@@ -6026,7 +6026,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+			// Query using user_id field (cct_author_id does not exist in the schema).
+			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
 			$where_values  = array( $session_key, $user_id );
 
 			if ( $assistant_id > 0 ) {
@@ -6046,46 +6047,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
-			// If no rows found with cct_author_id, try with user_id column as fallback.
-			// This handles cases where JetEngine might be using the custom user_id field
-			// instead of the built-in cct_author_id column.
 			if ( empty( $rows ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
-					'get_transcript_session: no rows found with cct_author_id, trying user_id fallback',
-					array(
-						'table'       => $table,
-						'user_id'     => $user_id,
-						'session_key' => $session_key,
-					)
-				);
-
-				// Build fallback query using user_id instead of cct_author_id.
-				$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
-				$fallback_where_values  = array( $session_key, $user_id );
-
-				if ( $assistant_id > 0 ) {
-					$fallback_where_clauses[] = 'assistant_id = %d';
-					$fallback_where_values[]  = $assistant_id;
-				}
-
-				$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
-
-				$select_fields           = $this->get_transcript_select_fields();
-				$fallback_query_template = "SELECT {$select_fields}
-             FROM {$table}
-             WHERE {$fallback_where_sql}
-             ORDER BY cct_created ASC, id ASC";
-
-				$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
-
-				$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
-			}
-
-			if ( empty( $rows ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'get_transcript_session: no rows found in database after fallback',
+					'get_transcript_session: no rows found in database',
 					array(
 						'table'       => $table,
 						'user_id'     => $user_id,
@@ -6430,7 +6395,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$query = $wpdb->prepare(
 				"SELECT request_payload
              FROM {$table}
-             WHERE session_key = %s AND cct_author_id = %d
+             WHERE session_key = %s AND user_id = %d
              ORDER BY cct_created ASC
              LIMIT 1",
 				$session_key,
