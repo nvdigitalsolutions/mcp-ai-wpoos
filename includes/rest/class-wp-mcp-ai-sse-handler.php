@@ -31,6 +31,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_SSE_Handler {
 
 	/**
+	 * Retry interval in milliseconds for SSE reconnection.
+	 *
+	 * If the SSE connection drops, clients will wait this many milliseconds
+	 * before attempting to reconnect.
+	 *
+	 * @since 1.0.0
+	 * @var int
+	 */
+	const RETRY_INTERVAL_MS = 3000;
+
+	/**
 	 * Send SSE headers for streaming response.
 	 *
 	 * Sets up HTTP headers required for Server-Sent Events streaming.
@@ -61,8 +72,7 @@ class WP_MCP_AI_SSE_Handler {
 		}
 
 		// Send retry directive to help clients reconnect if connection drops.
-		// Retry after 3000ms (3 seconds) on disconnect.
-		echo "retry: 3000\n\n";
+		echo 'retry: ' . self::RETRY_INTERVAL_MS . "\n\n";
 
 		// Force initial flush to establish connection.
 		if ( function_exists( 'flush' ) ) {

@@ -8401,7 +8401,7 @@
                             if (data.data) {
                                 // Extract text from final response if no chunks were received
                                 // This handles cases where streaming chunks weren't sent
-                                if (!fullContent || fullContent.length === 0) {
+                                if (!fullContent) {
                                     let finalText = '';
                                     
                                     // Try to extract text from data.data structure
@@ -8412,9 +8412,10 @@
                                     } else if (data.data.response && typeof data.data.response === 'string') {
                                         finalText = data.data.response;
                                     } else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
-                                        // Gemini format
-                                        for (let p = 0; p < data.data.candidates[0].content.parts.length; p++) {
-                                            const part = data.data.candidates[0].content.parts[p];
+                                        // Gemini format - optimize by caching parts array reference
+                                        const parts = data.data.candidates[0].content.parts;
+                                        for (let p = 0; p < parts.length; p++) {
+                                            const part = parts[p];
                                             if (part.text && typeof part.text === 'string') {
                                                 finalText += part.text;
                                             }
