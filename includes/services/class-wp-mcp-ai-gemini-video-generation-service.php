@@ -192,8 +192,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$parameters['seed'] = absint( $args['seed'] );
 		}
 
-		// Person generation control.
-		$parameters['personGeneration'] = 'allow_adult';
+		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
 		return array(
 			'instances'  => array( $instance ),
