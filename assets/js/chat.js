@@ -4890,7 +4890,8 @@
             return;
         }
         
-        // Include URL and name for display purposes when restoring from localStorage
+        // Include URL and name for server processing and localStorage restoration
+        // URL allows server to skip database lookups and directly use the attachment URL
         if (attachment.url) {
             segment.url = attachment.url;
         }
