@@ -7793,10 +7793,14 @@
 
         // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
+            // Ensure content is a string
+            const safeContent = content != null ? String(content) : '';
+            
             if (window.console && console.log) {
                 console.log('[WP oOS] updateStreamingMessage called:', {
-                    contentLength: content ? content.length : 0,
-                    contentSample: content ? content.substring(0, 50) + '...' : '(empty)',
+                    contentType: typeof content,
+                    contentLength: safeContent.length,
+                    contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
                     elementExists: !!streamingMessageElement,
                     elementInDOM: streamingMessageElement ? document.body.contains(streamingMessageElement) : false
                 });
@@ -7811,13 +7815,13 @@
                 if (window.console && console.log) {
                     console.log('[WP oOS] Setting textContent on streaming element:', {
                         currentTextLength: streamingMessageElement.textContent ? streamingMessageElement.textContent.length : 0,
-                        newTextLength: content ? content.length : 0
+                        newTextLength: safeContent.length
                     });
                 }
                 
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                streamingMessageElement.textContent = content;
+                streamingMessageElement.textContent = safeContent;
                 
                 if (window.console && console.log) {
                     console.log('[WP oOS] textContent set. Actual element textContent length:', streamingMessageElement.textContent.length);
@@ -7837,7 +7841,7 @@
             // Concern 2: Update status area (delegated to separate function)
             // This is intentionally OUTSIDE the streamingMessageElement check
             // because the status preview should work independently of the message bubble
-            updateStreamingStatus(content);
+            updateStreamingStatus(safeContent);
         }
 
         return fetch(state.config.messagesEndpoint, {
@@ -8104,7 +8108,7 @@
                                 }
                             }
                             
-                            // Display thinking text in status section if present
+                            // Display thinking text in bubble AND status section if present
                             if (thinkingChunk) {
                                 // Initialize or append to thinking buffer
                                 if (!state.thinkingText) {
@@ -8118,6 +8122,10 @@
                                     type: 'text-stream',
                                     showTime: false
                                 });
+                                
+                                // ALSO update the streaming bubble with thinking text
+                                // This ensures users can see the AI's reasoning process
+                                updateCallback(state.thinkingText);
                             }
                             
                             // Check for final response with complete data first
