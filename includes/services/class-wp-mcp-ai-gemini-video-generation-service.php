@@ -78,7 +78,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type bool   $generate_audio   Generate audio track (default false).
-	 *     @type bool   $enhance_prompt   Auto-enhance prompt (default true).
 	 *     @type string $negative_prompt  What to avoid in generation.
 	 *     @type int    $seed             Random seed for reproducibility.
 	 *     @type string $image_base64     Base64-encoded reference image.
@@ -174,7 +173,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'aspectRatio'    => $aspect_ratio,
 			'resolution'     => $resolution,
 			'durationSeconds' => $duration,
-			'enhancePrompt'  => isset( $args['enhance_prompt'] ) ? (bool) $args['enhance_prompt'] : true,
 			'generateAudio'  => isset( $args['generate_audio'] ) ? (bool) $args['generate_audio'] : false,
 		);
 
