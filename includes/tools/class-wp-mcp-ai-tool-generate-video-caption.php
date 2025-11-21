@@ -250,6 +250,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		// Gemini 2.0 and later support video.
 		$video_capable_models = array(
 			'gemini-2.5-flash',
+			'gemini-2.0-flash-exp',
 			'gemini-2.0-flash',
 			'gemini-exp-1206',
 		);

@@ -259,4 +259,43 @@ class Test_Video_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'video', strtolower( $analyze_desc ), 'Analyze tool description should mention video' );
 		$this->assertStringContainsString( 'video', strtolower( $caption_desc ), 'Caption tool description should mention video' );
 	}
+
+	/**
+	 * Test that all documented video-capable Gemini models are recognized.
+	 */
+	public function test_video_capable_gemini_models_recognized() {
+		$caption_tool = $this->registry->get_tool( 'generate_video_caption' );
+		$this->assertNotNull( $caption_tool, 'Generate video caption tool should exist' );
+
+		// Get the is_video_capable_gemini_model method via reflection.
+		$reflection = new ReflectionClass( $caption_tool );
+		$method     = $reflection->getMethod( 'is_video_capable_gemini_model' );
+		$method->setAccessible( true );
+
+		// Test all documented video-capable models from NEW-AI-MODELS-2024.md.
+		$video_capable_models = array(
+			'gemini-2.5-flash',      // Production-ready with video support.
+			'gemini-2.0-flash-exp',  // Latest experimental with native video understanding.
+			'gemini-2.0-flash',      // Stable 2.0 with video support.
+			'gemini-exp-1206',       // December 2024 experimental with video capabilities.
+		);
+
+		foreach ( $video_capable_models as $model ) {
+			$result = $method->invoke( $caption_tool, $model );
+			$this->assertTrue( $result, "Model $model should be recognized as video-capable" );
+		}
+
+		// Test that non-video models are not recognized.
+		$non_video_models = array(
+			'gemini-1.5-pro',
+			'gemini-1.5-flash',
+			'gemini-pro',
+			'gpt-4o',
+		);
+
+		foreach ( $non_video_models as $model ) {
+			$result = $method->invoke( $caption_tool, $model );
+			$this->assertFalse( $result, "Model $model should NOT be recognized as video-capable" );
+		}
+	}
 }
