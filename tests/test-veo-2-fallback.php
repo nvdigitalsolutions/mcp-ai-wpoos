@@ -17,14 +17,14 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		// Use reflection to access class constant.
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$reflection = new ReflectionClass( $service );
-		
+
 		$this->assertTrue(
 			$reflection->hasConstant( 'VEO_2_MODEL' ),
 			'VEO_2_MODEL constant should be defined'
 		);
-		
+
 		$constant = $reflection->getConstant( 'VEO_2_MODEL' );
-		
+
 		$this->assertEquals(
 			'veo-2.0-generate-001',
 			$constant,
@@ -39,7 +39,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$reflection = new ReflectionClass( $service );
 		$constant = $reflection->getConstant( 'VEO_2_MIN_DURATION' );
-		
+
 		$this->assertEquals(
 			5,
 			$constant,
@@ -220,7 +220,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 			'Veo 2.0 should not include resolution parameter (not supported by model)'
 		);
 	}
-	
+
 	/**
 	 * Test build_generation_payload excludes resolution parameter for Veo 2.0 with 720p.
 	 */
@@ -286,7 +286,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		
+
 		$operation = array(
 			'operation_name' => 'operations/test-123',
 			'model_used'     => $veo_2_constant,
