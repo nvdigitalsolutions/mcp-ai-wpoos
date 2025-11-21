@@ -150,4 +150,91 @@ class Test_Veo_Double_Async_Fix extends WP_UnitTestCase {
 		$result  = $method->invoke( $tool, array(), $context );
 		$this->assertTrue( $result, 'Should use async when in_async_executor is empty string' );
 	}
+
+	/**
+	 * Test that agentic_loop context forces synchronous execution.
+	 *
+	 * This prevents the tool from returning a nested async job_id when
+	 * the orchestrator has already forced synchronous execution for the
+	 * agentic loop. The loop needs actual results to continue the conversation.
+	 */
+	public function test_should_use_async_respects_agentic_loop_context() {
+		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'should_use_async' );
+		$method->setAccessible( true );
+
+		// Test: Default behavior (no context) should use async.
+		$result = $method->invoke( $tool, array(), array() );
+		$this->assertTrue( $result, 'Should use async mode by default' );
+
+		// Test: When in agentic loop context, should NOT use async.
+		$context = array( 'agentic_loop' => true );
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertFalse( $result, 'Should NOT use async when in agentic loop context' );
+
+		// Test: Even with explicit async=true, should override when in agentic loop.
+		$result = $method->invoke( $tool, array( 'async' => true ), $context );
+		$this->assertFalse( $result, 'Should override explicit async=true when in agentic loop' );
+
+		// Test: Can still disable async explicitly when NOT in agentic loop.
+		$result = $method->invoke( $tool, array( 'async' => false ), array() );
+		$this->assertFalse( $result, 'Should respect explicit async=false' );
+	}
+
+	/**
+	 * Test agentic loop context priority over in_async_executor.
+	 *
+	 * The agentic_loop flag should have the same priority as in_async_executor.
+	 * Both should prevent async execution.
+	 */
+	public function test_agentic_loop_and_async_executor_both_prevent_async() {
+		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'should_use_async' );
+		$method->setAccessible( true );
+
+		// Test with both flags set.
+		$context = array(
+			'agentic_loop'       => true,
+			'in_async_executor'  => true,
+		);
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertFalse( $result, 'Should NOT use async when both flags are set' );
+
+		// Test with only agentic_loop.
+		$context = array( 'agentic_loop' => true );
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertFalse( $result, 'Should NOT use async with only agentic_loop' );
+
+		// Test with only in_async_executor.
+		$context = array( 'in_async_executor' => true );
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertFalse( $result, 'Should NOT use async with only in_async_executor' );
+	}
+
+	/**
+	 * Test that agentic_loop=false doesn't disable async.
+	 *
+	 * Only the true value should disable async, not just the presence of the key.
+	 */
+	public function test_agentic_loop_false_allows_async() {
+		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'should_use_async' );
+		$method->setAccessible( true );
+
+		// Test with agentic_loop explicitly set to false.
+		$context = array( 'agentic_loop' => false );
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertTrue( $result, 'Should use async when agentic_loop is false' );
+
+		// Test with agentic_loop set to 0 (falsy but not boolean false).
+		$context = array( 'agentic_loop' => 0 );
+		$result  = $method->invoke( $tool, array(), $context );
+		$this->assertTrue( $result, 'Should use async when agentic_loop is 0' );
+	}
 }
