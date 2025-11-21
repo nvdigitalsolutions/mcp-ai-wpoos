@@ -6668,7 +6668,11 @@
             return waitForAsyncToolResultPolling(state, jobId, toolName);
         }
 
-        const timeout = 180000; // 3 minute timeout
+        // Determine timeout based on job type
+        // Video generation jobs (veo_*) need longer timeout (6 minutes) to match server-side timeout (5 min) with safety margin
+        // Regular async tool jobs use 3 minute timeout
+        const isVideoJob = jobId && typeof jobId === 'string' && jobId.indexOf('veo_') === 0;
+        const timeout = isVideoJob ? 360000 : 180000; // 6 minutes for video, 3 minutes for other tools
         const startTime = Date.now();
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
 
@@ -6803,7 +6807,11 @@
         }
 
         const pollDelay = 3000; // Poll every 3 seconds
-        const timeout = 180000; // 3 minute timeout
+        // Determine timeout based on job type
+        // Video generation jobs (veo_*) need longer timeout (6 minutes) to match server-side timeout (5 min) with safety margin
+        // Regular async tool jobs use 3 minute timeout
+        const isVideoJob = jobId && typeof jobId === 'string' && jobId.indexOf('veo_') === 0;
+        const timeout = isVideoJob ? 360000 : 180000; // 6 minutes for video, 3 minutes for other tools
         const startTime = Date.now();
         
         if (!pendingEntry) {
@@ -6844,7 +6852,12 @@
 
                 if (Date.now() - record.start >= record.timeout) {
                     cleanup();
-                    updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Tool timed out before completing.'));
+                    // Provide helpful message based on job type
+                    const isVideoJob = jobId && typeof jobId === 'string' && jobId.indexOf('veo_') === 0;
+                    const timeoutMessage = isVideoJob 
+                        ? getString('videoTimeout', 'Video generation is taking longer than expected. Check the jobs bar above for updates, or check back later.')
+                        : getString('toolTimeout', 'Tool timed out before completing.');
+                    updatePendingTaskEntry(pendingEntry, timeoutMessage);
                     reject(new Error('timeout'));
                     return;
                 }
