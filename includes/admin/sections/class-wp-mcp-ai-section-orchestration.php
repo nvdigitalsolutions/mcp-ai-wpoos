@@ -708,6 +708,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-admin-generic"></span>
 			<?php esc_html_e( 'Per Model', 'wp-mcp-ai' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'tools' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-admin-tools"></span>
+			<?php esc_html_e( 'Tools', 'wp-mcp-ai' ); ?>
+</a>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -725,6 +729,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'models':
 					$this->render_models_view();
+					break;
+				case 'tools':
+					$this->render_tools_view();
 					break;
 				case 'overview':
 				default:
@@ -999,6 +1006,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'fields' => array(
 						// Model-specific fields are handled separately by WP_MCP_AI_Model_Config_Renderer.
 					),
+			'tools'      => array(
+				'label'  => __( 'Tools', 'wp-mcp-ai' ),
+				'fields' => array(
+					// Tools view is read-only, no editable fields.
+				),
+			),
 				),
 			);
 		}
@@ -1013,6 +1026,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			// All fields are boolean checkboxes or sliders, no special validation needed.
 			return $input;
 		}
+
+	/**
+	 * Render tools view.
+	 *
+	 * Displays all registered tools with their capabilities and orchestration settings.
+	 * Delegates rendering to WP_MCP_AI_Tools_Orchestration_Renderer (SoC).
+	 */
+	private function render_tools_view() {
+		// Load renderer class if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-tools-orchestration-renderer.php';
+		}
+
+		// Delegate rendering to the renderer class (SoC).
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
+		echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
+	}
 
 		/**
 		 * Get health icon for status.
