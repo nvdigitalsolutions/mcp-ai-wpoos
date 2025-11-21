@@ -6389,7 +6389,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$query = $wpdb->prepare(
 				"SELECT request_payload
              FROM {$table}
-             WHERE session_key = %s AND cct_author_id = %d
+             WHERE session_key = %s AND user_id = %d
              ORDER BY cct_created ASC
              LIMIT 1",
 				$session_key,
