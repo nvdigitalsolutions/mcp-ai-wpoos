@@ -7903,6 +7903,8 @@
                     
                     // Clear thinking text buffer
                     state.thinkingText = null;
+                    // Clear streaming content buffer
+                    state.streamingContent = null;
                 }
 
                 saveConversationToStorage(state);
@@ -7919,6 +7921,10 @@
                     if (streamingMessageElement && streamingMessageElement.parentNode) {
                         streamingMessageElement.parentNode.removeChild(streamingMessageElement);
                     }
+                    
+                    // Clear streaming buffers on error
+                    state.thinkingText = null;
+                    state.streamingContent = null;
                 }
                 finalize();
             });
@@ -7929,6 +7935,9 @@
         const decoder = new TextDecoder();
         let buffer = '';
         let fullContent = '';
+        
+        // Initialize streaming content state variable
+        state.streamingContent = '';
 
         function readChunk() {
             return reader.read().then(function (result) {
@@ -8087,6 +8096,8 @@
                             // If we found streaming content, add it to fullContent and update UI
                             else if (contentChunk) {
                                 fullContent += contentChunk;
+                                // Store in state for status system access
+                                state.streamingContent = fullContent;
                                 updateCallback(fullContent);
                             }
                         }
@@ -8112,6 +8123,13 @@
         const type = data.type || '';
 
         if (type === 'thinking') {
+            // Don't override streaming status if content is actively streaming
+            // This prevents "thinking" status from interrupting active content streaming
+            if (state.streamingContent && state.streamingContent.length > 0) {
+                // Content is already streaming, ignore this thinking status
+                return;
+            }
+            
             setStatus(state.container, {
                 message: message,
                 type: 'thinking',
