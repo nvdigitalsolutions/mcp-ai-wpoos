@@ -44,7 +44,7 @@ class Test_Gemini_Args_Object_Structure extends WP_UnitTestCase {
 
 		// Verify it serializes as an object, not an array.
 		$json = wp_json_encode( $result );
-		$this->assertStringContainsString( '{"items":', $json );
+		$this->assertStringContainsString( '{"items"', $json );
 		$this->assertStringNotContainsString( '[0,1,2]', $json );
 	}
 
@@ -98,20 +98,30 @@ class Test_Gemini_Args_Object_Structure extends WP_UnitTestCase {
 
 		// Verify JSON structure.
 		$json = wp_json_encode( $result );
-		$this->assertStringContainsString( '"args":{"items":', $json );
+		$this->assertStringContainsString( '"args":{"items"', $json );
 	}
 
 	/**
-	 * Test that empty arrays remain empty.
+	 * Test that empty numeric arrays are wrapped to prevent JSON array serialization.
 	 */
-	public function test_empty_array_remains_empty() {
+	public function test_empty_numeric_array_wrapped() {
 		$reflection = new ReflectionClass( $this->client );
 		$method     = $reflection->getMethod( 'normalise_tool_arguments' );
 		$method->setAccessible( true );
 
+		// Test with an empty numeric array (should be wrapped).
 		$result = $method->invoke( $this->client, array() );
 
-		$this->assertSame( array(), $result );
+		// Empty numeric array should be wrapped in 'items'.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'items', $result );
+		$this->assertSame( array(), $result['items'] );
+
+		// Verify it serializes as an object, not an array.
+		$json = wp_json_encode( $result );
+		$this->assertStringContainsString( '{"items"', $json );
+		// Should be {"items":[]} not just []
+		$this->assertStringNotSame( '[]', $json );
 	}
 
 	/**
@@ -158,8 +168,8 @@ class Test_Gemini_Args_Object_Structure extends WP_UnitTestCase {
 
 		// Verify JSON serialization.
 		$json = wp_json_encode( $result );
-		$this->assertStringContainsString( '"args":{"hook":', $json );
-		$this->assertStringContainsString( '"args":{"items":', $json );
+		$this->assertStringContainsString( '"args":{"hook"', $json );
+		$this->assertStringContainsString( '"args":{"items"', $json );
 		// Should not contain a JSON array at the args level.
 		$this->assertStringNotMatchesRegularExpression( '/"args":\[/', $json );
 	}
@@ -223,5 +233,54 @@ class Test_Gemini_Args_Object_Structure extends WP_UnitTestCase {
 		// The args should be wrapped.
 		$this->assertArrayHasKey( 'items', $result['args'] );
 		$this->assertSame( array( 'a', 'b', 'c' ), $result['args']['items'] );
+	}
+
+	/**
+	 * Test that tool calls with empty args arrays are properly wrapped.
+	 *
+	 * This specifically tests the fix for empty numeric arrays to ensure
+	 * they serialize as objects {"items":[]} not arrays [].
+	 */
+	public function test_tool_call_with_empty_args() {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'convert_tool_call_to_function_call' );
+		$method->setAccessible( true );
+
+		// Simulate a tool call with empty args array.
+		$tool_call = array(
+			'id'   => 'call_789',
+			'type' => 'function',
+			'function' => array(
+				'name'      => 'create_cron_job',
+				'arguments' => wp_json_encode(
+					array(
+						'hook'      => 'test_hook',
+						'timestamp' => 1234567890,
+						'schedule'  => 'single',
+						'args'      => array(),
+					)
+				),
+			),
+		);
+
+		$result = $method->invoke( $this->client, $tool_call );
+
+		// Verify basic structure.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'name', $result );
+		$this->assertArrayHasKey( 'args', $result );
+
+		// The empty args should be wrapped.
+		$this->assertArrayHasKey( 'args', $result['args'] );
+		$this->assertIsArray( $result['args']['args'] );
+		$this->assertArrayHasKey( 'items', $result['args']['args'] );
+		$this->assertSame( array(), $result['args']['args']['items'] );
+
+		// Verify JSON - should not serialize as bare "args":[]
+		$json = wp_json_encode( $result );
+		// Should contain wrapped structure.
+		$this->assertStringContainsString( '{"items"', $json );
+		// The args field itself should be an object, not an array.
+		$this->assertStringNotMatchesRegularExpression( '/"args":\[\]/', $json );
 	}
 }

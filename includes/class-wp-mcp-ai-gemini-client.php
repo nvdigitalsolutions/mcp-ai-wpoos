@@ -1757,7 +1757,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 */
 		protected function ensure_args_object_structure( array $args ) {
 			// If the array is numeric (sequential keys starting at 0), wrap it.
-			if ( wp_is_numeric_array( $args ) && ! empty( $args ) ) {
+			// This includes empty arrays to prevent JSON array serialization.
+			if ( wp_is_numeric_array( $args ) ) {
 				return $this->wrap_numeric_array( $args );
 			}
 
@@ -1766,7 +1767,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			foreach ( $args as $key => $value ) {
 				if ( is_array( $value ) ) {
 					// Recursively process nested arrays.
-					if ( wp_is_numeric_array( $value ) && ! empty( $value ) ) {
+					if ( wp_is_numeric_array( $value ) ) {
 						// Wrap numeric arrays in an object structure.
 						$processed[ $key ] = $this->wrap_numeric_array( $value );
 					} else {
