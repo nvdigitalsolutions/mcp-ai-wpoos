@@ -187,4 +187,184 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		$summary = $this->service->get_status_summary( $this->user_id, 10 );
 		$this->assertCount( 5, $summary );
 	}
+
+	/**
+	 * Test get_job_details with video generation job.
+	 */
+	public function test_get_job_details_with_video_generation_job() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create a mock video generation job in transient.
+		$job_id   = 'veo_test123';
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test',
+			'args'           => array(
+				'prompt'  => 'Test video prompt',
+				'user_id' => $this->user_id,
+			),
+			'status'         => 'completed',
+			'queued_at'      => time() - 60,
+			'poll_attempt'   => 5,
+			'max_attempts'   => 60,
+			'result'         => array(
+				'attachment_id' => 123,
+				'url'           => 'https://example.com/video.mp4',
+				'prompt'        => 'Test video prompt',
+				'duration'      => 5,
+				'aspect_ratio'  => '16:9',
+				'resolution'    => '720p',
+				'model'         => 'veo-3.1-generate-preview',
+				'provider'      => 'gemini',
+			),
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get job details as the owner.
+		$details = $this->service->get_job_details( $job_id, $this->user_id );
+
+		$this->assertIsArray( $details );
+		$this->assertNotInstanceOf( 'WP_Error', $details );
+		$this->assertEquals( $job_id, $details['job_id'] );
+		$this->assertEquals( 'completed', $details['status'] );
+		$this->assertArrayHasKey( 'result', $details );
+		$this->assertEquals( 123, $details['result']['attachment_id'] );
+		$this->assertEquals( 'https://example.com/video.mp4', $details['result']['url'] );
+		$this->assertArrayHasKey( 'admin_url', $details );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
+
+	/**
+	 * Test get_job_details with video generation job - permission check.
+	 */
+	public function test_get_job_details_video_generation_permission() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		$other_user = $this->factory->user->create();
+
+		// Create a video generation job owned by another user.
+		$job_id   = 'veo_test456';
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test',
+			'args'           => array(
+				'prompt'  => 'Test video prompt',
+				'user_id' => $other_user,
+			),
+			'status'         => 'completed',
+			'queued_at'      => time() - 60,
+			'poll_attempt'   => 5,
+			'max_attempts'   => 60,
+			'result'         => array(
+				'attachment_id' => 123,
+				'url'           => 'https://example.com/video.mp4',
+			),
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Try to get job details as a different user - should be forbidden.
+		$details = $this->service->get_job_details( $job_id, $this->user_id );
+
+		$this->assertInstanceOf( 'WP_Error', $details );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $details->get_error_code() );
+
+		// Admin should be able to access.
+		$admin_details = $this->service->get_job_details( $job_id, $this->admin_id );
+		$this->assertIsArray( $admin_details );
+		$this->assertNotInstanceOf( 'WP_Error', $admin_details );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
+
+	/**
+	 * Test get_status_summary includes video generation jobs.
+	 */
+	public function test_get_status_summary_includes_video_jobs() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create a regular cron job.
+		$hook      = 'wp_mcp_ai_test_regular';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook, array(), 'single', $timestamp, $this->user_id );
+
+		// Create a video generation job.
+		$job_id   = 'veo_test789';
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test',
+			'args'           => array(
+				'prompt'  => 'Test video prompt',
+				'user_id' => $this->user_id,
+			),
+			'status'         => 'pending',
+			'queued_at'      => time(),
+			'poll_attempt'   => 0,
+			'max_attempts'   => 60,
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get status summary.
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		// Should have 2 jobs: 1 regular + 1 video.
+		$this->assertCount( 2, $summary );
+
+		// Find the video job.
+		$video_job = null;
+		foreach ( $summary as $job ) {
+			if ( isset( $job['tool_slug'] ) && WP_MCP_AI_Cron_Status_Service::VIDEO_GENERATION_TOOL_SLUG === $job['tool_slug'] ) {
+				$video_job = $job;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $video_job );
+		$this->assertEquals( 'pending', $video_job['status'] );
+		$this->assertEquals( WP_MCP_AI_Cron_Status_Service::VIDEO_GENERATION_JOB_TYPE, $video_job['type'] );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
+
+	/**
+	 * Test that polling status is counted as running, not completed.
+	 */
+	public function test_polling_status_counted_as_running() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create a video generation job with 'polling' status.
+		$job_id   = 'veo_polling_test';
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test',
+			'args'           => array(
+				'prompt'  => 'Test video prompt',
+				'user_id' => $this->user_id,
+			),
+			'status'         => 'polling',
+			'queued_at'      => time() - 30,
+			'poll_attempt'   => 3,
+			'max_attempts'   => 60,
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get status counts.
+		$counts = $this->service->get_status_counts( $this->user_id );
+
+		// The polling job should be counted as running, not completed.
+		$this->assertEquals( 1, $counts['running'] );
+		$this->assertEquals( 0, $counts['completed'] );
+		$this->assertEquals( 1, $counts['total'] );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
 }

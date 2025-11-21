@@ -31,6 +31,20 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 class WP_MCP_AI_Cron_Status_Service {
 
 	/**
+	 * Video generation tool slug constant
+	 *
+	 * @var string
+	 */
+	const VIDEO_GENERATION_TOOL_SLUG = 'generate_veo_video';
+
+	/**
+	 * Video generation job type constant
+	 *
+	 * @var string
+	 */
+	const VIDEO_GENERATION_JOB_TYPE = 'video_generation';
+
+	/**
 	 * Async tool executor instance (lazy loaded)
 	 *
 	 * @var WP_MCP_AI_Tool_Async_Executor|null
@@ -68,8 +82,11 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Get async tool jobs with optional assistant filter.
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 
-		// Merge async tool jobs with regular cron jobs.
-		$all_jobs = array_merge( $jobs, $async_jobs );
+		// Get video generation jobs.
+		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
+
+		// Merge async tool jobs, video jobs, and regular cron jobs.
+		$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
 
 		if ( empty( $all_jobs ) ) {
 			return array();
@@ -296,6 +313,78 @@ class WP_MCP_AI_Cron_Status_Service {
 	}
 
 	/**
+	 * Get video generation jobs for a user
+	 *
+	 * Retrieves Veo video generation jobs and formats them for status display.
+	 * Supports filtering by assistant_id for multi-widget isolation.
+	 *
+	 * Note: This uses a LIKE query on the options table similar to get_async_tool_jobs.
+	 * Performance impact is limited by the LIMIT 50 clause and transient expiration (24h).
+	 * For better performance, consider implementing a dedicated job tracking table if
+	 * the number of concurrent jobs becomes significant.
+	 *
+	 * @param int      $user_id User ID to filter by.
+	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @return array Array of video generation jobs formatted like cron jobs.
+	 */
+	protected function get_video_generation_jobs( $user_id, $assistant_id = null ) {
+		global $wpdb;
+
+		$prefix = 'wp_mcp_ai_veo_async_';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$transient_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT REPLACE(option_name, '_transient_', '') as transient_key 
+				FROM {$wpdb->options} 
+				WHERE option_name LIKE %s 
+				LIMIT 50",
+				$wpdb->esc_like( '_transient_' . $prefix ) . '%'
+			)
+		);
+
+		if ( empty( $transient_keys ) ) {
+			return array();
+		}
+
+		$is_admin = user_can( $user_id, 'manage_options' );
+		$jobs     = array();
+
+		foreach ( $transient_keys as $transient_key ) {
+			$metadata = get_transient( $transient_key );
+
+			if ( ! $metadata || ! is_array( $metadata ) ) {
+				continue;
+			}
+
+			// Filter by user unless admin.
+			$job_user_id = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
+
+			if ( ! $is_admin && $job_user_id !== $user_id ) {
+				continue;
+			}
+
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
+			}
+
+			// Add user_id for consistency.
+			$metadata['created_by'] = $job_user_id;
+			$metadata['tool_slug']  = self::VIDEO_GENERATION_TOOL_SLUG;
+			$metadata['type']       = self::VIDEO_GENERATION_JOB_TYPE;
+
+			$jobs[ $metadata['job_id'] ] = $metadata;
+		}
+
+		return $jobs;
+	}
+
+	/**
 	 * Format async tool job for status display
 	 *
 	 * Transforms async tool job metadata into consistent status format.
@@ -397,9 +486,10 @@ class WP_MCP_AI_Cron_Status_Service {
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		// Include async tool jobs with optional assistant filter.
+		// Include async tool jobs and video jobs with optional assistant filter.
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
-		$all_jobs   = array_merge( $jobs, $async_jobs );
+		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
+		$all_jobs   = array_merge( $jobs, $async_jobs, $video_jobs );
 
 		$counts = array(
 			'pending'   => 0,
@@ -431,7 +521,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Count by status.
 			if ( 'pending' === $status ) {
 				++$counts['pending'];
-			} elseif ( 'running' === $status ) {
+			} elseif ( 'running' === $status || 'polling' === $status ) {
 				++$counts['running'];
 			} elseif ( 'failed' === $status ) {
 				++$counts['failed'];
@@ -484,6 +574,38 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		$is_admin = user_can( $user_id, 'manage_options' );
+
+		// Check if it's a video generation job.
+		if ( 0 === strpos( $job_id, 'veo_' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Gemini_Video_Generation_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+			}
+
+			$video_service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+			$result        = $video_service->get_async_status( $job_id );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Check permissions - video jobs store user_id in args.
+			$job_user_id = 0;
+			if ( isset( $result['args']['user_id'] ) ) {
+				$job_user_id = absint( $result['args']['user_id'] );
+			}
+
+			if ( ! $is_admin && $job_user_id !== $user_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+				);
+			}
+
+			// Add admin URL.
+			$result['admin_url'] = $this->get_admin_url( $job_id );
+
+			return $result;
+		}
 
 		// Check if it's an async tool job.
 		if ( 0 === strpos( $job_id, 'async_' ) ) {
