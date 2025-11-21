@@ -314,4 +314,122 @@ class Test_Video_Tools extends WP_UnitTestCase {
 			$this->assertFalse( $result, "Model $model should NOT be recognized as video-capable" );
 		}
 	}
+
+	/**
+	 * Test that extract_video_frames tool is registered.
+	 */
+	public function test_extract_video_frames_tool_registered() {
+		$tool = $this->registry->get_tool( 'extract_video_frames' );
+		$this->assertInstanceOf( WP_MCP_AI_Tool_Interface::class, $tool, 'extract_video_frames should be registered as a tool' );
+	}
+
+	/**
+	 * Test extract_video_frames tool definition.
+	 */
+	public function test_extract_video_frames_tool_definition() {
+		$definition = $this->registry->get_tool_definition( 'extract_video_frames' );
+		
+		$this->assertIsArray( $definition, 'Tool definition should be an array' );
+		$this->assertEquals( 'extract_video_frames', $definition['name'], 'Tool name should be extract_video_frames' );
+		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
+		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
+		
+		// Check parameters.
+		$params = $definition['parameters'];
+		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
+		$this->assertArrayHasKey( 'video_url', $params['properties'], 'Should accept video_url parameter' );
+		$this->assertArrayHasKey( 'attachment_id', $params['properties'], 'Should accept attachment_id parameter' );
+		$this->assertArrayHasKey( 'timestamps', $params['properties'], 'Should accept timestamps parameter' );
+		$this->assertArrayHasKey( 'interval', $params['properties'], 'Should accept interval parameter' );
+		$this->assertArrayHasKey( 'frame_count', $params['properties'], 'Should accept frame_count parameter' );
+		$this->assertArrayHasKey( 'save_to_media', $params['properties'], 'Should accept save_to_media parameter' );
+	}
+
+	/**
+	 * Test that get_video_metadata tool is registered.
+	 */
+	public function test_get_video_metadata_tool_registered() {
+		$tool = $this->registry->get_tool( 'get_video_metadata' );
+		$this->assertInstanceOf( WP_MCP_AI_Tool_Interface::class, $tool, 'get_video_metadata should be registered as a tool' );
+	}
+
+	/**
+	 * Test get_video_metadata tool definition.
+	 */
+	public function test_get_video_metadata_tool_definition() {
+		$definition = $this->registry->get_tool_definition( 'get_video_metadata' );
+		
+		$this->assertIsArray( $definition, 'Tool definition should be an array' );
+		$this->assertEquals( 'get_video_metadata', $definition['name'], 'Tool name should be get_video_metadata' );
+		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
+		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
+		
+		// Check parameters.
+		$params = $definition['parameters'];
+		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
+		$this->assertArrayHasKey( 'video_url', $params['properties'], 'Should accept video_url parameter' );
+		$this->assertArrayHasKey( 'attachment_id', $params['properties'], 'Should accept attachment_id parameter' );
+		$this->assertArrayHasKey( 'include_streams', $params['properties'], 'Should accept include_streams parameter' );
+	}
+
+	/**
+	 * Test that new video tools are in the wordpress-core group.
+	 */
+	public function test_new_video_tools_in_core_group() {
+		$groups = $this->registry->get_tool_group_map();
+		
+		$this->assertArrayHasKey( 'extract_video_frames', $groups, 'extract_video_frames should be in group map' );
+		$this->assertEquals( 'wordpress-core', $groups['extract_video_frames'], 'extract_video_frames should be in wordpress-core group' );
+		
+		$this->assertArrayHasKey( 'get_video_metadata', $groups, 'get_video_metadata should be in group map' );
+		$this->assertEquals( 'wordpress-core', $groups['get_video_metadata'], 'get_video_metadata should be in wordpress-core group' );
+	}
+
+	/**
+	 * Test that new video tools have correct capability flags.
+	 */
+	public function test_new_video_tools_capability_flags() {
+		// Test extract_video_frames.
+		$extract_flags = $this->registry->get_tool_capability_flags( 'extract_video_frames' );
+		$this->assertContains( 'requires-capability', $extract_flags, 'extract_video_frames should require capabilities' );
+		$this->assertContains( 'write', $extract_flags, 'extract_video_frames should have write flag (creates files)' );
+		
+		// Test get_video_metadata.
+		$metadata_flags = $this->registry->get_tool_capability_flags( 'get_video_metadata' );
+		$this->assertContains( 'requires-capability', $metadata_flags, 'get_video_metadata should require capabilities' );
+		$this->assertContains( 'read-only', $metadata_flags, 'get_video_metadata should be read-only' );
+		$this->assertContains( 'cacheable', $metadata_flags, 'get_video_metadata results should be cacheable' );
+	}
+
+	/**
+	 * Test extract_video_frames check user capabilities.
+	 */
+	public function test_extract_video_frames_check_capabilities() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		
+		$tool = $this->registry->get_tool( 'extract_video_frames' );
+		$result = $tool->execute(
+			array( 'video_url' => 'https://example.com/video.mp4' ),
+			array( 'user_id' => $user_id )
+		);
+		
+		$this->assertWPError( $result, 'Should return WP_Error for insufficient capabilities' );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code(), 'Should return forbidden error' );
+	}
+
+	/**
+	 * Test get_video_metadata check user capabilities.
+	 */
+	public function test_get_video_metadata_check_capabilities() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		
+		$tool = $this->registry->get_tool( 'get_video_metadata' );
+		$result = $tool->execute(
+			array( 'video_url' => 'https://example.com/video.mp4' ),
+			array( 'user_id' => $user_id )
+		);
+		
+		$this->assertWPError( $result, 'Should return WP_Error for insufficient capabilities' );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code(), 'Should return forbidden error' );
+	}
 }
