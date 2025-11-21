@@ -7,6 +7,11 @@
     margin: 0 auto 2rem;
     box-shadow: 0 12px 28px var(--wp-mcp-ai-color-container-shadow, rgba(15, 23, 42, 0.08));
     position: relative;
+    transition: box-shadow 0.3s ease;
+}
+
+.wp-mcp-ai-chat:hover {
+    box-shadow: 0 16px 32px var(--wp-mcp-ai-color-container-shadow-hover, rgba(15, 23, 42, 0.12));
 }
 
 .wp-mcp-ai-chat__messages {
@@ -1107,7 +1112,7 @@
     border-radius: 999px;
     cursor: pointer;
     font-size: 0.95rem;
-    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.1s ease;
 }
 
 .wp-mcp-ai-chat__attach:hover,
@@ -1115,6 +1120,11 @@
     background: var(--wp-mcp-ai-color-attach-hover-background, #f0f0f0);
     color: var(--wp-mcp-ai-color-attach-text, #1d2327);
     border-color: var(--wp-mcp-ai-color-attach-hover-border, #a7aaad);
+    transform: translateY(-1px);
+}
+
+.wp-mcp-ai-chat__attach:active {
+    transform: translateY(0);
 }
 
 .wp-mcp-ai-chat__attach:disabled {
@@ -1147,11 +1157,11 @@
         var(--wp-mcp-ai-color-submit-hover-gradient-end, #6a4bff)
     );
     box-shadow: 0 16px 28px var(--wp-mcp-ai-color-submit-hover-shadow, rgba(50, 76, 248, 0.4));
+    transform: translateY(-2px);
     color: var(
         --wp-mcp-ai-color-submit-hover-text,
         var(--wp-mcp-ai-color-submit-text, #fff)
     );
-    transform: translateY(-1px);
 }
 
 .wp-mcp-ai-chat__submit:active {
