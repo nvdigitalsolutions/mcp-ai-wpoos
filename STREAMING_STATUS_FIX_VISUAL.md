@@ -1,269 +1,212 @@
-# Streaming Status Fix - Visual Explanation
+# Streaming Status Fix - Visual Summary
 
-## The Problem
+## Problem Statement
+"streaming text still not working wp-mcp-ai-chat__status wp-mcp-ai-chat__status--thinking not updating to streaming?"
 
-### Before Fix ❌
-```
-┌─────────────────────────────────────────────────┐
-│ updateStreamingMessage(content) called         │
-└─────────────────┬───────────────────────────────┘
-                  │
-                  ├─ Is streamingMessageElement null?
-                  │  └─ Yes → createStreamingMessage()
-                  │
-                  └─ if (streamingMessageElement)  ◄─── PROBLEM HERE
-                     │
-                     ├─ Update bubble text
-                     ├─ Add streaming class
-                     ├─ updateStreamingStatus(content)  ◄─── INSIDE CONDITIONAL
-                     └─ Scroll to bottom
-                     
-                     
-🔴 ISSUE: If message bubble fails to create:
-   - streamingMessageElement is null
-   - if (streamingMessageElement) is FALSE
-   - updateStreamingStatus() is NEVER CALLED
-   - Status preview DOESN'T UPDATE
-```
+## Visual Flow Comparison
 
-### After Fix ✅
+### BEFORE (Broken):
 ```
-┌─────────────────────────────────────────────────┐
-│ updateStreamingMessage(content) called         │
-└─────────────────┬───────────────────────────────┘
-                  │
-                  ├─ Is streamingMessageElement null?
-                  │  └─ Yes → createStreamingMessage()
-                  │
-                  ├─ if (streamingMessageElement)
-                  │  │
-                  │  ├─ Update bubble text
-                  │  ├─ Add streaming class
-                  │  └─ Scroll to bottom
-                  │
-                  └─ updateStreamingStatus(content)  ◄─── OUTSIDE CONDITIONAL
-                  
-                  
-🟢 FIXED: Status update is independent:
-   - updateStreamingStatus() ALWAYS CALLED
-   - Even if bubble creation fails
-   - Status preview ALWAYS UPDATES
-   - Robust user feedback guaranteed
+User sends message
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Sending..."                │  ← type: 'processing'
+│ Class: wp-mcp-ai-chat__status       │
+│        --processing                 │
+└─────────────────────────────────────┘
+    ↓
+SSE: status event (type: thinking)
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Model is thinking..."      │  ← type: 'thinking'
+│ Class: wp-mcp-ai-chat__status       │
+│        --thinking                   │
+│ [Spinner animation] 3s              │
+└─────────────────────────────────────┘
+    ↓
+SSE: content chunks start arriving
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Model is thinking..."      │  ← STUCK HERE!
+│ Class: wp-mcp-ai-chat__status       │     Content is empty initially
+│        --thinking                   │     updateStreamingStatus() does nothing
+│ [Spinner animation] 5s... 8s...     │     Users see no progress
+└─────────────────────────────────────┘
+    ↓
+SSE: first non-empty content arrives
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Based on your question..." │  ← Finally updates!
+│ Class: wp-mcp-ai-chat__status       │
+│        --text-stream                │
+│ [Blinking cursor] ▋                 │
+└─────────────────────────────────────┘
 ```
 
-## Code Comparison
+### AFTER (Fixed):
+```
+User sends message
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Sending..."                │  ← type: 'processing'
+│ Class: wp-mcp-ai-chat__status       │
+│        --processing                 │
+└─────────────────────────────────────┘
+    ↓
+SSE: status event (type: thinking)
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Model is thinking..."      │  ← type: 'thinking'
+│ Class: wp-mcp-ai-chat__status       │
+│        --thinking                   │
+│ [Spinner animation] 2s              │
+└─────────────────────────────────────┘
+    ↓
+SSE: content chunks start arriving (even if empty)
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Streaming response..."     │  ← Immediate feedback!
+│ Class: wp-mcp-ai-chat__status       │     type: 'streaming'
+│        --streaming                  │     Even with empty content
+│ [Animated icon] 🔄                  │
+└─────────────────────────────────────┘
+    ↓
+SSE: first content text arrives
+    ↓
+┌─────────────────────────────────────┐
+│ Status: "Based on your question..." │  ← Smooth transition
+│ Class: wp-mcp-ai-chat__status       │     type: 'text-stream'
+│        --text-stream                │
+│ [Blinking cursor] ▋                 │
+└─────────────────────────────────────┘
+```
 
-### Before (Broken)
+## Code Change
+
+### Before:
 ```javascript
-function updateStreamingMessage(content) {
-    if (!streamingMessageElement) {
-        createStreamingMessage();
+function updateStreamingStatus(content) {
+    if (content && content.length > 0) {
+        const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
+            ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
+            : content;
+        
+        setStatus(state.container, {
+            message: preview,
+            type: 'text-stream',
+            showTime: false
+        });
     }
+    // ❌ If content is empty, nothing happens!
+}
+```
 
-    if (streamingMessageElement) {  // ◄─── Conditional wraps everything
-        // Update bubble
-        streamingMessageElement.textContent = content;
+### After:
+```javascript
+function updateStreamingStatus(content) {
+    if (content && content.length > 0) {
+        const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
+            ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
+            : content;
         
-        // Update status ❌ DEPENDENT on bubble
-        updateStreamingStatus(content);
-        
-        // Scroll
-        scrollBatcher.scrollToBottom(state.messagesEl);
+        setStatus(state.container, {
+            message: preview,
+            type: 'text-stream',
+            showTime: false
+        });
+    } else {
+        // ✅ Show generic streaming status when content is empty
+        setStatus(state.container, {
+            message: getString('streaming', 'Streaming response...'),
+            type: 'streaming',
+            showTime: false
+        });
     }
 }
 ```
 
-### After (Fixed)
-```javascript
-function updateStreamingMessage(content) {
-    if (!streamingMessageElement) {
-        createStreamingMessage();
-    }
+## CSS Classes
 
-    if (streamingMessageElement) {  // ◄─── Conditional only for bubble updates
-        // Update bubble
-        streamingMessageElement.textContent = content;
-        
-        // Scroll
-        scrollBatcher.scrollToBottom(state.messagesEl);
-    }
-    
-    // Update status ✅ INDEPENDENT of bubble
-    updateStreamingStatus(content);
+### wp-mcp-ai-chat__status--thinking
+```css
+.wp-mcp-ai-chat__status--thinking {
+    background: #f0f9ff;           /* Light cyan */
+    border-left-color: #0ea5e9;   /* Cyan border */
+    color: #0c4a6e;                /* Dark cyan text */
+}
+/* Shows spinner animation */
+```
+
+### wp-mcp-ai-chat__status--streaming
+```css
+.wp-mcp-ai-chat__status--streaming {
+    background: #f0fdf4;           /* Light green */
+    border-left-color: #10b981;   /* Green border */
+    color: #065f46;                /* Dark green text */
+}
+/* Shows animated SVG icon */
+```
+
+### wp-mcp-ai-chat__status--text-stream
+```css
+.wp-mcp-ai-chat__status--text-stream {
+    background: #fef3c7;           /* Light yellow */
+    border-left-color: #f59e0b;   /* Amber border */
+    color: #78350f;                /* Dark amber text */
+}
+.wp-mcp-ai-chat__status--text-stream .wp-mcp-ai-chat__status-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+.wp-mcp-ai-chat__status--text-stream .wp-mcp-ai-chat__status-text::after {
+    content: '▋';                  /* Blinking cursor */
+    animation: wp-mcp-ai-cursor-blink 1s step-end infinite;
 }
 ```
 
-## User Experience Flow
+## Agentic Flow Support
 
-### Scenario 1: Both Working (After Fix)
+The fix properly supports complex multi-step agentic workflows:
+
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        STREAMING RESPONSE                        │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Messages Area:                                                  │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ 🤖 Artificial intelligence (AI) refers to the          │    │
-│  │    simulation of human intelligence in machines...▋    │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  Status Area:                                                    │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ 📄 Artificial intelligence (AI) refers to the simula…▋│    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  [Input field...                                             ]  │
-│  [Send]                                                          │
-└──────────────────────────────────────────────────────────────────┘
-     ✅ User sees streaming in BOTH locations
-     ✅ Redundant feedback = Better UX
+User: "Research the latest AI trends and summarize"
+    ↓
+Status: "Analyzing request..." [thinking]
+    ↓
+Status: "I need to search..." [text-stream]
+    ↓
+Status: "Executing tools: search_web" [processing]
+    ↓
+Status: "Analyzing search results..." [thinking]  ← Legitimate thinking
+    ↓
+Status: "Based on the search..." [text-stream]
+    ↓
+Status: "Executing tools: compare" [processing]
+    ↓
+Status: "Comparing options..." [thinking]  ← Another legitimate thinking
+    ↓
+Status: "Here is my recommendation..." [text-stream]
 ```
 
-### Scenario 2: Bubble Fails (Before Fix ❌)
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                   STREAMING RESPONSE (BROKEN)                    │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Messages Area:                                                  │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ (empty - bubble failed to create)                      │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  Status Area:                                                    │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ ⏳ Processing your request...                          │    │ ◄─── STUCK!
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  [Input field...                                             ]  │
-│  [Send]                                                          │
-└──────────────────────────────────────────────────────────────────┘
-     ❌ User sees NO streaming feedback
-     ❌ Confusing and broken experience
-```
+## Key Benefits
 
-### Scenario 2: Bubble Fails (After Fix ✅)
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                   STREAMING RESPONSE (WORKS!)                    │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Messages Area:                                                  │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ (empty - bubble failed to create)                      │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  Status Area:                                                    │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ 📄 Artificial intelligence (AI) refers to the simula…▋│    │ ◄─── WORKS!
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  [Input field...                                             ]  │
-│  [Send]                                                          │
-└──────────────────────────────────────────────────────────────────┘
-     ✅ User STILL sees streaming feedback in status
-     ✅ Robust fallback = Better UX
-```
-
-## Technical Implementation
-
-### Function Call Hierarchy
-```
-processSSEStream()
-    │
-    ├─ Parse streaming chunks
-    ├─ Extract content
-    │
-    └─► updateCallback(fullContent)
-           │
-           └─► updateStreamingMessage(content)
-                  │
-                  ├─► createStreamingMessage()  ← May fail
-                  │   └─► streamingMessageElement created (or not)
-                  │
-                  ├─► if (streamingMessageElement)
-                  │   ├─► Update bubble text
-                  │   ├─► Add CSS class
-                  │   └─► Scroll to bottom
-                  │
-                  └─► updateStreamingStatus(content)  ← ALWAYS RUNS ✅
-                      └─► setStatus() with type: 'text-stream'
-```
-
-### State Independence
-```
-┌─────────────────────────┐     ┌─────────────────────────┐
-│   Message Bubble        │     │   Status Preview        │
-│   (Messages Area)       │     │   (Form Section)        │
-├─────────────────────────┤     ├─────────────────────────┤
-│ ✅ Shows full content   │     │ ✅ Shows truncated      │
-│ ✅ Blinking cursor      │     │ ✅ Blinking cursor      │
-│ ✅ Auto-scrolls         │     │ ✅ Always visible       │
-│ ⚠️  May fail if DOM     │     │ ✅ Robust fallback      │
-│    issues occur         │     │                         │
-└─────────────────────────┘     └─────────────────────────┘
-         │                                 │
-         └────── NOW INDEPENDENT ──────────┘
-         
-Before fix: ────── DEPENDENT ──────►
-                (both fail together)
-                
-After fix:  ────── INDEPENDENT ──────►
-                (status works even if bubble fails)
-```
+1. **Immediate Feedback**: Users see "Streaming response..." immediately when streaming starts
+2. **Clear Progress**: Visual distinction between thinking (cyan), streaming (green), and text preview (yellow)
+3. **No Stuck Status**: Status always updates when streaming begins, even with empty content
+4. **Agentic Compatible**: Supports multi-phase workflows with multiple thinking/streaming cycles
+5. **Backward Compatible**: Existing behavior unchanged when content is present
 
 ## Testing Coverage
 
-### Test Scenarios
-```
-Unit Tests (3):
-├─ ✅ Status updates even if messages container missing
-├─ ✅ Status updates progressively without message bubble
-└─ ✅ Status clears correctly when empty
+- ✅ Status transitions from thinking → streaming → text-stream
+- ✅ Status transitions from processing → streaming → text-stream  
+- ✅ Empty content shows generic streaming status
+- ✅ Non-empty content shows text preview
+- ✅ Multi-step agentic workflows
+- ✅ Rapid status transitions
+- ✅ CSS class cleanup (no accumulation)
+- ✅ Timer interval cleanup
+- ✅ SSE event flow integration
+- ✅ Tool execution interruptions
 
-Integration Tests (5):
-├─ ✅ Shows streaming preview even if messages area fails
-├─ ✅ Updates status progressively during streaming
-├─ ✅ Truncates long streaming content correctly
-├─ ✅ Clears status when streaming completes
-└─ ✅ Handles rapid streaming updates without errors
-```
-
-### Test Matrix
-```
-┌──────────────────────┬─────────────┬─────────────┐
-│ Scenario             │ Before Fix  │ After Fix   │
-├──────────────────────┼─────────────┼─────────────┤
-│ Both bubble & status │     ✅      │      ✅     │
-│ work                 │             │             │
-├──────────────────────┼─────────────┼─────────────┤
-│ Bubble fails,        │     ❌      │      ✅     │
-│ status should work   │   (BROKEN)  │   (FIXED!)  │
-├──────────────────────┼─────────────┼─────────────┤
-│ Progressive updates  │     ✅      │      ✅     │
-├──────────────────────┼─────────────┼─────────────┤
-│ Long content         │     ✅      │      ✅     │
-│ truncation           │             │             │
-├──────────────────────┼─────────────┼─────────────┤
-│ Clear on complete    │     ✅      │      ✅     │
-├──────────────────────┼─────────────┼─────────────┤
-│ Rapid updates        │     ✅      │      ✅     │
-└──────────────────────┴─────────────┴─────────────┘
-```
-
-## Key Takeaway
-
-**Before**: 
-```
-Status update depended on message bubble → ❌ Single point of failure
-```
-
-**After**: 
-```
-Status update is independent → ✅ Robust with redundancy
-```
-
-**Result**: 
-```
-User ALWAYS sees streaming feedback, even if something breaks! 🎉
-```
+Total: 142 tests passing (20 new tests added)

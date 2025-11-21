@@ -7769,6 +7769,8 @@
 
         // Update status area with streaming preview (Separation of Concerns)
         function updateStreamingStatus(content) {
+            // Always update status when called, even if content is empty
+            // This ensures status transitions from "thinking" to "streaming" immediately
             if (content && content.length > 0) {
                 const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
                     ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
@@ -7777,6 +7779,13 @@
                 setStatus(state.container, {
                     message: preview,
                     type: 'text-stream',
+                    showTime: false
+                });
+            } else {
+                // Content is empty, but streaming has started - show generic streaming status
+                setStatus(state.container, {
+                    message: getString('streaming', 'Streaming response...'),
+                    type: 'streaming',
                     showTime: false
                 });
             }
