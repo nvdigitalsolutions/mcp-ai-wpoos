@@ -44,11 +44,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 	/**
-	 * Veo 3.1 model identifier
+	 * Veo 3.1 model identifier (primary)
 	 *
 	 * @var string
 	 */
 	const VEO_MODEL = 'veo-3.1-generate-preview';
+
+	/**
+	 * Veo 2.0 model identifier (fallback)
+	 *
+	 * @var string
+	 */
+	const VEO_2_MODEL = 'veo-2.0-generate-001';
 
 	/**
 	 * Minimum video duration in seconds
@@ -77,6 +84,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @var int
 	 */
 	const REQUIRED_1080P_DURATION = 8;
+
+	/**
+	 * Minimum video duration for Veo 2 in seconds
+	 *
+	 * @var int
+	 */
+	const VEO_2_MIN_DURATION = 5;
 
 	/**
 	 * Maximum polling attempts
@@ -125,7 +139,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Generate a video using Veo 3.1.
+	 * Generate a video using Veo 3.1 with automatic Veo 2.0 fallback.
 	 *
 	 * @param array $args {
 	 *     Video generation arguments.
@@ -140,6 +154,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type string $image_mime_type  MIME type of reference image.
 	 *     @type bool   $async            Whether to use async mode (cron fallback).
 	 *     @type int    $user_id          User ID for async operations.
+	 *     @type string $model            Optional. Force specific model ('veo-3.1' or 'veo-2.0').
 	 * }
 	 * @return array|WP_Error Video data or async job info on success, error on failure.
 	 */
@@ -153,22 +168,88 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
+		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
+		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
+		
+		if ( ! $force_veo_2 ) {
+			$result = $this->generate_video_with_model( $args, self::VEO_MODEL );
+			
+			// If successful or async, return immediately.
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+			
+			// Check if this is a retryable error that warrants Veo 2 fallback.
+			if ( $this->should_fallback_to_veo_2( $result ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_fallback_to_veo_2',
+					'Veo 3.1 failed, attempting Veo 2.0 fallback',
+					array(
+						'veo_3_error' => $result->get_error_message(),
+						'error_code'  => $result->get_error_code(),
+					)
+				);
+				
+				// Attempt with Veo 2.0.
+				$veo_2_result = $this->generate_video_with_model( $args, self::VEO_2_MODEL );
+				
+				// If Veo 2 succeeds, add metadata about fallback.
+				if ( ! is_wp_error( $veo_2_result ) ) {
+					if ( isset( $veo_2_result['async'] ) && $veo_2_result['async'] ) {
+						$veo_2_result['fallback_used'] = true;
+						$veo_2_result['primary_model_error'] = $result->get_error_message();
+					}
+					return $veo_2_result;
+				}
+				
+				// Both failed - return the original Veo 3 error with context.
+				return new WP_Error(
+					$result->get_error_code(),
+					sprintf(
+						/* translators: 1: Veo 3 error, 2: Veo 2 error */
+						__( 'Video generation failed. Veo 3.1: %1$s. Veo 2.0 fallback also failed: %2$s', 'wp-mcp-ai' ),
+						$result->get_error_message(),
+						$veo_2_result->get_error_message()
+					),
+					array( 'status' => 500 )
+				);
+			}
+			
+			// Not a retryable error, return the original error.
+			return $result;
+		}
+		
+		// Veo 2 explicitly requested.
+		return $this->generate_video_with_model( $args, self::VEO_2_MODEL );
+	}
+
+	/**
+	 * Generate video with a specific model.
+	 *
+	 * @param array  $args  Generation arguments.
+	 * @param string $model Model identifier.
+	 * @return array|WP_Error Video data or async job info on success, error on failure.
+	 */
+	protected function generate_video_with_model( array $args, $model ) {
 		// Check if async mode is requested.
 		$use_async = isset( $args['async'] ) && $args['async'];
 
-		// Build the request payload.
-		$payload = $this->build_generation_payload( $args );
+		// Build the request payload for the specified model.
+		$payload = $this->build_generation_payload( $args, $model );
 
 		if ( is_wp_error( $payload ) ) {
 			return $payload;
 		}
 
 		// Submit the generation request.
-		$operation = $this->submit_generation_request( $payload );
+		$operation = $this->submit_generation_request( $payload, $model );
 
 		if ( is_wp_error( $operation ) ) {
 			return $operation;
 		}
+
+		// Store model info in operation for later reference.
+		$operation['model_used'] = $model;
 
 		// If async mode, queue cron job and return job ID.
 		if ( $use_async ) {
@@ -190,29 +271,102 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Download and return video data for synchronous completion.
-		return $this->process_completed_video( $result, $args );
+		return $this->process_completed_video( $result, $args, $model );
 	}
 
 	/**
-	 * Build the generation payload for Veo 3.1.
+	 * Determine if error warrants fallback to Veo 2.
+	 *
+	 * @param WP_Error $error Error from Veo 3 attempt.
+	 * @return bool True if should fallback to Veo 2.
+	 */
+	protected function should_fallback_to_veo_2( $error ) {
+		$error_message = strtolower( $error->get_error_message() );
+		$error_code    = $error->get_error_code();
+		
+		// Quota/rate limit errors.
+		$quota_indicators = array(
+			'quota',
+			'rate limit',
+			'too many requests',
+			'resource exhausted',
+			'insufficient quota',
+			'quota exceeded',
+		);
+		
+		foreach ( $quota_indicators as $indicator ) {
+			if ( false !== strpos( $error_message, $indicator ) ) {
+				return true;
+			}
+		}
+		
+		// Model unavailable errors.
+		$availability_indicators = array(
+			'not available',
+			'unavailable',
+			'not found',
+			'does not exist',
+			'not supported',
+			'model not found',
+			'invalid model',
+		);
+		
+		foreach ( $availability_indicators as $indicator ) {
+			if ( false !== strpos( $error_message, $indicator ) ) {
+				return true;
+			}
+		}
+		
+		// HTTP status codes that suggest quota/availability issues.
+		$error_data = $error->get_error_data();
+		if ( isset( $error_data['status'] ) ) {
+			$status = $error_data['status'];
+			// 429 = Too Many Requests, 403 = Forbidden (quota), 503 = Service Unavailable.
+			if ( in_array( $status, array( 403, 429, 503 ), true ) ) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Build the generation payload for Veo models.
 	 *
 	 * Validates and sanitizes all parameters before sending to the Gemini API.
+	 * Adjusts constraints based on the model being used (Veo 3.1 vs Veo 2.0).
 	 * Duration validation is performed in multiple stages:
-	 * 1. Initial validation: Convert to integer and check range (4-8 seconds)
-	 * 2. 1080p override: Force to 8 seconds for 1080p resolution
+	 * 1. Initial validation: Convert to integer and check range based on model
+	 * 2. Model-specific adjustments: Veo 2 min 5s, 1080p requires 8s for Veo 3
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
-	 * @param array $args Generation arguments.
+	 * @param array  $args  Generation arguments.
+	 * @param string $model Model identifier (VEO_MODEL or VEO_2_MODEL).
 	 * @return array|WP_Error Payload or error.
 	 */
-	protected function build_generation_payload( $args ) {
+	protected function build_generation_payload( $args, $model = null ) {
+		// Default to Veo 3.1 if not specified.
+		if ( null === $model ) {
+			$model = self::VEO_MODEL;
+		}
+		
+		$is_veo_2 = ( self::VEO_2_MODEL === $model );
+		
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
-		// Duration validation (Veo API requires 4-8 seconds).
+		// Duration validation - depends on model.
 		// Stage 1: Initial validation and sanitization.
-		$duration = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
-		if ( $duration < self::MIN_DURATION || $duration > self::MAX_DURATION ) {
-			$duration = self::DEFAULT_DURATION;
+		$min_duration = $is_veo_2 ? self::VEO_2_MIN_DURATION : self::MIN_DURATION;
+		$duration     = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
+		
+		// Adjust duration if below model minimum.
+		if ( $duration < $min_duration ) {
+			$duration = $min_duration;
+		}
+		
+		// Ensure within max range.
+		if ( $duration > self::MAX_DURATION ) {
+			$duration = self::MAX_DURATION;
 		}
 
 		// Aspect ratio validation.
@@ -227,13 +381,24 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$resolution = '720p';
 		}
 
+		// Veo 2.0 does not support 1080p - force to 720p.
+		if ( $is_veo_2 && '1080p' === $resolution ) {
+			$resolution = '720p';
+			
+			WP_MCP_AI_Logger::log_event(
+				'veo_2_resolution_downgrade',
+				'Veo 2.0 does not support 1080p, downgrading to 720p',
+				array( 'requested' => '1080p' )
+			);
+		}
+		
 		// 1080p only supported for 16:9.
 		if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
 			$resolution = '720p';
 		}
 
-		// Stage 2: 1080p requires 8 seconds duration (2025 API requirement).
-		if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
+		// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
+		if ( ! $is_veo_2 && '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
 			$duration = self::REQUIRED_1080P_DURATION;
 		}
 
@@ -259,7 +424,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'aspectRatio'     => $aspect_ratio,
 			'resolution'      => $resolution,
 			'durationSeconds' => $duration,
-			// Note: 'generateAudio' is not supported by Veo 3.1 model - removed to prevent API errors.
+			// Note: 'generateAudio' is not supported by Veo models - removed to prevent API errors.
 		);
 
 		// Add optional parameters.
@@ -289,10 +454,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	/**
 	 * Submit video generation request to Gemini API.
 	 *
-	 * @param array $payload Request payload.
+	 * @param array  $payload Request payload.
+	 * @param string $model   Model identifier.
 	 * @return array|WP_Error Operation details or error.
 	 */
-	protected function submit_generation_request( $payload ) {
+	protected function submit_generation_request( $payload, $model = null ) {
+		// Default to Veo 3.1 if not specified.
+		if ( null === $model ) {
+			$model = self::VEO_MODEL;
+		}
+		
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
@@ -307,7 +478,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Veo endpoint uses predictLongRunning for async operations.
 		$endpoint = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:predictLongRunning',
-			rawurlencode( self::VEO_MODEL )
+			rawurlencode( $model )
 		);
 
 		$request_args = array(
@@ -496,11 +667,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	/**
 	 * Process completed video and download data.
 	 *
-	 * @param array $result Completed operation result.
-	 * @param array $args   Original generation arguments.
+	 * @param array  $result Completed operation result.
+	 * @param array  $args   Original generation arguments.
+	 * @param string $model  Model identifier used for generation.
 	 * @return array|WP_Error Video data or error.
 	 */
-	protected function process_completed_video( $result, $args ) {
+	protected function process_completed_video( $result, $args, $model = null ) {
+		// Default to Veo 3.1 if not specified.
+		if ( null === $model ) {
+			$model = self::VEO_MODEL;
+		}
+		
 		// Extract video URL from response.
 		// Support both old and new API response structures for backward compatibility.
 		$video_uri = null;
@@ -537,7 +714,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'duration'     => isset( $args['duration'] ) ? $args['duration'] : self::DEFAULT_DURATION,
 			'aspect_ratio' => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
 			'resolution'   => isset( $args['resolution'] ) ? $args['resolution'] : '720p',
-			'model'        => self::VEO_MODEL,
+			'model'        => $model,
 			'provider'     => 'gemini',
 		);
 	}
@@ -640,10 +817,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Generate unique job ID.
 		$job_id = 'veo_' . uniqid( '', true );
 
+		// Get model from operation (set by generate_video_with_model).
+		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
+
 		// Store operation metadata in transient.
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => $operation['operation_name'],
+			'model'          => $model,
 			'args'           => $args,
 			'status'         => 'pending',
 			'queued_at'      => time(),
@@ -774,7 +955,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Operation succeeded - process video.
-			$result = $this->process_completed_video( $data, $metadata['args'] );
+			$model = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
+			$result = $this->process_completed_video( $data, $metadata['args'], $model );
 
 			if ( is_wp_error( $result ) ) {
 				$metadata['status'] = 'failed';
