@@ -25,7 +25,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
-
 /**
  * Gemini Video Generation Service class
  *
