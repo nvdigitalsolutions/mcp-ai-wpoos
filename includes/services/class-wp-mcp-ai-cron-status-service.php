@@ -521,7 +521,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Count by status.
 			if ( 'pending' === $status ) {
 				++$counts['pending'];
-			} elseif ( 'running' === $status ) {
+			} elseif ( 'running' === $status || 'polling' === $status ) {
 				++$counts['running'];
 			} elseif ( 'failed' === $status ) {
 				++$counts['failed'];
