@@ -210,6 +210,12 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Check if async execution is requested.
 		$async = isset( $arguments['async'] ) && $arguments['async'];
 
+		// CRITICAL: If already running in async executor context, do NOT use tool-level async.
+		// This prevents double-async execution similar to video generation tool.
+		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
+			$async = false;
+		}
+
 		if ( $async ) {
 			return $this->schedule_async_creation( $arguments, $user_id );
 		}

@@ -222,6 +222,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$arguments = isset( $metadata['arguments'] ) ? $metadata['arguments'] : array();
 		$context   = isset( $metadata['context'] ) ? $metadata['context'] : array();
 
+		// Add flag to context indicating this tool is running in async executor.
+		// This prevents double-async execution (e.g., video generation tool
+		// queueing its own async job when already running in async context).
+		$context['in_async_executor'] = true;
+
 		// Log execution start.
 		$this->log_event(
 			'async_tool_started',
