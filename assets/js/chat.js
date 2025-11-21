@@ -8405,7 +8405,7 @@
                                     let finalText = '';
                                     
                                     // Try to extract text from data.data structure
-                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
+                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content && typeof data.data.choices[0].message.content === 'string') {
                                         finalText = data.data.choices[0].message.content;
                                     } else if (data.data.content && typeof data.data.content === 'string') {
                                         finalText = data.data.content;
