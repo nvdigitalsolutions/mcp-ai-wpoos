@@ -8405,13 +8405,20 @@
                                     let finalText = '';
                                     
                                     // Try to extract text from data.data structure
-                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content && typeof data.data.choices[0].message.content === 'string') {
-                                        finalText = data.data.choices[0].message.content;
-                                    } else if (data.data.content && typeof data.data.content === 'string') {
-                                        finalText = data.data.content;
-                                    } else if (data.data.response && typeof data.data.response === 'string') {
-                                        finalText = data.data.response;
-                                    } else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
+                                    // Handle OpenAI/Ollama format - choices[0].message.content
+                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
+                                        finalText = extractTextFromContent(data.data.choices[0].message.content);
+                                    } 
+                                    // Handle generic content field
+                                    else if (data.data.content) {
+                                        finalText = extractTextFromContent(data.data.content);
+                                    } 
+                                    // Handle response field
+                                    else if (data.data.response) {
+                                        finalText = extractTextFromContent(data.data.response);
+                                    } 
+                                    // Handle Gemini format - candidates[0].content.parts
+                                    else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
                                         // Gemini format - optimize by caching parts array reference
                                         const parts = data.data.candidates[0].content.parts;
                                         for (let p = 0; p < parts.length; p++) {
@@ -8422,7 +8429,8 @@
                                         }
                                     }
                                     
-                                    if (finalText) {
+                                    // Ensure finalText is a string before using it
+                                    if (finalText && typeof finalText === 'string') {
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
@@ -9993,6 +10001,65 @@
             return renderContentPiece(content);
         }
 
+        return '';
+    }
+
+    /**
+     * Extract text content from various AI provider response formats.
+     * Handles string content, object content with text/content properties,
+     * and arrays of content items.
+     * 
+     * This is used during SSE response parsing to normalize different
+     * provider formats (OpenAI, Ollama, etc.) into plain text.
+     * 
+     * Note: This differs from extractNestedText() which:
+     * - Returns an array (not string)
+     * - Recursively extracts from many properties (value, message, reason, etc.)
+     * - Is used for complex content parsing, not AI responses
+     * 
+     * @param {*} content - Content to extract text from (string, object, or array)
+     * @return {string} Extracted text or empty string
+     */
+    function extractTextFromContent(content) {
+        if (!content) {
+            return '';
+        }
+        
+        // If already a string, return it
+        if (typeof content === 'string') {
+            return content;
+        }
+        
+        // Handle array of content items (some providers return this)
+        if (Array.isArray(content)) {
+            let text = '';
+            for (let i = 0; i < content.length; i++) {
+                const item = content[i];
+                if (typeof item === 'string') {
+                    text += item;
+                } else if (item && typeof item === 'object') {
+                    // Handle nested object in array
+                    if (typeof item.text === 'string') {
+                        text += item.text;
+                    } else if (typeof item.content === 'string') {
+                        text += item.content;
+                    }
+                }
+            }
+            return text;
+        }
+        
+        // Handle object with text property (common format)
+        if (typeof content === 'object') {
+            if (typeof content.text === 'string') {
+                return content.text;
+            }
+            // Some formats nest text deeper
+            if (typeof content.content === 'string') {
+                return content.content;
+            }
+        }
+        
         return '';
     }
 
