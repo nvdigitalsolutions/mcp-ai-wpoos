@@ -279,6 +279,13 @@
 				'</path>' +
 				'</svg>' +
 				'</span>';
+		} else if (type === 'text-stream') {
+			statusClass += ' wp-mcp-ai-chat__status--text-stream';
+			indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+				'<svg class="wp-mcp-ai-chat__status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+				'<path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>' +
+				'</svg>' +
+				'</span>';
 		} else if (type === 'tool') {
 			statusClass += ' wp-mcp-ai-chat__status--tool';
 			indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
