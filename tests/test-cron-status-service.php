@@ -475,4 +475,71 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		// Clean up transient.
 		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id );
 	}
+
+	/**
+	 * Test that completed video generation jobs include result data in status summary.
+	 */
+	public function test_video_generation_job_includes_result_in_status_summary() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create a completed video generation job with result data.
+		$job_id = 'veo_completed_test';
+		$result = array(
+			'attachment_id' => 456,
+			'url'           => 'https://example.com/generated-video.mp4',
+			'prompt'        => 'A beautiful sunset over the ocean',
+			'duration'      => 5,
+			'aspect_ratio'  => '16:9',
+			'resolution'    => '720p',
+			'model'         => 'veo-3.1-generate-preview',
+			'provider'      => 'gemini',
+		);
+
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/completed',
+			'args'           => array(
+				'prompt'  => 'A beautiful sunset over the ocean',
+				'user_id' => $this->user_id,
+			),
+			'status'         => 'completed',
+			'queued_at'      => time() - 120,
+			'poll_attempt'   => 10,
+			'max_attempts'   => 60,
+			'result'         => $result,
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get status summary.
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		$this->assertNotEmpty( $summary );
+		$this->assertCount( 1, $summary );
+
+		$job = $summary[0];
+		$this->assertEquals( $job_id, $job['job_id'] );
+		$this->assertEquals( WP_MCP_AI_Cron_Status_Service::VIDEO_GENERATION_TOOL_SLUG, $job['tool_slug'] );
+		$this->assertEquals( 'completed', $job['status'] );
+		$this->assertEquals( WP_MCP_AI_Cron_Status_Service::VIDEO_GENERATION_JOB_TYPE, $job['type'] );
+
+		// Verify result data is included for agentic workflow (key requirement for veo).
+		$this->assertArrayHasKey( 'has_result', $job );
+		$this->assertTrue( $job['has_result'] );
+		$this->assertArrayHasKey( 'result', $job );
+		$this->assertIsArray( $job['result'] );
+
+		// Verify complete video result structure.
+		$this->assertEquals( 456, $job['result']['attachment_id'] );
+		$this->assertEquals( 'https://example.com/generated-video.mp4', $job['result']['url'] );
+		$this->assertEquals( 'A beautiful sunset over the ocean', $job['result']['prompt'] );
+		$this->assertEquals( 5, $job['result']['duration'] );
+		$this->assertEquals( '16:9', $job['result']['aspect_ratio'] );
+		$this->assertEquals( '720p', $job['result']['resolution'] );
+		$this->assertEquals( 'veo-3.1-generate-preview', $job['result']['model'] );
+		$this->assertEquals( 'gemini', $job['result']['provider'] );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
 }
