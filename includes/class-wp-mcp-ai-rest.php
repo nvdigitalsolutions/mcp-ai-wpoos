@@ -39,6 +39,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
 		const STREAMING_CHUNK_SIZE        = 50;    // Characters per chunk for simulated streaming.
 		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
+		const JOB_POLLING_INTERVAL        = 3;     // Seconds between job status polls for SSE streaming.
+		const JOB_POLLING_TIMEOUT         = 180;   // Maximum seconds to poll before timeout (3 minutes).
+		const JOB_POLLING_SAFETY_BUFFER   = 10;    // Extra iterations beyond calculated max to prevent edge cases.
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -945,11 +948,123 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Stream the job details via SSE.
-				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
+				// Stream the job details via SSE with polling until completion.
+				return $this->stream_job_status_with_polling( $service, $job_id, $user_id );
 			}
 
 			return rest_ensure_response( $job_details );
+		}
+
+		/**
+		 * Check if a job status represents a terminal state.
+		 *
+		 * Terminal states indicate the job has finished processing and will not change.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $status Job status to check.
+		 * @return bool True if status is terminal, false otherwise.
+		 */
+		protected function is_terminal_job_status( $status ) {
+			$terminal_statuses = array( 'completed', 'failed', 'error' );
+			return in_array( strtolower( (string) $status ), $terminal_statuses, true );
+		}
+
+		/**
+		 * Stream job status via SSE with polling until completion.
+		 *
+		 * Continuously polls the job status and sends SSE events until the job
+		 * reaches a terminal state (completed or failed), or until timeout/max iterations.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param WP_MCP_AI_Cron_Status_Service $service Cron status service instance.
+		 * @param string                        $job_id  Job identifier.
+		 * @param int                           $user_id User ID for permission checks.
+		 * @return WP_REST_Response Response object.
+		 */
+		protected function stream_job_status_with_polling( $service, $job_id, $user_id ) {
+			// Enable connection abort detection.
+			// The false parameter allows the script to detect when the client disconnects,
+			// preventing wasted resources polling for an abandoned connection.
+			if ( function_exists( 'ignore_user_abort' ) ) {
+				ignore_user_abort( false );
+			}
+
+			// Send SSE headers and establish connection.
+			$this->sse_handler->send_sse_headers();
+
+			// Polling configuration using class constants.
+			$poll_interval  = self::JOB_POLLING_INTERVAL;
+			$max_duration   = self::JOB_POLLING_TIMEOUT;
+			$start_time     = time();
+			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + self::JOB_POLLING_SAFETY_BUFFER;
+			$iteration      = 0;
+			$status         = ''; // Initialize status variable for timeout scenario.
+
+			while ( ( time() - $start_time ) < $max_duration && $iteration < $max_iterations ) {
+				++$iteration;
+
+				// Check if client disconnected.
+				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+					// Send disconnect event and exit.
+					$this->sse_handler->send_sse_event(
+						'disconnect',
+						array(
+							'message' => 'Client disconnected',
+							'job_id'  => $job_id,
+						)
+					);
+					exit;
+				}
+
+				// Get current job details.
+				$job_details = $service->get_job_details( $job_id, $user_id );
+
+				if ( is_wp_error( $job_details ) ) {
+					// Send error event and exit.
+					$this->sse_handler->send_sse_event(
+						'error',
+						array(
+							'message' => $job_details->get_error_message(),
+							'job_id'  => $job_id,
+						)
+					);
+					// Send [DONE] marker.
+					$this->sse_handler->send_sse_done();
+					exit;
+				}
+
+				// Send current status as SSE event.
+				$this->sse_handler->send_sse_event( 'cron_job_status', $job_details );
+
+				// Check if job has reached a terminal state.
+				$status = isset( $job_details['status'] ) ? (string) $job_details['status'] : '';
+				if ( $this->is_terminal_job_status( $status ) ) {
+					// Job finished - send [DONE] and exit.
+					$this->sse_handler->send_sse_done();
+					exit;
+				}
+
+				// Job still pending/polling - wait before next poll.
+				// NOTE: Using sleep() in a web request can cause worker exhaustion under high load.
+				// Consider implementing async polling for high-traffic environments.
+				sleep( $poll_interval );
+			}
+
+			// Timeout reached - send timeout event.
+			$this->sse_handler->send_sse_event(
+				'timeout',
+				array(
+					'message' => 'Job status polling timed out',
+					'job_id'  => $job_id,
+					'status'  => $status,
+				)
+			);
+
+			// Send [DONE] marker.
+			$this->sse_handler->send_sse_done();
+			exit;
 		}
 
 		/**
