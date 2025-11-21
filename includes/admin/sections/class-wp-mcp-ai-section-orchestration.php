@@ -711,10 +711,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'models' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'models' === $active_view ? 'active' : ''; ?>">
-<span class="dashicons dashicons-admin-generic"></span>
-			<?php esc_html_e( 'Per Model', 'wp-mcp-ai' ); ?>
-</a>
 <a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'tools' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'wp-mcp-ai' ); ?>
@@ -733,9 +729,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
-					break;
-				case 'models':
-					$this->render_models_view();
 					break;
 				case 'tools':
 					$this->render_tools_view();
