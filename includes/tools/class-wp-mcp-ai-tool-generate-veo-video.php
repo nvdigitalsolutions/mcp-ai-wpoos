@@ -68,7 +68,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. If using Veo 2.0 fallback, 1080p will be downgraded to 720p.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),

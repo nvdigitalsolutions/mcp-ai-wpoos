@@ -700,6 +700,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$model = self::VEO_MODEL;
 		}
 		
+		$is_veo_2 = ( self::VEO_2_MODEL === $model );
+		
 		// Extract video URL from response.
 		// Support both old and new API response structures for backward compatibility.
 		$video_uri = null;
@@ -728,6 +730,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return $video_data;
 		}
 
+		// Determine actual resolution used.
+		// Veo 2.0 always outputs 720p (resolution parameter not supported).
+		// Veo 3.1 uses the requested resolution or defaults to 720p.
+		$actual_resolution = $is_veo_2 ? '720p' : ( isset( $args['resolution'] ) ? $args['resolution'] : '720p' );
+
 		// Return video data with metadata.
 		return array(
 			'video_data'   => $video_data,
@@ -735,7 +742,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'prompt'       => $args['prompt'],
 			'duration'     => isset( $args['duration'] ) ? $args['duration'] : self::DEFAULT_DURATION,
 			'aspect_ratio' => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
-			'resolution'   => isset( $args['resolution'] ) ? $args['resolution'] : '720p',
+			'resolution'   => $actual_resolution,
 			'model'        => $model,
 			'provider'     => 'gemini',
 		);
