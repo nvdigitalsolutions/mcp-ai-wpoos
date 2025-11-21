@@ -774,8 +774,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 * The LLM doesn't need this binary data - it only needs metadata to reference
 	 * the generated image (attachment_id, url, file_name, etc.).
 	 *
+	 * For the agentic loop to work with vision models, we add an image_url structure
+	 * that allows the model to "see" the generated image in subsequent iterations.
+	 *
 	 * @param mixed $result Tool execution result.
-	 * @return mixed Sanitized result with only metadata.
+	 * @return mixed Sanitized result with only metadata and image_url for vision.
 	 */
 	public function sanitize_for_llm( $result ) {
 		if ( ! is_array( $result ) ) {
@@ -813,6 +816,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			if ( isset( $result[ $key ] ) ) {
 				$sanitized[ $key ] = $result[ $key ];
 			}
+		}
+
+		// Add image_url structure for the agentic loop.
+		// This allows vision models to "see" the generated image in subsequent iterations.
+		if ( isset( $result['url'] ) && '' !== $result['url'] ) {
+			$sanitized['image_url'] = array(
+				'url' => $result['url'],
+			);
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;

@@ -759,6 +759,9 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 * Strips large base64-encoded image data to prevent bloating the LLM context.
 	 * The full result with inline content is preserved for frontend display.
 	 *
+	 * For the agentic loop to work with vision models, we add an image_url structure
+	 * that allows the model to "see" the generated image in subsequent iterations.
+	 *
 	 * @param mixed $result Raw tool execution result.
 	 * @return mixed Sanitized result safe for LLM context.
 	 */
@@ -801,6 +804,19 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			if ( isset( $result[ $key ] ) ) {
 				$sanitized[ $key ] = $result[ $key ];
 			}
+		}
+
+		// Add image_url structure for the agentic loop.
+		// This allows vision models to "see" the generated image in subsequent iterations.
+		// Prefer download_url (if available) over url for Gemini images.
+		$image_url = isset( $result['download_url'] ) && '' !== $result['download_url']
+			? $result['download_url']
+			: ( isset( $result['url'] ) && '' !== $result['url'] ? $result['url'] : '' );
+
+		if ( '' !== $image_url ) {
+			$sanitized['image_url'] = array(
+				'url' => $image_url,
+			);
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
