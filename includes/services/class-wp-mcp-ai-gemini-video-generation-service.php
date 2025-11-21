@@ -172,15 +172,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
 		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
-		
+
 		if ( ! $force_veo_2 ) {
 			$result = $this->generate_video_with_model( $args, self::VEO_MODEL );
-			
+
 			// If successful or async, return immediately.
 			if ( ! is_wp_error( $result ) ) {
 				return $result;
 			}
-			
+
 			// Check if this is a retryable error that warrants Veo 2 fallback.
 			if ( $this->should_fallback_to_veo_2( $result ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -191,10 +191,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'error_code'  => $result->get_error_code(),
 					)
 				);
-				
+
 				// Attempt with Veo 2.0.
 				$veo_2_result = $this->generate_video_with_model( $args, self::VEO_2_MODEL );
-				
+
 				// If Veo 2 succeeds, add metadata about fallback.
 				if ( ! is_wp_error( $veo_2_result ) ) {
 					if ( isset( $veo_2_result['async'] ) && $veo_2_result['async'] ) {
@@ -203,7 +203,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					}
 					return $veo_2_result;
 				}
-				
+
 				// Both failed - return the original Veo 3 error with context.
 				return new WP_Error(
 					$result->get_error_code(),
@@ -216,11 +216,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					array( 'status' => 500 )
 				);
 			}
-			
+
 			// Not a retryable error, return the original error.
 			return $result;
 		}
-		
+
 		// Veo 2 explicitly requested.
 		return $this->generate_video_with_model( $args, self::VEO_2_MODEL );
 	}
@@ -266,7 +266,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		
+
 		// Check if result is an async fallback response (from timeout detection).
 		if ( isset( $result['async'] ) && $result['async'] ) {
 			return $result;
@@ -284,7 +284,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	protected function should_fallback_to_veo_2( $error ) {
 		$error_message = $error->get_error_message();
-		
+
 		// Quota/rate limit errors.
 		$quota_indicators = array(
 			'quota',
@@ -294,11 +294,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'insufficient quota',
 			'quota exceeded',
 		);
-		
+
 		if ( $this->error_message_contains( $error_message, $quota_indicators ) ) {
 			return true;
 		}
-		
+
 		// Model unavailable errors.
 		$availability_indicators = array(
 			'not available',
@@ -309,11 +309,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'model not found',
 			'invalid model',
 		);
-		
+
 		if ( $this->error_message_contains( $error_message, $availability_indicators ) ) {
 			return true;
 		}
-		
+
 		// HTTP status codes that suggest quota/availability issues.
 		$error_data = $error->get_error_data();
 		if ( isset( $error_data['status'] ) ) {
@@ -323,7 +323,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -362,21 +362,21 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
-		
+
 		$is_veo_2 = ( self::VEO_2_MODEL === $model );
-		
+
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
 		// Duration validation - depends on model.
 		// Stage 1: Initial validation and sanitization.
 		$min_duration = $is_veo_2 ? self::VEO_2_MIN_DURATION : self::MIN_DURATION;
 		$duration     = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
-		
+
 		// Adjust duration if below model minimum.
 		if ( $duration < $min_duration ) {
 			$duration = $min_duration;
 		}
-		
+
 		// Ensure within max range.
 		if ( $duration > self::MAX_DURATION ) {
 			$duration = self::MAX_DURATION;
@@ -389,30 +389,37 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Resolution validation.
-		$resolution = isset( $args['resolution'] ) ? $args['resolution'] : '720p';
-		if ( ! in_array( $resolution, array( '720p', '1080p' ), true ) ) {
-			$resolution = '720p';
-		}
+		// Note: Veo 2.0 does NOT support the 'resolution' parameter at all.
+		// Only Veo 3.1 supports resolution parameter ('720p' or '1080p').
+		// Initialize as null - will only be set for Veo 3.1.
+		$resolution = null;
 
-		// Veo 2.0 does not support 1080p - force to 720p.
-		if ( $is_veo_2 && '1080p' === $resolution ) {
-			$resolution = '720p';
-			
-			WP_MCP_AI_Logger::log_event(
-				'veo_2_resolution_downgrade',
-				'Veo 2.0 does not support 1080p, downgrading to 720p',
-				array( 'requested' => '1080p' )
-			);
-		}
-		
-		// 1080p only supported for 16:9.
-		if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
-			$resolution = '720p';
-		}
+		if ( ! $is_veo_2 ) {
+			// Veo 3.1: Validate and set resolution.
+			$resolution = isset( $args['resolution'] ) ? $args['resolution'] : '720p';
+			if ( ! in_array( $resolution, array( '720p', '1080p' ), true ) ) {
+				$resolution = '720p';
+			}
 
-		// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
-		if ( ! $is_veo_2 && '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
-			$duration = self::REQUIRED_1080P_DURATION;
+			// 1080p only supported for 16:9.
+			if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
+				$resolution = '720p';
+			}
+
+			// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
+			if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
+				$duration = self::REQUIRED_1080P_DURATION;
+			}
+		} else {
+			// Veo 2.0: Resolution parameter not supported - keep as null.
+			// Log if resolution was requested (will be ignored regardless of value).
+			if ( isset( $args['resolution'] ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_2_resolution_not_supported',
+					'Veo 2.0 does not support resolution parameter, using model default (720p)',
+					array( 'requested' => $args['resolution'] )
+				);
+			}
 		}
 
 		// Build instance data.
@@ -435,10 +442,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$parameters = array(
 			'sampleCount'     => 1,
 			'aspectRatio'     => $aspect_ratio,
-			'resolution'      => $resolution,
 			'durationSeconds' => $duration,
 			// Note: 'generateAudio' is not supported by Veo models - removed to prevent API errors.
 		);
+
+		// Only add resolution parameter for Veo 3.1 (not supported by Veo 2.0).
+		if ( ! $is_veo_2 && null !== $resolution ) {
+			$parameters['resolution'] = $resolution;
+		}
 
 		// Add optional parameters.
 		if ( ! empty( $args['negative_prompt'] ) ) {
@@ -476,7 +487,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
-		
+
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
@@ -580,7 +591,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		$attempts = 0;
-		
+
 		// Initialize timeout detector for async fallback.
 		// Note: Service is already loaded in services-init.php, but we require here
 		// to ensure it's available even if called directly without full initialization.
@@ -596,7 +607,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			if ( $attempts > 1 ) {
 				sleep( self::POLLING_INTERVAL );
 			}
-			
+
 			// Check if we're approaching PHP timeout (10 seconds before).
 			if ( $timeout_detector->is_approaching_timeout() ) {
 				// Approaching timeout - fall back to async mode.
@@ -605,7 +616,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					sprintf( 'Approaching timeout after %.2fs, falling back to async mode', $timeout_detector->get_elapsed_time() ),
 					$timeout_detector->get_metadata()
 				);
-				
+
 				// Queue for async polling and return job info.
 				return $this->queue_async_polling( $operation, $args );
 			}
@@ -673,7 +684,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'Max polling attempts reached, falling back to async mode',
 			array( 'attempts' => $attempts )
 		);
-		
+
 		return $this->queue_async_polling( $operation, $args );
 	}
 
@@ -690,20 +701,22 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
-		
+
+		$is_veo_2 = ( self::VEO_2_MODEL === $model );
+
 		// Extract video URL from response.
 		// Support both old and new API response structures for backward compatibility.
 		$video_uri = null;
-		
+
 		// New structure (2025): response.generateVideoResponse.generatedSamples[0].video.uri
 		if ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
 			$video_uri = $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'];
-		} 
+		}
 		// Old structure (legacy): response.predictions[0].videoUri
 		elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
 			$video_uri = $result['response']['predictions'][0]['videoUri'];
 		}
-		
+
 		if ( empty( $video_uri ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_video_uri',
@@ -719,6 +732,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return $video_data;
 		}
 
+		// Determine actual resolution used.
+		// Veo 2.0 always outputs 720p (resolution parameter not supported).
+		// Veo 3.1 uses the requested resolution or defaults to 720p.
+		$actual_resolution = $is_veo_2 ? '720p' : ( isset( $args['resolution'] ) ? $args['resolution'] : '720p' );
+
 		// Return video data with metadata.
 		return array(
 			'video_data'   => $video_data,
@@ -726,7 +744,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'prompt'       => $args['prompt'],
 			'duration'     => isset( $args['duration'] ) ? $args['duration'] : self::DEFAULT_DURATION,
 			'aspect_ratio' => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
-			'resolution'   => isset( $args['resolution'] ) ? $args['resolution'] : '720p',
+			'resolution'   => $actual_resolution,
 			'model'        => $model,
 			'provider'     => 'gemini',
 		);
@@ -976,14 +994,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$metadata['error']  = $result->get_error_message();
 			} else {
 				// Check if we should save to media library.
-				$save_to_media = isset( $metadata['args']['save_to_media'] ) 
-					? (bool) $metadata['args']['save_to_media'] 
+				$save_to_media = isset( $metadata['args']['save_to_media'] )
+					? (bool) $metadata['args']['save_to_media']
 					: true;
 
 				if ( $save_to_media ) {
-					$save_result = $this->save_video_to_media( 
-						$result, 
-						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0 
+					$save_result = $this->save_video_to_media(
+						$result,
+						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0
 					);
 
 					if ( is_wp_error( $save_result ) ) {
@@ -1006,7 +1024,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					// Video not saved to media library - return data URL instead of Google URL.
 					$video_base64 = base64_encode( $result['video_data'] );
 					$data_url     = 'data:video/mp4;base64,' . $video_base64;
-					
+
 					$metadata['status'] = 'completed';
 					$metadata['result'] = array(
 						'video_url'    => $data_url,
