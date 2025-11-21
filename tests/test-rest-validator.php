@@ -436,4 +436,57 @@ class Test_REST_Validator extends WP_UnitTestCase {
 		$this->assertEquals( 'lm_studio', $result['provider'], 'Provider should be preserved' );
 		$this->assertEquals( 'test-model', $result['model'], 'Other options should be preserved' );
 	}
+
+	/**
+	 * Test validate_messages_array allows assistant messages with null content when tool_calls are present.
+	 *
+	 * This tests the fix for the issue where assistant messages with tool_calls
+	 * but no text content have null content, which is valid per OpenAI's API spec.
+	 */
+	public function test_validate_messages_array_allows_null_content_for_assistant() {
+		$messages = array(
+			array(
+				'role'       => 'user',
+				'content'    => 'What is the weather?',
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => null, // Null content is valid for assistant messages with tool_calls
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'get_weather',
+							'arguments' => '{"location":"New York"}',
+						),
+					),
+				),
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertTrue( $result, 'Validator should accept assistant messages with null content' );
+	}
+
+	/**
+	 * Test validate_messages_array with assistant message without content or tool_calls.
+	 *
+	 * Assistant messages can have null content if they have tool_calls.
+	 */
+	public function test_validate_messages_array_assistant_without_content() {
+		$messages = array(
+			array(
+				'role' => 'assistant',
+				// No content field at all, which is allowed for assistant role
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertTrue( $result, 'Validator should accept assistant messages without content field' );
+	}
 }

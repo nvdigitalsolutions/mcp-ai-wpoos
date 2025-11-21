@@ -5968,12 +5968,21 @@
                 text = 'Resource created successfully.';
             } else if (result.updated === true) {
                 text = 'Resource updated successfully.';
+            } else if (result.deleted === true) {
+                text = 'Resource deleted successfully.';
             }
         }
 
-        // If we still don't have any extractable content, return null
+        // If we still don't have any extractable content and there are no links,
+        // return a generic success message to maintain the agentic look
+        // This ensures all tool executions are visible in the UI
         if (!text && links.length === 0) {
-            return null;
+            // Check if the result indicates an error
+            if (result.error || result.error_message || result.error_code) {
+                return null; // Let errors be handled by error display logic
+            }
+            // Provide a generic success message for tools without specific output
+            text = 'Tool executed successfully.';
         }
 
         // Format links as attachments-style for consistent display

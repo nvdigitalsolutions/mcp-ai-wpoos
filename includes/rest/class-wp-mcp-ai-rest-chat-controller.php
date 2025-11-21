@@ -160,7 +160,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
 									),
 									'content' => array(
-										'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
 										'oneOf'       => array(
 											array( 'type' => 'string' ),
 											array(
@@ -169,6 +169,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 													'type' => 'object',
 												),
 											),
+											array( 'type' => 'null' ),
 										),
 									),
 								),
@@ -252,7 +253,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
 						),
 						'content' => array(
-							'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
 							'oneOf'       => array(
 								array( 'type' => 'string' ),
 								array(
@@ -261,6 +262,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 										'type' => 'object',
 									),
 								),
+								array( 'type' => 'null' ),
 							),
 						),
 					),
