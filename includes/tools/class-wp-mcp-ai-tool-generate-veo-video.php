@@ -133,6 +133,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		// Determine if async mode should be used.
+		$use_async = $this->should_use_async( $arguments );
+
 		// Enhance prompt with style if specified.
 		$prompt = $this->enhance_prompt_with_style( $arguments );
 
@@ -142,6 +145,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'duration'     => isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5,
 			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
 			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
+			'async'        => $use_async,
+			'user_id'      => $user_id,
 		);
 
 		// Add optional parameters.
@@ -171,6 +176,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$result = $service->generate_video( $generation_args );
 
 		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// If async mode, return job info immediately.
+		if ( isset( $result['async'] ) && $result['async'] ) {
 			return $result;
 		}
 
@@ -246,6 +256,23 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return $prompt;
+	}
+
+	/**
+	 * Determine if async mode should be used
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True if async mode should be used.
+	 */
+	protected function should_use_async( $arguments ) {
+		// Check if explicitly set in arguments.
+		if ( isset( $arguments['async'] ) ) {
+			return (bool) $arguments['async'];
+		}
+
+		// Default to async for better reliability.
+		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
+		return true;
 	}
 
 	/**

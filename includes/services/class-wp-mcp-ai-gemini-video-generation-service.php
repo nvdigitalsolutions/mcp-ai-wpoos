@@ -30,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Polling for completion status
  * - Downloading generated videos
  * - Managing long-running operations
+ * - Supporting async mode with cron-based polling
  *
  * SoC Architecture:
  * - Tools call this service for video generation
@@ -91,7 +92,39 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	const POLLING_INTERVAL = 5;
 
 	/**
-	 * Generate a video using Veo 3.1
+	 * Cron hook for async video polling
+	 *
+	 * @var string
+	 */
+	const CRON_POLL_HOOK = 'wp_mcp_ai_poll_veo_video';
+
+	/**
+	 * Transient prefix for async operations
+	 *
+	 * @var string
+	 */
+	const ASYNC_OP_PREFIX = 'wp_mcp_ai_veo_async_';
+
+	/**
+	 * Initialize the service and register hooks
+	 */
+	public static function init() {
+		// Register cron hook for async polling.
+		add_action( self::CRON_POLL_HOOK, array( __CLASS__, 'poll_video_async_static' ), 10, 1 );
+	}
+
+	/**
+	 * Static wrapper for cron callback
+	 *
+	 * @param string $job_id Job identifier.
+	 */
+	public static function poll_video_async_static( $job_id ) {
+		$service = new self();
+		$service->poll_video_async( $job_id );
+	}
+
+	/**
+	 * Generate a video using Veo 3.1.
 	 *
 	 * @param array $args {
 	 *     Video generation arguments.
@@ -104,8 +137,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type int    $seed             Random seed for reproducibility.
 	 *     @type string $image_base64     Base64-encoded reference image.
 	 *     @type string $image_mime_type  MIME type of reference image.
+	 *     @type bool   $async            Whether to use async mode (cron fallback).
+	 *     @type int    $user_id          User ID for async operations.
 	 * }
-	 * @return array|WP_Error Video data or error.
+	 * @return array|WP_Error Video data or async job info on success, error on failure.
 	 */
 	public function generate_video( array $args ) {
 		// Validate required parameters.
@@ -116,6 +151,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				array( 'status' => 400 )
 			);
 		}
+
+		// Check if async mode is requested.
+		$use_async = isset( $args['async'] ) && $args['async'];
 
 		// Build the request payload.
 		$payload = $this->build_generation_payload( $args );
@@ -131,7 +169,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return $operation;
 		}
 
-		// Poll for completion.
+		// If async mode, queue cron job and return job ID.
+		if ( $use_async ) {
+			return $this->queue_async_polling( $operation, $args );
+		}
+
+		// Otherwise, poll synchronously (existing behavior).
 		$result = $this->poll_for_completion( $operation );
 
 		if ( is_wp_error( $result ) ) {
@@ -143,7 +186,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Build the generation payload for Veo 3.1
+	 * Build the generation payload for Veo 3.1.
 	 *
 	 * @param array $args Generation arguments.
 	 * @return array|WP_Error Payload or error.
@@ -222,7 +265,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Submit video generation request to Gemini API
+	 * Submit video generation request to Gemini API.
 	 *
 	 * @param array $payload Request payload.
 	 * @return array|WP_Error Operation details or error.
@@ -314,7 +357,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Poll for video generation completion
+	 * Poll for video generation completion.
 	 *
 	 * @param array $operation Operation details.
 	 * @return array|WP_Error Completed operation data or error.
@@ -405,7 +448,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Process completed video and download data
+	 * Process completed video and download data.
 	 *
 	 * @param array $result Completed operation result.
 	 * @param array $args   Original generation arguments.
@@ -444,7 +487,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Download generated video from URI
+	 * Download generated video from URI.
 	 *
 	 * @param string $video_uri Video URI from Gemini.
 	 * @return string|WP_Error Video binary data or error.
@@ -496,5 +539,349 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		return $video_data;
+	}
+
+	/**
+	 * Queue async polling for video generation.
+	 *
+	 * @param array $operation Operation details from Gemini API.
+	 * @param array $args      Original generation arguments.
+	 * @return array Async job information.
+	 */
+	protected function queue_async_polling( $operation, $args ) {
+		// Generate unique job ID.
+		$job_id = 'veo_' . uniqid( '', true );
+
+		// Store operation metadata in transient.
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => $operation['operation_name'],
+			'args'           => $args,
+			'status'         => 'pending',
+			'queued_at'      => time(),
+			'poll_attempt'   => 0,
+			'max_attempts'   => self::MAX_POLLING_ATTEMPTS,
+		);
+
+		// Save to transient (24 hour expiry).
+		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Schedule first poll immediately.
+		wp_schedule_single_event( time(), self::CRON_POLL_HOOK, array( $job_id ) );
+
+		// Record cron job in cron manager for visibility.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+			WP_MCP_AI_Cron_Manager::record_job(
+				self::CRON_POLL_HOOK,
+				array( $job_id ),
+				'single',
+				time(),
+				$user_id
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_async_queued',
+			'Veo video generation queued for async polling',
+			array(
+				'job_id'    => $job_id,
+				'operation' => $operation['operation_name'],
+			)
+		);
+
+		return array(
+			'async'   => true,
+			'job_id'  => $job_id,
+			'status'  => 'pending',
+			'message' => __( 'Video generation started. Use the job_id to check status.', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Poll for video completion (cron callback).
+	 *
+	 * @param string $job_id Async job identifier.
+	 */
+	public function poll_video_async( $job_id ) {
+		// Retrieve operation metadata.
+		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
+
+		if ( ! $metadata || ! isset( $metadata['operation_name'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Veo async job metadata not found',
+				array( 'job_id' => $job_id )
+			);
+			return;
+		}
+
+		// Increment poll attempt.
+		$metadata['poll_attempt']++;
+		$metadata['last_poll'] = time();
+
+		// Check if max attempts reached.
+		if ( $metadata['poll_attempt'] > $metadata['max_attempts'] ) {
+			$metadata['status'] = 'failed';
+			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
+			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+			WP_MCP_AI_Logger::log_error(
+				'Veo async generation timeout',
+				array(
+					'job_id'   => $job_id,
+					'attempts' => $metadata['poll_attempt'],
+				)
+			);
+			return;
+		}
+
+		// Poll the Gemini API for status.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+
+		$endpoint = sprintf(
+			'https://generativelanguage.googleapis.com/v1beta/%s',
+			$metadata['operation_name']
+		);
+
+		$response = wp_remote_get(
+			$endpoint,
+			array(
+				'headers' => array(
+					'x-goog-api-key' => $api_key,
+				),
+				'timeout' => 30,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			// Schedule retry.
+			$this->schedule_next_poll( $job_id, $metadata );
+			return;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Check if operation is done.
+		if ( isset( $data['done'] ) && true === $data['done'] ) {
+			if ( isset( $data['error'] ) ) {
+				// Operation failed.
+				$metadata['status'] = 'failed';
+				$metadata['error']  = isset( $data['error']['message'] )
+					? $data['error']['message']
+					: __( 'Video generation failed.', 'wp-mcp-ai' );
+				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+				WP_MCP_AI_Logger::log_error(
+					'Veo async generation failed',
+					array(
+						'job_id' => $job_id,
+						'error'  => $metadata['error'],
+					)
+				);
+				return;
+			}
+
+			// Operation succeeded - process video.
+			$result = $this->process_completed_video( $data, $metadata['args'] );
+
+			if ( is_wp_error( $result ) ) {
+				$metadata['status'] = 'failed';
+				$metadata['error']  = $result->get_error_message();
+			} else {
+				// Check if we should save to media library.
+				$save_to_media = isset( $metadata['args']['save_to_media'] ) 
+					? (bool) $metadata['args']['save_to_media'] 
+					: true;
+
+				if ( $save_to_media ) {
+					$attachment_id = $this->save_video_to_media( 
+						$result, 
+						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0 
+					);
+
+					if ( is_wp_error( $attachment_id ) ) {
+						$metadata['status'] = 'failed';
+						$metadata['error']  = $attachment_id->get_error_message();
+					} else {
+						$metadata['status'] = 'completed';
+						$metadata['result'] = array(
+							'attachment_id' => $attachment_id,
+							'url'           => wp_get_attachment_url( $attachment_id ),
+							'prompt'        => $result['prompt'],
+							'duration'      => $result['duration'],
+							'aspect_ratio'  => $result['aspect_ratio'],
+							'resolution'    => $result['resolution'],
+							'model'         => $result['model'],
+							'provider'      => $result['provider'],
+						);
+					}
+				} else {
+					$metadata['status'] = 'completed';
+					$metadata['result'] = $result;
+				}
+			}
+
+			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+			WP_MCP_AI_Logger::log_event(
+				'veo_async_completed',
+				'Veo async video generation completed',
+				array(
+					'job_id'   => $job_id,
+					'attempts' => $metadata['poll_attempt'],
+				)
+			);
+			return;
+		}
+
+		// Operation still in progress - schedule next poll.
+		$this->schedule_next_poll( $job_id, $metadata );
+	}
+
+	/**
+	 * Schedule next polling attempt.
+	 *
+	 * @param string $job_id   Job identifier.
+	 * @param array  $metadata Job metadata.
+	 */
+	protected function schedule_next_poll( $job_id, $metadata ) {
+		// Update metadata.
+		$metadata['status'] = 'polling';
+		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Schedule next poll.
+		$next_poll = time() + self::POLLING_INTERVAL;
+		wp_schedule_single_event( $next_poll, self::CRON_POLL_HOOK, array( $job_id ) );
+
+		// Record in cron manager.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
+			WP_MCP_AI_Cron_Manager::record_job(
+				self::CRON_POLL_HOOK,
+				array( $job_id ),
+				'single',
+				$next_poll,
+				$user_id
+			);
+		}
+	}
+
+	/**
+	 * Get async job status.
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return array|WP_Error Job status or error.
+	 */
+	public function get_async_status( $job_id ) {
+		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
+
+		if ( ! $metadata ) {
+			return new WP_Error(
+				'wp_mcp_ai_job_not_found',
+				__( 'Video generation job not found or expired.', 'wp-mcp-ai' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Return sanitized status.
+		$response = array(
+			'job_id'       => $metadata['job_id'],
+			'status'       => $metadata['status'],
+			'queued_at'    => $metadata['queued_at'],
+			'poll_attempt' => $metadata['poll_attempt'],
+			'max_attempts' => $metadata['max_attempts'],
+		);
+
+		if ( isset( $metadata['last_poll'] ) ) {
+			$response['last_poll'] = $metadata['last_poll'];
+		}
+
+		if ( 'failed' === $metadata['status'] && isset( $metadata['error'] ) ) {
+			$response['error'] = $metadata['error'];
+		}
+
+		if ( 'completed' === $metadata['status'] && isset( $metadata['result'] ) ) {
+			$response['result'] = $metadata['result'];
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Save generated video to Media Library.
+	 *
+	 * Note: This method is duplicated in the tool class for sync mode.
+	 * This is intentional to keep the service and tool layers independent.
+	 * The service needs it for async completion, the tool needs it for sync mode.
+	 *
+	 * @param array $result  Video generation result.
+	 * @param int   $user_id User ID for ownership.
+	 * @return int|WP_Error Attachment ID or error.
+	 */
+	protected function save_video_to_media( $result, $user_id ) {
+		// Generate unique filename.
+		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+
+		// Upload video.
+		$upload = wp_upload_bits( $filename, null, $result['video_data'] );
+
+		if ( ! empty( $upload['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_upload_failed',
+				$upload['error'],
+				array( 'status' => 500 )
+			);
+		}
+
+		// Create attachment.
+		$attachment = array(
+			'post_mime_type' => 'video/mp4',
+			'post_title'     => sprintf(
+				/* translators: %s: truncated prompt */
+				__( 'Veo Generated Video: %s', 'wp-mcp-ai' ),
+				substr( $result['prompt'], 0, 50 )
+			),
+			'post_content'   => $result['prompt'],
+			'post_status'    => 'inherit',
+			'post_author'    => $user_id,
+		);
+
+		$attachment_id = wp_insert_attachment( $attachment, $upload['file'] );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			return $attachment_id;
+		}
+
+		// Add metadata.
+		$metadata = array(
+			'veo_prompt'       => $result['prompt'],
+			'veo_duration'     => $result['duration'],
+			'veo_aspect_ratio' => $result['aspect_ratio'],
+			'veo_resolution'   => $result['resolution'],
+			'veo_model'        => $result['model'],
+			'veo_provider'     => $result['provider'],
+		);
+
+		foreach ( $metadata as $key => $value ) {
+			update_post_meta( $attachment_id, '_' . $key, $value );
+		}
+
+		// Generate attachment metadata.
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+		wp_update_attachment_metadata( $attachment_id, $attach_data );
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_video_saved',
+			'Veo generated video saved to Media Library',
+			array(
+				'attachment_id' => $attachment_id,
+				'duration'      => $result['duration'],
+			)
+		);
+
+		return $attachment_id;
 	}
 }
