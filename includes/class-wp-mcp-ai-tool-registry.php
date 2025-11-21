@@ -420,6 +420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_gemini_image'           => 'external-tools',
 				'edit_gemini_image'               => 'external-tools',
 				'generate_veo_video'              => 'external-tools',
+				'check_video_status'              => 'external-tools',
 				'generate_openai_speech'          => 'external-tools',
 				'transcribe_openai_audio'         => 'external-tools',
 				'open_openai_usage'               => 'external-tools',

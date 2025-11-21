@@ -32,11 +32,15 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-perfo
 // Load video-related services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-analysis-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-frame-extractor-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-gemini-video-generation-service.php';
 
 // Load async tool orchestration services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-orchestrator.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
+
+// Initialize video generation service (registers async polling hooks).
+WP_MCP_AI_Gemini_Video_Generation_Service::init();
 
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
