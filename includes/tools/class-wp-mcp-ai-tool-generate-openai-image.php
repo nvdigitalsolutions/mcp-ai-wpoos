@@ -233,11 +233,16 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// Validate quality for the selected model.
 		$quality = isset( $arguments['quality'] ) ? sanitize_key( $arguments['quality'] ) : $defaults['quality'];
 
-		// Sanitize quality to only allowed values: low, medium, high, auto.
-		// This prevents 400 errors from OpenAI API.
-		$allowed = array( 'low', 'medium', 'high', 'auto' );
-		if ( empty( $quality ) || ! in_array( $quality, $allowed, true ) ) {
-			$quality = 'medium';
+		// Normalize quality for the selected model. Different models support different quality values.
+		// gpt-image-1 uses: low, medium, high, auto
+		// DALL-E models use: standard, hd
+		$normalized_quality = $this->normalise_quality_for_model( $quality, $model );
+
+		if ( '' === $normalized_quality ) {
+			// If quality is not valid for the model, use the model's default quality.
+			$quality = $this->get_model_default_quality( $model );
+		} else {
+			$quality = $normalized_quality;
 		}
 
 		$response_format = isset( $arguments['response_format'] ) ? sanitize_key( $arguments['response_format'] ) : $defaults['response_format'];

@@ -672,9 +672,9 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that DALL-E 3 'hd' quality is sanitized to 'medium' (quality mapping patch).
+	 * Test that DALL-E 3 accepts 'hd' quality.
 	 */
-	public function test_dalle_3_hd_quality_sanitized_to_medium() {
+	public function test_dalle_3_accepts_hd_quality() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -711,7 +711,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
-		// Try to use 'hd' - it should be sanitized to 'medium'.
+		// DALL-E 3 should accept 'hd' quality.
 		$result = $tool->execute(
 			array(
 				'prompt'  => 'A high-def test image',
@@ -725,9 +725,9 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		// 'hd' should be sanitized to 'medium'.
-		$this->assertSame( 'medium', $payload['quality'] );
-		$this->assertSame( 'medium', $result['quality'] );
+		// DALL-E 3 should accept 'hd' quality as-is.
+		$this->assertSame( 'hd', $payload['quality'] );
+		$this->assertSame( 'hd', $result['quality'] );
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -735,7 +735,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that quality sanitization guards against invalid values.
+	 * Test that quality sanitization guards against invalid values for gpt-image-1.
 	 */
 	public function test_quality_sanitization_guards_against_invalid_values() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -748,6 +748,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
 
+		// For gpt-image-1, 'standard' and 'hd' are invalid (those are for DALL-E).
+		// Valid values for gpt-image-1 are: low, medium, high, auto.
 		$invalid_qualities = array( 'standard', 'hd', 'ultra', 'best', '', null, 'invalid' );
 
 		foreach ( $invalid_qualities as $invalid_quality ) {
@@ -790,8 +792,137 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			$this->assertNotNull( $captured_request, 'Request not captured for quality: ' . var_export( $invalid_quality, true ) );
 			$payload = json_decode( $captured_request['args']['body'], true );
-			// All invalid qualities should fall back to 'medium'.
+			// Invalid qualities for gpt-image-1 should fall back to 'medium' (the model's default).
 			$this->assertSame( 'medium', $payload['quality'], "Quality should be 'medium' for invalid value: " . var_export( $invalid_quality, true ) );
+
+			if ( ! empty( $result['attachment_id'] ) ) {
+				wp_delete_attachment( $result['attachment_id'], true );
+			}
+		}
+	}
+
+	/**
+	 * Test that DALL-E 3 accepts 'standard' quality.
+	 */
+	public function test_dalle_3_accepts_standard_quality() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 123,
+				'model'   => 'dall-e-3',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A standard quality test image',
+				'model'   => 'dall-e-3',
+				'quality' => 'standard',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertSame( 'standard', $payload['quality'] );
+		$this->assertSame( 'standard', $result['quality'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test that invalid quality values for DALL-E models fall back to 'standard'.
+	 */
+	public function test_dalle_invalid_quality_falls_back_to_standard() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		// For DALL-E, 'medium', 'high', 'low', and 'auto' are invalid (those are for gpt-image-1).
+		// Valid values for DALL-E are: standard, hd.
+		$invalid_qualities = array( 'medium', 'high', 'low', 'auto', 'ultra', '', null, 'invalid' );
+
+		foreach ( $invalid_qualities as $invalid_quality ) {
+			$captured_request = null;
+
+			$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+				$captured_request = array(
+					'args' => $args,
+					'url'  => $url,
+				);
+
+				$payload = array(
+					'created' => time(),
+					'model'   => 'dall-e-3',
+					'data'    => array(
+						array(
+							'b64_json' => $png_base64,
+						),
+					),
+				);
+
+				return array(
+					'body'     => wp_json_encode( $payload ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array( 'content-type' => 'application/json' ),
+				);
+			};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$result = $tool->execute(
+				array(
+					'prompt'  => 'Test image with invalid quality for DALL-E',
+					'model'   => 'dall-e-3',
+					'quality' => $invalid_quality,
+				),
+				array( 'user_id' => $user_id )
+			);
+
+			remove_filter( 'pre_http_request', $http_stub, 10 );
+
+			$this->assertNotNull( $captured_request, 'Request not captured for quality: ' . var_export( $invalid_quality, true ) );
+			$payload = json_decode( $captured_request['args']['body'], true );
+			// Invalid qualities for DALL-E should fall back to 'standard' (the model's default).
+			$this->assertSame( 'standard', $payload['quality'], "Quality should be 'standard' for invalid value: " . var_export( $invalid_quality, true ) );
 
 			if ( ! empty( $result['attachment_id'] ) ) {
 				wp_delete_attachment( $result['attachment_id'], true );
