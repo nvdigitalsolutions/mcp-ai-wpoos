@@ -49,10 +49,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
-					'default'     => 5,
+					'default'     => 4,
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
@@ -142,12 +142,16 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Prepare generation arguments.
 		$generation_args = array(
 			'prompt'       => $prompt,
-			'duration'     => isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5,
 			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
 			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
 			'async'        => $use_async,
 			'user_id'      => $user_id,
 		);
+
+		// Add duration if provided (let service apply default if not provided).
+		if ( isset( $arguments['duration'] ) ) {
+			$generation_args['duration'] = absint( $arguments['duration'] );
+		}
 
 		// Add optional parameters.
 		if ( ! empty( $arguments['negative_prompt'] ) ) {

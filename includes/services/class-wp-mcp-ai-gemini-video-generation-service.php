@@ -68,7 +68,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @var int
 	 */
-	const DEFAULT_DURATION = 5;
+	const DEFAULT_DURATION = 4;
 
 	/**
 	 * Required duration for 1080p resolution (2025 API requirement)

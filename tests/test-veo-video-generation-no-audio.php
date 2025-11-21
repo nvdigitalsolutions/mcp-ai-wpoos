@@ -282,9 +282,9 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 	/**
 	 * Test that invalid duration values are handled correctly.
 	 *
-	 * Duration must be 4-8 seconds. Values outside this range should default to 5.
+	 * Duration must be 4-8 seconds. Values outside this range should default to 4.
 	 */
-	public function test_invalid_duration_defaults_to_5_seconds() {
+	public function test_invalid_duration_defaults_to_4_seconds() {
 		// Set up API key.
 		$settings = array(
 			'gemini_api_key' => 'test-api-key-12345',
@@ -306,17 +306,17 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Should succeed and default to 5 seconds.
+		// Should succeed and default to 4 seconds.
 		$this->assertFalse( is_wp_error( $result ), 'Video generation should succeed with invalid duration' );
 
 		// Decode the request body.
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Verify duration was set to default (5 seconds).
+		// Verify duration was set to default (4 seconds).
 		$this->assertEquals(
-			5,
+			4,
 			$request_body['parameters']['durationSeconds'],
-			'Duration below minimum (3) should default to 5 seconds'
+			'Duration below minimum (3) should default to 4 seconds'
 		);
 
 		// Reset for next test.
@@ -330,17 +330,17 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Should succeed and default to 5 seconds.
+		// Should succeed and default to 4 seconds.
 		$this->assertFalse( is_wp_error( $result ), 'Video generation should succeed with invalid duration' );
 
 		// Decode the request body.
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Verify duration was set to default (5 seconds).
+		// Verify duration was set to default (4 seconds).
 		$this->assertEquals(
-			5,
+			4,
 			$request_body['parameters']['durationSeconds'],
-			'Duration above maximum (10) should default to 5 seconds'
+			'Duration above maximum (10) should default to 4 seconds'
 		);
 	}
 
