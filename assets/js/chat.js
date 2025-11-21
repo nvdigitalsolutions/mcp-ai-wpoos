@@ -7894,7 +7894,24 @@
                         if (streamingMessageElement.classList) {
                             streamingMessageElement.classList.remove('wp-mcp-ai-chat__bubble--streaming');
                         }
-                        streamingMessageElement.innerHTML = renderMarkdown(streamResult.content);
+                        
+                        // Preserve original content before rendering in case of failure
+                        const originalContent = streamingMessageElement.textContent || '';
+                        const renderedHtml = renderMarkdown(streamResult.content);
+                        
+                        // Only update innerHTML if rendering produced content
+                        // This prevents the bubble from becoming empty if rendering fails
+                        if (renderedHtml && renderedHtml.trim()) {
+                            streamingMessageElement.innerHTML = renderedHtml;
+                        } else {
+                            // Fallback: keep original content as escaped text if rendering fails
+                            if (window.console && console.warn) {
+                                console.warn('[WP oOS] Markdown rendering returned empty, preserving original content');
+                            }
+                            // Convert textContent to escaped HTML to preserve the content
+                            streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');
+                        }
+                        
                         attachSpeechButton(streamingMessageElement, state, streamResult.content);
                         attachCopyButton(streamingMessageElement, streamResult.content);
 
