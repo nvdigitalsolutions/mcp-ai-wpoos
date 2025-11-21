@@ -1101,6 +1101,11 @@
             return message;
         }
 
+        // Validate required fields are present
+        if (!message.role) {
+            return message;
+        }
+
         // Create a new object with only API-compatible fields
         const cleanMessage = {
             role: message.role,
