@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo 3.1 model. Supports text-to-video and image-to-video generation with cinematic quality output.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo 3.1 model. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Audio generation is not currently supported by Veo 3.1.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -71,11 +71,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Visual style preset: "cinematic", "realistic", "anime", "documentary", "artistic". This enhances the prompt with style-specific language.', 'wp-mcp-ai' ),
 					'enum'        => array( 'cinematic', 'realistic', 'anime', 'documentary', 'artistic', 'none' ),
 					'default'     => 'none',
-				),
-				'generate_audio'     => array(
-					'type'        => 'boolean',
-					'description' => __( 'Whether to generate audio/sound effects for the video. Default is false (silent video).', 'wp-mcp-ai' ),
-					'default'     => false,
 				),
 				'negative_prompt'    => array(
 					'type'        => 'string',
@@ -143,11 +138,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Prepare generation arguments.
 		$generation_args = array(
-			'prompt'         => $prompt,
-			'duration'       => isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5,
-			'aspect_ratio'   => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
-			'resolution'     => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
-			'generate_audio' => isset( $arguments['generate_audio'] ) ? (bool) $arguments['generate_audio'] : false,
+			'prompt'       => $prompt,
+			'duration'     => isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5,
+			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
+			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
 		);
 
 		// Add optional parameters.
@@ -240,11 +234,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$style_prefixes = array(
-			'cinematic'    => 'Cinematic shot with professional lighting and composition: ',
-			'realistic'    => 'Photorealistic footage with natural lighting and authentic details: ',
-			'anime'        => 'Anime-style animation with vibrant colors and expressive characters: ',
-			'documentary'  => 'Documentary-style footage with natural, observational cinematography: ',
-			'artistic'     => 'Artistic interpretation with creative visual style and unique perspective: ',
+			'cinematic'   => 'Cinematic shot with professional lighting and composition: ',
+			'realistic'   => 'Photorealistic footage with natural lighting and authentic details: ',
+			'anime'       => 'Anime-style animation with vibrant colors and expressive characters: ',
+			'documentary' => 'Documentary-style footage with natural, observational cinematography: ',
+			'artistic'    => 'Artistic interpretation with creative visual style and unique perspective: ',
 		);
 
 		if ( isset( $style_prefixes[ $style ] ) ) {

@@ -77,7 +77,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type int    $duration         Duration in seconds (1-8, default 5).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
-	 *     @type bool   $generate_audio   Generate audio track (default false).
 	 *     @type string $negative_prompt  What to avoid in generation.
 	 *     @type int    $seed             Random seed for reproducibility.
 	 *     @type string $image_base64     Base64-encoded reference image.
@@ -159,7 +158,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Add reference image if provided.
 		if ( ! empty( $args['image_base64'] ) ) {
-			$mime_type = isset( $args['image_mime_type'] ) ? $args['image_mime_type'] : 'image/jpeg';
+			$mime_type         = isset( $args['image_mime_type'] ) ? $args['image_mime_type'] : 'image/jpeg';
 			$instance['image'] = array(
 				'bytesBase64Encoded' => $args['image_base64'],
 				'mimeType'           => $mime_type,
@@ -168,12 +167,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Build parameters.
 		$parameters = array(
-			'model'          => self::VEO_MODEL,
-			'sampleCount'    => 1,
-			'aspectRatio'    => $aspect_ratio,
-			'resolution'     => $resolution,
+			'model'           => self::VEO_MODEL,
+			'sampleCount'     => 1,
+			'aspectRatio'     => $aspect_ratio,
+			'resolution'      => $resolution,
 			'durationSeconds' => $duration,
-			'generateAudio'  => isset( $args['generate_audio'] ) ? (bool) $args['generate_audio'] : false,
+			// Note: 'generateAudio' is not supported by Veo 3.1 model - removed to prevent API errors.
 		);
 
 		// Add optional parameters.
@@ -305,7 +304,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$attempts = 0;
 
 		while ( $attempts < self::MAX_POLLING_ATTEMPTS ) {
-			$attempts++;
+			++$attempts;
 
 			// Wait before polling.
 			if ( $attempts > 1 ) {
