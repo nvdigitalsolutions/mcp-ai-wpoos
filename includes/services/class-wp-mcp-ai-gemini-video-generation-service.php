@@ -11,8 +11,8 @@
  * - Watermarking: All videos automatically include SynthID digital watermark by Google
  * - Content Policy: Relies on Google's API-side content moderation
  * - Timeout Handling: 60s initial timeout + 5min max polling (300s)
- * - 1080p Requirement: Enforces 8 seconds duration for 1080p resolution (line 161-164)
- * - Aspect Ratio: 1080p only supported for 16:9 (line 156-159)
+ * - 1080p Requirement: Enforces 8 seconds duration for 1080p resolution (REQUIRED_1080P_DURATION constant)
+ * - Aspect Ratio: 1080p only supported for 16:9 (line 165-168)
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -68,6 +68,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @var int
 	 */
 	const DEFAULT_DURATION = 5;
+
+	/**
+	 * Required duration for 1080p resolution (2025 API requirement)
+	 *
+	 * @var int
+	 */
+	const REQUIRED_1080P_DURATION = 8;
 
 	/**
 	 * Maximum polling attempts
@@ -168,8 +175,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// 1080p requires 8 seconds duration (2025 API requirement).
-		if ( '1080p' === $resolution && 8 !== $duration ) {
-			$duration = 8;
+		if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
+			$duration = self::REQUIRED_1080P_DURATION;
 		}
 
 		// Build instance data.
