@@ -1695,23 +1695,27 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		/**
 		 * Normalise tool arguments into an array suitable for Gemini.
 		 *
+		 * Gemini API requires the 'args' field of a functionCall to be a JSON object,
+		 * not a JSON array. This method ensures that arguments are properly structured
+		 * by recursively converting numeric arrays to objects.
+		 *
 		 * @param mixed $arguments Raw arguments payload.
 		 * @return array
 		 */
 		protected function normalise_tool_arguments( $arguments ) {
 			if ( is_array( $arguments ) ) {
-				return $arguments;
+				return $this->ensure_args_object_structure( $arguments );
 			}
 
 			if ( is_object( $arguments ) ) {
-				return (array) $arguments;
+				return $this->ensure_args_object_structure( (array) $arguments );
 			}
 
 			if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
 				$decoded = json_decode( (string) $arguments, true );
 
 				if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-					return $decoded;
+					return $this->ensure_args_object_structure( $decoded );
 				}
 
 				$text = sanitize_textarea_field( (string) $arguments );
@@ -1722,6 +1726,45 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array();
+		}
+
+		/**
+		 * Ensure arguments are structured as objects for Gemini API compatibility.
+		 *
+		 * Recursively processes the arguments array to ensure that all nested values
+		 * are compatible with Gemini's requirement that the 'args' field be a JSON object.
+		 * Numeric arrays are converted to objects to prevent JSON array serialization.
+		 *
+		 * @param array $args Arguments array to process.
+		 * @return array Processed arguments as an associative array.
+		 */
+		protected function ensure_args_object_structure( array $args ) {
+			// If the array is numeric (sequential keys starting at 0), convert it to an object
+			// by wrapping it in a property called 'items' to avoid JSON array serialization.
+			if ( wp_is_numeric_array( $args ) && ! empty( $args ) ) {
+				// For numeric arrays, wrap them in an object structure that Gemini can accept.
+				return array( 'items' => $args );
+			}
+
+			// For associative arrays, recursively process nested values.
+			$processed = array();
+			foreach ( $args as $key => $value ) {
+				if ( is_array( $value ) ) {
+					// Recursively process nested arrays.
+					if ( wp_is_numeric_array( $value ) && ! empty( $value ) ) {
+						// Wrap numeric arrays in an object structure.
+						$processed[ $key ] = array( 'items' => $value );
+					} else {
+						// Recursively process associative arrays.
+						$processed[ $key ] = $this->ensure_args_object_structure( $value );
+					}
+				} else {
+					// Keep scalar values as-is.
+					$processed[ $key ] = $value;
+				}
+			}
+
+			return $processed;
 		}
 
 		/**
