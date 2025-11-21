@@ -395,19 +395,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		$attempts = 0;
 		
-		// Track start time for timeout detection.
-		$polling_start_time = microtime( true );
-		
-		// Get PHP max execution time (default 30 seconds if not set).
-		$max_execution_time = ini_get( 'max_execution_time' );
-		$max_execution_time = $max_execution_time ? (int) $max_execution_time : 30;
-		
-		// Set timeout threshold: 10 seconds before PHP timeout.
-		$timeout_threshold = $max_execution_time - 10;
-		if ( $timeout_threshold < 5 ) {
-			// If max_execution_time is very short, use at least 5 seconds.
-			$timeout_threshold = 5;
-		}
+		// Initialize timeout detector for async fallback.
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+		$timeout_detector = new WP_MCP_AI_Timeout_Detection_Service( 10 );
 
 		while ( $attempts < self::MAX_POLLING_ATTEMPTS ) {
 			++$attempts;
@@ -418,17 +408,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 			
 			// Check if we're approaching PHP timeout (10 seconds before).
-			$elapsed_time = microtime( true ) - $polling_start_time;
-			if ( $elapsed_time >= $timeout_threshold ) {
+			if ( $timeout_detector->is_approaching_timeout() ) {
 				// Approaching timeout - fall back to async mode.
 				WP_MCP_AI_Logger::log_event(
 					'veo_timeout_async_fallback',
-					sprintf( 'Approaching timeout after %.2fs, falling back to async mode', $elapsed_time ),
-					array(
-						'elapsed_time'       => $elapsed_time,
-						'timeout_threshold'  => $timeout_threshold,
-						'max_execution_time' => $max_execution_time,
-					)
+					sprintf( 'Approaching timeout after %.2fs, falling back to async mode', $timeout_detector->get_elapsed_time() ),
+					$timeout_detector->get_metadata()
 				);
 				
 				// Queue for async polling and return job info.
