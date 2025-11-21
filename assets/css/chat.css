@@ -283,6 +283,11 @@
     padding-bottom: 3rem;
 }
 
+/* Streaming bubble - ensure visibility even when empty */
+.wp-mcp-ai-chat__bubble--streaming {
+    min-height: 1.6em; /* Ensure bubble is visible even with no content */
+}
+
 /* Streaming cursor indicator */
 .wp-mcp-ai-chat__bubble--streaming::after {
     content: '▋';

@@ -7846,6 +7846,10 @@
                     });
                 }
 
+                // Create the streaming message bubble immediately when SSE streaming begins
+                // This ensures users see where the streaming text will appear
+                createStreamingMessage();
+
                 return processSSEStream(state, response, updateStreamingMessage);
             })
             .then(function (streamResult) {
