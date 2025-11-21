@@ -170,11 +170,11 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Negative duration (absint returns 5) should result in 5.
+		// Negative duration: absint(-5) returns 5 (absolute value), which is within valid range.
 		$this->assertEquals(
 			5,
 			$request_body['parameters']['durationSeconds'],
-			'Negative duration should default to 5 seconds via absint'
+			'Negative duration should be converted to absolute value (5) by absint'
 		);
 	}
 
