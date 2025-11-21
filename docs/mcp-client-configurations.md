@@ -99,7 +99,7 @@ Previous issue where LM Studio showed `SSE error: undefined` has been resolved!
 - POST requests use JSON-RPC 2.0 protocol
 - SSE is only used when explicitly requested via `?stream=true` parameter
 
-See [LM Studio SSE Fix Documentation](LM_STUDIO_SSE_FIX.md) for complete details.
+See [LM Studio SSE Fix Documentation](archive/fixes/LM_STUDIO_SSE_FIX.md) for complete details.
 
 ---
 

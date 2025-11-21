@@ -1,6 +1,6 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 18, 2025  
+**Last Updated:** November 21, 2025  
 **Plugin Version:** 1.0.0  
 **MCP Version:** 2024-11-05
 
@@ -8,13 +8,22 @@ This document provides a comprehensive index of all documentation available for 
 
 **Total Documentation:** 69+ files in docs/ folder, 5 essential files in root
 
-**📋 Documentation Reorganization (November 18, 2025):**
+**📋 Documentation Reorganization:**
+
+**November 21, 2025 - Fix Documentation Consolidation:**
+- 80+ fix documents consolidated into [docs/archive/fixes/](archive/fixes/)
+- All streaming, Gemini, SSE, transcript, and other fix documentation archived
+- No information lost - complete preservation of all fixes
+- New comprehensive index: [docs/archive/fixes/README.md](archive/fixes/README.md)
+- [docs/fixes/](fixes/) reserved for current/active fixes only
+
+**November 18, 2025 - Initial Reorganization:**
 - 95+ historical documents moved to organized archive structure
 - Root directory now contains only 5 essential documents (README, CONTRIBUTING, SECURITY, CHANGELOG, BUILD)
 - All documentation preserved in [docs/archive/](archive/) with logical organization:
   - [implementations/](archive/#implementations) - Feature implementation details
   - [phases/](archive/#phases) - Development phase documents
-  - [fixes/](archive/#fixes) - Bug fixes and issue resolutions
+  - [fixes/](archive/fixes/) - **80+ bug fixes and issue resolutions** (newly consolidated)
   - [features/](archive/#features) - Feature specifications
   - [code-reviews/](archive/#code-reviews) - Historical code reviews
   - [testing/](archive/#testing) - Test infrastructure documentation
@@ -48,9 +57,13 @@ This document provides a comprehensive index of all documentation available for 
 5. [multisite-support.md](multisite-support.md) - Multisite considerations
 6. [mesh-compute-pooling.md](mesh-compute-pooling.md) - Distributed compute pooling across sites
 
-### Historical Documentation
+### Historical Documentation & Bug Fixes
+- **[Historical Fixes Archive](archive/fixes/README.md)** - **80+ bug fixes and issue resolutions** organized by category
+  - Streaming, Gemini, SSE, Transcripts, Presets, LM Studio, Performance, and more
+  - Complete fix history with problem statements, root causes, and solutions
+  - Visual guides and debugging documentation
 - **[Archive Directory](archive/README.md)** - 95+ historical documents organized by category
-  - Implementation summaries, phase documents, fix reports, features, code reviews, testing docs
+  - Implementation summaries, phase documents, features, code reviews, testing docs
 
 ---
 
@@ -180,6 +193,7 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
+| **[archive/fixes/README.md](archive/fixes/README.md)** | **80+ historical bug fixes** - Comprehensive fix archive organized by category (streaming, Gemini, SSE, transcripts, etc.) | Developers/Admins |
 | [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
@@ -203,7 +217,6 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [OPENAI-STABILIZATION.md](OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
-| [TRANSCRIPT_RECONSTRUCTION_FIX.md](TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
 
 ---
 
