@@ -77,11 +77,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Whether to generate audio/sound effects for the video. Default is false (silent video).', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'enhance_prompt'     => array(
-					'type'        => 'boolean',
-					'description' => __( 'Enable automatic prompt enhancement by Gemini to improve video quality. Default is true.', 'wp-mcp-ai' ),
-					'default'     => true,
-				),
 				'negative_prompt'    => array(
 					'type'        => 'string',
 					'description' => __( 'What to avoid in the video (e.g., "blurry, low quality, distorted").', 'wp-mcp-ai' ),
@@ -153,7 +148,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'aspect_ratio'   => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
 			'resolution'     => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
 			'generate_audio' => isset( $arguments['generate_audio'] ) ? (bool) $arguments['generate_audio'] : false,
-			'enhance_prompt' => isset( $arguments['enhance_prompt'] ) ? (bool) $arguments['enhance_prompt'] : true,
 		);
 
 		// Add optional parameters.
