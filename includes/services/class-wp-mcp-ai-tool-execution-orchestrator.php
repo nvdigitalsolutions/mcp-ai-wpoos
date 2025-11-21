@@ -198,21 +198,34 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 *
 	 * Queues the tool for background execution via WordPress cron.
 	 * Returns a job_id immediately without waiting for execution.
+	 * Falls back to synchronous execution if async executor is unavailable.
 	 *
 	 * @param string $tool_slug Tool slug.
 	 * @param array  $arguments Tool arguments.
 	 * @param array  $context   Execution context.
-	 * @return array|WP_Error Async job info or error.
+	 * @return array|WP_Error Async job info or sync result.
 	 */
 	protected function execute_async( $tool_slug, array $arguments, array $context ) {
 		// Get async executor.
 		$executor = $this->get_async_executor();
 		if ( ! $executor ) {
-			return new WP_Error(
-				'wp_mcp_ai_async_unavailable',
-				__( 'Async executor is not available. Falling back to synchronous execution.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
+			// Failsafe: Fall back to synchronous execution if async is unavailable.
+			WP_MCP_AI_Logger::log_event(
+				'tool_orchestration_fallback',
+				sprintf( 'Tool "%s" falling back to sync execution (async executor unavailable)', $tool_slug ),
+				array( 'tool_slug' => $tool_slug )
 			);
+			
+			$registry = $this->get_registry();
+			if ( ! $registry ) {
+				return new WP_Error(
+					'wp_mcp_ai_registry_unavailable',
+					__( 'Tool registry is not available.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+			
+			return $registry->execute_tool( $tool_slug, $arguments, $context );
 		}
 
 		// Queue the tool for async execution.
