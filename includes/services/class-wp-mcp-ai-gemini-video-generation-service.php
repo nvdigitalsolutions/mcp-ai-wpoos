@@ -6,7 +6,8 @@
  * Manages async video generation, polling, and file download.
  *
  * Google API Requirements Compliance (2025):
- * - Authentication: Uses x-goog-api-key header (line 235)
+ * - Authentication: Uses x-goog-api-key header for API calls (line 235)
+ * - Video Download Auth: Appends API key as query parameter for GCS URLs (line 565)
  * - Rate Limits: 10 RPM for preview access (documented in tool capability flags)
  * - Watermarking: All videos automatically include SynthID digital watermark by Google
  * - Content Policy: Relies on Google's API-side content moderation
