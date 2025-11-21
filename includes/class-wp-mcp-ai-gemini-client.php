@@ -21,6 +21,16 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_EMBED_CONTENT   = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
 
 		/**
+		 * Key used to wrap numeric arrays for Gemini API compatibility.
+		 *
+		 * Gemini requires functionCall args to be JSON objects, not arrays.
+		 * Numeric arrays are wrapped in {"items": [...]} to force object serialization.
+		 *
+		 * @var string
+		 */
+		const NUMERIC_ARRAY_WRAPPER_KEY = 'items';
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -1735,15 +1745,20 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * are compatible with Gemini's requirement that the 'args' field be a JSON object.
 		 * Numeric arrays are converted to objects to prevent JSON array serialization.
 		 *
+		 * This fix applies universally to ALL tools with array parameters, including:
+		 * - create_cron_job (args parameter)
+		 * - create_google_calendar_event (attendees parameter)
+		 * - create_woo_product (categories, images parameters)
+		 * - create_chart (labels, data parameters)
+		 * - And any other tool with numeric array parameters
+		 *
 		 * @param array $args Arguments array to process.
 		 * @return array Processed arguments as an associative array.
 		 */
 		protected function ensure_args_object_structure( array $args ) {
-			// If the array is numeric (sequential keys starting at 0), convert it to an object
-			// by wrapping it in a property called 'items' to avoid JSON array serialization.
+			// If the array is numeric (sequential keys starting at 0), wrap it.
 			if ( wp_is_numeric_array( $args ) && ! empty( $args ) ) {
-				// For numeric arrays, wrap them in an object structure that Gemini can accept.
-				return array( 'items' => $args );
+				return $this->wrap_numeric_array( $args );
 			}
 
 			// For associative arrays, recursively process nested values.
@@ -1753,7 +1768,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					// Recursively process nested arrays.
 					if ( wp_is_numeric_array( $value ) && ! empty( $value ) ) {
 						// Wrap numeric arrays in an object structure.
-						$processed[ $key ] = array( 'items' => $value );
+						$processed[ $key ] = $this->wrap_numeric_array( $value );
 					} else {
 						// Recursively process associative arrays.
 						$processed[ $key ] = $this->ensure_args_object_structure( $value );
@@ -1765,6 +1780,20 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return $processed;
+		}
+
+		/**
+		 * Wrap a numeric array for Gemini API compatibility.
+		 *
+		 * Gemini API requires the 'args' field in functionCall to be a JSON object.
+		 * This method wraps numeric arrays in an object structure to prevent them
+		 * from being serialized as JSON arrays.
+		 *
+		 * @param array $array Numeric array to wrap.
+		 * @return array Array wrapped in object structure.
+		 */
+		private function wrap_numeric_array( array $array ) {
+			return array( self::NUMERIC_ARRAY_WRAPPER_KEY => $array );
 		}
 
 		/**
