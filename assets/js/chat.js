@@ -8128,8 +8128,8 @@
                     return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
                         finalize();
-                        // Don't clear status here if finish_reason was shown (will be cleared by timeout)
-                        if (!streamResult.finishReason || !formatFinishReason(streamResult.finishReason)) {
+                        // Clear status unless finish_reason should be displayed
+                        if (shouldClearStatus(streamResult)) {
                             clearStatus(state.container);
                         }
                         return streamResult;
@@ -8195,8 +8195,8 @@
 
                 saveConversationToStorage(state);
                 finalize();
-                // Don't clear status here if finish_reason was shown (will be cleared by timeout)
-                if (!streamResult.finishReason || !formatFinishReason(streamResult.finishReason)) {
+                // Clear status unless finish_reason should be displayed
+                if (shouldClearStatus(streamResult)) {
                     clearStatus(state.container);
                 }
                 return streamResult;
@@ -10392,6 +10392,22 @@
         } catch (error) {
             return '[' + (type || 'content') + ']';
         }
+    }
+
+    /**
+     * Check if status should be cleared based on finish_reason presence.
+     * Helper to avoid code duplication.
+     * 
+     * @param {Object} streamResult - Stream result object
+     * @return {boolean} True if status should be cleared immediately
+     */
+    function shouldClearStatus(streamResult) {
+        if (!streamResult || !streamResult.finishReason) {
+            return true;
+        }
+        
+        const reasonMessage = formatFinishReason(streamResult.finishReason);
+        return !reasonMessage;
     }
 
     /**
