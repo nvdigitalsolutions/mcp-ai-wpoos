@@ -7894,6 +7894,10 @@
                 // This ensures users see where the streaming text will appear
                 createStreamingMessage();
 
+                // Also update status immediately to show streaming has started
+                // This provides immediate feedback in the status section before first chunk arrives
+                updateStreamingStatus('');
+
                 return processSSEStream(state, response, updateStreamingMessage);
             })
             .then(function (streamResult) {
