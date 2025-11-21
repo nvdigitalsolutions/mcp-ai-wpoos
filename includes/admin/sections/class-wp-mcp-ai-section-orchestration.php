@@ -940,6 +940,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				return array();
 			}
 
+			// Special handling for tools view - update disabled tools option.
+			if ( 'tools' === $submitted_view ) {
+				$this->save_tool_enable_disable_settings( $input );
+				return array(); // Return empty to preserve other settings.
+			}
+
 			$active_field_keys = $view_groups[ $submitted_view ]['fields'];
 			$all_fields        = $this->get_fields();
 
@@ -952,6 +958,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			return $this->sanitize_fields( $input, $active_fields, true );
+		}
+
+		/**
+		 * Save tool enable/disable settings.
+		 *
+		 * @param array $input Raw input from form.
+		 */
+		private function save_tool_enable_disable_settings( $input ) {
+			// Get registry.
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			if ( ! $registry ) {
+				return;
+			}
+
+			// Get all registered tools.
+			$all_tools = $registry->get_tools();
+			if ( ! is_array( $all_tools ) ) {
+				return;
+			}
+
+			// Get enabled tools from input (checkboxes that are checked).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$enabled_tools = isset( $_POST['wp_mcp_ai_enabled_tools'] ) ? array_map( 'sanitize_key', wp_unslash( $_POST['wp_mcp_ai_enabled_tools'] ) ) : array();
+
+			// Build list of disabled tools (tools that exist but are not in enabled list).
+			$disabled_tools = array();
+			foreach ( $all_tools as $tool_slug => $tool ) {
+				if ( ! in_array( $tool_slug, $enabled_tools, true ) ) {
+					$disabled_tools[] = $tool_slug;
+				}
+			}
+
+			// Update the disabled tools option.
+			update_option( 'wp_mcp_ai_disabled_tools', $disabled_tools );
+
+			// Add success message.
+			add_settings_error(
+				'wp_mcp_ai_settings',
+				'tools_updated',
+				__( 'Tool settings updated successfully.', 'wp-mcp-ai' ),
+				'success'
+			);
 		}
 
 		/**
@@ -1013,12 +1061,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'fields' => array(
 						// Model-specific fields are handled separately by WP_MCP_AI_Model_Config_Renderer.
 					),
-			'tools'      => array(
-				'label'  => __( 'Tools', 'wp-mcp-ai' ),
-				'fields' => array(
-					// Tools view is read-only, no editable fields.
 				),
-			),
+				'tools'      => array(
+					'label'  => __( 'Tools', 'wp-mcp-ai' ),
+					'fields' => array(
+						'enabled_tools',
+					),
 				),
 			);
 		}
