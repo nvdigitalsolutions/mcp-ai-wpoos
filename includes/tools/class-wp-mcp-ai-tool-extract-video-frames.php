@@ -371,10 +371,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			$frame_path = $temp_dir . '/frame_' . str_pad( $index + 1, 3, '0', STR_PAD_LEFT ) . '.jpg';
 
-			// Use reflection to access protected method (for reusability).
-			$method = new ReflectionMethod( $frame_extractor, 'extract_single_frame' );
-			$method->setAccessible( true );
-			$result = $method->invoke( $frame_extractor, $video_path, $timestamp, $frame_path );
+			// Extract frame (service class should provide public API for this).
+			$result = $this->extract_single_frame_at_timestamp( $frame_extractor, $video_path, $timestamp, $frame_path );
 
 			if ( is_wp_error( $result ) ) {
 				$errors[] = $result->get_error_message();
@@ -402,6 +400,54 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return $frame_paths;
+	}
+
+	/**
+	 * Extract a single frame at a specific timestamp.
+	 *
+	 * Wraps the service's protected method to avoid using reflection.
+	 *
+	 * @param WP_MCP_AI_Video_Frame_Extractor_Service $frame_extractor Frame extractor service.
+	 * @param string                                   $video_path      Video file path.
+	 * @param float                                    $timestamp       Timestamp in seconds.
+	 * @param string                                   $output_path     Output path for frame.
+	 * @return true|WP_Error True on success, error on failure.
+	 */
+	protected function extract_single_frame_at_timestamp( $frame_extractor, $video_path, $timestamp, $output_path ) {
+		$escaped_video  = escapeshellarg( $video_path );
+		$escaped_output = escapeshellarg( $output_path );
+		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
+
+		// FFmpeg command to extract frame at specific timestamp.
+		$command = sprintf(
+			'ffmpeg -ss %s -i %s -vframes 1 -q:v 2 -y %s 2>&1',
+			$timestamp_formatted,
+			$escaped_video,
+			$escaped_output
+		);
+
+		$output      = array();
+		$return_code = 0;
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( $command, $output, $return_code );
+
+		if ( 0 !== $return_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_ffmpeg_extraction_failed',
+				sprintf(
+					/* translators: %s: timestamp in seconds */
+					__( 'FFmpeg failed to extract frame at timestamp %s', 'wp-mcp-ai' ),
+					$timestamp_formatted
+				),
+				array(
+					'status' => 500,
+					'output' => implode( "\n", $output ),
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -452,11 +498,19 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				continue;
 			}
 
-			// Prepare file for upload.
-			$filename = 'video-frame-' . ( $index + 1 ) . '-' . time() . '.jpg';
+			// Prepare file for upload using unique filename.
+			$filename = 'video-frame-' . ( $index + 1 ) . '-' . uniqid( '', true ) . '.jpg';
+
+			// Read file contents.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$file_content = file_get_contents( $frame_path );
+
+			if ( false === $file_content ) {
+				continue;
+			}
 
 			// Use WordPress file handling.
-			$upload = wp_upload_bits( $filename, null, file_get_contents( $frame_path ) );
+			$upload = wp_upload_bits( $filename, null, $file_content );
 
 			if ( ! empty( $upload['error'] ) ) {
 				continue;

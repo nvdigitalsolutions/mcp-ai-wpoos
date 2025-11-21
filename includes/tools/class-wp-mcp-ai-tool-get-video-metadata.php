@@ -138,13 +138,16 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		// Add WordPress-specific metadata if attachment.
 		if ( ! empty( $arguments['attachment_id'] ) ) {
 			$attachment_id = absint( $arguments['attachment_id'] );
+			$file_path_for_size = get_attached_file( $attachment_id );
+			$file_size = file_exists( $file_path_for_size ) ? filesize( $file_path_for_size ) : 0;
+			
 			$metadata['wordpress'] = array(
 				'id'          => $attachment_id,
 				'url'         => wp_get_attachment_url( $attachment_id ),
 				'title'       => get_the_title( $attachment_id ),
 				'mime_type'   => get_post_mime_type( $attachment_id ),
 				'upload_date' => get_the_date( 'c', $attachment_id ),
-				'file_size'   => size_format( filesize( $video_path ), 2 ),
+				'file_size'   => $file_size > 0 ? size_format( $file_size, 2 ) : '',
 			);
 		}
 
