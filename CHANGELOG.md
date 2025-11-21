@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- **Phase 2.1: File Management & Caching for Video Analysis (November 20, 2025)**
+  - File caching to avoid re-uploading same videos (transient-based with 24-hour expiration)
+  - File tracking in WordPress options for lifecycle management
+  - Automated cleanup of old files via daily WordPress cron job (`wp_mcp_ai_cleanup_gemini_files`)
+  - Cache key generation with file modification time detection for attachments
+  - Support for both URL-based and attachment-based caching
+  - Comprehensive test coverage (21 new unit tests in `tests/test-gemini-file-service-caching.php`)
+  - All features follow proper Separation of Concerns (Service layer handles business logic)
+  - Reduces API costs and improves performance by avoiding duplicate uploads
+  - **Status**: Phase 2.1 Complete ✅ (see `docs/archive/VIDEO_ANALYSIS_ROADMAP.md`)
+
 ### Documentation
 - **Documentation Reorganization (November 18, 2025)**: Comprehensive cleanup and consolidation of documentation
   - Consolidated bug reports into single comprehensive `docs/TESTING_AND_QUALITY_REPORT.md` (753 lines)
