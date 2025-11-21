@@ -40,6 +40,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	const VEO_MODEL = 'veo-3.1-generate-preview';
 
 	/**
+	 * Minimum video duration in seconds
+	 *
+	 * @var int
+	 */
+	const MIN_DURATION = 4;
+
+	/**
 	 * Maximum video duration in seconds
 	 *
 	 * @var int
@@ -130,7 +137,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Duration validation (Veo API requires 4-8 seconds).
 		$duration = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
-		if ( $duration < 4 || $duration > self::MAX_DURATION ) {
+		if ( $duration < self::MIN_DURATION || $duration > self::MAX_DURATION ) {
 			$duration = self::DEFAULT_DURATION;
 		}
 
