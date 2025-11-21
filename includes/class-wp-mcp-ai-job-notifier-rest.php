@@ -27,9 +27,10 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 */
 	public static function register_routes() {
 		// SSE endpoint for streaming job status.
+		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)/stream',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_.\-]+)/stream',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -63,9 +64,10 @@ class WP_MCP_AI_Job_Notifier_REST {
 		);
 
 		// Get job status (non-streaming).
+		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_.\-]+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -85,9 +87,11 @@ class WP_MCP_AI_Job_Notifier_REST {
 		);
 
 		// Register webhook.
+		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
+		// Also supports wildcards (*) for pattern matching.
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_*-]+)/webhooks',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_.*\-]+)/webhooks',
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
