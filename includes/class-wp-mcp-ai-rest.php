@@ -2592,6 +2592,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration            = 0;
 			$tool_result_messages = array();
 
+			// Send status update to indicate AI is generating response.
+			$this->send_sse_event(
+				'status',
+				array(
+					'type'    => 'generating',
+					'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+				)
+			);
+
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -2788,6 +2797,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
+				// Send status update to indicate AI is generating response after tool execution.
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'generating',
+						'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+					)
+				);
+
 				// Call LLM again with tool results.
 				$response = $this->client->create_chat_completion( $messages, $options );
 
@@ -2848,7 +2866,49 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
-			// Stream final response.
+			// Simulate streaming by sending text content in chunks before final response.
+			// Extract text content from the response to send progressively.
+			$text_content = '';
+			if ( isset( $response['choices'][0]['message']['content'] ) ) {
+				$text_content = $response['choices'][0]['message']['content'];
+			} elseif ( isset( $response['content'] ) ) {
+				$text_content = $response['content'];
+			}
+
+			// Send text content in chunks to simulate streaming (for better UX).
+			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
+				$chunk_size = 50; // Characters per chunk.
+				$text_len   = mb_strlen( $text_content, 'UTF-8' );
+				$chunks     = array();
+
+				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
+					$chunks[] = mb_substr( $text_content, $i, $chunk_size, 'UTF-8' );
+				}
+
+				// Send chunks with OpenAI-style delta format.
+				foreach ( $chunks as $chunk ) {
+					$this->send_sse_event(
+						'message',
+						array(
+							'choices' => array(
+								array(
+									'delta' => array(
+										'content' => $chunk,
+									),
+								),
+							),
+						)
+					);
+
+					// Small delay between chunks (microseconds) to simulate realistic streaming.
+					// This is optional and can be removed if it causes issues.
+					if ( function_exists( 'usleep' ) ) {
+						usleep( 10000 ); // 10ms per chunk.
+					}
+				}
+			}
+
+			// Stream final response with complete data.
 			$payload = array(
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
