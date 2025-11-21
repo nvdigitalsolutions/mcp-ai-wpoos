@@ -532,12 +532,17 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
+		// Prefer the upload URL to ensure we're using the local WordPress media URL,
+		// not an external URL from offloading plugins.
+		$local_url = isset( $upload['url'] ) ? $upload['url'] : '';
+		$download_url = $local_url ? $local_url : wp_get_attachment_url( $attachment_id );
+
 		return array(
 			'attachment_id' => (int) $attachment_id,
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
-			'url'           => isset( $upload['url'] ) ? $upload['url'] : '',
-			'download_url'  => wp_get_attachment_url( $attachment_id ),
+			'url'           => $local_url,
+			'download_url'  => $download_url,
 			'mime_type'     => $mime_type,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
