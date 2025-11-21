@@ -162,7 +162,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
-- 👔 **Professional & Team Templates** - Deploy assistants from 180+ pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
@@ -1543,7 +1543,7 @@ Developers can extend or replace these prompts with filters such as `wp_mcp_ai_a
 
 WP oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
 
-1. **Select from 180+ pre-built professional templates** spanning 12 industry categories
+1. **Select from 182 pre-built professional templates** spanning 12 industry categories
 2. **Create custom profession templates** with reusable configurations
 3. **Deploy entire teams** of specialized assistants with one click
 4. **Test everything from the backend** before exposing to end users
@@ -1557,19 +1557,19 @@ Professions are reusable assistant templates with pre-configured:
 - **AI model defaults** (provider, model, temperature)
 - **Warnings and disclaimers** for professional contexts
 
-**Available Categories (180+ professions):**
+**Available Categories (182 professions):**
 - 🌾 Agriculture & Natural Resources (10 professions)
-- 🎨 Art, Media & Entertainment (28 professions)
-- 💼 Business & Finance (20 professions)
+- 🎨 Art, Media & Entertainment (24 professions)
+- 💼 Business & Finance (16 professions)
 - 🎓 Education (10 professions)
-- 🏥 Healthcare & Medicine (30 professions)
-- ⚖️ Law & Public Safety (13 professions)
-- 🔬 Science & Engineering (21 professions)
-- 🍽️ Service Industry (13 professions)
-- 💻 Technology (13 professions)
-- 🔧 Trades & Manual Labor (14 professions)
-- 🚚 Transportation (11 professions)
-- 📋 Miscellaneous (24 professions)
+- 🏥 Healthcare & Medicine (25 professions)
+- ⚖️ Law & Public Safety (11 professions)
+- 🔬 Science & Engineering (17 professions)
+- 🍽️ Service Industry (12 professions)
+- 💻 Technology (12 professions)
+- 🔧 Trades & Manual Labor (13 professions)
+- 🚚 Transportation (10 professions)
+- 📋 Miscellaneous (22 professions)
 
 **Example Professions:**
 - Software Developer, Web Developer, Data Scientist
@@ -1577,7 +1577,7 @@ Professions are reusable assistant templates with pre-configured:
 - Registered Nurse, Physician, Pharmacist
 - Attorney, Paralegal, Mediator
 - Content Writer, Graphic Designer, Social Media Manager
-- And 165+ more...
+- And 170+ more...
 
 ### Creating Assistants from Templates
 
