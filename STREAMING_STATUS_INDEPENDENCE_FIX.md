@@ -84,14 +84,21 @@ These should work **independently** to provide redundant user feedback.
 - `updateStreamingStatus(content)` - Now called unconditionally
 
 ### Testing
-Created new test file: `tests/js/streaming-status-independence.test.js`
+Created two new test files:
 
-Tests verify:
+**Unit Tests** (`tests/js/streaming-status-independence.test.js`):
 1. ✅ Status updates even if messages container is missing
 2. ✅ Status updates progressively without message bubble
 3. ✅ Status clears correctly when empty
 
-All 121 tests pass (118 existing + 3 new).
+**Integration Tests** (`tests/js/streaming-status-fix-integration.test.js`):
+1. ✅ Shows streaming preview even if messages area fails
+2. ✅ Updates status progressively during streaming simulation
+3. ✅ Truncates long streaming content for status preview
+4. ✅ Clears status when streaming completes
+5. ✅ Handles rapid streaming updates without errors
+
+All 126 tests pass (118 existing + 8 new).
 
 ## Edge Cases Handled
 
