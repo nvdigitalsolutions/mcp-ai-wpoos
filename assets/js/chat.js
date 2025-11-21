@@ -7799,14 +7799,16 @@
                     streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--streaming');
                 }
                 
-                // Concern 2: Update status area (delegated to separate function)
-                updateStreamingStatus(content);
-                
                 // Concern 3: Auto-scroll to keep content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
                 console.warn('[WP oOS] Streaming message element not found');
             }
+
+            // Concern 2: Update status area (delegated to separate function)
+            // This is intentionally OUTSIDE the streamingMessageElement check
+            // because the status preview should work independently of the message bubble
+            updateStreamingStatus(content);
         }
 
         return fetch(state.config.messagesEndpoint, {
