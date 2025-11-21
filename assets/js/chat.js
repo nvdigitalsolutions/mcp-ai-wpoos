@@ -7775,6 +7775,17 @@
         let streamingMessageElement = null;
         let streamCompleted = false;
 
+        // Log request details for debugging fetch failures
+        if (window.console && console.log) {
+            console.log('[WP oOS] Starting streaming request:', {
+                endpoint: state.config.messagesEndpoint,
+                assistantId: payload.assistant_id,
+                messageCount: payload.messages ? payload.messages.length : 0,
+                streamEnabled: payload.stream,
+                hasSessionKey: !!payload.session_key
+            });
+        }
+
         // Create a placeholder message element for streaming content
         function createStreamingMessage() {
             if (!streamingMessageElement) {
@@ -7880,7 +7891,30 @@
             body: JSON.stringify(payload),
         })
             .then(function (response) {
+                // Log response received
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Streaming response received:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok,
+                        contentType: response.headers.get('content-type') || 'not set',
+                        headers: {
+                            'content-type': response.headers.get('content-type'),
+                            'cache-control': response.headers.get('cache-control'),
+                            'connection': response.headers.get('connection')
+                        }
+                    });
+                }
+                
                 if (!response.ok) {
+                    // Log error response details
+                    if (window.console && console.error) {
+                        console.error('[WP oOS] HTTP error response:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            url: response.url
+                        });
+                    }
                     throw response;
                 }
 
@@ -7993,6 +8027,29 @@
             })
             .catch(function (error) {
                 if (!streamCompleted) {
+                    // Enhanced logging for fetch failures
+                    if (window.console && console.error) {
+                        console.error('[WP oOS] Streaming request failed:', {
+                            errorType: error ? error.constructor.name : 'Unknown',
+                            errorMessage: error ? error.message : 'No error message',
+                            errorStatus: error ? error.status : 'N/A',
+                            errorStatusText: error ? error.statusText : 'N/A',
+                            endpoint: state.config.messagesEndpoint,
+                            assistantId: payload.assistant_id,
+                            hasResponse: error && typeof error.json === 'function',
+                            streamCompleted: streamCompleted
+                        });
+                        
+                        // If it's a Response object with error details, try to extract them
+                        if (error && typeof error.text === 'function') {
+                            error.text().then(function(responseText) {
+                                console.error('[WP oOS] Server response text:', responseText);
+                            }).catch(function() {
+                                console.error('[WP oOS] Could not extract response text');
+                            });
+                        }
+                    }
+                    
                     handleError(state, error);
                     restoreSubmissionState(state, submissionContext);
                     
@@ -8010,6 +8067,11 @@
     }
 
     function processSSEStream(state, response, updateCallback) {
+        // Log SSE stream processing start
+        if (window.console && console.log) {
+            console.log('[WP oOS] Starting SSE stream processing');
+        }
+        
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -8021,6 +8083,12 @@
         function readChunk() {
             return reader.read().then(function (result) {
                 if (result.done) {
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] SSE stream completed:', {
+                            totalContentLength: fullContent.length,
+                            contentSample: fullContent.substring(0, 100)
+                        });
+                    }
                     return { content: fullContent };
                 }
 
@@ -8216,16 +8284,41 @@
                             }
                         }
                     } catch (parseError) {
-                        // Ignore malformed JSON chunks
+                        // Log JSON parsing errors for debugging
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] Failed to parse SSE event data:', {
+                                eventType: eventType || '(none)',
+                                eventData: eventData.substring(0, 200),
+                                error: parseError.message
+                            });
+                        }
                     }
                 }
 
                 // Continue reading
                 return readChunk();
+            }).catch(function(readError) {
+                // Log stream reading errors
+                if (window.console && console.error) {
+                    console.error('[WP oOS] Error reading SSE stream chunk:', {
+                        error: readError.message || readError,
+                        errorType: readError.constructor.name
+                    });
+                }
+                throw readError;
             });
         }
 
-        return readChunk();
+        return readChunk().catch(function(streamError) {
+            // Log top-level stream errors
+            if (window.console && console.error) {
+                console.error('[WP oOS] SSE stream processing error:', {
+                    error: streamError.message || streamError,
+                    errorType: streamError.constructor.name
+                });
+            }
+            throw streamError;
+        });
     }
 
     function handleStatusEvent(state, data) {
