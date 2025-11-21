@@ -1000,6 +1000,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$start_time     = time();
 			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + self::JOB_POLLING_SAFETY_BUFFER;
 			$iteration      = 0;
+			$status         = ''; // Initialize status variable for timeout scenario.
 
 			while ( ( time() - $start_time ) < $max_duration && $iteration < $max_iterations ) {
 				++$iteration;
