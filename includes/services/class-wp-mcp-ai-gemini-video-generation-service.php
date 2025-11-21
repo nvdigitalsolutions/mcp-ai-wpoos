@@ -188,6 +188,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	/**
 	 * Build the generation payload for Veo 3.1.
 	 *
+	 * Validates and sanitizes all parameters before sending to the Gemini API.
+	 * Duration validation is performed in multiple stages:
+	 * 1. Initial validation: Convert to integer and check range (4-8 seconds)
+	 * 2. 1080p override: Force to 8 seconds for 1080p resolution
+	 * 3. Final validation: Safety check to ensure valid duration before API call
+	 *
 	 * @param array $args Generation arguments.
 	 * @return array|WP_Error Payload or error.
 	 */
@@ -195,6 +201,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
 		// Duration validation (Veo API requires 4-8 seconds).
+		// Stage 1: Initial validation and sanitization.
 		$duration = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
 		if ( $duration < self::MIN_DURATION || $duration > self::MAX_DURATION ) {
 			$duration = self::DEFAULT_DURATION;
@@ -217,7 +224,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$resolution = '720p';
 		}
 
-		// 1080p requires 8 seconds duration (2025 API requirement).
+		// Stage 2: 1080p requires 8 seconds duration (2025 API requirement).
 		if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
 			$duration = self::REQUIRED_1080P_DURATION;
 		}
@@ -258,8 +265,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
-		// Final validation: Ensure duration is always within valid range (4-8 seconds).
-		// This is a safety check to prevent API errors even if validation logic above has edge cases.
+		// Stage 3: Final validation as a safety check.
+		// This ensures duration is always within valid range (4-8 seconds) even if there are edge cases
+		// in the validation logic above. This prevents "durationSeconds is out of bound" API errors.
 		if ( ! is_int( $parameters['durationSeconds'] ) || $parameters['durationSeconds'] < self::MIN_DURATION || $parameters['durationSeconds'] > self::MAX_DURATION ) {
 			$parameters['durationSeconds'] = self::DEFAULT_DURATION;
 		}
