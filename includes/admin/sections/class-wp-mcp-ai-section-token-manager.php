@@ -88,6 +88,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Per Site', 'wp-mcp-ai' ); ?>
 					</a>
+					<a href="<?php echo esc_url( $this->get_view_url( 'per_models' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_models' === $active_view ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-admin-generic"></span>
+						<?php esc_html_e( 'Per Models', 'wp-mcp-ai' ); ?>
+					</a>
 					<?php if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) : ?>
 						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'analytics' === $active_view ? 'active' : ''; ?>">
 							<span class="dashicons dashicons-chart-line"></span>
@@ -108,6 +112,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							break;
 						case 'per_site':
 							$this->render_per_site_view();
+							break;
+						case 'per_models':
+							$this->render_per_models_view();
 							break;
 						case 'analytics':
 							if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
@@ -1005,6 +1012,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</tbody>
 			</table>
 			<?php
+		}
+
+		/**
+		 * Render per-models view.
+		 *
+		 * Displays per-model configuration table.
+		 * Delegates rendering to WP_MCP_AI_Model_Config_Renderer (SoC).
+		 */
+		private function render_per_models_view() {
+			// Load renderer class if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Config_Renderer' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-config-renderer.php';
+			}
+
+			// Delegate rendering to the renderer class (SoC).
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
+			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+			// Output JavaScript for inline editing.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is properly escaped in renderer.
+			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 
 		/**

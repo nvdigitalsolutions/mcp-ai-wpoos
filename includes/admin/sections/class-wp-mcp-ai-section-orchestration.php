@@ -711,10 +711,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'models' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'models' === $active_view ? 'active' : ''; ?>">
-<span class="dashicons dashicons-admin-generic"></span>
-			<?php esc_html_e( 'Per Model', 'wp-mcp-ai' ); ?>
-</a>
 <a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'tools' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'wp-mcp-ai' ); ?>
@@ -733,9 +729,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
-					break;
-				case 'models':
-					$this->render_models_view();
 					break;
 				case 'tools':
 					$this->render_tools_view();
@@ -883,27 +876,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '</table>';
 		}
 
-		/**
-		 * Render models view.
-		 *
-		 * Displays per-model configuration table.
-		 * Follows SoC: delegates rendering to WP_MCP_AI_Model_Config_Renderer.
-		 */
-		private function render_models_view() {
-			// Load renderer class if not already loaded.
-			if ( ! class_exists( 'WP_MCP_AI_Model_Config_Renderer' ) ) {
-				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-config-renderer.php';
-			}
-
-			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
-			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
-
-			// Output JavaScript for inline editing.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is properly escaped in renderer.
-			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
-		}
-
 
 		/**
 		 * Sanitize input for this section.
@@ -1008,20 +980,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'prediction_safety_buffer',
 					),
 				),
-				'models'     => array(
-					'label'  => __( 'Per Model', 'wp-mcp-ai' ),
-					'fields' => array(
-						// Model-specific fields are handled separately by WP_MCP_AI_Model_Config_Renderer.
-					),
 			'tools'      => array(
 				'label'  => __( 'Tools', 'wp-mcp-ai' ),
 				'fields' => array(
 					// Tools view is read-only, no editable fields.
 				),
 			),
-				),
-			);
-		}
+		);
+	}
 
 		/**
 		 * Validate section input.
