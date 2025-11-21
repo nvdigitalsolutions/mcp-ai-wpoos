@@ -64,7 +64,7 @@
 - [🛰 JetEngine REST API Reference](#jetengine-rest-api-reference)
 - [🧮 Usage Tracking](#usage-tracking)
 - [🧷 Attachment MIME Controls](#attachment-mime-controls)
-- [🧾 Logging](#logging)
+- [🪵 Logging](#logging)
 - [🧾 JetEngine REST Endpoint Report Helper](#jetengine-rest-endpoint-report-helper)
 - [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
 - [✅ Manual QA Scenarios](#manual-qa-scenarios)
@@ -73,8 +73,8 @@
 
 ## 🧩 Overview
 
-**WP oOS** is a modular AI framework for WordPress and JetEngine that connects your site's data with OpenAI's GPT models.
-It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+**WP oOS** is a modular AI framework for WordPress and JetEngine that connects your site's data with the latest AI models from OpenAI (GPT-4o, GPT-5 series), Google (Gemini 2.5/3, Veo video generation), Anthropic (Claude 4 series), and local AI providers (Ollama, LM Studio).
+It allows you to create and manage AI Assistants that can interact with users, access WordPress data, perform 105+ built-in tool functions, and generate multimedia content including images, speech, and videos.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -278,6 +278,9 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Generate OpenAI Image | `generate_openai_image` | Calls the OpenAI Images API with configurable defaults, saving the rendered asset to the Media Library with optional overrides.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】|
 | Generate Gemini Image | `generate_gemini_image` | Uses Gemini’s multimodal image endpoint to render creative, aspect-ratio-aware visuals that are persisted as WordPress attachments.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】|
 | Generate OpenAI Speech | `generate_openai_speech` | Converts text to audio via OpenAI’s text-to-speech models, honouring default voice/format selections and storing results in the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】|
+| Generate Veo Video | `generate_veo_video` | Creates AI-generated videos using Google's Veo 3.1 or Veo 2.0 models from text prompts, with automatic fallback handling and support for 1080p/720p resolution.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php】【F:includes/services/class-wp-mcp-ai-gemini-video-generation-service.php】|
+| Analyze Video | `analyze_video` | Analyzes video content using Gemini's multimodal capabilities to extract insights, descriptions, and metadata from video files.【F:includes/tools/class-wp-mcp-ai-tool-analyze-video.php】|
+| Generate Video Caption | `generate_video_caption` | Generates descriptive captions for video content using AI vision models.【F:includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php】|
 | Transcribe OpenAI Audio | `transcribe_openai_audio` | Sends uploaded audio to OpenAI’s transcription/translation endpoints and returns structured transcripts with language and duration metadata.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】|
 
 ### Research & situational awareness
@@ -644,7 +647,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
-- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 70+ built-in tools
+- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 105+ built-in tools
 - **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
 
@@ -752,28 +755,120 @@ To configure Ollama:
 
 The Ollama client supports the standard chat completion flow and automatically normalizes responses to match the OpenAI format for downstream compatibility. Note that some advanced features like tool calling may vary depending on the specific Ollama model you're using.
 
-### OpenAI model coverage
+### Supported AI Models (2025 Update)
 
-The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio, and Image APIs so site owners can choose the right model for each workflow. Token windows describe the maximum request size (messages, attachments, and tool payloads) the OpenAI API will accept for that model, while output limits reflect the largest single response the service will stream back. Leave a safety margin below each ceiling so assistants can add system instructions, tool calls, and knowledge snippets without hitting provider limits.
+WP oOS supports **100+ AI models** across multiple providers, including the latest flagship models from OpenAI, Google, Anthropic, and local AI options. The plugin automatically recognizes new models as they're released without requiring code updates.
 
-| Capability | Model | Max context tokens | Max output tokens | Notes |
-| --- | --- | --- | --- | --- |
-| Responses (general) | `gpt-4o` | 128,000 | 16,384 | Flagship multimodal model that balances quality and latency for production chat, tool, and multimodal calls. |
-| Responses (cost optimised) | `gpt-4o-mini` | 128,000 | 16,384 | Budget-friendly 4o variant recommended for day-to-day assistants and background automations. |
-| Responses (advanced) | `gpt-4.1` | 128,000 | 16,384 | Highest quality text model with stronger reasoning depth; ideal for complex editorial or engineering tasks. |
-| Responses (lightweight) | `gpt-4.1-mini` | 128,000 | 16,384 | Lower-latency 4.1 tier that keeps the larger context window while reducing cost for iterative workflows. |
-| Reasoning | `o1-preview` | 128,000 | 32,768 | Deliberate reasoning model suited to multi-step planning and analysis; expect slower responses while it “thinks”. |
-| Reasoning (fast) | `o1-mini` | 128,000 | 32,768 | Lighter o1 variant that trades some reasoning depth for responsiveness in operational assistants. |
+#### OpenAI Models
 
-#### Media and multimodal defaults
-
-| Capability | Model | Size or duration limits | Notes |
+**GPT-5 Series (2025 Flagship)** - Latest generation with enhanced reasoning
+| Model | Max Context | Max Output | Notes |
 | --- | --- | --- | --- |
-| Image generation | `gpt-image-1` | Up to 2048×2048 output (square) or proportional 1024/512 variants | Produces photorealistic or illustrative renders; respect OpenAI’s safety filters when prompting. |
-| Text-to-speech | `gpt-4o-mini-tts` | Up to ~4,096 input tokens per request | Generates natural-sounding speech in multiple voices; longer scripts should be chunked into multiple calls. |
-| Speech-to-text | `gpt-4o-mini-transcribe` | Optimised for recordings ≤ 90 minutes | Handles multilingual transcription and translation; large files are automatically chunked client-side before upload. |
+| `gpt-5.1` | 200,000 | 100,000 | Current flagship with superior reasoning and multimodal capabilities |
+| `gpt-5` | 200,000 | 100,000 | Stable GPT-5 release |
+| `gpt-5-mini` | 200,000 | 50,000 | Cost-effective GPT-5 variant |
+| `gpt-5-pro` | 200,000 | 100,000 | Enhanced version with priority access |
+| `gpt-5-codex` | 200,000 | 100,000 | Coding-optimized variant |
 
-OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → WP oOS** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
+**GPT-4o Series** - Multimodal models with vision capabilities
+| Model | Max Context | Max Output | Notes |
+| --- | --- | --- | --- |
+| `gpt-4o` | 128,000 | 16,384 | Flagship multimodal model for production use |
+| `gpt-4o-mini` | 128,000 | 16,384 | Cost-optimized for daily operations (recommended default) |
+| `gpt-4o-2024-11-20` | 128,000 | 16,384 | Latest GPT-4o snapshot (November 2024) |
+| `chatgpt-4o-latest` | 128,000 | 16,384 | Always uses latest ChatGPT model |
+
+**Reasoning Models (o-series)** - Advanced problem-solving
+| Model | Max Context | Max Output | Notes |
+| --- | --- | --- | --- |
+| `o1-2024-12-17` | 200,000 | 100,000 | Latest reasoning model with improved capabilities |
+| `o1-preview` | 128,000 | 32,768 | Preview of o1 reasoning model |
+| `o1-mini` | 128,000 | 32,768 | Faster reasoning variant |
+| `o3-mini` | TBD | TBD | Upcoming compact reasoning model |
+
+**Legacy Models** - For backward compatibility
+- `gpt-4-turbo`, `gpt-4`, `gpt-3.5-turbo` (text-only)
+
+#### Google Gemini Models
+
+**Gemini 3 Series (Preview)** - Next-generation multimodal
+| Model | Features | Notes |
+| --- | --- | --- |
+| `gemini-3-pro-preview` | Text, image, video, code | Latest experimental capabilities |
+
+**Gemini 2.5 Series (Stable)** - Production-ready multimodal
+| Model | Features | Notes |
+| --- | --- | --- |
+| `gemini-2.5-pro` | Text, image, video analysis | Highest quality Gemini model |
+| `gemini-2.5-flash` | Text, image, video analysis | **Recommended** - Fast and cost-effective |
+| `gemini-2.5-flash-lite` | Text, image | Lightweight variant |
+| `gemini-2.5-flash-image` | Image generation/editing | Specialized for image tasks |
+| `gemini-live-2.5-flash-preview` | Voice, multimodal | Live conversation support |
+
+**Gemini 2.0 Series** - Stable generation
+| Model | Features | Notes |
+| --- | --- | --- |
+| `gemini-2.0-flash` | Text, image, video | Proven performance |
+| `gemini-2.0-flash-lite` | Text, image | Cost-optimized |
+| `gemini-2.0-flash-exp` | Text, image, video | Experimental features |
+
+**Gemini 1.5 Series (Legacy)** - For compatibility
+- `gemini-1.5-pro`, `gemini-1.5-flash`
+
+**Gemma Models** - Open-source text models
+- `gemma-2-27b-it`, `gemma-2-9b-it`, `gemma-2-2b-it`
+
+#### Anthropic Claude Models
+
+**Claude 4 Series (2025)** - Latest flagship models
+| Model | Max Context | Max Output | Notes |
+| --- | --- | --- | --- |
+| `claude-sonnet-4.5` | 200,000 | 100,000 | **Recommended** - Balanced performance |
+| `claude-haiku-4.5` | 200,000 | 100,000 | Fastest Claude model |
+| `claude-opus-4.1` | 200,000 | 100,000 | Flagship model with highest capability |
+| `claude-opus-4.0` | 200,000 | 100,000 | Stable Opus release |
+
+**Claude 3.5 Series (Legacy)** - Previous generation
+- `claude-3-5-sonnet-20241022`, `claude-3-5-haiku-20241022`
+
+#### Google Veo Video Generation Models
+
+**Video Generation** - AI-powered video creation from text prompts
+| Model | Resolution | Duration | Notes |
+| --- | --- | --- | --- |
+| `veo-3.1-generate-preview` | Up to 1080p | 4-8 seconds | Latest Veo model (primary) |
+| `veo-2.0-generate-001` | Up to 720p | 5-8 seconds | Fallback model for quota limits |
+
+**Features:**
+- Automatic fallback from Veo 3.1 to Veo 2.0 when quota limits reached
+- SynthID digital watermarking (automatic)
+- 1080p requires 8-second duration minimum
+- Supports 16:9, 9:16, and 1:1 aspect ratios
+
+#### Local AI Models
+
+**Ollama** - Privacy-focused local deployment
+- Llama 3.2, Llama 3.1, Mistral, Mixtral, Gemma 2, CodeLlama, DeepSeek Coder, Phi-3, Qwen 2.5
+- Zero API costs, on-premises data processing
+
+**LM Studio** - Local AI with function calling
+- Qwen 3 Coder 30B (recommended for function calling)
+- Qwen 3 Vision-Language 30B
+- DeepSeek V3 671B
+- Full list of 50+ supported models available in settings
+
+#### Media and Multimodal Capabilities
+
+| Capability | Model | Limits | Notes |
+| --- | --- | --- | --- |
+| Image generation | `gpt-image-1` | Up to 2048x2048 | OpenAI DALL-E 3 |
+| Image generation (Gemini) | `gemini-2.5-flash-image` | Various sizes | Google Imagen |
+| Text-to-speech | `gpt-4o-mini-tts` | ~4,096 tokens | Multiple voices |
+| Speech-to-text | `gpt-4o-mini-transcribe` | <=90 minutes | Multilingual |
+| Video generation | `veo-3.1-generate-preview` | 4-8 seconds | 1080p support |
+
+OpenAI and Google regularly revise token policies and media limits. Review the [OpenAI model dashboard](https://platform.openai.com/docs/models) and [Google AI documentation](https://ai.google.dev/gemini-api/docs/models/gemini) before rolling out new assistants or increasing attachment budgets. Update defaults in **Settings → WP oOS** to keep assistants aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
+
 
 ## 🧱 ChatKit Integration
 
