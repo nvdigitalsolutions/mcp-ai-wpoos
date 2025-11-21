@@ -64,7 +64,7 @@ Google Gemini API integration fixes
 - `GEMINI_TOOL_SANITIZATION_FIX.md` - Tool sanitization
 - `GEMINI_URL_FIX_SUMMARY.md` - URL handling fixes
 
-### **Chat Transcripts (6 documents)**
+### **Chat Transcripts (7 documents)**
 Chat history persistence and retrieval
 
 **Transcript Management:**
@@ -250,7 +250,7 @@ Many issues have recurring patterns:
 - Docs directory (`/docs/` - 16 files)  
 - Docs fixes directory (`/docs/fixes/` - 2 files)
 
-**Total preserved:** 80+ documents
+**Total preserved:** 81 documents
 
 ### Deprecation Policy
 These documents are **archived but not deprecated**. They remain:

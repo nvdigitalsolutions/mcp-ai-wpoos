@@ -193,7 +193,7 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
-| **[archive/fixes/README.md](archive/fixes/README.md)** | **81 historical bug fixes** - Comprehensive fix archive organized by category (streaming, Gemini, SSE, transcripts, etc.) | Developers/Admins |
+| [archive/fixes/README.md](archive/fixes/README.md) | **81 historical bug fixes** - Comprehensive fix archive organized by category (streaming, Gemini, SSE, transcripts, etc.) | Developers/Admins |
 | [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
