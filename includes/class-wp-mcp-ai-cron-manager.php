@@ -62,22 +62,29 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 		/**
 		 * Record a cron event scheduled through the plugin.
 		 *
-		 * @param string $hook      Cron hook name.
-		 * @param array  $args      Arguments passed to the cron callback.
-		 * @param string $schedule  Schedule slug (or "single" for one-off events).
-		 * @param int    $timestamp Initial timestamp requested for the event.
-		 * @param int    $user_id   User who scheduled the event.
+		 * @param string      $hook       Cron hook name.
+		 * @param array       $args       Arguments passed to the cron callback.
+		 * @param string      $schedule   Schedule slug (or "single" for one-off events).
+		 * @param int         $timestamp  Initial timestamp requested for the event.
+		 * @param int         $user_id    User who scheduled the event.
+		 * @param string|null $custom_id  Optional custom job ID. If provided, this will be used instead of generating an MD5 hash.
+		 *                                 Useful for services that need predictable job IDs for tracking (e.g., veo_xxxxx).
 		 *
 		 * @return string Identifier of the stored job.
 		 */
-		public static function record_job( $hook, $args, $schedule, $timestamp, $user_id ) {
+		public static function record_job( $hook, $args, $schedule, $timestamp, $user_id, $custom_id = null ) {
 			$hook      = (string) $hook;
 			$args      = self::normalise_args( $args );
 			$schedule  = $schedule ? (string) $schedule : 'single';
 			$timestamp = (int) $timestamp;
 			$user_id   = (int) $user_id;
 
-			$job_id = self::generate_job_id( $hook, $args );
+			// Use custom ID if provided, otherwise generate from hook and args.
+			if ( null !== $custom_id && '' !== $custom_id ) {
+				$job_id = sanitize_key( (string) $custom_id );
+			} else {
+				$job_id = self::generate_job_id( $hook, $args );
+			}
 
 			$jobs = self::load_jobs();
 

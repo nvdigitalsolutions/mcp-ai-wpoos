@@ -879,7 +879,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				array( $job_id ),
 				'single',
 				$first_poll_time,
-				$user_id
+				$user_id,
+				$job_id  // Use the veo_xxx job_id directly instead of generating MD5 hash.
 			);
 		}
 
@@ -1078,7 +1079,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				array( $job_id ),
 				'single',
 				$next_poll,
-				$user_id
+				$user_id,
+				$job_id  // Use the veo_xxx job_id directly instead of generating MD5 hash.
 			);
 		}
 	}
