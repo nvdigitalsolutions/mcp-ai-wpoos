@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo 3.1 model. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Audio generation is not currently supported by Veo 3.1.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo 3.1 model. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Audio generation is not currently supported by Veo 3.1. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -380,7 +380,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'consumes-tokens',      // Uses AI credits.
 			'async',                // Takes significant time (60-120 seconds).
 			'long-running',         // Video generation is async.
-			'rate-limited',         // Subject to API rate limits (15 RPM, 100 RPH).
+			'rate-limited',         // Subject to API rate limits (10 RPM for preview, higher for paid tiers).
 			'may-timeout',          // May exceed typical HTTP timeouts.
 		);
 	}
