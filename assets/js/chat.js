@@ -7793,6 +7793,19 @@
 
         // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
+            // Ensure content is a string
+            const safeContent = content != null ? String(content) : '';
+            
+            if (DEBUG_MODE) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] updateStreamingMessage called:', {
+                        contentLength: safeContent.length,
+                        contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
+                        elementExists: !!streamingMessageElement
+                    });
+                }
+            }
+            
             if (!streamingMessageElement) {
                 createStreamingMessage();
             }
@@ -7801,7 +7814,7 @@
             if (streamingMessageElement) {
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                streamingMessageElement.textContent = content;
+                streamingMessageElement.textContent = safeContent;
                 
                 // Add streaming class for visual cursor indicator
                 if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
@@ -7811,13 +7824,13 @@
                 // Concern 3: Auto-scroll to keep content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
-                console.warn('[WP oOS] Streaming message element not found');
+                console.warn('[WP oOS] Streaming message element not found after creation attempt');
             }
 
             // Concern 2: Update status area (delegated to separate function)
             // This is intentionally OUTSIDE the streamingMessageElement check
             // because the status preview should work independently of the message bubble
-            updateStreamingStatus(content);
+            updateStreamingStatus(safeContent);
         }
 
         return fetch(state.config.messagesEndpoint, {
@@ -7987,6 +8000,15 @@
 
                     try {
                         const data = JSON.parse(eventData);
+                        
+                        if (DEBUG_MODE) {
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] SSE event:', {
+                                    eventType: eventType || '(none)',
+                                    hasData: !!data
+                                });
+                            }
+                        }
 
                         // Handle different event types
                         if (eventType === 'status') {
@@ -8076,7 +8098,7 @@
                                 }
                             }
                             
-                            // Display thinking text in status section if present
+                            // Display thinking text in bubble AND status section if present
                             if (thinkingChunk) {
                                 // Initialize or append to thinking buffer
                                 if (!state.thinkingText) {
@@ -8090,6 +8112,10 @@
                                     type: 'text-stream',
                                     showTime: false
                                 });
+                                
+                                // ALSO update the streaming bubble with thinking text
+                                // This ensures users can see the AI's reasoning process
+                                updateCallback(state.thinkingText);
                             }
                             
                             // Check for final response with complete data first
@@ -8102,6 +8128,16 @@
                                 fullContent += contentChunk;
                                 // Store in state for status system access
                                 state.streamingContent = fullContent;
+                                
+                                if (DEBUG_MODE) {
+                                    if (window.console && console.log) {
+                                        console.log('[WP oOS] Content chunk:', {
+                                            chunkLength: contentChunk.length,
+                                            totalLength: fullContent.length
+                                        });
+                                    }
+                                }
+                                
                                 updateCallback(fullContent);
                             }
                         }
