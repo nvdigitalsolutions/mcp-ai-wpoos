@@ -159,6 +159,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'user_id'      => $user_id,
 		);
 
+		// Include assistant_id from context for multi-widget isolation in cron status tracking.
+		if ( isset( $context['assistant_id'] ) ) {
+			$generation_args['assistant_id'] = absint( $context['assistant_id'] );
+		}
+
 		// Add duration if provided (let service apply default if not provided).
 		if ( isset( $arguments['duration'] ) ) {
 			$generation_args['duration'] = absint( $arguments['duration'] );
