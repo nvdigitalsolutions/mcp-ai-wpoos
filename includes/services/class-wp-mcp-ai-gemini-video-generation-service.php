@@ -367,7 +367,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$model = self::VEO_MODEL;
 		}
 
-		$is_veo_2 = ( self::VEO_MODEL === $model );
+		$is_veo_2 = ( 'veo-2.0-generate-001' === $model );
 
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
@@ -706,7 +706,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$model = self::VEO_MODEL;
 		}
 
-		$is_veo_2 = ( self::VEO_MODEL === $model );
+		$is_veo_2 = ( 'veo-2.0-generate-001' === $model );
 
 		// Extract video URL from response.
 		// Support both old and new API response structures for backward compatibility.
