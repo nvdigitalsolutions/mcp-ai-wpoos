@@ -7897,9 +7897,8 @@
                         status: response.status,
                         statusText: response.statusText,
                         ok: response.ok,
-                        contentType: response.headers.get('content-type') || 'not set',
                         headers: {
-                            'content-type': response.headers.get('content-type'),
+                            'content-type': response.headers.get('content-type') || 'not set',
                             'cache-control': response.headers.get('cache-control'),
                             'connection': response.headers.get('connection')
                         }
@@ -8030,7 +8029,7 @@
                     // Enhanced logging for fetch failures
                     if (window.console && console.error) {
                         console.error('[WP oOS] Streaming request failed:', {
-                            errorType: error ? error.constructor.name : 'Unknown',
+                            errorType: error && error.constructor ? error.constructor.name : 'Unknown',
                             errorMessage: error ? error.message : 'No error message',
                             errorStatus: error ? error.status : 'N/A',
                             errorStatusText: error ? error.statusText : 'N/A',
@@ -8301,8 +8300,8 @@
                 // Log stream reading errors
                 if (window.console && console.error) {
                     console.error('[WP oOS] Error reading SSE stream chunk:', {
-                        error: readError.message || readError,
-                        errorType: readError.constructor.name
+                        error: readError ? (readError.message || readError) : 'Unknown error',
+                        errorType: readError && readError.constructor ? readError.constructor.name : 'Unknown'
                     });
                 }
                 throw readError;
@@ -8313,8 +8312,8 @@
             // Log top-level stream errors
             if (window.console && console.error) {
                 console.error('[WP oOS] SSE stream processing error:', {
-                    error: streamError.message || streamError,
-                    errorType: streamError.constructor.name
+                    error: streamError ? (streamError.message || streamError) : 'Unknown error',
+                    errorType: streamError && streamError.constructor ? streamError.constructor.name : 'Unknown'
                 });
             }
             throw streamError;
