@@ -24,7 +24,7 @@
 - [💬 Frontend Shortcode](#frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama--lm-studio)
+- [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama-lm-studio)
 - [🧱 ChatKit Integration](#chatkit-integration)
 - [🌐 Crawl4AI Integration](#crawl4ai-integration)
 - [📡 Job Notification System](#job-notification-system)
@@ -35,7 +35,7 @@
 - [🎯 Agentic Loop Token Management](#agentic-loop-token-management)
 - [🔄 Chat Performance Optimizations](#chat-performance-optimizations)
 - [🌐 Mesh Compute Routing](#mesh-compute-routing)
-- [🔗 Federation & Discovery System](#federation--discovery-system)
+- [🔗 Federation & Discovery System](#federation-discovery-system)
 
 ### Remote MCP Setup
 - [🔒 MCP Server Authentication](#mcp-server-authentication)
@@ -49,14 +49,14 @@
 - [🛠 Assistant Editor Overview](#assistant-editor-overview)
 - [📊 Assistant Storage: CPT vs CCT](#assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
-- [👔 Professional & Team Layers](#professional--team-layers)
-- [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads--attachments)
+- [👔 Professional & Team Layers](#professional-team-layers)
+- [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads-attachments)
 
 ### Development
 - [🐳 Local Development with Docker](#local-development-with-docker)
 - [🧑‍💻 Development Tooling](#development-tooling)
-- [🧪 Testing & QA](#testing--qa)
-- [🧩 Hooks & Filters](#hooks--filters)
+- [🧪 Testing & QA](#testing-qa)
+- [🧩 Hooks & Filters](#hooks-filters)
 - [🧰 WP-CLI Commands](#wp-cli-commands)
 
 ### Reference
@@ -66,7 +66,7 @@
 - [🧷 Attachment MIME Controls](#attachment-mime-controls)
 - [🪵 Logging](#logging)
 - [🧾 JetEngine REST Endpoint Report Helper](#jetengine-rest-endpoint-report-helper)
-- [🔌 Optional Tools & Dependencies](#optional-tools--dependencies)
+- [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
 - [✅ Manual QA Scenarios](#manual-qa-scenarios)
 
 ---
