@@ -4,6 +4,8 @@
 
 The chat interface now displays a lightweight status indicator showing pending and completed cron jobs. This feature helps users track background jobs created via the AI assistant without leaving the chat.
 
+**New in v1.x**: The cron status endpoint now includes full result data for completed async tool executions, enabling seamless agentic workflows where the chat client can receive and process tool results automatically.
+
 ## User Experience
 
 ### Status Badge
@@ -42,6 +44,7 @@ This indicates 2 pending jobs and 5 completed jobs.
 - Endpoint: `GET /wp-json/mcp-ai/v1/cron-status`
 - Parameters:
   - `limit` (optional): Max jobs to return (1-50, default 10)
+  - `assistant_id` (optional): Filter jobs for specific assistant
 - Response:
   ```json
   {
@@ -55,15 +58,41 @@ This indicates 2 pending jobs and 5 completed jobs.
           "relative": "In 5 minutes"
         },
         "created_by": 1
+      },
+      {
+        "job_id": "async_xyz789",
+        "hook": "wp_mcp_ai_async_tool_execution",
+        "tool_slug": "generate_image",
+        "status": "completed",
+        "type": "async_tool",
+        "completed_at": {
+          "timestamp": 1699999000,
+          "relative": "5 minutes ago"
+        },
+        "has_result": true,
+        "result": {
+          "text": "Image generated successfully",
+          "data": {
+            "attachment_id": 123,
+            "url": "https://example.com/image.png"
+          }
+        },
+        "duration": 45.3,
+        "created_by": 1
       }
     ],
     "counts": {
-      "pending": 2,
-      "completed": 5,
-      "total": 7
+      "pending": 1,
+      "completed": 1,
+      "total": 2
     }
   }
   ```
+
+**Agentic Workflow Support**: For completed async tool executions (status: "completed"), the endpoint now includes the full `result` object. This enables the chat client to:
+- Automatically receive tool execution results when polling or via SSE
+- Continue multi-step workflows without user intervention
+- Display rich results (images, files, structured data) directly in the chat
 
 #### Frontend
 
