@@ -461,7 +461,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// The permissions check has already validated and set the user_id on the request.
-		// For CCT queries, this user_id maps to cct_author_id in the database.
+		// For CCT queries, this user_id parameter directly maps to the user_id field in the database.
 		// We must preserve user_id = 0 for guest users and not override with get_current_user_id().
 		// This allows admins to view other users' transcripts or guest transcripts.
 		// Note: user_id is already sanitized by REST API via absint() sanitize_callback.
@@ -785,7 +785,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// The permissions check has already validated and set the user_id on the request.
-		// For CCT queries, this user_id maps to cct_author_id in the database.
+		// For CCT queries, this user_id parameter directly maps to the user_id field in the database.
 		// We must preserve user_id = 0 for guest users and not override with get_current_user_id().
 		// This allows admins to view other users' transcripts or guest transcripts.
 		// Note: user_id is already sanitized by REST API via absint() sanitize_callback.

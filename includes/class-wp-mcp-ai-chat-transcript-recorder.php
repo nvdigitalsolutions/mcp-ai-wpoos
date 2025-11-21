@@ -215,7 +215,6 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		$record = array(
 			'session_key'      => $session_key,
 			'user_id'          => $user_id,
-			'cct_author_id'    => $user_id,
 			'assistant_id'     => $assistant_id,
 			'assistant_model'  => $model,
 			'request_payload'  => self::encode_json(
