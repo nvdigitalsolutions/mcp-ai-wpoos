@@ -258,6 +258,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
+		// Final validation: Ensure duration is always within valid range (4-8 seconds).
+		// This is a safety check to prevent API errors even if validation logic above has edge cases.
+		if ( ! is_int( $parameters['durationSeconds'] ) || $parameters['durationSeconds'] < self::MIN_DURATION || $parameters['durationSeconds'] > self::MAX_DURATION ) {
+			$parameters['durationSeconds'] = self::DEFAULT_DURATION;
+		}
+
 		return array(
 			'instances'  => array( $instance ),
 			'parameters' => $parameters,
