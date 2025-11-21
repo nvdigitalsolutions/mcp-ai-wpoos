@@ -212,7 +212,9 @@ To verify the changes work correctly:
 
 ```bash
 # 1. Run the new test suite
-vendor/bin/phpunit tests/test-tool-result-id-url-fields.php
+composer test tests/test-tool-result-id-url-fields.php
+# Or alternatively:
+./vendor/bin/phpunit tests/test-tool-result-id-url-fields.php
 
 # 2. Test async workflow via REST API
 curl -X POST http://your-site/wp-json/mcp-ai/v1/chat \
