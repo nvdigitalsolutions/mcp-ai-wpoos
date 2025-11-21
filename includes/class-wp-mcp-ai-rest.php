@@ -2868,31 +2868,64 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
-			// Extract thinking text from the response if present (e.g., Gemini 2.0 Flash Thinking mode).
+			// Extract thinking/reasoning text from the response if present.
+			// Supports multiple providers:
+			// - Gemini 2.0 Flash Thinking mode: message['thinking']
+			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning']
 			$thinking_text = '';
+			$thinking_provider_format = 'gemini'; // Default to Gemini format
+
+			// Check for Gemini thinking text
 			if ( ! empty( $response['choices'][0]['message']['thinking'] ) ) {
 				$thinking_text = $response['choices'][0]['message']['thinking'];
+				$thinking_provider_format = 'gemini';
+			}
+			// Check for OpenAI reasoning_content (future-ready)
+			elseif ( ! empty( $response['choices'][0]['message']['reasoning_content'] ) ) {
+				$thinking_text = $response['choices'][0]['message']['reasoning_content'];
+				$thinking_provider_format = 'openai';
+			}
+			// Check for OpenAI reasoning (alternative field)
+			elseif ( ! empty( $response['choices'][0]['message']['reasoning'] ) ) {
+				$thinking_text = $response['choices'][0]['message']['reasoning'];
+				$thinking_provider_format = 'openai';
 			}
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
 			if ( is_string( $thinking_text ) && '' !== $thinking_text ) {
-				// Format thinking chunks in Gemini format for multi-provider compatibility.
-				$thinking_formatter = function( $chunk ) {
-					return array(
-						'candidates' => array(
-							array(
-								'content' => array(
-									'parts' => array(
-										array(
-											'thought' => $chunk,
+				// Format thinking chunks based on provider for optimal client compatibility.
+				if ( 'openai' === $thinking_provider_format ) {
+					// Use OpenAI format for reasoning fields.
+					$thinking_formatter = function( $chunk ) {
+						return array(
+							'choices' => array(
+								array(
+									'delta' => array(
+										'reasoning_content' => $chunk,
+									),
+								),
+							),
+						);
+					};
+				} else {
+					// Use Gemini format for thinking field.
+					$thinking_formatter = function( $chunk ) {
+						return array(
+							'candidates' => array(
+								array(
+									'content' => array(
+										'parts' => array(
+											array(
+												'thought' => $chunk,
+											),
 										),
 									),
 								),
 							),
-						),
-					);
-				};
+						);
+					};
+				}
 
 				$this->stream_text_chunks( $thinking_text, $thinking_formatter, 'thinking', $assistant_id );
 			}
