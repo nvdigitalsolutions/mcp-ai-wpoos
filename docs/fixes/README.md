@@ -35,7 +35,7 @@ Each fix document should include:
 ## Historical Fixes
 
 For comprehensive historical fix documentation, see:
-- [docs/archive/fixes/](../archive/fixes/) - 80+ archived fix documents
+- [docs/archive/fixes/](../archive/fixes/) - 81 archived fix documents
 - [docs/archive/fixes/README.md](../archive/fixes/README.md) - Comprehensive index of all historical fixes
 
 ## Related Documentation

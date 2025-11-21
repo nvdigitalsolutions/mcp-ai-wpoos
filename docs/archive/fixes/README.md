@@ -1,7 +1,7 @@
 # Historical Fixes Archive
 
 **Last Updated:** November 21, 2025  
-**Total Documents:** 80+ fix and resolution documents
+**Total Documents:** 81 fix and resolution documents
 
 This directory contains comprehensive documentation of all bug fixes, issue resolutions, and patches applied to the WP oOS plugin throughout its development history.
 
@@ -14,6 +14,8 @@ All historical fix documentation is consolidated here to:
 - **Reduce confusion** - Clear separation between historical fixes and current docs
 - **Enable traceability** - Full history of problems and solutions
 - **Support debugging** - Reference past fixes when similar issues arise
+
+**Archival Timeline:** Fixes older than 30 days or well-established and verified should be moved here from `docs/fixes/`.
 
 ---
 

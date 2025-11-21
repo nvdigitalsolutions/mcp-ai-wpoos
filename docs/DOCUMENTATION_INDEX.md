@@ -11,7 +11,7 @@ This document provides a comprehensive index of all documentation available for 
 **📋 Documentation Reorganization:**
 
 **November 21, 2025 - Fix Documentation Consolidation:**
-- 80+ fix documents consolidated into [docs/archive/fixes/](archive/fixes/)
+- 81 fix documents consolidated into [docs/archive/fixes/](archive/fixes/)
 - All streaming, Gemini, SSE, transcript, and other fix documentation archived
 - No information lost - complete preservation of all fixes
 - New comprehensive index: [docs/archive/fixes/README.md](archive/fixes/README.md)
@@ -23,7 +23,7 @@ This document provides a comprehensive index of all documentation available for 
 - All documentation preserved in [docs/archive/](archive/) with logical organization:
   - [implementations/](archive/#implementations) - Feature implementation details
   - [phases/](archive/#phases) - Development phase documents
-  - [fixes/](archive/fixes/) - **80+ bug fixes and issue resolutions** (newly consolidated)
+  - [fixes/](archive/fixes/) - **81 bug fixes and issue resolutions** (newly consolidated)
   - [features/](archive/#features) - Feature specifications
   - [code-reviews/](archive/#code-reviews) - Historical code reviews
   - [testing/](archive/#testing) - Test infrastructure documentation
@@ -58,7 +58,7 @@ This document provides a comprehensive index of all documentation available for 
 6. [mesh-compute-pooling.md](mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ### Historical Documentation & Bug Fixes
-- **[Historical Fixes Archive](archive/fixes/README.md)** - **80+ bug fixes and issue resolutions** organized by category
+- **[Historical Fixes Archive](archive/fixes/README.md)** - **81 bug fixes and issue resolutions** organized by category
   - Streaming, Gemini, SSE, Transcripts, Presets, LM Studio, Performance, and more
   - Complete fix history with problem statements, root causes, and solutions
   - Visual guides and debugging documentation
@@ -193,7 +193,7 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
-| **[archive/fixes/README.md](archive/fixes/README.md)** | **80+ historical bug fixes** - Comprehensive fix archive organized by category (streaming, Gemini, SSE, transcripts, etc.) | Developers/Admins |
+| **[archive/fixes/README.md](archive/fixes/README.md)** | **81 historical bug fixes** - Comprehensive fix archive organized by category (streaming, Gemini, SSE, transcripts, etc.) | Developers/Admins |
 | [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
