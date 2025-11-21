@@ -100,7 +100,7 @@ class Test_Image_Manipulation_Tools extends WP_UnitTestCase {
 		$schema       = $convert_tool->get_parameters_schema();
 		$this->assertArrayHasKey( 'format', $schema['properties'] );
 		$this->assertArrayHasKey( 'quality', $schema['properties'] );
-		$this->assertArrayContains( 'format', $schema['required'] );
+		$this->assertContains( 'format', $schema['required'] );
 	}
 
 	/**
