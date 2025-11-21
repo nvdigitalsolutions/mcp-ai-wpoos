@@ -21,6 +21,16 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_EMBED_CONTENT   = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
 
 		/**
+		 * Key used to wrap numeric arrays for Gemini API compatibility.
+		 *
+		 * Gemini requires functionCall args to be JSON objects, not arrays.
+		 * Numeric arrays are wrapped in {"items": [...]} to force object serialization.
+		 *
+		 * @var string
+		 */
+		const NUMERIC_ARRAY_WRAPPER_KEY = 'items';
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -1695,23 +1705,27 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		/**
 		 * Normalise tool arguments into an array suitable for Gemini.
 		 *
+		 * Gemini API requires the 'args' field of a functionCall to be a JSON object,
+		 * not a JSON array. This method ensures that arguments are properly structured
+		 * by recursively converting numeric arrays to objects.
+		 *
 		 * @param mixed $arguments Raw arguments payload.
 		 * @return array
 		 */
 		protected function normalise_tool_arguments( $arguments ) {
 			if ( is_array( $arguments ) ) {
-				return $arguments;
+				return $this->ensure_args_object_structure( $arguments );
 			}
 
 			if ( is_object( $arguments ) ) {
-				return (array) $arguments;
+				return $this->ensure_args_object_structure( (array) $arguments );
 			}
 
 			if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
 				$decoded = json_decode( (string) $arguments, true );
 
 				if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-					return $decoded;
+					return $this->ensure_args_object_structure( $decoded );
 				}
 
 				$text = sanitize_textarea_field( (string) $arguments );
@@ -1722,6 +1736,65 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array();
+		}
+
+		/**
+		 * Ensure arguments are structured as objects for Gemini API compatibility.
+		 *
+		 * Recursively processes the arguments array to ensure that all nested values
+		 * are compatible with Gemini's requirement that the 'args' field be a JSON object.
+		 * Numeric arrays are converted to objects to prevent JSON array serialization.
+		 *
+		 * This fix applies universally to ALL tools with array parameters, including:
+		 * - create_cron_job (args parameter)
+		 * - create_google_calendar_event (attendees parameter)
+		 * - create_woo_product (categories, images parameters)
+		 * - create_chart (labels, data parameters)
+		 * - And any other tool with numeric array parameters
+		 *
+		 * @param array $args Arguments array to process.
+		 * @return array Processed arguments as an associative array.
+		 */
+		protected function ensure_args_object_structure( array $args ) {
+			// If the array is numeric (sequential keys starting at 0), wrap it.
+			// This includes empty arrays to prevent JSON array serialization.
+			if ( wp_is_numeric_array( $args ) ) {
+				return $this->wrap_numeric_array( $args );
+			}
+
+			// For associative arrays, recursively process nested values.
+			$processed = array();
+			foreach ( $args as $key => $value ) {
+				if ( is_array( $value ) ) {
+					// Recursively process nested arrays.
+					if ( wp_is_numeric_array( $value ) ) {
+						// Wrap numeric arrays in an object structure.
+						$processed[ $key ] = $this->wrap_numeric_array( $value );
+					} else {
+						// Recursively process associative arrays.
+						$processed[ $key ] = $this->ensure_args_object_structure( $value );
+					}
+				} else {
+					// Keep scalar values as-is.
+					$processed[ $key ] = $value;
+				}
+			}
+
+			return $processed;
+		}
+
+		/**
+		 * Wrap a numeric array for Gemini API compatibility.
+		 *
+		 * Gemini API requires the 'args' field in functionCall to be a JSON object.
+		 * This method wraps numeric arrays in an object structure to prevent them
+		 * from being serialized as JSON arrays.
+		 *
+		 * @param array $array Numeric array to wrap.
+		 * @return array Array wrapped in object structure.
+		 */
+		private function wrap_numeric_array( array $array ) {
+			return array( self::NUMERIC_ARRAY_WRAPPER_KEY => $array );
 		}
 
 		/**
