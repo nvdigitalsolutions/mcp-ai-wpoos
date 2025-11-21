@@ -311,8 +311,10 @@ class WP_MCP_AI_JetEngine_CCT {
 				10003,
 				'assistant_id',
 				__( 'Assistant ID', 'wp-mcp-ai' ),
-				'text',
+				'number',
 				array(
+					'min'         => 0,
+					'step'        => 1,
 					'description' => __( 'Internal assistant identifier handling the request.', 'wp-mcp-ai' ),
 				)
 			),
