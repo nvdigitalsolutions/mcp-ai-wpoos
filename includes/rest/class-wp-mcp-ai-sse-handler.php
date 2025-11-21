@@ -55,9 +55,18 @@ class WP_MCP_AI_SSE_Handler {
 			}
 		}
 
-		// Disable output buffering.
+		// Disable output buffering completely.
 		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
+		}
+
+		// Send retry directive to help clients reconnect if connection drops.
+		// Retry after 3000ms (3 seconds) on disconnect.
+		echo "retry: 3000\n\n";
+
+		// Force initial flush to establish connection.
+		if ( function_exists( 'flush' ) ) {
+			flush();
 		}
 	}
 
@@ -65,6 +74,7 @@ class WP_MCP_AI_SSE_Handler {
 	 * Send an SSE event.
 	 *
 	 * Emits a named event with JSON-encoded data following SSE specification.
+	 * Ensures data is flushed immediately for real-time streaming.
 	 *
 	 * @since 1.0.0
 	 *
@@ -75,8 +85,14 @@ class WP_MCP_AI_SSE_Handler {
 		echo 'event: ' . esc_html( $event ) . "\n";
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
 
+		// Force flush to send data immediately.
 		if ( function_exists( 'flush' ) ) {
 			flush();
+		}
+
+		// Also flush output buffer if one exists.
+		if ( ob_get_level() > 0 ) {
+			ob_flush();
 		}
 	}
 

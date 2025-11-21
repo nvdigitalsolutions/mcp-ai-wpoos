@@ -2882,6 +2882,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$chunk_size = self::STREAMING_CHUNK_SIZE;
 				$text_len   = $this->mb_strlen( $text_content );
 
+				// Log chunking start for debugging.
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'SSE Streaming: Starting to send text chunks',
+					array(
+						'text_length'  => $text_len,
+						'chunk_size'   => $chunk_size,
+						'num_chunks'   => ceil( $text_len / $chunk_size ),
+						'assistant_id' => $assistant_id,
+					)
+				);
+
 				// Check once if usleep is available before the loop.
 				$can_sleep = function_exists( 'usleep' );
 
@@ -2907,6 +2919,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						usleep( self::STREAMING_CHUNK_DELAY_US );
 					}
 				}
+			} else {
+				// Log when no chunks are sent (helps diagnose streaming issues).
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'SSE Streaming: No text chunks to send',
+					array(
+						'has_text_content' => ! empty( $text_content ),
+						'is_string'        => is_string( $text_content ),
+						'response_keys'    => array_keys( $response ),
+						'assistant_id'     => $assistant_id,
+					)
+				);
 			}
 
 			// Stream final response with complete data.
