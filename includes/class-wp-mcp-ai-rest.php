@@ -39,6 +39,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
 		const STREAMING_CHUNK_SIZE        = 50;    // Characters per chunk for simulated streaming.
 		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
+		const JOB_POLLING_INTERVAL        = 3;     // Seconds between job status polls for SSE streaming.
+		const JOB_POLLING_TIMEOUT         = 180;   // Maximum seconds to poll before timeout (3 minutes).
+		const JOB_POLLING_SAFETY_BUFFER   = 10;    // Extra iterations beyond calculated max to prevent edge cases.
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -966,14 +969,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return WP_REST_Response Response object.
 		 */
 		protected function stream_job_status_with_polling( $service, $job_id, $user_id ) {
+			// Enable connection abort detection.
+			// This allows connection_aborted() to work reliably across different PHP environments.
+			if ( function_exists( 'ignore_user_abort' ) ) {
+				ignore_user_abort( false );
+			}
+
 			// Send SSE headers and establish connection.
 			$this->sse_handler->send_sse_headers();
 
-			// Polling configuration.
-			$poll_interval  = 3; // Poll every 3 seconds (client-side expectation).
-			$max_duration   = 180; // 3 minute timeout.
+			// Polling configuration using class constants.
+			$poll_interval  = self::JOB_POLLING_INTERVAL;
+			$max_duration   = self::JOB_POLLING_TIMEOUT;
 			$start_time     = time();
-			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + 10; // Safety limit.
+			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + self::JOB_POLLING_SAFETY_BUFFER;
 			$iteration      = 0;
 
 			while ( ( time() - $start_time ) < $max_duration && $iteration < $max_iterations ) {
@@ -1027,6 +1036,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Job still pending/polling - wait before next poll.
+				// NOTE: Using sleep() in a web request can cause worker exhaustion under high load.
+				// Consider implementing async polling for high-traffic environments.
 				sleep( $poll_interval );
 			}
 
