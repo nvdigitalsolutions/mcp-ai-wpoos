@@ -158,6 +158,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$resolution = '720p';
 		}
 
+		// 1080p requires 8 seconds duration (2025 API requirement).
+		if ( '1080p' === $resolution && 8 !== $duration ) {
+			$duration = 8;
+		}
+
 		// Build instance data.
 		$instance = array(
 			'prompt' => $prompt,

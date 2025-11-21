@@ -49,7 +49,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 5,
@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default) or "1080p". Note: 1080p only available for 16:9 aspect ratio.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default) or "1080p". Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
