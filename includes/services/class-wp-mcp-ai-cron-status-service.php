@@ -58,13 +58,15 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Only includes jobs created by the current user or accessible to admins.
 	 * Now includes async tool execution jobs.
 	 * Supports filtering by assistant_id for multi-widget isolation.
+	 * Supports filtering by context to hide internal jobs from chat clients.
 	 *
 	 * @param int      $user_id User ID to filter jobs by (0 for all if admin).
 	 * @param int      $limit   Maximum number of jobs to return (default 10).
 	 * @param int|null $assistant_id Optional assistant ID to filter jobs for specific chat widget.
+	 * @param string   $context Context for filtering: 'chat' excludes internal async jobs, 'admin' shows all.
 	 * @return array Array of job status objects.
 	 */
-	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null ) {
+	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null, $context = 'admin' ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -79,11 +81,18 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Get all jobs from three sources.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		// Get async tool jobs with optional assistant filter.
-		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
+		// When context is 'chat', filter out internal infrastructure jobs.
+		// Internal jobs are those with specific system hooks that are not user-initiated.
+		// User-created jobs (via create_cron_job tool, etc.) should always be visible.
+		if ( 'chat' === $context ) {
+			$jobs = $this->filter_internal_jobs( $jobs );
+		}
 
-		// Get video generation jobs.
-		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
+		// Get async tool jobs and video jobs with optional assistant filter.
+		// When context is 'chat', exclude internal async tool execution jobs.
+		$include_async_jobs = 'admin' === $context;
+		$async_jobs         = $include_async_jobs ? $this->get_async_tool_jobs( $user_id, $assistant_id ) : array();
+		$video_jobs         = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
 		// Log job counts for debugging.
 		WP_MCP_AI_Logger::log_event(
@@ -93,6 +102,7 @@ class WP_MCP_AI_Cron_Status_Service {
 				'user_id'          => $user_id,
 				'is_admin'         => $is_admin,
 				'assistant_id'     => $assistant_id,
+				'context'          => $context,
 				'regular_jobs'     => count( $jobs ),
 				'async_tool_jobs'  => count( $async_jobs ),
 				'video_jobs'       => count( $video_jobs ),
@@ -486,12 +496,14 @@ class WP_MCP_AI_Cron_Status_Service {
 	 *
 	 * Now includes async tool jobs in counts.
 	 * Supports filtering by assistant_id for multi-widget isolation.
+	 * Supports filtering by context to hide internal jobs from chat clients.
 	 *
 	 * @param int      $user_id User ID to filter by.
 	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @param string   $context Context for filtering: 'chat' excludes internal async jobs, 'admin' shows all.
 	 * @return array Array with counts: pending, running, completed, failed, total.
 	 */
-	public function get_status_counts( $user_id = 0, $assistant_id = null ) {
+	public function get_status_counts( $user_id = 0, $assistant_id = null, $context = 'admin' ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -502,10 +514,17 @@ class WP_MCP_AI_Cron_Status_Service {
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
+		// When context is 'chat', filter out internal infrastructure jobs.
+		if ( 'chat' === $context ) {
+			$jobs = $this->filter_internal_jobs( $jobs );
+		}
+
 		// Include async tool jobs and video jobs with optional assistant filter.
-		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
-		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
-		$all_jobs   = array_merge( $jobs, $async_jobs, $video_jobs );
+		// When context is 'chat', exclude internal async tool execution jobs.
+		$include_async_jobs = 'admin' === $context;
+		$async_jobs         = $include_async_jobs ? $this->get_async_tool_jobs( $user_id, $assistant_id ) : array();
+		$video_jobs         = $this->get_video_generation_jobs( $user_id, $assistant_id );
+		$all_jobs           = array_merge( $jobs, $async_jobs, $video_jobs );
 
 		$counts = array(
 			'pending'   => 0,
@@ -549,6 +568,44 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		return $counts;
+	}
+
+	/**
+	 * Filter out internal infrastructure jobs from the jobs array
+	 *
+	 * Internal jobs are those created by the system for async tool execution
+	 * and video polling. User-created jobs (via create_cron_job tool, etc.)
+	 * should always be visible to the user.
+	 *
+	 * @param array $jobs Array of jobs to filter.
+	 * @return array Filtered array with internal jobs removed.
+	 */
+	protected function filter_internal_jobs( $jobs ) {
+		if ( empty( $jobs ) ) {
+			return $jobs;
+		}
+
+		// List of internal system hooks that should be hidden from chat clients.
+		$internal_hooks = array(
+			'wp_mcp_ai_async_tool_execution', // Async tool executor.
+			'wp_mcp_ai_poll_veo_video',       // Video generation polling.
+			'wp_mcp_ai_cleanup_async_results', // Cleanup job.
+		);
+
+		$filtered_jobs = array();
+
+		foreach ( $jobs as $job_id => $job ) {
+			$hook = isset( $job['hook'] ) ? $job['hook'] : '';
+
+			// Skip internal infrastructure jobs.
+			if ( in_array( $hook, $internal_hooks, true ) ) {
+				continue;
+			}
+
+			$filtered_jobs[ $job_id ] = $job;
+		}
+
+		return $filtered_jobs;
 	}
 
 	/**
