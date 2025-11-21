@@ -1157,11 +1157,11 @@
         var(--wp-mcp-ai-color-submit-hover-gradient-end, #6a4bff)
     );
     box-shadow: 0 16px 28px var(--wp-mcp-ai-color-submit-hover-shadow, rgba(50, 76, 248, 0.4));
-    transform: translateY(-1px);
     color: var(
         --wp-mcp-ai-color-submit-hover-text,
         var(--wp-mcp-ai-color-submit-text, #fff)
     );
+    transform: translateY(-1px);
 }
 
 .wp-mcp-ai-chat__submit:active {
@@ -1792,7 +1792,8 @@
 
     .wp-mcp-ai-chat__input {
         min-height: 100px;
-        font-size: max(16px, 1rem); /* Prevents zoom on iOS while respecting user font preferences */
+        /* Prevents iOS zoom (16px minimum) while respecting user font size preferences (max with 1rem) */
+        font-size: max(16px, 1rem);
     }
 
     .wp-mcp-ai-chat__tool-shortcuts {
