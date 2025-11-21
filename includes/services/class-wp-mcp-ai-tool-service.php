@@ -34,12 +34,20 @@ class WP_MCP_AI_Tool_Service {
 	private $registry;
 
 	/**
+	 * Tool Execution Orchestrator instance
+	 *
+	 * @var WP_MCP_AI_Tool_Execution_Orchestrator|null
+	 */
+	private $orchestrator;
+
+	/**
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry.
 	 */
 	public function __construct( WP_MCP_AI_Tool_Registry $registry ) {
-		$this->registry = $registry;
+		$this->registry     = $registry;
+		$this->orchestrator = null; // Lazy loaded.
 	}
 
 	/**
@@ -78,9 +86,10 @@ class WP_MCP_AI_Tool_Service {
 			);
 		}
 
-		// Execute tool.
+		// Execute tool via orchestrator (handles sync/async routing).
 		try {
-			$result = $this->registry->execute_tool( $tool_name, $arguments, $context );
+			$orchestrator = $this->get_orchestrator();
+			$result       = $orchestrator->execute_tool( $tool_name, $arguments, $context );
 
 			// Log successful execution.
 			WP_MCP_AI_Logger::log_event(
@@ -270,5 +279,22 @@ class WP_MCP_AI_Tool_Service {
 			'success_count'   => 0,
 			'error_count'     => 0,
 		);
+	}
+
+	/**
+	 * Get tool execution orchestrator instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Execution_Orchestrator
+	 */
+	private function get_orchestrator() {
+		if ( null === $this->orchestrator ) {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
+			}
+			// Pass registry and null for async_executor (will be lazy-loaded).
+			$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->registry, null );
+		}
+
+		return $this->orchestrator;
 	}
 }
