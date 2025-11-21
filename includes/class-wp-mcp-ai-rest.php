@@ -6267,7 +6267,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			$value = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $value );
+			// Trim whitespace first (consistent with Chat_Transcript_Recorder).
+			$value = trim( (string) $value );
+
+			if ( '' === $value ) {
+				return '';
+			}
+
+			// Remove any characters that are not alphanumeric, underscore, or hyphen.
+			$value = preg_replace( '/[^a-zA-Z0-9_-]/', '', $value );
 
 			if ( ! is_string( $value ) || '' === $value ) {
 				return '';
