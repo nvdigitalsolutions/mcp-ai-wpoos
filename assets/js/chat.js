@@ -100,6 +100,178 @@
     const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
 
     /**
+     * Streaming diagnostics logger utility (Separation of Concerns).
+     * Centralizes all streaming-related logging to keep business logic clean.
+     * Follows null-safe patterns to prevent secondary errors during error reporting.
+     */
+    const streamingLogger = (function() {
+        const LOG_PREFIX = '[WP oOS]';
+        
+        /**
+         * Safely get error type from an error object.
+         * @param {*} error - Error object or value
+         * @return {string} Error type name or 'Unknown'
+         */
+        function getErrorType(error) {
+            return error && error.constructor && error.constructor.name ? error.constructor.name : 'Unknown';
+        }
+        
+        /**
+         * Safely get error message from an error object.
+         * @param {*} error - Error object or value
+         * @return {string} Error message or 'Unknown'
+         */
+        function getErrorMessage(error) {
+            return error ? (error.message || 'Unknown') : 'Unknown';
+        }
+        
+        return {
+            /**
+             * Log streaming request initiation.
+             * @param {Object} context - Request context
+             */
+            logRequestStart: function(context) {
+                if (window.console && console.log) {
+                    console.log(LOG_PREFIX + ' Starting streaming request:', {
+                        endpoint: context.endpoint,
+                        assistantId: context.assistantId,
+                        messageCount: context.messageCount,
+                        streamEnabled: context.streamEnabled,
+                        hasSessionKey: context.hasSessionKey
+                    });
+                }
+            },
+            
+            /**
+             * Log HTTP response reception.
+             * @param {Response} response - Fetch Response object
+             */
+            logResponseReceived: function(response) {
+                if (window.console && console.log) {
+                    console.log(LOG_PREFIX + ' Streaming response received:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok,
+                        headers: {
+                            'content-type': response.headers.get('content-type') || 'not set',
+                            'cache-control': response.headers.get('cache-control'),
+                            'connection': response.headers.get('connection')
+                        }
+                    });
+                }
+            },
+            
+            /**
+             * Log HTTP error response.
+             * @param {Response} response - Fetch Response object
+             */
+            logHttpError: function(response) {
+                if (window.console && console.error) {
+                    console.error(LOG_PREFIX + ' HTTP error response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: response.url
+                    });
+                }
+            },
+            
+            /**
+             * Log fetch failure with detailed context.
+             * @param {*} error - Error object
+             * @param {Object} context - Request context
+             */
+            logFetchFailure: function(error, context) {
+                if (window.console && console.error) {
+                    console.error(LOG_PREFIX + ' Streaming request failed:', {
+                        errorType: getErrorType(error),
+                        errorMessage: getErrorMessage(error),
+                        errorStatus: error && error.status ? error.status : 'N/A',
+                        errorStatusText: error && error.statusText ? error.statusText : 'N/A',
+                        endpoint: context.endpoint,
+                        assistantId: context.assistantId,
+                        hasResponse: error && typeof error.json === 'function',
+                        streamCompleted: context.streamCompleted
+                    });
+                    
+                    // Extract response text if available (async, non-blocking)
+                    // This runs asynchronously and doesn't block the error flow
+                    if (error && typeof error.text === 'function') {
+                        error.text().then(function(responseText) {
+                            console.error(LOG_PREFIX + ' Server response text:', responseText);
+                        }).catch(function(extractError) {
+                            // Silently fail - response text extraction is best-effort
+                            console.error(LOG_PREFIX + ' Could not extract response text:', getErrorMessage(extractError));
+                        });
+                    }
+                }
+            },
+            
+            /**
+             * Log SSE stream processing start.
+             */
+            logStreamStart: function() {
+                if (window.console && console.log) {
+                    console.log(LOG_PREFIX + ' Starting SSE stream processing');
+                }
+            },
+            
+            /**
+             * Log SSE stream completion.
+             * @param {Object} result - Stream completion result
+             */
+            logStreamComplete: function(result) {
+                if (window.console && console.log) {
+                    console.log(LOG_PREFIX + ' SSE stream completed:', {
+                        totalContentLength: result.contentLength,
+                        contentSample: result.contentSample
+                    });
+                }
+            },
+            
+            /**
+             * Log SSE parsing error.
+             * @param {*} parseError - Parse error object
+             * @param {Object} context - Parsing context
+             */
+            logParseError: function(parseError, context) {
+                if (window.console && console.warn) {
+                    console.warn(LOG_PREFIX + ' Failed to parse SSE event data:', {
+                        eventType: context.eventType || '(none)',
+                        eventData: context.eventData,
+                        error: parseError ? (parseError.message || 'No error message') : 'Unknown error'
+                    });
+                }
+            },
+            
+            /**
+             * Log stream reading error.
+             * @param {*} error - Read error object
+             */
+            logStreamReadError: function(error) {
+                if (window.console && console.error) {
+                    console.error(LOG_PREFIX + ' Error reading SSE stream chunk:', {
+                        error: getErrorMessage(error),
+                        errorType: getErrorType(error)
+                    });
+                }
+            },
+            
+            /**
+             * Log top-level stream processing error.
+             * @param {*} error - Stream error object
+             */
+            logStreamError: function(error) {
+                if (window.console && console.error) {
+                    console.error(LOG_PREFIX + ' SSE stream processing error:', {
+                        error: getErrorMessage(error),
+                        errorType: getErrorType(error)
+                    });
+                }
+            }
+        };
+    })();
+
+    /**
      * Scroll to bottom batching utility to prevent forced reflows.
      * Uses requestAnimationFrame to batch multiple scroll requests.
      */
@@ -7775,6 +7947,15 @@
         let streamingMessageElement = null;
         let streamCompleted = false;
 
+        // Diagnostic logging (Separation of Concerns - delegated to logger utility)
+        streamingLogger.logRequestStart({
+            endpoint: state.config.messagesEndpoint,
+            assistantId: payload.assistant_id,
+            messageCount: payload.messages ? payload.messages.length : 0,
+            streamEnabled: payload.stream,
+            hasSessionKey: !!payload.session_key
+        });
+
         // Create a placeholder message element for streaming content
         function createStreamingMessage() {
             if (!streamingMessageElement) {
@@ -7880,7 +8061,12 @@
             body: JSON.stringify(payload),
         })
             .then(function (response) {
+                // Diagnostic logging (Separation of Concerns)
+                streamingLogger.logResponseReceived(response);
+                
                 if (!response.ok) {
+                    // Diagnostic logging (Separation of Concerns)
+                    streamingLogger.logHttpError(response);
                     throw response;
                 }
 
@@ -7993,6 +8179,13 @@
             })
             .catch(function (error) {
                 if (!streamCompleted) {
+                    // Diagnostic logging (Separation of Concerns)
+                    streamingLogger.logFetchFailure(error, {
+                        endpoint: state.config.messagesEndpoint,
+                        assistantId: payload.assistant_id,
+                        streamCompleted: streamCompleted
+                    });
+                    
                     handleError(state, error);
                     restoreSubmissionState(state, submissionContext);
                     
@@ -8010,6 +8203,9 @@
     }
 
     function processSSEStream(state, response, updateCallback) {
+        // Diagnostic logging (Separation of Concerns)
+        streamingLogger.logStreamStart();
+        
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -8021,6 +8217,11 @@
         function readChunk() {
             return reader.read().then(function (result) {
                 if (result.done) {
+                    // Diagnostic logging (Separation of Concerns)
+                    streamingLogger.logStreamComplete({
+                        contentLength: fullContent.length,
+                        contentSample: fullContent.substring(0, 100)
+                    });
                     return { content: fullContent };
                 }
 
@@ -8216,16 +8417,28 @@
                             }
                         }
                     } catch (parseError) {
-                        // Ignore malformed JSON chunks
+                        // Diagnostic logging (Separation of Concerns)
+                        streamingLogger.logParseError(parseError, {
+                            eventType: eventType,
+                            eventData: eventData.substring(0, 200)
+                        });
                     }
                 }
 
                 // Continue reading
                 return readChunk();
+            }).catch(function(readError) {
+                // Diagnostic logging (Separation of Concerns)
+                streamingLogger.logStreamReadError(readError);
+                throw readError;
             });
         }
 
-        return readChunk();
+        return readChunk().catch(function(streamError) {
+            // Diagnostic logging (Separation of Concerns)
+            streamingLogger.logStreamError(streamError);
+            throw streamError;
+        });
     }
 
     function handleStatusEvent(state, data) {
