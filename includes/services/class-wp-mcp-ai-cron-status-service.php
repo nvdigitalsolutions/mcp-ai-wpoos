@@ -76,7 +76,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Prune stale jobs first.
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		// Get all jobs.
+		// Get all jobs from three sources.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
 		// Get async tool jobs with optional assistant filter.
@@ -84,6 +84,20 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		// Get video generation jobs.
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
+
+		// Log job counts for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'cron_status_summary_requested',
+			'Cron status summary retrieved',
+			array(
+				'user_id'          => $user_id,
+				'is_admin'         => $is_admin,
+				'assistant_id'     => $assistant_id,
+				'regular_jobs'     => count( $jobs ),
+				'async_tool_jobs'  => count( $async_jobs ),
+				'video_jobs'       => count( $video_jobs ),
+			)
+		);
 
 		// Merge async tool jobs, video jobs, and regular cron jobs.
 		$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );

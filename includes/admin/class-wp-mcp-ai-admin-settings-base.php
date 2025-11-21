@@ -263,6 +263,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_logging'                       => false,
 				'default_model'                        => 'gpt-4o-mini',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
+				'default_gemini_video_model'           => 'veo-2.0',
 				'default_provider'                     => 'openai',
 				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
 				'web_search_provider'                  => 'duckduckgo',
