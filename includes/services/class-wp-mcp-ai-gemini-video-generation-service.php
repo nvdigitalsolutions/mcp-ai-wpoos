@@ -92,7 +92,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @var int
 	 */
-	const VEO_2_MIN_DURATION = 5;
+	const VEO_2_MIN_DURATION = 4;
 
 	/**
 	 * Maximum polling attempts
@@ -147,7 +147,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     Video generation arguments.
 	 *
 	 *     @type string $prompt           Video description/prompt (required).
-	 *     @type int    $duration         Duration in seconds (4-8, default 5).
+	 *     @type int    $duration         Duration in seconds (4-8, default 4).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type string $negative_prompt  What to avoid in generation.
@@ -350,7 +350,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Adjusts constraints based on the model being used (Veo 3.1 vs Veo 2.0).
 	 * Duration validation is performed in multiple stages:
 	 * 1. Initial validation: Convert to integer and check range based on model
-	 * 2. Model-specific adjustments: Veo 2 min 5s, 1080p requires 8s for Veo 3
+	 * 2. Model-specific adjustments: Veo 2 min 4s (same as Veo 3), 1080p requires 8s for Veo 3
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
 	 * @param array  $args  Generation arguments.

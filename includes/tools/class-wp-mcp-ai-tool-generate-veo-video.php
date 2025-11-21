@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 3.1 supports up to 1080p resolution and 4-8 second videos; Veo 2.0 supports up to 720p and 5-8 second videos. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Both Veo 3.1 and Veo 2.0 support 4-8 second videos; Veo 3.1 supports up to 1080p resolution while Veo 2.0 supports up to 720p. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8 for Veo 3.1, 5-8 for Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8 for both Veo 3.1 and Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 4,
