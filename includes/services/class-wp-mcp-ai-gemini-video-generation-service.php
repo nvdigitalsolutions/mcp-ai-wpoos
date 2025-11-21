@@ -178,16 +178,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Pass args for potential async fallback on timeout.
 		$result = $this->poll_for_completion( $operation, $args );
 
+		// Check for error response.
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 		
-		// Check if result is an async fallback response.
+		// Check if result is an async fallback response (from timeout detection).
 		if ( isset( $result['async'] ) && $result['async'] ) {
 			return $result;
 		}
 
-		// Download and return video data.
+		// Download and return video data for synchronous completion.
 		return $this->process_completed_video( $result, $args );
 	}
 
@@ -396,7 +397,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$attempts = 0;
 		
 		// Initialize timeout detector for async fallback.
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+		// Note: Service is already loaded in services-init.php, but we require here
+		// to ensure it's available even if called directly without full initialization.
+		if ( ! class_exists( 'WP_MCP_AI_Timeout_Detection_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+		}
 		$timeout_detector = new WP_MCP_AI_Timeout_Detection_Service( 10 );
 
 		while ( $attempts < self::MAX_POLLING_ATTEMPTS ) {

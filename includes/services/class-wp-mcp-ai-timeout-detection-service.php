@@ -71,7 +71,7 @@ class WP_MCP_AI_Timeout_Detection_Service {
 	public function __construct( $safety_buffer = null ) {
 		$this->start_time = microtime( true );
 
-		// Get PHP max execution time (0 means unlimited, treat as 30 seconds default).
+		// Get PHP max execution time (0 means unlimited).
 		$this->max_execution_time = ini_get( 'max_execution_time' );
 		$this->max_execution_time = $this->max_execution_time ? (int) $this->max_execution_time : 30;
 

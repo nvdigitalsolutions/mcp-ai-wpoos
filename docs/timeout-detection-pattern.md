@@ -274,11 +274,11 @@ When orchestrator routes to async:
 ## Tools That Should Implement This Pattern
 
 Current tools with `may-timeout` or `long-running` flags:
-- ✅ `generate_veo_video` - Implemented
-- 🔄 `generate_video_caption` - Should implement
-- 🔄 `analyze_video` - Should implement
-- 🔄 `extract_video_frames` - Should implement
-- 🔄 Other video/image generation tools
+- [DONE] `generate_veo_video` - Implemented
+- [TODO] `generate_video_caption` - Should implement
+- [TODO] `analyze_video` - Should implement
+- [TODO] `extract_video_frames` - Should implement
+- [TODO] Other video/image generation tools
 
 ## Related Documentation
 
