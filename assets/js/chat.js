@@ -8098,6 +8098,24 @@
             .then(function (streamResult) {
                 streamCompleted = true;
 
+                // Display finish_reason in status section if present (for OpenAI models)
+                if (streamResult && streamResult.finishReason) {
+                    const reasonMessage = formatFinishReason(streamResult.finishReason);
+                    if (reasonMessage) {
+                        setStatus(state.container, {
+                            message: reasonMessage,
+                            type: 'default',
+                            showTime: false
+                        });
+                        
+                        // Keep the reason visible for a moment before clearing
+                        // This gives users time to see why the response ended
+                        setTimeout(function() {
+                            clearStatus(state.container);
+                        }, 3000);
+                    }
+                }
+
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
                     // Remove temporary streaming message
@@ -8110,7 +8128,10 @@
                     return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
                         finalize();
-                        clearStatus(state.container);
+                        // Don't clear status here if finish_reason was shown (will be cleared by timeout)
+                        if (!streamResult.finishReason || !formatFinishReason(streamResult.finishReason)) {
+                            clearStatus(state.container);
+                        }
                         return streamResult;
                     });
                 }
@@ -8174,7 +8195,10 @@
 
                 saveConversationToStorage(state);
                 finalize();
-                clearStatus(state.container);
+                // Don't clear status here if finish_reason was shown (will be cleared by timeout)
+                if (!streamResult.finishReason || !formatFinishReason(streamResult.finishReason)) {
+                    clearStatus(state.container);
+                }
                 return streamResult;
             })
             .catch(function (error) {
@@ -8399,6 +8423,12 @@
                             // Check for final response with complete data first
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
+                                // Extract finish_reason from the response for OpenAI models
+                                let finishReason = null;
+                                if (data.data.choices && data.data.choices[0] && data.data.choices[0].finish_reason) {
+                                    finishReason = data.data.choices[0].finish_reason;
+                                }
+                                
                                 // Extract text from final response if no chunks were received
                                 // This handles cases where streaming chunks weren't sent
                                 if (!fullContent) {
@@ -8444,7 +8474,7 @@
                                     }
                                 }
                                 
-                                return { content: fullContent, finalData: data };
+                                return { content: fullContent, finalData: data, finishReason: finishReason };
                             }
                             // If we found streaming content, add it to fullContent and update UI
                             else if (contentChunk) {
@@ -10362,6 +10392,40 @@
         } catch (error) {
             return '[' + (type || 'content') + ']';
         }
+    }
+
+    /**
+     * Format finish_reason for display in status section.
+     * This provides user-friendly explanations for why the AI response ended.
+     * 
+     * @param {string} finishReason - The finish_reason from the API response
+     * @return {string} Formatted reason text for display, or empty string if not displayable
+     */
+    function formatFinishReason(finishReason) {
+        if (!finishReason || typeof finishReason !== 'string') {
+            return '';
+        }
+        
+        const reason = finishReason.trim().toLowerCase();
+        
+        // Don't display "stop" as it's the normal completion
+        if (reason === 'stop') {
+            return '';
+        }
+        
+        // Map finish reasons to user-friendly messages
+        const reasonMessages = {
+            'length': getString('finishReasonLength', 'Response stopped: Maximum length reached'),
+            'max_tokens': getString('finishReasonMaxTokens', 'Response stopped: Token limit reached'),
+            'content_filter': getString('finishReasonContentFilter', 'Response stopped: Content filtered'),
+            'tool_calls': getString('finishReasonToolCalls', 'Response stopped: Tool execution required'),
+            'function_call': getString('finishReasonFunctionCall', 'Response stopped: Function call required'),
+            'recitation': getString('finishReasonRecitation', 'Response stopped: Recitation detected'),
+            'safety': getString('finishReasonSafety', 'Response stopped: Safety filter triggered'),
+            'error': getString('finishReasonError', 'Response stopped: Error occurred')
+        };
+        
+        return reasonMessages[reason] || getString('finishReasonOther', 'Response stopped: ' + finishReason);
     }
 
     function formatString(template) {
