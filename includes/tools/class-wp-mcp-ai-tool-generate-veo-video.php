@@ -15,10 +15,11 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 /**
  * Generates videos from text prompts using Google's Veo models.
  * 
- * Uses Veo 3.1 by default with automatic fallback to Veo 2.0 when:
- * - Veo 3.1 is unavailable
+ * Uses Veo 2.0 by default (stable, 720p) with automatic fallback to Veo 3.1 when:
+ * - Veo 2.0 is unavailable
  * - Quota limits are reached
  * - Rate limits are exceeded
+ * Users can explicitly request Veo 3.1 for 1080p resolution support.
  */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
@@ -39,7 +40,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Both Veo 3.1 and Veo 2.0 support 4-8 second videos; Veo 3.1 supports up to 1080p resolution while Veo 2.0 supports up to 720p. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 2.0 supports 4-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -55,7 +56,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8 for both Veo 3.1 and Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8 for both models). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 4,
@@ -68,7 +69,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default, supported by both models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
@@ -99,8 +100,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'wp-mcp-ai' ),
-					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
+					'description' => __( 'Force a specific Veo model: "veo-2.0" (default, stable 720p) or "veo-3.1" (supports 1080p). If not specified, automatically uses Veo 2.0 with fallback to Veo 3.1 on quota/availability issues.', 'wp-mcp-ai' ),
+					'enum'        => array( 'veo-2.0', 'veo-3.1' ),
+					'default'     => 'veo-2.0',
 				),
 			),
 			'required'             => array( 'prompt' ),
