@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 2.0 supports 4-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 2.0 supports 5-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -56,10 +56,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8 for both models). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
-					'minimum'     => 4,
+					'description' => __( 'Video duration in seconds (5-8 for both models). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'minimum'     => 5,
 					'maximum'     => 8,
-					'default'     => 4,
+					'default'     => 5,
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
