@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool for generating videos using Gemini Veo 3.1.
+ * Tool for generating videos using Gemini Veo models with automatic fallback.
  *
  * @package WP_MCP_AI
  */
@@ -13,7 +13,12 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
- * Generates videos from text prompts using Google's Veo 3.1 model.
+ * Generates videos from text prompts using Google's Veo models.
+ * 
+ * Uses Veo 3.1 by default with automatic fallback to Veo 2.0 when:
+ * - Veo 3.1 is unavailable
+ * - Quota limits are reached
+ * - Rate limits are exceeded
  */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
@@ -34,7 +39,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo 3.1 model. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Audio generation is not currently supported by Veo 3.1. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 3.1 supports up to 1080p resolution and 4-8 second videos; Veo 2.0 supports up to 720p and 5-8 second videos. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -50,7 +55,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8 for Veo 3.1, 5-8 for Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 4,
@@ -63,7 +68,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default) or "1080p". Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. If using Veo 2.0 fallback, 1080p will be downgraded to 720p.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
@@ -91,6 +96,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'boolean',
 					'description' => __( 'Whether to save the generated video to WordPress Media Library. Default is true.', 'wp-mcp-ai' ),
 					'default'     => true,
+				),
+				'model'              => array(
+					'type'        => 'string',
+					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'wp-mcp-ai' ),
+					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
 				),
 			),
 			'required'             => array( 'prompt' ),
