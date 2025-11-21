@@ -7793,15 +7793,35 @@
 
         // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
+            if (window.console && console.log) {
+                console.log('[WP oOS] updateStreamingMessage called:', {
+                    contentLength: content ? content.length : 0,
+                    contentSample: content ? content.substring(0, 50) + '...' : '(empty)',
+                    elementExists: !!streamingMessageElement,
+                    elementInDOM: streamingMessageElement ? document.body.contains(streamingMessageElement) : false
+                });
+            }
+            
             if (!streamingMessageElement) {
                 createStreamingMessage();
             }
 
             // Concern 1: Update message bubble content
             if (streamingMessageElement) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Setting textContent on streaming element:', {
+                        currentTextLength: streamingMessageElement.textContent ? streamingMessageElement.textContent.length : 0,
+                        newTextLength: content ? content.length : 0
+                    });
+                }
+                
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 streamingMessageElement.textContent = content;
+                
+                if (window.console && console.log) {
+                    console.log('[WP oOS] textContent set. Actual element textContent length:', streamingMessageElement.textContent.length);
+                }
                 
                 // Add streaming class for visual cursor indicator
                 if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
@@ -7811,7 +7831,7 @@
                 // Concern 3: Auto-scroll to keep content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
-                console.warn('[WP oOS] Streaming message element not found');
+                console.warn('[WP oOS] Streaming message element not found after creation attempt');
             }
 
             // Concern 2: Update status area (delegated to separate function)
@@ -7987,6 +8007,14 @@
 
                     try {
                         const data = JSON.parse(eventData);
+                        
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] SSE event received:', {
+                                eventType: eventType || '(none)',
+                                dataKeys: Object.keys(data),
+                                dataSample: JSON.stringify(data).substring(0, 100) + '...'
+                            });
+                        }
 
                         // Handle different event types
                         if (eventType === 'status') {
@@ -8102,6 +8130,15 @@
                                 fullContent += contentChunk;
                                 // Store in state for status system access
                                 state.streamingContent = fullContent;
+                                
+                                if (window.console && console.log) {
+                                    console.log('[WP oOS] SSE content chunk received:', {
+                                        chunkLength: contentChunk.length,
+                                        fullContentLength: fullContent.length,
+                                        sample: fullContent.substring(0, 50) + '...'
+                                    });
+                                }
+                                
                                 updateCallback(fullContent);
                             }
                         }
