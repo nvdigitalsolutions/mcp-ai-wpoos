@@ -258,7 +258,15 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	protected function get_async_executor() {
 		if ( null === $this->async_executor ) {
 			if ( class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
-				$this->async_executor = new WP_MCP_AI_Tool_Async_Executor();
+				try {
+					$this->async_executor = new WP_MCP_AI_Tool_Async_Executor();
+				} catch ( Exception $e ) {
+					WP_MCP_AI_Logger::log_error(
+						'Failed to instantiate async executor',
+						array( 'error' => $e->getMessage() )
+					);
+					return null;
+				}
 			}
 		}
 

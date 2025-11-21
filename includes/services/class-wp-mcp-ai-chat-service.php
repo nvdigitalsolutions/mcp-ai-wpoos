@@ -601,7 +601,8 @@ class WP_MCP_AI_Chat_Service {
 			if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
 			}
-			$this->tool_orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->tool_registry );
+			// Pass registry and null for async_executor (will be lazy-loaded).
+			$this->tool_orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->tool_registry, null );
 		}
 
 		return $this->tool_orchestrator;

@@ -291,7 +291,8 @@ class WP_MCP_AI_Tool_Service {
 			if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
 			}
-			$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->registry );
+			// Pass registry and null for async_executor (will be lazy-loaded).
+			$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->registry, null );
 		}
 
 		return $this->orchestrator;
