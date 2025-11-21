@@ -945,11 +945,107 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Stream the job details via SSE.
-				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
+				// Stream the job details via SSE with polling until completion.
+				return $this->stream_job_status_with_polling( $service, $job_id, $user_id );
 			}
 
 			return rest_ensure_response( $job_details );
+		}
+
+		/**
+		 * Stream job status via SSE with polling until completion.
+		 *
+		 * Continuously polls the job status and sends SSE events until the job
+		 * reaches a terminal state (completed or failed), or until timeout/max iterations.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param WP_MCP_AI_Cron_Status_Service $service Cron status service instance.
+		 * @param string                        $job_id  Job identifier.
+		 * @param int                           $user_id User ID for permission checks.
+		 * @return WP_REST_Response Response object.
+		 */
+		protected function stream_job_status_with_polling( $service, $job_id, $user_id ) {
+			// Send SSE headers and establish connection.
+			$this->sse_handler->send_sse_headers();
+
+			// Polling configuration.
+			$poll_interval  = 3; // Poll every 3 seconds (client-side expectation).
+			$max_duration   = 180; // 3 minute timeout.
+			$start_time     = time();
+			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + 10; // Safety limit.
+			$iteration      = 0;
+
+			while ( ( time() - $start_time ) < $max_duration && $iteration < $max_iterations ) {
+				++$iteration;
+
+				// Check if client disconnected.
+				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+					// Send disconnect event and exit.
+					$this->sse_handler->send_sse_event(
+						'disconnect',
+						array(
+							'message' => 'Client disconnected',
+							'job_id'  => $job_id,
+						)
+					);
+					exit;
+				}
+
+				// Get current job details.
+				$job_details = $service->get_job_details( $job_id, $user_id );
+
+				if ( is_wp_error( $job_details ) ) {
+					// Send error event and exit.
+					$this->sse_handler->send_sse_event(
+						'error',
+						array(
+							'message' => $job_details->get_error_message(),
+							'job_id'  => $job_id,
+						)
+					);
+					// Send [DONE] marker.
+					echo "data: [DONE]\n\n";
+					if ( function_exists( 'flush' ) ) {
+						flush();
+					}
+					exit;
+				}
+
+				// Send current status as SSE event.
+				$this->sse_handler->send_sse_event( 'cron_job_status', $job_details );
+
+				// Check if job has reached a terminal state.
+				$status = isset( $job_details['status'] ) ? strtolower( (string) $job_details['status'] ) : '';
+				if ( 'completed' === $status || 'failed' === $status || 'error' === $status ) {
+					// Job finished - send [DONE] and exit.
+					echo "data: [DONE]\n\n";
+					if ( function_exists( 'flush' ) ) {
+						flush();
+					}
+					exit;
+				}
+
+				// Job still pending/polling - wait before next poll.
+				sleep( $poll_interval );
+			}
+
+			// Timeout reached - send timeout event.
+			$this->sse_handler->send_sse_event(
+				'timeout',
+				array(
+					'message' => 'Job status polling timed out',
+					'job_id'  => $job_id,
+					'status'  => $status,
+				)
+			);
+
+			// Send [DONE] marker.
+			echo "data: [DONE]\n\n";
+			if ( function_exists( 'flush' ) ) {
+				flush();
+			}
+			exit;
 		}
 
 		/**
