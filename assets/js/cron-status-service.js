@@ -24,12 +24,18 @@
 		/**
 		 * Polling interval in milliseconds
 		 */
-		pollingInterval: 30000, // 30 seconds
+		pollingInterval: 10000, // 10 seconds - faster updates for better UX
 
 		/**
 		 * Active polling timers by container ID
 		 */
 		pollers: {},
+
+		/**
+		 * Poller configurations by container ID
+		 * Stores endpoint, nonce, callback, assistantId for manual refresh
+		 */
+		pollerConfigs: {},
 
 		/**
 		 * Cached status data by container ID
@@ -94,6 +100,14 @@
 			// Stop existing poller if any
 			this.stopPolling(containerId);
 
+			// Store poller config for manual refresh
+			this.pollerConfigs[containerId] = {
+				endpoint: endpoint,
+				nonce: nonce,
+				callback: callback,
+				assistantId: assistantId
+			};
+
 			// Fetch immediately
 			const self = this;
 			this.fetchStatus(endpoint, nonce, 10, assistantId).then(function (data) {
@@ -128,6 +142,9 @@
 				clearInterval(this.pollers[containerId]);
 				delete this.pollers[containerId];
 			}
+			if (this.pollerConfigs[containerId]) {
+				delete this.pollerConfigs[containerId];
+			}
 		},
 
 		/**
@@ -149,6 +166,30 @@
 			if (this.cache[containerId]) {
 				delete this.cache[containerId];
 			}
+		},
+
+		/**
+		 * Manually refresh status for a container
+		 * Useful for immediate updates when a new job starts
+		 * 
+		 * @param {string} containerId - Chat container ID
+		 */
+		refreshStatus: function (containerId) {
+			// Find the poller config
+			const pollConfig = this.pollerConfigs && this.pollerConfigs[containerId];
+			if (!pollConfig) {
+				return;
+			}
+
+			const self = this;
+			this.fetchStatus(pollConfig.endpoint, pollConfig.nonce, 10, pollConfig.assistantId).then(function (data) {
+				if (data) {
+					self.cache[containerId] = data;
+					if (pollConfig.callback && typeof pollConfig.callback === 'function') {
+						pollConfig.callback(data);
+					}
+				}
+			});
 		},
 
 		/**

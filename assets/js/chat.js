@@ -8742,6 +8742,15 @@
                         console.error('[WP oOS] Async tool polling failed:', error);
                     }
                 });
+                
+                // Refresh cron status bar to show new job immediately
+                if (window.wpMcpAiCronStatus && state.container) {
+                    const instanceId = state.container.getAttribute('id');
+                    if (instanceId) {
+                        window.wpMcpAiCronStatus.refreshStatus(instanceId);
+                    }
+                }
+                
                 // Don't display the pending message here - waitForAsyncToolResult handles it
                 return;
             }
