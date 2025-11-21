@@ -74,8 +74,20 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$output      = array();
 		$return_code = 0;
 
+		// Use absolute path if available, otherwise rely on PATH.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( 'ffmpeg -version 2>&1', $output, $return_code );
+		exec( 'which ffmpeg 2>&1', $ffmpeg_path, $which_return );
+
+		if ( 0 === $which_return && ! empty( $ffmpeg_path[0] ) ) {
+			// Use absolute path for security.
+			$ffmpeg_cmd = escapeshellcmd( $ffmpeg_path[0] ) . ' -version 2>&1';
+		} else {
+			// Fallback to PATH-based ffmpeg.
+			$ffmpeg_cmd = 'ffmpeg -version 2>&1';
+		}
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( $ffmpeg_cmd, $output, $return_code );
 
 		// FFmpeg should return 0 and have output containing 'ffmpeg version'.
 		if ( 0 === $return_code && ! empty( $output ) ) {
@@ -105,7 +117,10 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 
 		// Use FFprobe to get duration.
 		$escaped_path = escapeshellarg( $video_path );
-		$command      = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {$escaped_path} 2>&1";
+		$command      = sprintf(
+			'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>&1',
+			$escaped_path
+		);
 
 		$output      = array();
 		$return_code = 0;
@@ -362,9 +377,32 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			return false;
 		}
 
+		// Security: Validate that directory is within WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$base_dir   = $upload_dir['basedir'] . '/wp-mcp-ai-temp';
+		$real_directory = realpath( $directory );
+		$real_base = realpath( $base_dir );
+
+		if ( false === $real_directory || false === $real_base ) {
+			return false;
+		}
+
+		// Ensure the directory is within our temp directory.
+		if ( 0 !== strpos( $real_directory, $real_base ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'video_frames_cleanup_security',
+				'Attempted to cleanup directory outside allowed path',
+				array(
+					'directory'  => $directory,
+					'base_dir'   => $base_dir,
+				)
+			);
+			return false;
+		}
+
 		// Delete all files in directory.
 		$files = glob( $directory . '/*' );
-		if ( ! empty( $files ) ) {
+		if ( ! empty( $files ) && is_array( $files ) ) {
 			foreach ( $files as $file ) {
 				if ( is_file( $file ) ) {
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
