@@ -350,7 +350,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Adjusts constraints based on the model being used (Veo 3.1 vs Veo 2.0).
 	 * Duration validation is performed in multiple stages:
 	 * 1. Initial validation: Convert to integer and check range based on model
-	 * 2. Model-specific adjustments: Veo 2 min 5s, 1080p requires 8s for Veo 3
+	 * 2. Model-specific adjustments: Veo 2 min 4s (same as Veo 3), 1080p requires 8s for Veo 3
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
 	 * @param array  $args  Generation arguments.
