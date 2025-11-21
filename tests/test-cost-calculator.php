@@ -486,4 +486,64 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$this->assertNotEquals( $cost_gpt41, $cost_gpt41_nano, 'gpt-4.1-nano should NOT match gpt-4.1 pricing' );
 		$this->assertNotEquals( $cost_gpt41_mini, $cost_gpt41_nano, 'gpt-4.1-nano should NOT match gpt-4.1-mini pricing' );
 	}
+
+	/**
+	 * Test Gemini 2.5 Pro pricing matches model config.
+	 */
+	public function test_gemini_25_pro_pricing() {
+		// Get pricing from cost calculator.
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'gemini', 'gemini-2.5-pro' );
+
+		$this->assertIsArray( $pricing, 'gemini-2.5-pro should have pricing' );
+		$this->assertArrayHasKey( 'input', $pricing, 'Pricing should have input key' );
+		$this->assertArrayHasKey( 'output', $pricing, 'Pricing should have output key' );
+
+		// Verify pricing matches updated rates (November 2025): $1.20 input, $4.80 output per 1M tokens.
+		$this->assertEquals( 1.20, $pricing['input'], 'Input pricing should be $1.20 per 1M tokens' );
+		$this->assertEquals( 4.80, $pricing['output'], 'Output pricing should be $4.80 per 1M tokens' );
+
+		// Verify average cost matches model config ($3.00 per 1M tokens).
+		$avg_cost = ( $pricing['input'] + $pricing['output'] ) / 2;
+		$this->assertEquals( 3.00, $avg_cost, 'Average cost should be $3.00 per 1M tokens' );
+	}
+
+	/**
+	 * Test Gemini 2.5 Pro cost calculation.
+	 */
+	public function test_calculate_cost_gemini_25_pro() {
+		// Test with 1M input tokens and 1M output tokens.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-pro', 1000000, 1000000 );
+
+		// Expected: (1M / 1M) * $1.20 + (1M / 1M) * $4.80 = $6.00.
+		$this->assertEquals( 6.00, $cost, 'Gemini 2.5 Pro cost calculation should be $6.00 for 1M input + 1M output tokens' );
+
+		// Test with different token counts.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-pro', 500000, 250000 );
+
+		// Expected: (500K / 1M) * $1.20 + (250K / 1M) * $4.80 = $0.60 + $1.20 = $1.80.
+		$this->assertEquals( 1.80, $cost, 'Gemini 2.5 Pro cost calculation should be $1.80 for 500K input + 250K output tokens' );
+	}
+
+	/**
+	 * Test Gemini 2.5 Pro pricing is consistent with model config.
+	 */
+	public function test_gemini_25_pro_updated_pricing() {
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'gemini', 'gemini-2.5-pro' );
+
+		// Old pricing was $1.25 input / $5.00 output - verify it's been updated.
+		$this->assertNotEquals( 1.25, $pricing['input'], 'Pricing should not be old rate of $1.25' );
+		$this->assertNotEquals( 5.00, $pricing['output'], 'Pricing should not be old rate of $5.00' );
+
+		// Verify new pricing maintains 1:4 ratio (Google standard for Gemini models).
+		$ratio = $pricing['output'] / $pricing['input'];
+		$this->assertEquals( 4.0, $ratio, 'Output should be 4x input (1:4 ratio)' );
+
+		// Verify pricing is consistent with model config ($3.00 per 1M average).
+		$model_config = WP_MCP_AI_Model_Config::get_model_config( 'gemini-2.5-pro' );
+		if ( $model_config && isset( $model_config['cost_per_1k'] ) ) {
+			$expected_avg = $model_config['cost_per_1k'] * 1000; // Convert per 1k to per 1M.
+			$actual_avg   = ( $pricing['input'] + $pricing['output'] ) / 2;
+			$this->assertEquals( $expected_avg, $actual_avg, 'Cost calculator average should match model config' );
+		}
+	}
 }
