@@ -2868,57 +2868,99 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
-			// Simulate streaming by sending text content in chunks before final response.
-			// Extract text content from the response to send progressively.
-			$text_content = '';
-			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['content'] ) ) {
-				$text_content = $response['choices'][0]['message']['content'];
-			} elseif ( isset( $response['content'] ) ) {
-				$text_content = $response['content'];
+			// Extract thinking/reasoning text from the response if present.
+			// Supports multiple providers:
+			// - Gemini 2.0 Flash Thinking mode: message['thinking']
+			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning']
+			$thinking_text = '';
+			$thinking_provider_format = 'gemini'; // Default to Gemini format
+
+			// Validate response structure before accessing nested keys
+			if ( ! empty( $response['choices'] ) && is_array( $response['choices'] ) && isset( $response['choices'][0]['message'] ) ) {
+				$message = $response['choices'][0]['message'];
+
+				// Check for Gemini thinking text
+				if ( ! empty( $message['thinking'] ) ) {
+					$thinking_text = $message['thinking'];
+					$thinking_provider_format = 'gemini';
+				}
+				// Check for OpenAI reasoning_content (future-ready)
+				elseif ( ! empty( $message['reasoning_content'] ) ) {
+					$thinking_text = $message['reasoning_content'];
+					$thinking_provider_format = 'openai';
+				}
+				// Check for OpenAI reasoning (alternative field)
+				elseif ( ! empty( $message['reasoning'] ) ) {
+					$thinking_text = $message['reasoning'];
+					$thinking_provider_format = 'openai';
+				}
 			}
 
-			// Send text content in chunks to simulate streaming (for better UX).
-			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
-				$chunk_size = self::STREAMING_CHUNK_SIZE;
-				$text_len   = $this->mb_strlen( $text_content );
-
-				// Log chunking start for debugging.
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'SSE Streaming: Starting to send text chunks',
-					array(
-						'text_length'  => $text_len,
-						'chunk_size'   => $chunk_size,
-						'num_chunks'   => ceil( $text_len / $chunk_size ),
-						'assistant_id' => $assistant_id,
-					)
-				);
-
-				// Check once if usleep is available before the loop.
-				$can_sleep = function_exists( 'usleep' );
-
-				// Send chunks directly without building array (memory efficient).
-				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
-					$chunk = $this->mb_substr( $text_content, $i, $chunk_size );
-
-					$this->send_sse_event(
-						'message',
-						array(
+			// Send thinking text in chunks BEFORE sending main content (if present).
+			// This allows the client to display thinking text in the status section.
+			if ( is_string( $thinking_text ) && '' !== $thinking_text ) {
+				// Format thinking chunks based on provider for optimal client compatibility.
+				if ( 'openai' === $thinking_provider_format ) {
+					// Use OpenAI format for reasoning fields.
+					$thinking_formatter = function( $chunk ) {
+						return array(
 							'choices' => array(
 								array(
 									'delta' => array(
-										'content' => $chunk,
+										'reasoning_content' => $chunk,
 									),
 								),
 							),
-						)
-					);
-
-					// Small delay between chunks to simulate realistic streaming.
-					if ( $can_sleep ) {
-						usleep( self::STREAMING_CHUNK_DELAY_US );
-					}
+						);
+					};
+				} else {
+					// Use Gemini format for thinking field.
+					$thinking_formatter = function( $chunk ) {
+						return array(
+							'candidates' => array(
+								array(
+									'content' => array(
+										'parts' => array(
+											array(
+												'thought' => $chunk,
+											),
+										),
+									),
+								),
+							),
+						);
+					};
 				}
+
+				$this->stream_text_chunks( $thinking_text, $thinking_formatter, 'thinking', $assistant_id );
+			}
+
+			// Simulate streaming by sending text content in chunks before final response.
+			// Extract text content from the response to send progressively.
+			$text_content = '';
+			if ( ! empty( $response['choices'][0]['message']['content'] ) ) {
+				// Normalize content - handles both string and array of segments.
+				$text_content = $this->normalise_message_content( $response['choices'][0]['message']['content'] );
+			} elseif ( isset( $response['content'] ) ) {
+				$text_content = $this->normalise_message_content( $response['content'] );
+			}
+
+			// Send text content in chunks to simulate streaming (for better UX).
+			if ( is_string( $text_content ) && '' !== $text_content ) {
+				// Format content chunks in OpenAI-compatible format.
+				$content_formatter = function( $chunk ) {
+					return array(
+						'choices' => array(
+							array(
+								'delta' => array(
+									'content' => $chunk,
+								),
+							),
+						),
+					);
+				};
+
+				$this->stream_text_chunks( $text_content, $content_formatter, 'text', $assistant_id );
 			} else {
 				// Log when no chunks are sent (helps diagnose streaming issues).
 				WP_MCP_AI_Logger::log_event(
@@ -7112,6 +7154,56 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function mb_substr( $string, $start, $length ) {
 			return function_exists( 'mb_substr' ) ? mb_substr( $string, $start, $length ) : substr( $string, $start, $length );
+		}
+
+		/**
+		 * Stream text in chunks via SSE with configurable format.
+		 *
+		 * Follows Separation of Concerns by extracting common chunking logic
+		 * into a reusable method. Supports both thinking text and content streaming.
+		 *
+		 * @param string   $text         Text to stream.
+		 * @param callable $formatter    Callback to format each chunk for SSE event.
+		 * @param string   $log_type     Type label for logging (e.g., 'thinking', 'text').
+		 * @param int      $assistant_id Assistant ID for logging.
+		 */
+		protected function stream_text_chunks( $text, $formatter, $log_type, $assistant_id ) {
+			if ( ! is_string( $text ) || '' === $text ) {
+				return;
+			}
+
+			$chunk_size = self::STREAMING_CHUNK_SIZE;
+			$text_len   = $this->mb_strlen( $text );
+
+			// Log streaming start for debugging.
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				sprintf( 'SSE Streaming: Starting to send %s chunks', $log_type ),
+				array(
+					'text_length'  => $text_len,
+					'chunk_size'   => $chunk_size,
+					'num_chunks'   => ceil( $text_len / $chunk_size ),
+					'assistant_id' => $assistant_id,
+					'type'         => $log_type,
+				)
+			);
+
+			// Check once if usleep is available before the loop.
+			$can_sleep = function_exists( 'usleep' );
+
+			// Send chunks with delay to simulate realistic streaming.
+			for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
+				$chunk = $this->mb_substr( $text, $i, $chunk_size );
+
+				// Use formatter callback to create the SSE event payload.
+				$payload = call_user_func( $formatter, $chunk );
+				$this->send_sse_event( 'message', $payload );
+
+				// Small delay between chunks to simulate realistic streaming.
+				if ( $can_sleep ) {
+					usleep( self::STREAMING_CHUNK_DELAY_US );
+				}
+			}
 		}
 
 		/**

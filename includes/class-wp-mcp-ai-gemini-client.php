@@ -2499,6 +2499,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$message    = array( 'role' => 'assistant' );
 					$segments   = array();
 					$tool_calls = array();
+					$thinking   = '';
 
 					if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
 						foreach ( $candidate['content']['parts'] as $part ) {
@@ -2507,6 +2508,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 									'type' => 'text',
 									'text' => (string) $part['text'],
 								);
+								continue;
+							}
+
+							if ( isset( $part['thought'] ) ) {
+								// Gemini 2.0 Flash Thinking mode provides thinking text
+								$thinking .= (string) $part['thought'];
 								continue;
 							}
 
@@ -2532,6 +2539,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 					if ( ! empty( $tool_calls ) ) {
 						$message['tool_calls'] = $tool_calls;
+					}
+
+					if ( ! empty( $thinking ) ) {
+						$message['thinking'] = $thinking;
 					}
 
 					$choice = array(
