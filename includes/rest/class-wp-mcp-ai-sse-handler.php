@@ -31,17 +31,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_SSE_Handler {
 
 	/**
-	 * Retry interval in milliseconds for SSE reconnection.
-	 *
-	 * If the SSE connection drops, clients will wait this many milliseconds
-	 * before attempting to reconnect.
-	 *
-	 * @since 1.0.0
-	 * @var int
-	 */
-	const RETRY_INTERVAL_MS = 3000;
-
-	/**
 	 * Send SSE headers for streaming response.
 	 *
 	 * Sets up HTTP headers required for Server-Sent Events streaming.
@@ -66,17 +55,9 @@ class WP_MCP_AI_SSE_Handler {
 			}
 		}
 
-		// Disable output buffering completely.
+		// Disable output buffering.
 		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
-		}
-
-		// Send retry directive to help clients reconnect if connection drops.
-		echo 'retry: ' . self::RETRY_INTERVAL_MS . "\n\n";
-
-		// Force initial flush to establish connection.
-		if ( function_exists( 'flush' ) ) {
-			flush();
 		}
 	}
 
@@ -84,7 +65,6 @@ class WP_MCP_AI_SSE_Handler {
 	 * Send an SSE event.
 	 *
 	 * Emits a named event with JSON-encoded data following SSE specification.
-	 * Ensures data is flushed immediately for real-time streaming.
 	 *
 	 * @since 1.0.0
 	 *
@@ -95,14 +75,8 @@ class WP_MCP_AI_SSE_Handler {
 		echo 'event: ' . esc_html( $event ) . "\n";
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
 
-		// Force flush to send data immediately.
 		if ( function_exists( 'flush' ) ) {
 			flush();
-		}
-
-		// Also flush output buffer if one exists.
-		if ( ob_get_level() > 0 ) {
-			ob_flush();
 		}
 	}
 
