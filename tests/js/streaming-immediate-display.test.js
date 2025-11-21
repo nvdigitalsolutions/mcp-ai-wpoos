@@ -1,7 +1,7 @@
 /**
  * Test for streaming text immediate display issue
  * 
- * Problem: Streaming text is waiting for the end to start displaying 
+ * Problem: Streaming text is waiting for the end to start displaying text
  * instead of appearing immediately in the status section.
  *
  * @package WP_MCP_AI
