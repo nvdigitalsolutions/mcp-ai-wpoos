@@ -11,17 +11,24 @@ The chat client UI now displays text **progressively as it streams** from AI pro
 - Uses Server-Sent Events (SSE) for efficient streaming
 - Supports all configured AI providers
 
-### 2. Visual Streaming Indicator
+### 2. Dual Streaming Display (NEW)
+- **Message Bubble**: Full streaming content with blinking cursor
+- **Status Preview**: Truncated preview (first 100 chars) in status area
+- Provides immediate feedback in the area users are watching
+- See [STREAMING_TEXT_STATUS_PREVIEW.md](STREAMING_TEXT_STATUS_PREVIEW.md) for details
+
+### 3. Visual Streaming Indicator
 - Displays a **blinking cursor (▋)** while streaming is active
 - Cursor automatically disappears when streaming completes
 - CSS animation provides smooth visual feedback
+- Appears in both message bubble AND status preview
 
-### 3. Auto-Scrolling
+### 4. Auto-Scrolling
 - Automatically scrolls to keep new content visible
 - Uses optimized scroll batching to prevent performance issues
 - Maintains smooth UX during rapid content updates
 
-### 4. Markdown Rendering
+### 5. Markdown Rendering
 - Plain text displayed during streaming (for security and performance)
 - Full markdown rendering applied when streaming completes
 - Preserves code blocks, links, formatting, etc.

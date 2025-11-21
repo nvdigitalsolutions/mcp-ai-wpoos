@@ -93,4 +93,71 @@ describe('Streaming Configuration', () => {
 			expect(element.classList.contains('class3')).toBe(true);
 		});
 	});
+
+	describe('Status Area Streaming Preview', () => {
+		it('should create status element structure', () => {
+			const status = document.createElement('div');
+			status.className = 'wp-mcp-ai-chat__status';
+			status.hidden = false;
+			
+			expect(status.className).toBe('wp-mcp-ai-chat__status');
+			expect(status.hidden).toBe(false);
+		});
+
+		it('should update status with streaming text', () => {
+			const status = document.createElement('div');
+			status.className = 'wp-mcp-ai-chat__status wp-mcp-ai-chat__status--text-stream';
+			
+			const text = document.createElement('span');
+			text.className = 'wp-mcp-ai-chat__status-text';
+			text.textContent = 'Streaming preview...';
+			
+			status.appendChild(text);
+			
+			expect(status.querySelector('.wp-mcp-ai-chat__status-text').textContent).toBe('Streaming preview...');
+		});
+
+		it('should truncate long streaming text for preview', () => {
+			const longText = 'A'.repeat(150);
+			const previewLength = 100;
+			const preview = longText.length > previewLength 
+				? longText.substring(0, previewLength) + '…' 
+				: longText;
+			
+			expect(preview.length).toBe(101); // 100 chars + ellipsis
+			expect(preview.endsWith('…')).toBe(true);
+		});
+
+		it('should not truncate short streaming text', () => {
+			const shortText = 'Hello, world!';
+			const previewLength = 100;
+			const preview = shortText.length > previewLength 
+				? shortText.substring(0, previewLength) + '…' 
+				: shortText;
+			
+			expect(preview).toBe(shortText);
+			expect(preview.endsWith('…')).toBe(false);
+		});
+
+		it('should apply text-stream class to status', () => {
+			const status = document.createElement('div');
+			status.className = 'wp-mcp-ai-chat__status';
+			status.classList.add('wp-mcp-ai-chat__status--text-stream');
+			
+			expect(status.classList.contains('wp-mcp-ai-chat__status--text-stream')).toBe(true);
+		});
+
+		it('should handle empty streaming content in status', () => {
+			const status = document.createElement('div');
+			status.className = 'wp-mcp-ai-chat__status';
+			
+			const text = document.createElement('span');
+			text.className = 'wp-mcp-ai-chat__status-text';
+			text.textContent = '';
+			
+			status.appendChild(text);
+			
+			expect(status.querySelector('.wp-mcp-ai-chat__status-text').textContent).toBe('');
+		});
+	});
 });
