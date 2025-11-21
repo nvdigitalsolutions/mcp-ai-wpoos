@@ -548,9 +548,33 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return string|WP_Error Video binary data or error.
 	 */
 	protected function download_video( $video_uri ) {
-		// The URI should be a signed GCS URL that we can download directly.
+		// Get API key for authenticated download.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_api_key',
+				__( 'Gemini API key is not configured.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// The URI from Gemini API may be a Google Cloud Storage URL that requires API key authentication.
+		// Append the API key as a query parameter for authenticated download.
+		$download_url = add_query_arg( 'key', $api_key, $video_uri );
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_video_download_attempt',
+			'Attempting to download generated video',
+			array(
+				'uri_host' => wp_parse_url( $video_uri, PHP_URL_HOST ),
+				'uri_path' => wp_parse_url( $video_uri, PHP_URL_PATH ),
+			)
+		);
+
 		$response = wp_remote_get(
-			$video_uri,
+			$download_url,
 			array(
 				'timeout' => 300,
 			)
@@ -566,6 +590,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		$code = wp_remote_retrieve_response_code( $response );
 		if ( $code < 200 || $code >= 300 ) {
+			WP_MCP_AI_Logger::log_error(
+				'Video download failed with HTTP error',
+				array(
+					'status' => $code,
+					'uri'    => wp_parse_url( $video_uri, PHP_URL_HOST ) . wp_parse_url( $video_uri, PHP_URL_PATH ),
+				)
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_download_failed',
 				sprintf(
