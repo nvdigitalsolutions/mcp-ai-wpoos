@@ -50,9 +50,10 @@
     const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
     // Tool execution timer constants
-    // Duration (in milliseconds) to keep tool execution timer visible before allowing
-    // "thinking" status to replace it. This ensures users see the timer for all tools,
-    // not just async tools.
+    // Duration (in milliseconds) to preserve tool execution info alongside thinking status.
+    // When a tool completes and thinking status arrives within this window, the tool name
+    // and timer are preserved in the status message. This ensures users see which tool
+    // executed and its duration for all tools, not just async tools.
     const TOOL_TIMER_DISPLAY_DURATION = 1500;
 
     // Other constants
@@ -8562,19 +8563,30 @@
                 return;
             }
             
-            // Don't override tool execution status if a tool recently completed
-            // Allow at least TOOL_TIMER_DISPLAY_DURATION for the tool timer to be visible
-            // This ensures all tools show their execution timer, not just async tools
-            if (state.lastToolResultTime && (Date.now() - state.lastToolResultTime < TOOL_TIMER_DISPLAY_DURATION)) {
-                // Tool just completed, keep the tool status visible for a moment
-                return;
+            // Preserve tool execution timer alongside thinking status
+            // If a tool recently completed, append tool info to thinking message
+            let statusMessage = message;
+            let statusStartTime = Date.now();
+            
+            if (state.lastToolResultTime && 
+                state.lastToolName &&
+                (Date.now() - state.lastToolResultTime < TOOL_TIMER_DISPLAY_DURATION)) {
+                // Tool just completed - preserve tool execution info alongside thinking status
+                const toolExecutionMsg = formatString(
+                    getString('executingTool', 'Executing %s…'),
+                    state.lastToolName
+                );
+                // Combine messages: "Executing tool_name… • Analyzing tool results…"
+                statusMessage = toolExecutionMsg + ' • ' + message;
+                // Use the original tool start time to show elapsed time
+                statusStartTime = state.lastToolStartTime || Date.now();
             }
             
             setStatus(state.container, {
-                message: message,
+                message: statusMessage,
                 type: 'thinking',
                 showTime: true,
-                startTime: Date.now()
+                startTime: statusStartTime
             });
         } else if (type === 'generating') {
             // Don't override streaming status if content is actively streaming
@@ -8634,6 +8646,10 @@
             });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
+            // Track the tool being executed and when it started
+            state.currentToolName = toolName;
+            state.currentToolStartTime = Date.now();
+            
             setStatus(state.container, {
                 message: formatString(
                     getString('executingTool', 'Executing %s…'),
@@ -8641,7 +8657,7 @@
                 ),
                 type: 'tool',
                 showTime: true,
-                startTime: Date.now()
+                startTime: state.currentToolStartTime
             });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
@@ -8661,8 +8677,9 @@
             }
             
             // Track when the last tool result was received
-            // This helps prevent the "thinking" status from immediately overwriting
-            // the tool execution timer, ensuring it's visible for all tools
+            // Store tool name and start time to preserve alongside thinking status
+            state.lastToolName = state.currentToolName || toolName;
+            state.lastToolStartTime = state.currentToolStartTime || Date.now();
             state.lastToolResultTime = Date.now();
             
             // Extract attachments from tool result (e.g., generated images, audio files)
