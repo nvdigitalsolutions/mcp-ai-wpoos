@@ -838,8 +838,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'requires-capability',  // Requires user capabilities.
 			'write',                // Creates media files.
 			'async',                // May take significant time to generate images.
-			'long-running',         // Image generation can take 5-30 seconds.
-			'background-only',      // Must run in background to ensure consistent cron tracking and avoid HTTP timeouts.
 			'rate-limited',         // Subject to OpenAI rate limits.
 			'requires-model',       // Requires image model specification.
 			'consumes-tokens',      // Uses AI credits/tokens.
