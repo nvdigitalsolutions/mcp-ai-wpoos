@@ -31,6 +31,20 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 class WP_MCP_AI_Cron_Status_Service {
 
 	/**
+	 * Video generation tool slug constant
+	 *
+	 * @var string
+	 */
+	const VIDEO_GENERATION_TOOL_SLUG = 'generate_veo_video';
+
+	/**
+	 * Video generation job type constant
+	 *
+	 * @var string
+	 */
+	const VIDEO_GENERATION_JOB_TYPE = 'video_generation';
+
+	/**
 	 * Async tool executor instance (lazy loaded)
 	 *
 	 * @var WP_MCP_AI_Tool_Async_Executor|null
@@ -304,6 +318,11 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Retrieves Veo video generation jobs and formats them for status display.
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
+	 * Note: This uses a LIKE query on the options table similar to get_async_tool_jobs.
+	 * Performance impact is limited by the LIMIT 50 clause and transient expiration (24h).
+	 * For better performance, consider implementing a dedicated job tracking table if
+	 * the number of concurrent jobs becomes significant.
+	 *
 	 * @param int      $user_id User ID to filter by.
 	 * @param int|null $assistant_id Optional assistant ID to filter by.
 	 * @return array Array of video generation jobs formatted like cron jobs.
@@ -356,8 +375,8 @@ class WP_MCP_AI_Cron_Status_Service {
 
 			// Add user_id for consistency.
 			$metadata['created_by'] = $job_user_id;
-			$metadata['tool_slug']  = 'generate_veo_video';
-			$metadata['type']       = 'video_generation';
+			$metadata['tool_slug']  = self::VIDEO_GENERATION_TOOL_SLUG;
+			$metadata['type']       = self::VIDEO_GENERATION_JOB_TYPE;
 
 			$jobs[ $metadata['job_id'] ] = $metadata;
 		}
