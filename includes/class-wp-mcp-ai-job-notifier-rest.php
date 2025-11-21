@@ -27,10 +27,9 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 */
 	public static function register_routes() {
 		// SSE endpoint for streaming job status.
-		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_.\-]+)/stream',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)/stream',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -41,7 +40,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 							'description'       => __( 'Unique identifier for the job to stream.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'max_duration'  => array(
 							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'wp-mcp-ai' ),
@@ -64,10 +63,9 @@ class WP_MCP_AI_Job_Notifier_REST {
 		);
 
 		// Get job status (non-streaming).
-		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_.\-]+)',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -78,7 +76,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 							'description'       => __( 'Unique identifier for the job to check status.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -87,11 +85,9 @@ class WP_MCP_AI_Job_Notifier_REST {
 		);
 
 		// Register webhook.
-		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
-		// Also supports wildcards (*) for pattern matching.
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/jobs/(?P<job_id>[a-zA-Z0-9_.*\-]+)/webhooks',
+			'/jobs/(?P<job_id>[a-zA-Z0-9_*-]+)/webhooks',
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -102,7 +98,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 							'description'       => __( 'Job identifier or wildcard pattern to register webhook for.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'webhook_url' => array(
 							'description'       => __( 'URL to POST webhook notifications to.', 'wp-mcp-ai' ),
@@ -283,27 +279,5 @@ class WP_MCP_AI_Job_Notifier_REST {
 				'message'     => __( 'Webhook registered successfully.', 'wp-mcp-ai' ),
 			)
 		);
-	}
-
-	/**
-	 * Sanitize job ID parameter.
-	 *
-	 * Job IDs are generated using uniqid() with more_entropy=true, which produces
-	 * IDs like 'veo_69203b5b2388f5.11575461'. This sanitization function preserves
-	 * the dot character while blocking path traversal and other malicious input.
-	 *
-	 * This method matches the sanitization in WP_MCP_AI_REST_Tools_Controller::sanitize_job_id().
-	 *
-	 * @param string $job_id Job ID to sanitize.
-	 * @return string Sanitized job ID.
-	 */
-	public static function sanitize_job_id( $job_id ) {
-		// Remove any characters that aren't alphanumeric, underscore, dot, hyphen, or asterisk (for wildcards).
-		$sanitized = preg_replace( '/[^a-zA-Z0-9_.*\-]/', '', $job_id );
-
-		// Remove path traversal attempts (consecutive dots).
-		$sanitized = preg_replace( '/\.\.+/', '', $sanitized );
-
-		return $sanitized;
 	}
 }

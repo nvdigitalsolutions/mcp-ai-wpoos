@@ -566,13 +566,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * @return array|WP_Error Job details or error.
 	 */
 	public function get_job_details( $job_id, $user_id = 0 ) {
-		// Sanitize job_id preserving dots (used in veo_ job IDs from uniqid).
-		// This logic matches the sanitization in REST Tools Controller to ensure consistency.
-		// Remove any characters that aren't alphanumeric, underscore, dot, or hyphen.
-		$job_id = preg_replace( '/[^a-zA-Z0-9_.\-]/', '', $job_id );
-		// Remove path traversal attempts (consecutive dots).
-		$job_id = preg_replace( '/\.\.+/', '', $job_id );
-
+		$job_id  = sanitize_key( $job_id );
 		$user_id = absint( $user_id );
 
 		if ( ! $user_id ) {

@@ -199,11 +199,10 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			true
 		);
 
-		// /cron-status/(?P<job_id>[a-zA-Z0-9_.]+) - Get details for a specific cron job.
-		// Updated regex to support dots in job IDs (e.g., veo_69203b5b2388f5.11575461 from uniqid).
+		// /cron-status/(?P<job_id>[a-zA-Z0-9_]+) - Get details for a specific cron job.
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/cron-status/(?P<job_id>[a-zA-Z0-9_.]+)',
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_]+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -214,7 +213,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Cron job identifier.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
+							'sanitize_callback' => 'sanitize_key',
 						),
 						'stream' => array(
 							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'wp-mcp-ai' ),
@@ -378,25 +377,5 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $this->main_controller->handle_cron_job_details_request( $request );
 		}
 		return $this->error( 'not_implemented', __( 'Cron job details endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
-	}
-
-	/**
-	 * Sanitize job ID parameter.
-	 *
-	 * Job IDs are generated using uniqid() with more_entropy=true, which produces
-	 * IDs like 'veo_69203b5b2388f5.11575461'. This sanitization function preserves
-	 * the dot character while blocking path traversal and other malicious input.
-	 *
-	 * @param string $job_id Job ID to sanitize.
-	 * @return string Sanitized job ID.
-	 */
-	public function sanitize_job_id( $job_id ) {
-		// Remove any characters that aren't alphanumeric, underscore, dot, or hyphen.
-		$sanitized = preg_replace( '/[^a-zA-Z0-9_.\-]/', '', $job_id );
-
-		// Remove path traversal attempts (consecutive dots).
-		$sanitized = preg_replace( '/\.\.+/', '', $sanitized );
-
-		return $sanitized;
 	}
 }
