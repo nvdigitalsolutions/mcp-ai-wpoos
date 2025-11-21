@@ -7796,12 +7796,14 @@
             // Ensure content is a string
             const safeContent = content != null ? String(content) : '';
             
-            if (DEBUG_MODE && window.console && console.log) {
-                console.log('[WP oOS] updateStreamingMessage called:', {
-                    contentLength: safeContent.length,
-                    contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
-                    elementExists: !!streamingMessageElement
-                });
+            if (DEBUG_MODE) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] updateStreamingMessage called:', {
+                        contentLength: safeContent.length,
+                        contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
+                        elementExists: !!streamingMessageElement
+                    });
+                }
             }
             
             if (!streamingMessageElement) {
@@ -7999,11 +8001,13 @@
                     try {
                         const data = JSON.parse(eventData);
                         
-                        if (DEBUG_MODE && window.console && console.log) {
-                            console.log('[WP oOS] SSE event:', {
-                                eventType: eventType || '(none)',
-                                hasData: !!data
-                            });
+                        if (DEBUG_MODE) {
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] SSE event:', {
+                                    eventType: eventType || '(none)',
+                                    hasData: !!data
+                                });
+                            }
                         }
 
                         // Handle different event types
@@ -8125,11 +8129,13 @@
                                 // Store in state for status system access
                                 state.streamingContent = fullContent;
                                 
-                                if (DEBUG_MODE && window.console && console.log) {
-                                    console.log('[WP oOS] Content chunk:', {
-                                        chunkLength: contentChunk.length,
-                                        totalLength: fullContent.length
-                                    });
+                                if (DEBUG_MODE) {
+                                    if (window.console && console.log) {
+                                        console.log('[WP oOS] Content chunk:', {
+                                            chunkLength: contentChunk.length,
+                                            totalLength: fullContent.length
+                                        });
+                                    }
                                 }
                                 
                                 updateCallback(fullContent);
