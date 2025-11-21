@@ -501,15 +501,25 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	protected function process_completed_video( $result, $args ) {
 		// Extract video URL from response.
-		if ( ! isset( $result['response']['predictions'][0]['videoUri'] ) ) {
+		// Support both old and new API response structures for backward compatibility.
+		$video_uri = null;
+		
+		// New structure (2025): response.generateVideoResponse.generatedSamples[0].video.uri
+		if ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
+			$video_uri = $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'];
+		} 
+		// Old structure (legacy): response.predictions[0].videoUri
+		elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
+			$video_uri = $result['response']['predictions'][0]['videoUri'];
+		}
+		
+		if ( empty( $video_uri ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_video_uri',
 				__( 'No video URI in completion response.', 'wp-mcp-ai' ),
 				array( 'status' => 500 )
 			);
 		}
-
-		$video_uri = $result['response']['predictions'][0]['videoUri'];
 
 		// Download the video.
 		$video_data = $this->download_video( $video_uri );
