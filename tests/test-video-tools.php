@@ -259,4 +259,59 @@ class Test_Video_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'video', strtolower( $analyze_desc ), 'Analyze tool description should mention video' );
 		$this->assertStringContainsString( 'video', strtolower( $caption_desc ), 'Caption tool description should mention video' );
 	}
+
+	/**
+	 * Test that all documented video-capable Gemini models are recognized.
+	 */
+	public function test_video_capable_gemini_models_recognized() {
+		$caption_tool = $this->registry->get_tool( 'generate_video_caption' );
+		$this->assertNotNull( $caption_tool, 'Generate video caption tool should exist' );
+
+		// Get the is_video_capable_gemini_model method via reflection.
+		$reflection = new ReflectionClass( $caption_tool );
+		$method     = $reflection->getMethod( 'is_video_capable_gemini_model' );
+		$method->setAccessible( true );
+
+		// Test all 2025 video-capable models based on current Gemini API.
+		$video_capable_models = array(
+			// Gemini 3 series (latest - 2025).
+			'gemini-3-pro-preview',
+			'gemini-3-pro',
+
+			// Gemini 2.5 series (production - 2025).
+			'gemini-2.5-pro',
+			'gemini-2.5-flash',
+			'gemini-2.5-flash-lite',
+			'gemini-2.5-flash-preview-09-2025',
+			'gemini-live-2.5-flash-preview',
+
+			// Gemini 2.0 series (stable).
+			'gemini-2.0-flash',
+			'gemini-2.0-flash-lite',
+
+			// Experimental models (may be deprecated).
+			'gemini-exp-1206',
+			'gemini-exp-1121',
+		);
+
+		foreach ( $video_capable_models as $model ) {
+			$result = $method->invoke( $caption_tool, $model );
+			$this->assertTrue( $result, "Model $model should be recognized as video-capable" );
+		}
+
+		// Test that deprecated/non-video models are not recognized.
+		$non_video_models = array(
+			'gemini-1.5-pro',         // Deprecated 1.x series.
+			'gemini-1.5-flash',       // Deprecated 1.x series.
+			'gemini-pro',             // Deprecated 1.x series.
+			'gpt-4o',                 // OpenAI model (not Gemini).
+			'gemini-2.5-flash-image', // Image generation only.
+			'gemini-2.0-flash-exp',   // Deprecated experimental (use gemini-2.0-flash).
+		);
+
+		foreach ( $non_video_models as $model ) {
+			$result = $method->invoke( $caption_tool, $model );
+			$this->assertFalse( $result, "Model $model should NOT be recognized as video-capable" );
+		}
+	}
 }

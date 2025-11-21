@@ -247,11 +247,28 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 	 * @return bool
 	 */
 	protected function is_video_capable_gemini_model( $model ) {
-		// Gemini 2.0 and later support video.
+		// Gemini 2.0 and later support video (2025 models).
+		// Based on Google's 2025 model lineup - all Gemini 1.x models are deprecated.
+		// Note: Experimental models with -exp suffix are being deprecated in favor of stable versions.
 		$video_capable_models = array(
+			// Gemini 3 series (latest - 2025).
+			'gemini-3-pro-preview',
+			'gemini-3-pro',
+
+			// Gemini 2.5 series (production - 2025).
+			'gemini-2.5-pro',
 			'gemini-2.5-flash',
+			'gemini-2.5-flash-lite',
+			'gemini-2.5-flash-preview-09-2025',
+			'gemini-live-2.5-flash-preview',
+
+			// Gemini 2.0 series (stable - use these instead of -exp variants).
 			'gemini-2.0-flash',
+			'gemini-2.0-flash-lite',
+
+			// Experimental models (still available but may be deprecated).
 			'gemini-exp-1206',
+			'gemini-exp-1121',
 		);
 
 		return in_array( $model, $video_capable_models, true );
