@@ -14,13 +14,15 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 * Test that Veo 2 constant is defined.
 	 */
 	public function test_veo_2_constant_defined() {
+		// Use reflection to access class constant.
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		$reflection = new ReflectionClass( $service );
+		
 		$this->assertTrue(
-			defined( 'WP_MCP_AI_Gemini_Video_Generation_Service::VEO_2_MODEL' ),
+			$reflection->hasConstant( 'VEO_2_MODEL' ),
 			'VEO_2_MODEL constant should be defined'
 		);
 		
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$reflection = new ReflectionClass( $service );
 		$constant = $reflection->getConstant( 'VEO_2_MODEL' );
 		
 		$this->assertEquals(

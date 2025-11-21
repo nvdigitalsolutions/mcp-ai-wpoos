@@ -281,8 +281,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return bool True if should fallback to Veo 2.
 	 */
 	protected function should_fallback_to_veo_2( $error ) {
-		$error_message = strtolower( $error->get_error_message() );
-		$error_code    = $error->get_error_code();
+		$error_message = $error->get_error_message();
 		
 		// Quota/rate limit errors.
 		$quota_indicators = array(
@@ -294,10 +293,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'quota exceeded',
 		);
 		
-		foreach ( $quota_indicators as $indicator ) {
-			if ( false !== strpos( $error_message, $indicator ) ) {
-				return true;
-			}
+		if ( $this->error_message_contains( $error_message, $quota_indicators ) ) {
+			return true;
 		}
 		
 		// Model unavailable errors.
@@ -311,10 +308,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'invalid model',
 		);
 		
-		foreach ( $availability_indicators as $indicator ) {
-			if ( false !== strpos( $error_message, $indicator ) ) {
-				return true;
-			}
+		if ( $this->error_message_contains( $error_message, $availability_indicators ) ) {
+			return true;
 		}
 		
 		// HTTP status codes that suggest quota/availability issues.
@@ -327,6 +322,22 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 		}
 		
+		return false;
+	}
+
+	/**
+	 * Check if error message contains any of the given indicators.
+	 *
+	 * @param string $message    Error message to check.
+	 * @param array  $indicators Array of strings to search for (case-insensitive).
+	 * @return bool True if any indicator is found in message.
+	 */
+	protected function error_message_contains( $message, $indicators ) {
+		foreach ( $indicators as $indicator ) {
+			if ( false !== stripos( $message, $indicator ) ) {
+				return true;
+			}
+		}
 		return false;
 	}
 
