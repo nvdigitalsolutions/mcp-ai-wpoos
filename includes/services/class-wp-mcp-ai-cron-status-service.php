@@ -574,8 +574,9 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Filter out internal infrastructure jobs from the jobs array
 	 *
 	 * Internal jobs are those created by the system for async tool execution
-	 * and video polling. User-created jobs (via create_cron_job tool, etc.)
-	 * should always be visible to the user.
+	 * and cleanup. User-initiated jobs should always be visible:
+	 * - User-created cron jobs (via create_cron_job tool)
+	 * - Video generation jobs (user explicitly requested)
 	 *
 	 * @param array $jobs Array of jobs to filter.
 	 * @return array Filtered array with internal jobs removed.
@@ -586,10 +587,11 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		// List of internal system hooks that should be hidden from chat clients.
+		// Note: wp_mcp_ai_poll_veo_video is NOT included because video generation
+		// is a user-initiated action, not internal infrastructure.
 		$internal_hooks = array(
-			'wp_mcp_ai_async_tool_execution', // Async tool executor.
-			'wp_mcp_ai_poll_veo_video',       // Video generation polling.
-			'wp_mcp_ai_cleanup_async_results', // Cleanup job.
+			'wp_mcp_ai_async_tool_execution', // Async tool executor (internal infrastructure).
+			'wp_mcp_ai_cleanup_async_results', // Cleanup job (internal maintenance).
 		);
 
 		$filtered_jobs = array();
