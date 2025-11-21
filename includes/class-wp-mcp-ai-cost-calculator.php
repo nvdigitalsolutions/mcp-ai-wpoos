@@ -98,8 +98,8 @@ class WP_MCP_AI_Cost_Calculator {
 		'gemini'    => array(
 			// Gemini 2.5 series (November 2025).
 			'gemini-2.5-pro'   => array(
-				'input'  => 1.25,
-				'output' => 5.00,
+				'input'  => 1.20,
+				'output' => 4.80,
 			),
 			'gemini-2.5-flash' => array(
 				'input'  => 0.10,
