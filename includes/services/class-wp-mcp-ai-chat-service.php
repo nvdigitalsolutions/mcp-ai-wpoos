@@ -694,10 +694,19 @@ class WP_MCP_AI_Chat_Service {
 	 * Strips large fields (like base64 image data) from tool results before
 	 * sending to the LLM to prevent timeout errors from oversized payloads.
 	 *
-	 * @param mixed  $result           Tool execution result.
+	 * This method:
+	 * - Calls tool's sanitize_for_llm() if it implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface
+	 * - Applies WordPress filters for custom sanitization
+	 * - Passes through WP_Error objects unchanged
+	 *
+	 * Example: generate_openai_image strips content.data (100KB+ base64) but preserves:
+	 * - attachment_id, url, file_name (essential metadata)
+	 * - image_url structure (for vision models)
+	 *
+	 * @param mixed  $result           Tool execution result (array, WP_Error, or scalar).
 	 * @param string $tool_name        Tool name.
 	 * @param array  $assistant_config Assistant configuration.
-	 * @return mixed Sanitized result.
+	 * @return mixed Sanitized result. WP_Error objects are returned unchanged.
 	 */
 	private function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array() ) {
 		// Get tool instance to check if it implements custom sanitization.

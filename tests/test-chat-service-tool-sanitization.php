@@ -15,6 +15,38 @@
 class WP_MCP_AI_Chat_Service_Tool_Sanitization_Test extends WP_UnitTestCase {
 
 	/**
+	 * Check if Chat Service is available.
+	 *
+	 * @return void
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
+			$this->markTestSkipped( 'Chat Service not available' );
+		}
+	}
+
+	/**
+	 * Create a chat service instance with mock dependencies.
+	 *
+	 * @return WP_MCP_AI_Chat_Service
+	 */
+	private function create_chat_service() {
+		$router               = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$rate_limiter         = $this->createMock( WP_MCP_AI_Rate_Limit_Manager::class );
+		$token_budget_manager = $this->createMock( WP_MCP_AI_Token_Budget_Manager::class );
+		$tool_registry        = WP_MCP_AI_Tool_Registry::get_instance();
+
+		return new WP_MCP_AI_Chat_Service(
+			$router,
+			$rate_limiter,
+			$token_budget_manager,
+			$tool_registry
+		);
+	}
+
+	/**
 	 * Test that generate_openai_image results are sanitized in chat flow.
 	 *
 	 * This test verifies that when generate_openai_image tool is executed
@@ -22,24 +54,7 @@ class WP_MCP_AI_Chat_Service_Tool_Sanitization_Test extends WP_UnitTestCase {
 	 * before being sent to the LLM.
 	 */
 	public function test_generate_openai_image_sanitization_in_chat_flow() {
-		// Skip if Chat Service is not available.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			$this->markTestSkipped( 'Chat Service not available' );
-		}
-
-		// Create mock dependencies.
-		$router               = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
-		$rate_limiter         = $this->createMock( WP_MCP_AI_Rate_Limit_Manager::class );
-		$token_budget_manager = $this->createMock( WP_MCP_AI_Token_Budget_Manager::class );
-		$tool_registry        = WP_MCP_AI_Tool_Registry::get_instance();
-
-		// Create chat service instance.
-		$chat_service = new WP_MCP_AI_Chat_Service(
-			$router,
-			$rate_limiter,
-			$token_budget_manager,
-			$tool_registry
-		);
+		$chat_service = $this->create_chat_service();
 
 		// Use reflection to access private sanitize_tool_result_for_llm method.
 		$reflection = new ReflectionClass( $chat_service );
@@ -98,24 +113,7 @@ class WP_MCP_AI_Chat_Service_Tool_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that tools without custom sanitization still work.
 	 */
 	public function test_tools_without_sanitization_interface_work() {
-		// Skip if Chat Service is not available.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			$this->markTestSkipped( 'Chat Service not available' );
-		}
-
-		// Create mock dependencies.
-		$router               = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
-		$rate_limiter         = $this->createMock( WP_MCP_AI_Rate_Limit_Manager::class );
-		$token_budget_manager = $this->createMock( WP_MCP_AI_Token_Budget_Manager::class );
-		$tool_registry        = WP_MCP_AI_Tool_Registry::get_instance();
-
-		// Create chat service instance.
-		$chat_service = new WP_MCP_AI_Chat_Service(
-			$router,
-			$rate_limiter,
-			$token_budget_manager,
-			$tool_registry
-		);
+		$chat_service = $this->create_chat_service();
 
 		// Use reflection to access private sanitize_tool_result_for_llm method.
 		$reflection = new ReflectionClass( $chat_service );
@@ -143,24 +141,7 @@ class WP_MCP_AI_Chat_Service_Tool_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that WP_Error results are not sanitized.
 	 */
 	public function test_wp_error_results_not_sanitized() {
-		// Skip if Chat Service is not available.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			$this->markTestSkipped( 'Chat Service not available' );
-		}
-
-		// Create mock dependencies.
-		$router               = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
-		$rate_limiter         = $this->createMock( WP_MCP_AI_Rate_Limit_Manager::class );
-		$token_budget_manager = $this->createMock( WP_MCP_AI_Token_Budget_Manager::class );
-		$tool_registry        = WP_MCP_AI_Tool_Registry::get_instance();
-
-		// Create chat service instance.
-		$chat_service = new WP_MCP_AI_Chat_Service(
-			$router,
-			$rate_limiter,
-			$token_budget_manager,
-			$tool_registry
-		);
+		$chat_service = $this->create_chat_service();
 
 		// Use reflection to access private sanitize_tool_result_for_llm method.
 		$reflection = new ReflectionClass( $chat_service );
@@ -182,35 +163,18 @@ class WP_MCP_AI_Chat_Service_Tool_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that filters are applied during sanitization.
 	 */
 	public function test_sanitization_filters_applied() {
-		// Skip if Chat Service is not available.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			$this->markTestSkipped( 'Chat Service not available' );
-		}
+		$chat_service = $this->create_chat_service();
 
-		// Create mock dependencies.
-		$router               = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
-		$rate_limiter         = $this->createMock( WP_MCP_AI_Rate_Limit_Manager::class );
-		$token_budget_manager = $this->createMock( WP_MCP_AI_Token_Budget_Manager::class );
-		$tool_registry        = WP_MCP_AI_Tool_Registry::get_instance();
-
-		// Create chat service instance.
-		$chat_service = new WP_MCP_AI_Chat_Service(
-			$router,
-			$rate_limiter,
-			$token_budget_manager,
-			$tool_registry
-		);
-
-		// Add filter to modify result.
+		// Add filter to modify result (filter receives 3 params: result, tool_name, assistant_config).
 		$filter_called = false;
-		$filter        = function ( $result ) use ( &$filter_called ) {
+		$filter        = function ( $result, $tool_name, $assistant_config ) use ( &$filter_called ) {
 			$filter_called = true;
 			if ( is_array( $result ) ) {
 				$result['filtered'] = true;
 			}
 			return $result;
 		};
-		add_filter( 'wp_mcp_ai_sanitize_tool_result_llm', $filter, 10, 1 );
+		add_filter( 'wp_mcp_ai_sanitize_tool_result_llm', $filter, 10, 3 );
 
 		// Use reflection to access private sanitize_tool_result_for_llm method.
 		$reflection = new ReflectionClass( $chat_service );
