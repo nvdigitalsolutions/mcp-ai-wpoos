@@ -2,16 +2,17 @@
 # Direct verification test for Veo video tool changes
 # This script verifies the changes without requiring full WordPress environment
 
+set -e  # Exit immediately on any command failure
+
 echo "=== Veo Video Tool Direct Verification ==="
 echo ""
 
 # Test 1: Verify service constant
 echo "1. Checking service DEFAULT_DURATION constant..."
-CONSTANT_VALUE=$(grep -A 1 "const DEFAULT_DURATION" includes/services/class-wp-mcp-ai-gemini-video-generation-service.php | grep "=" | sed 's/.*= //; s/;//')
-if [ "$CONSTANT_VALUE" = "4" ]; then
+if grep -q "const DEFAULT_DURATION = 4;" includes/services/class-wp-mcp-ai-gemini-video-generation-service.php; then
     echo "   ✓ Service DEFAULT_DURATION is 4"
 else
-    echo "   ✗ FAIL: Service DEFAULT_DURATION is $CONSTANT_VALUE (expected 4)"
+    echo "   ✗ FAIL: Service DEFAULT_DURATION is not 4"
     exit 1
 fi
 
@@ -34,22 +35,20 @@ else
     exit 1
 fi
 
-# Test 4: Verify SoC - tool should not have hardcoded default
+# Test 4: Verify SoC - tool should not have hardcoded default in duration assignment
 echo "4. Verifying Separation of Concerns implementation..."
-if grep -q "? absint.*: 4" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php; then
-    echo "   ✗ FAIL: Tool still has hardcoded default (violates SoC)"
+# Check that tool doesn't have hardcoded defaults in the duration assignment
+if grep -E "\['duration'\].*\?.*absint.*:\s*(4|5)" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php | grep -v "^[[:space:]]*//"; then
+    echo "   ✗ FAIL: Tool has hardcoded default in duration assignment (violates SoC)"
     exit 1
 fi
 
-if grep -q "? absint.*: 5" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php; then
-    echo "   ✗ FAIL: Tool still has old hardcoded default of 5"
-    exit 1
-fi
-
-if grep -q "if ( isset( \$arguments\['duration'\] ) )" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php; then
-    echo "   ✓ Tool uses conditional check (SoC compliant)"
+# Check for the correct SoC pattern: conditional check for duration
+if grep -q "if ( isset( \$arguments\['duration'\] ) )" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php && \
+   grep -q "\$generation_args\['duration'\] = absint( \$arguments\['duration'\] );" includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php; then
+    echo "   ✓ Tool uses conditional check for duration (SoC compliant)"
 else
-    echo "   ⚠ Warning: Could not verify SoC implementation"
+    echo "   ⚠ Warning: Could not verify SoC implementation pattern"
 fi
 
 # Test 5: Verify test files updated
