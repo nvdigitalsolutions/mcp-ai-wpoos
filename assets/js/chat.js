@@ -8288,7 +8288,7 @@
                             console.warn('[WP oOS] Failed to parse SSE event data:', {
                                 eventType: eventType || '(none)',
                                 eventData: eventData.substring(0, 200),
-                                error: parseError.message
+                                error: parseError ? (parseError.message || 'No error message') : 'Unknown error'
                             });
                         }
                     }
@@ -8300,7 +8300,7 @@
                 // Log stream reading errors
                 if (window.console && console.error) {
                     console.error('[WP oOS] Error reading SSE stream chunk:', {
-                        error: readError ? (readError.message || readError) : 'Unknown error',
+                        error: readError ? (readError.message || 'Unknown error') : 'Unknown error',
                         errorType: readError && readError.constructor ? readError.constructor.name : 'Unknown'
                     });
                 }
@@ -8312,7 +8312,7 @@
             // Log top-level stream errors
             if (window.console && console.error) {
                 console.error('[WP oOS] SSE stream processing error:', {
-                    error: streamError ? (streamError.message || streamError) : 'Unknown error',
+                    error: streamError ? (streamError.message || 'Unknown error') : 'Unknown error',
                     errorType: streamError && streamError.constructor ? streamError.constructor.name : 'Unknown'
                 });
             }
