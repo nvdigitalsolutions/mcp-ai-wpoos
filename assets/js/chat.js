@@ -55,6 +55,7 @@
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
+    const STREAMING_STATUS_PREVIEW_LENGTH = 100; // Maximum characters to show in status preview during streaming
     
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
@@ -7788,9 +7789,8 @@
                 // Also update status area with streaming preview for better visibility
                 // Show a truncated preview of the streaming content
                 if (content && content.length > 0) {
-                    const previewLength = 100; // Show first 100 characters
-                    const preview = content.length > previewLength 
-                        ? content.substring(0, previewLength) + '…' 
+                    const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
+                        ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
                         : content;
                     
                     setStatus(state.container, {
