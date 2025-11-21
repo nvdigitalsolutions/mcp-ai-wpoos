@@ -385,4 +385,78 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			);
 		}
 	}
+
+	/**
+	 * Test that 1080p resolution enforces 8 seconds duration (2025 API requirement).
+	 */
+	public function test_1080p_requires_8_seconds_duration() {
+		// Set up API key.
+		$settings = array(
+			'gemini_api_key' => 'test-api-key-12345',
+		);
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		$captured_request = null;
+
+		// Set up HTTP mocks with request capture.
+		$this->setup_veo_http_mocks( $captured_request );
+
+		// Test with 1080p and various durations - all should be forced to 8 seconds.
+		$test_durations = array( 4, 5, 6, 7 );
+		foreach ( $test_durations as $requested_duration ) {
+			$captured_request = null;
+
+			$result = $service->generate_video(
+				array(
+					'prompt'       => 'Test 1080p video',
+					'duration'     => $requested_duration,
+					'aspect_ratio' => '16:9',
+					'resolution'   => '1080p',
+				)
+			);
+
+			$this->assertFalse( is_wp_error( $result ), "Video generation should succeed with 1080p and duration {$requested_duration}" );
+
+			// Decode the request body.
+			$request_body = json_decode( $captured_request['args']['body'], true );
+
+			// Verify duration was forced to 8 seconds for 1080p.
+			$this->assertEquals(
+				8,
+				$request_body['parameters']['durationSeconds'],
+				"1080p resolution should force duration to 8 seconds (requested: {$requested_duration})"
+			);
+
+			// Verify resolution is 1080p.
+			$this->assertEquals(
+				'1080p',
+				$request_body['parameters']['resolution'],
+				'Resolution should be 1080p'
+			);
+		}
+
+		// Test that 8 seconds is accepted for 1080p.
+		$captured_request = null;
+
+		$result = $service->generate_video(
+			array(
+				'prompt'       => 'Test 1080p video',
+				'duration'     => 8,
+				'aspect_ratio' => '16:9',
+				'resolution'   => '1080p',
+			)
+		);
+
+		$this->assertFalse( is_wp_error( $result ), 'Video generation should succeed with 1080p and 8 seconds' );
+
+		$request_body = json_decode( $captured_request['args']['body'], true );
+
+		$this->assertEquals(
+			8,
+			$request_body['parameters']['durationSeconds'],
+			'1080p with 8 seconds should pass through correctly'
+		);
+	}
 }

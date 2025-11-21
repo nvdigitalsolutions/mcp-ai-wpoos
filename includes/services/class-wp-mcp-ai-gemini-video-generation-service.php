@@ -5,6 +5,15 @@
  * Handles video generation using Google's Veo 3.1 model through the Gemini API.
  * Manages async video generation, polling, and file download.
  *
+ * Google API Requirements Compliance (2025):
+ * - Authentication: Uses x-goog-api-key header (line 235)
+ * - Rate Limits: 10 RPM for preview access (documented in tool capability flags)
+ * - Watermarking: All videos automatically include SynthID digital watermark by Google
+ * - Content Policy: Relies on Google's API-side content moderation
+ * - Timeout Handling: 60s initial timeout + 5min max polling (300s)
+ * - 1080p Requirement: Enforces 8 seconds duration for 1080p resolution (REQUIRED_1080P_DURATION constant)
+ * - Aspect Ratio: 1080p only supported for 16:9 (line 165-168)
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */
@@ -59,6 +68,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @var int
 	 */
 	const DEFAULT_DURATION = 5;
+
+	/**
+	 * Required duration for 1080p resolution (2025 API requirement)
+	 *
+	 * @var int
+	 */
+	const REQUIRED_1080P_DURATION = 8;
 
 	/**
 	 * Maximum polling attempts
@@ -156,6 +172,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// 1080p only supported for 16:9.
 		if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
 			$resolution = '720p';
+		}
+
+		// 1080p requires 8 seconds duration (2025 API requirement).
+		if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
+			$duration = self::REQUIRED_1080P_DURATION;
 		}
 
 		// Build instance data.
