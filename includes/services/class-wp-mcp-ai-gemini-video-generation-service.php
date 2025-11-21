@@ -412,11 +412,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 		} else {
 			// Veo 2.0: Resolution parameter not supported - keep as null.
-			// Log if resolution was requested but will be ignored.
-			if ( isset( $args['resolution'] ) && '720p' !== $args['resolution'] ) {
+			// Log if resolution was requested (will be ignored regardless of value).
+			if ( isset( $args['resolution'] ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'veo_2_resolution_not_supported',
-					'Veo 2.0 does not support resolution parameter, using model default',
+					'Veo 2.0 does not support resolution parameter, using model default (720p)',
 					array( 'requested' => $args['resolution'] )
 				);
 			}
