@@ -1,4 +1,4 @@
-# Fix: Gemini Image/Video URLs Point to WordPress Media Library
+# Fix: Gemini Image/Video URLs Point to WordPress Media Library (SoC-Compliant)
 
 ## Problem Statement
 
@@ -6,135 +6,94 @@ When Gemini Veo 3 generates videos or edits images, the files are correctly save
 
 ## Root Cause
 
-The issue occurred because WordPress installations with media offloading plugins (like WP Offload Media, WP-Stateless, etc.) configured to use external storage (OneDrive, S3, etc.) will filter `wp_get_attachment_url()` to return the external storage URL.
+WordPress installations with media offloading plugins (like WP Offload Media, WP-Stateless, etc.) configured to use external storage (OneDrive, S3, etc.) filter `wp_get_attachment_url()` to return the external storage URL instead of the local WordPress upload directory URL.
 
-The affected code was calling `wp_get_attachment_url($attachment_id)` which, when filtered by offloading plugins, returns the external URL instead of the local WordPress upload directory URL.
+## Solution (SoC-Compliant)
 
-## Solution
+Created a utility class `WP_MCP_AI_Media_URL_Utils` that provides centralized, reusable methods for retrieving local WordPress URLs. This eliminates code duplication while maintaining proper Separation of Concerns (SoC) between tools and services.
 
-The fix ensures that we always use the **local WordPress upload URL** by preferring `$upload['url']` from `wp_upload_bits()` over `wp_get_attachment_url()`.
+### Architecture Benefits
 
-### Why This Works
+1. **Single Responsibility**: Utility class has one job - provide local WordPress URLs
+2. **No Code Duplication**: URL selection logic exists in one place
+3. **Reusability**: Any tool or service can use the utility class
+4. **Testability**: Utility methods can be unit tested independently
+5. **Maintainability**: Future changes only need to be made in one place
+6. **Layer Independence**: Tools and services remain architecturally separate
 
-1. **`wp_upload_bits($filename, null, $data)`** - Returns an array containing:
-   - `'file'` - Absolute path to the uploaded file
-   - `'url'` - Direct URL to the file in WordPress uploads directory
-   - `'error'` - Error message if upload failed
+## Implementation
 
-2. **`$upload['url']`** - Always points to the local WordPress uploads directory (e.g., `https://example.com/wp-content/uploads/2024/11/video.mp4`)
+### New Utility Class
 
-3. **`wp_get_attachment_url($attachment_id)`** - Can be filtered by plugins to return external URLs (e.g., `https://onedrive.live.com/...`)
+**File:** `includes/class-wp-mcp-ai-media-url-utils.php` (NEW)
 
-## Code Changes
-
-### 1. Gemini Veo Video Generation Tool
-
-**File:** `includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php`
-
-**Before:**
 ```php
-protected function save_video_to_media( $result, $user_id ) {
-    // ... upload and create attachment ...
-    return $attachment_id;
+class WP_MCP_AI_Media_URL_Utils {
+    /**
+     * Get local WordPress URL (not external CDN/offloaded URL).
+     * Prefers wp_upload_bits() URL over wp_get_attachment_url().
+     */
+    public static function get_local_upload_url( $upload, $attachment_id = 0 )
+
+    /**
+     * Build standardized attachment result with local URL.
+     */
+    public static function build_attachment_result( $attachment_id, $upload )
 }
-
-// In execute method:
-'url' => wp_get_attachment_url( $attachment_id ),
 ```
 
-**After:**
-```php
-protected function save_video_to_media( $result, $user_id ) {
-    // ... upload and create attachment ...
-    return array(
-        'attachment_id' => $attachment_id,
-        'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-    );
-}
+### Updated Files
 
-// In execute method:
-$save_result = $this->save_video_to_media( $result, $user_id );
-'url' => $save_result['url'],
-```
+**Tools:**
+- `includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php`
+- `includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php`
 
-### 2. Gemini Video Generation Service
+**Services:**
+- `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
 
-**File:** `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
+All now use: `WP_MCP_AI_Media_URL_Utils::build_attachment_result()` or `get_local_upload_url()`
 
-Same pattern applied to the service's `save_video_to_media()` method and async polling code.
+## Why This Works
 
-### 3. Gemini Image Editing Tool
-
-**File:** `includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php`
-
-**Before:**
-```php
-return array(
-    'url'          => isset( $upload['url'] ) ? $upload['url'] : '',
-    'download_url' => wp_get_attachment_url( $attachment_id ),
-    // ...
-);
-```
-
-**After:**
-```php
-$local_url = isset( $upload['url'] ) ? $upload['url'] : '';
-$download_url = $local_url ? $local_url : wp_get_attachment_url( $attachment_id );
-
-return array(
-    'url'          => $local_url,
-    'download_url' => $download_url,
-    // ...
-);
-```
+- **`wp_upload_bits()`** → Returns array with local `'url'` key
+- **`$upload['url']`** → Always points to local WordPress uploads directory  
+- **`wp_get_attachment_url()`** → Can be filtered to return external URLs
+- **Utility Class** → Centralizes the decision logic following SoC
 
 ## Test Coverage
 
-Created comprehensive test file: `tests/test-veo-local-url.php`
+**File:** `tests/test-veo-local-url.php` (NEW)
 
-The tests:
-1. Mock `wp_get_attachment_url()` to return OneDrive URLs
-2. Verify that `save_video_to_media()` returns local WordPress URLs
-3. Test both tool and service implementations
-4. Test async completion flow
-5. Assert URLs contain `wp-content/uploads` and NOT `onedrive`
-
-## Affected Features
-
-- ✅ Gemini Veo 3 video generation (sync mode)
-- ✅ Gemini Veo 3 video generation (async mode)
-- ✅ Gemini image editing
-- ℹ️ Gemini image generation (already correct - no changes needed)
+Tests verify:
+- Service returns local URLs (not OneDrive)
+- Tool returns local URLs (not OneDrive)
+- Async completion uses local URLs (not OneDrive)
+- URLs contain `wp-content/uploads` and NOT `onedrive`
 
 ## Backwards Compatibility
 
-This change is **fully backwards compatible**:
+✅ Fully backwards compatible:
+- Falls back to `wp_get_attachment_url()` if upload URL unavailable
+- No breaking changes for existing functionality
+- Works with or without media offloading plugins
 
-1. If no offloading plugin is active, `wp_get_attachment_url()` returns the same URL as `$upload['url']`
-2. We still fall back to `wp_get_attachment_url()` if `$upload['url']` is not available
-3. Existing code that relies on attachment IDs continues to work
+## Affected Features
 
-## How to Verify
+- ✅ Gemini Veo 3 video generation (sync and async)
+- ✅ Gemini image editing
+- ℹ️ Gemini image generation (already correct - no changes needed)
 
-1. **Without Offloading:**
-   - Generate a Veo video
-   - Check that the URL in the chat points to `/wp-content/uploads/`
+## Future Usage
 
-2. **With Offloading (OneDrive, S3, etc.):**
-   - Configure media offloading plugin
-   - Generate a Veo video
-   - Verify the URL in chat still points to local WordPress uploads
-   - The offloading plugin may still serve the file from OneDrive, but the URL shown to users is local
+For any new tools that save files to WordPress media:
 
-## Future Considerations
+```php
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
-This same pattern should be applied to any new tools that:
-1. Use `wp_upload_bits()` to save files
-2. Return URLs to the chat client
-3. Want to ensure local WordPress URLs are used
+$upload = wp_upload_bits( $filename, null, $data );
+// ... create attachment ...
 
-## Related Issues
+return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
+```
 
-- Gemini image generation already uses this pattern (no changes needed)
-- Image base class (`class-wp-mcp-ai-tool-image-base.php`) already uses this pattern
-- Other tools that fetch existing attachments should continue using `wp_get_attachment_url()`
+This maintains SoC and ensures consistency across the codebase.

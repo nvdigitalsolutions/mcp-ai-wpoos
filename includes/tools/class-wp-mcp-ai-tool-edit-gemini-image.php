@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
@@ -532,17 +533,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
-		// Prefer the upload URL to ensure we're using the local WordPress media URL,
-		// not an external URL from offloading plugins.
-		$local_url = isset( $upload['url'] ) ? $upload['url'] : '';
-		$download_url = $local_url ? $local_url : wp_get_attachment_url( $attachment_id );
+		// Get local WordPress URL using utility class for SoC compliance.
+		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
 			'url'           => $local_url,
-			'download_url'  => $download_url,
+			'download_url'  => $local_url,
 			'mime_type'     => $mime_type,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,

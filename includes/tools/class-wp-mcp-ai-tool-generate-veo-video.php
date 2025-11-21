@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Generates videos from text prompts using Google's Veo 3.1 model.
@@ -407,13 +408,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			)
 		);
 
-		// Return both attachment ID and the local upload URL.
-		// We prefer the upload URL to ensure we're pointing to the local WordPress
-		// media directory, not an external CDN or cloud storage like OneDrive.
-		return array(
-			'attachment_id' => $attachment_id,
-			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-		);
+		// Return attachment result with local WordPress URL.
+		// Uses utility class for SoC compliance and code reusability.
+		return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
 	}
 
 	/**
