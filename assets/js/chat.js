@@ -10425,7 +10425,13 @@
             'error': getString('finishReasonError', 'Response stopped: Error occurred')
         };
         
-        return reasonMessages[reason] || getString('finishReasonOther', 'Response stopped: ' + finishReason);
+        if (reasonMessages[reason]) {
+            return reasonMessages[reason];
+        }
+        
+        // For unknown reasons, use the format string with the original reason value
+        const template = getString('finishReasonOther', 'Response stopped: %s');
+        return formatString(template, finishReason);
     }
 
     function formatString(template) {
