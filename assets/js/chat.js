@@ -10012,6 +10012,11 @@
      * This is used during SSE response parsing to normalize different
      * provider formats (OpenAI, Ollama, etc.) into plain text.
      * 
+     * Note: This differs from extractNestedText() which:
+     * - Returns an array (not string)
+     * - Recursively extracts from many properties (value, message, reason, etc.)
+     * - Is used for complex content parsing, not AI responses
+     * 
      * @param {*} content - Content to extract text from (string, object, or array)
      * @return {string} Extracted text or empty string
      */
