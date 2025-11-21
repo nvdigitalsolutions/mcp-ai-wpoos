@@ -319,55 +319,6 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test process_completed_video returns 720p resolution for Veo 2.0.
-	 */
-	public function test_veo_2_result_resolution_720p() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'process_completed_video' );
-		$method->setAccessible( true );
-
-		// Mock API result with video URI.
-		$api_result = array(
-			'response' => array(
-				'generateVideoResponse' => array(
-					'generatedSamples' => array(
-						array(
-							'video' => array(
-								'uri' => 'https://example.com/video.mp4',
-							),
-						),
-					),
-				),
-			),
-		);
-
-		// Args with 1080p requested (should be ignored for Veo 2.0).
-		$args = array(
-			'prompt'     => 'Test video',
-			'resolution' => '1080p',
-			'duration'   => 8,
-		);
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-
-		// Mock the download_video method to prevent actual HTTP request.
-		$download_method = new ReflectionMethod( $service, 'download_video' );
-		$download_method->setAccessible( true );
-		
-		// We can't easily mock the download, so let's just verify the resolution logic.
-		// The actual resolution in result should be 720p for Veo 2.0 regardless of request.
-		// Since we can't mock easily in PHPUnit without a mocking framework, 
-		// we'll test this indirectly through the build_generation_payload test above.
-		
-		// This test documents expected behavior: Veo 2.0 always outputs 720p.
-		$this->assertEquals(
-			'720p',
-			'720p',
-			'Veo 2.0 always outputs 720p resolution (documented behavior)'
-		);
-	}
-
-	/**
 	 * Test tool description mentions fallback support.
 	 */
 	public function test_tool_description_mentions_fallback() {
