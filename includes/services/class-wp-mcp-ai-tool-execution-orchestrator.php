@@ -239,6 +239,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		return array(
 			'async'   => true,
 			'job_id'  => $job_id,
+			'id'      => $job_id, // Include 'id' for provider compatibility.
 			'status'  => 'pending',
 			'message' => sprintf(
 				/* translators: %s: tool name */
