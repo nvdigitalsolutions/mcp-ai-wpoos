@@ -381,6 +381,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_video_caption'          => 'wordpress-core',
 				'analyze_comment_content'         => 'wordpress-core',
 
+				// Image manipulation (Graphic Editor Suite).
+				'resize_image'                    => 'wordpress-core',
+				'crop_image'                      => 'wordpress-core',
+				'rotate_image'                    => 'wordpress-core',
+				'convert_image_format'            => 'wordpress-core',
+
 				// Data Visualization.
 				'create_chart'                    => 'wordpress-core',
 
@@ -792,6 +798,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
 				// Product scraping tool.
 				'WP_MCP_AI_Tool_Scrape_Product'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product.php',
+				// Image manipulation tools (Graphic Editor Suite).
+				'WP_MCP_AI_Tool_Resize_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-resize-image.php',
+				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
+				'WP_MCP_AI_Tool_Rotate_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
+				'WP_MCP_AI_Tool_Convert_Image_Format'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
