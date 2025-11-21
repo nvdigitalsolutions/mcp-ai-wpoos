@@ -173,8 +173,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Build parameters.
+		// Note: 'model' parameter is not included here as it's already specified in the API endpoint URL.
+		// Including it causes "model isn't supported" error from the Gemini API.
 		$parameters = array(
-			'model'           => self::VEO_MODEL,
 			'sampleCount'     => 1,
 			'aspectRatio'     => $aspect_ratio,
 			'resolution'      => $resolution,
