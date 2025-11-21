@@ -272,12 +272,27 @@ class Test_Video_Tools extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'is_video_capable_gemini_model' );
 		$method->setAccessible( true );
 
-		// Test all documented video-capable models from NEW-AI-MODELS-2024.md.
+		// Test all 2025 video-capable models based on current Gemini API.
 		$video_capable_models = array(
-			'gemini-2.5-flash',      // Production-ready with video support.
-			'gemini-2.0-flash-exp',  // Latest experimental with native video understanding.
-			'gemini-2.0-flash',      // Stable 2.0 with video support.
-			'gemini-exp-1206',       // December 2024 experimental with video capabilities.
+			// Gemini 3 series (latest - 2025).
+			'gemini-3-pro-preview',
+			'gemini-3-pro',
+
+			// Gemini 2.5 series (production - 2025).
+			'gemini-2.5-pro',
+			'gemini-2.5-flash',
+			'gemini-2.5-flash-lite',
+			'gemini-2.5-flash-preview-09-2025',
+			'gemini-live-2.5-flash-preview',
+
+			// Gemini 2.0 series (stable).
+			'gemini-2.0-flash-exp',
+			'gemini-2.0-flash',
+			'gemini-2.0-flash-lite',
+
+			// Experimental models.
+			'gemini-exp-1206',
+			'gemini-exp-1121',
 		);
 
 		foreach ( $video_capable_models as $model ) {
@@ -285,12 +300,13 @@ class Test_Video_Tools extends WP_UnitTestCase {
 			$this->assertTrue( $result, "Model $model should be recognized as video-capable" );
 		}
 
-		// Test that non-video models are not recognized.
+		// Test that deprecated/non-video models are not recognized.
 		$non_video_models = array(
-			'gemini-1.5-pro',
-			'gemini-1.5-flash',
-			'gemini-pro',
-			'gpt-4o',
+			'gemini-1.5-pro',   // Deprecated 1.x series.
+			'gemini-1.5-flash', // Deprecated 1.x series.
+			'gemini-pro',       // Deprecated 1.x series.
+			'gpt-4o',           // OpenAI model (not Gemini).
+			'gemini-2.5-flash-image', // Image generation only.
 		);
 
 		foreach ( $non_video_models as $model ) {
