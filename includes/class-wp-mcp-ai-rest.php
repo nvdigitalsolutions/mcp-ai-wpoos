@@ -888,9 +888,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_id = absint( $assistant_id );
 			}
 
-			// Get status summary and counts with optional assistant filter.
-			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id );
-			$counts = $service->get_status_counts( $user_id, $assistant_id );
+			$context = $request->get_param( 'context' );
+			if ( ! $context ) {
+				$context = 'admin';
+			}
+
+			// Get status summary and counts with optional assistant filter and context.
+			// When context is 'chat', internal async tool jobs are excluded.
+			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id, $context );
+			$counts = $service->get_status_counts( $user_id, $assistant_id, $context );
 
 			$response = array(
 				'jobs'   => $jobs,
