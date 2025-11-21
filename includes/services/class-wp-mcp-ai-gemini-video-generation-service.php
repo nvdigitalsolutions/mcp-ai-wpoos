@@ -389,30 +389,35 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Resolution validation.
-		$resolution = isset( $args['resolution'] ) ? $args['resolution'] : '720p';
-		if ( ! in_array( $resolution, array( '720p', '1080p' ), true ) ) {
-			$resolution = '720p';
-		}
-
-		// Veo 2.0 does not support 1080p - force to 720p.
-		if ( $is_veo_2 && '1080p' === $resolution ) {
-			$resolution = '720p';
-			
-			WP_MCP_AI_Logger::log_event(
-				'veo_2_resolution_downgrade',
-				'Veo 2.0 does not support 1080p, downgrading to 720p',
-				array( 'requested' => '1080p' )
-			);
-		}
+		// Note: Veo 2.0 does NOT support the 'resolution' parameter at all.
+		// Only Veo 3.1 supports resolution parameter ('720p' or '1080p').
+		$resolution = null;
 		
-		// 1080p only supported for 16:9.
-		if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
-			$resolution = '720p';
-		}
-
-		// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
-		if ( ! $is_veo_2 && '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
-			$duration = self::REQUIRED_1080P_DURATION;
+		if ( ! $is_veo_2 ) {
+			// Veo 3.1: Validate and set resolution.
+			$resolution = isset( $args['resolution'] ) ? $args['resolution'] : '720p';
+			if ( ! in_array( $resolution, array( '720p', '1080p' ), true ) ) {
+				$resolution = '720p';
+			}
+			
+			// 1080p only supported for 16:9.
+			if ( '1080p' === $resolution && '9:16' === $aspect_ratio ) {
+				$resolution = '720p';
+			}
+			
+			// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
+			if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
+				$duration = self::REQUIRED_1080P_DURATION;
+			}
+		} else {
+			// Veo 2.0: Log if resolution was requested but will be ignored.
+			if ( isset( $args['resolution'] ) && '720p' !== $args['resolution'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_2_resolution_not_supported',
+					'Veo 2.0 does not support resolution parameter, using model default',
+					array( 'requested' => $args['resolution'] )
+				);
+			}
 		}
 
 		// Build instance data.
@@ -435,10 +440,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$parameters = array(
 			'sampleCount'     => 1,
 			'aspectRatio'     => $aspect_ratio,
-			'resolution'      => $resolution,
 			'durationSeconds' => $duration,
 			// Note: 'generateAudio' is not supported by Veo models - removed to prevent API errors.
 		);
+		
+		// Only add resolution parameter for Veo 3.1 (not supported by Veo 2.0).
+		if ( ! $is_veo_2 && null !== $resolution ) {
+			$parameters['resolution'] = $resolution;
+		}
 
 		// Add optional parameters.
 		if ( ! empty( $args['negative_prompt'] ) ) {

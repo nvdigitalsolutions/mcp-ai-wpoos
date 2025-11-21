@@ -195,14 +195,14 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test build_generation_payload downgrades 1080p to 720p for Veo 2.
+	 * Test build_generation_payload excludes resolution parameter for Veo 2.0.
 	 */
-	public function test_veo_2_resolution_downgrade() {
+	public function test_veo_2_resolution_excluded() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$method = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
-		// Test that 1080p is downgraded to 720p for Veo 2.
+		// Test that resolution parameter is excluded for Veo 2.0 even with 1080p request.
 		$args = array(
 			'prompt'     => 'Test video',
 			'resolution' => '1080p',
@@ -214,11 +214,37 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
-		$this->assertArrayHasKey( 'resolution', $payload['parameters'] );
-		$this->assertEquals(
-			'720p',
-			$payload['parameters']['resolution'],
-			'Veo 2 should downgrade 1080p to 720p'
+		$this->assertArrayNotHasKey(
+			'resolution',
+			$payload['parameters'],
+			'Veo 2.0 should not include resolution parameter (not supported by model)'
+		);
+	}
+	
+	/**
+	 * Test build_generation_payload excludes resolution parameter for Veo 2.0 with 720p.
+	 */
+	public function test_veo_2_resolution_excluded_720p() {
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		$method = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method->setAccessible( true );
+
+		// Test that resolution parameter is excluded for Veo 2.0 even with 720p request.
+		$args = array(
+			'prompt'     => 'Test video',
+			'resolution' => '720p',
+			'duration'   => 5,
+		);
+
+		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
+		$payload = $method->invoke( $service, $args, $veo_2_constant );
+
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'parameters', $payload );
+		$this->assertArrayNotHasKey(
+			'resolution',
+			$payload['parameters'],
+			'Veo 2.0 should not include resolution parameter even with 720p'
 		);
 	}
 
