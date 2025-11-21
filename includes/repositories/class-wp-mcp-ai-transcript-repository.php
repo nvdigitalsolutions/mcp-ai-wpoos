@@ -202,6 +202,39 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
+		// If no rows found with cct_author_id, try with user_id column as fallback.
+		// This handles cases where JetEngine might be using the custom user_id field
+		// instead of the built-in cct_author_id column.
+		if ( empty( $rows ) ) {
+			// Build fallback query using user_id instead of cct_author_id.
+			$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
+			$fallback_where_values  = array( $session_key, $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
+
+			$fallback_query_template = "SELECT request_payload,
+                response_payload,
+                metadata,
+                request_started_at,
+                response_completed_at,
+                cct_created,
+                assistant_id,
+                assistant_model,
+                latency_ms
+         FROM {$table}
+         WHERE {$fallback_where_sql}
+         ORDER BY cct_created ASC, id ASC";
+
+			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
+
+			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+		}
+
 		if ( empty( $rows ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
