@@ -286,11 +286,10 @@ class Test_Video_Tools extends WP_UnitTestCase {
 			'gemini-live-2.5-flash-preview',
 
 			// Gemini 2.0 series (stable).
-			'gemini-2.0-flash-exp',
 			'gemini-2.0-flash',
 			'gemini-2.0-flash-lite',
 
-			// Experimental models.
+			// Experimental models (may be deprecated).
 			'gemini-exp-1206',
 			'gemini-exp-1121',
 		);
@@ -302,11 +301,12 @@ class Test_Video_Tools extends WP_UnitTestCase {
 
 		// Test that deprecated/non-video models are not recognized.
 		$non_video_models = array(
-			'gemini-1.5-pro',   // Deprecated 1.x series.
-			'gemini-1.5-flash', // Deprecated 1.x series.
-			'gemini-pro',       // Deprecated 1.x series.
-			'gpt-4o',           // OpenAI model (not Gemini).
+			'gemini-1.5-pro',         // Deprecated 1.x series.
+			'gemini-1.5-flash',       // Deprecated 1.x series.
+			'gemini-pro',             // Deprecated 1.x series.
+			'gpt-4o',                 // OpenAI model (not Gemini).
 			'gemini-2.5-flash-image', // Image generation only.
+			'gemini-2.0-flash-exp',   // Deprecated experimental (use gemini-2.0-flash).
 		);
 
 		foreach ( $non_video_models as $model ) {
