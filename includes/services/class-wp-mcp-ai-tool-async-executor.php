@@ -71,6 +71,16 @@ class WP_MCP_AI_Tool_Async_Executor {
 	const CRON_HOOK = 'wp_mcp_ai_async_tool_execution';
 
 	/**
+	 * Default timeout for async tool execution in cron context (in seconds)
+	 * 
+	 * Set to 180 seconds (3 minutes) to accommodate long-running tools
+	 * like video generation which typically takes 60-120 seconds.
+	 *
+	 * @var int
+	 */
+	const DEFAULT_TOOL_TIMEOUT = 180;
+
+	/**
 	 * Tool registry instance (lazy loaded)
 	 *
 	 * @var WP_MCP_AI_Tool_Registry|null
@@ -249,6 +259,26 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Execute tool.
 		try {
+			// Set execution time limit for async tool execution in cron context.
+			// Video generation can take 60-120 seconds, so we need to allow sufficient time.
+			// This is safe in cron context as it won't affect the main HTTP request.
+			$tool_timeout = self::DEFAULT_TOOL_TIMEOUT;
+			
+			// Apply filter to allow customization per tool.
+			$tool_timeout = apply_filters( 'wp_mcp_ai_async_tool_timeout', $tool_timeout, $tool_slug, $job_id );
+			
+			// Set timeout if function exists. Some hosting environments disable set_time_limit
+			// for security reasons (safe mode, disable_functions in php.ini).
+			// Silencing errors because set_time_limit may trigger:
+			// - Warning when disabled in php.ini (disable_functions)
+			// - Warning when safe mode is enabled
+			// - Warning when running as Apache module with certain configurations
+			// These warnings are expected and can be safely ignored as we're providing
+			// a best-effort timeout extension for long-running tools.
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+			
 			$start_time = microtime( true );
 			$result     = $tool->execute( $arguments, $context );
 			$duration   = microtime( true ) - $start_time;

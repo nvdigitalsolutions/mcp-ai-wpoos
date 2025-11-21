@@ -478,7 +478,49 @@ define( 'DOING_CRON', true );
    }
    ```
 
-2. **Return complete results** - include URLs and metadata:
+2. **Use `background-only` for tools that take 60+ seconds**:
+   ```php
+   public function get_capability_flags() {
+       return array( 
+           'async', 
+           'long-running',
+           'background-only',  // Forces async even in agentic loops
+           'may-timeout' 
+       );
+   }
+   ```
+   
+   **Why `background-only` is needed**:
+   - Agentic loops (chat conversations) normally force synchronous execution
+   - This ensures LLM receives actual results, not pending status
+   - But tools taking 60-120+ seconds (like video generation) will timeout
+   - `background-only` flag overrides this behavior, allowing async execution
+   - Example: Video generation via Gemini Veo 3.1 takes 60-120 seconds
+   
+   **Without `background-only`**:
+   ```
+   User: Generate a video → Tool runs sync → HTTP timeout after 30-60s → Error
+   ```
+   
+   **With `background-only`**:
+   ```
+   User: Generate a video → Tool queued async → job_id returned → Cron executes → Client polls → Success
+   ```
+
+3. **Check `in_async_executor` context to prevent double-async**:
+   ```php
+   protected function should_use_async( $arguments, $context ) {
+       // If already running in async executor, don't create nested async job
+       if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
+           return false;
+       }
+       
+       // Otherwise use async for long operations
+       return true;
+   }
+   ```
+
+4. **Return complete results** - include URLs and metadata:
    ```php
    return array(
        'url'           => $attachment_url,
@@ -489,7 +531,7 @@ define( 'DOING_CRON', true );
    );
    ```
 
-3. **Don't rely on request context** - only user_id, assistant_id, session_id are preserved
+5. **Don't rely on request context** - only user_id, assistant_id, session_id are preserved
 
 ### For Frontend Developers
 
