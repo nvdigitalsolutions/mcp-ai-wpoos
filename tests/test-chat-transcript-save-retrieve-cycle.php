@@ -83,9 +83,9 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 				public $records = array();
 
 				public function update_item( $record ) {
-					// Store records indexed by session_key and cct_author_id for retrieval.
+					// Store records indexed by session_key and user_id for retrieval.
 					$session_key = isset( $record['session_key'] ) ? $record['session_key'] : '';
-					$user_id     = isset( $record['cct_author_id'] ) ? $record['cct_author_id'] : 0;
+					$user_id     = isset( $record['user_id'] ) ? $record['user_id'] : 0;
 
 					if ( '' === $session_key || 0 === $user_id ) {
 						return new WP_Error( 'invalid_record', 'Invalid session_key or user_id' );
@@ -181,7 +181,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 		// Verify stored record structure.
 		$stored_record = $stored_records[0];
 		$this->assertEquals( $session_key, $stored_record['session_key'], 'Stored session_key should match' );
-		$this->assertEquals( $this->admin_id, $stored_record['cct_author_id'], 'Stored user_id should match' );
+		$this->assertEquals( $this->admin_id, $stored_record['user_id'], 'Stored user_id should match' );
 		$this->assertEquals( (string) $this->assistant_id, $stored_record['assistant_id'], 'Stored assistant_id should match' );
 
 		// Verify request_payload contains the messages.
