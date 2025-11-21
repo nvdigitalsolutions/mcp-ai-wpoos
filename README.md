@@ -49,6 +49,7 @@
 - [🛠 Assistant Editor Overview](#assistant-editor-overview)
 - [📊 Assistant Storage: CPT vs CCT](#assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
+- [👔 Professional & Team Layers](#professional-team-layers)
 - [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads-attachments)
 
 ### Development
@@ -161,6 +162,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
+- 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
@@ -1536,6 +1538,159 @@ Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate pr
 Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
 
 ➡️ [Read the full guide to assistant prompt shortcuts.](docs/assistant-tool-shortcuts.md)
+
+## 👔 Professional & Team Layers
+
+WP oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
+
+1. **Select from 182 pre-built professional templates** spanning 12 industry categories
+2. **Create custom profession templates** with reusable configurations
+3. **Deploy entire teams** of specialized assistants with one click
+4. **Test everything from the backend** before exposing to end users
+
+### 🎓 Professional Templates
+
+Professions are reusable assistant templates with pre-configured:
+- **Role descriptions** and expertise areas
+- **Default tools** curated for each profession
+- **Knowledge bases** with industry-specific best practices
+- **AI model defaults** (provider, model, temperature)
+- **Warnings and disclaimers** for professional contexts
+
+**Available Categories (182 professions):**
+- 🌾 Agriculture & Natural Resources (10 professions)
+- 🎨 Art, Media & Entertainment (24 professions)
+- 💼 Business & Finance (16 professions)
+- 🎓 Education (10 professions)
+- 🏥 Healthcare & Medicine (25 professions)
+- ⚖️ Law & Public Safety (11 professions)
+- 🔬 Science & Engineering (17 professions)
+- 🍽️ Service Industry (12 professions)
+- 💻 Technology (12 professions)
+- 🔧 Trades & Manual Labor (13 professions)
+- 🚚 Transportation (10 professions)
+- 📋 Miscellaneous (22 professions)
+
+**Example Professions:**
+- Software Developer, Web Developer, Data Scientist
+- Accountant, Financial Advisor, Marketing Consultant
+- Registered Nurse, Physician, Pharmacist
+- Attorney, Paralegal, Mediator
+- Content Writer, Graphic Designer, Social Media Manager
+- And 170+ more...
+
+### Creating Assistants from Templates
+
+Navigate to **AI Assistants → Add New** to browse the visual profession grid:
+
+1. **Browse by category** or search for a specific role
+2. **Click "Create"** on any profession to open a customization modal
+3. **Customize** the assistant name and AI settings (or use defaults)
+4. **Deploy** your configured assistant instantly
+
+Each profession template includes:
+- Pre-written system prompts with role-specific expertise
+- Curated tool selections appropriate for the profession
+- Industry knowledge bases and best practices
+- Recommended model settings for optimal performance
+
+### 👥 Team Deployments
+
+Teams group multiple professionals for coordinated workflows. Deploy an entire team of specialists with one click:
+
+**Pre-Built Teams:**
+- **Engineering Team** - Software, Mechanical, Electrical, Civil Engineers
+- **Pharmaceutical Development Team** - Pharmacist, Researcher, Clinical Pharmacologist, Regulatory Affairs
+- **Research & Data Science Team** - Data Scientist, Research Scientist, Statistician, Computer Scientist
+- **Marketing & Growth Team** - Marketing Consultant, Content Creator, Graphic Designer, Business Consultant
+
+**Team Features:**
+- **Centralized configuration** - Set provider, model, and temperature for all team members
+- **One-click deployment** - Creates all team member assistants simultaneously
+- **Consistent settings** - Team defaults override individual profession defaults
+- **Custom teams** - Create your own teams with any combination of professions
+
+Navigate to **Teams → Add Team** to deploy a pre-configured team or create custom team combinations.
+
+### 🧪 Backend Testing
+
+Test assistants, professions, and teams directly from the WordPress admin **before** deploying to end users:
+
+#### Test Assistant (Admin → AI Assistants → Test Assistant)
+
+- **Full feature parity** with frontend chat interfaces
+- **All tools enabled** including sensitive/restricted tools (admin-only)
+- **File upload support** with complete MIME type configuration
+- **Transcript saving** for debugging and analysis
+- **Tool shortcuts** pre-loaded from assistant configuration
+- **Streaming responses** with real-time feedback
+
+#### Test Profession (Admin → Professions → Test Profession)
+
+- **Preview profession templates** before creating assistants
+- **Validate role descriptions** and expertise areas
+- **Test default tool selections** in live conversations
+- **Verify knowledge base** content and accuracy
+- **Assess AI model performance** with profession-specific tasks
+
+#### Test Team (Admin → Teams → Test Team)
+
+- **Test entire teams** before deployment
+- **Validate team member coordination** and role separation
+- **Verify shared settings** propagate correctly
+- **Multi-assistant conversations** to test team dynamics
+- **Performance benchmarking** across team members
+
+**Security Note:** All test pages require `manage_options` capability and are restricted to WordPress administrators. Sensitive tools are enabled in test environments because administrators already have full site access.
+
+**Documentation:**
+- [Test Assistant Feature Enhancements](docs/test-assistant-enhancements.md) - Complete testing capabilities guide
+- [Dynamic Assistant Creation System](docs/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
+
+### Custom Professions & Teams
+
+Administrators can create custom profession templates and teams:
+
+**Create Custom Profession:**
+1. Navigate to **Professions → Add New**
+2. Set title, description, and category
+3. Define expertise areas and role description
+4. Select default tools from the registry
+5. Add knowledge base content
+6. Configure AI model defaults
+7. Publish for use in assistant creation
+
+**Create Custom Team:**
+1. Navigate to **Teams → Add New**
+2. Set team name and description
+3. Select profession members from your library
+4. Configure team-wide defaults (provider, model, temperature)
+5. Publish to enable one-click team deployment
+
+### Benefits
+
+**For Organizations:**
+- ✅ Rapid assistant deployment without manual configuration
+- ✅ Consistent configurations across similar roles
+- ✅ Template library grows with your organization
+- ✅ Share profession templates across sites
+- ✅ Professional-grade assistant quality out of the box
+
+**For Administrators:**
+- ✅ Test everything safely from the backend
+- ✅ No coding required for template-based assistants
+- ✅ Visual template selection interface
+- ✅ Reusable configurations reduce errors
+- ✅ Full control over custom templates
+
+**For Developers:**
+- ✅ JSON-based knowledge base system
+- ✅ Extensible via filters and hooks
+- ✅ WordPress standard CPT architecture
+- ✅ REST API access for profession and team data
+- ✅ Automated seeding from knowledge base files
+
+---
 
 ## 🔑 Assistant API credentials
 
