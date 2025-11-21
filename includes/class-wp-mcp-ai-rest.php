@@ -403,8 +403,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 		 */
 		public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
-			$user_id      = absint( $request->get_param( 'user_id' ) );
-			$current_user = get_current_user_id();
+			// Check if user_id was explicitly provided in the request.
+			// We need to check the raw parameter before absint() to distinguish between
+			// "not provided" (null) and "explicitly set to 0" (for guest transcripts).
+			$user_id_param = $request->get_param( 'user_id' );
+			$user_id       = absint( $user_id_param );
+			$current_user  = get_current_user_id();
 
 			// Check for guest token authentication.
 			$guest_token = $this->extract_guest_token( $request );
@@ -415,7 +419,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $guest_assistant ) {
 					// Guest users (not logged in) can access their own transcripts (user_id = 0).
 					// Set user_id to 0 if not explicitly provided, matching how chat transcripts are saved for guests.
-					if ( ! $user_id ) {
+					if ( null === $user_id_param || '' === $user_id_param ) {
 						$user_id = 0;
 						$request->set_param( 'user_id', $user_id );
 					}
@@ -427,7 +431,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			if ( ! $user_id && $current_user ) {
+			// Only set user_id to current user if it was NOT explicitly provided.
+			// This allows admins to query other users' transcripts (including user_id=0 for guests).
+			if ( ( null === $user_id_param || '' === $user_id_param ) && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
 			}

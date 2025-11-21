@@ -100,7 +100,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		$where_clauses = array( 'cct_author_id = %d' );
+		$where_clauses = array( 'user_id = %d' );
 		$where_values  = array( $user_id );
 
 		if ( $assistant_id > 0 ) {
@@ -175,7 +175,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
 
-		$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
 		$where_values  = array( $session_key, $user_id );
 
 		if ( $assistant_id > 0 ) {
@@ -195,31 +195,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
-		// If no rows found with cct_author_id, try with user_id column as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
-		if ( empty( $rows ) ) {
-			// Build fallback query using user_id instead of cct_author_id.
-			$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
-			$fallback_where_values  = array( $session_key, $user_id );
-
-			if ( $assistant_id > 0 ) {
-				$fallback_where_clauses[] = 'assistant_id = %d';
-				$fallback_where_values[]  = $assistant_id;
-			}
-
-			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
-
-			$select_fields           = $this->get_select_fields();
-			$fallback_query_template = "SELECT {$select_fields}
-         FROM {$table}
-         WHERE {$fallback_where_sql}
-         ORDER BY cct_created ASC, id ASC";
-
-			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
-
-			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
-		}
+		// Note: Removed fallback query since user_id is now the primary field in CCT schema.
 
 		if ( empty( $rows ) ) {
 			return new WP_Error(
@@ -252,29 +228,15 @@ class WP_MCP_AI_Transcript_Repository {
 			return false;
 		}
 
-		// First try deleting with cct_author_id.
+		// Delete using user_id field (the actual CCT field name).
 		$deleted = $wpdb->delete(
 			$table,
 			array(
-				'session_key'   => $session_key,
-				'cct_author_id' => $user_id,
+				'session_key' => $session_key,
+				'user_id'     => $user_id,
 			),
 			array( '%s', '%d' )
 		);
-
-		// If no rows deleted with cct_author_id, try with user_id as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
-		if ( false !== $deleted && 0 === $deleted ) {
-			$deleted = $wpdb->delete(
-				$table,
-				array(
-					'session_key' => $session_key,
-					'user_id'     => $user_id,
-				),
-				array( '%s', '%d' )
-			);
-		}
 
 		return $deleted;
 	}
