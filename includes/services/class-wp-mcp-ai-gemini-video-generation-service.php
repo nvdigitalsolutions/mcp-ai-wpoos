@@ -89,13 +89,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	const REQUIRED_1080P_DURATION = 8;
 
 	/**
-	 * Minimum video duration for Veo 2 in seconds
-	 *
-	 * @var int
-	 */
-	const VEO_2_MIN_DURATION = 4;
-
-	/**
 	 * Maximum polling attempts
 	 *
 	 * @var int
