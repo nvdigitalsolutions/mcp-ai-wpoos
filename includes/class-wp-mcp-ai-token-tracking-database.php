@@ -316,7 +316,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->get_row( $wpdb->prepare( $query, $user_id, $start_date, $end_date ), ARRAY_A );
 
 		if ( ! $result ) {
@@ -362,7 +362,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->get_row( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		if ( ! $result ) {
