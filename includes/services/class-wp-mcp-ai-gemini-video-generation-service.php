@@ -922,6 +922,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			)
 		);
 
+		/**
+		 * Fires when a video generation job is queued for async processing.
+		 *
+		 * This action allows other components to track video generation lifecycle
+		 * from queue to completion.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $job_id   Job identifier (e.g., 'veo_abc123').
+		 * @param array  $metadata Job metadata at queue time.
+		 * @param array  $args     Original generation arguments.
+		 */
+		do_action( 'wp_mcp_ai_video_job_queued', $job_id, $metadata, $args );
+
 		return array(
 			'async'   => true,
 			'job_id'  => $job_id,
@@ -1078,6 +1092,21 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'attempts' => $metadata['poll_attempt'],
 				)
 			);
+
+			/**
+			 * Fires when a video generation job completes (success or failure).
+			 *
+			 * This action allows other components to react to video generation completion
+			 * and notify users in real-time instead of relying on polling.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $job_id  Job identifier (e.g., 'veo_abc123').
+			 * @param array  $metadata Complete job metadata including result or error.
+			 * @param string $status  Job status ('completed' or 'failed').
+			 */
+			do_action( 'wp_mcp_ai_video_job_completed', $job_id, $metadata, $metadata['status'] );
+
 			return;
 		}
 

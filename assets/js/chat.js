@@ -10986,6 +10986,104 @@
     }
 
     /**
+     * Poll for job completion notifications
+     * 
+     * Fetches pending notifications from the server and displays them in the chat.
+     * Notifications are cleared after retrieval to avoid duplicates.
+     * 
+     * @param {HTMLElement} container - Chat container element
+     * @param {Object} config - Chat instance configuration
+     */
+    function pollJobNotifications(container, config) {
+        if (!container || !config) {
+            return;
+        }
+
+        const assistantId = config.assistantId;
+        if (!assistantId) {
+            return;
+        }
+
+        const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+        const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+
+        if (!restUrl) {
+            return;
+        }
+
+        const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
+
+        // Fetch notifications
+        fetch(notificationsUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': nonce
+            },
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Failed to fetch notifications');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (!data || !data.notifications || data.notifications.length === 0) {
+                return;
+            }
+
+            // Get state for this container
+            const instanceId = container.getAttribute('id');
+            const state = states.get(instanceId);
+            if (!state) {
+                return;
+            }
+
+            // Display each notification as a system message
+            data.notifications.forEach(function(notification) {
+                // Format message with appropriate emoji prefix
+                let prefix = '📋 ';
+                if (notification.status === 'completed') {
+                    prefix = '✅ ';
+                } else if (notification.status === 'failed') {
+                    prefix = '❌ ';
+                }
+
+                const message = prefix + notification.message;
+
+                // Append system message to chat
+                appendMessage(state.messagesEl, 'system', {
+                    text: message
+                });
+
+                // Log notification for debugging
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Job notification received:', notification);
+                }
+            });
+
+            // Force immediate cron status update
+            if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.fetchStatus) {
+                const instanceId = container.getAttribute('id');
+                const cronStatusEndpoint = restUrl + '/cron-status';
+                window.wpMcpAiCronStatus.fetchStatus(cronStatusEndpoint, nonce, 10, assistantId)
+                    .then(function(statusData) {
+                        // Update cron bar immediately
+                        if (statusData && window.wpMcpAiCronStatus.cache) {
+                            window.wpMcpAiCronStatus.cache[instanceId] = statusData;
+                        }
+                    });
+            }
+        })
+        .catch(function(error) {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Failed to fetch job notifications:', error);
+            }
+        });
+    }
+
+    /**
      * Initialize cron status display for a chat container
      * 
      * @param {HTMLElement} container - Chat container element
@@ -11079,13 +11177,13 @@
     }
 
     /**
-     * Enhanced init function to include cron status
+     * Enhanced init function to include cron status and job notifications
      */
     function initWithCronStatus() {
         // Call original init
         init();
 
-        // Initialize cron status for all chat containers after a brief delay
+        // Initialize cron status and notification polling for all chat containers after a brief delay
         // Use requestIdleCallback to avoid blocking main thread
         setTimeout(function() {
             domUpdateBatcher.schedule(function() {
@@ -11094,7 +11192,17 @@
                     const instanceId = container.getAttribute('id');
                     const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
                     if (config) {
+                        // Initialize cron status display
                         initializeCronStatus(container, config);
+
+                        // Start polling for job notifications every 10 seconds
+                        // This is more frequent than cron status (30s) to provide faster notifications
+                        setInterval(function() {
+                            pollJobNotifications(container, config);
+                        }, 10000);
+
+                        // Do initial poll immediately
+                        pollJobNotifications(container, config);
                     }
                 });
             });

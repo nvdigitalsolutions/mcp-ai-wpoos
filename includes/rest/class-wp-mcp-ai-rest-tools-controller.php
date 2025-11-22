@@ -226,6 +226,36 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+
+		// /job-notifications - Get pending job completion notifications for chat client.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/job-notifications',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_job_notifications_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'Assistant ID to filter notifications.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'validate_callback' => function( $param ) {
+								return is_numeric( $param ) && $param > 0;
+							},
+						),
+						'clear' => array(
+							'description' => __( 'Whether to clear notifications after retrieval.', 'wp-mcp-ai' ),
+							'type'        => 'boolean',
+							'required'    => false,
+							'default'     => true,
+						),
+					),
+				),
+			),
+			true
+		);
 	}
 
 	/**
@@ -377,6 +407,40 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $this->main_controller->handle_cron_job_details_request( $request );
 		}
 		return $this->error( 'not_implemented', __( 'Cron job details endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+
+	/**
+	 * Handle GET /job-notifications request.
+	 *
+	 * Retrieves pending job completion notifications for the current user and assistant.
+	 * Notifications are stored when async jobs complete and cleared when retrieved.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_job_notifications_request( WP_REST_Request $request ) {
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$clear        = (bool) $request->get_param( 'clear' );
+
+		// Get current user ID.
+		$user_id = get_current_user_id();
+
+		// Get event dispatcher service.
+		if ( ! class_exists( 'WP_MCP_AI_Event_Dispatcher_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-event-dispatcher-service.php';
+		}
+
+		$dispatcher = WP_MCP_AI_Event_Dispatcher_Service::get_instance();
+
+		// Get pending notifications.
+		$notifications = $dispatcher->get_pending_notifications( $user_id, $assistant_id, $clear );
+
+		return rest_ensure_response(
+			array(
+				'notifications' => $notifications,
+				'count'         => count( $notifications ),
+			)
+		);
 	}
 
 	/**
