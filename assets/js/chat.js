@@ -8410,9 +8410,14 @@
                         } else if (eventType === 'cron_job_status') {
                             // Handle cron job status updates
                             if (data.status && data.message) {
-                                const prefix = data.status === 'completed' ? '✅ ' : 
-                                              data.status === 'failed' ? '❌ ' : 
-                                              data.status === 'running' ? '⏳ ' : '📋 ';
+                                // Map status to emoji prefix
+                                const statusPrefixes = {
+                                    'completed': '✅ ',
+                                    'failed': '❌ ',
+                                    'running': '⏳ ',
+                                };
+                                const prefix = statusPrefixes[data.status] || '📋 ';
+                                
                                 appendMessage(state.messagesEl, 'system', {
                                     text: prefix + data.message
                                 });
