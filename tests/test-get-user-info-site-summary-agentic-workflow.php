@@ -74,9 +74,15 @@ class WP_MCP_AI_Test_Get_User_Info_Site_Summary_Agentic_Workflow extends WP_Unit
 	}
 
 	/**
-	 * Test that both tools are cacheable.
+	 * Test that tools have correct cacheability based on their context dependencies.
+	 *
+	 * get_user_info depends on user context (which user is calling) and should NOT be cacheable
+	 * to prevent security issues where User A's data could be returned to User B.
+	 *
+	 * get_site_summary does not depend on user context (same data for all admin users)
+	 * and should be cacheable for performance.
 	 */
-	public function test_both_tools_are_cacheable() {
+	public function test_tools_have_correct_cacheability() {
 		$reflection_class  = new ReflectionClass( 'WP_MCP_AI_Agentic_Workflow_Optimizer' );
 		$reflection_method = $reflection_class->getMethod( 'is_cacheable_tool' );
 		$reflection_method->setAccessible( true );
@@ -84,8 +90,8 @@ class WP_MCP_AI_Test_Get_User_Info_Site_Summary_Agentic_Workflow extends WP_Unit
 		$is_user_info_cacheable    = $reflection_method->invoke( $this->optimizer, 'get_user_info' );
 		$is_site_summary_cacheable = $reflection_method->invoke( $this->optimizer, 'get_site_summary' );
 
-		$this->assertTrue( $is_user_info_cacheable, 'get_user_info should be cacheable' );
-		$this->assertTrue( $is_site_summary_cacheable, 'get_site_summary should be cacheable' );
+		$this->assertFalse( $is_user_info_cacheable, 'get_user_info should NOT be cacheable (depends on user context)' );
+		$this->assertTrue( $is_site_summary_cacheable, 'get_site_summary should be cacheable (same for all admin users)' );
 	}
 
 	/**
@@ -114,9 +120,14 @@ class WP_MCP_AI_Test_Get_User_Info_Site_Summary_Agentic_Workflow extends WP_Unit
 	}
 
 	/**
-	 * Test that both tools cache correctly when executed sequentially.
+	 * Test that get_site_summary caches correctly while get_user_info does not.
+	 *
+	 * This is intentional behavior:
+	 * - get_site_summary returns the same data for all admin users, so caching is safe
+	 * - get_user_info returns different data based on the calling user's context, so caching
+	 *   would be a security risk (User A's data could leak to User B)
 	 */
-	public function test_both_tools_cache_correctly() {
+	public function test_site_summary_caches_user_info_does_not() {
 		$get_user_info_tool    = $this->registry->get_tool( 'get_user_info' );
 		$get_site_summary_tool = $this->registry->get_tool( 'get_site_summary' );
 
@@ -125,29 +136,21 @@ class WP_MCP_AI_Test_Get_User_Info_Site_Summary_Agentic_Workflow extends WP_Unit
 		// Clear cache.
 		wp_cache_flush();
 
-		// Execute get_user_info first time.
+		// Execute get_user_info - should NOT be cached.
 		$user_info_result1 = $get_user_info_tool->execute( array(), $context );
 		$this->assertNotWPError( $user_info_result1, 'get_user_info first execution should succeed' );
 
-		// Execute get_site_summary first time.
+		// Execute get_site_summary - should be cached.
 		$site_summary_result1 = $get_site_summary_tool->execute( array(), $context );
 		$this->assertNotWPError( $site_summary_result1, 'get_site_summary first execution should succeed' );
 
-		// Get cache key generation method.
+		// Verify that only get_site_summary is cacheable.
 		$reflection_class  = new ReflectionClass( 'WP_MCP_AI_Agentic_Workflow_Optimizer' );
-		$reflection_method = $reflection_class->getMethod( 'get_cache_key' );
-		$reflection_method->setAccessible( true );
+		$is_cacheable      = $reflection_class->getMethod( 'is_cacheable_tool' );
+		$is_cacheable->setAccessible( true );
 
-		$user_info_cache_key    = $reflection_method->invoke( $this->optimizer, 'get_user_info', array() );
-		$site_summary_cache_key = $reflection_method->invoke( $this->optimizer, 'get_site_summary', array() );
-
-		// Simulate cache hit by getting from cache.
-		$user_info_cached    = wp_cache_get( $user_info_cache_key, 'wp_mcp_ai_tool_results' );
-		$site_summary_cached = wp_cache_get( $site_summary_cache_key, 'wp_mcp_ai_tool_results' );
-
-		// Note: Cache might not be set immediately due to the hook system.
-		// The important thing is that both tools are in the cacheable list.
-		// We've already verified that in test_both_tools_are_cacheable.
+		$this->assertFalse( $is_cacheable->invoke( $this->optimizer, 'get_user_info' ), 'get_user_info should not be cacheable' );
+		$this->assertTrue( $is_cacheable->invoke( $this->optimizer, 'get_site_summary' ), 'get_site_summary should be cacheable' );
 	}
 
 	/**

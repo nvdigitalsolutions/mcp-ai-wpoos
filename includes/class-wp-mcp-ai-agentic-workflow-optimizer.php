@@ -135,7 +135,6 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	protected function is_cacheable_tool( $tool_name ) {
 		// Define cacheable tools (read-only operations).
 		$cacheable_tools = array(
-			'get_user_info',
 			'get_site_summary',
 			'search_content',
 			'get_recent_posts',
