@@ -10986,13 +10986,14 @@
     }
 
 	/**
-	 * Job notifications polling state
-	 * Stores polling timers, retry delays, and backoff state per container
+	 * Job notifications polling and SSE streaming state
+	 * Stores polling timers, SSE connections, retry delays, and backoff state per container
 	 */
 	const notificationPollers = {
-		timers: {},           // Active polling timers by container ID
-		retryDelays: {},      // Current retry delay for each container (for exponential backoff)
-		consecutiveErrors: {} // Track consecutive errors for backoff
+		timers: {},               // Active polling timers by container ID
+		sseConnections: {},       // Active SSE connections by container ID
+		retryDelays: {},          // Current retry delay for each container (for exponential backoff)
+		consecutiveErrors: {}     // Track consecutive errors for backoff
 	};
 
 	/**
@@ -11157,7 +11158,10 @@
 	}
 
 	/**
-	 * Start polling for job notifications with intelligent backoff
+	 * Start real-time notifications using SSE (with polling fallback)
+	 * 
+	 * Attempts to establish SSE connection for real-time updates.
+	 * Falls back to polling if SSE is unavailable or fails.
 	 * 
 	 * @param {HTMLElement} container - Chat container element
 	 * @param {Object} config - Chat instance configuration
@@ -11168,9 +11172,129 @@
 		}
 
 		const instanceId = container.getAttribute('id');
+		const assistantId = config.assistantId;
 		
-		// Stop any existing poller
+		// Stop any existing poller or SSE connection
 		stopNotificationPolling(instanceId);
+		
+		// Try SSE first if supported and SSE service is available
+		if (sseService && sseService.isSupported()) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] Attempting SSE connection for notifications on instance:', instanceId);
+			}
+			
+			const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+			const sseUrl = restUrl + '/job-notifications/stream?assistant_id=' + encodeURIComponent(assistantId);
+			
+			const sseConnection = sseService.connect(sseUrl, {
+				onOpen: function() {
+					if (window.console && console.log) {
+						console.log('[WP oOS] SSE connection established for instance:', instanceId);
+					}
+				},
+				eventHandlers: {
+					connected: function(data) {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connected:', data);
+						}
+					},
+					job_counts: function(counts) {
+						// Update job counts cache
+						if (!window.wpMcpAiJobCounts) {
+							window.wpMcpAiJobCounts = {};
+						}
+						window.wpMcpAiJobCounts[instanceId] = counts;
+						
+						// Update UI
+						updateJobBarDisplay(container, counts);
+						
+						// Stop SSE if no active jobs
+						if (!hasActiveJobs(instanceId)) {
+							if (window.console && console.log) {
+								console.log('[WP oOS] No active jobs. Stopping SSE for instance:', instanceId);
+							}
+							stopNotificationPolling(instanceId);
+						}
+					},
+					notification: function(notification) {
+						// Display notification in chat
+						const state = states.get(instanceId);
+						if (!state) {
+							return;
+						}
+						
+						let prefix = '📋 ';
+						if (notification.status === 'completed') {
+							prefix = '✅ ';
+						} else if (notification.status === 'failed') {
+							prefix = '❌ ';
+						}
+						
+						const message = prefix + notification.message;
+						
+						appendMessage(state.messagesEl, 'system', {
+							text: message
+						});
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE notification received:', notification);
+						}
+					},
+					heartbeat: function() {
+						// Heartbeat received, connection is alive
+					},
+					timeout: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE stream timeout. Reconnecting with polling fallback.');
+						}
+						// Restart with polling
+						stopNotificationPolling(instanceId);
+						startPollingFallback(container, config);
+					},
+					close: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connection closed for instance:', instanceId);
+						}
+					}
+				},
+				onError: function(error) {
+					if (window.console && console.warn) {
+						console.warn('[WP oOS] SSE error, falling back to polling:', error);
+					}
+					// Fall back to polling
+					stopNotificationPolling(instanceId);
+					startPollingFallback(container, config);
+				}
+			});
+			
+			// Store SSE connection for cleanup
+			if (!notificationPollers.sseConnections) {
+				notificationPollers.sseConnections = {};
+			}
+			notificationPollers.sseConnections[instanceId] = sseConnection;
+			
+		} else {
+			// SSE not supported, use polling
+			startPollingFallback(container, config);
+		}
+	}
+
+	/**
+	 * Start polling for job notifications (fallback mode)
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function startPollingFallback(container, config) {
+		if (!container || !config) {
+			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		if (window.console && console.log) {
+			console.log('[WP oOS] Using polling mode for notifications on instance:', instanceId);
+		}
 		
 		// Initialize backoff state
 		notificationPollers.retryDelays[instanceId] = 30000; // Start with 30s base interval
@@ -11193,14 +11317,23 @@
 	}
 
 	/**
-	 * Stop polling for job notifications
+	 * Stop polling or SSE streaming for job notifications
 	 * 
 	 * @param {string} instanceId - Container instance ID
 	 */
 	function stopNotificationPolling(instanceId) {
+		// Stop polling timer if exists
 		if (notificationPollers.timers[instanceId]) {
 			clearTimeout(notificationPollers.timers[instanceId]);
 			delete notificationPollers.timers[instanceId];
+		}
+		
+		// Close SSE connection if exists
+		if (notificationPollers.sseConnections && notificationPollers.sseConnections[instanceId]) {
+			if (notificationPollers.sseConnections[instanceId].close) {
+				notificationPollers.sseConnections[instanceId].close();
+			}
+			delete notificationPollers.sseConnections[instanceId];
 		}
 	}
 

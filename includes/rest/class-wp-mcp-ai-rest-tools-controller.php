@@ -256,6 +256,44 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+
+		// /job-notifications/stream - SSE stream for real-time notifications and job counts.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/job-notifications/stream',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_job_notifications_stream' ),
+					'args'                => array(
+						'assistant_id'  => array(
+							'description'       => __( 'Assistant ID to stream notifications for.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'validate_callback' => function( $param ) {
+								return is_numeric( $param ) && $param > 0;
+							},
+						),
+						'max_duration'  => array(
+							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'wp-mcp-ai' ),
+							'type'        => 'integer',
+							'minimum'     => 10,
+							'maximum'     => 600,
+							'default'     => 300,
+						),
+						'poll_interval' => array(
+							'description' => __( 'Interval in seconds between status checks.', 'wp-mcp-ai' ),
+							'type'        => 'integer',
+							'minimum'     => 1,
+							'maximum'     => 30,
+							'default'     => 2,
+						),
+					),
+				),
+			),
+			true
+		);
 	}
 
 	/**
@@ -461,6 +499,37 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'count'         => count( $notifications ),
 				'job_counts'    => $job_counts,
 			)
+		);
+	}
+
+	/**
+	 * Handle GET /job-notifications/stream request (SSE).
+	 *
+	 * Streams real-time job notifications and count updates via Server-Sent Events.
+	 * Eliminates the need for polling in the chat client for real-time updates.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return void Exits after streaming.
+	 */
+	public function handle_job_notifications_stream( WP_REST_Request $request ) {
+		$assistant_id  = absint( $request->get_param( 'assistant_id' ) );
+		$max_duration  = absint( $request->get_param( 'max_duration' ) );
+		$poll_interval = absint( $request->get_param( 'poll_interval' ) );
+
+		// Get current user ID.
+		$user_id = get_current_user_id();
+
+		// Load SSE notification stream service.
+		if ( ! class_exists( 'WP_MCP_AI_SSE_Notification_Stream' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-sse-notification-stream.php';
+		}
+
+		// Stream notifications (this will exit).
+		WP_MCP_AI_SSE_Notification_Stream::stream_notifications(
+			$assistant_id,
+			$user_id,
+			$max_duration,
+			$poll_interval
 		);
 	}
 
