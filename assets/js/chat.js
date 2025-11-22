@@ -11245,23 +11245,14 @@ return;
 }
 
 const counts = data.counts;
-const total = counts.total || 0;
 
-// Hide UI and stop polling if no jobs exist at all
-if (total === 0) {
-cronStatusEl.setAttribute('hidden', '');
-stopNotificationPolling(instanceId);
-return;
-}
-
-// Show status bar when jobs exist
-cronStatusEl.removeAttribute('hidden');
-
-// Stop notification polling if all jobs are completed (no active jobs)
-// This handles the case where jobs exist but are all completed/failed
+// Stop notification polling if no active jobs (but keep UI visible)
 if (!hasActiveJobs(instanceId)) {
 stopNotificationPolling(instanceId);
 }
+
+// Always show status bar to maintain visibility
+cronStatusEl.removeAttribute('hidden');
 
 // Update count elements
 const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
