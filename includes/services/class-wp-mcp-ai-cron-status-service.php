@@ -89,10 +89,9 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		// Get async tool jobs and video jobs with optional assistant filter.
-		// When context is 'chat', exclude internal async tool execution jobs.
-		$include_async_jobs = 'admin' === $context;
-		$async_jobs         = $include_async_jobs ? $this->get_async_tool_jobs( $user_id, $assistant_id ) : array();
-		$video_jobs         = $this->get_video_generation_jobs( $user_id, $assistant_id );
+		// Include async tool jobs in both admin and chat contexts so jobs created via chat are visible.
+		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
+		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
 		// Log job counts for debugging.
 		WP_MCP_AI_Logger::log_event(
@@ -541,10 +540,9 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		// Include async tool jobs and video jobs with optional assistant filter.
-		// When context is 'chat', exclude internal async tool execution jobs.
-		$include_async_jobs = 'admin' === $context;
-		$async_jobs         = $include_async_jobs ? $this->get_async_tool_jobs( $user_id, $assistant_id ) : array();
-		$video_jobs         = $this->get_video_generation_jobs( $user_id, $assistant_id );
+		// Include async tool jobs in both admin and chat contexts so jobs created via chat are visible.
+		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
+		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 		$all_jobs           = array_merge( $jobs, $async_jobs, $video_jobs );
 
 		$counts = array(
