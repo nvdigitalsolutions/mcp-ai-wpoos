@@ -10996,6 +10996,29 @@
 	};
 
 	/**
+	 * Check if there are any active jobs that require notification polling
+	 * 
+	 * @param {string} instanceId - Container instance ID
+	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
+	 */
+	function hasActiveJobs(instanceId) {
+		if (!window.wpMcpAiCronStatus || !window.wpMcpAiCronStatus.cache) {
+			return true; // Assume active if we can't check
+		}
+		
+		const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
+		if (!cronStatus || !cronStatus.counts) {
+			return true; // Assume active if we can't check
+		}
+		
+		const pending = cronStatus.counts.pending || 0;
+		const running = cronStatus.counts.running || 0;
+		
+		// Active jobs exist if there are pending or running jobs
+		return pending > 0 || running > 0;
+	}
+
+	/**
 	 * Poll for job completion notifications
 	 * 
 	 * Fetches pending notifications from the server and displays them in the chat.
@@ -11026,22 +11049,12 @@
 		
 		// Check if there are any active jobs before polling for notifications
 		// This prevents unnecessary API calls when all jobs are complete
-		if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.cache) {
-			const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
-			if (cronStatus && cronStatus.counts) {
-				const total = cronStatus.counts.total || 0;
-				const pending = cronStatus.counts.pending || 0;
-				const running = cronStatus.counts.running || 0;
-				
-				// Stop polling if there are no active jobs (only completed/failed jobs remain or no jobs at all)
-				if (total === 0 || (pending === 0 && running === 0)) {
-					if (window.console && console.log) {
-						console.log('[WP oOS] No active jobs. Stopping notification polling for instance:', instanceId);
-					}
-					stopNotificationPolling(instanceId);
-					return;
-				}
+		if (!hasActiveJobs(instanceId)) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] No active jobs. Stopping notification polling for instance:', instanceId);
 			}
+			stopNotificationPolling(instanceId);
+			return;
 		}
 		
 		const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
@@ -11230,8 +11243,6 @@ return;
 
 const counts = data.counts;
 const total = counts.total || 0;
-const pending = counts.pending || 0;
-const running = counts.running || 0;
 
 // Hide if no jobs
 if (total === 0) {
@@ -11241,8 +11252,8 @@ stopNotificationPolling(instanceId);
 return;
 }
 
-// Also stop notification polling if all jobs are completed (no pending/running jobs)
-if (pending === 0 && running === 0) {
+// Stop notification polling if all jobs are completed (no pending/running jobs)
+if (!hasActiveJobs(instanceId)) {
 stopNotificationPolling(instanceId);
 }
 
