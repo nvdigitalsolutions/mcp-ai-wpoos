@@ -126,11 +126,15 @@ if ( ! function_exists( 'get_plugin_updates' ) ) {
 	 * @return array Array of plugin update data.
 	 */
 	function get_plugin_updates() {
-		// Ensure get_plugins() is available.
+		// Ensure get_plugins() is available by loading plugin.php.
 		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			$plugin_file = ABSPATH . 'wp-admin/includes/plugin.php';
+			if ( file_exists( $plugin_file ) ) {
+				require_once $plugin_file;
+			}
 		}
 
+		// If get_plugins() is still not available, return empty array.
 		if ( ! function_exists( 'get_plugins' ) ) {
 			return array();
 		}
@@ -165,11 +169,15 @@ if ( ! function_exists( 'get_theme_updates' ) ) {
 	 * @return array Array of theme update data.
 	 */
 	function get_theme_updates() {
-		// Ensure wp_get_themes() is available.
+		// Ensure wp_get_themes() is available by loading theme.php.
 		if ( ! function_exists( 'wp_get_themes' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/theme.php';
+			$theme_file = ABSPATH . 'wp-admin/includes/theme.php';
+			if ( file_exists( $theme_file ) ) {
+				require_once $theme_file;
+			}
 		}
 
+		// If wp_get_themes() is still not available, return empty array.
 		if ( ! function_exists( 'wp_get_themes' ) ) {
 			return array();
 		}
