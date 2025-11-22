@@ -792,7 +792,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'[WP oOS Debug] POST /chat-transcripts FAILED: session_key=%s assistant_id=%d user_id=%d saved=0 response=500',
 						$session_key,
 						$assistant_id,
-						$user_id
+						get_current_user_id()
 					)
 				);
 			}
@@ -825,7 +825,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=%s assistant_id=%d user_id=%d saved=1 response=200',
 					$recorded_session_key,
 					$assistant_id,
-					$user_id
+					get_current_user_id()
 				)
 			);
 		}
