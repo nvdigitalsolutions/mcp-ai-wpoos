@@ -99,8 +99,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
+<a id="system-architecture"></a>
 ## 🏗 System Architecture
-
 
 WP oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
@@ -156,7 +156,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 
 ---
-
+<a id="features"></a>
 ## 🚀 Features
 
 > **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
@@ -221,6 +221,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 - ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
 
+<a id="memory-tool-stack-overview"></a>
 ## 🧠 Memory & Tool Stack Overview
 
 ### Model defaults
@@ -252,7 +253,7 @@ The core plugin ships with a centrally registered tool catalogue that lets assis
 ---
 
 
-
+<a id="built-in-tools-automations"></a>
 ## 🛠 Built-in tools & automations
 
 The assistant registry ships with a comprehensive catalogue of editorial, marketing, commerce, and operational helpers. The tables below outline every bundled tool and the slug assistants call when orchestrating workflows.
@@ -405,7 +406,7 @@ Need per-tool prerequisites or capability callouts? Consult [`docs/tool-referenc
 
 
 ---
-
+<a id="front-end-chat-surfaces"></a>
 ## 🗨️ Front-end chat surfaces
 
 WP oOS ships multiple ways to embed assistants on the front end:
@@ -449,7 +450,7 @@ Without JetEngine, chat conversations are **only stored in browser localStorage*
 See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
 
 ---
-
+<a id="installation"></a>
 ## 📦 Installation
 
 ### Standard Installation
@@ -483,7 +484,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 - ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
 
 ---
-
+<a id="what-you-lose-without-third-party-plugins"></a>
 ## 🔌 What You Lose Without Third-Party Plugins
 
 WP oOS works perfectly with vanilla WordPress, but certain features require third-party plugins (sold separately). Here's exactly what you lose without each plugin:
@@ -640,7 +641,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 
 ---
-
+<a id="documentation"></a>
 ## 📚 Documentation
 
 WP oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
@@ -688,7 +689,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
   - `testing/` - Test infrastructure documentation
 
 ---
-
+<a id="configuration-checklist-action-items"></a>
 ## ⚙️ Configuration Checklist (Action Items)
 
 Complete these after installation to unlock every integration point:
@@ -711,6 +712,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → WP oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 
+<a id="language-model-providers-openai-gemini-ollama-lm-studio"></a>
 ## 🧠 Language Model Providers (OpenAI, Gemini, Ollama & LM Studio)
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, or LM Studio while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
@@ -870,7 +872,7 @@ WP oOS supports **100+ AI models** across multiple providers, including the late
 
 OpenAI and Google regularly revise token policies and media limits. Review the [OpenAI model dashboard](https://platform.openai.com/docs/models) and [Google AI documentation](https://ai.google.dev/gemini-api/docs/models/gemini) before rolling out new assistants or increasing attachment budgets. Update defaults in **Settings → WP oOS** to keep assistants aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
 
-
+<a id="chatkit-integration"></a>
 ## 🧱 ChatKit Integration
 
 The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships with the core WP oOS plugin, so no separate add-on installation is required. Once enabled it self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
@@ -879,6 +881,7 @@ From the ChatKit dashboard configure the **WP oOS** integration and supply at le
 
 Consult [`docs/chatkit-integration.md`](docs/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
+<a id="crawl4ai-integration"></a>
 ## 🌐 Crawl4AI Integration
 
 Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context. When a remote Crawl4AI endpoint is configured the request now returns immediately with a task token while WP-Cron powered background polling captures the final payload and makes it available to the assistant UI once the crawl finishes.【F:includes/crawler/class-wp-mcp-ai-crawler.php†L1-L214】【F:assets/js/chat.js†L1-L2200】
@@ -887,6 +890,7 @@ Configure remote endpoints or API keys under **Settings → WP oOS → Tools** t
 
 Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
+<a id="job-notification-system"></a>
 ## 📡 Job Notification System
 
 WP oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/job-notification-system.md†L1-L100】
@@ -940,6 +944,7 @@ WP_MCP_AI_Job_Notifier::register_webhook(
 
 ➡️ See [docs/job-notification-system.md](docs/job-notification-system.md) for complete implementation details.
 
+<a id="elementor-widgets"></a>
 ## 🧊 Elementor Widgets
 
 Sites running Elementor automatically register a suite of MCP blocks so you can assemble onboarding pages, operational dashboards, and standalone chat layouts without writing markup.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】 The integration only boots when Elementor is present, so non-Elementor installs avoid any overhead.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】
@@ -957,6 +962,7 @@ Sites running Elementor automatically register a suite of MCP blocks so you can 
 - **WP oOS Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
 - **WP oOS Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
+<a id="usage-tracking"></a>
 ## 🧮 Usage Tracking
 
 The plugin records aggregate token usage per user, provider, and model whenever responses include usage metadata, simplifying internal reconciliation or billing workflows. Usage data is stored as user meta and automatically purged when accounts are deleted, and hooks are exposed for custom reporting pipelines.【F:includes/class-wp-mcp-ai-usage-tracker.php†L12-L119】
@@ -992,10 +998,12 @@ The usage tracking system automatically:
 - Supports the **Open OpenAI Usage** tool for quick access to provider dashboards
 - Provides AJAX-powered reset functionality for administrators
 
+<a id="attachment-mime-controls"></a>
 ## 🧷 Attachment MIME Controls
 
 Administrators can override the default image and file MIME allowlists used by the chat uploader. The settings screen accepts one MIME type per line, and the attachment helper merges the overrides with its defaults before enforcing them on upload and shortcode configuration.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L669】【F:includes/class-wp-mcp-ai-message-attachments.php†L503-L559】 Leave the fields empty to fall back to the bundled safe defaults.
 
+<a id="message-bundling"></a>
 ## ⚡ Message Bundling
 
 WP oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/message-bundling-feature.md†L1-L80】
@@ -1029,6 +1037,7 @@ window.wpMcpAiChatDebugMode = true;
 
 ➡️ See [docs/message-bundling-feature.md](docs/message-bundling-feature.md) for configuration options and implementation details.
 
+<a id="agentic-loop-token-management"></a>
 ## 🎯 Agentic Loop Token Management
 
 WP oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/high-token-tool-handling.md†L1-L80】
@@ -1067,6 +1076,7 @@ Automatic model switching is enabled by default. Configure fallback model under 
 
 ➡️ See [docs/high-token-tool-handling.md](docs/high-token-tool-handling.md) for complete technical details and examples.
 
+<a id="chat-performance-optimizations"></a>
 ## 🔄 Chat Performance Optimizations
 
 WP oOS includes several performance optimizations to enhance the chat experience:
@@ -1079,6 +1089,7 @@ WP oOS includes several performance optimizations to enhance the chat experience
 
 ➡️ See [docs/chat-performance-optimizations.md](docs/chat-performance-optimizations.md) for detailed performance tuning guide.
 
+<a id="mesh-compute-routing"></a>
 ## 🌐 Mesh Compute Routing
 
 WP oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
@@ -1113,6 +1124,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 ➡️ See [docs/mesh-routing-guide.md](docs/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
 ➡️ See [docs/mesh-compute-pooling.md](docs/mesh-compute-pooling.md) for architecture and authentication details.
 
+<a id="federation-discovery-system"></a>
 ## 🔗 Federation & Discovery System
 
 WP oOS includes a **decentralized AI capability network** that allows WordPress sites to publish their capabilities and discover peer sites. Think of it as "npm for AI tools" — sites can advertise what they offer and find complementary capabilities from trusted peers.
@@ -1197,6 +1209,7 @@ The 2025-10-31 internal review confirms the hardening of the group email automat
 
 ➡️ See [docs/CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
+<a id="mcp-server-authentication"></a>
 ## 🔒 MCP Server Authentication
 
 Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
@@ -1215,7 +1228,7 @@ Provision a separate WordPress site (or network site) for each MCP server you ne
 
 Sites that enable the Simple JWT Login integration can now reuse those bearer tokens alongside Auth0 credentials. The plugin validates tokens with Simple JWT Login’s native services, falls back to manual JWT decoding when the dependency cannot resolve a user, and automatically scopes REST requests to the assistant encoded in the token so cross-assistant hops are blocked with actionable errors.【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】【F:includes/class-wp-mcp-ai-rest.php†L2769-L2808】
 
-
+<a id="connecting-remote-mcp-clients"></a>
 ## 🌐 Connecting Remote MCP Clients
 
 WP oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
@@ -1337,6 +1350,7 @@ For comprehensive setup guides, troubleshooting, and advanced configurations, se
 ## 🤖 ChatGPT Connector
 OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because WP oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
 
+<a id="rest-api-endpoints"></a>
 ## 🛰 REST API Endpoints
 
 All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/mcp-ai/v1`, which exposes dedicated endpoints for chat completions and direct tool execution. Both routes share the same authentication rules described above: supply an Auth0 bearer token, a plugin-issued assistant credential, or a WordPress REST nonce for same-origin requests. Guest tokens issued by the shortcode or Elementor widget continue to be honoured when `allow_guests="true"` is enabled.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
@@ -1348,6 +1362,7 @@ All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/
 
 See [docs/rest-api.md](docs/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
 
+<a id="sse-streaming-support"></a>
 ## 🌊 SSE Streaming Support
 
 WP oOS includes comprehensive Server-Sent Events (SSE) support for real-time streaming responses, enabling faster perceived response times and better user experience.
@@ -1478,6 +1493,7 @@ For complete SSE implementation details, configuration options, and troubleshoot
 - **[Job Notification System](docs/job-notification-system.md)** - Real-time job status via SSE
 - **[REST API Reference](docs/rest-api.md)** - SSE endpoint specifications
 
+<a id="mcp-json-rpc-20-endpoint"></a>
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
 WP oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
@@ -1570,6 +1586,7 @@ See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
 
 ---
 
+<a id="assistant-editor-overview"></a>
 ## 🛠 Assistant Editor Overview
 
 Assistant posts ship with dedicated controls that map directly to runtime behaviour:
@@ -1581,6 +1598,7 @@ Assistant posts ship with dedicated controls that map directly to runtime behavi
 
 If an API or shortcode request omits the `assistant` parameter, the plugin automatically uses the default assistant configured in the global settings.
 
+<a id="assistant-storage-cpt-vs-cct"></a>
 ## 📊 Assistant Storage: CPT vs CCT
 
 WP oOS uses a **Custom Post Type (CPT)** as the primary storage for AI assistants, with automatic synchronization to a **JetEngine Custom Content Type (CCT)** when JetEngine is available.
@@ -1627,6 +1645,7 @@ When you save an assistant through the WordPress admin:
 
 ➡️ **[Read the complete CPT vs CCT guide](docs/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
 
+<a id="assistant-tool-shortcuts"></a>
 ## ⚡ Assistant Tool Shortcuts
 
 Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate prewritten instructions, scope them to registered tools, and add operator-facing descriptions that appear as tooltips and screen reader hints in the chat UI.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】 The shortcode merges these custom prompts with each tool’s declared shortcut tasks and always appends a safe fallback so assistants remain usable even without bespoke entries.【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】
@@ -1644,6 +1663,7 @@ WP oOS includes an enterprise-grade **template system** for rapid assistant depl
 3. **Deploy entire teams** of specialized assistants with one click
 4. **Test everything from the backend** before exposing to end users
 
+<a id="professional-team-layers"></a>
 ### 🎓 Professional Templates
 
 Professions are reusable assistant templates with pre-configured:
@@ -1787,7 +1807,7 @@ Administrators can create custom profession templates and teams:
 - ✅ Automated seeding from knowledge base files
 
 ---
-
+<a id="assistant-api-credentials"></a>
 ## 🔑 Assistant API credentials
 
 Administrators can issue per-assistant access tokens from the **API Credentials** meta box that appears on every assistant edit screen. Tokens are only available to users with the `manage_options` capability, surface the credential history in a table, and expose one-click revoke and delete actions for rapid cleanup.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】 When you click **Generate Credential** the plugin produces a single-use token in the form `cred_xxxxx.SECRET`, hashes the secret server-side, and records the issuer so you have an audit trail of who created each credential.【F:includes/class-wp-mcp-ai-credentials.php†L94-L135】
@@ -1795,7 +1815,7 @@ Administrators can issue per-assistant access tokens from the **API Credentials*
 Remote integrations can authenticate by sending that token in the standard `Authorization: Bearer` header—no Auth0 dependency required. The REST layer validates the credential, emits structured errors when a token is revoked or malformed, and scopes the request to the assistant that issued the token so clients cannot hop between assistants without an explicit credential for each one.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】
 
 ---
-
+<a id="local-development-with-docker"></a>
 ## 🐳 Local Development with Docker
 
 Spin up a disposable WordPress instance that mounts the plugin source directly into the container:
@@ -1839,7 +1859,7 @@ Default credentials:
 Override any of these values by exporting the environment variables `WORDPRESS_URL`, `WORDPRESS_TITLE`, `WORDPRESS_ADMIN_USER`, `WORDPRESS_ADMIN_PASSWORD`, `WORDPRESS_ADMIN_EMAIL`, or `WORDPRESS_PORT` before running the script.
 
 ---
-
+<a id="development-tooling"></a>
 ## 🧑‍💻 Development Tooling
 
 Install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:
@@ -1865,7 +1885,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 > The `test:install` script prefers the Composer-provided `wp-phpunit/wp-phpunit` package for the WordPress test suite. Run `composer install` before invoking it, especially on networks where `develop.svn.wordpress.org` is inaccessible.
 
 ---
-
+<a id="testing-qa"></a>
 ## 🧪 Testing & QA
 
 
@@ -1882,7 +1902,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 - For logging-centric debugging, enable logging in the WP oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
 
 ---
-
+<a id="frontend-shortcode"></a>
 ## 💬 Frontend Shortcode
 Embed a published assistant anywhere on the site with the shortcode. Replace `123` with the post ID of the assistant you created under **AI Assistants**.
 
@@ -1911,7 +1931,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - The Elementor chat widget can surface everything saved on the assistant post—model defaults, knowledge files, prompt shortcuts, and assigned tools—so you can build documentation and dashboards without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
 
 ---
-
+<a id="rest-chat-payloads-attachments"></a>
 ## 🧵 REST Chat Payloads & Attachments
 
 The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each message object still requires a `role`, but the
@@ -1961,7 +1981,7 @@ Need to relax or tighten the allowed file types? Administrators can override the
 Assistants can also query existing knowledge files with the **Search Attachments** tool, which reuses `WP_MCP_AI_Message_Attachments::user_can_access_attachment()` so only publicly accessible or user-owned media is returned alongside download URLs and file metadata for the model to reuse.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 
 ---
-
+<a id="jetengine-capability-reference"></a>
 ## 🔐 JetEngine Capability Reference
 
 When the plugin interacts with JetEngine objects it defers to the capabilities enforced by JetEngine’s own REST handlers and editor interfaces. Use the following table to review the specific capability checks that gate each object type:
@@ -1980,14 +2000,14 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 
 ---
-
+<a id="jetengine-rest-api-reference"></a>
 ## 🛰 JetEngine REST API Reference
 
 - 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
 - 🤖 When JetEngine is active, assistants can invoke the **List JetEngine REST Routes** tool to retrieve the same metadata directly inside a conversation (requires a user with the `manage_options` capability).
 
 ---
-
+<a id="logging"></a>
 ## 🪵 Logging
 
 - Enable or disable logging from **Settings → WP oOS → Enable Logging**.
@@ -2004,7 +2024,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
   ```
 
 ---
-
+<a id="jetengine-rest-endpoint-report-helper"></a>
 ## 🧾 JetEngine REST Endpoint Report Helper
 
 Use the JetEngine report helper to surface the CRUD coverage matrix that was compiled during the REST endpoint audit. The helper exposes the underlying endpoint metadata as a structured array so you can reuse it in documentation, dashboards, or custom checks.
@@ -2030,7 +2050,7 @@ The helper is filterable via:
 Each filter receives the full data set so you can extend or replace the output when JetEngine adds new endpoints or when your project needs to surface additional metadata.
 
 ---
-
+<a id="optional-tools-dependencies"></a>
 ## 🔌 Optional Tools & Dependencies
 
 **WP oOS works perfectly with vanilla WordPress** - you don't need any third-party plugins for core functionality.
@@ -2055,7 +2075,7 @@ However, certain features require third-party plugins (sold separately). The plu
 4. No errors occur - the plugin gracefully handles missing dependencies
 
 ---
-
+<a id="manual-qa-scenarios"></a>
 ## ✅ Manual QA Scenarios
 
 The project currently relies on manual verification. Run these checks after updating the plugin:
@@ -2079,7 +2099,7 @@ The project currently relies on manual verification. Run these checks after upda
 Document the results of each scenario when preparing releases to ensure optional integrations remain stable.
 
 ---
-
+<a id="hooks-filters"></a>
 ## 🧩 Hooks & Filters
 
 Use the following hooks to extend the plugin:
@@ -2096,7 +2116,7 @@ Use the following hooks to extend the plugin:
 | `apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $context )` | Filter | Intercept or redirect logging output. |
 
 ---
-
+<a id="wp-cli-commands"></a>
 ## 🧰 WP-CLI Commands
 
 Manage the WP oOS environment from the command line when WP-CLI is available.
