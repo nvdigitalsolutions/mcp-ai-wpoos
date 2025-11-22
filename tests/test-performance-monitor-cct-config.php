@@ -14,7 +14,7 @@ class WP_MCP_AI_Performance_Monitor_CCT_Test extends WP_UnitTestCase {
 	 * Test that the CCT slug is returned correctly.
 	 */
 	public function test_get_slug_returns_correct_value() {
-		$this->assertSame( 'performance_metrics', WP_MCP_AI_Performance_Monitor_CCT::get_slug() );
+		$this->assertSame( 'plugin_performance_monitor', WP_MCP_AI_Performance_Monitor_CCT::get_slug() );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class WP_MCP_AI_Performance_Monitor_CCT_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'rest_put_enabled', $args );
 		$this->assertArrayHasKey( 'rest_delete_enabled', $args );
 
-		$this->assertSame( 'performance_metrics', $args['slug'] );
+		$this->assertSame( 'plugin_performance_monitor', $args['slug'] );
 		$this->assertSame( 'dashicons-performance', $args['icon'] );
 		$this->assertSame( 'manage_options', $args['capability'] );
 
