@@ -324,6 +324,46 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add top_p if specified (nucleus sampling).
+			// Note: Anthropic recommends changing either temperature OR top_p, not both.
+			if ( isset( $options['top_p'] ) && '' !== $options['top_p'] && null !== $options['top_p'] ) {
+				$top_p = (float) $options['top_p'];
+				// Validate top_p is between 0 and 1.
+				if ( $top_p >= 0 && $top_p <= 1 ) {
+					$payload['top_p'] = $top_p;
+				}
+			}
+
+			// Add top_k if specified (top-K sampling).
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$top_k = absint( $options['top_k'] );
+				// top_k should be positive (0 means no restriction).
+				if ( $top_k >= 0 ) {
+					$payload['top_k'] = $top_k;
+				}
+			}
+
+			// Add stop_sequences if specified.
+			if ( ! empty( $options['stop'] ) || ! empty( $options['stop_sequences'] ) ) {
+				$stop = $options['stop_sequences'] ?? $options['stop'] ?? array();
+				
+				if ( is_string( $stop ) ) {
+					$stop = array( $stop );
+				}
+				
+				if ( is_array( $stop ) && ! empty( $stop ) ) {
+					$stop_sequences = array_map( 'sanitize_text_field', $stop );
+					if ( ! empty( $stop_sequences ) ) {
+						$payload['stop_sequences'] = $stop_sequences;
+					}
+				}
+			}
+
+			// Add metadata if specified (for request tracking/analytics).
+			if ( ! empty( $options['metadata'] ) && is_array( $options['metadata'] ) ) {
+				$payload['metadata'] = $options['metadata'];
+			}
+
 			return $payload;
 		}
 
