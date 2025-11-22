@@ -11002,24 +11002,23 @@
 	 * to ensure notifications are not missed. Only returns false when we can
 	 * definitively confirm no active jobs exist.
 	 * 
+	 * Uses job counts from consolidated job-notifications endpoint instead of
+	 * separate cron-status polling for better efficiency.
+	 * 
 	 * @param {string} instanceId - Container instance ID
 	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
 	 */
 	function hasActiveJobs(instanceId) {
-		if (!window.wpMcpAiCronStatus || !window.wpMcpAiCronStatus.cache) {
+		if (!window.wpMcpAiJobCounts || !window.wpMcpAiJobCounts[instanceId]) {
 			// Assume active if we can't check - fail-safe approach
 			// Better to poll unnecessarily than to miss notifications
 			return true;
 		}
 		
-		const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
-		if (!cronStatus || !cronStatus.counts) {
-			// Assume active if we can't check - fail-safe approach
-			return true;
-		}
+		const counts = window.wpMcpAiJobCounts[instanceId];
 		
-		const pending = cronStatus.counts.pending || 0;
-		const running = cronStatus.counts.running || 0;
+		const pending = counts.pending || 0;
+		const running = counts.running || 0;
 		
 		// Active jobs exist if there are pending or running jobs
 		return pending > 0 || running > 0;
@@ -11105,6 +11104,18 @@
 			return response.json();
 		})
 		.then(function(data) {
+			// Update job counts cache for hasActiveJobs()
+			// This eliminates the need for separate cron-status polling
+			if (data && data.job_counts) {
+				if (!window.wpMcpAiJobCounts) {
+					window.wpMcpAiJobCounts = {};
+				}
+				window.wpMcpAiJobCounts[instanceId] = data.job_counts;
+				
+				// Update UI job bar directly
+				updateJobBarDisplay(container, data.job_counts);
+			}
+			
 			if (!data || !data.notifications || data.notifications.length === 0) {
 				return;
 			}
@@ -11137,18 +11148,6 @@
 					console.log('[WP oOS] Job notification received:', notification);
 				}
 			});
-
-			// Force immediate cron status update
-			if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.fetchStatus) {
-				const cronStatusEndpoint = restUrl + '/cron-status';
-				window.wpMcpAiCronStatus.fetchStatus(cronStatusEndpoint, nonce, 10, assistantId)
-					.then(function(statusData) {
-						// Update cron bar immediately
-						if (statusData && window.wpMcpAiCronStatus.cache) {
-							window.wpMcpAiCronStatus.cache[instanceId] = statusData;
-						}
-					});
-			}
 		})
 		.catch(function(error) {
 			if (window.console && console.error) {
@@ -11205,8 +11204,69 @@
 		}
 	}
 
+	/**
+	 * Update job bar display with counts
+	 * 
+	 * Updates the job status bar UI with current job counts.
+	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} counts - Job counts object with pending, running, completed properties
+	 */
+	function updateJobBarDisplay(container, counts) {
+		if (!container || !counts) {
+			return;
+		}
+
+		const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+		if (!cronStatusEl) {
+			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		// Stop notification polling if no active jobs (but keep UI visible)
+		if (instanceId && !hasActiveJobs(instanceId)) {
+			stopNotificationPolling(instanceId);
+		}
+		
+		// Always show status bar to maintain visibility
+		cronStatusEl.removeAttribute('hidden');
+		
+		// Update count elements
+		const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
+		const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
+		const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
+		
+		if (pendingEl) {
+			pendingEl.textContent = counts.pending || 0;
+		}
+		
+		if (runningEl) {
+			runningEl.textContent = counts.running || 0;
+			runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
+			if (counts.running > 0) {
+				runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
+			}
+		}
+		
+		if (completedEl) {
+			completedEl.textContent = counts.completed || 0;
+			completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+			if (counts.completed > 0) {
+				completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+			}
+		}
+	}
+
 /**
  * Initialize cron status display for a chat container
+ * 
+ * DEPRECATED: This function is maintained for backwards compatibility only.
+ * The job bar is now updated directly by pollJobNotifications() using consolidated
+ * job counts, eliminating the need for separate cron-status polling.
+ * 
+ * This function only runs if cron-status-service.js is still loaded (legacy mode).
  * 
  * @param {HTMLElement} container - Chat container element
  * @param {Object} config - Chat instance configuration
@@ -11221,9 +11281,10 @@ if (!cronStatusEl) {
 return;
 }
 
-// Check if cron status service is available
+// Check if cron status service is available (legacy mode)
 if (typeof window.wpMcpAiCronStatus === 'undefined') {
-return;
+	// Cron status service not loaded - using consolidated polling mode (preferred)
+	return;
 }
 
 const instanceId = container.getAttribute('id');
@@ -11242,7 +11303,7 @@ if (!cronStatusEndpoint) {
 return;
 }
 
-// Update cron status display
+// Update cron status display (legacy function)
 function updateCronStatusDisplay(data) {
 if (!data || !data.counts) {
 return;
@@ -11284,7 +11345,8 @@ completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--
 }
 }
 
-// Start polling for cron status with assistant_id for multi-widget isolation
+// LEGACY MODE: Start polling for cron status with assistant_id for multi-widget isolation
+// This is only used if cron-status-service.js is still enqueued
 const assistantId = config.assistantId || null;
 window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
 
