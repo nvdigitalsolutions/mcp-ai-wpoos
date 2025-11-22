@@ -305,7 +305,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * @param string $music_description Music description/prompt.
 	 * @param int    $duration          Video duration in seconds.
-	 * @param int    $user_id           User ID for permission context.
+	 * @param int    $user_id           User ID for permission context (reserved for future use).
 	 * @param bool   $save_to_media     Whether to save to media library.
 	 * @return array|WP_Error Music generation result or error.
 	 */
@@ -360,7 +360,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Save to media library if requested and URL available.
 		if ( $save_to_media && ! empty( $result['audio_url'] ) ) {
-			$title = sprintf( 'Video Background Music - %s', gmdate( 'Y-m-d H:i' ) );
+			/* translators: %s: date and time */
+			$title = sprintf( __( 'Video Background Music - %s', 'wp-mcp-ai' ), gmdate( 'Y-m-d H:i' ) );
 			$attachment_id = $music_service->save_to_media_library(
 				$result['audio_url'],
 				$title,
