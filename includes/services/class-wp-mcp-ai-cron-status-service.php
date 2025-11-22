@@ -130,6 +130,14 @@ class WP_MCP_AI_Cron_Status_Service {
 				continue;
 			}
 
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0;
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
+			}
+
 			// Check if this is an async tool job.
 			$is_async_tool = isset( $job['tool_slug'] );
 
@@ -151,12 +159,13 @@ class WP_MCP_AI_Cron_Status_Service {
 
 				// Format job data.
 				$job_data = array(
-					'job_id'     => $job_id,
-					'hook'       => $hook,
-					'status'     => $status,
-					'next_run'   => null,
-					'created_by' => $created_by,
-					'admin_url'  => $this->get_admin_url( $job_id ),
+					'job_id'       => $job_id,
+					'hook'         => $hook,
+					'status'       => $status,
+					'next_run'     => null,
+					'created_by'   => $created_by,
+					'assistant_id' => isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0,
+					'admin_url'    => $this->get_admin_url( $job_id ),
 				);
 
 				if ( 'pending' === $status && $event ) {
@@ -169,6 +178,16 @@ class WP_MCP_AI_Cron_Status_Service {
 						'timestamp' => $first_timestamp,
 						'relative'  => $this->format_relative_time( $first_timestamp, true ),
 					);
+
+					// Check for stored result.
+					$result = WP_MCP_AI_Cron_Manager::get_job_result( $job_id );
+					if ( $result ) {
+						$job_data['has_result'] = true;
+						$job_data['result']     = $result['result'];
+						if ( isset( $result['status'] ) ) {
+							$job_data['status'] = $result['status'];
+						}
+					}
 				}
 			}
 
@@ -746,6 +765,19 @@ class WP_MCP_AI_Cron_Status_Service {
 		$event           = wp_get_scheduled_event( $hook, $args );
 		$job['status']   = $this->determine_job_status( $event, $first_timestamp );
 		$job['next_run'] = $event ? $event->timestamp : null;
+
+		// Check for stored result.
+		$result = WP_MCP_AI_Cron_Manager::get_job_result( $job_id );
+		if ( $result ) {
+			$job['has_result'] = true;
+			$job['result']     = $result['result'];
+			if ( isset( $result['completed_at'] ) ) {
+				$job['completed_at'] = $result['completed_at'];
+			}
+			if ( isset( $result['status'] ) ) {
+				$job['status'] = $result['status'];
+			}
+		}
 
 		// Add admin URL.
 		$job['admin_url'] = $this->get_admin_url( $job_id );
