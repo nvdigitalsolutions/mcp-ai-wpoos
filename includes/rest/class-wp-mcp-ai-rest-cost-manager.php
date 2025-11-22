@@ -224,14 +224,30 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 		$breakdown = WP_MCP_AI_Cost_Tracking_Service::get_user_cost_breakdown( $user_id, $start_date, $end_date );
 
+		// Phase 7 Week 5-6: Add actual vs estimated cost breakdown if enhanced tracking is available.
+		$cost_summary = array();
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
+			$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
+			$cost_summary   = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $start_datetime, $end_datetime );
+
+			// Calculate accuracy percentage (actual cost / total cost * 100).
+			$accuracy = 0.0;
+			if ( $cost_summary['total_cost'] > 0 ) {
+				$accuracy = ( $cost_summary['actual_cost'] / $cost_summary['total_cost'] ) * 100;
+			}
+			$cost_summary['accuracy_percentage'] = $accuracy;
+		}
+
 		return rest_ensure_response(
 			array(
-				'user_id'    => $user_id,
-				'start_date' => $start_date,
-				'end_date'   => $end_date,
-				'breakdown'  => $breakdown,
-				'total_cost' => $breakdown['total_cost'],
-				'formatted'  => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
+				'user_id'      => $user_id,
+				'start_date'   => $start_date,
+				'end_date'     => $end_date,
+				'breakdown'    => $breakdown,
+				'total_cost'   => $breakdown['total_cost'],
+				'formatted'    => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
+				'cost_summary' => $cost_summary, // Phase 7 Week 5-6: Enhanced tracking data.
 			)
 		);
 	}
@@ -248,13 +264,53 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 		$breakdown = WP_MCP_AI_Cost_Tracking_Service::get_site_cost_breakdown( $start_date, $end_date );
 
+		// Phase 7 Week 5-6: Calculate actual vs estimated breakdown.
+		$estimated_cost = 0.0;
+		$actual_cost    = 0.0;
+		$accuracy       = 0.0;
+
+		// Sum estimated vs actual from the breakdown (already calculated in Cost Tracking Service).
+		if ( isset( $breakdown['total_cost'] ) && $breakdown['total_cost'] > 0 ) {
+			// The breakdown already separates actual from estimated costs.
+			// Calculate proportion of actual vs estimated across all records.
+			if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+				$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
+				$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
+
+				// Get aggregated actual/estimated breakdown across all users.
+				global $wpdb;
+				$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+				$query      = "
+					SELECT 
+						SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
+						SUM(CASE WHEN is_estimated = 0 THEN cost_usd ELSE 0 END) as actual_cost
+					FROM {$table_name}
+					WHERE timestamp >= %s AND timestamp <= %s
+				";
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$result = $wpdb->get_row( $wpdb->prepare( $query, $start_datetime, $end_datetime ), ARRAY_A );
+
+				if ( $result ) {
+					$estimated_cost = floatval( $result['estimated_cost'] );
+					$actual_cost    = floatval( $result['actual_cost'] );
+
+					if ( ( $estimated_cost + $actual_cost ) > 0 ) {
+						$accuracy = ( $actual_cost / ( $estimated_cost + $actual_cost ) ) * 100;
+					}
+				}
+			}
+		}
+
 		return rest_ensure_response(
 			array(
-				'start_date' => $start_date,
-				'end_date'   => $end_date,
-				'breakdown'  => $breakdown,
-				'total_cost' => $breakdown['total_cost'],
-				'formatted'  => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
+				'start_date'          => $start_date,
+				'end_date'            => $end_date,
+				'breakdown'           => $breakdown,
+				'total_cost'          => $breakdown['total_cost'],
+				'formatted'           => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
+				'estimated_cost'      => $estimated_cost,  // Phase 7 Week 5-6: Enhanced tracking.
+				'actual_cost'         => $actual_cost,     // Phase 7 Week 5-6: Enhanced tracking.
+				'accuracy_percentage' => $accuracy,    // Phase 7 Week 5-6: Enhanced tracking.
 			)
 		);
 	}
@@ -336,10 +392,48 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 		$summary = WP_MCP_AI_Cost_Tracking_Service::get_dashboard_cost_summary( $days );
 
+		// Phase 7 Week 5-6: Add enhanced tracking statistics.
+		$enhanced_stats = array();
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			$start_date = gmdate( 'Y-m-d 00:00:00', strtotime( "-{$days} days" ) );
+			$end_date   = gmdate( 'Y-m-d 23:59:59' );
+
+			global $wpdb;
+			$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+			$query      = "
+				SELECT 
+					SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
+					SUM(CASE WHEN is_estimated = 0 THEN cost_usd ELSE 0 END) as actual_cost,
+					SUM(cost_usd) as total_cost,
+					SUM(total_tokens) as total_tokens,
+					COUNT(*) as total_records
+				FROM {$table_name}
+				WHERE timestamp >= %s AND timestamp <= %s
+			";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$result = $wpdb->get_row( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+			if ( $result ) {
+				$total_cost     = floatval( $result['total_cost'] );
+				$estimated_cost = floatval( $result['estimated_cost'] );
+				$actual_cost    = floatval( $result['actual_cost'] );
+
+				$enhanced_stats = array(
+					'total_cost'          => $total_cost,
+					'estimated_cost'      => $estimated_cost,
+					'actual_cost'         => $actual_cost,
+					'accuracy_percentage' => $total_cost > 0 ? ( $actual_cost / $total_cost ) * 100 : 0,
+					'total_tokens'        => intval( $result['total_tokens'] ),
+					'total_records'       => intval( $result['total_records'] ),
+				);
+			}
+		}
+
 		return rest_ensure_response(
 			array(
-				'days'    => $days,
-				'summary' => $summary,
+				'days'           => $days,
+				'summary'        => $summary,
+				'enhanced_stats' => $enhanced_stats, // Phase 7 Week 5-6: Enhanced tracking.
 			)
 		);
 	}
