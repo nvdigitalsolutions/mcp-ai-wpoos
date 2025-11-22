@@ -276,14 +276,14 @@ class WP_MCP_AI_Tool_Send_OpenPhone_Message implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// E.164 format requires a leading plus sign.
-		$has_plus = strpos( $phone, '+' ) === 0;
-		$digits   = preg_replace( '/[^0-9]/', '', $phone );
+		// Strip all non-digits and add the plus prefix.
+		$digits = preg_replace( '/[^0-9]/', '', $phone );
 
 		if ( '' === $digits ) {
 			return '';
 		}
 
-		return $has_plus ? '+' . $digits : '+' . $digits;
+		return '+' . $digits;
 	}
 
 	/**
