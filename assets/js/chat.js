@@ -11422,7 +11422,8 @@ return;
 
 // Check if cron status service is available (legacy mode)
 if (typeof window.wpMcpAiCronStatus === 'undefined') {
-	// Cron status service not loaded - using consolidated polling mode (preferred)
+	// Modern mode: Using consolidated polling/SSE for job updates (recommended).
+	// No separate cron-status service needed.
 	return;
 }
 
