@@ -10998,6 +10998,10 @@
 	/**
 	 * Check if there are any active jobs that require notification polling
 	 * 
+	 * Implements fail-safe behavior: returns true when status is unavailable
+	 * to ensure notifications are not missed. Only returns false when we can
+	 * definitively confirm no active jobs exist.
+	 * 
 	 * @param {string} instanceId - Container instance ID
 	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
 	 */
@@ -11264,9 +11268,9 @@ pendingEl.textContent = counts.pending || 0;
 }
 
 if (runningEl) {
-runningEl.textContent = counts.polling || 0;
+runningEl.textContent = counts.running || 0;
 runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
-if (counts.polling > 0) {
+if (counts.running > 0) {
 runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
 }
 }
