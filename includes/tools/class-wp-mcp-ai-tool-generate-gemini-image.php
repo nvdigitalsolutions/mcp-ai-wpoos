@@ -190,27 +190,12 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
-		$text_parts = array();
-		$text_parts[] = sprintf(
-			/* translators: 1: image title, 2: attachment ID */
-			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
+		$text = sprintf(
+			/* translators: 1: image title, 2: attachment ID, 3: prompt */
+			__( 'Successfully generated image "%1$s" (ID: %2$d). Prompt: %3$s', 'wp-mcp-ai' ),
 			$storage['title'],
-			$storage['attachment_id']
-		);
-		
-		if ( ! empty( $image['revised_prompt'] ) ) {
-			$text_parts[] = sprintf(
-				/* translators: %s: revised prompt from Gemini */
-				__( 'Description: %s', 'wp-mcp-ai' ),
-				$image['revised_prompt']
-			);
-		}
-		
-		$text_parts[] = sprintf(
-			/* translators: 1: aspect ratio, 2: format */
-			__( 'Format: %1$s, %2$s', 'wp-mcp-ai' ),
-			isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
-			strtoupper( isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ) )
+			$storage['attachment_id'],
+			$prompt
 		);
 		
 		$result = array(
@@ -228,7 +213,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'        => isset( $image['created'] ) ? $image['created'] : time(),
 			'provider'       => 'gemini', // Track provider for accurate cost attribution.
-			'text'           => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'text'           => $text, // Descriptive message for LLM and chat UI.
 		);
 
 		// Include usage metadata if available for accurate cost tracking.
