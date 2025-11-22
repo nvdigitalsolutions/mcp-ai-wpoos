@@ -570,6 +570,13 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Check if async tool job.
 			if ( isset( $job['tool_slug'] ) && isset( $job['status'] ) ) {
 				$status = $job['status'];
+				
+				// Validate async tool job status by checking if cron event still exists.
+				// This prevents stale 'pending', 'running', or 'polling' jobs from being counted
+				// when the underlying WordPress cron event has already executed or failed.
+				if ( 'pending' === $status || 'running' === $status || 'polling' === $status ) {
+					$status = $this->validate_async_job_status( $job, $status );
+				}
 			} else {
 				$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
 				$args            = isset( $job['args'] ) ? $job['args'] : array();
@@ -635,6 +642,81 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		return $filtered_jobs;
+	}
+
+	/**
+	 * Validate async job status by checking if WordPress cron event still exists
+	 *
+	 * For async tool jobs with 'pending' or 'running' status, this method verifies
+	 * that the underlying WordPress cron event is still scheduled. If the cron event
+	 * doesn't exist, the job is likely stale (completed/failed without updating metadata).
+	 *
+	 * This fixes the issue where jobs show as "running" in the chat client even though
+	 * the cron event has already executed or been removed.
+	 *
+	 * Handles both:
+	 * - Regular async tool jobs (hook: wp_mcp_ai_async_tool_execution)
+	 * - Video generation jobs (hook: wp_mcp_ai_poll_veo_video)
+	 *
+	 * @param array  $job    Async tool job metadata.
+	 * @param string $status Current status from metadata.
+	 * @return string Validated status (may be changed to 'failed' if stale).
+	 */
+	protected function validate_async_job_status( $job, $status ) {
+		// Get job_id to check for corresponding cron event.
+		$job_id = isset( $job['job_id'] ) ? $job['job_id'] : '';
+		
+		if ( empty( $job_id ) ) {
+			return $status;
+		}
+
+		// Determine which cron hook to check based on job type.
+		$job_type = isset( $job['type'] ) ? $job['type'] : '';
+		
+		if ( self::VIDEO_GENERATION_JOB_TYPE === $job_type ) {
+			// Video generation jobs use wp_mcp_ai_poll_veo_video hook.
+			$cron_hook = 'wp_mcp_ai_poll_veo_video';
+		} else {
+			// Regular async tool jobs use wp_mcp_ai_async_tool_execution hook.
+			$cron_hook = 'wp_mcp_ai_async_tool_execution';
+		}
+
+		// Check if WordPress cron event still exists for this job.
+		$event = wp_get_scheduled_event( $cron_hook, array( $job_id ) );
+
+		// If no cron event exists, the job is stale.
+		if ( false === $event ) {
+			// Check how long the job has been in this state.
+			$queued_at  = isset( $job['queued_at'] ) ? absint( $job['queued_at'] ) : 0;
+			$started_at = isset( $job['started_at'] ) ? absint( $job['started_at'] ) : 0;
+			
+			// Use started_at if available (running status), otherwise queued_at (pending status).
+			$timestamp = $started_at > 0 ? $started_at : $queued_at;
+			
+			// If job was queued/started more than 10 minutes ago and no cron event exists,
+			// consider it failed (likely the cron event executed but didn't update metadata,
+			// or the cron event was removed/never ran).
+			$stale_threshold = 10 * MINUTE_IN_SECONDS;
+			
+			if ( $timestamp > 0 && ( time() - $timestamp ) > $stale_threshold ) {
+				WP_MCP_AI_Logger::log_event(
+					'async_job_marked_as_failed',
+					sprintf( 'Async job %s marked as failed (stale, no cron event)', $job_id ),
+					array(
+						'job_id'     => $job_id,
+						'job_type'   => $job_type,
+						'cron_hook'  => $cron_hook,
+						'old_status' => $status,
+						'timestamp'  => $timestamp,
+						'age'        => time() - $timestamp,
+					)
+				);
+				
+				return 'failed';
+			}
+		}
+
+		return $status;
 	}
 
 	/**
