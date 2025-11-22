@@ -149,7 +149,26 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	}
 
 	/**
+	 * Check if currently in Elementor editor mode.
+	 *
+	 * Following SoC: Separate editor detection logic from rendering logic.
+	 *
+	 * @return bool True if in Elementor editor mode, false otherwise.
+	 */
+	protected function is_elementor_editor() {
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Render the widget on the front-end.
+	 *
+	 * Following SoC: This method orchestrates rendering, delegating to helper methods.
 	 */
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -174,6 +193,20 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 
 		if ( ! empty( $title ) ) {
 			echo '<h3 class="wp-mcp-ai-test-results__title">' . esc_html( $title ) . '</h3>';
+		}
+
+		// Show placeholder in Elementor editor mode to prevent data loading conflicts.
+		// Following SoC: Separate editor preview from live functionality.
+		if ( $this->is_elementor_editor() ) {
+			echo '<div class="wp-mcp-ai-test-results__editor-placeholder" style="padding: 40px 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center; border-radius: 4px;">';
+			echo '<span class="dashicons dashicons-list-view" style="font-size: 48px; width: 48px; height: 48px; color: #2271b1;"></span>';
+			echo '<p style="margin: 10px 0 0; font-size: 14px; color: #50575e;">';
+			echo esc_html__( 'Test Results Table Widget', 'wp-mcp-ai' );
+			echo '<br><small>' . esc_html__( 'Test results will be displayed here on the live page.', 'wp-mcp-ai' ) . '</small>';
+			echo '</p>';
+			echo '</div>';
+			echo '</div>';
+			return;
 		}
 
 		if ( empty( $results ) ) {
@@ -301,18 +334,41 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 
 	/**
 	 * Enqueue details modal script.
+	 *
+	 * Following SoC: This method handles client-side interaction logic.
+	 * Business logic for fetching data lives in AJAX handlers.
 	 */
 	protected function enqueue_details_modal_script() {
 		?>
 		<script>
 		(function($) {
 			$(document).ready(function() {
+				/**
+				 * Listen for test completion events and auto-refresh table.
+				 *
+				 * Following SoC: React to events from other widgets without tight coupling.
+				 */
+				$(document).on('wp-mcp-ai-test-completed', function(event, testData) {
+					// Auto-refresh the page to show new test results.
+					// In a real implementation, this could use AJAX to reload just the table.
+					setTimeout(function() {
+						location.reload();
+					}, 2000);
+				});
+
+				/**
+				 * Handle details button click.
+				 *
+				 * Following SoC: Separate interaction handling from data fetching.
+				 */
 				$('.wp-mcp-ai-test-results__details-btn').on('click', function(e) {
 					e.preventDefault();
 					var testId = $(this).data('test-id');
 					
-					// In a real implementation, this would fetch and display full test details.
-					alert('<?php echo esc_js( __( 'Test ID:', 'wp-mcp-ai' ) ); ?> ' + testId);
+					// TODO: Implement modal with full test details from CCT.
+					// For now, show basic alert as placeholder.
+					alert('<?php echo esc_js( __( 'Test ID:', 'wp-mcp-ai' ) ); ?> ' + testId + '\n\n' +
+						'<?php echo esc_js( __( 'Full test details modal coming soon.', 'wp-mcp-ai' ) ); ?>');
 				});
 			});
 		})(jQuery);

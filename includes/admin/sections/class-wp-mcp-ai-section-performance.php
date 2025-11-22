@@ -714,27 +714,45 @@ composer install</pre>
 			// Parse output for test results.
 			$summary = $this->parse_test_output( $output_text );
 
+			// Extract metrics from PHPUnit output for CCT storage.
+			$metrics      = $this->extract_metrics_from_phpunit_output( $output_text );
+			$test_results = $this->extract_test_results_from_phpunit_output( $output_text );
+
+			// Save test results to CCT - following SoC, delegate storage to CCT class.
+			$cct_item_id = $this->save_test_results_to_cct( $test_type, $metrics, $test_results );
+
 			return array(
-				'success' => true,
-				'message' => sprintf(
+				'success'      => true,
+				'message'      => sprintf(
 					/* translators: %1$s: test type, %2$s: test summary */
 					__( '%1$s tests completed successfully. %2$s', 'wp-mcp-ai' ),
 					ucfirst( $test_type ),
 					$summary
 				),
-				'output'  => $output_text,
-				'summary' => $summary,
+				'output'       => $output_text,
+				'summary'      => $summary,
+				'cct_item_id'  => $cct_item_id,
+				'saved_to_cct' => false !== $cct_item_id,
+				'metrics'      => $metrics,
 			);
 		} else {
+			// Even failed tests should be saved to CCT for analysis.
+			$metrics      = $this->extract_metrics_from_phpunit_output( $output_text );
+			$test_results = $this->extract_test_results_from_phpunit_output( $output_text );
+			$cct_item_id  = $this->save_test_results_to_cct( $test_type, $metrics, $test_results );
+
 			return array(
-				'success'     => false,
-				'message'     => sprintf(
+				'success'      => false,
+				'message'      => sprintf(
 					/* translators: %s: test type */
 					__( '%s tests failed. See details below.', 'wp-mcp-ai' ),
 					ucfirst( $test_type )
 				),
-				'output'      => $output_text,
-				'return_code' => $return_var,
+				'output'       => $output_text,
+				'return_code'  => $return_var,
+				'cct_item_id'  => $cct_item_id,
+				'saved_to_cct' => false !== $cct_item_id,
+				'metrics'      => $metrics,
 			);
 		}
 	}
@@ -759,6 +777,8 @@ composer install</pre>
 
 	/**
 	 * Parse PHPUnit test output to extract summary.
+	 *
+	 * Following SoC: This method is responsible only for parsing summary text.
 	 *
 	 * @param string $output Test output.
 	 * @return string Test summary.
@@ -795,6 +815,127 @@ composer install</pre>
 		}
 
 		return __( 'Test execution completed. Check details for results.', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Extract metrics from PHPUnit output.
+	 *
+	 * Following SoC: This method is responsible only for extracting performance metrics.
+	 * It does not store data or make decisions about it.
+	 *
+	 * @param string $output PHPUnit test output.
+	 * @return array Metrics array with performance data.
+	 */
+	protected function extract_metrics_from_phpunit_output( $output ) {
+		$metrics = array(
+			'avg_response_time' => 0,
+			'memory_peak_bytes' => 0,
+			'memory_peak_mb'    => 0,
+			'db_queries'        => 0,
+			'error_rate'        => 0,
+			'total_errors'      => 0,
+		);
+
+		// Extract execution time if available.
+		if ( preg_match( '/Time: ([\d.]+)\s*(ms|s)/', $output, $matches ) ) {
+			$time             = floatval( $matches[1] );
+			$unit             = $matches[2];
+			$time_ms          = ( 's' === $unit ) ? $time * 1000 : $time;
+			$metrics['avg_response_time'] = $time_ms;
+		}
+
+		// Extract memory usage if available.
+		if ( preg_match( '/Memory: ([\d.]+)\s*(MB|KB)/', $output, $matches ) ) {
+			$memory = floatval( $matches[1] );
+			$unit   = $matches[2];
+			$memory_mb = ( 'KB' === $unit ) ? $memory / 1024 : $memory;
+			$metrics['memory_peak_mb']    = $memory_mb;
+			$metrics['memory_peak_bytes'] = $memory_mb * 1024 * 1024;
+		}
+
+		return $metrics;
+	}
+
+	/**
+	 * Extract test results from PHPUnit output.
+	 *
+	 * Following SoC: This method is responsible only for extracting test result counts.
+	 * It does not interpret or store the results.
+	 *
+	 * @param string $output PHPUnit test output.
+	 * @return array Test results with pass/fail counts.
+	 */
+	protected function extract_test_results_from_phpunit_output( $output ) {
+		$results = array(
+			'total'   => 0,
+			'passed'  => 0,
+			'failed'  => 0,
+			'skipped' => 0,
+		);
+
+		// Try to extract from summary line.
+		if ( preg_match( '/Tests: (\d+), Assertions: \d+, Failures: (\d+)/', $output, $matches ) ) {
+			$results['total']  = absint( $matches[1] );
+			$results['failed'] = absint( $matches[2] );
+			$results['passed'] = $results['total'] - $results['failed'];
+		} elseif ( preg_match( '/OK \((\d+) tests?, (\d+) assertions?\)/', $output, $matches ) ) {
+			$results['total']  = absint( $matches[1] );
+			$results['passed'] = absint( $matches[1] );
+			$results['failed'] = 0;
+		} elseif ( preg_match( '/Tests: (\d+), Assertions: (\d+)/', $output, $matches ) ) {
+			$results['total']  = absint( $matches[1] );
+			$results['passed'] = absint( $matches[1] );
+			$results['failed'] = 0;
+		}
+
+		// Extract skipped tests if present.
+		if ( preg_match( '/Skipped: (\d+)/', $output, $matches ) ) {
+			$results['skipped'] = absint( $matches[1] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Save test results to CCT storage.
+	 *
+	 * Following SoC: This method is responsible only for orchestrating the save operation.
+	 * It delegates to WP_MCP_AI_Performance_Monitor_CCT for actual storage.
+	 *
+	 * @param string $test_type    Type of test.
+	 * @param array  $metrics      Performance metrics.
+	 * @param array  $test_results Test result counts.
+	 * @return int|false CCT item ID on success, false on failure.
+	 */
+	protected function save_test_results_to_cct( $test_type, $metrics, $test_results ) {
+		// Guard clause: Check if CCT storage is available.
+		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
+			return false;
+		}
+
+		try {
+			// Determine component - delegate to specialized method.
+			$component = $this->determine_test_component();
+
+			// Delegate storage to CCT class (SoC: storage logic lives in CCT class).
+			$cct_item_id = WP_MCP_AI_Performance_Monitor_CCT::store_test_result(
+				$test_type,
+				$component,
+				false, // Optimizations not tracked in programmatic tests.
+				$metrics,
+				$test_results
+			);
+
+			return $cct_item_id;
+
+		} catch ( Exception $e ) {
+			// Log error but don't fail the test execution.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'WP_MCP_AI: Failed to store test result in CCT: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+
+			return false;
+		}
 	}
 
 	/**
@@ -1121,9 +1262,49 @@ composer install</pre>
 
 		$output = $this->format_check_results( $checks );
 
+		// Prepare metrics for CCT storage.
+		$metrics = array(
+			'avg_response_time' => $duration,
+			'memory_peak_bytes' => $end_memory - $start_memory,
+			'memory_peak_mb'    => $memory_used,
+			'db_queries'        => 0, // Lightweight checks don't track this.
+			'error_rate'        => $failed > 0 ? ( $failed / count( $checks ) ) * 100 : 0,
+			'total_errors'      => $failed,
+		);
+
+		$test_results = array(
+			'total'    => count( $checks ),
+			'passed'   => $passed,
+			'failed'   => $failed,
+			'warnings' => $warnings,
+			'checks'   => $checks,
+		);
+
+		// Store test results in CCT if available.
+		$cct_item_id = false;
+		if ( class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
+			try {
+				// Determine component being tested (default to 'elementor' when run from widget).
+				$component = $this->determine_test_component();
+
+				$cct_item_id = WP_MCP_AI_Performance_Monitor_CCT::store_test_result(
+					$test_type,
+					$component,
+					false, // Lightweight checks don't test optimizations.
+					$metrics,
+					$test_results
+				);
+			} catch ( Exception $e ) {
+				// Log error but don't fail the test.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( 'WP_MCP_AI: Failed to store test result in CCT: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
+			}
+		}
+
 		return array(
-			'success' => 0 === $failed,
-			'message' => sprintf(
+			'success'     => 0 === $failed,
+			'message'     => sprintf(
 				/* translators: %1$s: test type, %2$d: passed checks, %3$d: failed checks */
 				__( '%1$s check completed: %2$d passed, %3$d failed, %4$d warnings', 'wp-mcp-ai' ),
 				ucfirst( $test_type ),
@@ -1131,14 +1312,53 @@ composer install</pre>
 				$failed,
 				$warnings
 			),
-			'summary' => sprintf(
+			'summary'     => sprintf(
 				/* translators: %1$s: duration, %2$s: memory */
 				__( 'Duration: %1$sms | Memory: %2$sMB', 'wp-mcp-ai' ),
 				$duration,
 				$memory_used
 			),
-			'output'  => $output,
+			'output'      => $output,
+			'cct_item_id' => $cct_item_id,
+			'saved_to_cct' => false !== $cct_item_id,
+			'metrics'     => $metrics,
+			'test_results' => $test_results,
 		);
+	}
+
+	/**
+	 * Determine the component being tested based on context.
+	 *
+	 * Following SoC: This method is responsible only for identifying the test context.
+	 * It checks multiple sources to determine the most specific component being tested.
+	 *
+	 * @return string Component identifier.
+	 */
+	protected function determine_test_component() {
+		// Check for assistant-specific context from POST data (widget-specific tests).
+		if ( isset( $_POST['assistant_id'] ) && ! empty( $_POST['assistant_id'] ) ) {
+			return 'cpt_assistant';
+		}
+		
+		// Check for component override in POST data (allows widgets to specify component).
+		if ( isset( $_POST['component'] ) && ! empty( $_POST['component'] ) ) {
+			return sanitize_key( $_POST['component'] );
+		}
+		
+		// Check if request came from Elementor widget via AJAX.
+		$referer = isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+		
+		if ( strpos( $referer, 'elementor' ) !== false ) {
+			return 'elementor';
+		}
+		
+		// Check if it's an admin page request.
+		if ( is_admin() ) {
+			return 'rest_api'; // Default to REST API for admin tests.
+		}
+		
+		// Default fallback.
+		return 'rest_api';
 	}
 
 	/**
