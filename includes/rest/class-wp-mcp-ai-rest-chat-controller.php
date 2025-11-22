@@ -175,12 +175,6 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 								),
 							),
 						),
-						'user_id'      => array(
-							'description'       => __( 'Optional user ID to associate with this transcript. Defaults to current user. Admin users can save for other users.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => false,
-							'sanitize_callback' => 'absint',
-						),
 					),
 				),
 			)
@@ -505,7 +499,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		);
 
 		if ( '' !== $session_key ) {
-			$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+			// Retrieve session by session_key only (gets all messages regardless of user_id).
+			// Pass 0 as user_id since it's no longer used in the query.
+			$session = $this->main_controller->get_transcript_session( 0, $session_key, $assistant_id );
 
 			if ( is_wp_error( $session ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -515,7 +511,6 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'error_code'    => $session->get_error_code(),
 						'error_message' => $session->get_error_message(),
 						'session_key'   => $session_key,
-						'user_id'       => $user_id,
 					)
 				);
 
@@ -531,6 +526,21 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 				// Return error directly for missing transcripts (will be 404)
 				return $session;
+			}
+
+			// Authorization check: Verify user can view this session.
+			$auth_check = $this->verify_session_access( $session, $user_id );
+			if ( is_wp_error( $auth_check ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'warning',
+					'handle_chat_transcripts: Unauthorized access attempt',
+					array(
+						'session_key' => $session_key,
+						'user_id'     => $user_id,
+					)
+				);
+
+				return $auth_check;
 			}
 
 			return rest_ensure_response( array( 'session' => $session ) );
@@ -658,40 +668,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// Get user ID - check if provided in request body first.
-		// This allows cron jobs and other automated processes to specify the user_id
-		// of the admin/user who initiated the action, rather than defaulting to 0.
-		$requested_user_id = $request->get_param( 'user_id' );
-		$current_user_id   = get_current_user_id();
-
-		if ( null !== $requested_user_id ) {
-			$requested_user_id = absint( $requested_user_id );
-
-			// Permission check: Users can only save for themselves unless they're admin.
-			// Guest users (user_id=0) are handled by the permission check.
-			if ( $requested_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'warning',
-					'handle_chat_transcript_save: Unauthorized user_id mismatch',
-					array(
-						'requested_user_id' => $requested_user_id,
-						'current_user_id'   => $current_user_id,
-						'session_key'       => $session_key,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_transcripts_forbidden_user',
-					__( 'You do not have permission to save transcripts for other users.', 'wp-mcp-ai' ),
-					array( 'status' => 403 )
-				);
-			}
-
-			$user_id = $requested_user_id;
-		} else {
-			// No user_id provided - use current user (or 0 for guest/cron).
-			$user_id = $current_user_id;
-		}
+		// Get user ID.
+		$user_id = get_current_user_id();
 
 		// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
 		// The permission check already validated the guest token if present.
@@ -700,13 +678,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'debug',
 			'handle_chat_transcript_save: Saving transcript',
 			array(
-				'session_key'       => $session_key,
-				'assistant_id'      => $assistant_id,
-				'user_id'           => $user_id,
-				'requested_user_id' => $requested_user_id,
-				'current_user_id'   => $current_user_id,
-				'message_count'     => count( $clean_messages ),
-				'source'            => 'chat_client',
+				'session_key'   => $session_key,
+				'assistant_id'  => $assistant_id,
+				'user_id'       => $user_id,
+				'message_count' => count( $clean_messages ),
+				'source'        => 'chat_client',
 			)
 		);
 
@@ -791,6 +767,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * This endpoint provides RESTful access to a specific transcript using the
 	 * session key in the URL path (e.g., /chat-transcripts/{session_key}).
 	 *
+	 * Retrieves ALL messages in the session regardless of user_id, then validates
+	 * authorization based on session ownership.
+	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
@@ -824,42 +803,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// The permissions check has already validated and set the user_id on the request.
-		// For CCT queries, this user_id parameter directly maps to the user_id field in the database.
-		// We must preserve user_id = 0 for guest users and not override with get_current_user_id().
-		// This allows admins to view other users' transcripts or guest transcripts.
-		// Note: user_id is already sanitized by REST API via absint() sanitize_callback.
-		$user_id = $request->get_param( 'user_id' );
-		if ( null === $user_id ) {
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'handle_chat_transcript_get: No user ID available',
-				array(
-					'requested_user_id' => $request->get_param( 'user_id' ),
-					'current_user_id'   => get_current_user_id(),
-					'is_user_logged_in' => is_user_logged_in(),
-					'session_key'       => $session_key,
-				)
-			);
-
-			return new WP_Error(
-				'wp_mcp_ai_transcripts_missing_user',
-				__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
-				array( 'status' => 400 )
-			);
-		}
+		// Get requesting user from permission check.
+		$requesting_user_id = $request->get_param( 'user_id' );
+		$current_user_id    = get_current_user_id();
 
 		WP_MCP_AI_Logger::log_event(
 			'debug',
 			'handle_chat_transcript_get: Request parameters',
 			array(
-				'session_key'  => $session_key,
-				'user_id'      => $user_id,
-				'assistant_id' => $assistant_id,
+				'session_key'        => $session_key,
+				'requesting_user_id' => $requesting_user_id,
+				'current_user_id'    => $current_user_id,
+				'assistant_id'       => $assistant_id,
 			)
 		);
 
-		$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+		// Retrieve the session - this now gets ALL messages by session_key.
+		// Pass 0 as user_id since it's no longer used in the query.
+		$session = $this->main_controller->get_transcript_session( 0, $session_key, $assistant_id );
 
 		if ( is_wp_error( $session ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -869,7 +830,6 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'error_code'    => $session->get_error_code(),
 					'error_message' => $session->get_error_message(),
 					'session_key'   => $session_key,
-					'user_id'       => $user_id,
 				)
 			);
 
@@ -885,6 +845,21 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			// Return error directly for missing transcripts (will be 404)
 			return $session;
+		}
+
+		// Authorization check: Verify user can view this session.
+		$auth_check = $this->verify_session_access( $session, $requesting_user_id );
+		if ( is_wp_error( $auth_check ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'handle_chat_transcript_get: Unauthorized access attempt',
+				array(
+					'session_key'        => $session_key,
+					'requesting_user_id' => $requesting_user_id,
+				)
+			);
+
+			return $auth_check;
 		}
 
 		return rest_ensure_response( array( 'session' => $session ) );
@@ -1001,5 +976,48 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
 			)
 		);
+	}
+
+	/**
+	 * Verify if a user is authorized to view a transcript session.
+	 *
+	 * This method enforces authorization by checking if:
+	 * - The user is an admin (can view any session), OR
+	 * - The user owns at least one message in the session
+	 *
+	 * This follows SOC by separating authorization logic from data retrieval.
+	 *
+	 * @param array $session           The session data (array of messages).
+	 * @param int   $requesting_user_id The user requesting access.
+	 * @return true|WP_Error True if authorized, WP_Error otherwise.
+	 */
+	protected function verify_session_access( $session, $requesting_user_id ) {
+		// Admins can view any session.
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+
+		// Non-admin users can only view sessions that contain at least one message they own.
+		// Extract unique user_ids from the session messages.
+		$session_user_ids = array();
+		if ( is_array( $session ) ) {
+			foreach ( $session as $message ) {
+				if ( isset( $message['user_id'] ) ) {
+					$session_user_ids[] = absint( $message['user_id'] );
+				}
+			}
+		}
+		$session_user_ids = array_unique( $session_user_ids );
+
+		// Check if the requesting user owns any message in this session.
+		if ( ! in_array( $requesting_user_id, $session_user_ids, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_forbidden',
+				__( 'You do not have permission to view this transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 }
