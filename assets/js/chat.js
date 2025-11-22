@@ -56,6 +56,13 @@
     // executed and its duration for all tools, not just async tools.
     const TOOL_TIMER_DISPLAY_DURATION = 1500;
 
+    // System bubble emoji prefixes for different event types
+    const CRON_JOB_STATUS_PREFIXES = {
+        'completed': '✅ ',
+        'failed': '❌ ',
+        'running': '⏳ ',
+    };
+
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -8395,6 +8402,28 @@
                             handleToolExecutionEvent(state, data);
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
+                        } else if (eventType === 'disconnect') {
+                            // Handle client disconnect event
+                            const message = data.message || getString('clientDisconnected', 'Connection lost.');
+                            appendMessage(state.messagesEl, 'system', {
+                                text: '⚠️ ' + message
+                            });
+                        } else if (eventType === 'timeout') {
+                            // Handle timeout event
+                            const message = data.message || getString('requestTimeout', 'Request timed out.');
+                            appendMessage(state.messagesEl, 'system', {
+                                text: '⏱️ ' + message
+                            });
+                        } else if (eventType === 'cron_job_status') {
+                            // Handle cron job status updates
+                            if (data.status && data.message) {
+                                // Map status to emoji prefix using module-level constant
+                                const prefix = CRON_JOB_STATUS_PREFIXES[data.status] || '📋 ';
+                                
+                                appendMessage(state.messagesEl, 'system', {
+                                    text: prefix + data.message
+                                });
+                            }
                         } else if (eventType === 'message' || !eventType) {
                             // Handle streaming responses from different AI providers
                             let contentChunk = null;
@@ -8666,6 +8695,13 @@
                 type: 'default',
                 showTime: false
             });
+            
+            // Show notification in chat as system bubble
+            const prefix = type === 'model_switched' ? '🔄 ' : '✂️ ';
+            appendMessage(state.messagesEl, 'system', {
+                text: prefix + message
+            });
+            
             setTimeout(function() {
                 setStatus(state.container, {
                     message: getString('sending', 'Sending…'),
@@ -8673,6 +8709,18 @@
                     showTime: false
                 });
             }, 2000);
+        } else if (type === 'max_iterations') {
+            // Show max iterations warning
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
+            
+            // Show notification in chat as system bubble
+            appendMessage(state.messagesEl, 'system', {
+                text: '⚠️ ' + message
+            });
         }
     }
 
@@ -8707,14 +8755,21 @@
             state.currentToolName = toolName;
             state.currentToolStartTime = Date.now();
             
+            const message = formatString(
+                getString('executingTool', 'Executing %s…'),
+                toolName
+            );
+            
             setStatus(state.container, {
-                message: formatString(
-                    getString('executingTool', 'Executing %s…'),
-                    toolName
-                ),
+                message: message,
                 type: 'tool',
                 showTime: true,
                 startTime: state.currentToolStartTime
+            });
+            
+            // Show tool execution in chat as system bubble
+            appendMessage(state.messagesEl, 'system', {
+                text: '⚙️ ' + message
             });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
