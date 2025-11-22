@@ -254,15 +254,15 @@ class WP_MCP_AI_Transcript_Repository {
 	 */
 	private function get_select_fields() {
 		return "id,
-                user_id,
-                request_payload,
-                response_payload,
-                metadata,
-                request_started_at,
-                response_completed_at,
-                cct_created,
-                assistant_id,
-                assistant_model,
-                latency_ms";
+		        user_id,
+		        request_payload,
+		        response_payload,
+		        metadata,
+		        request_started_at,
+		        response_completed_at,
+		        cct_created,
+		        assistant_id,
+		        assistant_model,
+		        latency_ms";
 	}
 }
