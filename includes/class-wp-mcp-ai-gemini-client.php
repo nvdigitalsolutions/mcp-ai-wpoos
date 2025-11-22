@@ -1434,6 +1434,68 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['responseJsonSchema'] = $options['response_json_schema'];
 			}
 
+			// Add topP if specified (nucleus sampling).
+			if ( isset( $options['top_p'] ) && '' !== $options['top_p'] && null !== $options['top_p'] ) {
+				$top_p = (float) $options['top_p'];
+				// Validate topP is between 0 and 1.
+				if ( $top_p >= 0 && $top_p <= 1 ) {
+					$payload['generationConfig']['topP'] = $top_p;
+				}
+			}
+
+			// Add topK if specified (top-K sampling).
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$top_k = absint( $options['top_k'] );
+				// topK should be positive.
+				if ( $top_k > 0 ) {
+					$payload['generationConfig']['topK'] = $top_k;
+				}
+			}
+
+			// Add stopSequences if specified.
+			if ( ! empty( $options['stop'] ) || ! empty( $options['stop_sequences'] ) ) {
+				$stop = $options['stop_sequences'] ?? $options['stop'] ?? array();
+				
+				if ( is_string( $stop ) ) {
+					$stop = array( $stop );
+				}
+				
+				if ( is_array( $stop ) && ! empty( $stop ) ) {
+					// Gemini supports up to 5 stop sequences.
+					$stop_sequences = array_slice( array_map( 'sanitize_text_field', $stop ), 0, 5 );
+					if ( ! empty( $stop_sequences ) ) {
+						$payload['generationConfig']['stopSequences'] = $stop_sequences;
+					}
+				}
+			}
+
+			// Add frequencyPenalty if specified.
+			if ( isset( $options['frequency_penalty'] ) && '' !== $options['frequency_penalty'] && null !== $options['frequency_penalty'] ) {
+				$frequency_penalty = (float) $options['frequency_penalty'];
+				// Gemini accepts frequency penalty (typically -2 to 2).
+				if ( $frequency_penalty >= -2 && $frequency_penalty <= 2 ) {
+					$payload['generationConfig']['frequencyPenalty'] = $frequency_penalty;
+				}
+			}
+
+			// Add presencePenalty if specified.
+			if ( isset( $options['presence_penalty'] ) && '' !== $options['presence_penalty'] && null !== $options['presence_penalty'] ) {
+				$presence_penalty = (float) $options['presence_penalty'];
+				// Gemini accepts presence penalty (typically -2 to 2).
+				if ( $presence_penalty >= -2 && $presence_penalty <= 2 ) {
+					$payload['generationConfig']['presencePenalty'] = $presence_penalty;
+				}
+			}
+
+			// Add candidateCount if specified (number of response variations).
+			if ( isset( $options['candidate_count'] ) && is_numeric( $options['candidate_count'] ) ) {
+				$candidate_count = absint( $options['candidate_count'] );
+				// Typically 1-8, but Gemini may have different limits.
+				if ( $candidate_count >= 1 && $candidate_count <= 8 ) {
+					$payload['generationConfig']['candidateCount'] = $candidate_count;
+				}
+			}
+
 			if ( empty( $payload['generationConfig'] ) ) {
 				unset( $payload['generationConfig'] );
 			}
