@@ -601,6 +601,22 @@ class WP_MCP_AI_Cron_Status_Service {
 			++$counts['total'];
 		}
 
+		// Log final counts for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'cron_status_counts_calculated',
+			'Cron status counts calculated',
+			array(
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+				'context'      => $context,
+				'counts'       => $counts,
+				'total_jobs'   => count( $all_jobs ),
+				'regular'      => count( $jobs ),
+				'async'        => count( $async_jobs ),
+				'video'        => count( $video_jobs ),
+			)
+		);
+
 		return $counts;
 	}
 
@@ -684,37 +700,69 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Check if WordPress cron event still exists for this job.
 		$event = wp_get_scheduled_event( $cron_hook, array( $job_id ) );
 
-		// If no cron event exists, the job is stale.
-		if ( false === $event ) {
-			// Check how long the job has been in this state.
-			$queued_at  = isset( $job['queued_at'] ) ? absint( $job['queued_at'] ) : 0;
-			$started_at = isset( $job['started_at'] ) ? absint( $job['started_at'] ) : 0;
-			
-			// Use started_at if available (running status), otherwise queued_at (pending status).
-			$timestamp = $started_at > 0 ? $started_at : $queued_at;
-			
-			// If job was queued/started more than 10 minutes ago and no cron event exists,
-			// consider it failed (likely the cron event executed but didn't update metadata,
-			// or the cron event was removed/never ran).
-			$stale_threshold = 10 * MINUTE_IN_SECONDS;
-			
-			if ( $timestamp > 0 && ( time() - $timestamp ) > $stale_threshold ) {
-				WP_MCP_AI_Logger::log_event(
-					'async_job_marked_as_failed',
-					sprintf( 'Async job %s marked as failed (stale, no cron event)', $job_id ),
-					array(
-						'job_id'     => $job_id,
-						'job_type'   => $job_type,
-						'cron_hook'  => $cron_hook,
-						'old_status' => $status,
-						'timestamp'  => $timestamp,
-						'age'        => time() - $timestamp,
-					)
-				);
-				
-				return 'failed';
-			}
+		// If cron event exists, job is still active - return status unchanged.
+		if ( false !== $event ) {
+			WP_MCP_AI_Logger::log_event(
+				'async_job_validated_active',
+				sprintf( 'Async job %s validated as active (cron event exists)', $job_id ),
+				array(
+					'job_id'         => $job_id,
+					'job_type'       => $job_type,
+					'cron_hook'      => $cron_hook,
+					'status'         => $status,
+					'next_run'       => $event->timestamp,
+					'seconds_until'  => $event->timestamp - time(),
+				)
+			);
+			return $status;
 		}
+
+		// No cron event exists - check if job is stale.
+		// Check how long the job has been in this state.
+		$queued_at  = isset( $job['queued_at'] ) ? absint( $job['queued_at'] ) : 0;
+		$started_at = isset( $job['started_at'] ) ? absint( $job['started_at'] ) : 0;
+		
+		// Use started_at if available (running status), otherwise queued_at (pending/polling status).
+		$timestamp = $started_at > 0 ? $started_at : $queued_at;
+		
+		// If job was queued/started more than 10 minutes ago and no cron event exists,
+		// consider it failed (likely the cron event executed but didn't update metadata,
+		// or the cron event was removed/never ran).
+		$stale_threshold = 10 * MINUTE_IN_SECONDS;
+		$age = $timestamp > 0 ? ( time() - $timestamp ) : 0;
+		
+		if ( $timestamp > 0 && $age > $stale_threshold ) {
+			WP_MCP_AI_Logger::log_event(
+				'async_job_marked_as_failed',
+				sprintf( 'Async job %s marked as failed (stale, no cron event)', $job_id ),
+				array(
+					'job_id'     => $job_id,
+					'job_type'   => $job_type,
+					'cron_hook'  => $cron_hook,
+					'old_status' => $status,
+					'timestamp'  => $timestamp,
+					'age'        => $age,
+				)
+			);
+			
+			return 'failed';
+		}
+		
+		// Job is recent (< 10 minutes) and no cron event exists.
+		// This could be normal - cron might be about to run, or job might have just been queued.
+		// Keep original status for now.
+		WP_MCP_AI_Logger::log_event(
+			'async_job_validated_recent',
+			sprintf( 'Async job %s has no cron event but is recent (< 10 min)', $job_id ),
+			array(
+				'job_id'     => $job_id,
+				'job_type'   => $job_type,
+				'cron_hook'  => $cron_hook,
+				'status'     => $status,
+				'timestamp'  => $timestamp,
+				'age'        => $age,
+			)
+		);
 
 		return $status;
 	}
