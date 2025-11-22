@@ -152,28 +152,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'              => 'array',
 							'required'          => true,
 							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-							'items'             => array(
-								'type'       => 'object',
-								'properties' => array(
-									'role'    => array(
-										'type' => 'string',
-										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-									),
-									'content' => array(
-										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
-										'oneOf'       => array(
-											array( 'type' => 'string' ),
-											array(
-												'type'  => 'array',
-												'items' => array(
-													'type' => 'object',
-												),
-											),
-											array( 'type' => 'null' ),
-										),
-									),
-								),
-							),
+							'items'             => $this->get_message_item_schema(),
 						),
 					),
 				),
@@ -245,28 +224,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'type'              => 'array',
 				'required'          => true,
 				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'role'    => array(
-							'type' => 'string',
-							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-						),
-						'content' => array(
-							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
-							'oneOf'       => array(
-								array( 'type' => 'string' ),
-								array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'object',
-									),
-								),
-								array( 'type' => 'null' ),
-							),
-						),
-					),
-				),
+				'items'             => $this->get_message_item_schema(),
 			),
 			'attachments'  => array(
 				'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
@@ -315,6 +273,81 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 						),
 					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get message item schema for REST API endpoints.
+	 *
+	 * Defines the complete OpenAI-compatible message schema including:
+	 * - role (required): Message role (system, user, assistant, tool)
+	 * - content: Message content (string, array of content parts, or null)
+	 * - tool_calls: Array of tool calls for assistant messages
+	 * - tool_call_id: Tool call identifier for tool messages
+	 * - name: Optional name field for tool messages
+	 *
+	 * @return array Message item schema definition.
+	 */
+	private function get_message_item_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'role'         => array(
+					'type' => 'string',
+					'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+				),
+				'content'      => array(
+					'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
+					'oneOf'       => array(
+						array( 'type' => 'string' ),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'object',
+							),
+						),
+						array( 'type' => 'null' ),
+					),
+				),
+				'tool_calls'   => array(
+					'description' => __( 'Tool calls made by the assistant. Only valid for assistant role messages.', 'wp-mcp-ai' ),
+					'type'        => 'array',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'id'       => array(
+								'type'        => 'string',
+								'description' => __( 'Unique identifier for the tool call.', 'wp-mcp-ai' ),
+							),
+							'type'     => array(
+								'type' => 'string',
+								'enum' => array( 'function' ),
+							),
+							'function' => array(
+								'type'       => 'object',
+								'properties' => array(
+									'name'      => array(
+										'type'        => 'string',
+										'description' => __( 'The name of the function to call.', 'wp-mcp-ai' ),
+									),
+									'arguments' => array(
+										'type'        => 'string',
+										'description' => __( 'JSON string of arguments to pass to the function.', 'wp-mcp-ai' ),
+									),
+								),
+							),
+						),
+					),
+				),
+				'tool_call_id' => array(
+					'description' => __( 'Tool call identifier. Required for tool role messages to match with assistant tool_calls.', 'wp-mcp-ai' ),
+					'type'        => 'string',
+				),
+				'name'         => array(
+					'description' => __( 'Optional name field for tool messages.', 'wp-mcp-ai' ),
+					'type'        => 'string',
 				),
 			),
 		);
