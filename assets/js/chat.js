@@ -56,6 +56,13 @@
     // executed and its duration for all tools, not just async tools.
     const TOOL_TIMER_DISPLAY_DURATION = 1500;
 
+    // System bubble emoji prefixes for different event types
+    const CRON_JOB_STATUS_PREFIXES = {
+        'completed': '✅ ',
+        'failed': '❌ ',
+        'running': '⏳ ',
+    };
+
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -8410,13 +8417,8 @@
                         } else if (eventType === 'cron_job_status') {
                             // Handle cron job status updates
                             if (data.status && data.message) {
-                                // Map status to emoji prefix
-                                const statusPrefixes = {
-                                    'completed': '✅ ',
-                                    'failed': '❌ ',
-                                    'running': '⏳ ',
-                                };
-                                const prefix = statusPrefixes[data.status] || '📋 ';
+                                // Map status to emoji prefix using module-level constant
+                                const prefix = CRON_JOB_STATUS_PREFIXES[data.status] || '📋 ';
                                 
                                 appendMessage(state.messagesEl, 'system', {
                                     text: prefix + data.message

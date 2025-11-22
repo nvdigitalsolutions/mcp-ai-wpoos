@@ -7,6 +7,22 @@
  * @package WP_MCP_AI
  */
 
+/**
+ * System bubble emoji prefixes used across the application.
+ * These must match the emojis defined in assets/js/chat.js
+ */
+const SYSTEM_BUBBLE_EMOJIS = {
+	TOOL_EXECUTION: '⚙️',
+	MODEL_SWITCHED: '🔄',
+	MESSAGES_TRUNCATED: '✂️',
+	WARNING: '⚠️',
+	TIMEOUT: '⏱️',
+	CRON_COMPLETED: '✅',
+	CRON_FAILED: '❌',
+	CRON_RUNNING: '⏳',
+	CRON_DEFAULT: '📋',
+};
+
 describe('System Bubble Events', () => {
 	let mockContainer;
 	let mockMessagesEl;
@@ -89,12 +105,12 @@ describe('System Bubble Events', () => {
 			// Create system bubble (simulating what the code does)
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⚙️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.TOOL_EXECUTION + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⚙️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.TOOL_EXECUTION);
 			expect(lastMsg.textContent).toContain('generate_veo_video');
 		});
 
@@ -115,12 +131,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⚙️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.TOOL_EXECUTION + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⚙️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.TOOL_EXECUTION);
 			expect(lastMsg.textContent).toContain('generate_veo_video');
 			expect(lastMsg.textContent).toContain('save_to_media_library');
 		});
@@ -132,12 +148,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '🔄 ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.MODEL_SWITCHED + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('🔄');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.MODEL_SWITCHED);
 			expect(lastMsg.textContent).toContain('gemini-2.5-flash');
 		});
 
@@ -146,12 +162,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '✂️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.MESSAGES_TRUNCATED + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('✂️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.MESSAGES_TRUNCATED);
 			expect(lastMsg.textContent).toContain('Reduced context');
 		});
 
@@ -160,12 +176,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⚠️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.WARNING + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⚠️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.WARNING);
 			expect(lastMsg.textContent).toContain('maximum tool execution');
 		});
 	});
@@ -176,12 +192,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⚠️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.WARNING + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⚠️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.WARNING);
 			expect(lastMsg.textContent).toContain('Connection lost');
 		});
 
@@ -190,12 +206,12 @@ describe('System Bubble Events', () => {
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⏱️ ' + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.TIMEOUT + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⏱️');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.TIMEOUT);
 			expect(lastMsg.textContent).toContain('timed out');
 		});
 	});
@@ -203,46 +219,43 @@ describe('System Bubble Events', () => {
 	describe('Cron Job Status Events', () => {
 		it('should create system bubble for completed cron job', () => {
 			const message = 'Video generation completed successfully.';
-			const prefix = '✅ ';
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = prefix + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.CRON_COMPLETED + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('✅');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.CRON_COMPLETED);
 			expect(lastMsg.textContent).toContain('completed');
 		});
 
 		it('should create system bubble for failed cron job', () => {
 			const message = 'Video generation failed.';
-			const prefix = '❌ ';
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = prefix + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.CRON_FAILED + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('❌');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.CRON_FAILED);
 			expect(lastMsg.textContent).toContain('failed');
 		});
 
 		it('should create system bubble for running cron job', () => {
 			const message = 'Generating video...';
-			const prefix = '⏳ ';
 			
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = prefix + message;
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.CRON_RUNNING + ' ' + message;
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
 			expect(isSystemBubble(lastMsg)).toBe(true);
-			expect(lastMsg.textContent).toContain('⏳');
+			expect(lastMsg.textContent).toContain(SYSTEM_BUBBLE_EMOJIS.CRON_RUNNING);
 			expect(lastMsg.textContent).toContain('Generating');
 		});
 	});
@@ -251,7 +264,7 @@ describe('System Bubble Events', () => {
 		it('should have correct CSS classes for system bubbles', () => {
 			const entry = document.createElement('div');
 			entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--system';
-			entry.textContent = '⚙️ Test message';
+			entry.textContent = SYSTEM_BUBBLE_EMOJIS.TOOL_EXECUTION + ' Test message';
 			mockMessagesEl.appendChild(entry);
 
 			const lastMsg = getLastMessage();
@@ -261,7 +274,8 @@ describe('System Bubble Events', () => {
 		});
 
 		it('should display emoji correctly in system bubbles', () => {
-			const emojis = ['⚙️', '🔄', '✂️', '⚠️', '⏱️', '✅', '❌', '⏳', '📋'];
+			// Use centralized emoji constants to prevent drift
+			const emojis = Object.values(SYSTEM_BUBBLE_EMOJIS);
 			
 			emojis.forEach((emoji) => {
 				const entry = document.createElement('div');
