@@ -10985,233 +10985,329 @@
         return div.innerHTML;
     }
 
-    /**
-     * Poll for job completion notifications
-     * 
-     * Fetches pending notifications from the server and displays them in the chat.
-     * Notifications are cleared after retrieval to avoid duplicates.
-     * 
-     * @param {HTMLElement} container - Chat container element
-     * @param {Object} config - Chat instance configuration
-     */
-    function pollJobNotifications(container, config) {
-        if (!container || !config) {
-            return;
-        }
+	/**
+	 * Job notifications polling state
+	 * Stores polling timers, retry delays, and backoff state per container
+	 */
+	const notificationPollers = {
+		timers: {},           // Active polling timers by container ID
+		retryDelays: {},      // Current retry delay for each container (for exponential backoff)
+		consecutiveErrors: {} // Track consecutive errors for backoff
+	};
 
-        const assistantId = config.assistantId;
-        if (!assistantId) {
-            return;
-        }
+	/**
+	 * Poll for job completion notifications
+	 * 
+	 * Fetches pending notifications from the server and displays them in the chat.
+	 * Notifications are cleared after retrieval to avoid duplicates.
+	 * Implements exponential backoff on rate limiting errors.
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function pollJobNotifications(container, config) {
+		if (!container || !config) {
+			return;
+		}
 
-        const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
-        const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+		const assistantId = config.assistantId;
+		if (!assistantId) {
+			return;
+		}
 
-        if (!restUrl) {
-            return;
-        }
+		const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+		const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
 
-        const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
+		if (!restUrl) {
+			return;
+		}
 
-        // Fetch notifications
-        fetch(notificationsUrl, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce': nonce
-            },
-            credentials: 'same-origin'
-        })
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('Failed to fetch notifications');
-            }
-            return response.json();
-        })
-        .then(function(data) {
-            if (!data || !data.notifications || data.notifications.length === 0) {
-                return;
-            }
+		const instanceId = container.getAttribute('id');
+		const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
 
-            // Get state for this container
-            const instanceId = container.getAttribute('id');
-            const state = states.get(instanceId);
-            if (!state) {
-                return;
-            }
+		// Fetch notifications
+		fetch(notificationsUrl, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': nonce
+			},
+			credentials: 'same-origin'
+		})
+		.then(function(response) {
+			// Handle rate limiting with exponential backoff
+			if (response.status === 429) {
+				// Increase backoff delay
+				const currentDelay = notificationPollers.retryDelays[instanceId] || 30000;
+				const newDelay = Math.min(currentDelay * 2, 300000); // Max 5 minutes
+				notificationPollers.retryDelays[instanceId] = newDelay;
+				
+				// Track consecutive errors
+				notificationPollers.consecutiveErrors[instanceId] = 
+					(notificationPollers.consecutiveErrors[instanceId] || 0) + 1;
+				
+				if (window.console && console.warn) {
+					console.warn('[WP oOS] Rate limited on job notifications. Backing off to ' + (newDelay / 1000) + 's. Consecutive errors: ' + notificationPollers.consecutiveErrors[instanceId]);
+				}
+				
+				throw new Error('Rate limited (429)');
+			}
+			
+			if (!response.ok) {
+				throw new Error('Failed to fetch notifications (HTTP ' + response.status + ')');
+			}
+			
+			// Reset backoff on success
+			notificationPollers.retryDelays[instanceId] = 30000; // Reset to 30s base interval
+			notificationPollers.consecutiveErrors[instanceId] = 0;
+			
+			return response.json();
+		})
+		.then(function(data) {
+			if (!data || !data.notifications || data.notifications.length === 0) {
+				return;
+			}
 
-            // Display each notification as a system message
-            data.notifications.forEach(function(notification) {
-                // Format message with appropriate emoji prefix
-                let prefix = '📋 ';
-                if (notification.status === 'completed') {
-                    prefix = '✅ ';
-                } else if (notification.status === 'failed') {
-                    prefix = '❌ ';
-                }
+			// Get state for this container
+			const state = states.get(instanceId);
+			if (!state) {
+				return;
+			}
 
-                const message = prefix + notification.message;
+			// Display each notification as a system message
+			data.notifications.forEach(function(notification) {
+				// Format message with appropriate emoji prefix
+				let prefix = '📋 ';
+				if (notification.status === 'completed') {
+					prefix = '✅ ';
+				} else if (notification.status === 'failed') {
+					prefix = '❌ ';
+				}
 
-                // Append system message to chat
-                appendMessage(state.messagesEl, 'system', {
-                    text: message
-                });
+				const message = prefix + notification.message;
 
-                // Log notification for debugging
-                if (window.console && console.log) {
-                    console.log('[WP oOS] Job notification received:', notification);
-                }
-            });
+				// Append system message to chat
+				appendMessage(state.messagesEl, 'system', {
+					text: message
+				});
 
-            // Force immediate cron status update
-            if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.fetchStatus) {
-                const instanceId = container.getAttribute('id');
-                const cronStatusEndpoint = restUrl + '/cron-status';
-                window.wpMcpAiCronStatus.fetchStatus(cronStatusEndpoint, nonce, 10, assistantId)
-                    .then(function(statusData) {
-                        // Update cron bar immediately
-                        if (statusData && window.wpMcpAiCronStatus.cache) {
-                            window.wpMcpAiCronStatus.cache[instanceId] = statusData;
-                        }
-                    });
-            }
-        })
-        .catch(function(error) {
-            if (window.console && console.error) {
-                console.error('[WP oOS] Failed to fetch job notifications:', error);
-            }
-        });
-    }
+				// Log notification for debugging
+				if (window.console && console.log) {
+					console.log('[WP oOS] Job notification received:', notification);
+				}
+			});
 
-    /**
-     * Initialize cron status display for a chat container
-     * 
-     * @param {HTMLElement} container - Chat container element
-     * @param {Object} config - Chat instance configuration
-     */
-    function initializeCronStatus(container, config) {
-        if (!container || !config) {
-            return;
-        }
+			// Force immediate cron status update
+			if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.fetchStatus) {
+				const cronStatusEndpoint = restUrl + '/cron-status';
+				window.wpMcpAiCronStatus.fetchStatus(cronStatusEndpoint, nonce, 10, assistantId)
+					.then(function(statusData) {
+						// Update cron bar immediately
+						if (statusData && window.wpMcpAiCronStatus.cache) {
+							window.wpMcpAiCronStatus.cache[instanceId] = statusData;
+						}
+					});
+			}
+		})
+		.catch(function(error) {
+			if (window.console && console.error) {
+				console.error('[WP oOS] Failed to fetch job notifications:', error);
+			}
+		});
+	}
 
-        const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
-        if (!cronStatusEl) {
-            return;
-        }
+	/**
+	 * Start polling for job notifications with intelligent backoff
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function startNotificationPolling(container, config) {
+		if (!container || !config) {
+			return;
+		}
 
-        // Check if cron status service is available
-        if (typeof window.wpMcpAiCronStatus === 'undefined') {
-            return;
-        }
+		const instanceId = container.getAttribute('id');
+		
+		// Stop any existing poller
+		stopNotificationPolling(instanceId);
+		
+		// Initialize backoff state
+		notificationPollers.retryDelays[instanceId] = 30000; // Start with 30s base interval
+		notificationPollers.consecutiveErrors[instanceId] = 0;
+		
+		// Do initial poll immediately
+		pollJobNotifications(container, config);
+		
+		// Set up polling with dynamic interval
+		function schedulePoll() {
+			const delay = notificationPollers.retryDelays[instanceId] || 30000;
+			
+			notificationPollers.timers[instanceId] = setTimeout(function() {
+				pollJobNotifications(container, config);
+				schedulePoll(); // Schedule next poll
+			}, delay);
+		}
+		
+		schedulePoll();
+	}
 
-        const instanceId = container.getAttribute('id');
-        if (!instanceId) {
-            return;
-        }
+	/**
+	 * Stop polling for job notifications
+	 * 
+	 * @param {string} instanceId - Container instance ID
+	 */
+	function stopNotificationPolling(instanceId) {
+		if (notificationPollers.timers[instanceId]) {
+			clearTimeout(notificationPollers.timers[instanceId]);
+			delete notificationPollers.timers[instanceId];
+		}
+	}
 
-        // Build cron status endpoint using global restUrl to avoid cross-domain issues
-        // (config.messagesEndpoint might point to an external URL)
-        const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
-        const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
-        const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+/**
+ * Initialize cron status display for a chat container
+ * 
+ * @param {HTMLElement} container - Chat container element
+ * @param {Object} config - Chat instance configuration
+ */
+function initializeCronStatus(container, config) {
+if (!container || !config) {
+return;
+}
 
-        // Don't start polling if endpoint is not available
-        if (!cronStatusEndpoint) {
-            return;
-        }
+const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+if (!cronStatusEl) {
+return;
+}
 
-        // Update cron status display
-        function updateCronStatusDisplay(data) {
-            if (!data || !data.counts) {
-                return;
-            }
+// Check if cron status service is available
+if (typeof window.wpMcpAiCronStatus === 'undefined') {
+return;
+}
 
-            const counts = data.counts;
-            const total = counts.total || 0;
+const instanceId = container.getAttribute('id');
+if (!instanceId) {
+return;
+}
 
-            // Hide if no jobs
-            if (total === 0) {
-                cronStatusEl.setAttribute('hidden', '');
-                return;
-            }
+// Build cron status endpoint using global restUrl to avoid cross-domain issues
+// (config.messagesEndpoint might point to an external URL)
+const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
+const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
 
-            // Show and update counts
-            cronStatusEl.removeAttribute('hidden');
+// Don't start polling if endpoint is not available
+if (!cronStatusEndpoint) {
+return;
+}
 
-            const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending .wp-mcp-ai-chat__cron-status-count');
-            const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed .wp-mcp-ai-chat__cron-status-count');
+// Update cron status display
+function updateCronStatusDisplay(data) {
+if (!data || !data.counts) {
+return;
+}
 
-            if (pendingEl) {
-                pendingEl.textContent = counts.pending || 0;
-                pendingEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-pending';
-                if (counts.pending > 0) {
-                    pendingEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-pending--active';
-                }
-            }
+const counts = data.counts;
+const total = counts.total || 0;
 
-            if (completedEl) {
-                completedEl.textContent = counts.completed || 0;
-                completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
-                if (counts.completed > 0) {
-                    completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
-                }
-            }
-        }
+// Hide if no jobs
+if (total === 0) {
+cronStatusEl.setAttribute('hidden', '');
+return;
+}
 
-        // Start polling for cron status with assistant_id for multi-widget isolation
-        const assistantId = config.assistantId || null;
-        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
+// Show status bar
+cronStatusEl.removeAttribute('hidden');
 
-        // Stop polling when chat is destroyed or hidden
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
-                    if (container.hasAttribute('hidden')) {
-                        window.wpMcpAiCronStatus.stopPolling(instanceId);
-                    }
-                }
-            });
-        });
+// Update count elements
+const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
+const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
+const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
 
-        observer.observe(container, { attributes: true });
-    }
+if (pendingEl) {
+pendingEl.textContent = counts.pending || 0;
+}
 
-    /**
-     * Enhanced init function to include cron status and job notifications
-     */
-    function initWithCronStatus() {
-        // Call original init
-        init();
+if (runningEl) {
+runningEl.textContent = counts.polling || 0;
+runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
+if (counts.polling > 0) {
+runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
+}
+}
 
-        // Initialize cron status and notification polling for all chat containers after a brief delay
-        // Use requestIdleCallback to avoid blocking main thread
-        setTimeout(function() {
-            domUpdateBatcher.schedule(function() {
-                const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
-                Array.prototype.forEach.call(containers, function(container) {
-                    const instanceId = container.getAttribute('id');
-                    const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
-                    if (config) {
-                        // Initialize cron status display
-                        initializeCronStatus(container, config);
+if (completedEl) {
+completedEl.textContent = counts.completed || 0;
+completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+if (counts.completed > 0) {
+completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+}
+}
+}
 
-                        // Start polling for job notifications every 10 seconds
-                        // This is more frequent than cron status (30s) to provide faster notifications
-                        setInterval(function() {
-                            pollJobNotifications(container, config);
-                        }, 10000);
+// Start polling for cron status with assistant_id for multi-widget isolation
+const assistantId = config.assistantId || null;
+window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
 
-                        // Do initial poll immediately
-                        pollJobNotifications(container, config);
-                    }
-                });
-            });
-        }, 500);
-    }
+// Stop polling when chat is destroyed or hidden
+const observer = new MutationObserver(function(mutations) {
+mutations.forEach(function(mutation) {
+if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+if (container.hasAttribute('hidden')) {
+window.wpMcpAiCronStatus.stopPolling(instanceId);
+}
+}
+});
+});
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initWithCronStatus);
-    } else {
-        initWithCronStatus();
-    }
+observer.observe(container, { attributes: true });
+}
+
+/**
+ * Enhanced init function to include cron status and job notifications
+ */
+function initWithCronStatus() {
+// Call original init
+init();
+
+// Initialize cron status and notification polling for all chat containers after a brief delay
+// Use requestIdleCallback to avoid blocking main thread
+setTimeout(function() {
+domUpdateBatcher.schedule(function() {
+const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+Array.prototype.forEach.call(containers, function(container) {
+const instanceId = container.getAttribute('id');
+const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+if (config) {
+// Initialize cron status display
+initializeCronStatus(container, config);
+
+// Start polling for job notifications with intelligent backoff
+// Base interval is 30s to match cron status polling
+// Automatically backs off to 5 minutes max on rate limiting
+startNotificationPolling(container, config);
+
+// Stop polling when chat is destroyed or hidden
+const observer = new MutationObserver(function(mutations) {
+mutations.forEach(function(mutation) {
+if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+if (container.hasAttribute('hidden')) {
+stopNotificationPolling(instanceId);
+}
+}
+});
+});
+
+observer.observe(container, { attributes: true });
+}
+});
+});
+}, 500);
+}
+
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', initWithCronStatus);
+} else {
+initWithCronStatus();
+}
 })();
