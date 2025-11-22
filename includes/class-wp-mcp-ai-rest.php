@@ -7847,7 +7847,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string SQL SELECT fields.
 		 */
 		private function get_transcript_select_fields() {
-			return "user_id,
+			return "id,
+                    user_id,
                     request_payload,
                     response_payload,
                     metadata,

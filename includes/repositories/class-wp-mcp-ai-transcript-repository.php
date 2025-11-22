@@ -253,7 +253,9 @@ class WP_MCP_AI_Transcript_Repository {
 	 * @return string SQL SELECT fields.
 	 */
 	private function get_select_fields() {
-		return "request_payload,
+		return "id,
+                user_id,
+                request_payload,
                 response_payload,
                 metadata,
                 request_started_at,
