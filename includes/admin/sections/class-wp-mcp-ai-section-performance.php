@@ -876,26 +876,40 @@ composer install</pre>
 			'passed'  => 0,
 			'failed'  => 0,
 			'skipped' => 0,
+			'errors'  => 0,
 		);
 
-		// Try to extract from summary line.
-		if ( preg_match( '/Tests: (\d+), Assertions: \d+, Failures: (\d+)/', $output, $matches ) ) {
-			$results['total']  = absint( $matches[1] );
-			$results['failed'] = absint( $matches[2] );
-			$results['passed'] = $results['total'] - $results['failed'];
+		// Extract total and assertions first (common to all summary formats).
+		if ( preg_match( '/Tests: (\d+), Assertions: (\d+)/', $output, $matches ) ) {
+			$results['total'] = absint( $matches[1] );
 		} elseif ( preg_match( '/OK \((\d+) tests?, (\d+) assertions?\)/', $output, $matches ) ) {
-			$results['total']  = absint( $matches[1] );
-			$results['passed'] = absint( $matches[1] );
-			$results['failed'] = 0;
-		} elseif ( preg_match( '/Tests: (\d+), Assertions: (\d+)/', $output, $matches ) ) {
-			$results['total']  = absint( $matches[1] );
-			$results['passed'] = absint( $matches[1] );
-			$results['failed'] = 0;
+			$results['total'] = absint( $matches[1] );
 		}
 
-		// Extract skipped tests if present.
+		// Extract failures.
+		if ( preg_match( '/Failures: (\d+)/', $output, $matches ) ) {
+			$results['failed'] = absint( $matches[1] );
+		}
+
+		// Extract errors (critical fix: errors are not failures).
+		if ( preg_match( '/Errors: (\d+)/', $output, $matches ) ) {
+			$results['errors'] = absint( $matches[1] );
+			// Errors count as failures for status determination.
+			$results['failed'] += absint( $matches[1] );
+		}
+
+		// Extract skipped tests.
 		if ( preg_match( '/Skipped: (\d+)/', $output, $matches ) ) {
 			$results['skipped'] = absint( $matches[1] );
+		}
+
+		// Calculate passed tests (total minus failures, errors, and skipped).
+		if ( $results['total'] > 0 ) {
+			$results['passed'] = $results['total'] - $results['failed'] - $results['skipped'];
+			// Ensure passed doesn't go negative.
+			if ( $results['passed'] < 0 ) {
+				$results['passed'] = 0;
+			}
 		}
 
 		return $results;
