@@ -8218,12 +8218,12 @@
                 
                 // IMMEDIATELY show the text content in the bubble (without animation)
                 // This ensures text is visible right away, not just the cursor
-                // The typing animation will continue to update displayedContent progressively
                 if (safeContent && safeContent.length > 0) {
-                    // Set text content directly to ensure it's visible
-                    streamingMessageElement.textContent = safeContent;
-                    // Also update displayedContent to match
+                    // Update displayedContent first to maintain consistency
                     displayedContent = safeContent;
+                    // Then set text content directly to ensure it's visible
+                    // This order ensures displayedContent always matches what's displayed
+                    streamingMessageElement.textContent = displayedContent;
                 }
                 
                 // VERIFY the content is set
