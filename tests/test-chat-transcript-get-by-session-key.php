@@ -49,6 +49,9 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		// Set required assistant metadata.
 		update_post_meta( $this->assistant_id, 'mcp_ai_provider', 'openai' );
 		update_post_meta( $this->assistant_id, 'mcp_ai_model', 'gpt-4' );
+
+		rest_get_server();
+		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -95,6 +98,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -130,6 +134,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		// Try with empty session key - WordPress will likely not match the route,
 		// but let's test with a slash which should match but be empty.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/ ' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -152,6 +157,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		// Not providing user_id and not logged in.
 
 		$response = rest_get_server()->dispatch( $request );
@@ -173,6 +179,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -198,6 +205,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 
@@ -225,6 +233,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id ); // Querying another user's transcript.
 
 		$response = rest_get_server()->dispatch( $request );
@@ -251,6 +260,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $this->user_id ); // Trying to access user1's transcript.
 
 		$response = rest_get_server()->dispatch( $request );
@@ -281,6 +291,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', 0 );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
 

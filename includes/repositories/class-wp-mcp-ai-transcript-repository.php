@@ -147,7 +147,13 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Get a single transcript session with all messages.
 	 *
-	 * @param int    $user_id      User identifier.
+	 * Retrieves all messages in a session by session_key, regardless of user_id.
+	 * This allows fetching complete conversation history even when messages were
+	 * created in different contexts (e.g., cron jobs with user_id=0).
+	 *
+	 * Authorization is enforced at the REST API layer, not in this repository method.
+	 *
+	 * @param int    $user_id      User identifier (kept for API compatibility, not used in query).
 	 * @param string $session_key  Session key.
 	 * @param int    $assistant_id Optional assistant ID to filter by.
 	 * @return array|WP_Error Array of transcript rows or WP_Error.
@@ -172,11 +178,13 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		$table        = $this->get_table_name();
-		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
 
-		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
-		$where_values  = array( $session_key, $user_id );
+		// Query by session_key only - retrieve ALL messages in this session.
+		// This ensures complete conversation history even when messages have different user_id values
+		// (e.g., messages created by cron with user_id=0).
+		$where_clauses = array( 'session_key = %s' );
+		$where_values  = array( $session_key );
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %d';
@@ -194,8 +202,6 @@ class WP_MCP_AI_Transcript_Repository {
 		$query = $wpdb->prepare( $query_template, $where_values );
 
 		$rows = $wpdb->get_results( $query, ARRAY_A );
-
-		// Note: Removed fallback query since user_id is now the primary field in CCT schema.
 
 		if ( empty( $rows ) ) {
 			return new WP_Error(
