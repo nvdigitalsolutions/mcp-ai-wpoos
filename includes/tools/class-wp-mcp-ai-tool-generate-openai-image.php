@@ -289,8 +289,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// Build descriptive text message for the LLM and chat UI.
 		$text_parts = array();
 		$text_parts[] = sprintf(
-			/* translators: 1: attachment ID */
-			__( 'Successfully generated image (ID: %d).', 'wp-mcp-ai' ),
+			/* translators: 1: image title, 2: attachment ID */
+			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
+			$storage['title'],
 			$storage['attachment_id']
 		);
 		
@@ -308,6 +309,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$size,
 			$quality
 		);
+		
+		$text = implode( ' ', $text_parts );
 
 		$result = array(
 			'attachment_id'   => $storage['attachment_id'],
@@ -316,14 +319,16 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'file_name'       => $storage['file_name'],
 			'mime_type'       => $storage['mime_type'],
 			'bytes'           => $storage['bytes'],
+			'title'           => $storage['title'],
 			'format'          => isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT,
 			'size'            => $size,
 			'quality'         => $quality,
 			'model'           => $image['model'],
 			'response_format' => $response_format,
+			'prompt'          => $prompt,
 			'revised_prompt'  => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'         => isset( $image['created'] ) ? $image['created'] : 0,
-			'text'            => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'text'            => $text, // Descriptive message for LLM and chat UI.
 		);
 
 		$inline_content = $this->build_inline_content_payload( $storage );
@@ -802,6 +807,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'file_name',
 			'mime_type',
 			'bytes',
+			'title',
 			'format',
 			'size',
 			'quality',

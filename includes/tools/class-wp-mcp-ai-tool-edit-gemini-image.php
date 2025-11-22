@@ -782,6 +782,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'title',
 			'model',
 			'aspect_ratio',
+			'format',
 			'edit_instruction',
 			'source_attachment',
 			'provider',
