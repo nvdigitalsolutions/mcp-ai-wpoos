@@ -96,12 +96,12 @@ if ( ! function_exists( 'wp_is_auto_update_forced_for_item' ) ) {
 	 * Checks if auto-updates are forced for a specific item type.
 	 *
 	 * @since 5.6.0 (WordPress Core)
-	 * @param string      $type   The type of update being checked: 'theme' or 'plugin'.
-	 * @param bool        $update Whether the update is enabled.
-	 * @param object|null $item   Optional. The update offer.
+	 * @param string      $type   The type of update being checked: 'theme' or 'plugin'. Unused in this polyfill.
+	 * @param bool        $update Whether the update is enabled. Unused in this polyfill.
+	 * @param object|null $item   Optional. The update offer. Unused in this polyfill.
 	 * @return bool True if auto-updates are forced, false otherwise.
 	 */
-	function wp_is_auto_update_forced_for_item( $type, $update, $item ) {
+	function wp_is_auto_update_forced_for_item( $type, $update, $item ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Parameters kept for WordPress core API compatibility.
 		// In non-admin contexts, we can't reliably determine if auto-updates are forced.
 		// Return false to indicate auto-updates are not forced.
 		return false;
@@ -116,10 +116,10 @@ if ( ! function_exists( 'get_core_updates' ) ) {
 	 * Gets available WordPress core updates from the transient.
 	 *
 	 * @since 2.7.0 (WordPress Core)
-	 * @param array $options Optional. Options to pass to the transient check.
+	 * @param array $options Optional. Options to pass to the transient check. Unused in this polyfill.
 	 * @return array|false Array of update objects on success, false on failure.
 	 */
-	function get_core_updates( $options = array() ) {
+	function get_core_updates( $options = array() ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Parameter kept for WordPress core API compatibility.
 		$updates = get_site_transient( 'update_core' );
 
 		if ( ! isset( $updates->updates ) || ! is_array( $updates->updates ) ) {
