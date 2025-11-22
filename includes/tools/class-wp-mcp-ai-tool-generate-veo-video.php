@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 2.0 supports 5-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Optionally generates background music using Gemini Lyria to match the video mood and duration. Note: Veo 2.0 supports 5-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -103,6 +103,17 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Force a specific Veo model: "veo-2.0" (default, stable 720p) or "veo-3.1" (supports 1080p). If not specified, automatically uses Veo 2.0 with fallback to Veo 3.1 on quota/availability issues.', 'wp-mcp-ai' ),
 					'enum'        => array( 'veo-2.0', 'veo-3.1' ),
 					'default'     => 'veo-2.0',
+				),
+				'background_music'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional. Generate background music for the video. Provide a music description (e.g., "upbeat electronic", "calm piano", "cinematic orchestral"). The music will be generated to match the video duration.', 'wp-mcp-ai' ),
+				),
+				'music_volume'       => array(
+					'type'        => 'number',
+					'description' => __( 'Background music volume (0.1-1.0). Default is 0.3 for subtle background. Only used if background_music is specified.', 'wp-mcp-ai' ),
+					'minimum'     => 0.1,
+					'maximum'     => 1.0,
+					'default'     => 0.3,
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -206,6 +217,25 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			return $result;
 		}
 
+		// Generate background music if requested.
+		$background_music = isset( $arguments['background_music'] ) ? trim( $arguments['background_music'] ) : '';
+		$music_result     = null;
+
+		if ( ! empty( $background_music ) ) {
+			$music_result = $this->generate_background_music( $background_music, $result['duration'], $user_id, $save_to_media );
+			// Don't fail video generation if music fails - just note it.
+			if ( is_wp_error( $music_result ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'tool_warning',
+					'Background music generation failed for video',
+					array(
+						'error' => $music_result->get_error_message(),
+					)
+				);
+				$music_result = null;
+			}
+		}
+
 		// Save to Media Library if requested.
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
@@ -216,7 +246,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				return $save_result;
 			}
 
-			return array(
+			$response = array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
@@ -232,13 +262,22 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					$save_result['attachment_id']
 				),
 			);
+
+			// Add music info to response if generated.
+			if ( $music_result && isset( $music_result['attachment_id'] ) ) {
+				$response['music_attachment_id'] = $music_result['attachment_id'];
+				$response['music_url']            = $music_result['audio_url'];
+				$response['message']             .= ' ' . __( 'Background music also generated.', 'wp-mcp-ai' );
+			}
+
+			return $response;
 		}
 
 		// Return video data URL.
 		$video_base64 = base64_encode( $result['video_data'] );
 		$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
-		return array(
+		$response = array(
 			'success'      => true,
 			'video_url'    => $data_url,
 			'prompt'       => $result['prompt'],
@@ -249,6 +288,72 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'provider'     => $result['provider'],
 			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
 		);
+
+		// Add music info to response if generated.
+		if ( $music_result && isset( $music_result['audio_url'] ) ) {
+			$response['music_url'] = $music_result['audio_url'];
+			$response['message']  .= ' ' . __( 'Background music also generated.', 'wp-mcp-ai' );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Generate background music for the video.
+	 *
+	 * SoC: Delegates to music service for music generation.
+	 *
+	 * @param string $music_description Music description/prompt.
+	 * @param int    $duration          Video duration in seconds.
+	 * @param int    $user_id           User ID for permission context.
+	 * @param bool   $save_to_media     Whether to save to media library.
+	 * @return array|WP_Error Music generation result or error.
+	 */
+	protected function generate_background_music( $music_description, $duration, $user_id, $save_to_media ) {
+		// Check if music service is available.
+		if ( ! class_exists( 'WP_MCP_AI_Gemini_Music_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
+		}
+
+		$music_service = new WP_MCP_AI_Gemini_Music_Service();
+
+		// Build music prompt optimized for video background.
+		$music_prompt = sprintf(
+			'Background music: %s. Loopable, instrumental only, no vocals, suitable for video background',
+			$music_description
+		);
+
+		// Generate music matching video duration.
+		$service_options = array(
+			'duration'     => min( $duration, 120 ), // Cap at service max.
+			'mode'         => 'balanced',
+			'api_provider' => 'segmind',
+			'timeout'      => 90,
+		);
+
+		$result = $music_service->generate_music( $music_prompt, $service_options );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Save to media library if requested and URL available.
+		if ( $save_to_media && ! empty( $result['audio_url'] ) ) {
+			$title = sprintf( 'Video Background Music - %s', gmdate( 'Y-m-d H:i' ) );
+			$attachment_id = $music_service->save_to_media_library(
+				$result['audio_url'],
+				$title,
+				$music_prompt,
+				$result['format'] ?? 'mp3'
+			);
+
+			if ( ! is_wp_error( $attachment_id ) ) {
+				$result['attachment_id'] = $attachment_id;
+				$result['audio_url']     = wp_get_attachment_url( $attachment_id );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
