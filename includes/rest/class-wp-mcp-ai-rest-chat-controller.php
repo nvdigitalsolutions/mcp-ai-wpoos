@@ -168,7 +168,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'              => 'array',
 							'required'          => true,
 							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-							'items'             => $this->get_message_item_schema(),
+							// Note: 'items' schema intentionally omitted to allow additional properties from AI providers.
+							// WordPress REST API's rest_sanitize_value_from_schema() strips properties not in the schema,
+							// breaking agentic workflows where providers add fields like 'refusal', 'audio', etc.
+							// The validate_callback handles all necessary validation without schema-based sanitization.
 						),
 					),
 				),

@@ -467,13 +467,18 @@ class WP_MCP_AI_REST_Validator {
 	/**
 	 * Sanitize metadata fields from a message.
 	 *
-	 * Handles tool_calls, tool_call_id, and name fields.
+	 * Handles tool_calls, tool_call_id, name, and preserves all additional
+	 * provider-specific fields (like OpenAI's 'refusal', 'audio', etc.) to support
+	 * agentic workflows.
 	 *
 	 * @param array $message The message array.
 	 * @return array Sanitized metadata fields.
 	 */
 	public function sanitize_message_metadata( array $message ) {
 		$metadata = array();
+
+		// Standard fields that need specific sanitization.
+		$known_fields = array( 'role', 'content', 'tool_calls', 'tool_call_id', 'name' );
 
 		if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 			$tool_calls = array();
@@ -529,6 +534,28 @@ class WP_MCP_AI_REST_Validator {
 
 		if ( isset( $message['name'] ) ) {
 			$metadata['name'] = sanitize_text_field( $message['name'] );
+		}
+
+		// Preserve all additional provider-specific fields (refusal, audio, etc.).
+		// This is critical for agentic workflows where AI providers add extra metadata.
+		foreach ( $message as $key => $value ) {
+			if ( in_array( $key, $known_fields, true ) ) {
+				continue; // Already handled above.
+			}
+
+			// Sanitize additional fields based on their type.
+			if ( is_string( $value ) ) {
+				$metadata[ $key ] = wp_check_invalid_utf8( $value, true );
+			} elseif ( is_numeric( $value ) ) {
+				$metadata[ $key ] = $value;
+			} elseif ( is_bool( $value ) ) {
+				$metadata[ $key ] = $value;
+			} elseif ( is_array( $value ) || is_object( $value ) ) {
+				// Keep arrays/objects as-is for complex provider-specific structures.
+				// These will be JSON-encoded when stored.
+				$metadata[ $key ] = $value;
+			}
+			// Null values and other types are skipped.
 		}
 
 		return $metadata;
