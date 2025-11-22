@@ -4,6 +4,10 @@
 
 This document explains how to enable and use the debug logging added to the chat-transcripts REST endpoints to diagnose issues with saving and retrieving conversation history.
 
+## Security Note
+
+For security, session keys in debug logs are truncated to show only the first 8 characters (e.g., `abc-123...`). This prevents full session keys from being exposed in log files while still allowing session tracking and correlation between save and retrieve operations.
+
 ## Enabling Debug Logging
 
 Debug logging can be enabled via the WordPress admin interface:
@@ -27,39 +31,39 @@ All debug logs are written to the PHP error log with the prefix `[WP oOS Debug]`
 
 **1. Incoming Save Request**
 ```
-[WP oOS Debug] POST /chat-transcripts: session_key=abc-123 assistant_id=14 user_id=1 message_count=5 url=/wp-json/mcp-ai/v1/chat-transcripts
+[WP oOS Debug] POST /chat-transcripts: session_key=abc-123e... assistant_id=14 user_id=1 message_count=5 url=/wp-json/mcp-ai/v1/chat-transcripts
 ```
 
 **2. Save Success**
 ```
-[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=abc-123 assistant_id=14 user_id=1 saved=1 response=200
+[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=abc-123e... assistant_id=14 user_id=1 saved=1 response=200
 ```
 
 **3. Save Failure**
 ```
-[WP oOS Debug] POST /chat-transcripts FAILED: session_key=abc-123 assistant_id=14 user_id=1 saved=0 response=500
+[WP oOS Debug] POST /chat-transcripts FAILED: session_key=abc-123e... assistant_id=14 user_id=1 saved=0 response=500
 ```
 
 ### GET /chat-transcripts/{session_key} (Retrieve Transcript)
 
 **1. Incoming GET Request**
 ```
-[WP oOS Debug] GET /chat-transcripts/{session_key}: session_key=abc-123 assistant_id=14 user_id=1 url=/wp-json/mcp-ai/v1/chat-transcripts/abc-123?user_id=1&assistant_id=14
+[WP oOS Debug] GET /chat-transcripts/{session_key}: session_key=abc-123e... assistant_id=14 user_id=1 url=/wp-json/mcp-ai/v1/chat-transcripts/abc-123e...?user_id=1&assistant_id=14
 ```
 
 **2. Session Not Found (404)**
 ```
-[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=abc-123 found_session=0 found_messages=0 response=404 error_code=wp_mcp_ai_transcript_not_found
+[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=abc-123e... found_session=0 found_messages=0 response=404 error_code=wp_mcp_ai_transcript_not_found
 ```
 
 **3. Unauthorized Access (403)**
 ```
-[WP oOS Debug] GET /chat-transcripts/{session_key} UNAUTHORIZED: session_key=abc-123 found_session=1 found_messages=5 response=403
+[WP oOS Debug] GET /chat-transcripts/{session_key} UNAUTHORIZED: session_key=abc-123e... found_session=1 found_messages=5 response=403
 ```
 
 **4. Success (200)**
 ```
-[WP oOS Debug] GET /chat-transcripts/{session_key} SUCCESS: session_key=abc-123 found_session=1 found_messages=5 response=200
+[WP oOS Debug] GET /chat-transcripts/{session_key} SUCCESS: session_key=abc-123e... found_session=1 found_messages=5 response=200
 ```
 
 ## Viewing Logs
@@ -103,7 +107,7 @@ Some server management plugins may provide access to error logs through the Word
 3. **Database issue** - The CCT table may not be accessible or may be missing data
 
 **Debugging steps:**
-1. Compare the session_key from the save log with the session_key from the get log
+1. Compare the first 8 characters of session_key from the save log with the get log (they should match)
 2. Verify JetEngine is active and CCT is configured for chat transcripts
 3. Check database for chat transcript records
 
@@ -111,9 +115,11 @@ Some server management plugins may provide access to error logs through the Word
 
 **Check for this pattern:**
 ```
-[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=abc-123 ... saved=1 response=200
-[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=abc-123 found_session=0 found_messages=0 response=404
+[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=abc-123e... ... saved=1 response=200
+[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=abc-123e... found_session=0 found_messages=0 response=404
 ```
+
+**Note:** Session keys are truncated to the first 8 characters in logs. If the first 8 characters match but you still get 404, the full session keys may differ.
 
 **Possible causes:**
 1. **Session key normalization** - The save and retrieve may be normalizing session keys differently
@@ -121,7 +127,7 @@ Some server management plugins may provide access to error logs through the Word
 3. **User ID mismatch** - If filtering by user_id, the IDs may not match
 
 **Debugging steps:**
-1. Compare the exact session_key values in both logs (character-by-character)
+1. Compare the first 8 characters of session_key from both logs - they should match exactly
 2. Add a small delay between save and retrieve
 3. Check user_id values in both requests
 

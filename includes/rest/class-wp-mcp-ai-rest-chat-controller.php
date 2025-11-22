@@ -659,11 +659,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 			$user_id     = get_current_user_id();
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : 'N/A';
+			// Truncate session key for security (show first 8 chars only).
+			$truncated_key = substr( $session_key, 0, 8 ) . '...';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
 					'[WP oOS Debug] POST /chat-transcripts: session_key=%s assistant_id=%d user_id=%d message_count=%d url=%s',
-					$session_key,
+					$truncated_key,
 					$assistant_id,
 					$user_id,
 					is_array( $messages ) ? count( $messages ) : 0,
@@ -786,11 +788,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			// Debug logging: Log save failure.
 			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+				// Truncate session key for security.
+				$truncated_key = substr( $session_key, 0, 8 ) . '...';
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
 						'[WP oOS Debug] POST /chat-transcripts FAILED: session_key=%s assistant_id=%d user_id=%d saved=0 response=500',
-						$session_key,
+						$truncated_key,
 						$assistant_id,
 						get_current_user_id()
 					)
@@ -819,11 +823,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Debug logging: Log successful save.
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			// Truncate session key for security.
+			$truncated_key = substr( $recorded_session_key, 0, 8 ) . '...';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
 					'[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=%s assistant_id=%d user_id=%d saved=1 response=200',
-					$recorded_session_key,
+					$truncated_key,
 					$assistant_id,
 					get_current_user_id()
 				)
@@ -877,11 +883,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 			$user_id     = get_current_user_id();
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : 'N/A';
+			// Truncate session key for security.
+			$truncated_key = substr( $session_key, 0, 8 ) . '...';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
 					'[WP oOS Debug] GET /chat-transcripts/{session_key}: session_key=%s assistant_id=%d user_id=%d url=%s',
-					$session_key,
+					$truncated_key,
 					$assistant_id,
 					$user_id,
 					$request_uri
@@ -930,11 +938,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			// Debug logging: Log session not found.
 			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 				$response_code = 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ? 200 : 404;
+				// Truncate session key for security.
+				$truncated_key = substr( $session_key, 0, 8 ) . '...';
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
 						'[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=%s found_session=0 found_messages=0 response=%d error_code=%s',
-						$session_key,
+						$truncated_key,
 						$response_code,
 						$session->get_error_code()
 					)
@@ -969,11 +979,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			// Debug logging: Log unauthorized access.
 			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+				// Truncate session key for security.
+				$truncated_key = substr( $session_key, 0, 8 ) . '...';
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
 						'[WP oOS Debug] GET /chat-transcripts/{session_key} UNAUTHORIZED: session_key=%s found_session=1 found_messages=%d response=403',
-						$session_key,
+						$truncated_key,
 						isset( $session['messages'] ) ? count( $session['messages'] ) : 0
 					)
 				);
@@ -985,11 +997,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Debug logging: Log successful retrieval.
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 			$message_count = isset( $session['messages'] ) ? count( $session['messages'] ) : 0;
+			// Truncate session key for security.
+			$truncated_key = substr( $session_key, 0, 8 ) . '...';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
 					'[WP oOS Debug] GET /chat-transcripts/{session_key} SUCCESS: session_key=%s found_session=1 found_messages=%d response=200',
-					$session_key,
+					$truncated_key,
 					$message_count
 				)
 			);
