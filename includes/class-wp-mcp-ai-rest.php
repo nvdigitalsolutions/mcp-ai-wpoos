@@ -6142,8 +6142,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Query using user_id field (cct_author_id does not exist in the schema).
-			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
-			$where_values  = array( $session_key, $user_id );
+			// When user_id is 0, retrieve all messages for the session_key regardless of user.
+			// This allows retrieving a session first, then verifying user access afterward.
+			$where_clauses = array( 'session_key = %s' );
+			$where_values  = array( $session_key );
+
+			if ( $user_id > 0 ) {
+				$where_clauses[] = 'user_id = %d';
+				$where_values[]  = $user_id;
+			}
 
 			if ( $assistant_id > 0 ) {
 				$where_clauses[] = 'assistant_id = %d';
