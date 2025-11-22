@@ -8540,10 +8540,31 @@
                                 updateCallback(state.thinkingText);
                             }
                             
-                            // Check for final response with complete data first
+                            // Process streaming content chunks FIRST, before checking for final response
+                            // This ensures text chunks are displayed in the bubble as they arrive
+                            if (contentChunk) {
+                                fullContent += contentChunk;
+                                // Store in state for status system access
+                                state.streamingContent = fullContent;
+                                
+                                // ALWAYS update the streaming bubble with accumulated content
+                                // This makes the text visible immediately as chunks arrive
+                                updateCallback(fullContent);
+                                
+                                if (DEBUG_MODE) {
+                                    if (window.console && console.log) {
+                                        console.log('[WP oOS] Content chunk:', {
+                                            chunkLength: contentChunk.length,
+                                            totalLength: fullContent.length
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            // Check for final response with complete data
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
-                                // Extract text from final response if no chunks were received
+                                // Extract text from final response if no chunks were received during streaming
                                 // This handles cases where streaming chunks weren't sent
                                 if (!fullContent) {
                                     let finalText = '';
@@ -8589,23 +8610,6 @@
                                 }
                                 
                                 return { content: fullContent, finalData: data };
-                            }
-                            // If we found streaming content, add it to fullContent and update UI
-                            else if (contentChunk) {
-                                fullContent += contentChunk;
-                                // Store in state for status system access
-                                state.streamingContent = fullContent;
-                                
-                                if (DEBUG_MODE) {
-                                    if (window.console && console.log) {
-                                        console.log('[WP oOS] Content chunk:', {
-                                            chunkLength: contentChunk.length,
-                                            totalLength: fullContent.length
-                                        });
-                                    }
-                                }
-                                
-                                updateCallback(fullContent);
                             }
                         }
                     } catch (parseError) {

@@ -623,6 +623,7 @@
 /* Assistant messages (combined class selector) */
 .wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant {
     background: var(--wp-mcp-ai-color-assistant-bubble-background, #f8faff);
+    color: var(--wp-mcp-ai-color-assistant-bubble-text, #0f172a);
     border: 1px solid var(--wp-mcp-ai-color-assistant-bubble-border, rgba(59, 130, 246, 0.25));
     box-shadow: 0 10px 20px var(--wp-mcp-ai-color-assistant-bubble-shadow, rgba(59, 130, 246, 0.08));
 }
