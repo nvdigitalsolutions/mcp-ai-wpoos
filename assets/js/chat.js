@@ -3328,22 +3328,28 @@
                 
                 // Refresh history list to include the newly saved conversation
                 // This ensures the history panel shows the correct session_key
+                // Add a small delay (500ms) to allow database write to complete (race condition fix)
                 if (state.historyLoaded) {
-                    var refreshPromise = refreshHistorySessions(state);
-                    
-                    // If history panel is visible, wait for refresh to complete before clearing status
-                    if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
-                        refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
-                            if (window.console && console.error) {
-                                console.error('Error refreshing history after save:', error);
-                            }
+                    setTimeout(function() {
+                        var refreshPromise = refreshHistorySessions(state);
+                        
+                        // If history panel is visible, wait for refresh to complete before clearing status
+                        if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
+                            refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
+                                if (window.console && console.error) {
+                                    console.error('Error refreshing history after save:', error);
+                                }
+                                clearStatusAfterDelay();
+                            });
+                        } else {
+                            // History not visible or refresh not a promise - clear status after delay
                             clearStatusAfterDelay();
-                        });
-                        return;
-                    }
+                        }
+                    }, 500);
+                } else {
+                    // History not loaded - clear status after delay
+                    clearStatusAfterDelay();
                 }
-                
-                clearStatusAfterDelay();
             } else {
                 // Save failed
                 const errorMsg = result.error || 'Failed to save conversation';
@@ -4201,8 +4207,8 @@
 
         // Default retry count is 0 (first attempt)
         const attempt = typeof retryCount === 'number' ? retryCount : 0;
-        const maxRetries = 2; // Allow up to 2 retries (3 total attempts)
-        const retryDelay = 500; // 500ms delay before retry
+        const maxRetries = 4; // Allow up to 4 retries (5 total attempts) for race condition handling
+        const retryDelay = 750; // 750ms delay before retry (allow database write to complete)
 
         // Construct URL with session_key in path (not as query param)
         let url = endpoint;
@@ -4319,19 +4325,23 @@
 
             // Retry on 404 errors (might be race condition) if we haven't exceeded max retries
             if (error.retryable && attempt < maxRetries) {
+                // Use exponential backoff with base delay 750ms
+                // Delays for attempts 0-3: 750ms, 1500ms, 3000ms, 6000ms
+                const currentDelay = retryDelay * Math.pow(2, attempt);
+                
                 if (window.console && console.log) {
                     console.log('[WP oOS] Retrying conversation details fetch after delay:', {
                         session_key: sessionKey,
-                        delay_ms: retryDelay,
-                        next_attempt: attempt + 2
+                        delay_ms: currentDelay,
+                        next_attempt: attempt + 2 // Next attempt number (1-based for display)
                     });
                 }
                 
-                // Wait before retrying
+                // Wait before retrying with exponential backoff
                 return new Promise(function(resolve) {
                     setTimeout(function() {
                         resolve(fetchHistorySessionDetails(state, sessionKey, attempt + 1));
-                    }, retryDelay);
+                    }, currentDelay);
                 });
             }
 
