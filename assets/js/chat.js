@@ -11209,13 +11209,7 @@
 						// Update UI
 						updateJobBarDisplay(container, counts);
 						
-						// Stop SSE if no active jobs
-						if (!hasActiveJobs(instanceId)) {
-							if (window.console && console.log) {
-								console.log('[WP oOS] No active jobs. Stopping SSE for instance:', instanceId);
-							}
-							stopNotificationPolling(instanceId);
-						}
+						// Note: Keep SSE connection open even when no jobs to detect new jobs immediately
 					},
 					notification: function(notification) {
 						// Display notification in chat
@@ -11344,6 +11338,8 @@
 	 * Updates the job status bar UI with current job counts.
 	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
 	 * 
+	 * Note: Does NOT stop polling when counts are zero - polling continues to detect new jobs.
+	 * 
 	 * @param {HTMLElement} container - Chat container element
 	 * @param {Object} counts - Job counts object with pending, running, completed properties
 	 */
@@ -11355,13 +11351,6 @@
 		const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
 		if (!cronStatusEl) {
 			return;
-		}
-
-		const instanceId = container.getAttribute('id');
-		
-		// Stop notification polling if no active jobs (but keep UI visible)
-		if (instanceId && !hasActiveJobs(instanceId)) {
-			stopNotificationPolling(instanceId);
 		}
 		
 		// Always show status bar to maintain visibility

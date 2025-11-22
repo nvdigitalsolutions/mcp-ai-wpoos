@@ -504,11 +504,14 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'total'     => 0,
 		);
 
-		if ( ! $this->main_controller || ! method_exists( $this->main_controller, 'get_cron_status_service' ) ) {
-			return $default_counts;
+		// Access cron status service directly from container to avoid calling protected method.
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
 		}
 
-		$cron_service = $this->main_controller->get_cron_status_service();
+		$container = WP_MCP_AI_Container::get_instance();
+		$cron_service = $container->get( 'service.cron_status' );
+
 		if ( ! $cron_service || ! method_exists( $cron_service, 'get_status_counts' ) ) {
 			return $default_counts;
 		}
