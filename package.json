@@ -22,11 +22,13 @@
 		"install:chartjs": "cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js"
 	},
 	"dependencies": {
-		"@google/genai": "^0.21.0",
 		"chart.js": "^4.4.1",
 		"dompurify": "^3.3.0",
 		"ky": "^1.14.0",
 		"marked": "^17.0.0"
+	},
+	"optionalDependencies": {
+		"@google/genai": "^1.30.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.5",
