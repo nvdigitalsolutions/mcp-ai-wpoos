@@ -43,7 +43,7 @@ class WP_MCP_AI_Chat_Transcript_Additional_Properties_Test extends WP_UnitTestCa
 			wp_mcp_ai_bootstrap();
 		}
 
-		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$this->admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
 		$this->assistant_id = wp_insert_post(
