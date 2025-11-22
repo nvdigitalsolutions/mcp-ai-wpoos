@@ -202,9 +202,9 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Ensure the Site Health class and its dependencies are loaded.
 	 *
-	 * WordPress core function polyfills are now loaded globally via wordpress-polyfills.php,
-	 * following separation of concerns principle. This method only loads WordPress admin
-	 * includes required for Site Health functionality.
+	 * WordPress core function polyfills must be loaded BEFORE WordPress admin includes
+	 * because some WordPress files (like misc.php) declare functions without checking
+	 * if they exist first.
 	 *
 	 * @return bool
 	 */
@@ -216,6 +216,9 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! defined( 'ABSPATH' ) ) {
 			return false;
 		}
+
+		// Load polyfills BEFORE WordPress admin files to prevent redeclaration errors.
+		require_once WP_MCP_AI_PATH . 'includes/wordpress-polyfills.php';
 
 		$maybe_require = static function ( $path ) {
 			if ( file_exists( $path ) ) {

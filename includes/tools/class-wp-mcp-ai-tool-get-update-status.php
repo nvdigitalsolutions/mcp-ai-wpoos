@@ -69,6 +69,8 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
 
+		// Load polyfills before WordPress admin files to prevent redeclaration errors.
+		require_once WP_MCP_AI_PATH . 'includes/wordpress-polyfills.php';
 		require_once ABSPATH . 'wp-admin/includes/update.php';
 
 		$component_type      = isset( $arguments['component_type'] ) ? sanitize_key( $arguments['component_type'] ) : '';

@@ -5,8 +5,14 @@
  * Provides polyfills for WordPress admin functions that may not be available
  * in certain contexts, especially when accessed via REST API or other non-admin contexts.
  *
+ * IMPORTANT: This file must be loaded BEFORE WordPress admin includes (like misc.php,
+ * update.php, etc.) are loaded, because those files declare some of these functions
+ * without checking if they exist first. Loading this file after those WordPress files
+ * will cause "Cannot redeclare function" fatal errors.
+ *
  * This file follows separation of concerns by centralizing all WordPress compatibility
- * polyfills in one place, making them available globally to all tools and components.
+ * polyfills in one place, making them available to tools that need to load WordPress
+ * admin files in non-admin contexts.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -15,6 +21,12 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+// Prevent loading this file multiple times.
+if ( defined( 'WP_MCP_AI_POLYFILLS_LOADED' ) ) {
+	return;
+}
+define( 'WP_MCP_AI_POLYFILLS_LOADED', true );
 
 /**
  * Helper function to safely load WordPress admin files.

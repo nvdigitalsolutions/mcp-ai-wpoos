@@ -348,10 +348,6 @@ if ( ! $skip_buffering ) {
 	}
 }
 
-// Load WordPress core function polyfills early to ensure they're available globally.
-// This prevents "Call to undefined function" errors in Site Health and other WordPress core contexts.
-require_once WP_MCP_AI_PATH . 'includes/wordpress-polyfills.php';
-
 // Load admin settings component classes.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-base.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
