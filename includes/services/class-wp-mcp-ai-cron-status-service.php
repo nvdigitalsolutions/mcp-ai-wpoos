@@ -346,8 +346,9 @@ class WP_MCP_AI_Cron_Status_Service {
 				}
 			}
 
-			// Add user_id for consistency.
-			$metadata['created_by'] = $job_user_id;
+			// Add user_id and assistant_id for consistency.
+			$metadata['created_by']   = $job_user_id;
+			$metadata['assistant_id'] = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
 
 			$jobs[ $metadata['job_id'] ] = $metadata;
 		}
@@ -416,10 +417,11 @@ class WP_MCP_AI_Cron_Status_Service {
 				}
 			}
 
-			// Add user_id for consistency.
-			$metadata['created_by'] = $job_user_id;
-			$metadata['tool_slug']  = self::VIDEO_GENERATION_TOOL_SLUG;
-			$metadata['type']       = self::VIDEO_GENERATION_JOB_TYPE;
+			// Add user_id and assistant_id for consistency.
+			$metadata['created_by']   = $job_user_id;
+			$metadata['assistant_id'] = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+			$metadata['tool_slug']    = self::VIDEO_GENERATION_TOOL_SLUG;
+			$metadata['type']         = self::VIDEO_GENERATION_JOB_TYPE;
 
 			$jobs[ $metadata['job_id'] ] = $metadata;
 		}
@@ -557,6 +559,14 @@ class WP_MCP_AI_Cron_Status_Service {
 			$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
 			if ( ! $is_admin && $created_by !== $user_id ) {
 				continue;
+			}
+
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0;
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
 			}
 
 			// Check if async tool job.

@@ -900,14 +900,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Record cron job in cron manager for visibility.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+			$user_id      = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+			$assistant_id = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_POLL_HOOK,
 				array( $job_id ),
 				'single',
 				$first_poll_time,
 				$user_id,
-				$job_id  // Use the veo_xxx job_id directly instead of generating MD5 hash.
+				$job_id,  // Use the veo_xxx job_id directly instead of generating MD5 hash.
+				$assistant_id
 			);
 		}
 
