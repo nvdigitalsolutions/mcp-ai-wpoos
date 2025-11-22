@@ -175,6 +175,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 								),
 							),
 						),
+						'user_id'      => array(
+							'description'       => __( 'Optional user ID to associate with this transcript. Defaults to current user. Admin users can save for other users.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
 					),
 				),
 			)
@@ -652,8 +658,40 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// Get user ID.
-		$user_id = get_current_user_id();
+		// Get user ID - check if provided in request body first.
+		// This allows cron jobs and other automated processes to specify the user_id
+		// of the admin/user who initiated the action, rather than defaulting to 0.
+		$requested_user_id = $request->get_param( 'user_id' );
+		$current_user_id   = get_current_user_id();
+
+		if ( null !== $requested_user_id ) {
+			$requested_user_id = absint( $requested_user_id );
+
+			// Permission check: Users can only save for themselves unless they're admin.
+			// Guest users (user_id=0) are handled by the permission check.
+			if ( $requested_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'warning',
+					'handle_chat_transcript_save: Unauthorized user_id mismatch',
+					array(
+						'requested_user_id' => $requested_user_id,
+						'current_user_id'   => $current_user_id,
+						'session_key'       => $session_key,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_forbidden_user',
+					__( 'You do not have permission to save transcripts for other users.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			$user_id = $requested_user_id;
+		} else {
+			// No user_id provided - use current user (or 0 for guest/cron).
+			$user_id = $current_user_id;
+		}
 
 		// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
 		// The permission check already validated the guest token if present.
@@ -662,11 +700,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'debug',
 			'handle_chat_transcript_save: Saving transcript',
 			array(
-				'session_key'   => $session_key,
-				'assistant_id'  => $assistant_id,
-				'user_id'       => $user_id,
-				'message_count' => count( $clean_messages ),
-				'source'        => 'chat_client',
+				'session_key'       => $session_key,
+				'assistant_id'      => $assistant_id,
+				'user_id'           => $user_id,
+				'requested_user_id' => $requested_user_id,
+				'current_user_id'   => $current_user_id,
+				'message_count'     => count( $clean_messages ),
+				'source'            => 'chat_client',
 			)
 		);
 

@@ -1193,6 +1193,13 @@
             messages: cleanMessages
         };
 
+        // Include user_id if available (for cron jobs and admin contexts).
+        // This allows transcripts to be saved with the correct user_id even when
+        // the request is made in a different user context (e.g., via WP-Cron).
+        if (state.config.userId !== undefined && state.config.userId !== null) {
+            payload.user_id = state.config.userId;
+        }
+
         /**
          * Internal function to attempt the save request.
          * 
