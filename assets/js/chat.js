@@ -8068,6 +8068,13 @@
 
         let streamingMessageElement = null;
         let streamCompleted = false;
+        
+        // Typing animation state
+        let typingAnimationRunning = false;
+        let targetContent = '';
+        let displayedContent = '';
+        let typingTimerId = null;
+        const TYPING_SPEED_MS = 10; // Milliseconds per character for typing effect
 
         // Diagnostic logging (Separation of Concerns - delegated to logger utility)
         streamingLogger.logRequestStart({
@@ -8125,6 +8132,66 @@
             }
         }
 
+        // Typing animation function - simulates character-by-character typing
+        function startTypingAnimation() {
+            // If animation is already running, it will continue with the updated targetContent
+            // No need to start a new animation
+            if (typingAnimationRunning) {
+                return;
+            }
+            
+            typingAnimationRunning = true;
+            
+            function typeNextChar() {
+                // Handle case where targetContent changes during animation
+                // Always use current targetContent, not a snapshot
+                if (displayedContent.length < targetContent.length) {
+                    // Add one more character from current target
+                    displayedContent = targetContent.substring(0, displayedContent.length + 1);
+                    
+                    if (streamingMessageElement) {
+                        streamingMessageElement.textContent = displayedContent;
+                        scrollBatcher.scrollToBottom(state.messagesEl);
+                    }
+                    
+                    // Schedule next character
+                    typingTimerId = setTimeout(typeNextChar, TYPING_SPEED_MS);
+                } else if (displayedContent.length > targetContent.length) {
+                    // Handle case where content becomes shorter (e.g., stream reset)
+                    displayedContent = targetContent;
+                    if (streamingMessageElement) {
+                        streamingMessageElement.textContent = displayedContent;
+                        scrollBatcher.scrollToBottom(state.messagesEl);
+                    }
+                    // Typing complete
+                    typingAnimationRunning = false;
+                    typingTimerId = null;
+                } else {
+                    // Typing complete - displayed matches target
+                    typingAnimationRunning = false;
+                    typingTimerId = null;
+                }
+            }
+            
+            typeNextChar();
+        }
+        
+        // Stop typing animation and show full content immediately
+        function stopTypingAnimation() {
+            if (typingTimerId) {
+                clearTimeout(typingTimerId);
+                typingTimerId = null;
+            }
+            typingAnimationRunning = false;
+            
+            // Show complete content immediately
+            if (streamingMessageElement && targetContent) {
+                displayedContent = targetContent;
+                streamingMessageElement.textContent = displayedContent;
+                scrollBatcher.scrollToBottom(state.messagesEl);
+            }
+        }
+
         // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
             // Ensure content is a string
@@ -8144,18 +8211,22 @@
                 createStreamingMessage();
             }
 
-            // Concern 1: Update message bubble content
+            // Concern 1: Update message bubble content with typing animation
             if (streamingMessageElement) {
-                // Update text content with accumulated response
-                // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                streamingMessageElement.textContent = safeContent;
+                // Update target content for typing animation
+                targetContent = safeContent;
                 
-                // VERIFY the text was actually set
+                // Start typing animation if new content is longer than displayed
+                if (targetContent.length > displayedContent.length) {
+                    startTypingAnimation();
+                }
+                
+                // VERIFY the animation state
                 if (window.console && console.log) {
-                    console.log('[WP oOS] After setting textContent:', {
-                        elementTextContent: streamingMessageElement.textContent,
-                        elementInnerHTML: streamingMessageElement.innerHTML,
-                        elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
+                    console.log('[WP oOS] Typing animation state:', {
+                        targetLength: targetContent.length,
+                        displayedLength: displayedContent.length,
+                        animationRunning: typingAnimationRunning
                     });
                 }
                 
@@ -8239,6 +8310,9 @@
 
                 // Fallback: Add accumulated content to conversation if no final data
                 if (streamResult && streamResult.content) {
+                    // Stop typing animation and show full content before rendering markdown
+                    stopTypingAnimation();
+                    
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
                         // streamingMessageElement is now the bubble itself (merged structure)
@@ -8601,7 +8675,7 @@
                                         if (window.console && console.log) {
                                             console.log('[WP oOS] Extracted final text from data.data:', {
                                                 textLength: finalText.length,
-                                                textSample: finalText.substring(0, 100)
+                                                contentSample: finalText.substring(0, 100)
                                             });
                                         }
                                     }
