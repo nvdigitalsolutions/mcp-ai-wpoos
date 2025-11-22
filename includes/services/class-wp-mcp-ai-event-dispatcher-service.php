@@ -128,6 +128,9 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 	/**
 	 * Handle async job queued event
 	 *
+	 * Bridges async tool events to generic job notifier system.
+	 * Follows SOC: Only routes events, doesn't contain business logic.
+	 *
 	 * @param string $job_id    Job identifier.
 	 * @param array  $metadata  Job metadata.
 	 * @param string $tool_slug Tool slug.
@@ -136,6 +139,9 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 		// Format notification - don't notify for queued state, only completion.
 		// Queued notifications would be too noisy.
 		$this->log_notification( 'async_job_queued', $job_id, $metadata );
+
+		// Bridge to generic job notifier system for job bar display.
+		do_action( 'wp_mcp_ai_job_started', $job_id, $metadata );
 	}
 
 	/**
@@ -152,6 +158,9 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 
 	/**
 	 * Handle async job completed event
+	 *
+	 * Bridges async tool events to generic job notifier system.
+	 * Follows SOC: Only routes events and formats messages, doesn't contain business logic.
 	 *
 	 * @param string $job_id    Job identifier.
 	 * @param array  $metadata  Job metadata including result.
@@ -183,10 +192,16 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 				'result'    => $result,
 			)
 		);
+
+		// Bridge to generic job notifier system for job bar display.
+		do_action( 'wp_mcp_ai_job_completed', $job_id, $result, $metadata );
 	}
 
 	/**
 	 * Handle async job failed event
+	 *
+	 * Bridges async tool events to generic job notifier system.
+	 * Follows SOC: Only routes events and formats messages, doesn't contain business logic.
 	 *
 	 * @param string        $job_id        Job identifier.
 	 * @param array         $metadata      Job metadata.
@@ -216,10 +231,20 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 				'error'     => $error_message,
 			)
 		);
+
+		// Bridge to generic job notifier system for job bar display.
+		// Create WP_Error if not provided.
+		if ( ! is_wp_error( $error ) ) {
+			$error = new WP_Error( 'async_tool_failed', $error_message );
+		}
+		do_action( 'wp_mcp_ai_job_failed', $job_id, $error, $metadata );
 	}
 
 	/**
 	 * Handle video job queued event
+	 *
+	 * Bridges video-specific events to generic job notifier system.
+	 * Follows SOC: Only routes events, doesn't contain business logic.
 	 *
 	 * @param string $job_id   Job identifier.
 	 * @param array  $metadata Job metadata.
@@ -228,10 +253,17 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 	public function handle_video_job_queued( $job_id, $metadata, $args ) {
 		// Log but don't notify for queued state.
 		$this->log_notification( 'video_job_queued', $job_id, $metadata );
+
+		// Bridge to generic job notifier system for job bar display.
+		// This allows the chat client's job polling to detect video jobs.
+		do_action( 'wp_mcp_ai_job_started', $job_id, $metadata );
 	}
 
 	/**
 	 * Handle video job completed event
+	 *
+	 * Bridges video-specific events to generic job notifier system.
+	 * Follows SOC: Only routes events and formats messages, doesn't contain business logic.
 	 *
 	 * @param string $job_id   Job identifier.
 	 * @param array  $metadata Job metadata.
@@ -261,6 +293,11 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 					'result' => isset( $metadata['result'] ) ? $metadata['result'] : null,
 				)
 			);
+
+			// Bridge to generic job notifier system for job bar display.
+			// Allows chat client's SSE/REST polling to detect video completion.
+			$result = isset( $metadata['result'] ) ? $metadata['result'] : array();
+			do_action( 'wp_mcp_ai_job_completed', $job_id, $result, $metadata );
 		} elseif ( 'failed' === $status ) {
 			// Failure - notify about error.
 			$error_message = isset( $metadata['error'] ) ? $metadata['error'] : __( 'Unknown error', 'wp-mcp-ai' );
@@ -281,6 +318,11 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 					'error' => $error_message,
 				)
 			);
+
+			// Bridge to generic job notifier system for job bar display.
+			// Create WP_Error for failed state.
+			$error = new WP_Error( 'video_generation_failed', $error_message );
+			do_action( 'wp_mcp_ai_job_failed', $job_id, $error, $metadata );
 		}
 	}
 
