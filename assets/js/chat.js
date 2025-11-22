@@ -8601,7 +8601,7 @@
                                         if (window.console && console.log) {
                                             console.log('[WP oOS] Extracted final text from data.data:', {
                                                 textLength: finalText.length,
-                                                textSample: finalText.substring(0, 100)
+                                                contentSample: finalText.substring(0, 100)
                                             });
                                         }
                                     }
