@@ -297,19 +297,27 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Get message item schema for REST API endpoints.
 	 *
-	 * Defines the complete OpenAI-compatible message schema including:
+	 * Defines the message schema compatible with multiple AI providers including:
 	 * - role (required): Message role (system, user, assistant, tool)
 	 * - content: Message content (string, array of content parts, or null)
 	 * - tool_calls: Array of tool calls for assistant messages
 	 * - tool_call_id: Tool call identifier for tool messages
 	 * - name: Optional name field for tool messages
 	 *
+	 * Note: additionalProperties is set to true to allow AI providers (OpenAI, Gemini,
+	 * Ollama, etc.) to include provider-specific fields without breaking validation.
+	 * This is essential for agentic workflows where providers may add fields like:
+	 * - OpenAI: 'refusal', 'audio', 'function_call'
+	 * - Gemini: provider-specific metadata
+	 * - Ollama: local model metadata
+	 *
 	 * @return array Message item schema definition.
 	 */
 	private function get_message_item_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'additionalProperties' => true,
+			'properties'           => array(
 				'role'         => array(
 					'type' => 'string',
 					'enum' => array( 'system', 'user', 'assistant', 'tool' ),
