@@ -10996,6 +10996,36 @@
 	};
 
 	/**
+	 * Check if there are any active jobs that require notification polling
+	 * 
+	 * Implements fail-safe behavior: returns true when status is unavailable
+	 * to ensure notifications are not missed. Only returns false when we can
+	 * definitively confirm no active jobs exist.
+	 * 
+	 * @param {string} instanceId - Container instance ID
+	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
+	 */
+	function hasActiveJobs(instanceId) {
+		if (!window.wpMcpAiCronStatus || !window.wpMcpAiCronStatus.cache) {
+			// Assume active if we can't check - fail-safe approach
+			// Better to poll unnecessarily than to miss notifications
+			return true;
+		}
+		
+		const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
+		if (!cronStatus || !cronStatus.counts) {
+			// Assume active if we can't check - fail-safe approach
+			return true;
+		}
+		
+		const pending = cronStatus.counts.pending || 0;
+		const running = cronStatus.counts.running || 0;
+		
+		// Active jobs exist if there are pending or running jobs
+		return pending > 0 || running > 0;
+	}
+
+	/**
 	 * Poll for job completion notifications
 	 * 
 	 * Fetches pending notifications from the server and displays them in the chat.
@@ -11023,6 +11053,17 @@
 		}
 
 		const instanceId = container.getAttribute('id');
+		
+		// Check if there are any active jobs before polling for notifications
+		// This prevents unnecessary API calls when all jobs are complete
+		if (!hasActiveJobs(instanceId)) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] No active jobs. Stopping notification polling for instance:', instanceId);
+			}
+			stopNotificationPolling(instanceId);
+			return;
+		}
+		
 		const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
 
 		// Fetch notifications
@@ -11208,15 +11249,13 @@ return;
 }
 
 const counts = data.counts;
-const total = counts.total || 0;
 
-// Hide if no jobs
-if (total === 0) {
-cronStatusEl.setAttribute('hidden', '');
-return;
+// Stop notification polling if no active jobs (but keep UI visible)
+if (!hasActiveJobs(instanceId)) {
+stopNotificationPolling(instanceId);
 }
 
-// Show status bar
+// Always show status bar to maintain visibility
 cronStatusEl.removeAttribute('hidden');
 
 // Update count elements
@@ -11229,9 +11268,9 @@ pendingEl.textContent = counts.pending || 0;
 }
 
 if (runningEl) {
-runningEl.textContent = counts.polling || 0;
+runningEl.textContent = counts.running || 0;
 runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
-if (counts.polling > 0) {
+if (counts.running > 0) {
 runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
 }
 }
