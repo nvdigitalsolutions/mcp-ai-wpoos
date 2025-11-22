@@ -220,10 +220,12 @@ class WP_MCP_AI_REST_Authenticator {
 			);
 		}
 
+		// Check capability before setting user context.
 		if ( $capability && ! current_user_can( $capability ) ) {
 			return $this->insufficient_permissions_error( $capability );
 		}
 
+		// Authentication successful - set user context.
 		$this->set_authenticated_user_id( get_current_user_id() );
 
 		return $this->get_auth_context();
