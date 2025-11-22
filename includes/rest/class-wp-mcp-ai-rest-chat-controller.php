@@ -778,10 +778,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'info',
 			'handle_chat_transcript_save: Transcript saved successfully',
 			array(
-				'session_key'   => $session_key,
-				'assistant_id'  => $assistant_id,
-				'user_id'       => $user_id,
-				'message_count' => count( $clean_messages ),
+				'session_key'          => $session_key,
+				'recorded_session_key' => $recorded_session_key,
+				'keys_match'           => $session_key === $recorded_session_key,
+				'assistant_id'         => $assistant_id,
+				'user_id'              => $user_id,
+				'message_count'        => count( $clean_messages ),
 			)
 		);
 

@@ -6167,6 +6167,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$query = $wpdb->prepare( $query_template, $where_values );
 
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: executing SQL query',
+				array(
+					'query'       => $query,
+					'user_id'     => $user_id,
+					'session_key' => $session_key,
+				)
+			);
+
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
 			if ( empty( $rows ) ) {
@@ -6177,6 +6187,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'table'       => $table,
 						'user_id'     => $user_id,
 						'session_key' => $session_key,
+						'query'       => $query,
+						'wpdb_error'  => $wpdb->last_error,
 					)
 				);
 
@@ -7835,16 +7847,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string SQL SELECT fields.
 		 */
 		private function get_transcript_select_fields() {
-			return "user_id,
-                    request_payload,
-                    response_payload,
-                    metadata,
-                    request_started_at,
-                    response_completed_at,
-                    cct_created,
-                    assistant_id,
-                    assistant_model,
-                    latency_ms";
+			return "id,
+			        user_id,
+			        request_payload,
+			        response_payload,
+			        metadata,
+			        request_started_at,
+			        response_completed_at,
+			        cct_created,
+			        assistant_id,
+			        assistant_model,
+			        latency_ms";
 		}
 	}
 }
