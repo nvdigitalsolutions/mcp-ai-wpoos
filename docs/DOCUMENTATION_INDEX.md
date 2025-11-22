@@ -31,7 +31,7 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
-## 📚 Quick Navigation
+## Quick Navigation
 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
@@ -67,7 +67,7 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
-## 📖 Core Documentation
+## Core Documentation
 
 ### 🆕 Key Reference Documents
 
@@ -296,7 +296,7 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
-## 🔗 External Resources
+## External Resources
 
 ### WordPress Development
 - [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/)
