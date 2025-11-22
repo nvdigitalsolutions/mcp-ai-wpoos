@@ -8134,15 +8134,19 @@
 
         // Typing animation function - simulates character-by-character typing
         function startTypingAnimation() {
+            // If animation is already running, it will continue with the updated targetContent
+            // No need to start a new animation
             if (typingAnimationRunning) {
-                return; // Animation already running
+                return;
             }
             
             typingAnimationRunning = true;
             
             function typeNextChar() {
+                // Handle case where targetContent changes during animation
+                // Always use current targetContent, not a snapshot
                 if (displayedContent.length < targetContent.length) {
-                    // Add one more character
+                    // Add one more character from current target
                     displayedContent = targetContent.substring(0, displayedContent.length + 1);
                     
                     if (streamingMessageElement) {
@@ -8152,8 +8156,18 @@
                     
                     // Schedule next character
                     typingTimerId = setTimeout(typeNextChar, TYPING_SPEED_MS);
-                } else {
+                } else if (displayedContent.length > targetContent.length) {
+                    // Handle case where content becomes shorter (e.g., stream reset)
+                    displayedContent = targetContent;
+                    if (streamingMessageElement) {
+                        streamingMessageElement.textContent = displayedContent;
+                        scrollBatcher.scrollToBottom(state.messagesEl);
+                    }
                     // Typing complete
+                    typingAnimationRunning = false;
+                    typingTimerId = null;
+                } else {
+                    // Typing complete - displayed matches target
                     typingAnimationRunning = false;
                     typingTimerId = null;
                 }
