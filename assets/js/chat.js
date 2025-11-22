@@ -11003,12 +11003,15 @@
 	 */
 	function hasActiveJobs(instanceId) {
 		if (!window.wpMcpAiCronStatus || !window.wpMcpAiCronStatus.cache) {
-			return true; // Assume active if we can't check
+			// Assume active if we can't check - fail-safe approach
+			// Better to poll unnecessarily than to miss notifications
+			return true;
 		}
 		
 		const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
 		if (!cronStatus || !cronStatus.counts) {
-			return true; // Assume active if we can't check
+			// Assume active if we can't check - fail-safe approach
+			return true;
 		}
 		
 		const pending = cronStatus.counts.pending || 0;
@@ -11244,21 +11247,21 @@ return;
 const counts = data.counts;
 const total = counts.total || 0;
 
-// Hide if no jobs
+// Hide UI and stop polling if no jobs exist at all
 if (total === 0) {
 cronStatusEl.setAttribute('hidden', '');
-// Stop notification polling when there are no jobs
 stopNotificationPolling(instanceId);
 return;
 }
 
-// Stop notification polling if all jobs are completed (no pending/running jobs)
+// Show status bar when jobs exist
+cronStatusEl.removeAttribute('hidden');
+
+// Stop notification polling if all jobs are completed (no active jobs)
+// This handles the case where jobs exist but are all completed/failed
 if (!hasActiveJobs(instanceId)) {
 stopNotificationPolling(instanceId);
 }
-
-// Show status bar
-cronStatusEl.removeAttribute('hidden');
 
 // Update count elements
 const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
