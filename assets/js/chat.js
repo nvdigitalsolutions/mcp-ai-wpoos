@@ -10993,7 +10993,9 @@
 		timers: {},               // Active polling timers by container ID
 		sseConnections: {},       // Active SSE connections by container ID
 		retryDelays: {},          // Current retry delay for each container (for exponential backoff)
-		consecutiveErrors: {}     // Track consecutive errors for backoff
+		consecutiveErrors: {},    // Track consecutive errors for backoff
+		lastJobTime: {},          // Timestamp of last detected job per container
+		noJobChecks: {}           // Count of consecutive checks with no jobs
 	};
 
 	/**
@@ -11177,6 +11179,9 @@
 		// Stop any existing poller or SSE connection
 		stopNotificationPolling(instanceId);
 		
+		// Initialize/reset job tracking counters
+		notificationPollers.noJobChecks[instanceId] = 0;
+		
 		// Try SSE first if supported and SSE service is available
 		const hasSseService = typeof sseService !== 'undefined' && sseService;
 		if (hasSseService && sseService.isSupported()) {
@@ -11291,9 +11296,10 @@
 			console.log('[WP oOS] Using polling mode for notifications on instance:', instanceId);
 		}
 		
-		// Initialize backoff state
+		// Initialize backoff state and job tracking
 		notificationPollers.retryDelays[instanceId] = 30000; // Start with 30s base interval
 		notificationPollers.consecutiveErrors[instanceId] = 0;
+		notificationPollers.noJobChecks[instanceId] = 0; // Reset no-job counter
 		
 		// Do initial poll immediately
 		pollJobNotifications(container, config);
@@ -11338,7 +11344,10 @@
 	 * Updates the job status bar UI with current job counts.
 	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
 	 * 
-	 * Note: Does NOT stop polling when counts are zero - polling continues to detect new jobs.
+	 * Implements intelligent polling lifecycle:
+	 * - Continues polling while jobs are active
+	 * - Stops after 5 consecutive checks with no jobs (2.5 minutes for polling, 10s for SSE)
+	 * - Allows new jobs to be detected before stopping
 	 * 
 	 * @param {HTMLElement} container - Chat container element
 	 * @param {Object} counts - Job counts object with pending, running, completed properties
@@ -11351,6 +11360,31 @@
 		const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
 		if (!cronStatusEl) {
 			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		// Track job activity for intelligent polling lifecycle
+		const hasJobs = (counts.pending || 0) > 0 || (counts.running || 0) > 0;
+		
+		if (hasJobs) {
+			// Reset no-job counter when jobs are detected
+			notificationPollers.noJobChecks[instanceId] = 0;
+			notificationPollers.lastJobTime[instanceId] = Date.now();
+		} else {
+			// Increment no-job counter
+			notificationPollers.noJobChecks[instanceId] = (notificationPollers.noJobChecks[instanceId] || 0) + 1;
+			
+			// Stop polling after 5 consecutive checks with no jobs
+			// This gives new jobs time to be detected before shutting down
+			if (notificationPollers.noJobChecks[instanceId] >= 5) {
+				if (window.console && console.log) {
+					console.log('[WP oOS] No jobs for 5 checks. Stopping polling for instance:', instanceId);
+				}
+				stopNotificationPolling(instanceId);
+				// Reset counter for next time polling starts
+				notificationPollers.noJobChecks[instanceId] = 0;
+			}
 		}
 		
 		// Always show status bar to maintain visibility
