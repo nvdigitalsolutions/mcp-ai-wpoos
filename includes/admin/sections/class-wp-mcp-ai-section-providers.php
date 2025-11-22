@@ -223,10 +223,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				// Music Generation API Keys (Third-party Lyria providers).
 				'segmind_api_key'             => array(
 					'type'         => 'password',
-					'label'        => __( 'Segmind API Key (Music Generation)', 'wp-mcp-ai' ),
+					'label'        => __( 'Segmind API Key (Third-Party Music)', 'wp-mcp-ai' ),
 					'description'  => sprintf(
 						/* translators: %s: Segmind URL */
-						__( 'Optional. API key for Segmind Lyria music generation service. Get one from <a href="%s" target="_blank">Segmind.com</a>. Required for the generate_gemini_music and generate_audio_effects tools.', 'wp-mcp-ai' ),
+						__( 'Optional third-party API key for Segmind Lyria music generation service (not affiliated with Google). Get one from <a href="%s" target="_blank">Segmind.com</a>. Required for the generate_gemini_music and generate_audio_effects tools.', 'wp-mcp-ai' ),
 						'https://www.segmind.com/'
 					),
 					'placeholder'  => 'SG_...',
@@ -234,10 +234,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 				'aimlapi_key'                 => array(
 					'type'         => 'password',
-					'label'        => __( 'AIMLAPI Key (Alternative Music Provider)', 'wp-mcp-ai' ),
+					'label'        => __( 'AIMLAPI Key (Third-Party Alternative)', 'wp-mcp-ai' ),
 					'description'  => sprintf(
 						/* translators: %s: AIMLAPI URL */
-						__( 'Optional alternative to Segmind. API key for AIMLAPI Lyria music generation. Get one from <a href="%s" target="_blank">AIMLAPI.com</a>.', 'wp-mcp-ai' ),
+						__( 'Optional third-party alternative to Segmind for Lyria music generation (not affiliated with Google). Get one from <a href="%s" target="_blank">AIMLAPI.com</a>.', 'wp-mcp-ai' ),
 						'https://aimlapi.com/'
 					),
 					'placeholder'  => 'api_...',

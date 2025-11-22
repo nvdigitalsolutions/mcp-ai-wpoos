@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'music_volume'       => array(
 					'type'        => 'number',
-					'description' => __( 'Background music volume (0.1-1.0). Default is 0.3 for subtle background. Only used if background_music is specified.', 'wp-mcp-ai' ),
+					'description' => __( 'Background music volume (0.1-1.0). Default is 0.3 for subtle background. Only used if background_music is specified. Note: Volume adjustment requires post-processing; this parameter is reserved for future implementation when audio mixing is available.', 'wp-mcp-ai' ),
 					'minimum'     => 0.1,
 					'maximum'     => 1.0,
 					'default'     => 0.3,
@@ -323,15 +323,36 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			$music_description
 		);
 
-		// Generate music matching video duration.
-		$service_options = array(
-			'duration'     => min( $duration, 120 ), // Cap at service max.
-			'mode'         => 'balanced',
-			'api_provider' => 'segmind',
-			'timeout'      => 90,
-		);
+		// Try primary provider (segmind) first, fallback to aimlapi if it fails.
+		$providers = array( 'segmind', 'aimlapi' );
+		$result    = null;
 
-		$result = $music_service->generate_music( $music_prompt, $service_options );
+		foreach ( $providers as $provider ) {
+			// Generate music matching video duration.
+			$service_options = array(
+				'duration'     => min( $duration, 120 ), // Cap at service max.
+				'mode'         => 'balanced',
+				'api_provider' => $provider,
+				'timeout'      => 90,
+			);
+
+			$result = $music_service->generate_music( $music_prompt, $service_options );
+
+			// Success - break loop.
+			if ( ! is_wp_error( $result ) ) {
+				break;
+			}
+
+			// Log failure and try next provider.
+			WP_MCP_AI_Logger::log_event(
+				'tool_info',
+				'Music provider failed, trying fallback',
+				array(
+					'failed_provider' => $provider,
+					'error'           => $result->get_error_message(),
+				)
+			);
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
