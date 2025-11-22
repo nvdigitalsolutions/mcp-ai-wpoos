@@ -201,6 +201,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 			)
 		);
 
+		/**
+		 * Fires when an async tool execution is queued.
+		 *
+		 * This action allows other components to react to job queuing
+		 * and track job lifecycle from start to finish.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $job_id    Job identifier.
+		 * @param array  $metadata  Job metadata at queue time.
+		 * @param string $tool_slug Tool slug being queued.
+		 */
+		do_action( 'wp_mcp_ai_async_job_queued', $job_id, $metadata, $tool_slug );
+
 		return $job_id;
 	}
 
@@ -309,6 +323,21 @@ class WP_MCP_AI_Tool_Async_Executor {
 				)
 			);
 
+			/**
+			 * Fires when an async tool execution completes successfully.
+			 *
+			 * This action allows other components (e.g., chat client notification system)
+			 * to react to job completion in real-time instead of relying on polling.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $job_id    Job identifier.
+			 * @param array  $metadata  Complete job metadata including result.
+			 * @param mixed  $result    Uncompressed tool execution result.
+			 * @param string $tool_slug Tool slug that was executed.
+			 */
+			do_action( 'wp_mcp_ai_async_job_completed', $job_id, $metadata, $result, $tool_slug );
+
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );
 		}
@@ -341,6 +370,21 @@ class WP_MCP_AI_Tool_Async_Executor {
 				'error'     => $error_message,
 			)
 		);
+
+		/**
+		 * Fires when an async tool execution fails.
+		 *
+		 * This action allows other components to react to job failures
+		 * and notify users or take corrective action.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string        $job_id        Job identifier.
+		 * @param array         $metadata      Complete job metadata including error.
+		 * @param string        $error_message Error message.
+		 * @param WP_Error|null $error         WP_Error object if available.
+		 */
+		do_action( 'wp_mcp_ai_async_job_failed', $job_id, $metadata, $error_message, $error );
 	}
 
 	/**
