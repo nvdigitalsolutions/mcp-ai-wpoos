@@ -11115,8 +11115,12 @@
 				}
 				window.wpMcpAiJobCounts[instanceId] = data.job_counts;
 				
-				// Update UI job bar directly
+				// Update cron bar UI directly
 				updateJobBarDisplay(container, data.job_counts);
+				
+				if (window.console && console.log) {
+					console.log('[WP oOS] Cron bar updated via polling:', data.job_counts);
+				}
 			}
 			
 			if (!data || !data.notifications || data.notifications.length === 0) {
@@ -11211,8 +11215,12 @@
 						}
 						window.wpMcpAiJobCounts[instanceId] = counts;
 						
-						// Update UI
+						// Update cron bar UI
 						updateJobBarDisplay(container, counts);
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] Cron bar updated via SSE:', counts);
+						}
 						
 						// Note: Keep SSE connection open even when no jobs to detect new jobs immediately
 					},
