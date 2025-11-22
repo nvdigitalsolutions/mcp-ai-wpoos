@@ -190,13 +190,23 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
-		$text = sprintf(
-			/* translators: 1: image title, 2: attachment ID, 3: prompt */
-			__( 'Successfully generated image "%1$s" (ID: %2$d). Prompt: %3$s', 'wp-mcp-ai' ),
+		$text_parts = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: image title, 2: attachment ID */
+			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
 			$storage['title'],
-			$storage['attachment_id'],
-			$prompt
+			$storage['attachment_id']
 		);
+		
+		if ( ! empty( $image['revised_prompt'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: revised prompt from Gemini */
+				__( 'Revised prompt: %s', 'wp-mcp-ai' ),
+				$image['revised_prompt']
+			);
+		}
+		
+		$text = implode( ' ', $text_parts );
 		
 		$result = array(
 			'attachment_id'  => $storage['attachment_id'],
