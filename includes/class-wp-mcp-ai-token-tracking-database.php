@@ -337,6 +337,65 @@ class WP_MCP_AI_Token_Tracking_Database {
 	}
 
 	/**
+	 * Get site-wide cost summary with actual vs estimated breakdown.
+	 *
+	 * Phase 7 Week 5-6: Provides aggregated cost statistics across all users.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Site-wide cost summary with estimated_cost, actual_cost, accuracy_percentage.
+	 */
+	public static function get_site_cost_summary( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
+				SUM(CASE WHEN is_estimated = 0 THEN cost_usd ELSE 0 END) as actual_cost,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens,
+				COUNT(*) as total_records
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$result = $wpdb->get_row( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		if ( ! $result ) {
+			return array(
+				'total_cost'          => 0.0,
+				'estimated_cost'      => 0.0,
+				'actual_cost'         => 0.0,
+				'accuracy_percentage' => 0.0,
+				'total_tokens'        => 0,
+				'total_records'       => 0,
+			);
+		}
+
+		$total_cost = floatval( $result['total_cost'] );
+		$actual_cost = floatval( $result['actual_cost'] );
+
+		// Calculate accuracy percentage.
+		$accuracy_percentage = 0.0;
+		if ( $total_cost > 0 ) {
+			$accuracy_percentage = ( $actual_cost / $total_cost ) * 100;
+		}
+
+		return array(
+			'total_cost'          => $total_cost,
+			'estimated_cost'      => floatval( $result['estimated_cost'] ),
+			'actual_cost'         => $actual_cost,
+			'accuracy_percentage' => $accuracy_percentage,
+			'total_tokens'        => intval( $result['total_tokens'] ),
+			'total_records'       => intval( $result['total_records'] ),
+		);
+	}
+
+	/**
 	 * Get aggregated usage data by provider.
 	 *
 	 * Data access method - returns raw query results for service layer to process.

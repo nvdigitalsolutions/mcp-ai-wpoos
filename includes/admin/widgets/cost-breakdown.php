@@ -22,6 +22,15 @@ $by_provider  = isset( $data['by_provider'] ) ? $data['by_provider'] : array();
 $by_model     = isset( $data['by_model'] ) ? $data['by_model'] : array();
 $period_start = isset( $data['period_start'] ) ? $data['period_start'] : gmdate( 'Y-m-d', strtotime( '-7 days' ) );
 $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-m-d' );
+
+// Phase 7 Week 5-6: Get enhanced tracking statistics if available.
+$enhanced_stats = array();
+if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+	$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
+	$end_datetime   = gmdate( 'Y-m-d 23:59:59' );
+
+	$enhanced_stats = WP_MCP_AI_Token_Tracking_Database::get_site_cost_summary( $start_datetime, $end_datetime );
+}
 ?>
 
 <div class="wp-mcp-ai-widget-cost-breakdown">
@@ -51,6 +60,26 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 					esc_html( number_format_i18n( $total_tokens ) )
 				);
 				?>
+			</div>
+		<?php endif; ?>
+		<?php
+		// Phase 7 Week 5-6: Show accuracy indicator if enhanced tracking is available.
+		if ( ! empty( $enhanced_stats ) && $enhanced_stats['total_cost'] > 0 ) :
+			$accuracy     = $enhanced_stats['accuracy_percentage'];
+			$actual_cost  = $enhanced_stats['actual_cost'];
+			$color        = $accuracy >= 75 ? '#46b450' : ( $accuracy >= 50 ? '#ffb900' : '#dc3232' );
+			$status_text  = $accuracy >= 75 ? __( 'High Accuracy', 'wp-mcp-ai' ) : ( $accuracy >= 50 ? __( 'Moderate Accuracy', 'wp-mcp-ai' ) : __( 'Low Accuracy', 'wp-mcp-ai' ) );
+			?>
+			<div class="wp-mcp-ai-cost-accuracy" style="margin-top: 8px; padding: 6px 10px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 11px;">
+				<div style="display: flex; justify-content: space-between; align-items: center;">
+					<span style="color: #fff;">
+						<strong><?php esc_html_e( 'Actual:', 'wp-mcp-ai' ); ?></strong>
+						<?php echo esc_html( WP_MCP_AI_Cost_Calculator::format_cost( $actual_cost ) ); ?>
+					</span>
+					<span style="color: <?php echo esc_attr( $color ); ?>; font-weight: 600;">
+						<?php echo esc_html( number_format( $accuracy, 1 ) ); ?>% <?php echo esc_html( $status_text ); ?>
+					</span>
+				</div>
 			</div>
 		<?php endif; ?>
 	</div>

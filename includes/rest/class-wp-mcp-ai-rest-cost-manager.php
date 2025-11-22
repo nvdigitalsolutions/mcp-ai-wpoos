@@ -269,36 +269,15 @@ class WP_MCP_AI_REST_Cost_Manager {
 		$actual_cost    = 0.0;
 		$accuracy       = 0.0;
 
-		// Sum estimated vs actual from the breakdown (already calculated in Cost Tracking Service).
-		if ( isset( $breakdown['total_cost'] ) && $breakdown['total_cost'] > 0 ) {
-			// The breakdown already separates actual from estimated costs.
-			// Calculate proportion of actual vs estimated across all records.
-			if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
-				$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
-				$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
+		// Get site-wide cost summary using the Token Tracking Database method.
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
+			$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
 
-				// Get aggregated actual/estimated breakdown across all users.
-				global $wpdb;
-				$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-				$query      = "
-					SELECT 
-						SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
-						SUM(CASE WHEN is_estimated = 0 THEN cost_usd ELSE 0 END) as actual_cost
-					FROM {$table_name}
-					WHERE timestamp >= %s AND timestamp <= %s
-				";
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$result = $wpdb->get_row( $wpdb->prepare( $query, $start_datetime, $end_datetime ), ARRAY_A );
-
-				if ( $result ) {
-					$estimated_cost = floatval( $result['estimated_cost'] );
-					$actual_cost    = floatval( $result['actual_cost'] );
-
-					if ( ( $estimated_cost + $actual_cost ) > 0 ) {
-						$accuracy = ( $actual_cost / ( $estimated_cost + $actual_cost ) ) * 100;
-					}
-				}
-			}
+			$site_summary   = WP_MCP_AI_Token_Tracking_Database::get_site_cost_summary( $start_datetime, $end_datetime );
+			$estimated_cost = $site_summary['estimated_cost'];
+			$actual_cost    = $site_summary['actual_cost'];
+			$accuracy       = $site_summary['accuracy_percentage'];
 		}
 
 		return rest_ensure_response(
@@ -398,35 +377,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 			$start_date = gmdate( 'Y-m-d 00:00:00', strtotime( "-{$days} days" ) );
 			$end_date   = gmdate( 'Y-m-d 23:59:59' );
 
-			global $wpdb;
-			$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-			$query      = "
-				SELECT 
-					SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
-					SUM(CASE WHEN is_estimated = 0 THEN cost_usd ELSE 0 END) as actual_cost,
-					SUM(cost_usd) as total_cost,
-					SUM(total_tokens) as total_tokens,
-					COUNT(*) as total_records
-				FROM {$table_name}
-				WHERE timestamp >= %s AND timestamp <= %s
-			";
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$result = $wpdb->get_row( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
-
-			if ( $result ) {
-				$total_cost     = floatval( $result['total_cost'] );
-				$estimated_cost = floatval( $result['estimated_cost'] );
-				$actual_cost    = floatval( $result['actual_cost'] );
-
-				$enhanced_stats = array(
-					'total_cost'          => $total_cost,
-					'estimated_cost'      => $estimated_cost,
-					'actual_cost'         => $actual_cost,
-					'accuracy_percentage' => $total_cost > 0 ? ( $actual_cost / $total_cost ) * 100 : 0,
-					'total_tokens'        => intval( $result['total_tokens'] ),
-					'total_records'       => intval( $result['total_records'] ),
-				);
-			}
+			$enhanced_stats = WP_MCP_AI_Token_Tracking_Database::get_site_cost_summary( $start_date, $end_date );
 		}
 
 		return rest_ensure_response(
