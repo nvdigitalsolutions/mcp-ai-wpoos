@@ -435,10 +435,31 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Get pending notifications.
 		$notifications = $dispatcher->get_pending_notifications( $user_id, $assistant_id, $clear );
 
+		// Get job counts from cron status service to consolidate polling.
+		// This eliminates the need for separate cron-status polling.
+		$job_counts = array(
+			'pending'   => 0,
+			'running'   => 0,
+			'completed' => 0,
+			'failed'    => 0,
+			'total'     => 0,
+		);
+
+		if ( $this->main_controller && method_exists( $this->main_controller, 'get_cron_status_service' ) ) {
+			$cron_service = $this->main_controller->get_cron_status_service();
+			if ( $cron_service && method_exists( $cron_service, 'get_status_counts' ) ) {
+				$counts_data = $cron_service->get_status_counts( $user_id, $assistant_id, 'chat' );
+				if ( is_array( $counts_data ) ) {
+					$job_counts = $counts_data;
+				}
+			}
+		}
+
 		return rest_ensure_response(
 			array(
 				'notifications' => $notifications,
 				'count'         => count( $notifications ),
+				'job_counts'    => $job_counts,
 			)
 		);
 	}
