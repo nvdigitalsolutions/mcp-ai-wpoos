@@ -3341,12 +3341,15 @@
                                 }
                                 clearStatusAfterDelay();
                             });
-                            return;
+                        } else {
+                            // History not visible or refresh not a promise - clear status after delay
+                            clearStatusAfterDelay();
                         }
                     }, 500);
+                } else {
+                    // History not loaded - clear status after delay
+                    clearStatusAfterDelay();
                 }
-                
-                clearStatusAfterDelay();
             } else {
                 // Save failed
                 const errorMsg = result.error || 'Failed to save conversation';
@@ -4329,7 +4332,7 @@
                     console.log('[WP oOS] Retrying conversation details fetch after delay:', {
                         session_key: sessionKey,
                         delay_ms: currentDelay,
-                        next_attempt: attempt + 2
+                        next_attempt: attempt + 2 // Display as 1-based: next call will be attempt+1, displayed as (attempt+1)+1
                     });
                 }
                 
