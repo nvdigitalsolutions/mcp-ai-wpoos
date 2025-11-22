@@ -276,12 +276,14 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 					// Add CCT save confirmation if available.
 					if (data.saved_to_cct && data.cct_item_id) {
 						message += '<br><span class="wp-mcp-ai-cct-saved">';
-						message += '<?php echo esc_js( __( '✓ Results saved to database (ID: ', 'wp-mcp-ai' ) ); ?>';
+						message += '<span class="dashicons dashicons-yes"></span> ';
+						message += '<?php echo esc_js( __( 'Results saved to database (ID: ', 'wp-mcp-ai' ) ); ?>';
 						message += data.cct_item_id + ')';
 						message += '</span>';
 					} else if (data.saved_to_cct === false) {
 						message += '<br><span class="wp-mcp-ai-cct-warning">';
-						message += '<?php echo esc_js( __( '⚠ Results not saved (CCT unavailable)', 'wp-mcp-ai' ) ); ?>';
+						message += '<span class="dashicons dashicons-warning"></span> ';
+						message += '<?php echo esc_js( __( 'Results not saved (CCT unavailable)', 'wp-mcp-ai' ) ); ?>';
 						message += '</span>';
 					}
 					

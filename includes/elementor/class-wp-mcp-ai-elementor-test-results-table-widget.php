@@ -204,8 +204,8 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			echo esc_html__( 'Test Results Table Widget', 'wp-mcp-ai' );
 			echo '<br><small>' . esc_html__( 'Test results will be displayed here on the live page.', 'wp-mcp-ai' ) . '</small>';
 			echo '</p>';
-			echo '</div>';
-			echo '</div>';
+			echo '</div>'; // Close editor placeholder.
+			echo '</div>'; // Close main container.
 			return;
 		}
 

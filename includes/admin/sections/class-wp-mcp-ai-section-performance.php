@@ -862,6 +862,11 @@ composer install</pre>
 	 * Following SoC: This method is responsible only for extracting test result counts.
 	 * It does not interpret or store the results.
 	 *
+	 * Note: PHPUnit tests use 'skipped' field while lightweight checks use 'warnings' field.
+	 * This is intentional as they represent different concepts:
+	 * - PHPUnit 'skipped': Tests marked to skip (e.g., missing dependencies)
+	 * - Lightweight 'warnings': Checks that passed but with warnings (e.g., non-optimal settings)
+	 *
 	 * @param string $output PHPUnit test output.
 	 * @return array Test results with pass/fail counts.
 	 */
@@ -1332,15 +1337,21 @@ composer install</pre>
 	 * Following SoC: This method is responsible only for identifying the test context.
 	 * It checks multiple sources to determine the most specific component being tested.
 	 *
+	 * Security Note: This method is only called from AJAX handlers that have already
+	 * performed nonce verification and capability checks (ajax_run_test, ajax_get_metrics).
+	 * POST data access is safe in this context.
+	 *
 	 * @return string Component identifier.
 	 */
 	protected function determine_test_component() {
 		// Check for assistant-specific context from POST data (widget-specific tests).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in calling method.
 		if ( isset( $_POST['assistant_id'] ) && ! empty( $_POST['assistant_id'] ) ) {
 			return 'cpt_assistant';
 		}
 		
 		// Check for component override in POST data (allows widgets to specify component).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in calling method.
 		if ( isset( $_POST['component'] ) && ! empty( $_POST['component'] ) ) {
 			return sanitize_key( $_POST['component'] );
 		}
