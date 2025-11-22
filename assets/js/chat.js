@@ -8216,17 +8216,23 @@
                 // Update target content for typing animation
                 targetContent = safeContent;
                 
-                // Start typing animation if new content is longer than displayed
-                if (targetContent.length > displayedContent.length) {
-                    startTypingAnimation();
+                // IMMEDIATELY show the text content in the bubble (without animation)
+                // This ensures text is visible right away, not just the cursor
+                if (safeContent && safeContent.length > 0) {
+                    // Update displayedContent first to maintain consistency
+                    displayedContent = safeContent;
+                    // Then set text content directly to ensure it's visible
+                    // This order ensures displayedContent always matches what's displayed
+                    streamingMessageElement.textContent = displayedContent;
                 }
                 
-                // VERIFY the animation state
+                // VERIFY the content is set
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Typing animation state:', {
+                    console.log('[WP oOS] Streaming bubble content:', {
                         targetLength: targetContent.length,
                         displayedLength: displayedContent.length,
-                        animationRunning: typingAnimationRunning
+                        bubbleTextLength: streamingMessageElement.textContent ? streamingMessageElement.textContent.length : 0,
+                        bubbleTextSample: streamingMessageElement.textContent ? streamingMessageElement.textContent.substring(0, 30) : '(empty)'
                     });
                 }
                 
