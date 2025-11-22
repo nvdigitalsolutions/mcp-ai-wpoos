@@ -183,8 +183,8 @@ describe('Admin Settings localStorage Error Handling', () => {
 				throw new Error('Access to storage is not allowed from this context.');
 			});
 
-			// Spy on console.log
-			const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+			// Clear any existing console.log calls from beforeEach
+			consoleLogSpy.mockClear();
 
 			// Simulate the wpMcpAiSaveExpandedState function
 			const wpMcpAiSaveExpandedState = function() {
@@ -214,7 +214,6 @@ describe('Admin Settings localStorage Error Handling', () => {
 			
 			// Restore
 			localStorage.setItem = originalSetItem;
-			consoleLogSpy.mockRestore();
 		});
 	});
 });
