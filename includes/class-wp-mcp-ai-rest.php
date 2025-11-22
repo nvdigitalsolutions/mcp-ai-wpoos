@@ -6167,6 +6167,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$query = $wpdb->prepare( $query_template, $where_values );
 
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: executing SQL query',
+				array(
+					'query'       => $query,
+					'user_id'     => $user_id,
+					'session_key' => $session_key,
+				)
+			);
+
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
 			if ( empty( $rows ) ) {
@@ -6177,6 +6187,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'table'       => $table,
 						'user_id'     => $user_id,
 						'session_key' => $session_key,
+						'query'       => $query,
+						'wpdb_error'  => $wpdb->last_error,
 					)
 				);
 
