@@ -9246,7 +9246,7 @@
                     };
                     
                     if (normalized && normalized.attachments && normalized.attachments.length > 0) {
-                        displayMetadata.text = normalized.text || (toolName + ': ' + getString('completed', 'Completed'));
+                        displayMetadata.text = normalized.text || `${toolName}: ${getString('completed', 'Completed')}`;
                         displayMetadata.attachments = normalized.attachments;
                     } else if (parsedContent && parsedContent.text) {
                         displayMetadata.text = parsedContent.text;
@@ -9255,7 +9255,7 @@
                     } else if (typeof parsedContent === 'string') {
                         displayMetadata.text = parsedContent;
                     } else {
-                        displayMetadata.text = toolName + ': ' + getString('completed', 'Completed successfully');
+                        displayMetadata.text = `${toolName}: ${getString('completed', 'Completed successfully')}`;
                     }
                     
                     // Add display metadata to tool result for proper persistence
