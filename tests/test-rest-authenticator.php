@@ -375,4 +375,92 @@ class Test_REST_Authenticator extends WP_UnitTestCase {
 
 		$this->assertEquals( 'test-token-with-spaces', $token );
 	}
+
+	/**
+	 * Test authenticate method with valid nonce for authenticated endpoint.
+	 */
+	public function test_authenticate_with_valid_nonce() {
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$result = $this->authenticator->authenticate( $request, 'edit_posts' );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( $user_id, $result['user_id'] );
+	}
+
+	/**
+	 * Test authenticate method with invalid nonce.
+	 */
+	public function test_authenticate_with_invalid_nonce() {
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$request->set_header( 'X-WP-Nonce', 'invalid_nonce' );
+
+		$result = $this->authenticator->authenticate( $request, 'edit_posts' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'rest_invalid_nonce', $result->get_error_code() );
+	}
+
+	/**
+	 * Test authenticate method with missing nonce for authenticated endpoint.
+	 */
+	public function test_authenticate_with_missing_nonce() {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+
+		$result = $this->authenticator->authenticate( $request, 'edit_posts' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_credentials', $result->get_error_code() );
+	}
+
+	/**
+	 * Test authenticate method for public endpoint without nonce.
+	 */
+	public function test_authenticate_public_endpoint_without_nonce() {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+
+		$result = $this->authenticator->authenticate( $request, 'public' );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 0, $result['user_id'] );
+	}
+
+	/**
+	 * Test authenticate method for public endpoint with valid nonce.
+	 */
+	public function test_authenticate_public_endpoint_with_nonce() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$result = $this->authenticator->authenticate( $request, 'public' );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( $user_id, $result['user_id'] );
+	}
+
+	/**
+	 * Test authenticate method with insufficient permissions.
+	 */
+	public function test_authenticate_with_insufficient_permissions() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$result = $this->authenticator->authenticate( $request, 'manage_options' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'rest_insufficient_permissions', $result->get_error_code() );
+	}
 }
