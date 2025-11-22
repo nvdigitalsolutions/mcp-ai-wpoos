@@ -68,8 +68,9 @@ class GeminiMusicService {
 
 		try {
 			// Dynamic import of @google/genai
-			const { GoogleGenerativeAI } = await import('@google/genai');
-			this.genAI = new GoogleGenerativeAI(apiKey);
+			// Note: In v1.x, the export is GoogleGenAI (not GoogleGenerativeAI)
+			const { GoogleGenAI } = await import('@google/genai');
+			this.genAI = new GoogleGenAI(apiKey);
 			this.emit('initialized', { success: true });
 		} catch (error) {
 			this.emit('error', { 
