@@ -316,16 +316,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 				'content'      => array(
 					'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
-					'oneOf'       => array(
-						array( 'type' => 'string' ),
-						array(
-							'type'  => 'array',
-							'items' => array(
-								'type' => 'object',
-							),
-						),
-						array( 'type' => 'null' ),
-					),
+					// Note: We cannot use 'oneOf' here because WordPress REST API has known issues
+					// with oneOf validation in some versions. Content validation is handled by
+					// the validate_messages_array() callback in the validator class instead.
 				),
 				'tool_calls'   => array(
 					'description' => __( 'Tool calls made by the assistant. Only valid for assistant role messages.', 'wp-mcp-ai' ),

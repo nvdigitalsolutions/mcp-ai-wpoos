@@ -119,6 +119,141 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test validate_messages_array with string content (most common case).
+	 */
+	public function test_validate_messages_array_string_content() {
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'This is a string message',
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test validate_messages_array with array content (multimodal content).
+	 */
+	public function test_validate_messages_array_array_content() {
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'What is in this image?',
+					),
+					array(
+						'type'      => 'image_url',
+						'image_url' => array(
+							'url' => 'https://example.com/image.jpg',
+						),
+					),
+				),
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test validate_messages_array with null content (assistant with tool_calls).
+	 */
+	public function test_validate_messages_array_null_content() {
+		$messages = array(
+			array(
+				'role'       => 'assistant',
+				'content'    => null,
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'get_weather',
+							'arguments' => '{"location":"London"}',
+						),
+					),
+				),
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertTrue( $result );
+	}
+
+	/**
+	 * Test validate_messages_array with invalid content type (e.g., object).
+	 */
+	public function test_validate_messages_array_invalid_content_type() {
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => (object) array( 'text' => 'Hello' ), // object instead of array
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'rest_invalid_param', $result->get_error_code() );
+		$this->assertStringContainsString( 'invalid "content" type', $result->get_error_message() );
+	}
+
+	/**
+	 * Test validate_messages_array with invalid content type (e.g., number).
+	 */
+	public function test_validate_messages_array_invalid_content_type_number() {
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 123, // number instead of string/array/null
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'rest_invalid_param', $result->get_error_code() );
+		$this->assertStringContainsString( 'invalid "content" type', $result->get_error_message() );
+	}
+
+	/**
+	 * Test validate_messages_array with array content containing non-objects.
+	 */
+	public function test_validate_messages_array_array_content_with_invalid_parts() {
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Hello',
+					),
+					'invalid string part', // This should be an array/object
+				),
+			),
+		);
+
+		$request = new WP_REST_Request();
+		$result  = $this->validator->validate_messages_array( $messages, $request, 'messages' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'rest_invalid_param', $result->get_error_code() );
+		$this->assertStringContainsString( 'invalid content part', $result->get_error_message() );
+	}
+
+	/**
 	 * Test validate_attachments_array with valid input.
 	 */
 	public function test_validate_attachments_array_valid() {

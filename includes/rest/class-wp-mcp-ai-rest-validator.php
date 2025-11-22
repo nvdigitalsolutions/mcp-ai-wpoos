@@ -132,6 +132,45 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
+			// Validate content type (must be string, array, or null).
+			if ( isset( $message['content'] ) ) {
+				$content = $message['content'];
+				if ( ! is_string( $content ) && ! is_array( $content ) && ! is_null( $content ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: message index */
+							__( 'Message at index %d has invalid "content" type. Must be a string, array of content parts, or null.', 'wp-mcp-ai' ),
+							$index
+						),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'fix_content_type' => __( 'Message content must be a string, an array of content parts, or null (for assistant messages with tool_calls).', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
+
+				// If content is an array, validate it contains objects (content parts).
+				if ( is_array( $content ) ) {
+					foreach ( $content as $part_index => $part ) {
+						if ( ! is_array( $part ) ) {
+							return new WP_Error(
+								'rest_invalid_param',
+								sprintf(
+									/* translators: 1: message index, 2: content part index */
+									__( 'Message at index %1$d has invalid content part at index %2$d. Each content part must be an object/array.', 'wp-mcp-ai' ),
+									$index,
+									$part_index
+								),
+								array( 'status' => 400 )
+							);
+						}
+					}
+				}
+			}
+
 			// Validate tool_call_id for tool messages.
 			if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
 				return new WP_Error(
