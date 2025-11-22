@@ -6235,7 +6235,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! empty( $request_messages ) ) {
 					$existing_count = count( $messages );
 
-					$this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+					$this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'], $row['user_id'] );
 
 					$pending_tool_responses = $this->extract_appended_tool_responses( $messages, $existing_count );
 
@@ -6250,7 +6250,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				$before_response = count( $messages );
-				$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+				$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'], $row['user_id'] );
 
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -6262,7 +6262,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				if ( ! empty( $pending_tool_responses ) ) {
 					$before_tool = count( $messages );
-					$this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'] );
+					$this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'], $row['user_id'] );
 
 					WP_MCP_AI_Logger::log_event(
 						'debug',
@@ -7146,8 +7146,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param array  $new_messages      New messages to append.
 		 * @param string $primary_timestamp Primary timestamp.
 		 * @param string $fallback_timestamp Fallback timestamp.
+		 * @param int    $user_id           User ID to associate with messages.
 		 */
-		protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp ) {
+		protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp, $user_id = 0 ) {
 			if ( empty( $new_messages ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -7168,6 +7169,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'existing_count' => $existing_count,
 					'new_count'      => $new_count,
 					'timestamp'      => $timestamp,
+					'user_id'        => $user_id,
 				)
 			);
 
@@ -7188,6 +7190,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			for ( $index = $position; $index < $new_count; $index++ ) {
 				$message              = $new_messages[ $index ];
 				$message['timestamp'] = $timestamp;
+				$message['user_id']   = absint( $user_id );
 				$conversation[]       = $message;
 				++$added_count;
 			}
@@ -7832,7 +7835,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string SQL SELECT fields.
 		 */
 		private function get_transcript_select_fields() {
-			return "request_payload,
+			return "user_id,
+                    request_payload,
                     response_payload,
                     metadata,
                     request_started_at,
