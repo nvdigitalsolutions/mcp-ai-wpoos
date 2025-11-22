@@ -11178,7 +11178,8 @@
 		stopNotificationPolling(instanceId);
 		
 		// Try SSE first if supported and SSE service is available
-		if (sseService && sseService.isSupported()) {
+		const hasSseService = typeof sseService !== 'undefined' && sseService;
+		if (hasSseService && sseService.isSupported()) {
 			if (window.console && console.log) {
 				console.log('[WP oOS] Attempting SSE connection for notifications on instance:', instanceId);
 			}
@@ -11395,9 +11396,14 @@
 /**
  * Initialize cron status display for a chat container
  * 
- * DEPRECATED: This function is maintained for backwards compatibility only.
+ * @deprecated since 1.1.0 - Will be removed in version 2.0.0
+ * 
+ * LEGACY MODE: This function is maintained for backwards compatibility only.
  * The job bar is now updated directly by pollJobNotifications() using consolidated
  * job counts, eliminating the need for separate cron-status polling.
+ * 
+ * Migration: Remove cron-status-service.js from your enqueues. The chat client
+ * will automatically use consolidated polling or SSE streaming for job updates.
  * 
  * This function only runs if cron-status-service.js is still loaded (legacy mode).
  * 

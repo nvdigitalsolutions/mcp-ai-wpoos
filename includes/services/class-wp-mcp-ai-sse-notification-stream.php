@@ -83,9 +83,12 @@ class WP_MCP_AI_SSE_Notification_Stream {
 		$start_time       = time();
 		$last_heartbeat   = time();
 		$heartbeat_interval = 15; // Send heartbeat every 15 seconds.
+		$max_iterations = 1000; // Safety limit to prevent infinite loops.
+		$iteration_count = 0;
 
 		// Main streaming loop.
-		while ( true ) {
+		while ( $iteration_count < $max_iterations ) {
+			++$iteration_count;
 			$current_time = time();
 
 			// Check if max duration exceeded.
@@ -149,10 +152,15 @@ class WP_MCP_AI_SSE_Notification_Stream {
 			}
 		}
 
-		// Send close event.
+		// Send close event with reason.
+		$close_message = 'Stream closed';
+		if ( $iteration_count >= $max_iterations ) {
+			$close_message = 'Maximum iterations reached (safety limit)';
+		}
+		
 		self::send_event(
 			'close',
-			array( 'message' => 'Stream closed' )
+			array( 'message' => $close_message )
 		);
 
 		exit;
