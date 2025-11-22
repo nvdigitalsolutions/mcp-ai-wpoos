@@ -12,7 +12,10 @@ window.wpMcpAiSaveExpandedState = function() {
     try {
         localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
     } catch (e) {
-        // Ignore localStorage errors
+        // Log localStorage errors for debugging
+        if (window.console && console.log) {
+            console.log('[WP oOS] localStorage access not allowed:', e);
+        }
     }
 };
 

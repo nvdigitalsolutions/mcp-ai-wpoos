@@ -157,7 +157,10 @@ describe('Admin Settings localStorage Error Handling', () => {
 				try {
 					localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
 				} catch (e) {
-					// Ignore localStorage errors
+					// Log localStorage errors for debugging
+					if (window.console && console.log) {
+						console.log('[WP oOS] localStorage access not allowed:', e);
+					}
 				}
 			};
 
@@ -166,6 +169,52 @@ describe('Admin Settings localStorage Error Handling', () => {
 			
 			// Restore
 			localStorage.setItem = originalSetItem;
+		});
+
+		it('should log errors when localStorage is not accessible', () => {
+			// Setup DOM
+			document.body.innerHTML = `
+				<div id="section1" class="wp-mcp-ai-section--expanded"></div>
+			`;
+
+			// Mock localStorage.setItem to throw error
+			const originalSetItem = localStorage.setItem;
+			localStorage.setItem = jest.fn(() => {
+				throw new Error('Access to storage is not allowed from this context.');
+			});
+
+			// Spy on console.log
+			const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+			// Simulate the wpMcpAiSaveExpandedState function
+			const wpMcpAiSaveExpandedState = function() {
+				const sections = document.querySelectorAll('.wp-mcp-ai-section--expanded');
+				const expandedIds = Array.from(sections)
+					.map(function(section) { return section.getAttribute('id'); })
+					.filter(function(id) { return id; });
+				
+				try {
+					localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+				} catch (e) {
+					// Log localStorage errors for debugging
+					if (window.console && console.log) {
+						console.log('[WP oOS] localStorage access not allowed:', e);
+					}
+				}
+			};
+
+			// Call the function
+			wpMcpAiSaveExpandedState();
+
+			// Verify console.log was called with the error
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				'[WP oOS] localStorage access not allowed:',
+				expect.any(Error)
+			);
+			
+			// Restore
+			localStorage.setItem = originalSetItem;
+			consoleLogSpy.mockRestore();
 		});
 	});
 });
