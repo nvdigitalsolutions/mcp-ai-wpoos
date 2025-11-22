@@ -68,16 +68,20 @@ class WP_MCP_AI_Gemini_Music_Service {
 	/**
 	 * Generate music using the Lyria model via third-party API.
 	 *
-	 * @param string $prompt Music generation prompt describing desired music.
+	 * @param string $prompt Music generation prompt or base prompt.
 	 * @param array  $options {
 	 *     Optional. Music generation options.
 	 *
-	 *     @type string $negative_prompt Elements to exclude from generation.
-	 *     @type int    $duration        Duration in seconds (5-120).
-	 *     @type int    $seed            Random seed for reproducibility.
-	 *     @type string $api_provider    API provider ('segmind' or 'aimlapi'). Default 'segmind'.
-	 *     @type string $api_key         Third-party API key (overrides settings).
-	 *     @type int    $timeout         Request timeout in seconds.
+	 *     @type array  $weighted_prompts Array of weighted prompts [{text, weight}].
+	 *     @type string $negative_prompt  Elements to exclude from generation.
+	 *     @type int    $duration         Duration in seconds (5-120).
+	 *     @type int    $bpm              Beats per minute (40-200).
+	 *     @type float  $density          Note density (0-1).
+	 *     @type string $mode             Generation mode (quality, speed, balanced).
+	 *     @type int    $seed             Random seed for reproducibility.
+	 *     @type string $api_provider     API provider ('segmind' or 'aimlapi'). Default 'segmind'.
+	 *     @type string $api_key          Third-party API key (overrides settings).
+	 *     @type int    $timeout          Request timeout in seconds.
 	 * }
 	 * @return array|WP_Error {
 	 *     Success: Array with audio data and metadata.
@@ -87,31 +91,35 @@ class WP_MCP_AI_Gemini_Music_Service {
 	 *     @type string $audio_data    Base64-encoded audio data (if applicable).
 	 *     @type string $format        Audio format (mp3, wav).
 	 *     @type int    $duration      Actual duration in seconds.
-	 *     @type string $prompt        Original prompt used.
+	 *     @type string $prompt        Final prompt used (after weighted prompts processing).
 	 * }
 	 */
 	public function generate_music( $prompt, $options = array() ) {
-		$prompt = sanitize_textarea_field( $prompt );
-		$prompt = trim( $prompt );
+		// Parse options.
+		$defaults = array(
+			'weighted_prompts' => array(),
+			'negative_prompt'  => '',
+			'duration'         => self::DEFAULT_DURATION,
+			'bpm'              => 120,
+			'density'          => 0.5,
+			'mode'             => 'balanced',
+			'seed'             => null,
+			'api_provider'     => 'segmind',
+			'api_key'          => null,
+			'timeout'          => 120,
+		);
 
-		if ( empty( $prompt ) ) {
+		$options = wp_parse_args( $options, $defaults );
+
+		// Build final prompt from weighted prompts or regular prompt.
+		$final_prompt = $this->build_final_prompt( $prompt, $options );
+
+		if ( empty( $final_prompt ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_music_prompt',
 				__( 'Music generation prompt cannot be empty.', 'wp-mcp-ai' )
 			);
 		}
-
-		// Parse options.
-		$defaults = array(
-			'negative_prompt' => '',
-			'duration'        => self::DEFAULT_DURATION,
-			'seed'            => null,
-			'api_provider'    => 'segmind',
-			'api_key'         => null,
-			'timeout'         => 120,
-		);
-
-		$options = wp_parse_args( $options, $defaults );
 
 		// Validate duration.
 		$duration = absint( $options['duration'] );
@@ -126,7 +134,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 		}
 
 		// Build request payload.
-		$payload = $this->build_request_payload( $prompt, $options );
+		$payload = $this->build_request_payload( $final_prompt, $options );
 
 		// Select endpoint.
 		$endpoint = $this->get_api_endpoint( $options['api_provider'] );
@@ -137,6 +145,9 @@ class WP_MCP_AI_Gemini_Music_Service {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+
+		// Add final prompt to result.
+		$result['prompt'] = $final_prompt;
 
 		return $result;
 	}
@@ -215,6 +226,72 @@ class WP_MCP_AI_Gemini_Music_Service {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Build final prompt from weighted prompts or regular prompt.
+	 *
+	 * Incorporates BPM, density, and mode instructions into the prompt.
+	 * This is where the business logic for prompt construction lives.
+	 *
+	 * @param string $base_prompt Base prompt string.
+	 * @param array  $options     Generation options including weighted_prompts, bpm, density, mode.
+	 * @return string Final constructed prompt.
+	 */
+	protected function build_final_prompt( $base_prompt, $options ) {
+		$prompt_parts = array();
+
+		// Handle weighted prompts (priority over base prompt).
+		if ( ! empty( $options['weighted_prompts'] ) && is_array( $options['weighted_prompts'] ) ) {
+			foreach ( $options['weighted_prompts'] as $wp ) {
+				if ( isset( $wp['text'] ) && isset( $wp['weight'] ) ) {
+					$text   = sanitize_textarea_field( $wp['text'] );
+					$weight = floatval( $wp['weight'] );
+
+					if ( ! empty( $text ) && $weight > 0 ) {
+						// Convert weight to percentage for clearer prompt.
+						$percentage = round( $weight * 100 );
+						$prompt_parts[] = sprintf( '%d%% %s', $percentage, $text );
+					}
+				}
+			}
+
+			$final_prompt = implode( ', ', $prompt_parts );
+		} else {
+			$final_prompt = sanitize_textarea_field( $base_prompt );
+		}
+
+		$final_prompt = trim( $final_prompt );
+
+		if ( empty( $final_prompt ) ) {
+			return '';
+		}
+
+		// Add BPM specification.
+		$bpm = isset( $options['bpm'] ) ? absint( $options['bpm'] ) : 120;
+		if ( $bpm >= 40 && $bpm <= 200 ) {
+			$final_prompt .= sprintf( ', %d BPM', $bpm );
+		}
+
+		// Add density description.
+		$density = isset( $options['density'] ) ? floatval( $options['density'] ) : 0.5;
+		if ( $density < 0.3 ) {
+			$final_prompt .= ', sparse arrangement, minimal notes';
+		} elseif ( $density > 0.7 ) {
+			$final_prompt .= ', dense arrangement, complex instrumentation';
+		} elseif ( $density >= 0.4 && $density <= 0.6 ) {
+			$final_prompt .= ', balanced arrangement';
+		}
+
+		// Add mode/quality instructions.
+		$mode = isset( $options['mode'] ) ? sanitize_key( $options['mode'] ) : 'balanced';
+		if ( 'quality' === $mode ) {
+			$final_prompt .= ', high-quality production, professional mix';
+		} elseif ( 'speed' === $mode ) {
+			$final_prompt .= ', quick generation';
+		}
+
+		return $final_prompt;
 	}
 
 	/**

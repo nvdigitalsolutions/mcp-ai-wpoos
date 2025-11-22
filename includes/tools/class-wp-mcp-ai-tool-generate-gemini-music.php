@@ -46,36 +46,76 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'prompt'          => array(
+				'prompt'           => array(
 					'type'        => 'string',
-					'description' => __( 'Detailed description of the desired music. Include genre, mood, tempo, instrumentation, and style. Examples: "Upbeat jazz with piano and saxophone, sunny afternoon vibe", "Dark ambient electronic music with deep bass, mysterious atmosphere".', 'wp-mcp-ai' ),
+					'description' => __( 'Detailed description of the desired music. Include genre, mood, tempo, instrumentation, and style. Examples: "Upbeat jazz with piano and saxophone, sunny afternoon vibe", "Dark ambient electronic music with deep bass, mysterious atmosphere". Note: Use weighted_prompts for combining multiple styles.', 'wp-mcp-ai' ),
 				),
-				'negative_prompt' => array(
+				'weighted_prompts' => array(
+					'type'        => 'array',
+					'description' => __( 'Array of prompts with weights for combining multiple music styles. Each item should have "text" and "weight" (0-1). Example: [{"text": "Harmonica", "weight": 0.3}, {"text": "Afrobeat", "weight": 0.7}]. If provided, overrides the "prompt" parameter.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'text'   => array(
+								'type'        => 'string',
+								'description' => __( 'Music style or genre description.', 'wp-mcp-ai' ),
+							),
+							'weight' => array(
+								'type'        => 'number',
+								'description' => __( 'Weight for this style (0-1). Higher weight means more influence.', 'wp-mcp-ai' ),
+								'minimum'     => 0,
+								'maximum'     => 1,
+							),
+						),
+						'required'   => array( 'text', 'weight' ),
+					),
+				),
+				'negative_prompt'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Elements to exclude from the music. Example: "No vocals, no drums".', 'wp-mcp-ai' ),
 				),
-				'duration'        => array(
+				'duration'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Duration of the music in seconds (5-120). Default is 30 seconds.', 'wp-mcp-ai' ),
 					'minimum'     => 5,
 					'maximum'     => 120,
 					'default'     => 30,
 				),
-				'title'           => array(
+				'bpm'              => array(
+					'type'        => 'integer',
+					'description' => __( 'Beats per minute (40-200). Controls the tempo of the music. Default is 120.', 'wp-mcp-ai' ),
+					'minimum'     => 40,
+					'maximum'     => 200,
+					'default'     => 120,
+				),
+				'density'          => array(
+					'type'        => 'number',
+					'description' => __( 'Note density (0-1). Controls how busy the music is. 0 = sparse, 1 = dense. Default is 0.5.', 'wp-mcp-ai' ),
+					'minimum'     => 0,
+					'maximum'     => 1,
+					'default'     => 0.5,
+				),
+				'mode'             => array(
+					'type'        => 'string',
+					'description' => __( 'Generation mode. "quality" for best quality (slower), "speed" for faster generation, "balanced" for middle ground. Default: "balanced".', 'wp-mcp-ai' ),
+					'enum'        => array( 'quality', 'speed', 'balanced' ),
+					'default'     => 'balanced',
+				),
+				'title'            => array(
 					'type'        => 'string',
 					'description' => __( 'Title for the generated music track. If not provided, will be auto-generated from the prompt.', 'wp-mcp-ai' ),
 				),
-				'seed'            => array(
+				'seed'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional random seed for reproducible generation.', 'wp-mcp-ai' ),
 				),
-				'api_provider'    => array(
+				'api_provider'     => array(
 					'type'        => 'string',
 					'description' => __( 'Third-party API provider to use. Options: "segmind", "aimlapi". Default: "segmind".', 'wp-mcp-ai' ),
 					'enum'        => array( 'segmind', 'aimlapi' ),
 					'default'     => 'segmind',
 				),
-				'timeout'         => array(
+				'timeout'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds. Default is 120.', 'wp-mcp-ai' ),
 					'minimum'     => 30,
@@ -83,7 +123,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 					'default'     => 120,
 				),
 			),
-			'required'             => array( 'prompt' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -106,6 +146,15 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
 	 */
+	/**
+	 * Execute the tool.
+	 *
+	 * SoC: Tool handles validation and permission checks, delegates to service for business logic.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		$has_token = ! empty( $context['token_authenticated'] );
@@ -120,53 +169,55 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Extract and validate arguments.
-		$prompt          = isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '';
-		$negative_prompt = isset( $arguments['negative_prompt'] ) ? sanitize_textarea_field( $arguments['negative_prompt'] ) : '';
-		$duration        = isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 30;
-		$title           = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$seed            = isset( $arguments['seed'] ) ? absint( $arguments['seed'] ) : null;
-		$api_provider    = isset( $arguments['api_provider'] ) ? sanitize_key( $arguments['api_provider'] ) : 'segmind';
-		$timeout         = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 120;
+		$prompt           = isset( $arguments['prompt'] ) ? $arguments['prompt'] : '';
+		$weighted_prompts = isset( $arguments['weighted_prompts'] ) ? $arguments['weighted_prompts'] : array();
+		$title            = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 
-		$prompt = trim( $prompt );
-
-		if ( empty( $prompt ) ) {
+		// Require either prompt or weighted_prompts.
+		if ( empty( $prompt ) && empty( $weighted_prompts ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_prompt',
-				__( 'Music generation prompt is required.', 'wp-mcp-ai' ),
+				__( 'Music generation requires either "prompt" or "weighted_prompts".', 'wp-mcp-ai' ),
 				array( 'status' => 400 )
 			);
 		}
 
-		// Validate API provider.
-		if ( ! in_array( $api_provider, array( 'segmind', 'aimlapi' ), true ) ) {
-			$api_provider = 'segmind';
-		}
-
 		// Auto-generate title if not provided.
 		if ( empty( $title ) ) {
-			$title = $this->generate_title_from_prompt( $prompt );
+			if ( ! empty( $weighted_prompts ) && is_array( $weighted_prompts ) ) {
+				// Use first weighted prompt text for title.
+				$title = isset( $weighted_prompts[0]['text'] ) ? substr( $weighted_prompts[0]['text'], 0, 40 ) : 'Generated Music';
+			} else {
+				$title = substr( $prompt, 0, 40 );
+			}
+			$title .= ' - ' . gmdate( 'Y-m-d H:i' );
 		}
 
-		// Prepare service options.
+		// Prepare service options (pass through all relevant arguments).
 		$service_options = array(
-			'negative_prompt' => $negative_prompt,
-			'duration'        => $duration,
-			'seed'            => $seed,
-			'api_provider'    => $api_provider,
-			'timeout'         => $timeout,
+			'weighted_prompts' => $weighted_prompts,
+			'negative_prompt'  => isset( $arguments['negative_prompt'] ) ? $arguments['negative_prompt'] : '',
+			'duration'         => isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 30,
+			'bpm'              => isset( $arguments['bpm'] ) ? absint( $arguments['bpm'] ) : 120,
+			'density'          => isset( $arguments['density'] ) ? floatval( $arguments['density'] ) : 0.5,
+			'mode'             => isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'balanced',
+			'seed'             => isset( $arguments['seed'] ) ? absint( $arguments['seed'] ) : null,
+			'api_provider'     => isset( $arguments['api_provider'] ) ? sanitize_key( $arguments['api_provider'] ) : 'segmind',
+			'timeout'          => isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 120,
 		);
 
 		// Initialize music service.
 		$music_service = new WP_MCP_AI_Gemini_Music_Service();
 
-		// Generate music.
+		// Generate music (service handles business logic).
 		WP_MCP_AI_Logger::log_event(
 			'tool_execute',
 			'Generating music with Gemini Lyria',
 			array(
-				'tool'   => $this->get_slug(),
-				'prompt' => $prompt,
+				'tool'             => $this->get_slug(),
+				'has_weighted'     => ! empty( $weighted_prompts ),
+				'bpm'              => $service_options['bpm'],
+				'density'          => $service_options['density'],
 			)
 		);
 
@@ -181,10 +232,11 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 
 		if ( ! empty( $result['audio_url'] ) ) {
 			$format        = isset( $result['format'] ) ? $result['format'] : 'mp3';
+			$final_prompt  = isset( $result['prompt'] ) ? $result['prompt'] : $prompt;
 			$attachment_id = $music_service->save_to_media_library(
 				$result['audio_url'],
 				$title,
-				$prompt,
+				$final_prompt,
 				$format
 			);
 
@@ -193,24 +245,26 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 				WP_MCP_AI_Logger::log_event(
 					'tool_warning',
 					'Music generated but upload failed',
-					array(
-						'error' => $attachment_id->get_error_message(),
-					)
+					array( 'error' => $attachment_id->get_error_message() )
 				);
 
 				return array(
 					'success'   => true,
 					'audio_url' => $result['audio_url'],
-					'prompt'    => $prompt,
-					'duration'  => isset( $result['duration'] ) ? $result['duration'] : $duration,
+					'prompt'    => $final_prompt,
+					'duration'  => isset( $result['duration'] ) ? $result['duration'] : $service_options['duration'],
 					'format'    => $format,
+					'bpm'       => $service_options['bpm'],
+					'density'   => $service_options['density'],
+					'mode'      => $service_options['mode'],
 					'warning'   => __( 'Music generated successfully but could not be saved to media library.', 'wp-mcp-ai' ),
 				);
 			}
 		}
 
 		// Get attachment URL.
-		$audio_url = $attachment_id ? wp_get_attachment_url( $attachment_id ) : ( $result['audio_url'] ?? '' );
+		$audio_url    = $attachment_id ? wp_get_attachment_url( $attachment_id ) : ( $result['audio_url'] ?? '' );
+		$final_prompt = isset( $result['prompt'] ) ? $result['prompt'] : $prompt;
 
 		// Prepare response.
 		$response = array(
@@ -218,10 +272,17 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 			'attachment_id' => $attachment_id,
 			'audio_url'     => $audio_url,
 			'title'         => $title,
-			'prompt'        => $prompt,
-			'duration'      => isset( $result['duration'] ) ? $result['duration'] : $duration,
+			'prompt'        => $final_prompt,
+			'duration'      => isset( $result['duration'] ) ? $result['duration'] : $service_options['duration'],
 			'format'        => isset( $result['format'] ) ? $result['format'] : 'mp3',
+			'bpm'           => $service_options['bpm'],
+			'density'       => $service_options['density'],
+			'mode'          => $service_options['mode'],
 		);
+
+		if ( ! empty( $weighted_prompts ) ) {
+			$response['weighted_prompts'] = $weighted_prompts;
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'tool_success',
@@ -236,7 +297,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Music implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
-	 * Generate a title from the prompt.
+	 * Generate a title from the prompt (removed build_final_prompt - now in service).
 	 *
 	 * @param string $prompt Music generation prompt.
 	 * @return string Generated title.

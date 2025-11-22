@@ -423,6 +423,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'check_video_status'              => 'external-tools',
 				'generate_openai_speech'          => 'external-tools',
 				'transcribe_openai_audio'         => 'external-tools',
+				'generate_gemini_music'           => 'external-tools',
+				'generate_audio_effects'          => 'external-tools',
+				'analyze_audio_content'           => 'external-tools',
 				'open_openai_usage'               => 'external-tools',
 				'open_openai_logs'                => 'external-tools',
 				'run_openai_external_action'      => 'external-tools',
@@ -805,6 +808,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
 				// Product scraping tool.
 				'WP_MCP_AI_Tool_Scrape_Product'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product.php',
+				// Audio and music generation tools.
+				'WP_MCP_AI_Tool_Generate_Gemini_Music'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-music.php',
+				'WP_MCP_AI_Tool_Generate_Audio_Effects'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-audio-effects.php',
+				'WP_MCP_AI_Tool_Analyze_Audio_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-audio-content.php',
 				// Image manipulation tools (Graphic Editor Suite).
 				'WP_MCP_AI_Tool_Resize_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-resize-image.php',
 				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
