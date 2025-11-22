@@ -8551,21 +8551,19 @@
                                 // This makes the text visible immediately as chunks arrive
                                 updateCallback(fullContent);
                                 
-                                if (DEBUG_MODE) {
-                                    if (window.console && console.log) {
-                                        console.log('[WP oOS] Content chunk:', {
-                                            chunkLength: contentChunk.length,
-                                            totalLength: fullContent.length
-                                        });
-                                    }
+                                if (DEBUG_MODE && window.console && console.log) {
+                                    console.log('[WP oOS] Content chunk:', {
+                                        chunkLength: contentChunk.length,
+                                        totalLength: fullContent.length
+                                    });
                                 }
                             }
                             
                             // Check for final response with complete data
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
-                                // Extract text from final response if no chunks were received during streaming
-                                // This handles cases where streaming chunks weren't sent
+                                // Extract text from final response only if no chunks were received during streaming
+                                // This handles cases where streaming chunks weren't sent (fullContent is empty string)
                                 if (!fullContent) {
                                     let finalText = '';
                                     
