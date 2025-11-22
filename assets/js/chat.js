@@ -11023,6 +11023,27 @@
 		}
 
 		const instanceId = container.getAttribute('id');
+		
+		// Check if there are any active jobs before polling for notifications
+		// This prevents unnecessary API calls when all jobs are complete
+		if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.cache) {
+			const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
+			if (cronStatus && cronStatus.counts) {
+				const total = cronStatus.counts.total || 0;
+				const pending = cronStatus.counts.pending || 0;
+				const running = cronStatus.counts.running || 0;
+				
+				// Stop polling if there are no active jobs (only completed/failed jobs remain or no jobs at all)
+				if (total === 0 || (pending === 0 && running === 0)) {
+					if (window.console && console.log) {
+						console.log('[WP oOS] No active jobs. Stopping notification polling for instance:', instanceId);
+					}
+					stopNotificationPolling(instanceId);
+					return;
+				}
+			}
+		}
+		
 		const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
 
 		// Fetch notifications
@@ -11209,11 +11230,20 @@ return;
 
 const counts = data.counts;
 const total = counts.total || 0;
+const pending = counts.pending || 0;
+const running = counts.running || 0;
 
 // Hide if no jobs
 if (total === 0) {
 cronStatusEl.setAttribute('hidden', '');
+// Stop notification polling when there are no jobs
+stopNotificationPolling(instanceId);
 return;
+}
+
+// Also stop notification polling if all jobs are completed (no pending/running jobs)
+if (pending === 0 && running === 0) {
+stopNotificationPolling(instanceId);
 }
 
 // Show status bar
