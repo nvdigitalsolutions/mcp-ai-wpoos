@@ -655,6 +655,23 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 		$messages     = $request->get_param( 'messages' );
 
+		// Debug logging: Log incoming save request.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			$user_id     = get_current_user_id();
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : 'N/A';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log(
+				sprintf(
+					'[WP oOS Debug] POST /chat-transcripts: session_key=%s assistant_id=%d user_id=%d message_count=%d url=%s',
+					$session_key,
+					$assistant_id,
+					$user_id,
+					is_array( $messages ) ? count( $messages ) : 0,
+					$request_uri
+				)
+			);
+		}
+
 		if ( ! $assistant_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_assistant',
@@ -767,6 +784,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				)
 			);
 
+			// Debug logging: Log save failure.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Debug] POST /chat-transcripts FAILED: session_key=%s assistant_id=%d user_id=%d saved=0 response=500',
+						$session_key,
+						$assistant_id,
+						$user_id
+					)
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_transcript_save_failed',
 				__( 'Failed to save transcript. Please ensure JetEngine Custom Content Types is active and properly configured.', 'wp-mcp-ai' ),
@@ -786,6 +816,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message_count'        => count( $clean_messages ),
 			)
 		);
+
+		// Debug logging: Log successful save.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log(
+				sprintf(
+					'[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=%s assistant_id=%d user_id=%d saved=1 response=200',
+					$recorded_session_key,
+					$assistant_id,
+					$user_id
+				)
+			);
+		}
 
 		return rest_ensure_response(
 			array(
@@ -830,6 +873,22 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 
+		// Debug logging: Log incoming GET request.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			$user_id     = get_current_user_id();
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : 'N/A';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log(
+				sprintf(
+					'[WP oOS Debug] GET /chat-transcripts/{session_key}: session_key=%s assistant_id=%d user_id=%d url=%s',
+					$session_key,
+					$assistant_id,
+					$user_id,
+					$request_uri
+				)
+			);
+		}
+
 		if ( '' === $session_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_invalid_session',
@@ -868,6 +927,20 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				)
 			);
 
+			// Debug logging: Log session not found.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+				$response_code = 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ? 200 : 404;
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Debug] GET /chat-transcripts/{session_key} ERROR: session_key=%s found_session=0 found_messages=0 response=%d error_code=%s',
+						$session_key,
+						$response_code,
+						$session->get_error_code()
+					)
+				);
+			}
+
 			// Handle gracefully for unavailable transcript storage (JetEngine not active)
 			if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
 				return rest_ensure_response(
@@ -894,7 +967,32 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				)
 			);
 
+			// Debug logging: Log unauthorized access.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Debug] GET /chat-transcripts/{session_key} UNAUTHORIZED: session_key=%s found_session=1 found_messages=%d response=403',
+						$session_key,
+						isset( $session['messages'] ) ? count( $session['messages'] ) : 0
+					)
+				);
+			}
+
 			return $auth_check;
+		}
+
+		// Debug logging: Log successful retrieval.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			$message_count = isset( $session['messages'] ) ? count( $session['messages'] ) : 0;
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log(
+				sprintf(
+					'[WP oOS Debug] GET /chat-transcripts/{session_key} SUCCESS: session_key=%s found_session=1 found_messages=%d response=200',
+					$session_key,
+					$message_count
+				)
+			);
 		}
 
 		return rest_ensure_response( array( 'session' => $session ) );
