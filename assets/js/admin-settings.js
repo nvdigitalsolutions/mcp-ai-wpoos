@@ -532,26 +532,30 @@ window.wpMcpAiSaveExpandedState = function() {
         });
         
         // Restore expanded state from localStorage
-        const expandedSections = localStorage.getItem('wp_mcp_ai_expanded_sections');
-        if (expandedSections) {
-            try {
-                const sections = JSON.parse(expandedSections);
-                // Cache jQuery selectors for better performance
-                const $allSections = $('.wp-mcp-ai-section');
-                const $allHeaders = $('.wp-mcp-ai-section__header');
-                // First, collapse all sections
-                $allSections.removeClass('wp-mcp-ai-section--expanded');
-                $allHeaders.attr('aria-expanded', 'false');
-                // Then expand only the saved sections
-                sections.forEach(function(id) {
-                    const $section = $('#' + id);
-                    $section.addClass('wp-mcp-ai-section--expanded');
-                    $section.find('.wp-mcp-ai-section__header').attr('aria-expanded', 'true');
-                });
-                log('Restored expanded sections from localStorage:', sections);
-            } catch (e) {
-                log('Error parsing expanded sections:', e);
+        try {
+            const expandedSections = localStorage.getItem('wp_mcp_ai_expanded_sections');
+            if (expandedSections) {
+                try {
+                    const sections = JSON.parse(expandedSections);
+                    // Cache jQuery selectors for better performance
+                    const $allSections = $('.wp-mcp-ai-section');
+                    const $allHeaders = $('.wp-mcp-ai-section__header');
+                    // First, collapse all sections
+                    $allSections.removeClass('wp-mcp-ai-section--expanded');
+                    $allHeaders.attr('aria-expanded', 'false');
+                    // Then expand only the saved sections
+                    sections.forEach(function(id) {
+                        const $section = $('#' + id);
+                        $section.addClass('wp-mcp-ai-section--expanded');
+                        $section.find('.wp-mcp-ai-section__header').attr('aria-expanded', 'true');
+                    });
+                    log('Restored expanded sections from localStorage:', sections);
+                } catch (e) {
+                    log('Error parsing expanded sections:', e);
+                }
             }
+        } catch (e) {
+            log('localStorage access not allowed:', e);
         }
         // If no localStorage, all sections remain expanded (default from PHP)
         
@@ -567,8 +571,12 @@ window.wpMcpAiSaveExpandedState = function() {
                             expandedIds.push(id);
                         }
                     });
-                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
-                    log('Saved expanded sections to localStorage:', expandedIds);
+                    try {
+                        localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                        log('Saved expanded sections to localStorage:', expandedIds);
+                    } catch (e) {
+                        log('localStorage access not allowed:', e);
+                    }
                 });
             } else {
                 // Fallback for older browsers
@@ -580,8 +588,12 @@ window.wpMcpAiSaveExpandedState = function() {
                             expandedIds.push(id);
                         }
                     });
-                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
-                    log('Saved expanded sections to localStorage:', expandedIds);
+                    try {
+                        localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                        log('Saved expanded sections to localStorage:', expandedIds);
+                    } catch (e) {
+                        log('localStorage access not allowed:', e);
+                    }
                 }, 50);
             }
         });
