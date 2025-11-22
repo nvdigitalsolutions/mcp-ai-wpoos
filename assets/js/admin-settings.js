@@ -558,7 +558,10 @@ window.wpMcpAiSaveExpandedState = function() {
                 }
             }
         } catch (e) {
-            log('localStorage access not allowed:', e);
+            // Log localStorage errors even when DEBUG is false, as these are important
+            if (window.console && console.log) {
+                console.log('[WP oOS] localStorage access not allowed:', e);
+            }
         }
         // If no localStorage, all sections remain expanded (default from PHP)
         
@@ -578,7 +581,10 @@ window.wpMcpAiSaveExpandedState = function() {
                         localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
                         log('Saved expanded sections to localStorage:', expandedIds);
                     } catch (e) {
-                        log('localStorage access not allowed:', e);
+                        // Log localStorage errors even when DEBUG is false, as these are important
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] localStorage access not allowed:', e);
+                        }
                     }
                 });
             } else {
@@ -595,7 +601,10 @@ window.wpMcpAiSaveExpandedState = function() {
                         localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
                         log('Saved expanded sections to localStorage:', expandedIds);
                     } catch (e) {
-                        log('localStorage access not allowed:', e);
+                        // Log localStorage errors even when DEBUG is false, as these are important
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] localStorage access not allowed:', e);
+                        }
                     }
                 }, 50);
             }
