@@ -4325,14 +4325,15 @@
 
             // Retry on 404 errors (might be race condition) if we haven't exceeded max retries
             if (error.retryable && attempt < maxRetries) {
-                // Use exponential backoff: 750ms, 1500ms, 3000ms, 6000ms
+                // Use exponential backoff with base delay 750ms
+                // Delays for attempts 0-3: 750ms, 1500ms, 3000ms, 6000ms
                 const currentDelay = retryDelay * Math.pow(2, attempt);
                 
                 if (window.console && console.log) {
                     console.log('[WP oOS] Retrying conversation details fetch after delay:', {
                         session_key: sessionKey,
                         delay_ms: currentDelay,
-                        next_attempt: attempt + 2 // Display as 1-based: next call will be attempt+1, displayed as (attempt+1)+1
+                        next_attempt: attempt + 2 // Next attempt number (1-based for display)
                     });
                 }
                 
