@@ -16,6 +16,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Helper function to safely load WordPress admin files.
+ *
+ * @param string $filename The filename relative to wp-admin/includes/.
+ * @return bool True if file was loaded or already exists, false otherwise.
+ */
+function wp_mcp_ai_load_admin_file( $filename ) {
+	$file_path = ABSPATH . 'wp-admin/includes/' . $filename;
+	if ( file_exists( $file_path ) ) {
+		require_once $file_path;
+		return true;
+	}
+	return false;
+}
+
 // Polyfill for wp_check_php_version() - introduced in WordPress 5.1.0.
 if ( ! function_exists( 'wp_check_php_version' ) ) {
 	/**
@@ -128,10 +143,7 @@ if ( ! function_exists( 'get_plugin_updates' ) ) {
 	function get_plugin_updates() {
 		// Ensure get_plugins() is available by loading plugin.php.
 		if ( ! function_exists( 'get_plugins' ) ) {
-			$plugin_file = ABSPATH . 'wp-admin/includes/plugin.php';
-			if ( file_exists( $plugin_file ) ) {
-				require_once $plugin_file;
-			}
+			wp_mcp_ai_load_admin_file( 'plugin.php' );
 		}
 
 		// If get_plugins() is still not available, return empty array.
@@ -171,10 +183,7 @@ if ( ! function_exists( 'get_theme_updates' ) ) {
 	function get_theme_updates() {
 		// Ensure wp_get_themes() is available by loading theme.php.
 		if ( ! function_exists( 'wp_get_themes' ) ) {
-			$theme_file = ABSPATH . 'wp-admin/includes/theme.php';
-			if ( file_exists( $theme_file ) ) {
-				require_once $theme_file;
-			}
+			wp_mcp_ai_load_admin_file( 'theme.php' );
 		}
 
 		// If wp_get_themes() is still not available, return empty array.
