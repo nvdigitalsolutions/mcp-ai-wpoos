@@ -189,7 +189,10 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the cron event. Please try again.', 'wp-mcp-ai' ) );
 		}
 
-		$job_id = WP_MCP_AI_Cron_Manager::record_job( $hook, $args, $schedule, $timestamp, $user_id );
+		// Extract assistant_id from context for multi-widget isolation.
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		$job_id = WP_MCP_AI_Cron_Manager::record_job( $hook, $args, $schedule, $timestamp, $user_id, null, $assistant_id );
 
 		return array(
 			'job_id'        => $job_id,
