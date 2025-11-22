@@ -7703,8 +7703,46 @@
 
             if (role === 'tool') {
                 // Render tool responses
-                // Use display metadata if available
-                const toolPayload = display || content;
+                // Use display metadata if available, otherwise build from content
+                let toolPayload;
+                
+                if (display && typeof display === 'object') {
+                    // Use saved display metadata for consistency
+                    toolPayload = {
+                        text: display.text || '',
+                        attachments: Array.isArray(display.attachments) ? display.attachments : []
+                    };
+                    
+                    // Preserve bubbleType if present
+                    if (display.bubbleType) {
+                        toolPayload.bubbleType = display.bubbleType;
+                    }
+                } else {
+                    // Fallback: parse content if it's a JSON string
+                    let parsedContent = content;
+                    if (typeof content === 'string') {
+                        try {
+                            parsedContent = JSON.parse(content);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = content;
+                        }
+                    }
+                    
+                    // Build display payload from content
+                    if (typeof parsedContent === 'object' && parsedContent !== null) {
+                        toolPayload = {
+                            text: parsedContent.text || parsedContent.message || String(content),
+                            attachments: []
+                        };
+                    } else {
+                        toolPayload = {
+                            text: String(content),
+                            attachments: []
+                        };
+                    }
+                }
+                
                 appendMessage(state.messagesEl, 'tool', toolPayload);
                 return;
             }
@@ -9184,7 +9222,57 @@
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
-                    state.conversation.push(toolResult);
+                    // Parse tool result content to extract display metadata
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = toolResult.content;
+                        }
+                    }
+                    
+                    // Normalize tool result for display (extract text and attachments)
+                    const toolName = toolResult.name || '';
+                    const normalized = typeof parsedContent === 'object' && parsedContent !== null ? 
+                        normaliseToolResultForDisplay(toolName, parsedContent) : null;
+                    
+                    // Build display metadata for persistence
+                    const displayMetadata = {
+                        text: '',
+                        attachments: []
+                    };
+                    
+                    if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+                        displayMetadata.text = normalized.text || (toolName + ': ' + getString('completed', 'Completed'));
+                        displayMetadata.attachments = normalized.attachments;
+                    } else if (parsedContent && parsedContent.text) {
+                        displayMetadata.text = parsedContent.text;
+                    } else if (parsedContent && parsedContent.message) {
+                        displayMetadata.text = parsedContent.message;
+                    } else if (typeof parsedContent === 'string') {
+                        displayMetadata.text = parsedContent;
+                    } else {
+                        displayMetadata.text = toolName + ': ' + getString('completed', 'Completed successfully');
+                    }
+                    
+                    // Add display metadata to tool result for proper persistence
+                    const toolResultWithDisplay = {
+                        role: toolResult.role,
+                        content: toolResult.content,
+                        display: displayMetadata
+                    };
+                    
+                    // Preserve tool_call_id and name if present
+                    if (toolResult.tool_call_id) {
+                        toolResultWithDisplay.tool_call_id = toolResult.tool_call_id;
+                    }
+                    if (toolResult.name) {
+                        toolResultWithDisplay.name = toolResult.name;
+                    }
+                    
+                    state.conversation.push(toolResultWithDisplay);
                 }
             });
 
