@@ -772,6 +772,31 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.039,  // Per image cost (1024x1024).
 				'status'         => 'active',
 			),
+			// Gemini Music Generation models (Lyria).
+			'gemini-lyria'                 => array(
+				'name'           => 'Gemini Lyria Music Generation',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 100,
+				'tpd'            => 10000000,
+				'rpd'            => 1000,
+				'context_window' => 32000,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.005,  // Estimated per generation cost.
+				'status'         => 'experimental',
+			),
+			'gemini-lyria-realtime'        => array(
+				'name'           => 'Gemini Lyria RealTime (WebSocket)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 50,
+				'tpd'            => 10000000,
+				'rpd'            => 500,
+				'context_window' => 32000,
+				'fallback_model' => 'gemini-lyria',
+				'cost_per_1k'    => 0.008,  // Estimated per generation cost.
+				'status'         => 'experimental',
+			),
 			// Gemini 2.0 series (stable).
 			'gemini-2.0-flash'       => array(
 				'name'           => 'Gemini 2.0 Flash',
