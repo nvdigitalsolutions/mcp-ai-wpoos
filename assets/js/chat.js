@@ -10986,13 +10986,16 @@
     }
 
 	/**
-	 * Job notifications polling state
-	 * Stores polling timers, retry delays, and backoff state per container
+	 * Job notifications polling and SSE streaming state
+	 * Stores polling timers, SSE connections, retry delays, and backoff state per container
 	 */
 	const notificationPollers = {
-		timers: {},           // Active polling timers by container ID
-		retryDelays: {},      // Current retry delay for each container (for exponential backoff)
-		consecutiveErrors: {} // Track consecutive errors for backoff
+		timers: {},               // Active polling timers by container ID
+		sseConnections: {},       // Active SSE connections by container ID
+		retryDelays: {},          // Current retry delay for each container (for exponential backoff)
+		consecutiveErrors: {},    // Track consecutive errors for backoff
+		lastJobTime: {},          // Timestamp of last detected job per container
+		noJobChecks: {}           // Count of consecutive checks with no jobs
 	};
 
 	/**
@@ -11002,24 +11005,23 @@
 	 * to ensure notifications are not missed. Only returns false when we can
 	 * definitively confirm no active jobs exist.
 	 * 
+	 * Uses job counts from consolidated job-notifications endpoint instead of
+	 * separate cron-status polling for better efficiency.
+	 * 
 	 * @param {string} instanceId - Container instance ID
 	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
 	 */
 	function hasActiveJobs(instanceId) {
-		if (!window.wpMcpAiCronStatus || !window.wpMcpAiCronStatus.cache) {
+		if (!window.wpMcpAiJobCounts || !window.wpMcpAiJobCounts[instanceId]) {
 			// Assume active if we can't check - fail-safe approach
 			// Better to poll unnecessarily than to miss notifications
 			return true;
 		}
 		
-		const cronStatus = window.wpMcpAiCronStatus.cache[instanceId];
-		if (!cronStatus || !cronStatus.counts) {
-			// Assume active if we can't check - fail-safe approach
-			return true;
-		}
+		const counts = window.wpMcpAiJobCounts[instanceId];
 		
-		const pending = cronStatus.counts.pending || 0;
-		const running = cronStatus.counts.running || 0;
+		const pending = counts.pending || 0;
+		const running = counts.running || 0;
 		
 		// Active jobs exist if there are pending or running jobs
 		return pending > 0 || running > 0;
@@ -11105,6 +11107,22 @@
 			return response.json();
 		})
 		.then(function(data) {
+			// Update job counts cache for hasActiveJobs()
+			// This eliminates the need for separate cron-status polling
+			if (data && data.job_counts) {
+				if (!window.wpMcpAiJobCounts) {
+					window.wpMcpAiJobCounts = {};
+				}
+				window.wpMcpAiJobCounts[instanceId] = data.job_counts;
+				
+				// Update cron bar UI directly
+				updateJobBarDisplay(container, data.job_counts);
+				
+				if (window.console && console.log) {
+					console.log('[WP oOS] Cron bar updated via polling:', data.job_counts);
+				}
+			}
+			
 			if (!data || !data.notifications || data.notifications.length === 0) {
 				return;
 			}
@@ -11137,18 +11155,6 @@
 					console.log('[WP oOS] Job notification received:', notification);
 				}
 			});
-
-			// Force immediate cron status update
-			if (window.wpMcpAiCronStatus && window.wpMcpAiCronStatus.fetchStatus) {
-				const cronStatusEndpoint = restUrl + '/cron-status';
-				window.wpMcpAiCronStatus.fetchStatus(cronStatusEndpoint, nonce, 10, assistantId)
-					.then(function(statusData) {
-						// Update cron bar immediately
-						if (statusData && window.wpMcpAiCronStatus.cache) {
-							window.wpMcpAiCronStatus.cache[instanceId] = statusData;
-						}
-					});
-			}
 		})
 		.catch(function(error) {
 			if (window.console && console.error) {
@@ -11158,7 +11164,10 @@
 	}
 
 	/**
-	 * Start polling for job notifications with intelligent backoff
+	 * Start real-time notifications using SSE (with polling fallback)
+	 * 
+	 * Attempts to establish SSE connection for real-time updates.
+	 * Falls back to polling if SSE is unavailable or fails.
 	 * 
 	 * @param {HTMLElement} container - Chat container element
 	 * @param {Object} config - Chat instance configuration
@@ -11169,13 +11178,136 @@
 		}
 
 		const instanceId = container.getAttribute('id');
+		const assistantId = config.assistantId;
 		
-		// Stop any existing poller
+		// Stop any existing poller or SSE connection
 		stopNotificationPolling(instanceId);
 		
-		// Initialize backoff state
+		// Initialize/reset job tracking counters
+		notificationPollers.noJobChecks[instanceId] = 0;
+		
+		// Try SSE first if supported and SSE service is available
+		const hasSseService = typeof sseService !== 'undefined' && sseService;
+		if (hasSseService && sseService.isSupported()) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] Attempting SSE connection for notifications on instance:', instanceId);
+			}
+			
+			const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+			const sseUrl = restUrl + '/job-notifications/stream?assistant_id=' + encodeURIComponent(assistantId);
+			
+			const sseConnection = sseService.connect(sseUrl, {
+				onOpen: function() {
+					if (window.console && console.log) {
+						console.log('[WP oOS] SSE connection established for instance:', instanceId);
+					}
+				},
+				eventHandlers: {
+					connected: function(data) {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connected:', data);
+						}
+					},
+					job_counts: function(counts) {
+						// Update job counts cache
+						if (!window.wpMcpAiJobCounts) {
+							window.wpMcpAiJobCounts = {};
+						}
+						window.wpMcpAiJobCounts[instanceId] = counts;
+						
+						// Update cron bar UI
+						updateJobBarDisplay(container, counts);
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] Cron bar updated via SSE:', counts);
+						}
+						
+						// Note: Keep SSE connection open even when no jobs to detect new jobs immediately
+					},
+					notification: function(notification) {
+						// Display notification in chat
+						const state = states.get(instanceId);
+						if (!state) {
+							return;
+						}
+						
+						let prefix = '📋 ';
+						if (notification.status === 'completed') {
+							prefix = '✅ ';
+						} else if (notification.status === 'failed') {
+							prefix = '❌ ';
+						}
+						
+						const message = prefix + notification.message;
+						
+						appendMessage(state.messagesEl, 'system', {
+							text: message
+						});
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE notification received:', notification);
+						}
+					},
+					heartbeat: function() {
+						// Heartbeat received, connection is alive
+					},
+					timeout: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE stream timeout. Reconnecting with polling fallback.');
+						}
+						// Restart with polling
+						stopNotificationPolling(instanceId);
+						startPollingFallback(container, config);
+					},
+					close: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connection closed for instance:', instanceId);
+						}
+					}
+				},
+				onError: function(error) {
+					if (window.console && console.warn) {
+						console.warn('[WP oOS] SSE error, falling back to polling:', error);
+					}
+					// Fall back to polling
+					stopNotificationPolling(instanceId);
+					startPollingFallback(container, config);
+				}
+			});
+			
+			// Store SSE connection for cleanup
+			if (!notificationPollers.sseConnections) {
+				notificationPollers.sseConnections = {};
+			}
+			notificationPollers.sseConnections[instanceId] = sseConnection;
+			
+		} else {
+			// SSE not supported, use polling
+			startPollingFallback(container, config);
+		}
+	}
+
+	/**
+	 * Start polling for job notifications (fallback mode)
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function startPollingFallback(container, config) {
+		if (!container || !config) {
+			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		if (window.console && console.log) {
+			console.log('[WP oOS] Using polling mode for notifications on instance:', instanceId);
+		}
+		
+		// Initialize backoff state and job tracking
 		notificationPollers.retryDelays[instanceId] = 30000; // Start with 30s base interval
 		notificationPollers.consecutiveErrors[instanceId] = 0;
+		notificationPollers.noJobChecks[instanceId] = 0; // Reset no-job counter
 		
 		// Do initial poll immediately
 		pollJobNotifications(container, config);
@@ -11194,19 +11326,117 @@
 	}
 
 	/**
-	 * Stop polling for job notifications
+	 * Stop polling or SSE streaming for job notifications
 	 * 
 	 * @param {string} instanceId - Container instance ID
 	 */
 	function stopNotificationPolling(instanceId) {
+		// Stop polling timer if exists
 		if (notificationPollers.timers[instanceId]) {
 			clearTimeout(notificationPollers.timers[instanceId]);
 			delete notificationPollers.timers[instanceId];
+		}
+		
+		// Close SSE connection if exists
+		if (notificationPollers.sseConnections && notificationPollers.sseConnections[instanceId]) {
+			if (notificationPollers.sseConnections[instanceId].close) {
+				notificationPollers.sseConnections[instanceId].close();
+			}
+			delete notificationPollers.sseConnections[instanceId];
+		}
+	}
+
+	/**
+	 * Update job bar display with counts
+	 * 
+	 * Updates the job status bar UI with current job counts.
+	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
+	 * 
+	 * Implements intelligent polling lifecycle:
+	 * - Continues polling while jobs are active
+	 * - Stops after 5 consecutive checks with no jobs (2.5 minutes for polling, 10s for SSE)
+	 * - Allows new jobs to be detected before stopping
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} counts - Job counts object with pending, running, completed properties
+	 */
+	function updateJobBarDisplay(container, counts) {
+		if (!container || !counts) {
+			return;
+		}
+
+		const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+		if (!cronStatusEl) {
+			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		// Track job activity for intelligent polling lifecycle
+		const hasJobs = (counts.pending || 0) > 0 || (counts.running || 0) > 0;
+		
+		if (hasJobs) {
+			// Reset no-job counter when jobs are detected
+			notificationPollers.noJobChecks[instanceId] = 0;
+			notificationPollers.lastJobTime[instanceId] = Date.now();
+		} else {
+			// Increment no-job counter
+			notificationPollers.noJobChecks[instanceId] = (notificationPollers.noJobChecks[instanceId] || 0) + 1;
+			
+			// Stop polling after 5 consecutive checks with no jobs
+			// This gives new jobs time to be detected before shutting down
+			if (notificationPollers.noJobChecks[instanceId] >= 5) {
+				if (window.console && console.log) {
+					console.log('[WP oOS] No jobs for 5 checks. Stopping polling for instance:', instanceId);
+				}
+				stopNotificationPolling(instanceId);
+				// Reset counter for next time polling starts
+				notificationPollers.noJobChecks[instanceId] = 0;
+			}
+		}
+		
+		// Always show status bar to maintain visibility
+		cronStatusEl.removeAttribute('hidden');
+		
+		// Update count elements
+		const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
+		const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
+		const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
+		
+		if (pendingEl) {
+			pendingEl.textContent = counts.pending || 0;
+		}
+		
+		if (runningEl) {
+			runningEl.textContent = counts.running || 0;
+			runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
+			if (counts.running > 0) {
+				runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
+			}
+		}
+		
+		if (completedEl) {
+			completedEl.textContent = counts.completed || 0;
+			completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+			if (counts.completed > 0) {
+				completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+			}
 		}
 	}
 
 /**
  * Initialize cron status display for a chat container
+ * 
+ * @deprecated since 1.1.0 - Will be removed in version 2.0.0
+ * 
+ * LEGACY MODE: This function is maintained for backwards compatibility only.
+ * The job bar is now updated directly by pollJobNotifications() using consolidated
+ * job counts, eliminating the need for separate cron-status polling.
+ * 
+ * Migration: Remove cron-status-service.js from your enqueues. The chat client
+ * will automatically use consolidated polling or SSE streaming for job updates.
+ * 
+ * This function only runs if cron-status-service.js is still loaded (legacy mode).
  * 
  * @param {HTMLElement} container - Chat container element
  * @param {Object} config - Chat instance configuration
@@ -11221,9 +11451,11 @@ if (!cronStatusEl) {
 return;
 }
 
-// Check if cron status service is available
+// Check if cron status service is available (legacy mode)
 if (typeof window.wpMcpAiCronStatus === 'undefined') {
-return;
+	// Modern mode: Using consolidated polling/SSE for job updates (recommended).
+	// No separate cron-status service needed.
+	return;
 }
 
 const instanceId = container.getAttribute('id');
@@ -11242,7 +11474,7 @@ if (!cronStatusEndpoint) {
 return;
 }
 
-// Update cron status display
+// Update cron status display (legacy function)
 function updateCronStatusDisplay(data) {
 if (!data || !data.counts) {
 return;
@@ -11284,7 +11516,8 @@ completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--
 }
 }
 
-// Start polling for cron status with assistant_id for multi-widget isolation
+// LEGACY MODE: Start polling for cron status with assistant_id for multi-widget isolation
+// This is only used if cron-status-service.js is still enqueued
 const assistantId = config.assistantId || null;
 window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
 
