@@ -9235,8 +9235,9 @@
                     
                     // Normalize tool result for display (extract text and attachments)
                     const toolName = toolResult.name || '';
-                    const normalized = typeof parsedContent === 'object' && parsedContent !== null ? 
-                        normaliseToolResultForDisplay(toolName, parsedContent) : null;
+                    const normalized = typeof parsedContent === 'object' && parsedContent !== null
+                        ? normaliseToolResultForDisplay(toolName, parsedContent)
+                        : null;
                     
                     // Build display metadata for persistence
                     const displayMetadata = {

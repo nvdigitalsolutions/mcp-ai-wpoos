@@ -5,6 +5,25 @@
  * @package WP_MCP_AI
  */
 
+/**
+ * Helper function to parse tool result content.
+ * Simulates the parsing logic used in the actual implementation.
+ *
+ * @param {string|Object} content - Content to parse
+ * @return {*} Parsed content or original if parsing fails
+ */
+function parseToolContent( content ) {
+	let parsedContent = content;
+	if ( typeof content === 'string' ) {
+		try {
+			parsedContent = JSON.parse( content );
+		} catch ( e ) {
+			parsedContent = content;
+		}
+	}
+	return parsedContent;
+}
+
 describe( 'Tool Bubble Persistence', () => {
 	describe( 'Tool result display metadata creation', () => {
 		it( 'should create display metadata with text and empty attachments for simple tool result', () => {
@@ -17,15 +36,8 @@ describe( 'Tool Bubble Persistence', () => {
 				} ),
 			};
 
-			// Parse content
-			let parsedContent = toolResult.content;
-			if ( typeof parsedContent === 'string' ) {
-				try {
-					parsedContent = JSON.parse( parsedContent );
-				} catch ( e ) {
-					parsedContent = toolResult.content;
-				}
-			}
+			// Parse content using helper
+			const parsedContent = parseToolContent( toolResult.content );
 
 			// Build display metadata
 			const displayMetadata = {
@@ -90,14 +102,7 @@ describe( 'Tool Bubble Persistence', () => {
 				} ),
 			};
 
-			let parsedContent = toolResult.content;
-			if ( typeof parsedContent === 'string' ) {
-				try {
-					parsedContent = JSON.parse( parsedContent );
-				} catch ( e ) {
-					parsedContent = toolResult.content;
-				}
-			}
+			const parsedContent = parseToolContent( toolResult.content );
 
 			const displayMetadata = {
 				text: '',
@@ -124,14 +129,7 @@ describe( 'Tool Bubble Persistence', () => {
 				} ),
 			};
 
-			let parsedContent = toolResult.content;
-			if ( typeof parsedContent === 'string' ) {
-				try {
-					parsedContent = JSON.parse( parsedContent );
-				} catch ( e ) {
-					parsedContent = toolResult.content;
-				}
-			}
+			const parsedContent = parseToolContent( toolResult.content );
 
 			const displayMetadata = {
 				text: '',
@@ -230,15 +228,8 @@ describe( 'Tool Bubble Persistence', () => {
 					attachments: Array.isArray( display.attachments ) ? display.attachments : [],
 				};
 			} else {
-				// Fallback: parse content
-				let parsedContent = content;
-				if ( typeof content === 'string' ) {
-					try {
-						parsedContent = JSON.parse( content );
-					} catch ( e ) {
-						parsedContent = content;
-					}
-				}
+				// Fallback: parse content using helper
+				const parsedContent = parseToolContent( content );
 
 				if ( typeof parsedContent === 'object' && parsedContent !== null ) {
 					toolPayload = {
@@ -273,14 +264,7 @@ describe( 'Tool Bubble Persistence', () => {
 					attachments: [],
 				};
 			} else {
-				let parsedContent = content;
-				if ( typeof content === 'string' ) {
-					try {
-						parsedContent = JSON.parse( content );
-					} catch ( e ) {
-						parsedContent = content;
-					}
-				}
+				const parsedContent = parseToolContent( content );
 
 				if ( typeof parsedContent === 'object' && parsedContent !== null ) {
 					toolPayload = {
