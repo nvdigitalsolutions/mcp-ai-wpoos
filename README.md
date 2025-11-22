@@ -644,11 +644,15 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 <a id="documentation"></a>
 ## 📚 Documentation
 
-WP oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
+WP oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 65+ root-level documents and 95+ historical documents moved to organized `docs/` structure for better navigation.
+
+### Essential Documentation Indices
+- **[📑 Documentation Index](DOCUMENTATION_INDEX.md)** - Master index of all 400+ documentation files (Start here!)
+- **[🐛 Fixes Index](FIXES_INDEX.md)** - Complete index of 36+ bug fixes categorized by type
+- **[✨ Enhancements Index](ENHANCEMENTS_INDEX.md)** - Index of 10+ major feature enhancements
 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
 - **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 105+ built-in tools
 - **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
@@ -679,12 +683,27 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 - [Chat Performance Optimizations](docs/chat-performance-optimizations.md) - Complete performance guide
 - [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
+### Current Documentation (Organized Structure)
+- **[Fixes Directory](docs/fixes/)** - 36+ bug fixes and issue resolutions
+  - Streaming & SSE fixes, AI provider integration fixes, API fixes
+  - Each fix includes: problem statement, root cause, solution, testing
+- **[Enhancements Directory](docs/enhancements/)** - Major feature enhancements
+  - Async video generation, file attachments, streaming improvements, cron integration
+- **[Implementations Directory](docs/implementations/)** - Technical implementation details
+  - Tool orchestration, SOC refactoring, streaming logging, result preservation
+- **[Phases Directory](docs/phases/)** - Development phase documentation
+  - Phase 2.1 (File Management), Phase 3.x, Next phase planning
+- **[Features Directory](docs/features/)** - Feature-specific documentation
+  - VEO video generation, specialized tool documentation
+- **[Testing Directory](docs/testing/)** - Test guides and documentation
+  - Test frameworks, manual QA scenarios, test writing guides
+
 ### Historical Documentation
 - **[Archive Directory](docs/archive/)** - 95+ historical documents organized by category:
-  - `implementations/` - Implementation summaries and technical details
-  - `phases/` - Development phase documents
-  - `fixes/` - Bug fix summaries and issue resolutions
-  - `features/` - Feature documentation
+  - `implementations/` - Historical implementation summaries
+  - `phases/` - Completed development phases
+  - `fixes/` - Archived fix summaries
+  - `features/` - Historical feature docs
   - `code-reviews/` - Code review reports
   - `testing/` - Test infrastructure documentation
 
