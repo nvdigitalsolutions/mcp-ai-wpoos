@@ -198,6 +198,7 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
+		$requires_audio = isset( $args['capability_flags'] ) && in_array( 'audio', $args['capability_flags'], true );
 
 		// Gemini 3 series (multimodal - latest generation) - Preview.
 		$models['gemini-3-pro-preview']   = 'Gemini 3 Pro (Preview)';
@@ -213,6 +214,12 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-2.5-flash-preview-native-audio-dialog'] = 'Gemini 2.5 Native Audio Dialog';
 		$models['gemini-2.5-flash-preview-tts'] = 'Gemini 2.5 Flash TTS';
 		$models['gemini-2.5-pro-preview-tts']   = 'Gemini 2.5 Pro TTS';
+
+		// Music generation models - only for audio/music generation tools.
+		if ( $requires_audio ) {
+			$models['gemini-lyria']          = 'Gemini Lyria Music Generation';
+			$models['gemini-lyria-realtime'] = 'Gemini Lyria RealTime (WebSocket)';
+		}
 
 		// Image generation model - only for image generation/editing tools.
 		if ( $requires_image_gen ) {
