@@ -114,9 +114,12 @@ class Test_REST_Job_Notifications_Consolidated extends WP_UnitTestCase {
 		$response = rest_do_request( $request );
 
 		// Should return 401 or 403.
-		$this->assertContains(
+		$this->assertThat(
 			$response->get_status(),
-			array( 401, 403 ),
+			$this->logicalOr(
+				$this->equalTo( 401 ),
+				$this->equalTo( 403 )
+			),
 			'Unauthenticated request should return 401 or 403'
 		);
 	}

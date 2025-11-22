@@ -54,7 +54,14 @@ class WP_MCP_AI_SSE_Notification_Stream {
 
 		// Disable output buffering for real-time streaming.
 		if ( function_exists( 'apache_setenv' ) ) {
-			@apache_setenv( 'no-gzip', '1' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$result = apache_setenv( 'no-gzip', '1' );
+			if ( false === $result ) {
+				// Log warning but continue - not critical for functionality.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP_MCP_AI: Failed to disable Apache gzip for SSE stream' );
+				}
+			}
 		}
 		ini_set( 'output_buffering', 'off' );
 		ini_set( 'zlib.output_compression', 'off' );
@@ -76,9 +83,6 @@ class WP_MCP_AI_SSE_Notification_Stream {
 		$start_time       = time();
 		$last_heartbeat   = time();
 		$heartbeat_interval = 15; // Send heartbeat every 15 seconds.
-
-		// Track last notification IDs to avoid duplicates.
-		$last_notification_time = time();
 
 		// Main streaming loop.
 		while ( true ) {

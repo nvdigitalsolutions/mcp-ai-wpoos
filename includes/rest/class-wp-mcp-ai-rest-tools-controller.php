@@ -473,25 +473,8 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Get pending notifications.
 		$notifications = $dispatcher->get_pending_notifications( $user_id, $assistant_id, $clear );
 
-		// Get job counts from cron status service to consolidate polling.
-		// This eliminates the need for separate cron-status polling.
-		$job_counts = array(
-			'pending'   => 0,
-			'running'   => 0,
-			'completed' => 0,
-			'failed'    => 0,
-			'total'     => 0,
-		);
-
-		if ( $this->main_controller && method_exists( $this->main_controller, 'get_cron_status_service' ) ) {
-			$cron_service = $this->main_controller->get_cron_status_service();
-			if ( $cron_service && method_exists( $cron_service, 'get_status_counts' ) ) {
-				$counts_data = $cron_service->get_status_counts( $user_id, $assistant_id, 'chat' );
-				if ( is_array( $counts_data ) ) {
-					$job_counts = $counts_data;
-				}
-			}
-		}
+		// Get job counts to consolidate polling (reduces client requests by 50%).
+		$job_counts = $this->get_job_counts_for_user( $user_id, $assistant_id );
 
 		return rest_ensure_response(
 			array(
@@ -500,6 +483,38 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'job_counts'    => $job_counts,
 			)
 		);
+	}
+
+	/**
+	 * Get job counts for a user and assistant
+	 *
+	 * Helper method to retrieve job counts from Cron Status Service.
+	 * Used by job-notifications endpoint to consolidate polling.
+	 *
+	 * @param int $user_id      User ID.
+	 * @param int $assistant_id Assistant ID.
+	 * @return array Job counts with pending, running, completed, failed, total.
+	 */
+	private function get_job_counts_for_user( $user_id, $assistant_id ) {
+		$default_counts = array(
+			'pending'   => 0,
+			'running'   => 0,
+			'completed' => 0,
+			'failed'    => 0,
+			'total'     => 0,
+		);
+
+		if ( ! $this->main_controller || ! method_exists( $this->main_controller, 'get_cron_status_service' ) ) {
+			return $default_counts;
+		}
+
+		$cron_service = $this->main_controller->get_cron_status_service();
+		if ( ! $cron_service || ! method_exists( $cron_service, 'get_status_counts' ) ) {
+			return $default_counts;
+		}
+
+		$counts_data = $cron_service->get_status_counts( $user_id, $assistant_id, 'chat' );
+		return is_array( $counts_data ) ? $counts_data : $default_counts;
 	}
 
 	/**
