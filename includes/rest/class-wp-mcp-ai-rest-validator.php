@@ -690,7 +690,7 @@ class WP_MCP_AI_REST_Validator {
 			return '';
 		}
 
-		$key = (string) $value;
+		$key = trim( (string) $value );
 		$key = preg_replace( '/[^a-zA-Z0-9_-]/', '', $key );
 
 		// Use the same max length as the transcript recorder to ensure consistency.
