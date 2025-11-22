@@ -202,9 +202,9 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Ensure the Site Health class and its dependencies are loaded.
 	 *
-	 * WordPress core function polyfills must be loaded BEFORE WordPress admin includes
-	 * because some WordPress files (like misc.php) declare functions without checking
-	 * if they exist first.
+	 * Loads WordPress core function polyfills before WordPress admin includes
+	 * to prevent redeclaration errors. WordPress files like misc.php declare
+	 * functions without checking if they exist first.
 	 *
 	 * @return bool
 	 */

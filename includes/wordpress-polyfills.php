@@ -10,9 +10,13 @@
  * without checking if they exist first. Loading this file after those WordPress files
  * will cause "Cannot redeclare function" fatal errors.
  *
- * This file follows separation of concerns by centralizing all WordPress compatibility
- * polyfills in one place, making them available to tools that need to load WordPress
- * admin files in non-admin contexts.
+ * USAGE: Tools that need to load WordPress admin files should require this file first:
+ *   require_once WP_MCP_AI_PATH . 'includes/wordpress-polyfills.php';
+ *   require_once ABSPATH . 'wp-admin/includes/misc.php';
+ *
+ * This file centralizes WordPress compatibility polyfills while maintaining on-demand
+ * loading to prevent conflicts. A guard constant prevents duplicate loading when
+ * multiple tools need the polyfills.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
