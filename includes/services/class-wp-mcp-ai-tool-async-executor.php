@@ -262,6 +262,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 			)
 		);
 
+		/**
+		 * Fires when an async tool execution starts.
+		 *
+		 * This action allows other components to track when a queued job
+		 * actually begins execution (not just queued).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $job_id    Job identifier.
+		 * @param array  $metadata  Job metadata at start time.
+		 * @param string $tool_slug Tool slug being executed.
+		 */
+		do_action( 'wp_mcp_ai_async_job_started', $job_id, $metadata, $tool_slug );
+
 		// Get tool instance.
 		$registry = $this->get_registry();
 		$tool     = $registry ? $registry->get_tool( $tool_slug ) : null;

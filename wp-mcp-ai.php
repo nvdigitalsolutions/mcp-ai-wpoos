@@ -976,6 +976,33 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 }
 
 /**
+ * Initialize event dispatcher service during plugin bootstrap.
+ *
+ * Ensures the event dispatcher registers its WordPress hook listeners
+ * to bridge async job events to chat client notifications.
+ *
+ * SOC: Event dispatcher handles event routing, doesn't execute jobs.
+ */
+if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_event_dispatcher' ) ) {
+	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_event_dispatcher', 5 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_init_event_dispatcher' ) ) {
+	/**
+	 * Initialize the event dispatcher service.
+	 *
+	 * Called during wp_mcp_ai_bootstrapped action to ensure the dispatcher
+	 * registers its hook listeners before any async jobs complete.
+	 */
+	function wp_mcp_ai_init_event_dispatcher() {
+		if ( ! class_exists( 'WP_MCP_AI_Event_Dispatcher_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-event-dispatcher-service.php';
+		}
+		WP_MCP_AI_Event_Dispatcher_Service::get_instance();
+	}
+}
+
+/**
  * Ensure file cleanup cron jobs are scheduled.
  *
  * Called on plugins_loaded to handle plugin upgrades where activation
