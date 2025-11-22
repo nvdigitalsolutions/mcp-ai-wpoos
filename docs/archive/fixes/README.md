@@ -1,14 +1,24 @@
 # Historical Fixes Archive
 
-**Last Updated:** November 21, 2025  
-**Total Documents:** 81 fix and resolution documents  
-*Note: This count reflects the initial consolidation on Nov 21, 2025. The archive may grow as new fixes are added.*
+**Last Updated:** November 22, 2025  
+**Total Documents:** 23 fix and resolution documents (plus archive sections)  
+*Note: Archive contains historical fixes that were already in the archive structure.*
 
 This directory contains comprehensive documentation of all bug fixes, issue resolutions, and patches applied to the WP oOS plugin throughout its development history.
 
+## Table of Contents
+
+- [Purpose](#purpose) 📋
+- [Organization](#organization) 🗂️
+- [Finding Fixes](#finding-fixes) 🔍
+- [Related Documentation](#related-documentation) 📚
+- [Reading Guide](#reading-guide) 📖
+- [Important Notes](#important-notes) ⚠️
+- [Quick Links](#quick-links) 🔗
+
 ---
 
-## Purpose
+## Purpose 📋
 
 All historical fix documentation is consolidated here to:
 - **Prevent information loss** - No fix documentation is deleted, all is preserved
@@ -20,7 +30,9 @@ All historical fix documentation is consolidated here to:
 
 ---
 
-## Organization
+## Organization 🗂️
+
+[↑ Back to top](#table-of-contents)
 
 Fixes are organized by category and type:
 
@@ -167,7 +179,9 @@ Various bug fixes and issue resolutions
 
 ---
 
-## Finding Fixes
+## Finding Fixes 🔍
+
+[↑ Back to top](#table-of-contents)
 
 ### By Problem Type
 
@@ -201,7 +215,9 @@ Various bug fixes and issue resolutions
 
 ---
 
-## Related Documentation
+## Related Documentation 📚
+
+[↑ Back to top](#table-of-contents)
 
 ### Current Active Fixes
 For current, non-archived fixes and ongoing issues:
@@ -219,7 +235,9 @@ For current, non-archived fixes and ongoing issues:
 
 ---
 
-## Reading Guide
+## Reading Guide 📖
+
+[↑ Back to top](#table-of-contents)
 
 ### For Developers Debugging Issues
 1. **Identify the component** (streaming, Gemini, transcripts, etc.)
@@ -243,7 +261,9 @@ Many issues have recurring patterns:
 
 ---
 
-## Important Notes
+## Important Notes ⚠️
+
+[↑ Back to top](#table-of-contents)
 
 ### No Information Loss
 **All fix documentation has been preserved.** Files were moved from:
@@ -269,7 +289,9 @@ These documents are **archived but not deprecated**. They remain:
 
 ---
 
-## Quick Links
+## Quick Links 🔗
+
+[↑ Back to top](#table-of-contents)
 
 - [Main Documentation Index](../../DOCUMENTATION_INDEX.md)
 - [Archive Index](../README.md)
