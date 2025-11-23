@@ -113,7 +113,7 @@ class WP_MCP_AI_Chat_Service {
 		$max_iterations = 5,
 		$request = null
 	) {
-		// Log orchestration start
+		// Log orchestration start.
 		WP_MCP_AI_Logger::log_event(
 			'debug',
 			'Chat orchestration starting',
@@ -159,7 +159,7 @@ class WP_MCP_AI_Chat_Service {
 			return $response;
 		}
 
-		// Log initial response received
+		// Log initial response received.
 		WP_MCP_AI_Logger::log_event(
 			'debug',
 			'Initial chat response received',
@@ -271,15 +271,15 @@ class WP_MCP_AI_Chat_Service {
 
 			// Add tool results to conversation.
 			// Two versions are maintained:
-			// 1. Full results for frontend display (tool_result_messages[])
-			// 2. Sanitized results for LLM to reduce token usage (messages[])
+			// 1. Full results for frontend display (tool_result_messages[]).
+			// 2. Sanitized results for LLM to reduce token usage (messages[]).
 			foreach ( $tool_results as $tool_result ) {
 				// Keep full result for frontend display (includes base64 content).
 				$tool_result_messages[] = $tool_result;
-				
+
 				// Create sanitized version for LLM (strips large base64 content to save tokens).
 				$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $assistant_config );
-				$messages[] = $sanitized_result;
+				$messages[]       = $sanitized_result;
 			}
 
 			// Extract any images from tool results and add them as a user message
@@ -294,7 +294,7 @@ class WP_MCP_AI_Chat_Service {
 						'Added image user message for vision model',
 						array(
 							'iteration'    => $iteration,
-							'image_count'  => count( $image_message['content'] ) - 1, // Subtract text segment
+							'image_count'  => count( $image_message['content'] ) - 1, // Subtract text segment.
 							'assistant_id' => $assistant_id,
 						)
 					);
@@ -343,7 +343,7 @@ class WP_MCP_AI_Chat_Service {
 		// Update response completion timestamp after agentic loop.
 		$transcript_context['response_completed_at'] = microtime( true );
 
-		// Log orchestration completion
+		// Log orchestration completion.
 		WP_MCP_AI_Logger::log_event(
 			'debug',
 			'Chat orchestration completed',
@@ -505,16 +505,16 @@ class WP_MCP_AI_Chat_Service {
 				continue;
 			}
 
-			// Parse the tool result content (it's JSON-encoded)
+			// Parse the tool result content (it's JSON-encoded).
 			$content = json_decode( $tool_result['content'], true );
 			if ( ! is_array( $content ) ) {
 				continue;
 			}
 
-			// Check if this tool result contains an image_url structure
+			// Check if this tool result contains an image_url structure.
 			if ( isset( $content['image_url'] ) && is_array( $content['image_url'] ) && isset( $content['image_url']['url'] ) ) {
 				$image_url = esc_url_raw( $content['image_url']['url'] );
-				
+
 				if ( '' !== $image_url ) {
 					$image_content[] = array(
 						'type'      => 'image_url',
@@ -526,9 +526,9 @@ class WP_MCP_AI_Chat_Service {
 			}
 		}
 
-		// If we found images, create a user message with them
+		// If we found images, create a user message with them.
 		if ( ! empty( $image_content ) ) {
-			// Add a text segment to provide context
+			// Add a text segment to provide context.
 			array_unshift(
 				$image_content,
 				array(
@@ -712,7 +712,7 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		$tool_name = isset( $tool_result['name'] ) ? $tool_result['name'] : '';
-		
+
 		// Parse the JSON-encoded content.
 		$content = $tool_result['content'];
 		if ( is_string( $content ) ) {
@@ -721,29 +721,29 @@ class WP_MCP_AI_Chat_Service {
 				$content = $decoded;
 			}
 		}
-		
+
 		// If content is not an array after parsing, return as-is.
 		if ( ! is_array( $content ) ) {
 			return $tool_result;
 		}
-		
+
 		// Get tool instance for interface-based sanitization.
 		$tool_instance = null;
 		if ( $tool_name && $this->tool_registry->is_tool_registered( $tool_name ) ) {
 			$tool_instance = $this->tool_registry->get_tool( $tool_name );
 		}
-		
+
 		// Apply tool-specific sanitization if available.
 		if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
 			$content = $tool_instance->sanitize_for_llm( $content );
 		}
-		
+
 		// Apply generic sanitization filters.
 		$content = apply_filters( 'wp_mcp_ai_sanitize_tool_result_llm', $content, $tool_name, $assistant_config );
 		if ( $tool_name ) {
 			$content = apply_filters( "wp_mcp_ai_sanitize_tool_result_llm_{$tool_name}", $content, $assistant_config );
 		}
-		
+
 		// Re-encode the sanitized content as JSON string.
 		// The content should always be JSON-encoded for consistency with the tool result format.
 		// However, if a filter returned a string, preserve it to avoid double-encoding.
@@ -755,7 +755,7 @@ class WP_MCP_AI_Chat_Service {
 			// Content is an array, encode it to JSON.
 			$sanitized_result['content'] = wp_json_encode( $content );
 		}
-		
+
 		return $sanitized_result;
 	}
 }
