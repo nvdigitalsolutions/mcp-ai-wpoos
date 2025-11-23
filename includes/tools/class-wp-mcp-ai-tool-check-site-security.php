@@ -240,6 +240,8 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP
 		global $wp_version;
 
 		if ( ! function_exists( 'get_core_updates' ) ) {
+			// Load polyfills before WordPress admin files to prevent redeclaration errors.
+			require_once WP_MCP_AI_PATH . 'includes/wordpress-polyfills.php';
 			require_once ABSPATH . 'wp-admin/includes/update.php';
 		}
 
