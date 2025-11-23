@@ -311,4 +311,63 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			'Widget should have CSS styling for test output pre tag'
 		);
 	}
+
+	/**
+	 * Test that output field handling works for all 4 test types
+	 */
+	public function test_output_field_works_for_all_test_types() {
+		// Set widget settings with all 4 test types enabled.
+		$this->widget->set_settings( array(
+			'title'         => 'Test Runner',
+			'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
+			'show_results'  => 'yes',
+		) );
+
+		// Capture the output.
+		ob_start();
+		$this->widget->render();
+		$output = ob_get_clean();
+
+		// Verify all 4 test type buttons are rendered.
+		$test_types = array( 'stress', 'security', 'speed', 'optimization' );
+		foreach ( $test_types as $test_type ) {
+			$this->assertStringContainsString(
+				'data-test-type="' . $test_type . '"',
+				$output,
+				sprintf( 'Widget should render %s test button', $test_type )
+			);
+		}
+
+		// Verify that the AJAX handler is shared across all test types.
+		// The JavaScript uses a generic event handler that reads data-test-type,
+		// so the output field handling applies to ALL test types.
+		$this->assertStringContainsString(
+			'var testType = button.data(\'test-type\');',
+			$output,
+			'Widget should use generic test type handler for all tests'
+		);
+
+		// Verify the error handler (which includes output field handling) is in the shared success callback.
+		$this->assertStringContainsString(
+			'response.data.output',
+			$output,
+			'Widget should check output field in shared error handler for all test types'
+		);
+
+		// Count how many times the AJAX handler is defined - should be exactly 1 (shared handler).
+		$ajax_handler_count = substr_count( $output, 'action: \'wp_mcp_ai_run_performance_test\'' );
+		$this->assertEquals(
+			1,
+			$ajax_handler_count,
+			'Widget should have exactly one AJAX handler shared by all test types'
+		);
+
+		// Verify the output handling is inside the AJAX success callback (not duplicated per test type).
+		$output_handling_count = substr_count( $output, 'response.data.output' );
+		$this->assertEquals(
+			1,
+			$output_handling_count,
+			'Widget should have output handling in one shared location for all test types'
+		);
+	}
 }
