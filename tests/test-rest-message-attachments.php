@@ -340,6 +340,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 				$this->assertSame( 'high', $image_segment['detail'] );
 
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $image_segment );
+				$this->assertIsArray( $image_segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment['image_url'] );
+				$this->assertNotEmpty( $image_segment['image_url']['url'] );
+
 				return true;
 			},
 			function ( $options ) use ( &$resolved_file_id ) {
@@ -392,6 +398,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertArrayNotHasKey( 'image', $segment );
 				$this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 				$this->assertSame( 'low', $segment['detail'] );
+
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $segment );
+				$this->assertIsArray( $segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $segment['image_url'] );
+				$this->assertNotEmpty( $segment['image_url']['url'] );
 
 				return true;
 			},
@@ -563,6 +575,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertStringStartsWith( 'file-test-', $image_file_id );
 				$this->assertSame( 'Scene reference', $image_segment['caption'] );
 				$this->assertSame( 'low', $image_segment['detail'] );
+
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $image_segment );
+				$this->assertIsArray( $image_segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment['image_url'] );
+				$this->assertNotEmpty( $image_segment['image_url']['url'] );
 
 				$second_message = $messages[1];
 				$this->assertSame( 'assistant', $second_message['role'] );
