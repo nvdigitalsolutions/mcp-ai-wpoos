@@ -674,13 +674,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
 
-		// Build a minimal response payload for the recorder.
-		// Since this is just saving a conversation without a new response,
-		// we create a synthetic response payload.
-		$response = array(
-			'model'   => $model,
-			'choices' => array(),
-		);
+		// Build a response payload from the conversation messages.
+		// When manually saving a conversation, we need to construct a response that includes
+		// the assistant messages in the expected OpenAI format so they can be properly extracted
+		// when the transcript is loaded later.
+		$response = $this->build_response_from_messages( $clean_messages, $model );
 
 		// Build context for the transcript recorder.
 		$context = array(
@@ -960,5 +958,60 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
 			)
 		);
+	}
+
+	/**
+	 * Build a response payload from conversation messages for transcript storage.
+	 *
+	 * When manually saving a conversation (not from a live chat response), we need to
+	 * construct a response payload that matches the expected OpenAI response format.
+	 * This ensures that when the transcript is loaded later, the messages can be
+	 * properly extracted from the response_payload field.
+	 *
+	 * The response payload will include all assistant messages from the conversation
+	 * in the 'choices' array, formatted according to the OpenAI API response schema.
+	 *
+	 * @param array  $messages Clean sanitized messages array.
+	 * @param string $model    Model identifier.
+	 * @return array Response payload with choices containing assistant messages.
+	 */
+	private function build_response_from_messages( array $messages, $model ) {
+		$choices = array();
+		$index   = 0;
+
+		// Extract all assistant messages and add them to choices array.
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
+				continue;
+			}
+
+			// Only include assistant messages in the response payload.
+			// User, system, and tool messages are stored in request_payload.
+			if ( 'assistant' === $message['role'] ) {
+				$choice = array(
+					'index'   => $index++,
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => isset( $message['content'] ) ? $message['content'] : null,
+					),
+					'finish_reason' => 'stop',
+				);
+
+				// Preserve tool_calls if present in the assistant message.
+				if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+					$choice['message']['tool_calls'] = $message['tool_calls'];
+				}
+
+				$choices[] = $choice;
+			}
+		}
+
+		// Build the response payload in OpenAI format.
+		$response = array(
+			'model'   => $model,
+			'choices' => $choices,
+		);
+
+		return $response;
 	}
 }
