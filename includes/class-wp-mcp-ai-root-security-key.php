@@ -234,6 +234,14 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 				return true;
 			}
 
+			// Allow initialization during WordPress cron execution.
+			// Cron jobs (including async tool execution) need to run even when
+			// the root security key is required. Cron runs in a non-admin,
+			// non-user context, so we need to explicitly allow it.
+			if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+				return true;
+			}
+
 			// Block initialization for non-admin contexts when key is required.
 			return false;
 		}
