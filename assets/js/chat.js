@@ -6605,7 +6605,8 @@
 
         const timeout = 180000; // 3 minute timeout
         const startTime = Date.now();
-        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        const pendingMessage = getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.') + ' Job ID: ' + jobId;
+        const pendingEntry = appendMessage(state.messagesEl, 'system', pendingMessage);
 
         return new Promise(function (resolve, reject) {
             let sseConnection = null;
@@ -6742,7 +6743,8 @@
         const startTime = Date.now();
         
         if (!pendingEntry) {
-            pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+            const pendingMessage = getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.') + ' Job ID: ' + jobId;
+            pendingEntry = appendMessage(state.messagesEl, 'system', pendingMessage);
         }
 
         state.pendingAsyncTools[jobId] = {
