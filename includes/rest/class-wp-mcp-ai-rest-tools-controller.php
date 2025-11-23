@@ -160,6 +160,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		);
 
 		// /cron-status - Lightweight cron job status for admin dashboard and chat widgets.
+		// Supports SSE streaming for real-time updates.
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/cron-status',
@@ -181,17 +182,14 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'default'           => 10,
 							'sanitize_callback' => 'absint',
-						),
-					),
-					'args'                => array(
-						'limit' => array(
-							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => false,
-							'default'           => 10,
-							'sanitize_callback' => 'absint',
 							'minimum'           => 1,
 							'maximum'           => 50,
+						),
+						'stream'       => array(
+							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'wp-mcp-ai' ),
+							'type'        => 'boolean',
+							'required'    => false,
+							'default'     => false,
 						),
 					),
 				),

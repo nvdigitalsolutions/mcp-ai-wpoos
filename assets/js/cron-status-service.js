@@ -2,6 +2,7 @@
  * Cron Status Service
  *
  * Handles fetching and updating cron job status for display in chat interfaces.
+ * Uses SSE-first approach with 30-second REST polling fallback.
  * Follows separation of concerns by encapsulating API communication logic.
  *
  * @package WP_MCP_AI
@@ -18,18 +19,23 @@
 	/**
 	 * Cron Status Service
 	 * 
-	 * Provides methods to fetch and manage cron job status display.
+	 * Provides methods to fetch and manage cron job status display using SSE or REST.
 	 */
 	const CronStatusService = {
 		/**
-		 * Polling interval in milliseconds
+		 * Fallback polling interval in milliseconds (30 seconds)
 		 */
-		pollingInterval: 30000, // 30 seconds
+		fallbackPollingInterval: 30000,
 
 		/**
-		 * Active polling timers by container ID
+		 * Active SSE connections by container ID
 		 */
-		pollers: {},
+		sseConnections: {},
+
+		/**
+		 * Fallback polling timers by container ID (used when SSE fails)
+		 */
+		fallbackPollers: {},
 
 		/**
 		 * Cached status data by container ID
@@ -37,25 +43,26 @@
 		cache: {},
 
 		/**
-		 * Fetch cron job status from API
+		 * Fetch cron job status from REST API (fallback method)
 		 * 
 		 * @param {string} endpoint - REST API endpoint URL
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {number} limit - Maximum number of jobs to fetch
+		 * @param {number} assistantId - Optional assistant ID for filtering
 		 * @return {Promise} Promise resolving to status data
 		 */
-		fetchStatus: function (endpoint, nonce, limit, assistantId) {
+		fetchStatusREST: function (endpoint, nonce, limit, assistantId) {
 			limit = limit || 10;
 
 			// Build URL with parameters
-		let url = endpoint + '?limit=' + limit;
-		
-		// Add assistant_id for multi-widget isolation
-		if (assistantId) {
-			url += '&assistant_id=' + encodeURIComponent(assistantId);
-		}
-		
-		const headers = {
+			let url = endpoint + '?limit=' + limit;
+			
+			// Add assistant_id for multi-widget isolation
+			if (assistantId) {
+				url += '&assistant_id=' + encodeURIComponent(assistantId);
+			}
+			
+			const headers = {
 				'Content-Type': 'application/json',
 			};
 
@@ -76,27 +83,115 @@
 				})
 				.catch(function (error) {
 					if (window.console && console.error) {
-						console.error('Cron status fetch error:', error);
+						console.error('[WP MCP AI] Cron status REST fetch error:', error);
 					}
 					return null;
 				});
 		},
 
 		/**
-		 * Start polling for cron status updates
+		 * Start monitoring cron status using SSE-first approach
+		 * Falls back to REST polling after 30 seconds if SSE fails or is not supported.
 		 * 
 		 * @param {string} containerId - Chat container ID
 		 * @param {string} endpoint - REST API endpoint URL
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {Function} callback - Callback function to handle status updates
+		 * @param {number} assistantId - Optional assistant ID for filtering
 		 */
-		startPolling: function (containerId, endpoint, nonce, callback, assistantId) {
-			// Stop existing poller if any
-			this.stopPolling(containerId);
+		startMonitoring: function (containerId, endpoint, nonce, callback, assistantId) {
+			// Stop existing monitoring if any
+			this.stopMonitoring(containerId);
+
+			const self = this;
+
+			// Try SSE first if supported
+			if (window.wpMcpAiSSE && window.wpMcpAiSSE.isSupported()) {
+				// Build SSE URL with stream parameter
+				let sseUrl = endpoint + '?stream=true&limit=10';
+				if (assistantId) {
+					sseUrl += '&assistant_id=' + encodeURIComponent(assistantId);
+				}
+
+				// Note: EventSource doesn't support custom headers
+				// WordPress will use session cookie authentication automatically
+
+				let sseReceived = false; // Track if we received any SSE data
+
+				try {
+					const sseConnection = window.wpMcpAiSSE.connect(sseUrl, {
+						eventHandlers: {
+							'cron_status': function (data) {
+								sseReceived = true; // Mark that SSE is working
+								if (data) {
+									self.cache[containerId] = data;
+									if (callback && typeof callback === 'function') {
+										callback(data);
+									}
+								}
+							}
+						},
+						onError: function (error) {
+							if (window.console && console.warn) {
+								console.warn('[WP MCP AI] SSE cron status failed, falling back to REST polling:', error);
+							}
+							// Stop SSE connection before falling back
+							self.stopSSE(containerId);
+							// Fall back to REST polling
+							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+						},
+						onOpen: function () {
+							if (window.console && console.log) {
+								console.log('[WP MCP AI] SSE cron status connection established for', containerId);
+							}
+						}
+					});
+
+					if (sseConnection) {
+						this.sseConnections[containerId] = sseConnection;
+						
+						// Set timeout to fall back to polling after 30 seconds if no SSE data received
+						setTimeout(function () {
+							// Only fall back if SSE connection still exists and no data received
+							if (self.sseConnections[containerId] && !sseReceived) {
+								if (window.console && console.warn) {
+									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
+								}
+								self.stopSSE(containerId);
+								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+							}
+						}, 30000);
+					} else {
+						// SSE connection failed, use REST polling
+						this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+					}
+				} catch (error) {
+					if (window.console && console.error) {
+						console.error('[WP MCP AI] SSE cron status connection error:', error);
+					}
+					// Fall back to REST polling
+					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+				}
+			} else {
+				// SSE not supported, use REST polling
+				this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+			}
+		},
+
+		/**
+		 * Start fallback REST polling
+		 * 
+		 * @param {string} containerId - Chat container ID
+		 * @param {string} endpoint - REST API endpoint URL
+		 * @param {string} nonce - WordPress REST nonce
+		 * @param {Function} callback - Callback function to handle status updates
+		 * @param {number} assistantId - Optional assistant ID for filtering
+		 */
+		startFallbackPolling: function (containerId, endpoint, nonce, callback, assistantId) {
+			const self = this;
 
 			// Fetch immediately
-			const self = this;
-			this.fetchStatus(endpoint, nonce, 10, assistantId).then(function (data) {
+			this.fetchStatusREST(endpoint, nonce, 10, assistantId).then(function (data) {
 				if (data) {
 					self.cache[containerId] = data;
 					if (callback && typeof callback === 'function') {
@@ -106,8 +201,8 @@
 			});
 
 			// Set up polling interval
-			this.pollers[containerId] = setInterval(function () {
-				self.fetchStatus(endpoint, nonce, 10, assistantId).then(function (data) {
+			this.fallbackPollers[containerId] = setInterval(function () {
+				self.fetchStatusREST(endpoint, nonce, 10, assistantId).then(function (data) {
 					if (data) {
 						self.cache[containerId] = data;
 						if (callback && typeof callback === 'function') {
@@ -115,19 +210,44 @@
 						}
 					}
 				});
-			}, this.pollingInterval);
+			}, this.fallbackPollingInterval);
 		},
 
 		/**
-		 * Stop polling for a container
+		 * Stop SSE connection for a container
 		 * 
 		 * @param {string} containerId - Chat container ID
 		 */
-		stopPolling: function (containerId) {
-			if (this.pollers[containerId]) {
-				clearInterval(this.pollers[containerId]);
-				delete this.pollers[containerId];
+		stopSSE: function (containerId) {
+			if (this.sseConnections[containerId]) {
+				const connection = this.sseConnections[containerId];
+				if (connection && connection.close && typeof connection.close === 'function') {
+					connection.close();
+				}
+				delete this.sseConnections[containerId];
 			}
+		},
+
+		/**
+		 * Stop fallback polling for a container
+		 * 
+		 * @param {string} containerId - Chat container ID
+		 */
+		stopFallbackPolling: function (containerId) {
+			if (this.fallbackPollers[containerId]) {
+				clearInterval(this.fallbackPollers[containerId]);
+				delete this.fallbackPollers[containerId];
+			}
+		},
+
+		/**
+		 * Stop all monitoring for a container
+		 * 
+		 * @param {string} containerId - Chat container ID
+		 */
+		stopMonitoring: function (containerId) {
+			this.stopSSE(containerId);
+			this.stopFallbackPolling(containerId);
 		},
 
 		/**
@@ -187,6 +307,21 @@
 					});
 				}
 			});
+		},
+
+		// Legacy API compatibility - deprecated, use startMonitoring/stopMonitoring
+		startPolling: function (containerId, endpoint, nonce, callback, assistantId) {
+			if (window.console && console.warn) {
+				console.warn('[WP MCP AI] CronStatusService.startPolling is deprecated, use startMonitoring instead');
+			}
+			return this.startMonitoring(containerId, endpoint, nonce, callback, assistantId);
+		},
+
+		stopPolling: function (containerId) {
+			if (window.console && console.warn) {
+				console.warn('[WP MCP AI] CronStatusService.stopPolling is deprecated, use stopMonitoring instead');
+			}
+			return this.stopMonitoring(containerId);
 		}
 	};
 

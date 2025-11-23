@@ -10716,16 +10716,16 @@
             }
         }
 
-        // Start polling for cron status with assistant_id for multi-widget isolation
+        // Start monitoring cron status with SSE-first approach (30s fallback to REST polling)
         const assistantId = config.assistantId || null;
-        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
+        window.wpMcpAiCronStatus.startMonitoring(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
 
-        // Stop polling when chat is destroyed or hidden
+        // Stop monitoring when chat is destroyed or hidden
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
                     if (container.hasAttribute('hidden')) {
-                        window.wpMcpAiCronStatus.stopPolling(instanceId);
+                        window.wpMcpAiCronStatus.stopMonitoring(instanceId);
                     }
                 }
             });
