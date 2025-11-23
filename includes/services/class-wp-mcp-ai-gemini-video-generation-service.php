@@ -1222,12 +1222,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
 						}
 					}
-
-						// Store success result in cron manager for retrieval.
-						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
-						}
-					}
 				} else {
 					// Video not saved to media library - return data URL instead of Google URL.
 					$video_base64 = base64_encode( $result['video_data'] );
