@@ -340,6 +340,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 				$this->assertSame( 'high', $image_segment['detail'] );
 
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $image_segment );
+				$this->assertIsArray( $image_segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment['image_url'] );
+				$this->assertNotEmpty( $image_segment['image_url']['url'] );
+
 				return true;
 			},
 			function ( $options ) use ( &$resolved_file_id ) {
@@ -392,6 +398,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertArrayNotHasKey( 'image', $segment );
 				$this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 				$this->assertSame( 'low', $segment['detail'] );
+
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $segment );
+				$this->assertIsArray( $segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $segment['image_url'] );
+				$this->assertNotEmpty( $segment['image_url']['url'] );
 
 				return true;
 			},
@@ -564,6 +576,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertSame( 'Scene reference', $image_segment['caption'] );
 				$this->assertSame( 'low', $image_segment['detail'] );
 
+				// Verify that the image URL is included for OpenAI/Gemini compatibility.
+				$this->assertArrayHasKey( 'image_url', $image_segment );
+				$this->assertIsArray( $image_segment['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment['image_url'] );
+				$this->assertNotEmpty( $image_segment['image_url']['url'] );
+
 				$second_message = $messages[1];
 				$this->assertSame( 'assistant', $second_message['role'] );
 				$this->assertCount( 1, $second_message['content'] );
@@ -595,6 +613,128 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 				$this->assertSame( $file_file_id, $file_attachment['file_id'] );
 				$this->assertSame( 'text/plain', $file_attachment['mime_type'] );
 				$this->assertArrayNotHasKey( 'data', $file_attachment );
+
+				return true;
+			}
+		);
+	}
+
+	/**
+	 * Ensure multiple image attachments in a single message are processed with URLs.
+	 */
+	public function test_multiple_image_attachments_in_single_message() {
+		$assistant_id         = $this->create_assistant_post();
+		$image_attachment_id1 = $this->create_image_attachment( 'photo1.png' );
+		$image_attachment_id2 = $this->create_image_attachment( 'photo2.png' );
+		$image_attachment_id3 = $this->create_image_attachment( 'photo3.png' );
+
+		$image_file_id1 = null;
+		$image_file_id2 = null;
+		$image_file_id3 = null;
+
+		$this->dispatch_chat_request(
+			$assistant_id,
+			array(
+				array(
+					'role'    => 'user',
+					'content' => array(
+						array(
+							'type' => 'text',
+							'text' => 'Compare these three images.',
+						),
+						array(
+							'type'          => 'input_image',
+							'attachment_id' => $image_attachment_id1,
+							'detail'        => 'high',
+						),
+						array(
+							'type'          => 'input_image',
+							'attachment_id' => $image_attachment_id2,
+							'detail'        => 'auto',
+						),
+						array(
+							'type'          => 'input_image',
+							'attachment_id' => $image_attachment_id3,
+							'detail'        => 'low',
+						),
+					),
+				),
+			),
+			function ( $messages ) use ( &$image_file_id1, &$image_file_id2, &$image_file_id3 ) {
+				$this->assertCount( 1, $messages );
+
+				$first_message = $messages[0];
+				$this->assertSame( 'user', $first_message['role'] );
+				$this->assertCount( 4, $first_message['content'] );
+
+				// First segment is text.
+				$this->assertSame( 'text', $first_message['content'][0]['type'] );
+				$this->assertSame( 'Compare these three images.', $first_message['content'][0]['text'] );
+
+				// Second segment is first image.
+				$image_segment1 = $first_message['content'][1];
+				$this->assertSame( 'input_image', $image_segment1['type'] );
+				$this->assertArrayHasKey( 'file_id', $image_segment1 );
+				$image_file_id1 = $image_segment1['file_id'];
+				$this->assertStringStartsWith( 'file-test-', $image_file_id1 );
+				$this->assertSame( 'high', $image_segment1['detail'] );
+				$this->assertArrayHasKey( 'image_url', $image_segment1 );
+				$this->assertIsArray( $image_segment1['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment1['image_url'] );
+				$this->assertNotEmpty( $image_segment1['image_url']['url'] );
+
+				// Third segment is second image.
+				$image_segment2 = $first_message['content'][2];
+				$this->assertSame( 'input_image', $image_segment2['type'] );
+				$this->assertArrayHasKey( 'file_id', $image_segment2 );
+				$image_file_id2 = $image_segment2['file_id'];
+				$this->assertStringStartsWith( 'file-test-', $image_file_id2 );
+				$this->assertSame( 'auto', $image_segment2['detail'] );
+				$this->assertArrayHasKey( 'image_url', $image_segment2 );
+				$this->assertIsArray( $image_segment2['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment2['image_url'] );
+				$this->assertNotEmpty( $image_segment2['image_url']['url'] );
+
+				// Fourth segment is third image.
+				$image_segment3 = $first_message['content'][3];
+				$this->assertSame( 'input_image', $image_segment3['type'] );
+				$this->assertArrayHasKey( 'file_id', $image_segment3 );
+				$image_file_id3 = $image_segment3['file_id'];
+				$this->assertStringStartsWith( 'file-test-', $image_file_id3 );
+				$this->assertSame( 'low', $image_segment3['detail'] );
+				$this->assertArrayHasKey( 'image_url', $image_segment3 );
+				$this->assertIsArray( $image_segment3['image_url'] );
+				$this->assertArrayHasKey( 'url', $image_segment3['image_url'] );
+				$this->assertNotEmpty( $image_segment3['image_url']['url'] );
+
+				// Verify all three file IDs are unique.
+				$this->assertNotEquals( $image_file_id1, $image_file_id2 );
+				$this->assertNotEquals( $image_file_id1, $image_file_id3 );
+				$this->assertNotEquals( $image_file_id2, $image_file_id3 );
+
+				return true;
+			},
+			function ( $options ) use ( &$image_file_id1, &$image_file_id2, &$image_file_id3 ) {
+				$this->assertArrayHasKey( 'attachments', $options );
+				$this->assertCount( 3, $options['attachments'] );
+
+				// Verify first image attachment.
+				$attachment1 = $options['attachments'][0];
+				$this->assertSame( $image_file_id1, $attachment1['id'] );
+				$this->assertSame( $image_file_id1, $attachment1['file_id'] );
+				$this->assertSame( 'image/png', $attachment1['mime_type'] );
+
+				// Verify second image attachment.
+				$attachment2 = $options['attachments'][1];
+				$this->assertSame( $image_file_id2, $attachment2['id'] );
+				$this->assertSame( $image_file_id2, $attachment2['file_id'] );
+				$this->assertSame( 'image/png', $attachment2['mime_type'] );
+
+				// Verify third image attachment.
+				$attachment3 = $options['attachments'][2];
+				$this->assertSame( $image_file_id3, $attachment3['id'] );
+				$this->assertSame( $image_file_id3, $attachment3['file_id'] );
+				$this->assertSame( 'image/png', $attachment3['mime_type'] );
 
 				return true;
 			}

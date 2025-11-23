@@ -429,7 +429,8 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_image_attachment', __( 'Image segments must include an attachment ID or URL.', 'wp-mcp-ai' ) );
 			}
 
-			$prepared_attachment = $this->register_attachment( absint( $segment['attachment_id'] ), 'image' );
+			$attachment_id       = absint( $segment['attachment_id'] );
+			$prepared_attachment = $this->register_attachment( $attachment_id, 'image' );
 
 			if ( is_wp_error( $prepared_attachment ) ) {
 				return $prepared_attachment;
@@ -439,6 +440,22 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				'type'    => 'input_image',
 				'file_id' => $prepared_attachment['file_id'],
 			);
+
+			// Get the image URL for providers that need it (OpenAI Chat Completions, Gemini).
+			// This is essential for vision models that require direct image URLs.
+			$image_url = wp_get_attachment_url( $attachment_id );
+			if ( ! empty( $image_url ) ) {
+				$prepared['image_url'] = array( 'url' => esc_url_raw( $image_url ) );
+			} else {
+				// Log warning if URL cannot be retrieved, but continue since we have file_id.
+				WP_MCP_AI_Logger::log_error(
+					'Could not retrieve URL for image attachment.',
+					array(
+						'attachment_id' => $attachment_id,
+						'file_id'       => $prepared_attachment['file_id'],
+					)
+				);
+			}
 
 			$resolved_caption = $caption;
 
