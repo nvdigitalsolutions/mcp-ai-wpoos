@@ -930,8 +930,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array Async job information.
 	 */
 	protected function queue_async_polling( $operation, $args ) {
-		// Generate unique job ID.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Generate unique job ID without dots to avoid sanitization issues.
+		// uniqid('', true) returns strings like '6922d31dbba7d5.10004742' with a dot.
+		// Remove the dot to ensure consistent job IDs across all systems (transients, cron manager, etc.).
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
 		// Get model from operation (set by generate_video_with_model).
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
@@ -1511,8 +1513,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return int|WP_Error Attachment ID or error.
 	 */
 	protected function save_video_to_media( $result, $user_id ) {
-		// Generate unique filename.
-		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+		// Generate unique filename without dots for consistency.
+		$filename = 'veo-video-' . str_replace( '.', '', uniqid( '', true ) ) . '.mp4';
 
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );

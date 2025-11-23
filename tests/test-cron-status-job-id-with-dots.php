@@ -89,8 +89,8 @@ class Test_Cron_Status_Job_ID_With_Dots extends WP_UnitTestCase {
 	public function test_cron_status_endpoint_with_dot_in_job_id() {
 		wp_set_current_user( $this->user_id );
 
-		// Create a mock video generation job with dot in ID.
-		$job_id   = 'veo_' . uniqid( '', true );
+		// Create a mock video generation job (dots removed for consistency).
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-operation',
@@ -175,17 +175,17 @@ class Test_Cron_Status_Job_ID_With_Dots extends WP_UnitTestCase {
 	 * Test the actual uniqid format used in production.
 	 */
 	public function test_actual_uniqid_format() {
-		// Generate a real job ID the way the code does.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Generate a real job ID the way the code does (with dots removed).
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
-		// Verify it contains a dot.
-		$this->assertStringContainsString( '.', $job_id, 'uniqid with more_entropy should contain a dot' );
+		// Verify it does NOT contain a dot (dots are removed for consistency).
+		$this->assertStringNotContainsString( '.', $job_id, 'Job IDs should not contain dots after str_replace' );
 
-		// Verify it can be sanitized without losing the dot.
+		// Verify it can be sanitized without changes.
 		$controller = new WP_MCP_AI_REST_Tools_Controller();
 		$sanitized  = $controller->sanitize_job_id( $job_id );
 
-		$this->assertEquals( $job_id, $sanitized, 'Real uniqid format should pass sanitization unchanged' );
-		$this->assertStringContainsString( '.', $sanitized, 'Sanitized job ID should still contain dot' );
+		$this->assertEquals( $job_id, $sanitized, 'Job ID without dots should pass sanitization unchanged' );
+		$this->assertStringNotContainsString( '.', $sanitized, 'Sanitized job ID should not contain dots' );
 	}
 }

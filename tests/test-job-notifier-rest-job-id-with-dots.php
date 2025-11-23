@@ -1,10 +1,10 @@
 <?php
 /**
- * Tests for Job Notifier REST endpoints with job IDs containing dots
+ * Tests for Job Notifier REST endpoints with job IDs from uniqid
  *
- * Verifies that job IDs generated with uniqid('prefix', true) which contain
- * dots (e.g., veo_69203b5b2388f5.11575461) are properly handled by the
- * job notifier REST API endpoints.
+ * Verifies that job IDs generated with str_replace('.', '', uniqid('prefix', true))
+ * which have dots removed (e.g., veo_69203b5b2388f511575461) are properly handled
+ * by the job notifier REST API endpoints.
  *
  * @package WP_MCP_AI
  */
@@ -40,13 +40,13 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test job status endpoint with job ID containing dot.
+	 * Test job status endpoint with job ID from uniqid.
 	 */
 	public function test_job_status_endpoint_with_dot_in_job_id() {
 		wp_set_current_user( $this->user_id );
 
-		// Create a mock job with dot in ID.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Create a mock job (dots removed for consistency).
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$status = array(
 			'job_id'     => $job_id,
 			'status'     => 'running',
@@ -79,13 +79,13 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test job stream endpoint with job ID containing dot.
+	 * Test job stream endpoint with job ID from uniqid.
 	 */
 	public function test_job_stream_endpoint_with_dot_in_job_id() {
 		wp_set_current_user( $this->user_id );
 
-		// Create a mock job with dot in ID.
-		$job_id = 'test_' . uniqid( '', true );
+		// Create a mock job (dots removed for consistency).
+		$job_id = 'test_' . str_replace( '.', '', uniqid( '', true ) );
 		$status = array(
 			'job_id'     => $job_id,
 			'status'     => 'started',
@@ -109,13 +109,13 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test webhook endpoint with job ID containing dot.
+	 * Test webhook endpoint with job ID from uniqid.
 	 */
 	public function test_webhook_endpoint_with_dot_in_job_id() {
 		wp_set_current_user( $this->user_id );
 
-		// Create a job ID with dot.
-		$job_id = 'err_' . uniqid( '', true );
+		// Create a job ID (dots removed for consistency).
+		$job_id = 'err_' . str_replace( '.', '', uniqid( '', true ) );
 
 		// Make request to REST endpoint.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/jobs/' . $job_id . '/webhooks' );
@@ -137,11 +137,11 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	public function test_real_uniqid_format_all_endpoints() {
 		wp_set_current_user( $this->user_id );
 
-		// Generate a real job ID the way the code does.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Generate a real job ID the way the code does (dots removed for consistency).
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
-		// Verify it contains a dot.
-		$this->assertStringContainsString( '.', $job_id, 'uniqid with more_entropy should contain a dot' );
+		// Verify it does NOT contain a dot (dots are removed).
+		$this->assertStringNotContainsString( '.', $job_id, 'Job IDs should not contain dots after str_replace' );
 
 		// Create status for the job.
 		$status = array(

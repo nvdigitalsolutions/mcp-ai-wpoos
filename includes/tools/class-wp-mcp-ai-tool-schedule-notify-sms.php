@@ -233,7 +233,8 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
 
 		// Store job_id in payload for result storage later.
-		$payload['_job_id'] = uniqid( 'sms_', true );
+		// Remove dots from uniqid to avoid sanitization issues with cron manager.
+		$payload['_job_id'] = 'sms_' . str_replace( '.', '', uniqid( '', true ) );
 		$job_id             = $payload['_job_id'];
 
 		$job_id = WP_MCP_AI_Cron_Manager::record_job( self::CRON_HOOK, $payload, 'single', $timestamp, $user_id, $job_id, $assistant_id );

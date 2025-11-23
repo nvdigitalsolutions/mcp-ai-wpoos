@@ -42,7 +42,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 
 		// Create a mock video job metadata.
-		$job_id   = 'veo_' . uniqid( '', true );
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op-123',
@@ -82,7 +82,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
 
 		// Create a test video job.
-		$job_id   = 'veo_' . uniqid( '', true );
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op-456',
@@ -119,7 +119,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
 
 		// Create a completed video job with result.
-		$job_id   = 'veo_' . uniqid( '', true );
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op-789',
@@ -172,7 +172,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
 
 		// Create a failed video job.
-		$job_id   = 'veo_' . uniqid( '', true );
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op-error',
@@ -214,7 +214,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 		$other_user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Create a video job for the test user.
-		$job_id   = 'veo_' . uniqid( '', true );
+		$job_id   = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op-private',

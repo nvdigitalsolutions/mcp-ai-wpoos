@@ -505,8 +505,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return int|WP_Error Attachment ID or error.
 	 */
 	protected function save_video_to_media( $result, $user_id ) {
-		// Generate unique filename.
-		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+		// Generate unique filename without dots for consistency.
+		$filename = 'veo-video-' . str_replace( '.', '', uniqid( '', true ) ) . '.mp4';
 
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );
