@@ -74,13 +74,16 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $result;
 		}
 
-		// Check if this request has a context parameter.
-		// Use get_param() to check all parameter sources (query, body, route, defaults).
-		// The context parameter can be passed via URL query string, request body, or route defaults.
-		$context = $request->get_param( 'context' );
+		// Check if context parameter was explicitly provided by the client.
+		// We check both query params and body params, but NOT route defaults.
+		// This ensures we only apply no-cache headers when the client actually requested
+		// a specific context, not when the endpoint just has a default context value.
+		$query_params = $request->get_query_params();
+		$body_params  = $request->get_body_params();
+		$has_explicit_context = isset( $query_params['context'] ) || isset( $body_params['context'] );
 
-		// For requests with context parameter or edit-related endpoints, ensure no caching.
-		if ( ! empty( $context ) || self::is_edit_endpoint( $route ) ) {
+		// For requests with explicit context parameter or edit-related endpoints, ensure no caching.
+		if ( $has_explicit_context || self::is_edit_endpoint( $route ) ) {
 			// Set aggressive no-cache headers to prevent any caching.
 			$result->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
 			$result->header( 'Pragma', 'no-cache' );
@@ -173,22 +176,20 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			if ( ! empty( $parsed['query'] ) ) {
 				parse_str( $parsed['query'], $uri_params );
 
-				// Check for context parameter in URI but not in request params.
-				// Use get_param() to check all parameter sources.
-				$context_param = $request->get_param( 'context' );
-				if ( isset( $uri_params['context'] ) && ! $context_param ) {
+				// Check for context parameter in URI but not in request query params.
+				// We check query params specifically because we're detecting if query strings are stripped.
+				$query_params = $request->get_query_params();
+				if ( isset( $uri_params['context'] ) && ! isset( $query_params['context'] ) ) {
 					// Query string is being stripped - log for debugging.
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 						WP_MCP_AI_Logger::log_event(
 							'warning',
 							'REST API context parameter stripped from request',
 							array(
-								'request_uri'      => $request_uri,
-								'expected_params'  => $uri_params,
-								'query_params'     => $request->get_query_params(),
-								'all_params'       => $request->get_params(),
-								'context_detected' => $context_param,
-								'route'            => $request->get_route(),
+								'request_uri'     => $request_uri,
+								'expected_params' => $uri_params,
+								'actual_params'   => $request->get_query_params(),
+								'route'           => $request->get_route(),
 							)
 						);
 					}
@@ -241,9 +242,10 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $response;
 		}
 
-		// Use get_param() to check all parameter sources, not just query params.
-		$context_param = $request->get_param( 'context' );
-		if ( strpos( $request_uri, '?context=' ) !== false && ! $context_param ) {
+		// Check if context parameter in URI might have been stripped from query params.
+		// We check query params specifically to detect query string stripping.
+		$query_params = $request->get_query_params();
+		if ( strpos( $request_uri, '?context=' ) !== false && ! isset( $query_params['context'] ) ) {
 			// Add diagnostic information to the error.
 			$error_data = $response->get_error_data();
 			if ( ! is_array( $error_data ) ) {

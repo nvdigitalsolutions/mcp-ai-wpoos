@@ -355,12 +355,12 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that context parameter is correctly detected from set_param()
+	 * Test that context parameter is correctly detected from request body
 	 *
-	 * This test verifies that the fix works when context is set via set_param(),
-	 * which is how some REST endpoints and tools set parameters programmatically.
+	 * This test verifies that the fix works when context is passed in the request body,
+	 * which is how some POST/PUT/PATCH requests may send parameters.
 	 */
-	public function test_context_set_param_detection() {
+	public function test_context_body_parameter_detection() {
 		// Create a test post.
 		$post_id = $this->factory->post->create(
 			array(
@@ -373,12 +373,14 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		// Create request and set context via set_param().
+		// Create request and set context via body params.
 		$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
-		$request->set_param( 'context', 'edit' );
+		$request->set_body_params( array( 'context' => 'edit' ) );
 
-		// Verify that get_param() returns the context.
-		$this->assertEquals( 'edit', $request->get_param( 'context' ) );
+		// Verify that body params are set correctly.
+		$body_params = $request->get_body_params();
+		$this->assertArrayHasKey( 'context', $body_params );
+		$this->assertEquals( 'edit', $body_params['context'] );
 
 		$server   = rest_get_server();
 		$response = $server->dispatch( $request );
@@ -392,5 +394,58 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'no-cache', $headers['Cache-Control'] );
 		$this->assertStringContainsString( 'no-store', $headers['Cache-Control'] );
 		$this->assertStringContainsString( 'must-revalidate', $headers['Cache-Control'] );
+	}
+
+	/**
+	 * Test that default context does NOT trigger no-cache headers
+	 *
+	 * This test verifies that requests without explicit context parameter
+	 * (relying on route defaults like 'view') do NOT get no-cache headers,
+	 * allowing them to be cached properly.
+	 */
+	public function test_default_context_allows_caching() {
+		// Create a test post.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_title'  => 'Test Post',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Create request WITHOUT explicit context parameter.
+		// The route will have default context='view' but we didn't explicitly set it.
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
+
+		// Verify that no explicit context was set.
+		$query_params = $request->get_query_params();
+		$body_params  = $request->get_body_params();
+		$this->assertArrayNotHasKey( 'context', $query_params );
+		$this->assertArrayNotHasKey( 'context', $body_params );
+
+		$server   = rest_get_server();
+		$response = $server->dispatch( $request );
+
+		// Check that response is successful.
+		$this->assertEquals( 200, $response->get_status() );
+
+		// Check that aggressive no-cache headers are NOT present.
+		// The endpoint may have some cache control, but not the aggressive
+		// no-store/no-cache/must-revalidate that we add for explicit context.
+		$headers = $response->get_headers();
+		if ( isset( $headers['Cache-Control'] ) ) {
+			// If Cache-Control exists, it should not have our aggressive no-cache markers.
+			$cache_control = $headers['Cache-Control'];
+			// The fix should NOT apply aggressive caching, so we check for the absence
+			// of the specific combination we set (no-store AND no-cache AND must-revalidate).
+			$has_aggressive_no_cache = (
+				strpos( $cache_control, 'no-store' ) !== false &&
+				strpos( $cache_control, 'no-cache' ) !== false &&
+				strpos( $cache_control, 'must-revalidate' ) !== false
+			);
+			$this->assertFalse(
+				$has_aggressive_no_cache,
+				'Default context should not trigger aggressive no-cache headers'
+			);
+		}
 	}
 }
