@@ -6605,7 +6605,7 @@
 
         const timeout = 180000; // 3 minute timeout
         const startTime = Date.now();
-        const pendingMessage = getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.') + ' Job ID: ' + jobId;
+        const pendingMessage = `${getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.')} Job ID: ${jobId}`;
         const pendingEntry = appendMessage(state.messagesEl, 'system', pendingMessage);
 
         return new Promise(function (resolve, reject) {
@@ -6743,7 +6743,7 @@
         const startTime = Date.now();
         
         if (!pendingEntry) {
-            const pendingMessage = getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.') + ' Job ID: ' + jobId;
+            const pendingMessage = `${getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.')} Job ID: ${jobId}`;
             pendingEntry = appendMessage(state.messagesEl, 'system', pendingMessage);
         }
 
