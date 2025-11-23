@@ -890,13 +890,45 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'max_attempts'   => self::MAX_POLLING_ATTEMPTS,
 		);
 
-		// Save to transient (24 hour expiry).
+		// Save to transient (24 hour expiry) BEFORE scheduling cron.
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-		// Schedule first poll with a 1-second delay to ensure transient is saved.
-		// This prevents race condition where cron executes before database commit.
-		$first_poll_time = time() + 1;
-		wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
+		// Force database write to ensure transient is committed.
+		// Critical for preventing race conditions where cron executes before transient is saved.
+		wp_cache_flush();
+
+		// Schedule first poll with increased delay (3 seconds instead of 1) to ensure:
+		// 1. Transient is fully committed to database
+		// 2. Cron system has time to register the event
+		// 3. Any database replication lag is accounted for
+		$first_poll_time = time() + 3;
+		$scheduled       = wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
+
+		// Check if scheduling was successful.
+		if ( false === $scheduled ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to schedule initial video poll',
+				array(
+					'job_id'          => $job_id,
+					'first_poll_time' => $first_poll_time,
+					'hook'            => self::CRON_POLL_HOOK,
+				)
+			);
+
+			// Mark job as failed immediately.
+			$metadata['status']       = 'failed';
+			$metadata['error']        = __( 'Failed to schedule video generation polling.', 'wp-mcp-ai' );
+			$metadata['completed_at'] = time();
+			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+			return array(
+				'async'   => true,
+				'job_id'  => $job_id,
+				'status'  => 'failed',
+				'error'   => $metadata['error'],
+				'message' => __( 'Failed to queue video generation. Please try again.', 'wp-mcp-ai' ),
+			);
+		}
 
 		// Record cron job in cron manager for visibility.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -917,8 +949,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
 			array(
-				'job_id'    => $job_id,
-				'operation' => $operation['operation_name'],
+				'job_id'          => $job_id,
+				'operation'       => $operation['operation_name'],
+				'first_poll_time' => $first_poll_time,
 			)
 		);
 
@@ -950,6 +983,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param string $job_id Async job identifier.
 	 */
 	public function poll_video_async( $job_id ) {
+		// Verify cron hook is registered before attempting to poll.
+		// This prevents silent failures if service wasn't properly initialized.
+		if ( ! has_action( self::CRON_POLL_HOOK ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Veo cron hook not registered',
+				array(
+					'job_id' => $job_id,
+					'hook'   => self::CRON_POLL_HOOK,
+				)
+			);
+			// Re-initialize service to register hook.
+			self::init();
+		}
+
 		// Retrieve operation metadata.
 		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
 
@@ -967,16 +1014,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Check if max attempts reached.
 		if ( $metadata['poll_attempt'] > $metadata['max_attempts'] ) {
-			$metadata['status'] = 'failed';
-			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
-			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
-
-			WP_MCP_AI_Logger::log_error(
+			$this->mark_job_as_failed(
+				$job_id,
+				$metadata,
+				__( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' ),
+				'wp_mcp_ai_veo_timeout',
 				'Veo async generation timeout',
-				array(
-					'job_id'   => $job_id,
-					'attempts' => $metadata['poll_attempt'],
-				)
+				array( 'attempts' => $metadata['poll_attempt'] )
 			);
 			return;
 		}
@@ -984,6 +1028,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Poll the Gemini API for status.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+
+		if ( empty( $api_key ) ) {
+			$this->mark_job_as_failed(
+				$job_id,
+				$metadata,
+				__( 'Gemini API key not configured.', 'wp-mcp-ai' ),
+				'wp_mcp_ai_missing_api_key',
+				'Veo async polling failed - missing API key'
+			);
+			return;
+		}
 
 		$endpoint = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/%s',
@@ -1001,6 +1056,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		if ( is_wp_error( $response ) ) {
+			// Log the error for debugging.
+			WP_MCP_AI_Logger::log_event(
+				'veo_poll_error',
+				'Error polling Gemini API for video status',
+				array(
+					'job_id'   => $job_id,
+					'attempt'  => $metadata['poll_attempt'],
+					'error'    => $response->get_error_message(),
+				)
+			);
+
+			// Update metadata with error status before scheduling retry.
+			$metadata['last_error'] = $response->get_error_message();
+
 			// Schedule retry.
 			$this->schedule_next_poll( $job_id, $metadata );
 			return;
@@ -1013,29 +1082,33 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $data['done'] ) && true === $data['done'] ) {
 			if ( isset( $data['error'] ) ) {
 				// Operation failed.
-				$metadata['status'] = 'failed';
-				$metadata['error']  = isset( $data['error']['message'] )
+				$error_message = isset( $data['error']['message'] )
 					? $data['error']['message']
 					: __( 'Video generation failed.', 'wp-mcp-ai' );
-				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-				WP_MCP_AI_Logger::log_error(
-					'Veo async generation failed',
-					array(
-						'job_id' => $job_id,
-						'error'  => $metadata['error'],
-					)
+				$this->mark_job_as_failed(
+					$job_id,
+					$metadata,
+					$error_message,
+					'wp_mcp_ai_veo_generation_failed',
+					'Veo async generation failed'
 				);
 				return;
 			}
 
 			// Operation succeeded - process video.
-			$model = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
+			$model  = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
 			$result = $this->process_completed_video( $data, $metadata['args'], $model );
 
 			if ( is_wp_error( $result ) ) {
-				$metadata['status'] = 'failed';
-				$metadata['error']  = $result->get_error_message();
+				$metadata['status']       = 'failed';
+				$metadata['error']        = $result->get_error_message();
+				$metadata['completed_at'] = time();
+
+				// Store error result in cron manager for retrieval.
+				if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+					WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $result );
+				}
 			} else {
 				// Check if we should save to media library.
 				$save_to_media = isset( $metadata['args']['save_to_media'] )
@@ -1049,11 +1122,18 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					);
 
 					if ( is_wp_error( $save_result ) ) {
-						$metadata['status'] = 'failed';
-						$metadata['error']  = $save_result->get_error_message();
+						$metadata['status']       = 'failed';
+						$metadata['error']        = $save_result->get_error_message();
+						$metadata['completed_at'] = time();
+
+						// Store error result in cron manager for retrieval.
+						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $save_result );
+						}
 					} else {
-						$metadata['status'] = 'completed';
-						$metadata['result'] = array(
+						$metadata['status']       = 'completed';
+						$metadata['completed_at'] = time();
+						$metadata['result']       = array(
 							'attachment_id' => $save_result['attachment_id'],
 							'url'           => $save_result['url'],
 							'prompt'        => $result['prompt'],
@@ -1063,14 +1143,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'model'         => $result['model'],
 							'provider'      => $result['provider'],
 						);
+
+						// Store success result in cron manager for retrieval.
+						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
+						}
 					}
 				} else {
 					// Video not saved to media library - return data URL instead of Google URL.
 					$video_base64 = base64_encode( $result['video_data'] );
 					$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
-					$metadata['status'] = 'completed';
-					$metadata['result'] = array(
+					$metadata['status']       = 'completed';
+					$metadata['completed_at'] = time();
+					$metadata['result']       = array(
 						'video_url'    => $data_url,
 						'prompt'       => $result['prompt'],
 						'duration'     => $result['duration'],
@@ -1079,6 +1165,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'model'        => $result['model'],
 						'provider'     => $result['provider'],
 					);
+
+					// Store success result in cron manager for retrieval.
+					if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+						WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
+					}
 				}
 			}
 
@@ -1121,13 +1212,41 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param array  $metadata Job metadata.
 	 */
 	protected function schedule_next_poll( $job_id, $metadata ) {
-		// Update metadata.
+		// Update metadata and save BEFORE scheduling cron event.
+		// This prevents race conditions where cron executes before transient is saved.
 		$metadata['status'] = 'polling';
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
+		// Force database write to ensure transient is committed before cron scheduling.
+		// This addresses race conditions in high-traffic environments.
+		wp_cache_flush();
+
 		// Schedule next poll.
 		$next_poll = time() + self::POLLING_INTERVAL;
-		wp_schedule_single_event( $next_poll, self::CRON_POLL_HOOK, array( $job_id ) );
+		$scheduled = wp_schedule_single_event( $next_poll, self::CRON_POLL_HOOK, array( $job_id ) );
+
+		// Log scheduling result for debugging.
+		if ( false === $scheduled ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to schedule next video poll',
+				array(
+					'job_id'    => $job_id,
+					'next_poll' => $next_poll,
+					'hook'      => self::CRON_POLL_HOOK,
+				)
+			);
+
+			// Mark job as failed since we can't schedule the next poll.
+			$this->mark_job_as_failed(
+				$job_id,
+				$metadata,
+				__( 'Failed to schedule video polling cron job.', 'wp-mcp-ai' ),
+				'wp_mcp_ai_cron_schedule_failed',
+				'Veo poll scheduling failed',
+				array( 'next_poll' => $next_poll )
+			);
+			return;
+		}
 
 		// Record in cron manager.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -1143,6 +1262,66 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$assistant_id
 			);
 		}
+
+		// Log successful scheduling.
+		WP_MCP_AI_Logger::log_event(
+			'veo_poll_scheduled',
+			'Next video poll scheduled',
+			array(
+				'job_id'    => $job_id,
+				'next_poll' => $next_poll,
+				'attempt'   => $metadata['poll_attempt'],
+			)
+		);
+	}
+
+	/**
+	 * Mark job as failed with error message and fire completion action.
+	 *
+	 * Centralizes failure handling to reduce code duplication.
+	 * Ensures consistent behavior across all failure paths.
+	 *
+	 * @param string $job_id      Job identifier.
+	 * @param array  $metadata    Job metadata.
+	 * @param string $error       Error message.
+	 * @param string $error_code  Optional error code for WP_Error.
+	 * @param string $log_event   Optional event name for logging.
+	 * @param array  $log_context Optional context for logging.
+	 */
+	protected function mark_job_as_failed( $job_id, &$metadata, $error, $error_code = 'wp_mcp_ai_veo_failed', $log_event = 'veo_job_failed', $log_context = array() ) {
+		$metadata['status']       = 'failed';
+		$metadata['error']        = $error;
+		$metadata['completed_at'] = time();
+		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Store result in cron manager for retrieval.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			WP_MCP_AI_Cron_Manager::store_job_result(
+				$job_id,
+				new WP_Error( $error_code, $error )
+			);
+		}
+
+		// Log the failure.
+		WP_MCP_AI_Logger::log_error(
+			$log_event,
+			array_merge(
+				array(
+					'job_id' => $job_id,
+					'error'  => $error,
+				),
+				$log_context
+			)
+		);
+
+		/**
+		 * Fires when video job fails.
+		 *
+		 * @param string $job_id   Job identifier.
+		 * @param array  $metadata Job metadata.
+		 * @param string $status   Status ('failed').
+		 */
+		do_action( 'wp_mcp_ai_video_job_completed', $job_id, $metadata, 'failed' );
 	}
 
 	/**
