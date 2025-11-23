@@ -255,8 +255,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			return array(
 				'openai_api_key'                       => '',
 				'gemini_api_key'                       => '',
-				'segmind_api_key'                      => '',
-				'aimlapi_key'                          => '',
 				'ollama_endpoint_url'                  => '',
 				'ollama_model'                         => '',
 				'lm_studio_endpoint_url'               => '',
@@ -265,7 +263,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_logging'                       => false,
 				'default_model'                        => 'gpt-4o-mini',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
-				'default_gemini_video_model'           => 'veo-2.0',
 				'default_provider'                     => 'openai',
 				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
 				'web_search_provider'                  => 'duckduckgo',

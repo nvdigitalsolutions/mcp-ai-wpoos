@@ -49,7 +49,7 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
 		rest_get_server();
-		do_action( 'rest_api_init' );
+		do_action( 'init' );
 	}
 
 	/**
@@ -172,7 +172,6 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		);
 
 		$failure_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$failure_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$failure_request->set_header( 'Content-Type', 'application/json' );
 		$failure_request->set_body(
 			wp_json_encode(
@@ -208,7 +207,6 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		);
 
 		$success_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$success_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$success_request->set_header( 'Content-Type', 'application/json' );
 		$success_request->set_body(
 			wp_json_encode(

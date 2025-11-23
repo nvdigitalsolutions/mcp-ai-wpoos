@@ -47,7 +47,7 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
 		rest_get_server();
-		do_action( 'rest_api_init' );
+		do_action( 'init' );
 	}
 
 	public function tearDown(): void {
@@ -105,7 +105,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	 */
 	public function test_save_endpoint_requires_assistant_id() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'session_key', 'test-session-123' );
 		$request->set_param(
 			'messages',
@@ -130,7 +129,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	 */
 	public function test_save_endpoint_requires_session_key() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param(
 			'messages',
@@ -155,7 +153,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	 */
 	public function test_save_endpoint_requires_messages() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-session-123' );
 
@@ -174,7 +171,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-session-456' );
 		$request->set_param(
@@ -217,7 +213,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-session-789' );
 		$request->set_param(
@@ -249,7 +244,6 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $draft_assistant_id );
 		$request->set_param( 'session_key', 'test-session-999' );
 		$request->set_param(

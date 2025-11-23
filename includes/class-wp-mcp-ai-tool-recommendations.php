@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Recommendations {
 				'get_google_analytics_report',
 				'get_quickbooks_report',
 				'reliefweb_reports',
+				'get_site_summary',
 			),
 		),
 
@@ -103,7 +104,6 @@ class WP_MCP_AI_Tool_Recommendations {
 			'description'     => 'Simple operations with minimal token requirements',
 			'tools'           => array(
 				'get_user_info',
-				'get_site_summary',
 				'get_update_status',
 				'count_tokens',
 				'get_cron_job',

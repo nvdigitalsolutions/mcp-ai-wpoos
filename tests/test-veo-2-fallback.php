@@ -41,9 +41,9 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$constant = $reflection->getConstant( 'VEO_2_MIN_DURATION' );
 
 		$this->assertEquals(
-			4,
+			5,
 			$constant,
-			'VEO_2_MIN_DURATION should be 4 seconds (same as Veo 3.1)'
+			'VEO_2_MIN_DURATION should be 5 seconds'
 		);
 	}
 
@@ -175,10 +175,10 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$method = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
-		// Test that duration below 4 seconds is adjusted for Veo 2.
+		// Test that duration below 5 seconds is adjusted for Veo 2.
 		$args = array(
 			'prompt'   => 'Test video',
-			'duration' => 3, // Below minimum (4 seconds).
+			'duration' => 4, // Below Veo 2 minimum.
 		);
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
@@ -188,9 +188,9 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'parameters', $payload );
 		$this->assertArrayHasKey( 'durationSeconds', $payload['parameters'] );
 		$this->assertEquals(
-			4,
+			5,
 			$payload['parameters']['durationSeconds'],
-			'Veo 2 should enforce minimum 4 second duration (same as Veo 3.1)'
+			'Veo 2 should enforce minimum 5 second duration'
 		);
 	}
 

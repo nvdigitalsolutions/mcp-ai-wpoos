@@ -466,9 +466,7 @@ class WP_MCP_AI_Chat_Service {
 
 				$result_content = wp_json_encode( $error_payload );
 			} else {
-				// Sanitize tool result for LLM (strips large fields like base64 data).
-				$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
-				$result_content   = wp_json_encode( $sanitized_result );
+				$result_content = wp_json_encode( $tool_result );
 			}
 
 			$results[] = array(
@@ -686,47 +684,5 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $this->tool_orchestrator;
-	}
-
-	/**
-	 * Sanitize tool result for LLM consumption
-	 *
-	 * Strips large fields (like base64 image data) from tool results before
-	 * sending to the LLM to prevent timeout errors from oversized payloads.
-	 *
-	 * This method:
-	 * - Calls tool's sanitize_for_llm() if it implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface
-	 * - Applies WordPress filters for custom sanitization
-	 * - Passes through WP_Error objects unchanged
-	 *
-	 * Example: generate_openai_image strips content.data (100KB+ base64) but preserves:
-	 * - attachment_id, url, file_name (essential metadata)
-	 * - image_url structure (for vision models)
-	 *
-	 * @param mixed  $result           Tool execution result (array, WP_Error, or scalar).
-	 * @param string $tool_name        Tool name.
-	 * @param array  $assistant_config Assistant configuration.
-	 * @return mixed Sanitized result. WP_Error objects are returned unchanged.
-	 */
-	private function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array() ) {
-		// Get tool instance to check if it implements custom sanitization.
-		$tool_instance = null;
-		if ( $tool_name && $this->tool_registry ) {
-			$tool_instance = $this->tool_registry->get_tool( $tool_name );
-		}
-
-		// If tool implements custom sanitization interface, use it.
-		if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
-			$result = $tool_instance->sanitize_for_llm( $result );
-		}
-
-		// Allow filtering of tool results before sending to LLM.
-		$result = apply_filters( 'wp_mcp_ai_sanitize_tool_result_llm', $result, $tool_name, $assistant_config );
-
-		if ( $tool_name ) {
-			$result = apply_filters( "wp_mcp_ai_sanitize_tool_result_llm_{$tool_name}", $result, $assistant_config );
-		}
-
-		return $result;
 	}
 }

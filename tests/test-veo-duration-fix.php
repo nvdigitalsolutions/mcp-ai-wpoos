@@ -21,9 +21,9 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that duration value 0 (from absint of invalid input) defaults to 5.
+	 * Test that duration value 0 (from absint of invalid input) defaults to 4.
 	 */
-	public function test_duration_zero_defaults_to_five() {
+	public function test_duration_zero_defaults_to_four() {
 		// Set up API key.
 		$settings = array(
 			'gemini_api_key' => 'test-api-key-12345',
@@ -107,18 +107,18 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Duration 0 should have been defaulted to 5.
+		// Duration 0 should have been defaulted to 4.
 		$this->assertEquals(
-			5,
+			4,
 			$request_body['parameters']['durationSeconds'],
-			'Duration 0 should default to 5 seconds'
+			'Duration 0 should default to 4 seconds'
 		);
 	}
 
 	/**
-	 * Test that negative duration values default to 5.
+	 * Test that negative duration values default to 4.
 	 */
-	public function test_negative_duration_defaults_to_five() {
+	public function test_negative_duration_defaults_to_four() {
 		// Set up API key.
 		$settings = array(
 			'gemini_api_key' => 'test-api-key-12345',
@@ -179,9 +179,9 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that duration values outside 5-8 range default to 5.
+	 * Test that duration values outside 4-8 range default to 4.
 	 */
-	public function test_out_of_range_durations_default_to_five() {
+	public function test_out_of_range_durations_default_to_four() {
 		// Set up API key.
 		$settings = array(
 			'gemini_api_key' => 'test-api-key-12345',
@@ -191,7 +191,7 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Test values outside the valid range.
-		$test_values = array( 1, 2, 3, 4, 9, 10, 15, 100 );
+		$test_values = array( 1, 2, 3, 9, 10, 15, 100 );
 
 		foreach ( $test_values as $test_duration ) {
 			$captured_request = null;
@@ -237,15 +237,15 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 			$request_body = json_decode( $captured_request['args']['body'], true );
 
 			$this->assertEquals(
-				5,
+				4,
 				$request_body['parameters']['durationSeconds'],
-				"Duration {$test_duration} (outside 5-8 range) should default to 5 seconds"
+				"Duration {$test_duration} (outside 4-8 range) should default to 4 seconds"
 			);
 		}
 	}
 
 	/**
-	 * Test that all valid duration values (5-8) are passed correctly.
+	 * Test that all valid duration values (4-8) are passed correctly.
 	 */
 	public function test_valid_durations_passed_correctly() {
 		// Set up API key.
@@ -257,7 +257,7 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Test all valid duration values.
-		foreach ( array( 5, 6, 7, 8 ) as $valid_duration ) {
+		foreach ( array( 4, 5, 6, 7, 8 ) as $valid_duration ) {
 			$captured_request = null;
 
 			// Mock HTTP requests.
@@ -362,11 +362,11 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Should default to 5.
+		// Should default to 4.
 		$this->assertEquals(
-			5,
+			4,
 			$request_body['parameters']['durationSeconds'],
-			'Missing duration should default to 5 seconds'
+			'Missing duration should default to 4 seconds'
 		);
 
 		// Verify the duration is an integer in the JSON.

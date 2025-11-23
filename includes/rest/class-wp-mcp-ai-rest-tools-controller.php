@@ -181,16 +181,17 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'default'           => 10,
 							'sanitize_callback' => 'absint',
+						),
+					),
+					'args'                => array(
+						'limit' => array(
+							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 10,
+							'sanitize_callback' => 'absint',
 							'minimum'           => 1,
 							'maximum'           => 50,
-						),
-						'context'      => array(
-							'description'       => __( 'Context for filtering jobs: "chat" excludes internal async jobs, "admin" shows all.', 'wp-mcp-ai' ),
-							'type'              => 'string',
-							'required'          => false,
-							'default'           => 'admin',
-							'enum'              => array( 'chat', 'admin' ),
-							'sanitize_callback' => 'sanitize_key',
 						),
 					),
 				),
@@ -220,74 +221,6 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'        => 'boolean',
 							'required'    => false,
 							'default'     => false,
-						),
-					),
-				),
-			),
-			true
-		);
-
-		// /job-notifications - Get pending job completion notifications for chat client.
-		register_rest_route(
-			self::REST_NAMESPACE,
-			'/job-notifications',
-			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
-					'callback'            => array( $this, 'handle_job_notifications_request' ),
-					'args'                => array(
-						'assistant_id' => array(
-							'description'       => __( 'Assistant ID to filter notifications.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => true,
-							'validate_callback' => function( $param ) {
-								return is_numeric( $param ) && $param > 0;
-							},
-						),
-						'clear' => array(
-							'description' => __( 'Whether to clear notifications after retrieval.', 'wp-mcp-ai' ),
-							'type'        => 'boolean',
-							'required'    => false,
-							'default'     => true,
-						),
-					),
-				),
-			),
-			true
-		);
-
-		// /job-notifications/stream - SSE stream for real-time notifications and job counts.
-		register_rest_route(
-			self::REST_NAMESPACE,
-			'/job-notifications/stream',
-			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
-					'callback'            => array( $this, 'handle_job_notifications_stream' ),
-					'args'                => array(
-						'assistant_id'  => array(
-							'description'       => __( 'Assistant ID to stream notifications for.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => true,
-							'validate_callback' => function( $param ) {
-								return is_numeric( $param ) && $param > 0;
-							},
-						),
-						'max_duration'  => array(
-							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'wp-mcp-ai' ),
-							'type'        => 'integer',
-							'minimum'     => 10,
-							'maximum'     => 600,
-							'default'     => 300,
-						),
-						'poll_interval' => array(
-							'description' => __( 'Interval in seconds between status checks.', 'wp-mcp-ai' ),
-							'type'        => 'integer',
-							'minimum'     => 1,
-							'maximum'     => 30,
-							'default'     => 2,
 						),
 					),
 				),
@@ -445,110 +378,6 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $this->main_controller->handle_cron_job_details_request( $request );
 		}
 		return $this->error( 'not_implemented', __( 'Cron job details endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
-	}
-
-	/**
-	 * Handle GET /job-notifications request.
-	 *
-	 * Retrieves pending job completion notifications for the current user and assistant.
-	 * Notifications are stored when async jobs complete and cleared when retrieved.
-	 *
-	 * @param WP_REST_Request $request REST request instance.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function handle_job_notifications_request( WP_REST_Request $request ) {
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-		$clear        = (bool) $request->get_param( 'clear' );
-
-		// Get current user ID.
-		$user_id = get_current_user_id();
-
-		// Get event dispatcher service.
-		if ( ! class_exists( 'WP_MCP_AI_Event_Dispatcher_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-event-dispatcher-service.php';
-		}
-
-		$dispatcher = WP_MCP_AI_Event_Dispatcher_Service::get_instance();
-
-		// Get pending notifications.
-		$notifications = $dispatcher->get_pending_notifications( $user_id, $assistant_id, $clear );
-
-		// Get job counts to consolidate polling (reduces client requests by 50%).
-		$job_counts = $this->get_job_counts_for_user( $user_id, $assistant_id );
-
-		return rest_ensure_response(
-			array(
-				'notifications' => $notifications,
-				'count'         => count( $notifications ),
-				'job_counts'    => $job_counts,
-			)
-		);
-	}
-
-	/**
-	 * Get job counts for a user and assistant
-	 *
-	 * Helper method to retrieve job counts from Cron Status Service.
-	 * Used by job-notifications endpoint to consolidate polling.
-	 *
-	 * @param int $user_id      User ID.
-	 * @param int $assistant_id Assistant ID.
-	 * @return array Job counts with pending, running, completed, failed, total.
-	 */
-	private function get_job_counts_for_user( $user_id, $assistant_id ) {
-		$default_counts = array(
-			'pending'   => 0,
-			'running'   => 0,
-			'completed' => 0,
-			'failed'    => 0,
-			'total'     => 0,
-		);
-
-		// Access cron status service directly from container to avoid calling protected method.
-		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
-		}
-
-		$container = WP_MCP_AI_Container::get_instance();
-		$cron_service = $container->get( 'service.cron_status' );
-
-		if ( ! $cron_service || ! method_exists( $cron_service, 'get_status_counts' ) ) {
-			return $default_counts;
-		}
-
-		$counts_data = $cron_service->get_status_counts( $user_id, $assistant_id, 'chat' );
-		return is_array( $counts_data ) ? $counts_data : $default_counts;
-	}
-
-	/**
-	 * Handle GET /job-notifications/stream request (SSE).
-	 *
-	 * Streams real-time job notifications and count updates via Server-Sent Events.
-	 * Eliminates the need for polling in the chat client for real-time updates.
-	 *
-	 * @param WP_REST_Request $request REST request instance.
-	 * @return void Exits after streaming.
-	 */
-	public function handle_job_notifications_stream( WP_REST_Request $request ) {
-		$assistant_id  = absint( $request->get_param( 'assistant_id' ) );
-		$max_duration  = absint( $request->get_param( 'max_duration' ) );
-		$poll_interval = absint( $request->get_param( 'poll_interval' ) );
-
-		// Get current user ID.
-		$user_id = get_current_user_id();
-
-		// Load SSE notification stream service.
-		if ( ! class_exists( 'WP_MCP_AI_SSE_Notification_Stream' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-sse-notification-stream.php';
-		}
-
-		// Stream notifications (this will exit).
-		WP_MCP_AI_SSE_Notification_Stream::stream_notifications(
-			$assistant_id,
-			$user_id,
-			$max_duration,
-			$poll_interval
-		);
 	}
 
 	/**

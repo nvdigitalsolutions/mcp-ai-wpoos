@@ -710,11 +710,11 @@ class WP_MCP_AI_Analytics_Engine {
 		// Build query to fetch transcripts.
 		$where = '';
 		if ( $user_id > 0 ) {
-			$where = $wpdb->prepare( 'WHERE user_id = %d', $user_id );
+			$where = $wpdb->prepare( 'WHERE cct_author_id = %d', $user_id );
 		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is validated, $where is prepared above.
-		$transcripts = $wpdb->get_results( "SELECT _ID, user_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
+		$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
 
 		if ( empty( $transcripts ) ) {
 			return $results;
@@ -725,7 +725,7 @@ class WP_MCP_AI_Analytics_Engine {
 		foreach ( $transcripts as $transcript ) {
 			++$results['transcripts_processed'];
 
-			$transcript_user_id = absint( $transcript->user_id );
+			$transcript_user_id = absint( $transcript->cct_author_id );
 			if ( ! $transcript_user_id ) {
 				continue;
 			}

@@ -47,4 +47,3 @@ test-storage-service.html
 verify-*.php
 /wp-content/
 test-transcript-routes.php
-*.md

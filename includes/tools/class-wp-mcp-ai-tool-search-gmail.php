@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
  */
-class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
 
@@ -478,46 +478,5 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function sanitize_for_llm( $result ) {
-		if ( ! is_array( $result ) ) {
-			return $result;
-		}
-
-		// Strip email addresses from Gmail search results before sending to LLM.
-		// The LLM needs message content and metadata for analysis, but doesn't
-		// need sender/recipient email addresses which are PII.
-		$sanitized = array();
-
-		foreach ( $result as $message ) {
-			if ( ! is_array( $message ) ) {
-				$sanitized[] = $message;
-				continue;
-			}
-
-			$sanitized_message = $message;
-
-			// Remove sender email address - this is PII.
-			unset( $sanitized_message['from'] );
-
-			// Remove recipient email address - this is PII.
-			unset( $sanitized_message['to'] );
-
-			// Keep essential fields for LLM analysis:
-			// - id: Message identifier
-			// - subject: Email subject line
-			// - date, timestamp: Temporal context
-			// - snippet: Message preview/summary
-			// - labels: Gmail categorization
-			// - permalink: Link to message (doesn't expose email content)
-
-			$sanitized[] = $sanitized_message;
-		}
-
-		return $sanitized;
 	}
 }

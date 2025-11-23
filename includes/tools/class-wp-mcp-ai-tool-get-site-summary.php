@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides basic site metadata and content statistics.
  */
-class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -88,28 +88,5 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function sanitize_for_llm( $result ) {
-		if ( ! is_array( $result ) ) {
-			return $result;
-		}
-
-		// Strip admin email before sending to LLM.
-		// The LLM doesn't need the site admin's email address for context.
-		$sanitized = $result;
-
-		// Remove admin email - this is PII.
-		unset( $sanitized['admin_email'] );
-
-		// Keep essential fields for LLM context:
-		// - summary, site_name, site_description: Site identity
-		// - site_url: Site location
-		// - posts_published, pages_published, total_users: Content stats
-
-		return $sanitized;
 	}
 }
