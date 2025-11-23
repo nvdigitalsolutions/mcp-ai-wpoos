@@ -7089,6 +7089,93 @@
     // Expose public API globally
     if (typeof window !== 'undefined') {
         window.wpMcpAiLoadSession = loadSessionIntoChat;
+
+        /**
+         * Console testing utility for GET /chat-transcripts/{session_key} endpoint.
+         * 
+         * Usage in browser console:
+         *   wpMcpAiTestGetTranscript('1e05412c-c158-44c1-8f8d-584c9f29a1e9', 1, 14)
+         *   wpMcpAiTestGetTranscript('session-key-here') // user_id and assistant_id optional
+         * 
+         * @param {string} sessionKey - The session key/UUID to retrieve
+         * @param {number|null} userId - Optional user ID (defaults to current user)
+         * @param {number|null} assistantId - Optional assistant ID
+         * @return {Promise} Promise that resolves with the transcript data
+         */
+        window.wpMcpAiTestGetTranscript = function(sessionKey, userId, assistantId) {
+            if (!sessionKey) {
+                console.error('[wpMcpAiTestGetTranscript] Error: sessionKey is required');
+                return Promise.reject(new Error('sessionKey parameter is required'));
+            }
+
+            // Get the transcripts endpoint from global config
+            const baseEndpoint = (globalConfig && globalConfig.transcriptsEndpoint) || '';
+            if (!baseEndpoint) {
+                console.error('[wpMcpAiTestGetTranscript] Error: transcriptsEndpoint not found in global config');
+                console.log('[wpMcpAiTestGetTranscript] Available config:', globalConfig);
+                return Promise.reject(new Error('transcriptsEndpoint not configured'));
+            }
+
+            // Build URL with session key
+            let url = baseEndpoint;
+            if (!url.endsWith('/')) {
+                url += '/';
+            }
+            url += encodeURIComponent(sessionKey);
+
+            // Add query parameters
+            const params = [];
+            if (userId) {
+                params.push('user_id=' + encodeURIComponent(userId));
+            }
+            if (assistantId) {
+                params.push('assistant_id=' + encodeURIComponent(assistantId));
+            }
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+
+            // Build headers with nonce
+            const headers = {
+                'Accept': 'application/json'
+            };
+            const nonce = (globalConfig && globalConfig.nonce) || '';
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+
+            console.log('[wpMcpAiTestGetTranscript] Request:', {
+                url: url,
+                sessionKey: sessionKey,
+                userId: userId || 'not specified',
+                assistantId: assistantId || 'not specified',
+                headers: headers
+            });
+
+            // Make the fetch request
+            return fetch(url, {
+                method: 'GET',
+                headers: headers,
+                credentials: 'same-origin'
+            }).then(function(response) {
+                console.log('[wpMcpAiTestGetTranscript] Response status:', response.status, response.statusText);
+                
+                return response.json().then(function(data) {
+                    if (response.ok) {
+                        console.log('[wpMcpAiTestGetTranscript] Success! Data:', data);
+                    } else {
+                        console.error('[wpMcpAiTestGetTranscript] Error response:', data);
+                    }
+                    return data;
+                }).catch(function(jsonError) {
+                    console.error('[wpMcpAiTestGetTranscript] Failed to parse JSON response:', jsonError);
+                    throw jsonError;
+                });
+            }).catch(function(error) {
+                console.error('[wpMcpAiTestGetTranscript] Fetch error:', error);
+                throw error;
+            });
+        };
     }
 
     /**
