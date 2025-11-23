@@ -160,7 +160,13 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 		$this->assertIsArray( $final_async_metadata, 'Async job metadata should exist' );
 		$this->assertEquals( 'completed', $final_async_metadata['status'], 'Async job should be completed' );
 		$this->assertArrayHasKey( 'result', $final_async_metadata, 'Async job should have result' );
-		$this->assertEquals( $video_result, $final_async_metadata['result'], 'Async job result should be final video result' );
+		
+		// Verify result is wrapped in async executor format.
+		$this->assertIsArray( $final_async_metadata['result'], 'Result should be an array' );
+		$this->assertArrayHasKey( 'compressed', $final_async_metadata['result'], 'Result should have compressed key' );
+		$this->assertArrayHasKey( 'data', $final_async_metadata['result'], 'Result should have data key' );
+		$this->assertFalse( $final_async_metadata['result']['compressed'], 'Result should not be compressed' );
+		$this->assertEquals( $video_result, $final_async_metadata['result']['data'], 'Result data should match video result' );
 
 		// 2. Veo job should be completed.
 		$final_veo_metadata = get_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $veo_job_id );
@@ -180,7 +186,8 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 		$this->assertEquals( $user_id, $veo_hook_data['metadata']['user_id'], 'user_id should match' );
 
 		// 5. Chat client can retrieve video URL from original async job.
-		$client_result = $final_async_metadata['result'];
+		// The result is wrapped, so we need to access the 'data' key.
+		$client_result = $final_async_metadata['result']['data'];
 		$this->assertArrayHasKey( 'url', $client_result, 'Result should include video URL' );
 		$this->assertEquals( 'http://example.com/integration-test-video.mp4', $client_result['url'], 'URL should match' );
 		$this->assertArrayHasKey( 'attachment_id', $client_result, 'Result should include attachment_id' );

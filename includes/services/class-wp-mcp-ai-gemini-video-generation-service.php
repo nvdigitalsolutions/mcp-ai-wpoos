@@ -1328,9 +1328,18 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Update parent job with final result.
+		// Wrap result in async executor's expected format (compress_result structure).
+		// The async executor expects results to have 'compressed' and 'data' keys.
+		$serialized = serialize( $result );
+		$wrapped_result = array(
+			'compressed'    => false,
+			'data'          => $result,
+			'original_size' => strlen( $serialized ),
+		);
+
 		$parent_metadata['status']       = 'completed';
 		$parent_metadata['completed_at'] = time();
-		$parent_metadata['result']       = $result;
+		$parent_metadata['result']       = $wrapped_result;
 
 		// Save updated metadata.
 		set_transient( 'wp_mcp_ai_async_meta_' . $parent_job_id, $parent_metadata, DAY_IN_SECONDS );

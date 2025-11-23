@@ -128,7 +128,14 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 		$this->assertIsArray( $updated_parent, 'Parent job metadata should exist' );
 		$this->assertEquals( 'completed', $updated_parent['status'], 'Parent job should be marked completed' );
 		$this->assertArrayHasKey( 'result', $updated_parent, 'Parent job should have result' );
-		$this->assertEquals( $video_result, $updated_parent['result'], 'Parent job result should match video result' );
+		
+		// Verify result is wrapped in async executor format.
+		$this->assertIsArray( $updated_parent['result'], 'Result should be an array' );
+		$this->assertArrayHasKey( 'compressed', $updated_parent['result'], 'Result should have compressed key' );
+		$this->assertArrayHasKey( 'data', $updated_parent['result'], 'Result should have data key' );
+		$this->assertArrayHasKey( 'original_size', $updated_parent['result'], 'Result should have original_size key' );
+		$this->assertFalse( $updated_parent['result']['compressed'], 'Result should not be compressed' );
+		$this->assertEquals( $video_result, $updated_parent['result']['data'], 'Result data should match video result' );
 
 		// Verify parent completion hook was fired.
 		$this->assertTrue( $parent_hook_called, 'Parent job completion hook should be fired' );
