@@ -934,6 +934,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'attempts' => $metadata['poll_attempt'],
 				)
 			);
+
+			// Fire job failed hook for notification system.
+			do_action(
+				'wp_mcp_ai_job_failed',
+				$job_id,
+				new WP_Error( 'veo_timeout', $metadata['error'] ),
+				array(
+					'tool'   => 'generate_veo_video',
+					'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+				)
+			);
 			return;
 		}
 
@@ -982,6 +993,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'error'  => $metadata['error'],
 					)
 				);
+
+				// Fire job failed hook for notification system.
+				do_action(
+					'wp_mcp_ai_job_failed',
+					$job_id,
+					new WP_Error( 'veo_generation_failed', $metadata['error'] ),
+					array(
+						'tool'   => 'generate_veo_video',
+						'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+					)
+				);
 				return;
 			}
 
@@ -992,6 +1014,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			if ( is_wp_error( $result ) ) {
 				$metadata['status'] = 'failed';
 				$metadata['error']  = $result->get_error_message();
+				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+				// Fire job failed hook for notification system.
+				do_action(
+					'wp_mcp_ai_job_failed',
+					$job_id,
+					$result,
+					array(
+						'tool'   => 'generate_veo_video',
+						'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+					)
+				);
+				return;
 			} else {
 				// Check if we should save to media library.
 				$save_to_media = isset( $metadata['args']['save_to_media'] )
@@ -1007,6 +1042,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					if ( is_wp_error( $save_result ) ) {
 						$metadata['status'] = 'failed';
 						$metadata['error']  = $save_result->get_error_message();
+						set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+						// Fire job failed hook for notification system.
+						do_action(
+							'wp_mcp_ai_job_failed',
+							$job_id,
+							$save_result,
+							array(
+								'tool'   => 'generate_veo_video',
+								'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+							)
+						);
+						return;
 					} else {
 						$metadata['status'] = 'completed';
 						$metadata['result'] = array(
@@ -1046,6 +1094,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				array(
 					'job_id'   => $job_id,
 					'attempts' => $metadata['poll_attempt'],
+				)
+			);
+
+			// Fire job completed hook for notification system.
+			// This allows the chat client to receive the completion notification via SSE/polling.
+			do_action(
+				'wp_mcp_ai_job_completed',
+				$job_id,
+				isset( $metadata['result'] ) ? $metadata['result'] : array(),
+				array(
+					'tool'     => 'generate_veo_video',
+					'prompt'   => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+					'duration' => isset( $metadata['args']['duration'] ) ? $metadata['args']['duration'] : 0,
 				)
 			);
 			return;

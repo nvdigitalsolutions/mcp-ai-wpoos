@@ -308,6 +308,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 				)
 			);
 
+			// Fire job completed hook for notification system.
+			// This allows the chat client to receive completion notifications via SSE/polling
+			// for any tool that runs through the async executor.
+			do_action(
+				'wp_mcp_ai_job_completed',
+				$job_id,
+				$result,
+				array(
+					'tool'     => $tool_slug,
+					'duration' => $duration,
+					'context'  => isset( $context['assistant_id'] ) ? array( 'assistant_id' => $context['assistant_id'] ) : array(),
+				)
+			);
+
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );
 		}
@@ -338,6 +352,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 				'job_id'    => $job_id,
 				'tool_slug' => $metadata['tool_slug'],
 				'error'     => $error_message,
+			)
+		);
+
+		// Fire job failed hook for notification system.
+		// This allows the chat client to receive failure notifications via SSE/polling
+		// for any tool that runs through the async executor.
+		$wp_error = $error instanceof WP_Error ? $error : new WP_Error( 'async_tool_failed', $error_message );
+		do_action(
+			'wp_mcp_ai_job_failed',
+			$job_id,
+			$wp_error,
+			array(
+				'tool'  => isset( $metadata['tool_slug'] ) ? $metadata['tool_slug'] : 'unknown',
+				'error' => $error_message,
 			)
 		);
 	}
