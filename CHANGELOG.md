@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Chat Client Attachment Visibility (PR #1630, November 24, 2025)**
+  - Fixed issue where file attachments (images, PDFs, etc.) were appearing in the chat UI but not being passed to OpenAI
+  - Added `input_image` and `input_file` segment types to REST validator's processable types
+  - Users can now attach files in chat-client and AI providers will properly receive them
+  - Preserves agentic workflow - no manual re-uploading needed
+  - Added 2 comprehensive unit tests (`test_sanitize_messages_processes_input_image_segments` and `test_sanitize_messages_processes_input_file_segments`)
+  - Backward compatible with all existing segment types
+  - See `docs/archive/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
+
+### Documentation
+- **Documentation Organization (November 24, 2025)**: Completed documentation cleanup
+  - Moved 62 non-essential markdown files from root to `docs/archive/` subdirectories
+  - Root directory now contains only 5 essential files (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, BUILD.md)
+  - Organized files into logical categories:
+    - `docs/archive/fixes/` - Bug fix summaries and technical details (31 files)
+    - `docs/archive/features/` - Feature implementation documentation (14 files)
+    - `docs/archive/implementations/` - Implementation summaries (5 files)
+    - `docs/archive/phases/` - Phase documents (4 files)
+    - `docs/archive/testing/` - Test guides and summaries (3 files)
+    - `docs/archive/summaries/` - General summaries (1 file)
+  - All documentation preserved (nothing deleted, only organized)
+  - Easier navigation and discovery of relevant documentation
+  - Completes the documentation reorganization initiated on November 18, 2025
+
 ### Added
 - **Phase 2.1: File Management & Caching for Video Analysis (November 20, 2025)**
   - File caching to avoid re-uploading same videos (transient-based with 24-hour expiration)

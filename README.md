@@ -1845,8 +1845,8 @@ The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each m
 
 - `text` – Free-form text (`text` property). Strings supplied directly to `content` are automatically wrapped in this format. For backwards compatibility, existing `input_text` payloads sent to the REST API are still accepted and normalised to the new schema.
 - `input_image` – Reference an uploaded WordPress attachment (`attachment_id`) or provide a remote `url`. Optional `detail`
-  hints (`low`, `auto`, `high`) and `caption` fields are preserved.
-- `input_file` – Reference an uploaded attachment that should be streamed to the model.
+  hints (`low`, `auto`, `high`) and `caption` fields are preserved. *(Fixed in v1.0.0: Chat client attachments now properly processed)*
+- `input_file` – Reference an uploaded attachment that should be streamed to the model. *(Fixed in v1.0.0: Chat client file attachments now properly processed)*
 
 The REST controller validates attachment ownership/permissions, enforces a default 5 MB size cap (filterable via
 `wp_mcp_ai_max_attachment_bytes`), and only allows safe MIME types by default. Text and structured data formats include
