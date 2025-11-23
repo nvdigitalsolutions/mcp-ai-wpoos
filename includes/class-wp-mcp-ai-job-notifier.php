@@ -220,14 +220,18 @@ class WP_MCP_AI_Job_Notifier {
 
 			// Send webhook asynchronously to avoid blocking.
 			$timestamp = time();
+			$payload   = array(
+				'event'   => $event,
+				'job_id'  => $job_id,
+				'data'    => $data,
+				'sent_at' => current_time( 'c', true ),
+			);
+
+			// Use numerically-indexed array for wp_schedule_single_event.
+			// The action expects 2 arguments: $url and $payload.
 			$webhook_args = array(
-				'url'     => $webhook['url'],
-				'payload' => array(
-					'event'   => $event,
-					'job_id'  => $job_id,
-					'data'    => $data,
-					'sent_at' => current_time( 'c', true ),
-				),
+				$webhook['url'],
+				$payload,
 			);
 
 			wp_schedule_single_event(
