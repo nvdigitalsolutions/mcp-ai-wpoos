@@ -264,6 +264,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										if (response.data.details) {
 											errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
 										}
+										// Add test output if available (contains the actual failure details)
+										if (response.data.output) {
+											errorHtml += '<details class="wp-mcp-ai-test-output"><summary><strong><?php echo esc_js( __( 'Test Output (Click to expand)', 'wp-mcp-ai' ) ); ?></strong></summary><pre>' + escapeHtml(response.data.output) + '</pre></details>';
+										}
 										if (response.data.cli_command) {
 											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
 										}
@@ -359,6 +363,34 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 			font-family: Consolas, Monaco, monospace;
 			display: inline-block;
 			margin-top: 5px;
+		}
+		.wp-mcp-ai-test-output {
+			margin-top: 10px;
+			background: #f0f0f1;
+			border: 1px solid #ccd0d4;
+			border-radius: 3px;
+		}
+		.wp-mcp-ai-test-output summary {
+			padding: 10px;
+			cursor: pointer;
+			font-size: 13px;
+			user-select: none;
+		}
+		.wp-mcp-ai-test-output summary:hover {
+			background: #e5e5e5;
+		}
+		.wp-mcp-ai-test-output pre {
+			margin: 0;
+			padding: 15px;
+			background: #23282d;
+			color: #f0f0f1;
+			border-radius: 0 0 3px 3px;
+			overflow-x: auto;
+			font-family: Consolas, Monaco, monospace;
+			font-size: 12px;
+			line-height: 1.6;
+			max-height: 400px;
+			overflow-y: auto;
 		}
 		</style>
 		<?php
