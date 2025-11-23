@@ -23,16 +23,22 @@ describe( 'Video Attachment Rendering', () => {
 			// Check for video file extensions in URL
 			if ( url && typeof url === 'string' ) {
 				const lowerUrl = url.toLowerCase();
-				if ( lowerUrl.indexOf( '.mp4' ) !== -1 ||
-					lowerUrl.indexOf( '.webm' ) !== -1 ||
-					lowerUrl.indexOf( '.ogg' ) !== -1 ||
-					lowerUrl.indexOf( '.mov' ) !== -1 ||
-					lowerUrl.indexOf( 'video' ) !== -1 ) {
-					return true;
+
+				// Check for common video file extensions
+				const videoExtensions = [ '.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv' ];
+				for ( let i = 0; i < videoExtensions.length; i++ ) {
+					if ( lowerUrl.indexOf( videoExtensions[ i ] ) !== -1 ) {
+						return true;
+					}
 				}
 
 				// Check for data URLs with video MIME type
 				if ( lowerUrl.indexOf( 'data:video/' ) === 0 ) {
+					return true;
+				}
+
+				// Check for 'video' in path segments (more specific than global match)
+				if ( lowerUrl.indexOf( '/video/' ) !== -1 || lowerUrl.indexOf( '/videos/' ) !== -1 ) {
 					return true;
 				}
 			}
@@ -40,15 +46,21 @@ describe( 'Video Attachment Rendering', () => {
 			// Check metadata for video indicators
 			if ( meta && typeof meta === 'string' ) {
 				const lowerMeta = meta.toLowerCase();
-				if ( lowerMeta.indexOf( 'video' ) !== -1 || lowerMeta.indexOf( '.mp4' ) !== -1 ) {
-					return true;
+				const videoIndicators = [ 'video', '.mp4', '.webm', '.ogg', '.mov' ];
+				for ( let i = 0; i < videoIndicators.length; i++ ) {
+					if ( lowerMeta.indexOf( videoIndicators[ i ] ) !== -1 ) {
+						return true;
+					}
 				}
 			}
 
 			// Check label for video indicators
 			if ( label && typeof label === 'string' ) {
 				const lowerLabel = label.toLowerCase();
-				if ( lowerLabel.indexOf( 'video' ) !== -1 || lowerLabel.indexOf( 'veo' ) !== -1 ) {
+				// More specific label checks for Veo or explicit "video" mentions
+				if ( lowerLabel.indexOf( 'veo' ) !== -1 ||
+					lowerLabel.indexOf( 'video' ) === 0 || // "video" at start
+					lowerLabel.indexOf( ' video' ) !== -1 ) { // " video" anywhere
 					return true;
 				}
 			}
@@ -88,11 +100,35 @@ describe( 'Video Attachment Rendering', () => {
 			expect( isVideoAttachment( attachment ) ).toBe( true );
 		} );
 
+		it( 'should detect video label starting with "video"', () => {
+			const attachment = {
+				url: 'https://example.com/file',
+				label: 'Video file from server',
+			};
+			expect( isVideoAttachment( attachment ) ).toBe( true );
+		} );
+
+		it( 'should detect video label containing " video"', () => {
+			const attachment = {
+				url: 'https://example.com/file',
+				label: 'Generated video file',
+			};
+			expect( isVideoAttachment( attachment ) ).toBe( true );
+		} );
+
 		it( 'should detect video by metadata', () => {
 			const attachment = {
 				url: 'https://example.com/file',
 				label: 'File',
 				meta: '720p • 5s • video',
+			};
+			expect( isVideoAttachment( attachment ) ).toBe( true );
+		} );
+
+		it( 'should detect video by path segment /video/', () => {
+			const attachment = {
+				url: 'https://example.com/video/file.dat',
+				label: 'File',
 			};
 			expect( isVideoAttachment( attachment ) ).toBe( true );
 		} );
@@ -109,6 +145,14 @@ describe( 'Video Attachment Rendering', () => {
 			const attachment = {
 				url: 'https://example.com/document.pdf',
 				label: 'PDF document',
+			};
+			expect( isVideoAttachment( attachment ) ).toBe( false );
+		} );
+
+		it( 'should not detect files with "video" in the middle of filename', () => {
+			const attachment = {
+				url: 'https://example.com/videogame.txt',
+				label: 'Text file',
 			};
 			expect( isVideoAttachment( attachment ) ).toBe( false );
 		} );

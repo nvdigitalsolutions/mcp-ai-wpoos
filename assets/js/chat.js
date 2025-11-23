@@ -9581,15 +9581,16 @@
                     
                     const source = document.createElement('source');
                     source.src = attachment.url;
-                    source.type = 'video/mp4';
+                    
+                    // Determine MIME type based on URL
+                    const mimeType = getVideoMimeType(attachment.url);
+                    source.type = mimeType;
                     
                     video.appendChild(source);
                     
-                    // Fallback text for browsers that don't support video
-                    const fallback = document.createTextNode(
-                        getString('videoNotSupported', 'Your browser does not support video playback.')
-                    );
-                    video.appendChild(fallback);
+                    // Add fallback text for browsers that don't support video
+                    // This is text content inside the video element, not a text node
+                    video.textContent = getString('videoNotSupported', 'Your browser does not support video playback.');
                     
                     videoContainer.appendChild(video);
                     
@@ -10141,6 +10142,44 @@
     }
 
     /**
+     * Get video MIME type based on URL or file extension.
+     * 
+     * @param {string} url - Video URL
+     * @return {string} MIME type
+     */
+    function getVideoMimeType(url) {
+        if (!url || typeof url !== 'string') {
+            return 'video/mp4'; // Default fallback
+        }
+
+        const lowerUrl = url.toLowerCase();
+
+        // Check for data URL with explicit MIME type
+        if (lowerUrl.indexOf('data:video/') === 0) {
+            const mimeMatch = url.match(/^data:(video\/[^;,]+)/);
+            if (mimeMatch && mimeMatch[1]) {
+                return mimeMatch[1];
+            }
+        }
+
+        // Determine MIME type by file extension
+        if (lowerUrl.indexOf('.webm') !== -1) {
+            return 'video/webm';
+        } else if (lowerUrl.indexOf('.ogg') !== -1 || lowerUrl.indexOf('.ogv') !== -1) {
+            return 'video/ogg';
+        } else if (lowerUrl.indexOf('.mov') !== -1) {
+            return 'video/quicktime';
+        } else if (lowerUrl.indexOf('.avi') !== -1) {
+            return 'video/x-msvideo';
+        } else if (lowerUrl.indexOf('.mkv') !== -1) {
+            return 'video/x-matroska';
+        }
+
+        // Default to MP4
+        return 'video/mp4';
+    }
+
+    /**
      * Check if an attachment is a video based on URL or MIME type.
      * Detects video files from veo generation and other video sources.
      * 
@@ -10159,16 +10198,23 @@
         // Check for video file extensions in URL
         if (url && typeof url === 'string') {
             const lowerUrl = url.toLowerCase();
-            if (lowerUrl.indexOf('.mp4') !== -1 || 
-                lowerUrl.indexOf('.webm') !== -1 || 
-                lowerUrl.indexOf('.ogg') !== -1 ||
-                lowerUrl.indexOf('.mov') !== -1 ||
-                lowerUrl.indexOf('video') !== -1) {
-                return true;
+            
+            // Check for common video file extensions
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv'];
+            for (let i = 0; i < videoExtensions.length; i++) {
+                if (lowerUrl.indexOf(videoExtensions[i]) !== -1) {
+                    return true;
+                }
             }
             
             // Check for data URLs with video MIME type
             if (lowerUrl.indexOf('data:video/') === 0) {
+                return true;
+            }
+            
+            // Check for 'video' in path segments (more specific than global match)
+            // Only match if it's part of a path segment like /video/ or /videos/
+            if (lowerUrl.indexOf('/video/') !== -1 || lowerUrl.indexOf('/videos/') !== -1) {
                 return true;
             }
         }
@@ -10176,15 +10222,21 @@
         // Check metadata for video indicators
         if (meta && typeof meta === 'string') {
             const lowerMeta = meta.toLowerCase();
-            if (lowerMeta.indexOf('video') !== -1 || lowerMeta.indexOf('.mp4') !== -1) {
-                return true;
+            const videoIndicators = ['video', '.mp4', '.webm', '.ogg', '.mov'];
+            for (let i = 0; i < videoIndicators.length; i++) {
+                if (lowerMeta.indexOf(videoIndicators[i]) !== -1) {
+                    return true;
+                }
             }
         }
 
         // Check label for video indicators (e.g., "Veo Generated Video")
         if (label && typeof label === 'string') {
             const lowerLabel = label.toLowerCase();
-            if (lowerLabel.indexOf('video') !== -1 || lowerLabel.indexOf('veo') !== -1) {
+            // More specific label checks for Veo or explicit "video" mentions
+            if (lowerLabel.indexOf('veo') !== -1 || 
+                lowerLabel.indexOf('video') === 0 || // "video" at start
+                lowerLabel.indexOf(' video') !== -1) { // " video" anywhere
                 return true;
             }
         }
