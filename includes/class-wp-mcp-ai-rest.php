@@ -907,7 +907,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Stream the cron status via SSE.
+				// Return cron status as SSE snapshot (one-shot response).
+				// For continuous job monitoring, use /cron-status/{job_id}?stream=true instead.
 				return $this->sse_handler->stream_event_stream_payload( $response, 'cron_status' );
 			}
 
