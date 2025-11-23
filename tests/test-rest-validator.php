@@ -436,4 +436,109 @@ class Test_REST_Validator extends WP_UnitTestCase {
 		$this->assertEquals( 'lm_studio', $result['provider'], 'Provider should be preserved' );
 		$this->assertEquals( 'test-model', $result['model'], 'Other options should be preserved' );
 	}
+
+	/**
+	 * Test that input_image segments are processed by sanitize_messages.
+	 *
+	 * This test ensures that chat-client attachments sent as input_image segments
+	 * with attachment_id are properly handled by the validator.
+	 */
+	public function test_sanitize_messages_processes_input_image_segments() {
+		// Create a test image attachment.
+		$attachment_id = $this->factory->attachment->create_upload_object(
+			WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png'
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'What is in this image?',
+					),
+					array(
+						'type'          => 'input_image',
+						'attachment_id' => $attachment_id,
+					),
+				),
+			),
+		);
+
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+
+		$result = $this->validator->sanitize_messages( $messages );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'messages', $result );
+		$this->assertArrayHasKey( 'attachments', $result );
+
+		$sanitized_messages = $result['messages'];
+		$this->assertCount( 1, $sanitized_messages );
+
+		$content = $sanitized_messages[0]['content'];
+		$this->assertCount( 2, $content, 'Should have both text and image segments' );
+
+		// Verify text segment.
+		$this->assertEquals( 'text', $content[0]['type'] );
+		$this->assertEquals( 'What is in this image?', $content[0]['text'] );
+
+		// Verify input_image segment was processed.
+		$this->assertEquals( 'input_image', $content[1]['type'] );
+		$this->assertArrayHasKey( 'file_id', $content[1], 'input_image segment should have file_id after processing' );
+		$this->assertArrayNotHasKey( 'attachment_id', $content[1], 'attachment_id should be resolved to file_id' );
+	}
+
+	/**
+	 * Test that input_file segments are processed by sanitize_messages.
+	 *
+	 * This test ensures that chat-client file attachments sent as input_file segments
+	 * with attachment_id are properly handled by the validator.
+	 */
+	public function test_sanitize_messages_processes_input_file_segments() {
+		// Create a test file attachment.
+		$attachment_id = $this->factory->attachment->create_upload_object(
+			WP_MCP_AI_PATH . 'tests/fixtures/test.pdf'
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Please analyze this document.',
+					),
+					array(
+						'type'          => 'input_file',
+						'attachment_id' => $attachment_id,
+						'display_name'  => 'test.pdf',
+					),
+				),
+			),
+		);
+
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+
+		$result = $this->validator->sanitize_messages( $messages );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'messages', $result );
+		$this->assertArrayHasKey( 'attachments', $result );
+
+		$sanitized_messages = $result['messages'];
+		$this->assertCount( 1, $sanitized_messages );
+
+		$content = $sanitized_messages[0]['content'];
+		$this->assertCount( 2, $content, 'Should have both text and file segments' );
+
+		// Verify text segment.
+		$this->assertEquals( 'text', $content[0]['type'] );
+		$this->assertEquals( 'Please analyze this document.', $content[0]['text'] );
+
+		// Verify input_file segment was processed.
+		$this->assertEquals( 'input_file', $content[1]['type'] );
+		$this->assertArrayHasKey( 'file_id', $content[1], 'input_file segment should have file_id after processing' );
+		$this->assertArrayNotHasKey( 'attachment_id', $content[1], 'attachment_id should be resolved to file_id' );
+	}
 }
