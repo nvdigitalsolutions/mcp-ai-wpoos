@@ -135,6 +135,8 @@
 							if (window.console && console.warn) {
 								console.warn('[WP MCP AI] SSE cron status failed, falling back to REST polling:', error);
 							}
+							// Stop SSE connection before falling back
+							self.stopSSE(containerId);
 							// Fall back to REST polling
 							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
 						},
@@ -150,8 +152,8 @@
 						
 						// Set timeout to fall back to polling after 30 seconds if no SSE data received
 						setTimeout(function () {
-							// If SSE hasn't received any data yet, fall back to polling
-							if (!sseReceived) {
+							// Only fall back if SSE connection still exists and no data received
+							if (self.sseConnections[containerId] && !sseReceived) {
 								if (window.console && console.warn) {
 									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
 								}
