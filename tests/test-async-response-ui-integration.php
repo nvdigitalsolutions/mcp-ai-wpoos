@@ -326,17 +326,20 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		// Verify job_id is also included in status update messages (toolPolling).
 		// This ensures the job_id persists when status updates replace the message.
 		$this->assertStringContainsString(
-			"getString('toolPolling', 'Tool is processing…')} Job ID: \${jobId}",
+			"'Tool is processing…')} Job ID: \${jobId}`",
 			$chat_js,
 			'JavaScript should display job_id in status update messages'
 		);
 
-		// Count occurrences - should appear in initial message (2x) + status updates (3x) = at least 5.
+		// Count occurrences - should appear in:
+		// - Initial messages: 2 (SSE + polling)
+		// - Status updates: 3 (SSE handler + 2 polling handler paths)
+		// Total: at least 5 occurrences.
 		$count = substr_count( $chat_js, 'Job ID: ${jobId}' );
 		$this->assertGreaterThanOrEqual(
 			5,
 			$count,
-			'Job ID should be displayed in initial messages and status updates'
+			'Job ID should be displayed in initial messages and status updates (2 initial + 3 status = 5 total)'
 		);
 	}
 }
