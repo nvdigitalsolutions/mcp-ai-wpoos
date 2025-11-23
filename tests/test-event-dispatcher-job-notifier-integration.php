@@ -37,7 +37,7 @@ class Test_Event_Dispatcher_Job_Notifier_Integration extends WP_UnitTestCase {
 	 * Test video job queued event bridges to job notifier.
 	 */
 	public function test_video_job_queued_creates_job_notifier_entry() {
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-operation',
@@ -62,7 +62,7 @@ class Test_Event_Dispatcher_Job_Notifier_Integration extends WP_UnitTestCase {
 	 * Test video job completed event bridges to job notifier.
 	 */
 	public function test_video_job_completed_creates_job_notifier_entry() {
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id' => $job_id,
 			'status' => 'completed',
@@ -93,7 +93,7 @@ class Test_Event_Dispatcher_Job_Notifier_Integration extends WP_UnitTestCase {
 	 * Test video job failed event bridges to job notifier.
 	 */
 	public function test_video_job_failed_creates_job_notifier_entry() {
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$metadata = array(
 			'job_id' => $job_id,
 			'status' => 'failed',
@@ -222,7 +222,7 @@ class Test_Event_Dispatcher_Job_Notifier_Integration extends WP_UnitTestCase {
 	 * Test complete video generation lifecycle.
 	 */
 	public function test_complete_video_generation_lifecycle() {
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
 		// Step 1: Job queued.
 		$metadata = array(

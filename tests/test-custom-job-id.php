@@ -113,7 +113,7 @@ $this->assertSame( $hook, $job_details['hook'] );
  */
 public function test_video_job_workflow() {
 $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
-$custom_job_id = 'veo_' . uniqid( '', true );
+$custom_job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 $hook = 'wp_mcp_ai_poll_video';
 $timestamp = time() + 10;
 

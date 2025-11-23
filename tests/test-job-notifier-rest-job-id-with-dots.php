@@ -46,7 +46,7 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 		wp_set_current_user( $this->user_id );
 
 		// Create a mock job with dot in ID.
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 		$status = array(
 			'job_id'     => $job_id,
 			'status'     => 'running',
@@ -138,7 +138,7 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 		wp_set_current_user( $this->user_id );
 
 		// Generate a real job ID the way the code does.
-		$job_id = 'veo_' . uniqid( '', true );
+		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
 		// Verify it contains a dot.
 		$this->assertStringContainsString( '.', $job_id, 'uniqid with more_entropy should contain a dot' );
