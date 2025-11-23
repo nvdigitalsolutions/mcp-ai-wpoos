@@ -1203,6 +1203,39 @@
     opacity: 0.85;
 }
 
+/* Video player styles */
+.wp-mcp-ai-chat__video-container {
+    margin-top: 0.5rem;
+    max-width: 100%;
+}
+
+.wp-mcp-ai-chat__video-player {
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    border-radius: 8px;
+    background: #000;
+    display: block;
+}
+
+.wp-mcp-ai-chat__video-download {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--wp-mcp-ai-color-button-background, #2563eb);
+    color: var(--wp-mcp-ai-color-button-text, #fff);
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+}
+
+.wp-mcp-ai-chat__video-download:hover,
+.wp-mcp-ai-chat__video-download:focus {
+    background: var(--wp-mcp-ai-color-button-hover-background, #1d4ed8);
+    text-decoration: none;
+}
+
 .wp-mcp-ai-chat__notice {
     border: 1px solid var(--wp-mcp-ai-color-notice-border, rgba(214, 54, 56, 0.35));
     background: var(--wp-mcp-ai-color-notice-background, #fef2f2);

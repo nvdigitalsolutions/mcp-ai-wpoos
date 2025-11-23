@@ -6127,6 +6127,31 @@
             if (formatValue) {
                 metaParts.push(formatValue.toUpperCase());
             }
+        } else if (toolName === 'generate_veo_video') {
+            // Video-specific metadata for Veo videos
+            if (typeof result.duration === 'number') {
+                metaParts.push(result.duration + 's');
+            }
+            
+            if (aspectRatioValue) {
+                metaParts.push(aspectRatioValue);
+            }
+            
+            if (typeof result.resolution === 'string' && result.resolution.trim()) {
+                metaParts.push(result.resolution.trim());
+            }
+            
+            if (typeof result.model === 'string' && result.model.trim()) {
+                const modelName = result.model.trim();
+                // Extract clean model name (e.g., "veo-3.1-generate-preview" -> "Veo 3.1")
+                if (modelName.indexOf('veo-3.1') !== -1) {
+                    metaParts.push('Veo 3.1');
+                } else if (modelName.indexOf('veo-2') !== -1) {
+                    metaParts.push('Veo 2.0');
+                } else {
+                    metaParts.push(modelName);
+                }
+            }
         }
 
         const attachmentMeta = metaParts.join(' • ');
@@ -6186,6 +6211,8 @@
             text = getString('editGeminiImageToolSuccess', 'Gemini image edited and saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
+        } else if (toolName === 'generate_veo_video') {
+            text = getString('veoVideoToolSuccess', 'Video generated successfully and saved to the Media Library.');
         }
 
         return {
@@ -9539,24 +9566,74 @@
                 const item = document.createElement('li');
                 item.className = 'wp-mcp-ai-chat__bubble-attachment';
 
-                const link = document.createElement('a');
-                link.href = attachment.url;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = attachment.label;
+                // Check if this is a video attachment
+                const isVideo = isVideoAttachment(attachment);
+                
+                if (isVideo) {
+                    // Render video player
+                    const videoContainer = document.createElement('div');
+                    videoContainer.className = 'wp-mcp-ai-chat__video-container';
+                    
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.preload = 'metadata';
+                    video.className = 'wp-mcp-ai-chat__video-player';
+                    
+                    const source = document.createElement('source');
+                    source.src = attachment.url;
+                    
+                    // Determine MIME type based on URL
+                    const mimeType = getVideoMimeType(attachment.url);
+                    source.type = mimeType;
+                    
+                    video.appendChild(source);
+                    
+                    // Add fallback text as a separate text node AFTER the source element
+                    // This is the correct way to add fallback content to HTML5 video elements
+                    const fallbackText = document.createTextNode(
+                        getString('videoNotSupported', 'Your browser does not support video playback.')
+                    );
+                    video.appendChild(fallbackText);
+                    
+                    videoContainer.appendChild(video);
+                    
+                    // Add download link below video
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = attachment.url;
+                    downloadLink.download = attachment.downloadName || 'video.mp4';
+                    downloadLink.className = 'wp-mcp-ai-chat__video-download';
+                    downloadLink.textContent = getString('downloadVideo', 'Download video');
+                    videoContainer.appendChild(downloadLink);
+                    
+                    item.appendChild(videoContainer);
+                    
+                    if (attachment.meta) {
+                        const meta = document.createElement('div');
+                        meta.className = 'wp-mcp-ai-chat__attachments-meta';
+                        meta.textContent = attachment.meta;
+                        item.appendChild(meta);
+                    }
+                } else {
+                    // Render as download link (existing behavior)
+                    const link = document.createElement('a');
+                    link.href = attachment.url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.textContent = attachment.label;
 
-                if (attachment.downloadName) {
-                    link.download = attachment.downloadName;
-                }
+                    if (attachment.downloadName) {
+                        link.download = attachment.downloadName;
+                    }
 
-                item.appendChild(link);
+                    item.appendChild(link);
 
-                if (attachment.meta) {
-                    const meta = document.createElement('span');
-                    meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                    meta.textContent = attachment.meta;
-                    item.appendChild(document.createTextNode(' – '));
-                    item.appendChild(meta);
+                    if (attachment.meta) {
+                        const meta = document.createElement('span');
+                        meta.className = 'wp-mcp-ai-chat__attachments-meta';
+                        meta.textContent = attachment.meta;
+                        item.appendChild(document.createTextNode(' – '));
+                        item.appendChild(meta);
+                    }
                 }
 
                 container.appendChild(item);
@@ -10065,6 +10142,118 @@
 
     function replaceAll(text, search, replacement) {
         return text.split(search).join(replacement);
+    }
+
+    /**
+     * Get video MIME type based on URL or file extension.
+     * 
+     * @param {string} url - Video URL
+     * @return {string} MIME type
+     */
+    function getVideoMimeType(url) {
+        if (!url || typeof url !== 'string') {
+            return 'video/mp4'; // Default fallback
+        }
+
+        const lowerUrl = url.toLowerCase();
+
+        // Check for data URL with explicit MIME type
+        if (lowerUrl.indexOf('data:video/') === 0) {
+            const mimeMatch = url.match(/^data:(video\/[^;,]+)/);
+            if (mimeMatch && mimeMatch[1]) {
+                return mimeMatch[1];
+            }
+        }
+
+        // Determine MIME type by file extension
+        if (lowerUrl.indexOf('.webm') !== -1) {
+            return 'video/webm';
+        } else if (lowerUrl.indexOf('.ogg') !== -1 || lowerUrl.indexOf('.ogv') !== -1) {
+            return 'video/ogg';
+        } else if (lowerUrl.indexOf('.mov') !== -1) {
+            return 'video/quicktime';
+        } else if (lowerUrl.indexOf('.avi') !== -1) {
+            return 'video/x-msvideo';
+        } else if (lowerUrl.indexOf('.mkv') !== -1) {
+            return 'video/x-matroska';
+        }
+
+        // Default to MP4
+        return 'video/mp4';
+    }
+
+    /**
+     * Check if an attachment is a video based on URL or MIME type.
+     * Detects video files from veo generation and other video sources.
+     * 
+     * @param {Object} attachment - Attachment object with url and optional meta properties
+     * @return {boolean} True if attachment is a video
+     */
+    function isVideoAttachment(attachment) {
+        if (!attachment || typeof attachment !== 'object') {
+            return false;
+        }
+
+        const url = attachment.url || '';
+        const meta = attachment.meta || '';
+        const label = attachment.label || '';
+
+        // Check for video file extensions in URL
+        if (url && typeof url === 'string') {
+            const lowerUrl = url.toLowerCase();
+            
+            // Extract the path part of the URL (before query string or hash)
+            let urlPath = lowerUrl.split('?')[0].split('#')[0];
+            
+            // Check for common video file extensions at the end of the path
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv'];
+            for (let i = 0; i < videoExtensions.length; i++) {
+                const ext = videoExtensions[i];
+                if (urlPath.lastIndexOf(ext) === urlPath.length - ext.length) {
+                    return true;
+                }
+            }
+            
+            // Check for data URLs with video MIME type
+            if (lowerUrl.indexOf('data:video/') === 0) {
+                return true;
+            }
+            
+            // Check for 'video' in path segments (more specific than global match)
+            // Only match if it's part of a path segment like /video/ or /videos/
+            if (lowerUrl.indexOf('/video/') !== -1 || lowerUrl.indexOf('/videos/') !== -1) {
+                return true;
+            }
+        }
+
+        // Check metadata for video indicators
+        if (meta && typeof meta === 'string') {
+            const lowerMeta = meta.toLowerCase();
+            // Only check for explicit video type mentions in metadata
+            // Avoid false positives by checking for word boundaries where possible
+            if (lowerMeta.indexOf(' video') !== -1 || // " video" with space
+                lowerMeta.indexOf('video ') !== -1 || // "video " with space
+                lowerMeta === 'video' || // exact match
+                lowerMeta.indexOf('.mp4') !== -1 ||
+                lowerMeta.indexOf('.webm') !== -1 ||
+                lowerMeta.indexOf('.ogg') !== -1 ||
+                lowerMeta.indexOf('.mov') !== -1) {
+                return true;
+            }
+        }
+
+        // Check label for video indicators (e.g., "Veo Generated Video")
+        if (label && typeof label === 'string') {
+            const lowerLabel = label.toLowerCase();
+            // More specific label checks for Veo or explicit "video" mentions
+            if (lowerLabel.indexOf('veo') !== -1 || 
+                lowerLabel.indexOf('video') === 0 || // "video" at start
+                lowerLabel.indexOf(' video') !== -1) { // " video" anywhere
+                return true;
+            }
+        }
+
+        return false;
     }
 
     function normaliseContent(content) {

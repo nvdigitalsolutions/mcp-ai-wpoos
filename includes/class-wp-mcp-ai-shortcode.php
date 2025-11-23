@@ -279,6 +279,11 @@ class WP_MCP_AI_Shortcode {
 					'exportSuccess'                 => __( 'Conversation exported successfully as ', 'wp-mcp-ai' ),
 					'deleteConversation'            => __( 'Delete this conversation', 'wp-mcp-ai' ),
 					'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'wp-mcp-ai' ),
+					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'wp-mcp-ai' ),
+					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'wp-mcp-ai' ),
+					'downloadVideo'                 => __( 'Download video', 'wp-mcp-ai' ),
+					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'wp-mcp-ai' ),
+					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'wp-mcp-ai' ),
 					'roleLabels'                    => array(
 						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
 						'user'      => __( 'You', 'wp-mcp-ai' ),
