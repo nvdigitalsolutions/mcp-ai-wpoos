@@ -334,7 +334,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * @param int    $user_id          User identifier.
 	 * @param int    $assistant_id     Optional assistant ID to filter by.
 	 * @param string $additional_where Optional additional WHERE condition (e.g., 'session_key = %s').
-	 * @param array  $additional_values Optional additional values for the WHERE clause.
+	 * @param array  $additional_values Optional array of values corresponding to placeholders in $additional_where.
 	 * @return array Array with 'where_sql' and 'where_values' keys.
 	 */
 	private function build_user_id_fallback_where( $user_id, $assistant_id = 0, $additional_where = '', $additional_values = array() ) {
@@ -342,7 +342,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$where_values  = array();
 
 		// Add additional conditions first (e.g., session_key).
-		if ( '' !== $additional_where ) {
+		if ( ! empty( $additional_where ) ) {
 			$where_clauses[] = $additional_where;
 			$where_values    = array_merge( $where_values, $additional_values );
 		}
