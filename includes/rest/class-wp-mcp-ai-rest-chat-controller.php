@@ -24,6 +24,25 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
+	 * Allowed response metadata fields for manual transcript saves.
+	 *
+	 * These fields can be included in the response_metadata parameter when
+	 * manually saving a conversation. Only whitelisted fields are accepted
+	 * to prevent injection of arbitrary data.
+	 *
+	 * @var array
+	 */
+	const ALLOWED_RESPONSE_METADATA_FIELDS = array(
+		'usage',
+		'provider',
+		'id',
+		'object',
+		'created',
+		'service_tier',
+		'system_fingerprint',
+	);
+
+	/**
 	 * Reference to the main REST controller for shared functionality.
 	 *
 	 * @var WP_MCP_AI_REST
@@ -174,6 +193,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 									),
 								),
 							),
+						),
+						'response_metadata' => array(
+							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'wp-mcp-ai' ),
+							'type'        => 'object',
+							'required'    => false,
 						),
 					),
 				),
@@ -673,14 +697,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Get assistant configuration for metadata.
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
+		$provider         = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
 
-		// Build a minimal response payload for the recorder.
-		// Since this is just saving a conversation without a new response,
-		// we create a synthetic response payload.
-		$response = array(
-			'model'   => $model,
-			'choices' => array(),
-		);
+		// Get optional response metadata (usage data, provider info, etc.) if provided.
+		$response_metadata = $request->get_param( 'response_metadata' );
+		if ( ! is_array( $response_metadata ) ) {
+			$response_metadata = array();
+		}
+
+		// Build a response payload from the conversation messages.
+		// When manually saving a conversation, we need to construct a response that includes
+		// the assistant messages in the expected OpenAI format so they can be properly extracted
+		// when the transcript is loaded later.
+		$response = $this->build_response_from_messages( $clean_messages, $model, $response_metadata );
+
+		// Add provider to response if available and not already set.
+		if ( '' !== $provider && ! isset( $response['provider'] ) ) {
+			$response['provider'] = $provider;
+		}
 
 		// Build context for the transcript recorder.
 		$context = array(
@@ -960,5 +994,165 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
 			)
 		);
+	}
+
+	/**
+	 * Build a response payload from conversation messages for transcript storage.
+	 *
+	 * When manually saving a conversation (not from a live chat response), we need to
+	 * construct a response payload that matches the expected OpenAI response format.
+	 * This ensures that when the transcript is loaded later, the messages can be
+	 * properly extracted from the response_payload field.
+	 *
+	 * The response payload will include all assistant messages from the conversation
+	 * in the 'choices' array, formatted according to the OpenAI API response schema.
+	 *
+	 * Optionally accepts response metadata (usage data, provider info, etc.) that
+	 * will be merged into the response payload to preserve this information.
+	 *
+	 * @param array  $messages         Clean sanitized messages array.
+	 * @param string $model            Model identifier.
+	 * @param array  $response_metadata Optional response metadata (usage, provider, etc.).
+	 * @return array Response payload with choices containing assistant messages.
+	 */
+	private function build_response_from_messages( array $messages, $model, array $response_metadata = array() ) {
+		$choices = array();
+		$index   = 0;
+
+		// Extract all assistant messages and add them to choices array.
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
+				continue;
+			}
+
+			// Only include assistant messages in the response payload.
+			// User, system, and tool messages are stored in request_payload.
+			if ( 'assistant' === $message['role'] ) {
+				$choice = array(
+					'index'   => $index++,
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => isset( $message['content'] ) ? $message['content'] : null,
+					),
+					'finish_reason' => 'stop',
+				);
+
+				// Preserve tool_calls if present in the assistant message.
+				if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+					$choice['message']['tool_calls'] = $message['tool_calls'];
+				}
+
+				$choices[] = $choice;
+			}
+		}
+
+		// Build the base response payload in OpenAI format.
+		$response = array(
+			'model'   => $model,
+			'choices' => $choices,
+		);
+
+		// Merge in optional response metadata if provided.
+		// This allows preserving usage data, provider info, response IDs, etc.
+		if ( ! empty( $response_metadata ) && is_array( $response_metadata ) ) {
+			foreach ( self::ALLOWED_RESPONSE_METADATA_FIELDS as $field ) {
+				if ( isset( $response_metadata[ $field ] ) ) {
+					// Sanitize based on field type.
+					switch ( $field ) {
+						case 'usage':
+							// Validate and sanitize usage data structure.
+							$usage = $this->sanitize_usage_data( $response_metadata[ $field ] );
+							if ( ! empty( $usage ) ) {
+								$response[ $field ] = $usage;
+							}
+							break;
+
+						case 'provider':
+							$response[ $field ] = sanitize_key( $response_metadata[ $field ] );
+							break;
+
+						case 'id':
+						case 'object':
+						case 'service_tier':
+						case 'system_fingerprint':
+							$response[ $field ] = sanitize_text_field( $response_metadata[ $field ] );
+							break;
+
+						case 'created':
+							$response[ $field ] = absint( $response_metadata[ $field ] );
+							break;
+					}
+				}
+			}
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Sanitize and validate usage data structure.
+	 *
+	 * Validates that usage data contains the expected fields with appropriate types.
+	 * Returns a sanitized usage array or empty array if invalid.
+	 *
+	 * @param mixed $usage_data Raw usage data from request.
+	 * @return array Sanitized usage data or empty array if invalid.
+	 */
+	private function sanitize_usage_data( $usage_data ) {
+		if ( ! is_array( $usage_data ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+
+		// Sanitize top-level token counts.
+		$token_fields = array( 'prompt_tokens', 'completion_tokens', 'total_tokens' );
+		foreach ( $token_fields as $field ) {
+			if ( isset( $usage_data[ $field ] ) ) {
+				$value = absint( $usage_data[ $field ] );
+				if ( $value >= 0 ) {
+					$sanitized[ $field ] = $value;
+				}
+			}
+		}
+
+		// Sanitize prompt_tokens_details if present.
+		if ( isset( $usage_data['prompt_tokens_details'] ) && is_array( $usage_data['prompt_tokens_details'] ) ) {
+			$prompt_details = array();
+			$detail_fields  = array( 'cached_tokens', 'audio_tokens' );
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['prompt_tokens_details'][ $field ] ) ) {
+					$prompt_details[ $field ] = absint( $usage_data['prompt_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $prompt_details ) ) {
+				$sanitized['prompt_tokens_details'] = $prompt_details;
+			}
+		}
+
+		// Sanitize completion_tokens_details if present.
+		if ( isset( $usage_data['completion_tokens_details'] ) && is_array( $usage_data['completion_tokens_details'] ) ) {
+			$completion_details = array();
+			$detail_fields      = array(
+				'reasoning_tokens',
+				'audio_tokens',
+				'accepted_prediction_tokens',
+				'rejected_prediction_tokens',
+			);
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['completion_tokens_details'][ $field ] ) ) {
+					$completion_details[ $field ] = absint( $usage_data['completion_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $completion_details ) ) {
+				$sanitized['completion_tokens_details'] = $completion_details;
+			}
+		}
+
+		return $sanitized;
 	}
 }
