@@ -671,18 +671,20 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		$this->main_controller->hydrate_request_body_params( $request );
 
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-		$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
-		$messages     = $request->get_param( 'messages' );
+		$assistant_id     = absint( $request->get_param( 'assistant_id' ) );
+		$raw_session_key  = $request->get_param( 'session_key' );
+		$session_key      = $this->validator->sanitize_session_key_param( $raw_session_key );
+		$messages         = $request->get_param( 'messages' );
 
-		// Debug logging: Log incoming save request.
+		// Debug logging: Log incoming save request with detailed session_key tracking.
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 			$user_id     = get_current_user_id();
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : 'N/A';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
-					'[WP oOS Debug] POST /chat-transcripts: session_key=%s assistant_id=%d user_id=%d message_count=%d url=%s',
+					'[WP oOS Debug] POST /chat-transcripts: raw_session_key=%s sanitized_session_key=%s assistant_id=%d user_id=%d message_count=%d url=%s',
+					$this->truncate_session_key_for_logging( $raw_session_key ),
 					$this->truncate_session_key_for_logging( $session_key ),
 					$assistant_id,
 					$user_id,
@@ -760,20 +762,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
 
-		// Build a minimal response payload for the recorder.
-		// Since this is just saving a conversation without a new response,
-		// we create a synthetic response payload.
+		// Build response payload for the recorder.
+		// When saving a complete conversation (not during a chat interaction), we store ALL messages
+		// in request_payload.messages. The response_payload represents the AI's response for this "turn",
+		// but since we're just persisting an existing conversation, there's no new response.
+		// We keep choices empty to avoid duplicating messages that are already in request_payload.
 		$response = array(
 			'model'   => $model,
 			'choices' => array(),
 		);
 
 		// Build context for the transcript recorder.
-		$context = array(
+		// Use current timestamp for both started and completed since this is a save operation.
+		$current_time = microtime( true );
+		$context      = array(
 			'session_key'           => $session_key,
 			'save_transcript'       => true,
-			'request_started_at'    => microtime( true ),
-			'response_completed_at' => microtime( true ),
+			'request_started_at'    => $current_time,
+			'response_completed_at' => $current_time,
 		);
 
 		// Use the transcript recorder to save.
@@ -837,13 +843,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		// Debug logging: Log successful save.
+		// Debug logging: Log successful save with detailed session_key comparison.
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
-					'[WP oOS Debug] POST /chat-transcripts SUCCESS: session_key=%s assistant_id=%d user_id=%d saved=1 response=200',
+					'[WP oOS Debug] POST /chat-transcripts SUCCESS: requested_session_key=%s recorded_session_key=%s keys_match=%s assistant_id=%d user_id=%d saved=1 response=200',
+					$this->truncate_session_key_for_logging( $session_key ),
 					$this->truncate_session_key_for_logging( $recorded_session_key ),
+					$session_key === $recorded_session_key ? 'yes' : 'NO',
 					$assistant_id,
 					get_current_user_id()
 				)
@@ -932,9 +940,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		// Retrieve the session - this now gets ALL messages by session_key.
-		// Pass 0 as user_id since it's no longer used in the query.
-		$session = $this->main_controller->get_transcript_session( 0, $session_key, $assistant_id );
+		// Retrieve the session - DON'T filter by assistant_id when fetching by session_key.
+		// Session keys are unique UUIDs, so filtering by assistant_id can prevent users from
+		// viewing their own conversations if they switch between assistants/widgets.
+		// The session contains the correct assistant_id, and authorization is verified separately.
+		// Pass 0 for both user_id and assistant_id to get all messages for this session_key.
+		$session = $this->main_controller->get_transcript_session( 0, $session_key, 0 );
 
 		if ( is_wp_error( $session ) ) {
 			WP_MCP_AI_Logger::log_event(
