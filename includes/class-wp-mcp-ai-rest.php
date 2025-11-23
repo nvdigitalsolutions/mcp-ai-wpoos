@@ -896,6 +896,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$response['assistant_id'] = $assistant_id;
 			}
 
+			// Check if SSE streaming was requested.
+			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
+				// Stream the cron status via SSE.
+				return $this->sse_handler->stream_event_stream_payload( $response, 'cron_status' );
+			}
+
 			return rest_ensure_response( $response );
 		}
 
