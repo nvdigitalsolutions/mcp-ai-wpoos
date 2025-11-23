@@ -1110,6 +1110,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			// If there's a parent async job (from async executor), complete it with the final result.
 			// This ensures the chat client can retrieve the video URL from the original job ID.
+			// The parent job completion also fires its own wp_mcp_ai_job_completed hook.
 			if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 				$this->complete_parent_job( $metadata['parent_job_id'], $metadata['result'] );
 			}
@@ -1131,8 +1132,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$hook_metadata['assistant_id'] = absint( $metadata['assistant_id'] );
 			}
 
-			// Fire job completed hook for notification system.
+			// Fire job completed hook for the veo job itself.
 			// This allows the chat client to receive the completion notification via SSE/polling.
+			// Note: If there's a parent job, two completion hooks are fired:
+			// 1. This one for the veo job (veo_xxx)
+			// 2. Another in complete_parent_job for the parent job (async_xxx)
+			// This allows the client to poll either job ID and get the final result.
 			do_action(
 				'wp_mcp_ai_job_completed',
 				$job_id,

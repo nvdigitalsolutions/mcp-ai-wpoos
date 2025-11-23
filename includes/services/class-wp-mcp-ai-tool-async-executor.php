@@ -165,8 +165,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Store metadata (use transient for quick access).
 		$this->save_metadata( $job_id, $metadata );
 
-		// Schedule cron job.
-		$timestamp = time();
+		// Schedule cron job with a 1-second delay to ensure metadata and recording complete first.
+		// This prevents race condition where cron executes before transient is saved or job is recorded.
+		$timestamp = time() + 1;
 		$scheduled = wp_schedule_single_event(
 			$timestamp,
 			self::CRON_HOOK,
