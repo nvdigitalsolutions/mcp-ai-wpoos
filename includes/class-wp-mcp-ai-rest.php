@@ -41,6 +41,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
 
 		/**
+		 * SSE job monitoring configuration constants.
+		 *
+		 * @since 1.0.0
+		 */
+		const SSE_JOB_MAX_POLLS           = 120;   // Maximum number of status polls (120 * 3s = 6 minutes).
+		const SSE_JOB_POLL_INTERVAL       = 3;     // Seconds between status polls.
+		const SSE_JOB_HEARTBEAT_INTERVAL  = 5;     // Send heartbeat every N polls (5 * 3s = 15 seconds).
+
+		/**
 		 * Tool slug used for document + prompt submissions.
 		 *
 		 * Requests that include attachments are temporarily granted access to this
@@ -974,8 +983,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Poll for updates until job completes or times out.
-			$max_polls     = 120; // 120 * 3 seconds = 6 minutes max.
-			$poll_interval = 3; // Poll every 3 seconds.
+			$max_polls     = self::SSE_JOB_MAX_POLLS;
+			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
 			$poll_count    = 0;
 			$last_status   = $status;
 
@@ -1004,7 +1013,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$current_status = isset( $updated_details['status'] ) ? $updated_details['status'] : 'unknown';
 
 				// Send update if status changed or if this is a periodic heartbeat.
-				if ( $current_status !== $last_status || 0 === $poll_count % 5 ) {
+				if ( $current_status !== $last_status || 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL ) {
 					$this->sse_handler->send_sse_event( 'cron_job_status', $updated_details );
 					$last_status = $current_status;
 				}
