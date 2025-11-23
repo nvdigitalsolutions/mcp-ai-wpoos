@@ -74,8 +74,7 @@ class WP_MCP_AI_Cron_Execution_Tracker {
 
 		// Try to find a job with this hook and args.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-		$job  = null;
-
+		
 		foreach ( $jobs as $tracked_job ) {
 			if ( isset( $tracked_job['hook'] ) && $tracked_job['hook'] === $hook ) {
 				// Normalize both args for comparison.
@@ -84,28 +83,25 @@ class WP_MCP_AI_Cron_Execution_Tracker {
 
 				// Compare args.
 				if ( $tracked_args === $current_args ) {
-					$job = $tracked_job;
-					break;
+					// Found matching job, validate job_id and start tracking.
+					$job_id = isset( $tracked_job['job_id'] ) ? $tracked_job['job_id'] : '';
+					
+					if ( empty( $job_id ) ) {
+						return; // Invalid job_id, skip.
+					}
+
+					// Mark job as executing.
+					self::mark_job_executing( $job_id, $tracked_job );
+
+					// Register shutdown hook to track completion/failure.
+					add_action( 'shutdown', array( __CLASS__, 'track_cron_completion' ), 999 );
+					return; // Job found and tracked, exit early.
 				}
 			}
 		}
 
-		// Not a tracked job, ignore.
-		if ( ! $job ) {
-			return;
-		}
-
-		$job_id = isset( $job['job_id'] ) ? $job['job_id'] : '';
-
-		if ( empty( $job_id ) ) {
-			return;
-		}
-
-		// Mark job as executing.
-		self::mark_job_executing( $job_id, $job );
-
-		// Register shutdown hook to track completion/failure.
-		add_action( 'shutdown', array( __CLASS__, 'track_cron_completion' ), 999 );
+		// Not a tracked job, exit early.
+		return;
 	}
 
 	/**
