@@ -270,12 +270,14 @@ class WP_MCP_AI_Chat_Service {
 			}
 
 			// Add tool results to conversation.
-			// Use sanitized version for LLM to reduce token usage, full version for frontend display.
+			// Two versions are maintained:
+			// 1. Full results for frontend display (tool_result_messages[])
+			// 2. Sanitized results for LLM to reduce token usage (messages[])
 			foreach ( $tool_results as $tool_result ) {
-				// Keep full result for frontend display.
+				// Keep full result for frontend display (includes base64 content).
 				$tool_result_messages[] = $tool_result;
 				
-				// Create sanitized version for LLM (strips large base64 content).
+				// Create sanitized version for LLM (strips large base64 content to save tokens).
 				$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $assistant_config );
 				$messages[] = $sanitized_result;
 			}
@@ -742,9 +744,17 @@ class WP_MCP_AI_Chat_Service {
 			$content = apply_filters( "wp_mcp_ai_sanitize_tool_result_llm_{$tool_name}", $content, $assistant_config );
 		}
 		
-		// Re-encode the sanitized content.
+		// Re-encode the sanitized content as JSON string.
+		// The content should always be JSON-encoded for consistency with the tool result format.
+		// However, if a filter returned a string, preserve it to avoid double-encoding.
 		$sanitized_result = $tool_result;
-		$sanitized_result['content'] = is_string( $content ) ? $content : wp_json_encode( $content );
+		if ( is_string( $content ) ) {
+			// Content is already a string (possibly from a filter), use as-is.
+			$sanitized_result['content'] = $content;
+		} else {
+			// Content is an array, encode it to JSON.
+			$sanitized_result['content'] = wp_json_encode( $content );
+		}
 		
 		return $sanitized_result;
 	}
