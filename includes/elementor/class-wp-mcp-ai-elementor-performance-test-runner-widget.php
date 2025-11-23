@@ -205,7 +205,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		(function($) {
 			// Helper function to escape HTML and prevent XSS
 			function escapeHtml(text) {
-				if (!text) return '';
+				// Handle null, undefined, and objects
+				if (text === null || text === undefined) return '';
+				if (typeof text === 'object') return '';
+				
 				var map = {
 					'&': '&amp;',
 					'<': '&lt;',

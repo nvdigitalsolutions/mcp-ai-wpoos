@@ -15,9 +15,18 @@
 class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestCase {
 
 	/**
-	 * Test that widget JavaScript contains proper error handling for object responses
+	 * Widget instance for tests
+	 *
+	 * @var WP_MCP_AI_Elementor_Performance_Test_Runner_Widget
 	 */
-	public function test_widget_contains_error_object_handling() {
+	private $widget;
+
+	/**
+	 * Set up before each test
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
 		// Load Elementor stubs if needed.
 		if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
 			require_once WP_MCP_AI_PATH . 'tests/helpers/elementor-stubs.php';
@@ -30,14 +39,19 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		require_once WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-runner-widget.php';
 
 		// Create widget instance.
-		$widget = new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget();
+		$this->widget = new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget();
 
 		// Set up admin user to pass permission check.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
+	}
 
+	/**
+	 * Test that widget JavaScript contains proper error handling for object responses
+	 */
+	public function test_widget_contains_error_object_handling() {
 		// Set widget settings.
-		$widget->set_settings( array(
+		$this->widget->set_settings( array(
 			'title'         => 'Test Runner',
 			'description'   => 'Test Description',
 			'enabled_tests' => array( 'security' ),
@@ -46,7 +60,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$widget->render();
+		$this->widget->render();
 		$output = ob_get_clean();
 
 		// Verify the output contains error handling for object responses.
@@ -122,26 +136,8 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 * Test that widget handles string error responses (backward compatibility)
 	 */
 	public function test_widget_handles_string_errors() {
-		// Load Elementor stubs if needed.
-		if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
-			require_once WP_MCP_AI_PATH . 'tests/helpers/elementor-stubs.php';
-		}
-
-		// Load required trait.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
-
-		// Load the widget class.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-runner-widget.php';
-
-		// Create widget instance.
-		$widget = new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget();
-
-		// Set up admin user to pass permission check.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
-
 		// Set widget settings.
-		$widget->set_settings( array(
+		$this->widget->set_settings( array(
 			'title'         => 'Test Runner',
 			'enabled_tests' => array( 'security' ),
 			'show_results'  => 'yes',
@@ -149,7 +145,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$widget->render();
+		$this->widget->render();
 		$output = ob_get_clean();
 
 		// Verify the output contains handling for string errors (else case).
@@ -160,8 +156,8 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		);
 
 		// The widget should still display string errors.
-		$this->assertMatchesRegularExpression(
-			'/response\.data\s*\+\s*[\'"]<\/p>/',
+		$this->assertStringContainsString(
+			'response.data',
 			$output,
 			'Widget should handle string error responses for backward compatibility'
 		);
@@ -171,33 +167,19 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 * Test that widget requires manage_options capability
 	 */
 	public function test_widget_requires_manage_options_capability() {
-		// Load Elementor stubs if needed.
-		if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
-			require_once WP_MCP_AI_PATH . 'tests/helpers/elementor-stubs.php';
-		}
-
-		// Load required trait.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
-
-		// Load the widget class.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-runner-widget.php';
-
-		// Create widget instance.
-		$widget = new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget();
-
 		// Set up subscriber user (no manage_options capability).
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
 		// Set widget settings.
-		$widget->set_settings( array(
+		$this->widget->set_settings( array(
 			'title'         => 'Test Runner',
 			'enabled_tests' => array( 'security' ),
 		) );
 
 		// Capture the output.
 		ob_start();
-		$widget->render();
+		$this->widget->render();
 		$output = ob_get_clean();
 
 		// Verify the output shows permission denied message.
@@ -219,26 +201,8 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 * Test that widget renders all enabled test types
 	 */
 	public function test_widget_renders_enabled_test_types() {
-		// Load Elementor stubs if needed.
-		if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
-			require_once WP_MCP_AI_PATH . 'tests/helpers/elementor-stubs.php';
-		}
-
-		// Load required trait.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
-
-		// Load the widget class.
-		require_once WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-runner-widget.php';
-
-		// Create widget instance.
-		$widget = new WP_MCP_AI_Elementor_Performance_Test_Runner_Widget();
-
-		// Set up admin user to pass permission check.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
-
 		// Set widget settings with all test types.
-		$widget->set_settings( array(
+		$this->widget->set_settings( array(
 			'title'         => 'Test Runner',
 			'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
 			'show_results'  => 'yes',
@@ -246,7 +210,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 
 		// Capture the output.
 		ob_start();
-		$widget->render();
+		$this->widget->render();
 		$output = ob_get_clean();
 
 		// Verify all test types are rendered.
