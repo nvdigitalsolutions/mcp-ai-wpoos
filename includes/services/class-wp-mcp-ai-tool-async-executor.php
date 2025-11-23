@@ -115,7 +115,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 					array(),
 					'hourly',
 					$cleanup_timestamp,
-					0 // System-created job.
+					0,    // System-created job.
+					null, // No custom ID for system jobs.
+					0     // No assistant for system jobs.
 				);
 			}
 		}

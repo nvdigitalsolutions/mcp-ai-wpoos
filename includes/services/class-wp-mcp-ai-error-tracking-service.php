@@ -124,7 +124,9 @@ class WP_MCP_AI_Error_Tracking_Service {
 					array(),
 					'daily',
 					$cleanup_timestamp,
-					0 // System-created job.
+					0,    // System-created job.
+					null, // No custom ID for system jobs.
+					0     // No assistant for system jobs.
 				);
 			}
 		}
