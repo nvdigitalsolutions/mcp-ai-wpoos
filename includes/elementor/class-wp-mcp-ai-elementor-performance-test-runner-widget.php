@@ -266,7 +266,11 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										}
 										// Add test output if available (contains the actual failure details)
 										if (response.data.output) {
-											errorHtml += '<details class="wp-mcp-ai-test-output"><summary><strong><?php echo esc_js( __( 'Test Output (Click to expand)', 'wp-mcp-ai' ) ); ?></strong></summary><pre>' + escapeHtml(response.data.output) + '</pre></details>';
+											var outputLabel = '<?php echo esc_js( __( 'Test Output (Click to expand)', 'wp-mcp-ai' ) ); ?>';
+											errorHtml += '<details class="wp-mcp-ai-test-output">' +
+												'<summary><strong>' + outputLabel + '</strong></summary>' +
+												'<pre>' + escapeHtml(response.data.output) + '</pre>' +
+												'</details>';
 										}
 										if (response.data.cli_command) {
 											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
