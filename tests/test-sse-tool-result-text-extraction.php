@@ -163,8 +163,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles empty array.
 	 */
 	public function test_extract_text_handles_empty_array() {
-
-		$result = $method->invoke( $rest, array() );
+		$result = $this->extract_text( array() );
 
 		$this->assertSame( '', $result );
 	}
