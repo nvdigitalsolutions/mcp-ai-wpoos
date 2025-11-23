@@ -305,4 +305,30 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		// Cleanup.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 	}
+
+	/**
+	 * Test that job_id is displayed in the pending message
+	 */
+	public function test_job_id_displayed_in_pending_message() {
+		// Load chat.js to verify job_id is displayed.
+		$chat_js_path = WP_MCP_AI_PATH . 'assets/js/chat.js';
+		$this->assertFileExists( $chat_js_path, 'chat.js should exist' );
+
+		$chat_js = file_get_contents( $chat_js_path );
+
+		// Verify job_id is included in the pending message for SSE.
+		$this->assertStringContainsString(
+			'Job ID: ${jobId}',
+			$chat_js,
+			'JavaScript should display job_id in pending message (SSE)'
+		);
+
+		// Count occurrences - should appear in both SSE and polling functions.
+		$count = substr_count( $chat_js, 'Job ID: ${jobId}' );
+		$this->assertGreaterThanOrEqual(
+			2,
+			$count,
+			'Job ID should be displayed in both SSE and polling functions'
+		);
+	}
 }
