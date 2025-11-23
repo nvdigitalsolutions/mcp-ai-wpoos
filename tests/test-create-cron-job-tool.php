@@ -128,7 +128,7 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure missing timestamps default to one minute in the future.
+	 * Ensure missing timestamps default to two minutes in the future.
 	 */
 	public function test_execute_defaults_timestamp_when_missing() {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -148,11 +148,11 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertSame( $hook, $result['hook'] );
 		$this->assertSame( 'single', $result['schedule'] );
-		$this->assertGreaterThanOrEqual( $before + MINUTE_IN_SECONDS, $result['timestamp'] );
+		$this->assertGreaterThanOrEqual( $before + ( 2 * MINUTE_IN_SECONDS ), $result['timestamp'] );
 
 		$next_run = wp_next_scheduled( $hook, array() );
 		$this->assertNotFalse( $next_run );
-		$this->assertGreaterThanOrEqual( $before + MINUTE_IN_SECONDS, $next_run );
+		$this->assertGreaterThanOrEqual( $before + ( 2 * MINUTE_IN_SECONDS ), $next_run );
 
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 		$this->assertCount( 1, $jobs );
