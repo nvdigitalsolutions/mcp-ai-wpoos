@@ -111,30 +111,31 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 * Shared across all test pages.
 	 */
 	protected function enqueue_chat_assets() {
-		$script_relative             = 'assets/js/chat.js';
-		$style_relative              = 'assets/css/chat.css';
-		$cron_status_script_relative = 'assets/js/cron-status-service.js';
-		$cron_status_style_relative  = 'assets/css/cron-status.css';
+		$script_relative            = 'assets/js/chat.js';
+		$style_relative             = 'assets/css/chat.css';
+		$sse_service_relative       = 'assets/js/sse-service.js';
+		$cron_status_style_relative = 'assets/css/cron-status.css';
 
-		$script_path             = WP_MCP_AI_URL . $script_relative;
-		$style_path              = WP_MCP_AI_URL . $style_relative;
-		$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
-		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
+		$script_path            = WP_MCP_AI_URL . $script_relative;
+		$style_path             = WP_MCP_AI_URL . $style_relative;
+		$sse_service_path       = WP_MCP_AI_URL . $sse_service_relative;
+		$cron_status_style_path = WP_MCP_AI_URL . $cron_status_style_relative;
 
-		$script_version             = $this->get_asset_version( $script_relative );
-		$style_version              = $this->get_asset_version( $style_relative );
-		$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
-		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
+		$script_version            = $this->get_asset_version( $script_relative );
+		$style_version             = $this->get_asset_version( $style_relative );
+		$sse_service_version       = $this->get_asset_version( $sse_service_relative );
+		$cron_status_style_version = $this->get_asset_version( $cron_status_style_relative );
 
-		// Enqueue cron status service first.
+		// Enqueue SSE service first for real-time notifications.
 		wp_enqueue_script(
-			'wp-mcp-ai-cron-status',
-			$cron_status_script_path,
+			'wp-mcp-ai-sse-service',
+			$sse_service_path,
 			array(),
-			$cron_status_script_version,
+			$sse_service_version,
 			true
 		);
 
+		// Enqueue cron status CSS for job bar UI.
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			$cron_status_style_path,
@@ -152,7 +153,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
 			$script_path,
-			array( 'wp-mcp-ai-cron-status' ),
+			array( 'wp-mcp-ai-sse-service' ),
 			$script_version,
 			true
 		);

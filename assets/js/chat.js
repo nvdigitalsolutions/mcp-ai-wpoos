@@ -11425,114 +11425,33 @@
 	}
 
 /**
- * Initialize cron status display for a chat container
+ * Initialize job bar display for a chat container
  * 
- * @deprecated since 1.1.0 - Will be removed in version 2.0.0
- * 
- * LEGACY MODE: This function is maintained for backwards compatibility only.
- * The job bar is now updated directly by pollJobNotifications() using consolidated
- * job counts, eliminating the need for separate cron-status polling.
- * 
- * Migration: Remove cron-status-service.js from your enqueues. The chat client
- * will automatically use consolidated polling or SSE streaming for job updates.
- * 
- * This function only runs if cron-status-service.js is still loaded (legacy mode).
+ * Sets up the job bar UI to show pending/running/completed job counts.
+ * Uses modern SSE/polling system via startNotificationPolling() for real-time updates.
+ * Legacy cron-status-service.js polling has been removed.
  * 
  * @param {HTMLElement} container - Chat container element
  * @param {Object} config - Chat instance configuration
  */
 function initializeCronStatus(container, config) {
-if (!container || !config) {
-return;
-}
+	if (!container || !config) {
+		return;
+	}
 
-const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
-if (!cronStatusEl) {
-return;
-}
+	const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+	if (!cronStatusEl) {
+		return;
+	}
 
-// Check if cron status service is available (legacy mode)
-if (typeof window.wpMcpAiCronStatus === 'undefined') {
-	// Modern mode: Using consolidated polling/SSE for job updates (recommended).
-	// No separate cron-status service needed.
-	return;
-}
+	const instanceId = container.getAttribute('id');
+	if (!instanceId) {
+		return;
+	}
 
-const instanceId = container.getAttribute('id');
-if (!instanceId) {
-return;
-}
-
-// Build cron status endpoint using global restUrl to avoid cross-domain issues
-// (config.messagesEndpoint might point to an external URL)
-const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
-const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
-const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
-
-// Don't start polling if endpoint is not available
-if (!cronStatusEndpoint) {
-return;
-}
-
-// Update cron status display (legacy function)
-function updateCronStatusDisplay(data) {
-if (!data || !data.counts) {
-return;
-}
-
-const counts = data.counts;
-
-// Stop notification polling if no active jobs (but keep UI visible)
-if (!hasActiveJobs(instanceId)) {
-stopNotificationPolling(instanceId);
-}
-
-// Always show status bar to maintain visibility
-cronStatusEl.removeAttribute('hidden');
-
-// Update count elements
-const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
-const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
-const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
-
-if (pendingEl) {
-pendingEl.textContent = counts.pending || 0;
-}
-
-if (runningEl) {
-runningEl.textContent = counts.running || 0;
-runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
-if (counts.running > 0) {
-runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
-}
-}
-
-if (completedEl) {
-completedEl.textContent = counts.completed || 0;
-completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
-if (counts.completed > 0) {
-completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
-}
-}
-}
-
-// LEGACY MODE: Start polling for cron status with assistant_id for multi-widget isolation
-// This is only used if cron-status-service.js is still enqueued
-const assistantId = config.assistantId || null;
-window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
-
-// Stop polling when chat is destroyed or hidden
-const observer = new MutationObserver(function(mutations) {
-mutations.forEach(function(mutation) {
-if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
-if (container.hasAttribute('hidden')) {
-window.wpMcpAiCronStatus.stopPolling(instanceId);
-}
-}
-});
-});
-
-observer.observe(container, { attributes: true });
+	// Job bar is now updated directly by the modern notification system
+	// (startNotificationPolling) which uses SSE with 30-second polling fallback.
+	// No separate legacy polling service is needed.
 }
 
 /**

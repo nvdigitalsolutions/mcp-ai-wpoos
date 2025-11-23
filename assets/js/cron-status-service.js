@@ -1,8 +1,13 @@
 /**
  * Cron Status Service
  *
- * Handles fetching and updating cron job status for display in chat interfaces.
- * Follows separation of concerns by encapsulating API communication logic.
+ * @deprecated This service is no longer used. The chat client now uses SSE (Server-Sent Events)
+ *             for real-time job notifications with automatic fallback to 30-second polling when
+ *             SSE is unavailable. This file is kept for backwards compatibility only and will
+ *             be removed in a future version.
+ *
+ * Migration: Remove enqueuing of cron-status-service.js from your code. The chat client
+ *            automatically handles job notifications via the modern SSE/polling system.
  *
  * @package WP_MCP_AI
  */

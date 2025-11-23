@@ -61,7 +61,7 @@ class WP_MCP_AI_Shortcode {
 
 		$script_relative             = 'assets/js/chat.js';
 		$style_relative              = 'assets/css/chat.css';
-		$cron_status_script_relative = 'assets/js/cron-status-service.js';
+		$sse_service_relative        = 'assets/js/sse-service.js';
 		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
 		// Chat service files (Phase 1-4 modularization)
@@ -73,7 +73,7 @@ class WP_MCP_AI_Shortcode {
 
 		$script_path             = WP_MCP_AI_URL . $script_relative;
 		$style_path              = WP_MCP_AI_URL . $style_relative;
-		$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
+		$sse_service_path        = WP_MCP_AI_URL . $sse_service_relative;
 		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
 
 		$storage_service_path   = WP_MCP_AI_URL . $storage_service_relative;
@@ -84,7 +84,7 @@ class WP_MCP_AI_Shortcode {
 
 		$script_version             = $this->get_asset_version( $script_relative );
 		$style_version              = $this->get_asset_version( $style_relative );
-		$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
+		$sse_service_version        = $this->get_asset_version( $sse_service_relative );
 		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
 
 		$storage_service_version   = $this->get_asset_version( $storage_service_relative );
@@ -93,15 +93,16 @@ class WP_MCP_AI_Shortcode {
 		$ui_utils_service_version  = $this->get_asset_version( $ui_utils_service_relative );
 		$audio_service_version     = $this->get_asset_version( $audio_service_relative );
 
-		// Register cron status assets (loaded before chat.js).
+		// Register SSE service (loaded before chat.js for real-time notifications).
 		wp_register_script(
-			'wp-mcp-ai-cron-status',
-			$cron_status_script_path,
+			'wp-mcp-ai-sse-service',
+			$sse_service_path,
 			array(),
-			$cron_status_script_version,
+			$sse_service_version,
 			true
 		);
 
+		// Register cron status CSS (for job bar UI).
 		wp_register_style(
 			'wp-mcp-ai-cron-status',
 			$cron_status_style_path,
@@ -170,7 +171,7 @@ class WP_MCP_AI_Shortcode {
 			self::SCRIPT_HANDLE,
 			$script_path,
 			array(
-				'wp-mcp-ai-cron-status',
+				'wp-mcp-ai-sse-service',
 				'wp-mcp-ai-chat-storage',
 				'wp-mcp-ai-chat-clipboard',
 				'wp-mcp-ai-chat-markdown',
