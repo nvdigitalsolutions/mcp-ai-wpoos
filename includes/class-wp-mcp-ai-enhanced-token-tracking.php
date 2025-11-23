@@ -35,9 +35,8 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		WP_MCP_AI_Token_Tracking_Database::init();
 
 		// Schedule cleanup task.
-		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_token_tracking' ) ) {
-			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'daily', 'wp_mcp_ai_cleanup_token_tracking' );
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_token_tracking' );
 		}
 
 		add_action( 'wp_mcp_ai_cleanup_token_tracking', array( __CLASS__, 'cleanup_old_records' ) );
@@ -222,15 +221,9 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 		$deleted = WP_MCP_AI_Token_Tracking_Database::cleanup_old_records( $retention_days );
 
-		// Log the cleanup event.
-		WP_MCP_AI_Logger::log_event(
-			'token_tracking_cleanup_cron',
-			'Token tracking cleanup completed.',
-			array(
-				'deleted_count'  => $deleted,
-				'retention_days' => $retention_days,
-			)
-		);
+		if ( $deleted > 0 ) {
+			error_log( sprintf( 'WP MCP AI: Cleaned up %d old token tracking records (older than %d days)', $deleted, $retention_days ) );
+		}
 	}
 
 	/**

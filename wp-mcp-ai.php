@@ -994,15 +994,13 @@ if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 	 */
 	function wp_mcp_ai_ensure_cleanup_cron_scheduled() {
 		// Schedule Gemini file cleanup if not already scheduled.
-		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {
-			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
 		}
 
 		// Schedule OpenAI file cleanup if not already scheduled.
-		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
-			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
 	}
 }
@@ -1296,12 +1294,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		wp_mcp_ai_check_activation_security();
 
 		// Schedule file cleanup cron job (daily).
-		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {
-			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
 		}
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
-			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
 
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here

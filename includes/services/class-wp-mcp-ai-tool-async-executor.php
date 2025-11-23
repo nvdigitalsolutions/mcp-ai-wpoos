@@ -104,9 +104,8 @@ class WP_MCP_AI_Tool_Async_Executor {
 		add_action( 'wp_mcp_ai_cleanup_async_results', array( $this, 'cleanup_expired_results' ) );
 
 		// Schedule cleanup if not already scheduled.
-		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_async_results' ) ) {
-			$cleanup_timestamp = time() + ( 2 * MINUTE_IN_SECONDS );
+			$cleanup_timestamp = time();
 			wp_schedule_event( $cleanup_timestamp, 'hourly', 'wp_mcp_ai_cleanup_async_results' );
 
 			// Record cleanup cron job in cron manager for visibility.
@@ -166,9 +165,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Store metadata (use transient for quick access).
 		$this->save_metadata( $job_id, $metadata );
 
-		// Schedule cron job with a 1-second delay to ensure metadata and recording complete first.
+		// Schedule cron job with a 2-minute delay to ensure metadata and recording complete first.
 		// This prevents race condition where cron executes before transient is saved or job is recorded.
-		$timestamp = time() + 1;
+		// The delay also accounts for potential delays in agentic workflows where the chat client
+		// expects to receive a response after the job completes.
+		$timestamp = time() + ( 2 * MINUTE_IN_SECONDS );
 		$scheduled = wp_schedule_single_event(
 			$timestamp,
 			self::CRON_HOOK,
