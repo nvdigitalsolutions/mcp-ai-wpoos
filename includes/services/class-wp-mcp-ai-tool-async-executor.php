@@ -95,9 +95,35 @@ class WP_MCP_AI_Tool_Async_Executor {
 	protected $logger = null;
 
 	/**
-	 * Initialize the executor and register hooks
+	 * Static flag to track if hooks have been registered.
+	 * Ensures init() is idempotent and can be called multiple times safely.
+	 * 
+	 * Note: PHP (which WordPress runs on) is single-threaded, so this static
+	 * flag is safe from race conditions. Each HTTP/cron request has its own
+	 * process and flag state. During tests, use @runInSeparateProcess or
+	 * reset the flag via reflection in setUp().
+	 *
+	 * @var bool
+	 */
+	protected static $hooks_registered = false;
+
+	/**
+	 * Initialize the executor and register hooks.
+	 * 
+	 * This method is idempotent - it can be called multiple times safely.
+	 * Hooks are only registered once per request, even if init() is called
+	 * multiple times or from different executor instances.
+	 * 
+	 * This is critical for WordPress cron execution where the executor must
+	 * register its cron hook handler on every request, not just the first time
+	 * an instance is created.
 	 */
 	public function init() {
+		// Only register hooks once per request, even if called multiple times.
+		if ( self::$hooks_registered ) {
+			return;
+		}
+
 		add_action( self::CRON_HOOK, array( $this, 'execute_async_tool' ), 10, 1 );
 
 		// Cleanup expired results periodically.
@@ -121,6 +147,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 				);
 			}
 		}
+
+		// Mark hooks as registered for this request.
+		self::$hooks_registered = true;
 	}
 
 	/**
