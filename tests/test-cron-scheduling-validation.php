@@ -259,7 +259,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['deleted'], 'Job should be deleted' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'message', $result, 'Job should be deleted' );
 
 		// Verify it's gone from WordPress cron.
 		$this->assertFalse( wp_next_scheduled( $hook ), 'Job should be unscheduled' );
@@ -445,12 +446,9 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		// Should handle gracefully and either reject or fall back to one-time.
-		if ( isset( $result['scheduled'] ) ) {
-			$this->assertIsBool( $result['scheduled'] );
-		} else {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		}
+		// Should reject with an error.
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_schedule', $result->get_error_code() );
 	}
 
 	/**
