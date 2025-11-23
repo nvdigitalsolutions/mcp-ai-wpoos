@@ -159,6 +159,17 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'user_id'      => $user_id,
 		);
 
+		// Pass assistant_id if available in context for proper completion hook routing.
+		if ( isset( $context['assistant_id'] ) ) {
+			$generation_args['assistant_id'] = absint( $context['assistant_id'] );
+		}
+
+		// Pass parent_job_id if available (when called from async executor).
+		// This allows the veo service to complete the parent async job when video generation finishes.
+		if ( isset( $context['parent_job_id'] ) ) {
+			$generation_args['parent_job_id'] = sanitize_key( $context['parent_job_id'] );
+		}
+
 		// Add duration if provided (let service apply default if not provided).
 		if ( isset( $arguments['duration'] ) ) {
 			$generation_args['duration'] = absint( $arguments['duration'] );

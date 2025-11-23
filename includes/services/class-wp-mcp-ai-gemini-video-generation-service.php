@@ -863,6 +863,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'max_attempts'   => self::MAX_POLLING_ATTEMPTS,
 		);
 
+		// Store parent_job_id if provided (from async executor).
+		// This allows us to complete the parent job when video generation finishes.
+		if ( isset( $args['parent_job_id'] ) ) {
+			$metadata['parent_job_id'] = sanitize_key( $args['parent_job_id'] );
+		}
+
+		// Store assistant_id if provided for proper completion hook routing.
+		if ( isset( $args['assistant_id'] ) ) {
+			$metadata['assistant_id'] = absint( $args['assistant_id'] );
+		}
+
 		// Save to transient (24 hour expiry).
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
@@ -1097,17 +1108,36 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				)
 			);
 
+			// If there's a parent async job (from async executor), complete it with the final result.
+			// This ensures the chat client can retrieve the video URL from the original job ID.
+			if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+				$this->complete_parent_job( $metadata['parent_job_id'], $metadata['result'] );
+			}
+
+			// Prepare hook metadata with user_id and assistant_id for chat client routing.
+			$hook_metadata = array(
+				'tool'     => 'generate_veo_video',
+				'prompt'   => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+				'duration' => isset( $metadata['args']['duration'] ) ? $metadata['args']['duration'] : 0,
+			);
+
+			// Include user_id if available.
+			if ( isset( $metadata['args']['user_id'] ) ) {
+				$hook_metadata['user_id'] = absint( $metadata['args']['user_id'] );
+			}
+
+			// Include assistant_id if available.
+			if ( isset( $metadata['assistant_id'] ) ) {
+				$hook_metadata['assistant_id'] = absint( $metadata['assistant_id'] );
+			}
+
 			// Fire job completed hook for notification system.
 			// This allows the chat client to receive the completion notification via SSE/polling.
 			do_action(
 				'wp_mcp_ai_job_completed',
 				$job_id,
 				isset( $metadata['result'] ) ? $metadata['result'] : array(),
-				array(
-					'tool'     => 'generate_veo_video',
-					'prompt'   => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
-					'duration' => isset( $metadata['args']['duration'] ) ? $metadata['args']['duration'] : 0,
-				)
+				$hook_metadata
 			);
 			return;
 		}
@@ -1266,5 +1296,64 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Return attachment result with local WordPress URL.
 		// Uses utility class for SoC compliance and code reusability.
 		return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
+	}
+
+	/**
+	 * Complete parent async job with final video result.
+	 *
+	 * When video generation is called through async executor, there are two job IDs:
+	 * 1. async_xxx (from async executor)
+	 * 2. veo_yyy (from video generation service)
+	 *
+	 * When polling times out, the tool returns a nested async response to the executor.
+	 * This method updates the parent async job with the final video result.
+	 *
+	 * @param string $parent_job_id Parent async job ID.
+	 * @param array  $result        Final video generation result.
+	 */
+	protected function complete_parent_job( $parent_job_id, $result ) {
+		// Check if parent job exists.
+		$parent_metadata = get_transient( 'wp_mcp_ai_async_meta_' . $parent_job_id );
+
+		if ( ! $parent_metadata ) {
+			// Parent job not found or expired - log and continue.
+			WP_MCP_AI_Logger::log_event(
+				'veo_parent_job_not_found',
+				'Parent async job not found when completing veo job',
+				array(
+					'parent_job_id' => $parent_job_id,
+				)
+			);
+			return;
+		}
+
+		// Update parent job with final result.
+		$parent_metadata['status']       = 'completed';
+		$parent_metadata['completed_at'] = time();
+		$parent_metadata['result']       = $result;
+
+		// Save updated metadata.
+		set_transient( 'wp_mcp_ai_async_meta_' . $parent_job_id, $parent_metadata, DAY_IN_SECONDS );
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_parent_job_completed',
+			'Completed parent async job with video result',
+			array(
+				'parent_job_id' => $parent_job_id,
+				'has_url'       => isset( $result['url'] ),
+			)
+		);
+
+		// Fire completion hook for the parent job as well.
+		// This ensures the chat client can poll either job ID and get the result.
+		do_action(
+			'wp_mcp_ai_job_completed',
+			$parent_job_id,
+			$result,
+			array(
+				'tool' => 'generate_veo_video',
+				'note' => 'Parent async job completed by veo service',
+			)
+		);
 	}
 }
