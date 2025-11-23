@@ -345,7 +345,7 @@ class WP_MCP_AI_Crawler {
 			$timestamp = time() + $delay;
 			wp_schedule_single_event( $timestamp, self::CRON_HOOK, array( $task_id ) );
 
-			// Record in cron manager for visibility and management.
+			// Record cron job in manager to track nested poll scheduling.
 			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				$user_id = 0;
 				if ( isset( $job['context']['user_id'] ) ) {

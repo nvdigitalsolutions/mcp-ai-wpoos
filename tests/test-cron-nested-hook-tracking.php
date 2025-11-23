@@ -101,7 +101,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Call the schedule_next_poll method via reflection (it's protected).
+		// Call the protected schedule_next_poll method via reflection to test nested poll tracking.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Crawler' );
 		$method     = $reflection->getMethod( 'schedule_next_poll' );
 		$method->setAccessible( true );

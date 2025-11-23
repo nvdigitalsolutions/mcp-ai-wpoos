@@ -240,7 +240,7 @@ class WP_MCP_AI_Job_Notifier {
 				$webhook_args
 			);
 
-			// Record in cron manager for visibility and management.
+			// Record webhook dispatch job in manager for admin visibility.
 			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				// Try to get user_id from metadata or data.
 				$user_id = 0;
