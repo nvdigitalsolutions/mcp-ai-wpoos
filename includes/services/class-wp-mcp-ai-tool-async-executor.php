@@ -165,11 +165,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Store metadata (use transient for quick access).
 		$this->save_metadata( $job_id, $metadata );
 
-		// Schedule cron job with a 2-minute delay to ensure metadata and recording complete first.
+		// Schedule cron job with a 20-second delay to ensure metadata and recording complete first.
 		// This prevents race condition where cron executes before transient is saved or job is recorded.
 		// The delay also accounts for potential delays in agentic workflows where the chat client
 		// expects to receive a response after the job completes.
-		$timestamp = time() + ( 2 * MINUTE_IN_SECONDS );
+		$timestamp = time() + 20;
 		$scheduled = wp_schedule_single_event(
 			$timestamp,
 			self::CRON_HOOK,

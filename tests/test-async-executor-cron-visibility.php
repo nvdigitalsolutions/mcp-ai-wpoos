@@ -58,7 +58,8 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 
 		$this->assertNotFalse( $event, 'Cron event should be scheduled' );
 		$this->assertGreaterThan( time(), $event->timestamp, 'Cron should be scheduled in the future (not immediate)' );
-		$this->assertLessThanOrEqual( time() + 2, $event->timestamp, 'Cron should be scheduled within 2 seconds' );
+		$this->assertLessThanOrEqual( time() + 21, $event->timestamp, 'Cron should be scheduled within 21 seconds (20s delay + 1s tolerance)' );
+		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
 
 		// Check that job was recorded in cron manager.
 		$recorded_job = WP_MCP_AI_Cron_Manager::get_job( md5( wp_json_encode( array(
@@ -113,7 +114,8 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 
 		$this->assertNotFalse( $event, 'Veo cron event should be scheduled' );
 		$this->assertGreaterThan( time(), $event->timestamp, 'Veo cron should be scheduled in the future (not immediate)' );
-		$this->assertLessThanOrEqual( time() + 2, $event->timestamp, 'Veo cron should be scheduled within 2 seconds' );
+		$this->assertLessThanOrEqual( time() + 21, $event->timestamp, 'Veo cron should be scheduled within 21 seconds (20s delay + 1s tolerance)' );
+		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Veo cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
 
 		// Check that job was recorded in cron manager.
 		$recorded_job = WP_MCP_AI_Cron_Manager::get_job( md5( wp_json_encode( array(
