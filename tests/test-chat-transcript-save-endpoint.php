@@ -264,4 +264,58 @@ class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 
 		$this->assertNotEquals( 200, $response->get_status(), 'Should not allow saving to inaccessible assistant' );
 	}
+
+	/**
+	 * Test that the endpoint accepts assistant messages with null content (agentic flows).
+	 */
+	public function test_save_endpoint_accepts_null_content_for_assistant_messages() {
+		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'session_key', 'test-agentic-flow-123' );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Generate an image of a cat',
+				),
+				array(
+					'role'       => 'assistant',
+					'content'    => null, // null content is valid when tool_calls are present.
+					'tool_calls' => array(
+						array(
+							'id'       => 'call_abc123',
+							'type'     => 'function',
+							'function' => array(
+								'name'      => 'generate_image',
+								'arguments' => '{"prompt":"a cat"}',
+							),
+						),
+					),
+				),
+				array(
+					'role'         => 'tool',
+					'tool_call_id' => 'call_abc123',
+					'content'      => '{"image_url":"https://example.com/cat.png"}',
+				),
+				array(
+					'role'    => 'assistant',
+					'content' => 'Here is an image of a cat.',
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 200, $response->get_status(), 'Should accept assistant messages with null content (agentic flows)' );
+		$this->assertArrayHasKey( 'success', $data, 'Response should include success flag' );
+		$this->assertTrue( $data['success'], 'Success flag should be true' );
+
+		// Verify the transcript was saved with the null content.
+		$this->assertNotNull( $this->transcript_handler, 'Transcript handler should be initialized' );
+		$this->assertCount( 1, $this->transcript_handler->records, 'One record should have been saved' );
+	}
 }
