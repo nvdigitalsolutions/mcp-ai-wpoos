@@ -245,4 +245,70 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			'Widget should have results container when show_results is enabled'
 		);
 	}
+
+	/**
+	 * Test that widget handles output field in error responses
+	 */
+	public function test_widget_handles_output_field_in_errors() {
+		// Set widget settings.
+		$this->widget->set_settings( array(
+			'title'         => 'Test Runner',
+			'enabled_tests' => array( 'security' ),
+			'show_results'  => 'yes',
+		) );
+
+		// Capture the output.
+		ob_start();
+		$this->widget->render();
+		$output = ob_get_clean();
+
+		// Verify the output field is checked in error responses.
+		$this->assertStringContainsString(
+			'response.data.output',
+			$output,
+			'Widget should check for output field in error responses'
+		);
+
+		// Verify the output is rendered in a details/summary element.
+		$this->assertStringContainsString(
+			'<details class="wp-mcp-ai-test-output">',
+			$output,
+			'Widget should use details element for test output'
+		);
+
+		// Verify there's a summary with user-friendly text.
+		$this->assertStringContainsString(
+			'<summary>',
+			$output,
+			'Widget should have summary element for test output'
+		);
+
+		// Verify the output is wrapped in a pre tag.
+		$this->assertStringContainsString(
+			'<pre>',
+			$output,
+			'Widget should wrap test output in pre tag for formatting'
+		);
+
+		// Verify output is escaped for security.
+		$this->assertStringContainsString(
+			'escapeHtml(response.data.output)',
+			$output,
+			'Widget should escape test output to prevent XSS'
+		);
+
+		// Verify CSS styling for test output.
+		$this->assertStringContainsString(
+			'.wp-mcp-ai-test-output',
+			$output,
+			'Widget should have CSS styling for test output'
+		);
+
+		// Verify test output has styling for pre tag.
+		$this->assertStringContainsString(
+			'.wp-mcp-ai-test-output pre',
+			$output,
+			'Widget should have CSS styling for test output pre tag'
+		);
+	}
 }
