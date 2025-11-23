@@ -24,10 +24,14 @@ describe( 'Video Attachment Rendering', () => {
 			if ( url && typeof url === 'string' ) {
 				const lowerUrl = url.toLowerCase();
 
-				// Check for common video file extensions
+				// Extract the path part of the URL (before query string or hash)
+				const urlPath = lowerUrl.split( '?' )[ 0 ].split( '#' )[ 0 ];
+
+				// Check for common video file extensions at the end of the path
 				const videoExtensions = [ '.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv' ];
 				for ( let i = 0; i < videoExtensions.length; i++ ) {
-					if ( lowerUrl.indexOf( videoExtensions[ i ] ) !== -1 ) {
+					const ext = videoExtensions[ i ];
+					if ( urlPath.lastIndexOf( ext ) === urlPath.length - ext.length ) {
 						return true;
 					}
 				}
@@ -46,11 +50,15 @@ describe( 'Video Attachment Rendering', () => {
 			// Check metadata for video indicators
 			if ( meta && typeof meta === 'string' ) {
 				const lowerMeta = meta.toLowerCase();
-				const videoIndicators = [ 'video', '.mp4', '.webm', '.ogg', '.mov' ];
-				for ( let i = 0; i < videoIndicators.length; i++ ) {
-					if ( lowerMeta.indexOf( videoIndicators[ i ] ) !== -1 ) {
-						return true;
-					}
+				// Only check for explicit video type mentions in metadata
+				if ( lowerMeta.indexOf( ' video' ) !== -1 || // " video" with space
+					lowerMeta.indexOf( 'video ' ) !== -1 || // "video " with space
+					lowerMeta === 'video' || // exact match
+					lowerMeta.indexOf( '.mp4' ) !== -1 ||
+					lowerMeta.indexOf( '.webm' ) !== -1 ||
+					lowerMeta.indexOf( '.ogg' ) !== -1 ||
+					lowerMeta.indexOf( '.mov' ) !== -1 ) {
+					return true;
 				}
 			}
 
