@@ -8634,6 +8634,12 @@
             
             // Check if this is an async tool execution that's still pending
             if (result.async === true && result.status === 'pending' && result.job_id) {
+                // Display initial message with job ID if provided
+                if (result.message) {
+                    const messageWithJobId = result.message + ' (Job ID: ' + result.job_id + ')';
+                    appendMessage(state.messagesEl, 'system', messageWithJobId);
+                }
+                
                 // Start polling for the async result
                 waitForAsyncToolResult(state, result.job_id, toolName).catch(function (error) {
                     // Error is already displayed by waitForAsyncToolResult
@@ -8641,7 +8647,6 @@
                         console.error('[WP oOS] Async tool polling failed:', error);
                     }
                 });
-                // Don't display the pending message here - waitForAsyncToolResult handles it
                 return;
             }
             
