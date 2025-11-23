@@ -309,11 +309,20 @@ class WP_MCP_AI_Job_Notifier {
 
 		// Clean up old transients.
 		$pattern = $wpdb->esc_like( '_transient_' . self::CACHE_PREFIX ) . '%';
-		$wpdb->query(
+		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
 				$pattern,
 				time() - self::CACHE_DURATION
+			)
+		);
+
+		// Log the cleanup event.
+		WP_MCP_AI_Logger::log_event(
+			'job_cache_cleanup_cron',
+			'Job cache cleanup completed.',
+			array(
+				'deleted_count' => $deleted,
 			)
 		);
 	}

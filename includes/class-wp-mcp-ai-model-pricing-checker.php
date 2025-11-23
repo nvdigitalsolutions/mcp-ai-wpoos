@@ -27,8 +27,9 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		add_action( 'wp_ajax_wp_mcp_ai_dismiss_price_notice', array( __CLASS__, 'dismiss_price_notice' ) );
 
 		// Schedule cron job if not already scheduled.
+		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), 'monthly', self::CRON_HOOK );
+			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'monthly', self::CRON_HOOK );
 		}
 	}
 

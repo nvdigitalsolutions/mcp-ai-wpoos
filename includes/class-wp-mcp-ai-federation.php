@@ -91,8 +91,9 @@ class WP_MCP_AI_Federation {
 			$this->directory_rest_handler = new WP_MCP_AI_Federation_Directory_REST();
 
 			// Schedule peer verification cron if not already scheduled.
+			// Schedule 2 minutes in the future to account for any delays.
 			if ( ! wp_next_scheduled( 'wp_mcp_ai_verify_peers' ) ) {
-				wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_verify_peers' );
+				wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'hourly', 'wp_mcp_ai_verify_peers' );
 			}
 		} else {
 			// Unschedule cron if directory is disabled.
@@ -113,9 +114,10 @@ class WP_MCP_AI_Federation {
 		}
 
 		// Schedule peer verification cron.
+		// Schedule 2 minutes in the future to account for any delays.
 		if ( WP_MCP_AI_Federation_Settings::is_directory_enabled() ) {
 			if ( ! wp_next_scheduled( 'wp_mcp_ai_verify_peers' ) ) {
-				wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_verify_peers' );
+				wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'hourly', 'wp_mcp_ai_verify_peers' );
 			}
 		}
 	}

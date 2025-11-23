@@ -101,8 +101,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 		add_action( 'wp_mcp_ai_before_tool_execution', array( __CLASS__, 'check_tool_limit' ), 5, 3 );
 
 		// Register hourly cron job for forecast checks.
+		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_hourly_forecast_check' ) ) {
-			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_hourly_forecast_check' );
+			wp_schedule_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'hourly', 'wp_mcp_ai_hourly_forecast_check' );
 		}
 
 		// Hook cron job to alert checking.

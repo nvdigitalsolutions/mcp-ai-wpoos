@@ -104,8 +104,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 		add_action( 'wp_mcp_ai_cleanup_async_results', array( $this, 'cleanup_expired_results' ) );
 
 		// Schedule cleanup if not already scheduled.
+		// Schedule 2 minutes in the future to account for any delays.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_async_results' ) ) {
-			$cleanup_timestamp = time();
+			$cleanup_timestamp = time() + ( 2 * MINUTE_IN_SECONDS );
 			wp_schedule_event( $cleanup_timestamp, 'hourly', 'wp_mcp_ai_cleanup_async_results' );
 
 			// Record cleanup cron job in cron manager for visibility.

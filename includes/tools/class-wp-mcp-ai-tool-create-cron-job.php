@@ -57,7 +57,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'timestamp' => array(
 					'type'        => 'integer',
-					'description' => __( 'Unix timestamp for when the event should first run. Defaults to one minute from now.', 'wp-mcp-ai' ),
+					'description' => __( 'Unix timestamp for when the event should first run. Defaults to two minutes from now.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 				),
 				'schedule'  => array(
@@ -137,7 +137,8 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$timestamp = isset( $arguments['timestamp'] ) ? (int) $arguments['timestamp'] : 0;
 
 		if ( $timestamp <= 0 ) {
-			$timestamp = time() + MINUTE_IN_SECONDS;
+			// Default to 2 minutes in the future to account for any delays.
+			$timestamp = time() + ( 2 * MINUTE_IN_SECONDS );
 		}
 
 		$current_time = time();
