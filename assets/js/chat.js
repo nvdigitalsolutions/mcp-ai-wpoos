@@ -11187,8 +11187,8 @@
 		notificationPollers.noJobChecks[instanceId] = 0;
 		
 		// Try SSE first if supported and SSE service is available
-		const hasSseService = typeof sseService !== 'undefined' && sseService;
-		if (hasSseService && sseService.isSupported()) {
+		const canUseSse = typeof sseService !== 'undefined' && sseService;
+		if (canUseSse && sseService.isSupported()) {
 			if (window.console && console.log) {
 				console.log('[WP oOS] Attempting SSE connection for notifications on instance:', instanceId);
 			}

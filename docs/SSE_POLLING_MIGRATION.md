@@ -2,7 +2,7 @@
 
 ## Overview
 
-As of version 1.1.0, the WP oOS plugin has removed legacy cron status polling in favor of a modern SSE (Server-Sent Events) first approach with automatic polling fallback.
+As of version 1.1.0, the WP oOS plugin has removed legacy cron status polling in favor of a modern **SSE-first** approach with automatic polling fallback.
 
 ## What Changed
 
@@ -148,7 +148,7 @@ This is normal behavior. SSE connections:
 - `includes/class-wp-mcp-ai-shortcode.php` - Updated script dependencies
 - `includes/admin/class-wp-mcp-ai-admin-test-page-base.php` - Updated script dependencies
 - `assets/js/chat.js` - Removed legacy polling code
-- `assets/js/cron-status-service.js` - Marked as deprecated
+- `assets/js/cron-status-service.js` - Marked as deprecated (file remains functional for backwards compatibility but should not be used in new implementations)
 
 ## Future Plans
 
