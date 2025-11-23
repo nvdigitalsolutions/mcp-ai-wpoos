@@ -133,10 +133,48 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
+		// If no rows found with cct_author_id, try with user_id column as fallback.
+		// This handles cases where JetEngine might be using the custom user_id field
+		// instead of the built-in cct_author_id column.
+		if ( empty( $rows ) ) {
+			$fallback_where             = $this->build_user_id_fallback_where( $user_id, $assistant_id );
+			$fallback_query_values      = array_merge( $fallback_where['where_values'], array( $per_page, $offset ) );
+			$fallback_query_template = "SELECT session_key,
+                MIN(request_started_at) AS started_at,
+                MAX(response_completed_at) AS completed_at,
+                MIN(cct_created) AS first_created,
+                MAX(cct_created) AS last_created,
+                MAX(assistant_id) AS assistant_id,
+                MAX(assistant_model) AS assistant_model,
+                COUNT(*) AS turn_count
+         FROM {$table}
+         WHERE {$fallback_where['where_sql']}
+         GROUP BY session_key
+         ORDER BY MAX(cct_created) DESC, session_key ASC
+         LIMIT %d OFFSET %d";
+
+			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_query_values );
+
+			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+
+			if ( ! is_array( $rows ) ) {
+				$rows = array();
+			}
+		}
+
 		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
 		$total_query          = $wpdb->prepare( $total_query_template, $where_values );
 
 		$total = (int) $wpdb->get_var( $total_query );
+
+		// If we had to use fallback, also use fallback for total count.
+		if ( 0 === $total && ! empty( $rows ) ) {
+			$fallback_where                = $this->build_user_id_fallback_where( $user_id, $assistant_id );
+			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where['where_sql']}";
+			$fallback_total_query          = $wpdb->prepare( $fallback_total_query_template, $fallback_where['where_values'] );
+
+			$total = (int) $wpdb->get_var( $fallback_total_query );
+		}
 
 		return array(
 			'items' => $rows,
@@ -199,24 +237,14 @@ class WP_MCP_AI_Transcript_Repository {
 		// This handles cases where JetEngine might be using the custom user_id field
 		// instead of the built-in cct_author_id column.
 		if ( empty( $rows ) ) {
-			// Build fallback query using user_id instead of cct_author_id.
-			$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
-			$fallback_where_values  = array( $session_key, $user_id );
-
-			if ( $assistant_id > 0 ) {
-				$fallback_where_clauses[] = 'assistant_id = %d';
-				$fallback_where_values[]  = $assistant_id;
-			}
-
-			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
-
+			$fallback_where          = $this->build_user_id_fallback_where( $user_id, $assistant_id, 'session_key = %s', array( $session_key ) );
 			$select_fields           = $this->get_select_fields();
 			$fallback_query_template = "SELECT {$select_fields}
          FROM {$table}
-         WHERE {$fallback_where_sql}
+         WHERE {$fallback_where['where_sql']}
          ORDER BY cct_created ASC, id ASC";
 
-			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
+			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where['where_values'] );
 
 			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
 		}
@@ -294,5 +322,44 @@ class WP_MCP_AI_Transcript_Repository {
                 assistant_id,
                 assistant_model,
                 latency_ms";
+	}
+
+	/**
+	 * Build fallback WHERE clause for user_id column.
+	 *
+	 * Creates WHERE clause and values for queries using the custom user_id field
+	 * instead of the built-in cct_author_id column. This handles cases where
+	 * JetEngine might be using a custom user_id field.
+	 *
+	 * @param int    $user_id          User identifier.
+	 * @param int    $assistant_id     Optional assistant ID to filter by.
+	 * @param string $additional_where Optional additional WHERE condition (e.g., 'session_key = %s').
+	 * @param array  $additional_values Optional array of values corresponding to placeholders in $additional_where.
+	 * @return array Array with 'where_sql' and 'where_values' keys.
+	 */
+	private function build_user_id_fallback_where( $user_id, $assistant_id = 0, $additional_where = '', $additional_values = array() ) {
+		$where_clauses = array();
+		$where_values  = array();
+
+		// Add additional conditions first (e.g., session_key).
+		if ( ! empty( $additional_where ) ) {
+			$where_clauses[] = $additional_where;
+			$where_values    = array_merge( $where_values, $additional_values );
+		}
+
+		// Add user_id filter.
+		$where_clauses[] = 'user_id = %d';
+		$where_values[]  = $user_id;
+
+		// Add assistant_id filter if provided.
+		if ( $assistant_id > 0 ) {
+			$where_clauses[] = 'assistant_id = %d';
+			$where_values[]  = $assistant_id;
+		}
+
+		return array(
+			'where_sql'    => implode( ' AND ', $where_clauses ),
+			'where_values' => $where_values,
+		);
 	}
 }

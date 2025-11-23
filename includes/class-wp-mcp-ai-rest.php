@@ -6075,8 +6075,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return array|WP_Error
 		 */
 		public function get_transcript_session( $user_id, $session_key, $assistant_id = 0 ) {
-			global $wpdb;
-
 			WP_MCP_AI_Logger::log_event(
 				'debug',
 				'get_transcript_session called',
@@ -6109,102 +6107,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			if ( ! $this->transcript_table_exists() ) {
-				return new WP_Error(
-					'wp_mcp_ai_transcripts_unavailable',
-					__( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'wp-mcp-ai' ),
-					array( 'status' => 404 )
-				);
-			}
+			// Use the repository to retrieve raw database rows with fallback logic.
+			$repository = $this->get_transcript_repository();
+			$rows       = $repository->get_session( $user_id, $session_key, $assistant_id );
 
-			$table        = $this->get_transcript_table_name();
-			$user_id      = absint( $user_id );
-			$assistant_id = absint( $assistant_id );
+			// Handle errors from repository.
+			if ( is_wp_error( $rows ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'get_transcript_session: repository returned error',
+					array(
+						'error_code'    => $rows->get_error_code(),
+						'error_message' => $rows->get_error_message(),
+						'user_id'       => $user_id,
+						'session_key'   => $session_key,
+						'assistant_id'  => $assistant_id,
+					)
+				);
+
+				return $rows;
+			}
 
 			WP_MCP_AI_Logger::log_event(
 				'debug',
-				'get_transcript_session: database query parameters',
+				'get_transcript_session: retrieved rows from repository',
 				array(
-					'table'        => $table,
+					'row_count'    => count( $rows ),
 					'user_id'      => $user_id,
 					'session_key'  => $session_key,
 					'assistant_id' => $assistant_id,
 				)
 			);
-
-			$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
-			$where_values  = array( $session_key, $user_id );
-
-			if ( $assistant_id > 0 ) {
-				$where_clauses[] = 'assistant_id = %d';
-				$where_values[]  = $assistant_id;
-			}
-
-			$where_sql = implode( ' AND ', $where_clauses );
-
-			$select_fields  = $this->get_transcript_select_fields();
-			$query_template = "SELECT {$select_fields}
-             FROM {$table}
-             WHERE {$where_sql}
-             ORDER BY cct_created ASC, id ASC";
-
-			$query = $wpdb->prepare( $query_template, $where_values );
-
-			$rows = $wpdb->get_results( $query, ARRAY_A );
-
-			// If no rows found with cct_author_id, try with user_id column as fallback.
-			// This handles cases where JetEngine might be using the custom user_id field
-			// instead of the built-in cct_author_id column.
-			if ( empty( $rows ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'get_transcript_session: no rows found with cct_author_id, trying user_id fallback',
-					array(
-						'table'       => $table,
-						'user_id'     => $user_id,
-						'session_key' => $session_key,
-					)
-				);
-
-				// Build fallback query using user_id instead of cct_author_id.
-				$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
-				$fallback_where_values  = array( $session_key, $user_id );
-
-				if ( $assistant_id > 0 ) {
-					$fallback_where_clauses[] = 'assistant_id = %d';
-					$fallback_where_values[]  = $assistant_id;
-				}
-
-				$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
-
-				$select_fields           = $this->get_transcript_select_fields();
-				$fallback_query_template = "SELECT {$select_fields}
-             FROM {$table}
-             WHERE {$fallback_where_sql}
-             ORDER BY cct_created ASC, id ASC";
-
-				$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
-
-				$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
-			}
-
-			if ( empty( $rows ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'get_transcript_session: no rows found in database after fallback',
-					array(
-						'table'       => $table,
-						'user_id'     => $user_id,
-						'session_key' => $session_key,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_transcript_missing',
-					__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
-					array( 'status' => 404 )
-				);
-			}
 
 			$assistant_id    = 0;
 			$assistant_model = '';
