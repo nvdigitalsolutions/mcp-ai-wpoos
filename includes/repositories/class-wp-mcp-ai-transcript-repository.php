@@ -283,9 +283,8 @@ class WP_MCP_AI_Transcript_Repository {
 			);
 		}
 
-		// If no rows found with cct_author_id, try with user_id column as fallback.
 		// If no rows found with user_id, try with cct_author_id column as fallback.
-		// This handles cases where JetEngine might be using the built-in cct_author_id 
+		// This handles cases where JetEngine might be using the built-in cct_author_id
 		// field instead of the custom user_id field.
 		if ( empty( $rows ) ) {
 			$fallback_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
