@@ -8493,8 +8493,8 @@
                                                 try {
                                                     parsedContent = JSON.parse(parsedContent);
                                                 } catch (e) {
-                                                    // If parsing fails, keep original content - extractTextFromContent handles both strings and objects
-                                                    parsedContent = toolResult.content;
+                                                    // If parsing fails, parsedContent remains as original string
+                                                    // extractTextFromContent handles both strings and objects
                                                 }
                                             }
                                             
