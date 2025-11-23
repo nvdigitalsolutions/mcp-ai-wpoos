@@ -77,6 +77,19 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		// Extract session key before saving
 		$session_key = isset( $record['session_key'] ) ? $record['session_key'] : null;
 
+		// Log the record being saved for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'Chat Transcript Recorder: Saving transcript',
+			array(
+				'session_key'   => $session_key,
+				'user_id'       => $user_id,
+				'assistant_id'  => $assistant_id,
+				'cct_author_id' => isset( $record['cct_author_id'] ) ? $record['cct_author_id'] : 'not set',
+				'message_count' => count( $messages ),
+			)
+		);
+
 		try {
 			$result = $handler->update_item( $record );
 
@@ -86,18 +99,32 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 					array(
 						'assistant_id'  => $assistant_id,
 						'user_id'       => $user_id,
+						'session_key'   => $session_key,
 						'error_code'    => $result->get_error_code(),
 						'error_message' => $result->get_error_message(),
 					)
 				);
 				return null;
 			}
+
+			// Log successful save with result details.
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'Chat Transcript Recorder: Transcript saved successfully',
+				array(
+					'session_key'  => $session_key,
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+					'result'       => is_numeric( $result ) ? "ID: {$result}" : gettype( $result ),
+				)
+			);
 		} catch ( Throwable $exception ) {
 			WP_MCP_AI_Logger::log_error(
 				'Unexpected error while saving chat transcript.',
 				array(
 					'assistant_id' => $assistant_id,
 					'user_id'      => $user_id,
+					'session_key'  => $session_key,
 					'exception'    => $exception->getMessage(),
 				)
 			);
