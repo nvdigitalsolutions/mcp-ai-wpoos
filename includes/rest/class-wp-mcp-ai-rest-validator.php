@@ -550,7 +550,7 @@ class WP_MCP_AI_REST_Validator {
 				if ( '' !== $segment['text'] ) {
 					$segments[] = $segment;
 				}
-			} elseif ( in_array( $segment_type, array( 'image_url', 'image_file', 'audio', 'file' ), true ) ) {
+			} elseif ( in_array( $segment_type, array( 'image_url', 'image_file', 'input_image', 'audio', 'file', 'input_file' ), true ) ) {
 				$segment = $attachments_helper->prepare_input_attachment_segment( $item );
 
 				if ( ! is_wp_error( $segment ) ) {
