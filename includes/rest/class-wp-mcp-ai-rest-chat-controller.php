@@ -24,6 +24,25 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
+	 * Allowed response metadata fields for manual transcript saves.
+	 *
+	 * These fields can be included in the response_metadata parameter when
+	 * manually saving a conversation. Only whitelisted fields are accepted
+	 * to prevent injection of arbitrary data.
+	 *
+	 * @var array
+	 */
+	const ALLOWED_RESPONSE_METADATA_FIELDS = array(
+		'usage',
+		'provider',
+		'id',
+		'object',
+		'created',
+		'service_tier',
+		'system_fingerprint',
+	);
+
+	/**
 	 * Reference to the main REST controller for shared functionality.
 	 *
 	 * @var WP_MCP_AI_REST
@@ -147,7 +166,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'messages'          => array(
+						'messages'     => array(
 							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
 							'type'              => 'array',
 							'required'          => true,
@@ -1036,17 +1055,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Merge in optional response metadata if provided.
 		// This allows preserving usage data, provider info, response IDs, etc.
 		if ( ! empty( $response_metadata ) && is_array( $response_metadata ) ) {
-			// Sanitize and merge the metadata.
-			$allowed_fields = array( 'usage', 'provider', 'id', 'object', 'created', 'service_tier', 'system_fingerprint' );
-
-			foreach ( $allowed_fields as $field ) {
+			foreach ( self::ALLOWED_RESPONSE_METADATA_FIELDS as $field ) {
 				if ( isset( $response_metadata[ $field ] ) ) {
 					// Sanitize based on field type.
 					switch ( $field ) {
 						case 'usage':
-							// Usage is an array/object, preserve as-is if it's an array.
-							if ( is_array( $response_metadata[ $field ] ) ) {
-								$response[ $field ] = $response_metadata[ $field ];
+							// Validate and sanitize usage data structure.
+							$usage = $this->sanitize_usage_data( $response_metadata[ $field ] );
+							if ( ! empty( $usage ) ) {
+								$response[ $field ] = $usage;
 							}
 							break;
 
@@ -1070,5 +1087,72 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Sanitize and validate usage data structure.
+	 *
+	 * Validates that usage data contains the expected fields with appropriate types.
+	 * Returns a sanitized usage array or empty array if invalid.
+	 *
+	 * @param mixed $usage_data Raw usage data from request.
+	 * @return array Sanitized usage data or empty array if invalid.
+	 */
+	private function sanitize_usage_data( $usage_data ) {
+		if ( ! is_array( $usage_data ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+
+		// Sanitize top-level token counts.
+		$token_fields = array( 'prompt_tokens', 'completion_tokens', 'total_tokens' );
+		foreach ( $token_fields as $field ) {
+			if ( isset( $usage_data[ $field ] ) ) {
+				$value = absint( $usage_data[ $field ] );
+				if ( $value >= 0 ) {
+					$sanitized[ $field ] = $value;
+				}
+			}
+		}
+
+		// Sanitize prompt_tokens_details if present.
+		if ( isset( $usage_data['prompt_tokens_details'] ) && is_array( $usage_data['prompt_tokens_details'] ) ) {
+			$prompt_details = array();
+			$detail_fields  = array( 'cached_tokens', 'audio_tokens' );
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['prompt_tokens_details'][ $field ] ) ) {
+					$prompt_details[ $field ] = absint( $usage_data['prompt_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $prompt_details ) ) {
+				$sanitized['prompt_tokens_details'] = $prompt_details;
+			}
+		}
+
+		// Sanitize completion_tokens_details if present.
+		if ( isset( $usage_data['completion_tokens_details'] ) && is_array( $usage_data['completion_tokens_details'] ) ) {
+			$completion_details = array();
+			$detail_fields      = array(
+				'reasoning_tokens',
+				'audio_tokens',
+				'accepted_prediction_tokens',
+				'rejected_prediction_tokens',
+			);
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['completion_tokens_details'][ $field ] ) ) {
+					$completion_details[ $field ] = absint( $usage_data['completion_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $completion_details ) ) {
+				$sanitized['completion_tokens_details'] = $completion_details;
+			}
+		}
+
+		return $sanitized;
 	}
 }
