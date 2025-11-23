@@ -1,20 +1,15 @@
 <?php
 /**
- * Tests for user_id field in transcript records.
+ * Tests for cct_author_id field in transcript records.
  *
- * Verifies that the transcript recorder properly sets user_id
- * for both logged-in users and guests, ensuring transcripts
- * can be retrieved properly.
- *
- * Note: The CCT schema uses user_id as the field name, not cct_author_id.
- * JetEngine provides built-in cct_created and cct_modified fields,
- * but author/user tracking is done via the custom user_id field.
+ * Verifies that the transcript recorder properly sets cct_author_id
+ * to match user_id, ensuring transcripts can be retrieved properly.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test user_id is set correctly in transcript records.
+ * Test cct_author_id is set correctly in transcript records.
  */
 class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 	/**
@@ -92,18 +87,14 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that user_id is set correctly for logged-in users.
-	 *
-	 * Note: The CCT schema only has a user_id field, not cct_author_id.
-	 * JetEngine has built-in cct_created and cct_modified fields, but
-	 * author tracking is done via the custom user_id field.
+	 * Test that cct_author_id is set correctly for logged-in users.
 	 */
-	public function test_user_id_is_set_for_logged_in_user() {
+	public function test_cct_author_id_is_set_for_logged_in_user() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
-		$request->set_param( 'session_key', 'test-user-id-session' );
+		$request->set_param( 'session_key', 'test-cct-author-id-session' );
 		$request->set_param(
 			'messages',
 			array(
@@ -126,15 +117,20 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 
 		$record = $this->transcript_handler->records[0];
 
-		// Verify user_id is set (the actual CCT field).
+		// Verify both user_id and cct_author_id are set.
 		$this->assertArrayHasKey( 'user_id', $record, 'Record should have user_id field' );
+		$this->assertArrayHasKey( 'cct_author_id', $record, 'Record should have cct_author_id field' );
+
+		// Verify they match.
 		$this->assertEquals( $this->admin_id, $record['user_id'], 'user_id should be set to current user ID' );
+		$this->assertEquals( $this->admin_id, $record['cct_author_id'], 'cct_author_id should be set to current user ID' );
+		$this->assertEquals( $record['user_id'], $record['cct_author_id'], 'user_id and cct_author_id should match' );
 	}
 
 	/**
-	 * Test that user_id is set to 0 for guest users.
+	 * Test that cct_author_id is set to 0 for guest users.
 	 */
-	public function test_user_id_is_zero_for_guest_users() {
+	public function test_cct_author_id_is_zero_for_guest_users() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		// Create a guest token for authentication.
@@ -159,7 +155,7 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
 		$request->set_param( 'assistant_id', $this->assistant_id );
-		$request->set_param( 'session_key', 'test-guest-user-id-session' );
+		$request->set_param( 'session_key', 'test-guest-cct-author-session' );
 		$request->set_param(
 			'messages',
 			array(
@@ -180,9 +176,12 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 			$record = $this->transcript_handler->records[0];
 
 			$this->assertArrayHasKey( 'user_id', $record, 'Record should have user_id field' );
+			$this->assertArrayHasKey( 'cct_author_id', $record, 'Record should have cct_author_id field' );
 
-			// For guest users, user_id should be 0.
+			// For guest users, both should be 0.
 			$this->assertEquals( 0, $record['user_id'], 'user_id should be 0 for guest users' );
+			$this->assertEquals( 0, $record['cct_author_id'], 'cct_author_id should be 0 for guest users' );
+			$this->assertEquals( $record['user_id'], $record['cct_author_id'], 'user_id and cct_author_id should match for guest users' );
 		}
 	}
 }

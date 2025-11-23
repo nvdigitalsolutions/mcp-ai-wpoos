@@ -134,15 +134,13 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_invalid_hook', __( 'A valid hook name is required to schedule a cron job.', 'wp-mcp-ai' ) );
 		}
 
-		// Capture current time once to avoid race conditions between default timestamp and validation.
-		$current_time = time();
-
 		$timestamp = isset( $arguments['timestamp'] ) ? (int) $arguments['timestamp'] : 0;
 
 		if ( $timestamp <= 0 ) {
-			$timestamp = $current_time + MINUTE_IN_SECONDS;
+			$timestamp = time() + MINUTE_IN_SECONDS;
 		}
 
+		$current_time = time();
 		if ( $timestamp < $current_time ) {
 			return new WP_Error( 'wp_mcp_ai_past_timestamp', __( 'The requested start time is in the past. Please choose a future timestamp.', 'wp-mcp-ai' ) );
 		}
@@ -191,60 +189,15 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the cron event. Please try again.', 'wp-mcp-ai' ) );
 		}
 
-		// Extract assistant_id from context for multi-widget isolation.
-		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
-
-		$job_id = WP_MCP_AI_Cron_Manager::record_job( $hook, $args, $schedule, $timestamp, $user_id, null, $assistant_id );
-
-		// Dispatch notification for cron job creation (orchestration layer integration).
-		do_action(
-			'wp_mcp_ai_cron_job_created',
-			$job_id,
-			array(
-				'hook'          => $hook,
-				'schedule'      => $schedule,
-				'timestamp'     => $timestamp,
-				'user_id'       => $user_id,
-				'assistant_id'  => $assistant_id,
-				'next_run'      => wp_date( DATE_ATOM, $timestamp ),
-			)
-		);
-
-		// Calculate human-readable time until execution.
-		// Use $current_time to maintain consistency with earlier validation.
-		$time_until_run = $timestamp - $current_time;
-		$human_time     = '';
-
-		if ( $time_until_run < MINUTE_IN_SECONDS ) {
-			$human_time = __( 'in less than a minute', 'wp-mcp-ai' );
-		} elseif ( $time_until_run < HOUR_IN_SECONDS ) {
-			$minutes = (int) ( $time_until_run / MINUTE_IN_SECONDS );
-			/* translators: %d: number of minutes */
-			$human_time = sprintf( _n( 'in %d minute', 'in %d minutes', $minutes, 'wp-mcp-ai' ), $minutes );
-		} elseif ( $time_until_run < DAY_IN_SECONDS ) {
-			$hours = (int) ( $time_until_run / HOUR_IN_SECONDS );
-			/* translators: %d: number of hours */
-			$human_time = sprintf( _n( 'in %d hour', 'in %d hours', $hours, 'wp-mcp-ai' ), $hours );
-		} else {
-			$days = (int) ( $time_until_run / DAY_IN_SECONDS );
-			/* translators: %d: number of days */
-			$human_time = sprintf( _n( 'in %d day', 'in %d days', $days, 'wp-mcp-ai' ), $days );
-		}
+		WP_MCP_AI_Cron_Manager::record_job( $hook, $args, $schedule, $timestamp, $user_id );
 
 		return array(
-			'job_id'        => $job_id,
 			'hook'          => $hook,
 			'schedule'      => $schedule,
 			'timestamp'     => $timestamp,
 			'scheduled_for' => wp_date( DATE_ATOM, $timestamp ),
-			'human_time'    => $human_time,
 			'args'          => $args,
-			'message'       => sprintf(
-				/* translators: 1: human-readable time, 2: schedule type */
-				__( 'Cron event scheduled successfully. Will run %1$s (%2$s).', 'wp-mcp-ai' ),
-				$human_time,
-				'single' === $schedule ? __( 'one-time', 'wp-mcp-ai' ) : $schedule
-			),
+			'message'       => __( 'Cron event scheduled successfully.', 'wp-mcp-ai' ),
 		);
 	}
 

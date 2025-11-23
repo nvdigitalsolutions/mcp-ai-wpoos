@@ -132,45 +132,6 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			// Validate content type (must be string, array, or null).
-			if ( isset( $message['content'] ) ) {
-				$content = $message['content'];
-				if ( ! is_string( $content ) && ! is_array( $content ) && ! is_null( $content ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: message index */
-							__( 'Message at index %d has invalid "content" type. Must be a string, array of content parts, or null.', 'wp-mcp-ai' ),
-							$index
-						),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'fix_content_type' => __( 'Message content must be a string, an array of content parts, or null (for assistant messages with tool_calls).', 'wp-mcp-ai' ),
-							),
-						)
-					);
-				}
-
-				// If content is an array, validate it contains objects (content parts).
-				if ( is_array( $content ) ) {
-					foreach ( $content as $part_index => $part ) {
-						if ( ! is_array( $part ) ) {
-							return new WP_Error(
-								'rest_invalid_param',
-								sprintf(
-									/* translators: 1: message index, 2: content part index */
-									__( 'Message at index %1$d has invalid content part at index %2$d. Each content part must be an object/array.', 'wp-mcp-ai' ),
-									$index,
-									$part_index
-								),
-								array( 'status' => 400 )
-							);
-						}
-					}
-				}
-			}
-
 			// Validate tool_call_id for tool messages.
 			if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
 				return new WP_Error(
@@ -191,28 +152,6 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Passthrough sanitize callback for messages array.
-	 *
-	 * This prevents WordPress REST API from applying schema-based sanitization
-	 * (rest_sanitize_value_from_schema) which would strip properties not defined
-	 * in the schema. By providing an explicit sanitize_callback that returns the
-	 * value unchanged, we allow additional properties from AI providers (like
-	 * 'refusal', 'audio', etc.) to pass through while still validating structure
-	 * via validate_messages_array().
-	 *
-	 * @param mixed           $value   The messages array to sanitize (passthrough).
-	 * @param WP_REST_Request $request The request object.
-	 * @param string          $param   The parameter name.
-	 * @return mixed The unchanged value.
-	 */
-	public function sanitize_messages_array( $value, $request, $param ) {
-		// Return value unchanged - validation is handled by validate_messages_array().
-		// This prevents WordPress from applying rest_sanitize_value_from_schema() which
-		// would reject the array due to missing 'items' schema definition.
-		return $value;
 	}
 
 	/**
@@ -489,18 +428,13 @@ class WP_MCP_AI_REST_Validator {
 	/**
 	 * Sanitize metadata fields from a message.
 	 *
-	 * Handles tool_calls, tool_call_id, name, and preserves all additional
-	 * provider-specific fields (like OpenAI's 'refusal', 'audio', etc.) to support
-	 * agentic workflows.
+	 * Handles tool_calls, tool_call_id, and name fields.
 	 *
 	 * @param array $message The message array.
 	 * @return array Sanitized metadata fields.
 	 */
 	public function sanitize_message_metadata( array $message ) {
 		$metadata = array();
-
-		// Standard fields that need specific sanitization.
-		$known_fields = array( 'role', 'content', 'tool_calls', 'tool_call_id', 'name' );
 
 		if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 			$tool_calls = array();
@@ -556,28 +490,6 @@ class WP_MCP_AI_REST_Validator {
 
 		if ( isset( $message['name'] ) ) {
 			$metadata['name'] = sanitize_text_field( $message['name'] );
-		}
-
-		// Preserve all additional provider-specific fields (refusal, audio, etc.).
-		// This is critical for agentic workflows where AI providers add extra metadata.
-		foreach ( $message as $key => $value ) {
-			if ( in_array( $key, $known_fields, true ) ) {
-				continue; // Already handled above.
-			}
-
-			// Sanitize additional fields based on their type.
-			if ( is_string( $value ) ) {
-				$metadata[ $key ] = wp_check_invalid_utf8( $value, true );
-			} elseif ( is_numeric( $value ) ) {
-				$metadata[ $key ] = $value;
-			} elseif ( is_bool( $value ) ) {
-				$metadata[ $key ] = $value;
-			} elseif ( is_array( $value ) || is_object( $value ) ) {
-				// Keep arrays/objects as-is for complex provider-specific structures.
-				// These will be JSON-encoded when stored.
-				$metadata[ $key ] = $value;
-			}
-			// Null values and other types are skipped.
 		}
 
 		return $metadata;
@@ -778,7 +690,7 @@ class WP_MCP_AI_REST_Validator {
 			return '';
 		}
 
-		$key = trim( (string) $value );
+		$key = (string) $value;
 		$key = preg_replace( '/[^a-zA-Z0-9_-]/', '', $key );
 
 		// Use the same max length as the transcript recorder to ensure consistency.

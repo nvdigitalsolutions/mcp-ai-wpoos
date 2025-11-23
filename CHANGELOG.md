@@ -15,37 +15,7 @@
   - **Status**: Phase 2.1 Complete ✅ (see `docs/archive/VIDEO_ANALYSIS_ROADMAP.md`)
 
 ### Documentation
-- **Documentation Reorganization Phase 2 (November 22, 2025)**: Major documentation consolidation and indexing
-  - Reorganized 65+ root-level markdown files into logical directory structure
-    - Moved 36 fix summaries → `docs/fixes/` (streaming, Gemini, LM Studio, OpenAI, SSE, transcripts)
-    - Moved 8 implementation docs → `docs/implementations/` (tool orchestration, SOC refactoring, streaming)
-    - Moved 6 enhancement docs → `docs/enhancements/` (async video, file attachments, streaming, cron)
-    - Moved 6 phase docs → `docs/phases/` (Phase 2.1, 3.2, 3.3, next phase planning)
-    - Moved 3 VEO docs → `docs/features/veo/` (fallback, duration, job flow)
-    - Moved 2 test guides → `docs/testing/` (async flow, streaming fetch logging)
-  - Created 3 comprehensive index documents in root:
-    - `DOCUMENTATION_INDEX.md` - Master index of all 400+ documentation files with navigation guide
-    - `FIXES_INDEX.md` - Complete index of 36+ bug fixes categorized by type (streaming, AI providers, API, etc.)
-    - `ENHANCEMENTS_INDEX.md` - Index of 10+ major feature enhancements with use cases and examples
-  - Created 6 README files for subdirectories:
-    - `docs/fixes/README.md` - Bug fix documentation guide
-    - `docs/enhancements/README.md` - Feature enhancement guide
-    - `docs/implementations/README.md` - Technical implementation guide
-    - `docs/testing/README.md` - Test documentation and guides
-    - `docs/phases/README.md` - Development phase documentation
-    - `docs/features/veo/README.md` - VEO video generation features
-  - **Root directory now streamlined to 10 essential files**:
-    - Core: README.md, BUILD.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md
-    - Indices: DOCUMENTATION_INDEX.md, FIXES_INDEX.md, ENHANCEMENTS_INDEX.md
-    - Planning: README_NEXT_PHASE.md, ARCHITECTURE_DIAGRAM.txt
-  - Benefits:
-    - Professional, clean root directory appearance
-    - Easy discovery of documentation by category
-    - Comprehensive cross-referencing between related docs
-    - Clear learning paths for users, developers, and contributors
-    - All information preserved (nothing deleted, only organized)
-
-- **Documentation Reorganization Phase 1 (November 18, 2025)**: Initial cleanup and consolidation
+- **Documentation Reorganization (November 18, 2025)**: Comprehensive cleanup and consolidation of documentation
   - Consolidated bug reports into single comprehensive `docs/TESTING_AND_QUALITY_REPORT.md` (753 lines)
     - Merged BUG_REPORT.md and BUG_REPORT_SUMMARY.md
     - Includes test suite results (2,106 tests, 73.4% pass rate)
@@ -59,6 +29,14 @@
     - Created `docs/archive/features/` for feature documentation
     - Created `docs/archive/code-reviews/` for code review reports
     - Created `docs/archive/testing/` for test infrastructure docs
+  - **Root directory now contains only 5 essential files**:
+    - README.md - Main plugin documentation
+    - CONTRIBUTING.md - Contribution guidelines
+    - SECURITY.md - Security policy
+    - CHANGELOG.md - This file
+    - BUILD.md - Build and development instructions
+  - All documentation preserved (nothing deleted, only organized)
+  - Easier navigation and discovery of relevant documentation
 
 ### Added
 - **LM Studio Function Calling Support**: Added OpenAI-compatible function calling to LM Studio provider (#1360)

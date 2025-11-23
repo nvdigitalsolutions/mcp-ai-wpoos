@@ -776,7 +776,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			'create_index'        => true,
 			'hide_field_names'    => false,
 			'rest_get_enabled'    => true,
-			'rest_put_enabled'    => true,
+			'rest_put_enabled'    => false,
 			'rest_post_enabled'   => true,
 			'rest_delete_enabled' => false,
 			'rest_get_access'     => 'manage_options',

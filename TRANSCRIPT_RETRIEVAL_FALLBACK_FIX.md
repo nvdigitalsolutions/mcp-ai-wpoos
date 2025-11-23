@@ -106,7 +106,7 @@ $record = array(
     'session_key'      => $session_key,
     'user_id'          => $user_id,      // Custom CCT field
     'cct_author_id'    => $user_id,      // Built-in JetEngine column
-    'assistant_id'     => $assistant_id, // Integer ID (updated to match CCT number field)
+    'assistant_id'     => (string) $assistant_id,
     'request_payload'  => $json_messages,
     'response_payload' => $json_response,
     // ...

@@ -33,7 +33,7 @@ class WP_MCP_AI_Gemini_Image_Tool_Response_Display_Test extends WP_UnitTestCase 
 			'revised_prompt' => '',
 			'created'        => time(),
 			'provider'       => 'gemini',
-			'text'           => 'Successfully generated image "Gemini Image: A test image" (ID: 123).',
+			'text'           => 'Successfully generated image "Gemini Image: A test image" (ID: 123). Format: 1:1, PNG',
 			'content'        => array(
 				'encoding'  => 'base64',
 				'data'      => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwsB9YwH0e0AAAAASUVORK5CYII=',

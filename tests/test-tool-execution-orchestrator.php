@@ -45,14 +45,9 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 	 * Test that orchestrator detects long-running tools.
 	 */
 	public function test_detects_long_running_tools() {
-		// Test with a tool that has 'long-running' flag (not generate_veo_video anymore,
-		// as it uses its own async mechanism instead of orchestrator wrapping).
-		// Using create_cron_job as an example of a long-running tool.
-		$is_long_running = $this->orchestrator->is_long_running_tool( 'create_cron_job' );
-		
-		// Note: create_cron_job may or may not have long-running flag, so we skip this assertion
-		// and just test that the method works without errors.
-		$this->assertIsBool( $is_long_running, 'is_long_running_tool should return boolean' );
+		// Test with generate_veo_video which has 'long-running' flag.
+		$is_long_running = $this->orchestrator->is_long_running_tool( 'generate_veo_video' );
+		$this->assertTrue( $is_long_running, 'generate_veo_video should be detected as long-running' );
 
 		// Test with a non-long-running tool.
 		$is_long_running = $this->orchestrator->is_long_running_tool( 'get_post' );
@@ -76,22 +71,19 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Execute generate_veo_video - it uses its own async mechanism (veo_xxx jobs)
-		// instead of orchestrator wrapping, so it returns veo_xxx job_id directly.
+		// Execute a long-running tool - should return async job info.
 		$result = $this->orchestrator->execute_tool(
 			'generate_veo_video',
 			array( 'prompt' => 'Test video' ),
 			array( 'user_id' => $user_id )
 		);
 
-		// Should return async job info from the tool's internal async mechanism.
+		// Should return async job info.
 		$this->assertIsArray( $result, 'Should return array' );
 		$this->assertTrue( isset( $result['async'] ), 'Should have async flag' );
 		$this->assertTrue( $result['async'], 'async flag should be true' );
 		$this->assertTrue( isset( $result['job_id'] ), 'Should have job_id' );
-		// Note: generate_veo_video returns veo_xxx job_id (its own async mechanism),
-		// not async_xxx (orchestrator wrapping) to avoid double-async nesting.
-		$this->assertStringStartsWith( 'veo_', $result['job_id'], 'job_id should start with veo_ (tool internal async)' );
+		$this->assertStringStartsWith( 'async_', $result['job_id'], 'job_id should start with async_' );
 	}
 
 	/**
@@ -152,10 +144,6 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 
 	/**
 	 * Test that force_sync context prevents async execution.
-	 * 
-	 * Note: generate_veo_video uses its own async mechanism and is not wrapped by the orchestrator,
-	 * so force_sync at the orchestrator level won't affect it. The tool checks its arguments
-	 * for an explicit async parameter to control its behavior.
 	 */
 	public function test_force_sync_context_prevents_async() {
 		// Enable auto-async.
@@ -171,25 +159,21 @@ class Test_Tool_Execution_Orchestrator extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// For generate_veo_video, we need to pass async=false in arguments to force sync,
-		// not in context, since the tool isn't wrapped by orchestrator.
+		// Execute long-running tool with force_sync - should execute synchronously.
+		// We expect this to fail or return an error since we're forcing sync on an async tool.
+		// The important thing is that it doesn't return async job info.
 		$result = $this->orchestrator->execute_tool(
 			'generate_veo_video',
-			array( 
-				'prompt' => 'Test video',
-				'async'  => false,  // Tool-level async control
-			),
-			array( 'user_id' => $user_id )
+			array( 'prompt' => 'Test video' ),
+			array(
+				'user_id'    => $user_id,
+				'force_sync' => true,
+			)
 		);
 
-		// Tool should attempt sync execution (may fail due to API key not being configured in test).
-		// The important thing is that we're testing the mechanism exists.
+		// Should NOT return async job info.
 		if ( is_array( $result ) ) {
-			// Tool may return error due to missing API key, or attempt sync execution.
-			// Just verify no async job_id was returned.
-			if ( isset( $result['async'] ) ) {
-				$this->assertFalse( $result['async'], 'Should not execute async when async=false in arguments' );
-			}
+			$this->assertFalse( isset( $result['async'] ) && $result['async'], 'Should not execute async when force_sync is set' );
 		}
 	}
 

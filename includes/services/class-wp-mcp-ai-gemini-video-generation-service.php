@@ -2,8 +2,7 @@
 /**
  * Gemini Video Generation Service
  *
- * Handles video generation using Google's Veo models through the Gemini API.
- * Defaults to Veo 2.0 with optional Veo 3.1 upgrade support.
+ * Handles video generation using Google's Veo 3.1 model through the Gemini API.
  * Manages async video generation, polling, and file download.
  *
  * Google API Requirements Compliance (2025):
@@ -47,25 +46,25 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 	/**
-	 * Veo 2.0 model identifier (primary/default as of 2025)
+	 * Veo 3.1 model identifier (primary)
 	 *
 	 * @var string
 	 */
-	const VEO_MODEL = 'veo-2.0-generate-001';
+	const VEO_MODEL = 'veo-3.1-generate-preview';
 
 	/**
-	 * Veo 3.1 model identifier (optional upgrade model)
+	 * Veo 2.0 model identifier (fallback)
 	 *
 	 * @var string
 	 */
-	const VEO_3_MODEL = 'veo-3.1-generate-preview';
+	const VEO_2_MODEL = 'veo-2.0-generate-001';
 
 	/**
 	 * Minimum video duration in seconds
 	 *
 	 * @var int
 	 */
-	const MIN_DURATION = 5;
+	const MIN_DURATION = 4;
 
 	/**
 	 * Maximum video duration in seconds
@@ -79,7 +78,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @var int
 	 */
-	const DEFAULT_DURATION = 5;
+	const DEFAULT_DURATION = 4;
 
 	/**
 	 * Required duration for 1080p resolution (2025 API requirement)
@@ -87,6 +86,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @var int
 	 */
 	const REQUIRED_1080P_DURATION = 8;
+
+	/**
+	 * Minimum video duration for Veo 2 in seconds
+	 *
+	 * @var int
+	 */
+	const VEO_2_MIN_DURATION = 5;
 
 	/**
 	 * Maximum polling attempts
@@ -122,16 +128,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	public static function init() {
 		// Register cron hook for async polling.
 		add_action( self::CRON_POLL_HOOK, array( __CLASS__, 'poll_video_async_static' ), 10, 1 );
-		
-		// Log initialization for debugging.
-		WP_MCP_AI_Logger::log_event(
-			'veo_service_initialized',
-			'Video generation service initialized and cron hook registered',
-			array(
-				'hook' => self::CRON_POLL_HOOK,
-				'time' => time(),
-			)
-		);
 	}
 
 	/**
@@ -140,32 +136,18 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param string $job_id Job identifier.
 	 */
 	public static function poll_video_async_static( $job_id ) {
-		// Log that cron fired - critical for debugging.
-		WP_MCP_AI_Logger::log_event(
-			'veo_cron_fired',
-			'Video polling cron callback executed',
-			array(
-				'job_id' => $job_id,
-				'time'   => time(),
-			)
-		);
-		
 		$service = new self();
 		$service->poll_video_async( $job_id );
 	}
 
 	/**
-	 * Generate a video using Veo models with automatic fallback.
-	 *
-	 * Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 (1080p support).
-	 * Users can explicitly request Veo 3.1 via the model parameter for higher resolution.
-	 * Default model can be configured in Settings > Providers > Google Gemini.
+	 * Generate a video using Veo 3.1 with automatic Veo 2.0 fallback.
 	 *
 	 * @param array $args {
 	 *     Video generation arguments.
 	 *
 	 *     @type string $prompt           Video description/prompt (required).
-	 *     @type int    $duration         Duration in seconds (5-8, default 5).
+	 *     @type int    $duration         Duration in seconds (4-8, default 5).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type string $negative_prompt  What to avoid in generation.
@@ -174,7 +156,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type string $image_mime_type  MIME type of reference image.
 	 *     @type bool   $async            Whether to use async mode (cron fallback).
 	 *     @type int    $user_id          User ID for async operations.
-	 *     @type string $model            Optional. Force specific model ('veo-2.0' or 'veo-3.1').
+	 *     @type string $model            Optional. Force specific model ('veo-3.1' or 'veo-2.0').
 	 * }
 	 * @return array|WP_Error Video data or async job info on success, error on failure.
 	 */
@@ -188,58 +170,48 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
-		// Determine which model to use as default.
-		// Priority: 1) Explicit model parameter, 2) Settings, 3) Constant default.
-		$default_model = $this->get_default_model();
-
-		// Check if a specific model is explicitly requested.
-		$force_veo_3 = isset( $args['model'] ) && 'veo-3.1' === $args['model'];
+		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
 		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
 
-		// If no explicit model specified, use the default from settings.
-		if ( ! $force_veo_3 && ! $force_veo_2 ) {
-			$result = $this->generate_video_with_model( $args, $default_model );
+		if ( ! $force_veo_2 ) {
+			$result = $this->generate_video_with_model( $args, self::VEO_MODEL );
 
 			// If successful or async, return immediately.
 			if ( ! is_wp_error( $result ) ) {
 				return $result;
 			}
 
-			// Check if this is a retryable error that warrants fallback.
-			// Fallback to the alternate model (if default is 2.0, try 3.1; if default is 3.1, try 2.0).
-			$fallback_model = ( 'veo-2.0-generate-001' === $default_model ) ? self::VEO_3_MODEL : self::VEO_MODEL;
-
-			if ( $this->should_fallback_to_alternate_model( $result ) ) {
-				$fallback_name = ( 'veo-2.0-generate-001' === $default_model ) ? 'Veo 3.1' : 'Veo 2.0';
+			// Check if this is a retryable error that warrants Veo 2 fallback.
+			if ( $this->should_fallback_to_veo_2( $result ) ) {
 				WP_MCP_AI_Logger::log_event(
-					'veo_fallback_to_alternate',
-					sprintf( 'Primary model failed, attempting %s fallback', $fallback_name ),
+					'veo_fallback_to_veo_2',
+					'Veo 3.1 failed, attempting Veo 2.0 fallback',
 					array(
-						'primary_error' => $result->get_error_message(),
-						'error_code'    => $result->get_error_code(),
+						'veo_3_error' => $result->get_error_message(),
+						'error_code'  => $result->get_error_code(),
 					)
 				);
 
-				// Attempt with fallback model.
-				$fallback_result = $this->generate_video_with_model( $args, $fallback_model );
+				// Attempt with Veo 2.0.
+				$veo_2_result = $this->generate_video_with_model( $args, self::VEO_2_MODEL );
 
-				// If fallback succeeds, add metadata about it.
-				if ( ! is_wp_error( $fallback_result ) ) {
-					if ( isset( $fallback_result['async'] ) && $fallback_result['async'] ) {
-						$fallback_result['fallback_used'] = true;
-						$fallback_result['primary_model_error'] = $result->get_error_message();
+				// If Veo 2 succeeds, add metadata about fallback.
+				if ( ! is_wp_error( $veo_2_result ) ) {
+					if ( isset( $veo_2_result['async'] ) && $veo_2_result['async'] ) {
+						$veo_2_result['fallback_used'] = true;
+						$veo_2_result['primary_model_error'] = $result->get_error_message();
 					}
-					return $fallback_result;
+					return $veo_2_result;
 				}
 
-				// Both failed - return error with context.
+				// Both failed - return the original Veo 3 error with context.
 				return new WP_Error(
 					$result->get_error_code(),
 					sprintf(
-						/* translators: 1: Primary error, 2: Fallback error */
-						__( 'Video generation failed. Primary model: %1$s. Fallback also failed: %2$s', 'wp-mcp-ai' ),
+						/* translators: 1: Veo 3 error, 2: Veo 2 error */
+						__( 'Video generation failed. Veo 3.1: %1$s. Veo 2.0 fallback also failed: %2$s', 'wp-mcp-ai' ),
 						$result->get_error_message(),
-						$fallback_result->get_error_message()
+						$veo_2_result->get_error_message()
 					),
 					array( 'status' => 500 )
 				);
@@ -249,27 +221,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return $result;
 		}
 
-		// Specific model explicitly requested - use it without fallback.
-		$requested_model = $force_veo_3 ? self::VEO_3_MODEL : self::VEO_MODEL;
-		return $this->generate_video_with_model( $args, $requested_model );
-	}
-
-	/**
-	 * Get the default video model from settings
-	 *
-	 * @return string Model identifier (veo-2.0-generate-001 or veo-3.1-generate-preview).
-	 */
-	protected function get_default_model() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$setting_value = isset( $settings['default_gemini_video_model'] ) ? $settings['default_gemini_video_model'] : 'veo-2.0';
-
-		// Convert setting value to model identifier.
-		if ( 'veo-3.1' === $setting_value ) {
-			return self::VEO_3_MODEL;
-		}
-
-		// Default to Veo 2.0.
-		return self::VEO_MODEL;
+		// Veo 2 explicitly requested.
+		return $this->generate_video_with_model( $args, self::VEO_2_MODEL );
 	}
 
 	/**
@@ -324,12 +277,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Determine if error warrants fallback to alternate model.
+	 * Determine if error warrants fallback to Veo 2.
 	 *
-	 * @param WP_Error $error Error from primary model attempt.
-	 * @return bool True if should fallback to alternate model.
+	 * @param WP_Error $error Error from Veo 3 attempt.
+	 * @return bool True if should fallback to Veo 2.
 	 */
-	protected function should_fallback_to_alternate_model( $error ) {
+	protected function should_fallback_to_veo_2( $error ) {
 		$error_message = $error->get_error_message();
 
 		// Quota/rate limit errors.
@@ -394,29 +347,29 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Build the generation payload for Veo models.
 	 *
 	 * Validates and sanitizes all parameters before sending to the Gemini API.
-	 * Adjusts constraints based on the model being used (Veo 2.0 default vs Veo 3.1 optional).
+	 * Adjusts constraints based on the model being used (Veo 3.1 vs Veo 2.0).
 	 * Duration validation is performed in multiple stages:
 	 * 1. Initial validation: Convert to integer and check range based on model
-	 * 2. Model-specific adjustments: Both models support 5-8s, 1080p requires 8s for Veo 3.1
+	 * 2. Model-specific adjustments: Veo 2 min 5s, 1080p requires 8s for Veo 3
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
 	 * @param array  $args  Generation arguments.
-	 * @param string $model Model identifier (VEO_MODEL for Veo 2.0, VEO_3_MODEL for Veo 3.1).
+	 * @param string $model Model identifier (VEO_MODEL or VEO_2_MODEL).
 	 * @return array|WP_Error Payload or error.
 	 */
 	protected function build_generation_payload( $args, $model = null ) {
-		// Default to Veo 2.0 if not specified.
+		// Default to Veo 3.1 if not specified.
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
 
-		$is_veo_2 = ( 'veo-2.0-generate-001' === $model );
+		$is_veo_2 = ( self::VEO_2_MODEL === $model );
 
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
-		// Duration validation - same for both models (5-8 seconds).
+		// Duration validation - depends on model.
 		// Stage 1: Initial validation and sanitization.
-		$min_duration = self::MIN_DURATION; // Both models support 5-8 seconds
+		$min_duration = $is_veo_2 ? self::VEO_2_MIN_DURATION : self::MIN_DURATION;
 		$duration     = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
 
 		// Adjust duration if below model minimum.
@@ -510,7 +463,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
 		// Stage 3: Final validation as a safety check.
-		// This ensures duration is always within valid range (5-8 seconds) even if there are edge cases
+		// This ensures duration is always within valid range (4-8 seconds) even if there are edge cases
 		// in the validation logic above. This prevents "durationSeconds is out of bound" API errors.
 		if ( ! is_int( $parameters['durationSeconds'] ) || $parameters['durationSeconds'] < self::MIN_DURATION || $parameters['durationSeconds'] > self::MAX_DURATION ) {
 			$parameters['durationSeconds'] = self::DEFAULT_DURATION;
@@ -530,7 +483,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array|WP_Error Operation details or error.
 	 */
 	protected function submit_generation_request( $payload, $model = null ) {
-		// Default to Veo 2.0 if not specified.
+		// Default to Veo 3.1 if not specified.
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
@@ -744,12 +697,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array|WP_Error Video data or error.
 	 */
 	protected function process_completed_video( $result, $args, $model = null ) {
-		// Default to Veo 2.0 if not specified.
+		// Default to Veo 3.1 if not specified.
 		if ( null === $model ) {
 			$model = self::VEO_MODEL;
 		}
 
-		$is_veo_2 = ( 'veo-2.0-generate-001' === $model );
+		$is_veo_2 = ( self::VEO_2_MODEL === $model );
 
 		// Extract video URL from response.
 		// Support both old and new API response structures for backward compatibility.
@@ -773,35 +726,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Download the video.
-		WP_MCP_AI_Logger::log_event(
-			'veo_downloading_video',
-			'Downloading generated video from Google',
-			array(
-				'uri_host' => wp_parse_url( $video_uri, PHP_URL_HOST ),
-				'uri_path' => wp_parse_url( $video_uri, PHP_URL_PATH ),
-			)
-		);
-		
 		$video_data = $this->download_video( $video_uri );
 
 		if ( is_wp_error( $video_data ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Veo video download failed',
-				array(
-					'error' => $video_data->get_error_message(),
-					'code'  => $video_data->get_error_code(),
-				)
-			);
 			return $video_data;
 		}
-
-		WP_MCP_AI_Logger::log_event(
-			'veo_video_downloaded',
-			'Successfully downloaded video from Google',
-			array(
-				'size_bytes' => strlen( $video_data ),
-			)
-		);
 
 		// Determine actual resolution used.
 		// Veo 2.0 always outputs 720p (resolution parameter not supported).
@@ -934,101 +863,34 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'max_attempts'   => self::MAX_POLLING_ATTEMPTS,
 		);
 
-		// Save to transient (24 hour expiry) BEFORE scheduling cron.
+		// Save to transient (24 hour expiry).
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-		// Force database write to ensure transient is committed.
-		// Critical for preventing race conditions where cron executes before transient is saved.
-		wp_cache_flush();
-
-		// Schedule first poll with increased delay (3 seconds instead of 1) to ensure:
-		// 1. Transient is fully committed to database
-		// 2. Cron system has time to register the event
-		// 3. Any database replication lag is accounted for
-		$first_poll_time = time() + 3;
-		$scheduled       = wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
-
-		// Log scheduling attempt - critical for debugging cron execution issues.
-		WP_MCP_AI_Logger::log_event(
-			'veo_poll_schedule_attempt',
-			'Attempting to schedule first video poll',
-			array(
-				'job_id'          => $job_id,
-				'first_poll_time' => $first_poll_time,
-				'scheduled_result' => $scheduled,
-				'hook'            => self::CRON_POLL_HOOK,
-			)
-		);
-
-		// Check if scheduling was successful.
-		if ( false === $scheduled ) {
-			WP_MCP_AI_Logger::log_error(
-				'Failed to schedule initial video poll',
-				array(
-					'job_id'          => $job_id,
-					'first_poll_time' => $first_poll_time,
-					'hook'            => self::CRON_POLL_HOOK,
-				)
-			);
-
-			// Mark job as failed immediately.
-			$metadata['status']       = 'failed';
-			$metadata['error']        = __( 'Failed to schedule video generation polling.', 'wp-mcp-ai' );
-			$metadata['completed_at'] = time();
-			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
-
-			return array(
-				'async'   => true,
-				'job_id'  => $job_id,
-				'status'  => 'failed',
-				'error'   => $metadata['error'],
-				'message' => __( 'Failed to queue video generation. Please try again.', 'wp-mcp-ai' ),
-			);
-		}
+		// Schedule first poll with a 1-second delay to ensure transient is saved.
+		// This prevents race condition where cron executes before database commit.
+		$first_poll_time = time() + 1;
+		wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
 
 		// Record cron job in cron manager for visibility.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id      = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
-			$assistant_id = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+			$user_id = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_POLL_HOOK,
 				array( $job_id ),
 				'single',
 				$first_poll_time,
-				$user_id,
-				$job_id,  // Use the veo_xxx job_id directly instead of generating MD5 hash.
-				$assistant_id
+				$user_id
 			);
 		}
 
-		// Verify the cron event was actually registered.
-		$next_scheduled = wp_next_scheduled( self::CRON_POLL_HOOK, array( $job_id ) );
-		
 		WP_MCP_AI_Logger::log_event(
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
 			array(
-				'job_id'          => $job_id,
-				'operation'       => $operation['operation_name'],
-				'first_poll_time' => $first_poll_time,
-				'next_scheduled'  => $next_scheduled,
-				'verified'        => ( false !== $next_scheduled ),
+				'job_id'    => $job_id,
+				'operation' => $operation['operation_name'],
 			)
 		);
-
-		/**
-		 * Fires when a video generation job is queued for async processing.
-		 *
-		 * This action allows other components to track video generation lifecycle
-		 * from queue to completion.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param string $job_id   Job identifier (e.g., 'veo_abc123').
-		 * @param array  $metadata Job metadata at queue time.
-		 * @param array  $args     Original generation arguments.
-		 */
-		do_action( 'wp_mcp_ai_video_job_queued', $job_id, $metadata, $args );
 
 		return array(
 			'async'   => true,
@@ -1044,20 +906,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param string $job_id Async job identifier.
 	 */
 	public function poll_video_async( $job_id ) {
-		// Verify cron hook is registered before attempting to poll.
-		// This prevents silent failures if service wasn't properly initialized.
-		if ( ! has_action( self::CRON_POLL_HOOK ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Veo cron hook not registered',
-				array(
-					'job_id' => $job_id,
-					'hook'   => self::CRON_POLL_HOOK,
-				)
-			);
-			// Re-initialize service to register hook.
-			self::init();
-		}
-
 		// Retrieve operation metadata.
 		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
 
@@ -1075,13 +923,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Check if max attempts reached.
 		if ( $metadata['poll_attempt'] > $metadata['max_attempts'] ) {
-			$this->mark_job_as_failed(
-				$job_id,
-				$metadata,
-				__( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' ),
-				'wp_mcp_ai_veo_timeout',
+			$metadata['status'] = 'failed';
+			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
+			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+			WP_MCP_AI_Logger::log_error(
 				'Veo async generation timeout',
-				array( 'attempts' => $metadata['poll_attempt'] )
+				array(
+					'job_id'   => $job_id,
+					'attempts' => $metadata['poll_attempt'],
+				)
 			);
 			return;
 		}
@@ -1089,17 +940,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Poll the Gemini API for status.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
-
-		if ( empty( $api_key ) ) {
-			$this->mark_job_as_failed(
-				$job_id,
-				$metadata,
-				__( 'Gemini API key not configured.', 'wp-mcp-ai' ),
-				'wp_mcp_ai_missing_api_key',
-				'Veo async polling failed - missing API key'
-			);
-			return;
-		}
 
 		$endpoint = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/%s',
@@ -1117,20 +957,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// Log the error for debugging.
-			WP_MCP_AI_Logger::log_event(
-				'veo_poll_error',
-				'Error polling Gemini API for video status',
-				array(
-					'job_id'   => $job_id,
-					'attempt'  => $metadata['poll_attempt'],
-					'error'    => $response->get_error_message(),
-				)
-			);
-
-			// Update metadata with error status before scheduling retry.
-			$metadata['last_error'] = $response->get_error_message();
-
 			// Schedule retry.
 			$this->schedule_next_poll( $job_id, $metadata );
 			return;
@@ -1143,52 +969,29 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $data['done'] ) && true === $data['done'] ) {
 			if ( isset( $data['error'] ) ) {
 				// Operation failed.
-				$error_message = isset( $data['error']['message'] )
+				$metadata['status'] = 'failed';
+				$metadata['error']  = isset( $data['error']['message'] )
 					? $data['error']['message']
 					: __( 'Video generation failed.', 'wp-mcp-ai' );
+				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-				$this->mark_job_as_failed(
-					$job_id,
-					$metadata,
-					$error_message,
-					'wp_mcp_ai_veo_generation_failed',
-					'Veo async generation failed'
+				WP_MCP_AI_Logger::log_error(
+					'Veo async generation failed',
+					array(
+						'job_id' => $job_id,
+						'error'  => $metadata['error'],
+					)
 				);
 				return;
 			}
 
 			// Operation succeeded - process video.
-			$model  = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
-			
-			WP_MCP_AI_Logger::log_event(
-				'veo_async_processing_video',
-				'Processing completed video from Google',
-				array(
-					'job_id' => $job_id,
-					'model'  => $model,
-				)
-			);
-			
+			$model = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
 			$result = $this->process_completed_video( $data, $metadata['args'], $model );
 
 			if ( is_wp_error( $result ) ) {
-				$metadata['status']       = 'failed';
-				$metadata['error']        = $result->get_error_message();
-				$metadata['completed_at'] = time();
-
-				WP_MCP_AI_Logger::log_error(
-					'Veo video processing failed',
-					array(
-						'job_id' => $job_id,
-						'error'  => $result->get_error_message(),
-						'code'   => $result->get_error_code(),
-					)
-				);
-
-				// Store error result in cron manager for retrieval.
-				if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-					WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $result );
-				}
+				$metadata['status'] = 'failed';
+				$metadata['error']  = $result->get_error_message();
 			} else {
 				// Check if we should save to media library.
 				$save_to_media = isset( $metadata['args']['save_to_media'] )
@@ -1196,44 +999,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					: true;
 
 				if ( $save_to_media ) {
-					WP_MCP_AI_Logger::log_event(
-						'veo_async_saving_to_media',
-						'Attempting to save video to WordPress media library',
-						array(
-							'job_id'          => $job_id,
-							'user_id'         => isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0,
-							'has_video_data'  => ! empty( $result['video_data'] ),
-							'video_size'      => isset( $result['video_data'] ) ? strlen( $result['video_data'] ) : 0,
-						)
-					);
-					
 					$save_result = $this->save_video_to_media(
 						$result,
 						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0
 					);
 
 					if ( is_wp_error( $save_result ) ) {
-						$metadata['status']       = 'failed';
-						$metadata['error']        = $save_result->get_error_message();
-						$metadata['completed_at'] = time();
-
-						WP_MCP_AI_Logger::log_error(
-							'Veo video save to media library failed',
-							array(
-								'job_id' => $job_id,
-								'error'  => $save_result->get_error_message(),
-								'code'   => $save_result->get_error_code(),
-							)
-						);
-
-						// Store error result in cron manager for retrieval.
-						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $save_result );
-						}
+						$metadata['status'] = 'failed';
+						$metadata['error']  = $save_result->get_error_message();
 					} else {
-						$metadata['status']       = 'completed';
-						$metadata['completed_at'] = time();
-						$metadata['result']       = array(
+						$metadata['status'] = 'completed';
+						$metadata['result'] = array(
 							'attachment_id' => $save_result['attachment_id'],
 							'url'           => $save_result['url'],
 							'prompt'        => $result['prompt'],
@@ -1243,30 +1019,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'model'         => $result['model'],
 							'provider'      => $result['provider'],
 						);
-
-						WP_MCP_AI_Logger::log_event(
-							'veo_video_saved_successfully',
-							'Veo video successfully saved to WordPress media library',
-							array(
-								'job_id'        => $job_id,
-								'attachment_id' => $save_result['attachment_id'],
-								'url'           => $save_result['url'],
-							)
-						);
-
-						// Store success result in cron manager for retrieval.
-						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-							WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
-						}
 					}
 				} else {
 					// Video not saved to media library - return data URL instead of Google URL.
 					$video_base64 = base64_encode( $result['video_data'] );
 					$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
-					$metadata['status']       = 'completed';
-					$metadata['completed_at'] = time();
-					$metadata['result']       = array(
+					$metadata['status'] = 'completed';
+					$metadata['result'] = array(
 						'video_url'    => $data_url,
 						'prompt'       => $result['prompt'],
 						'duration'     => $result['duration'],
@@ -1275,44 +1035,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'model'        => $result['model'],
 						'provider'     => $result['provider'],
 					);
-
-					// Store success result in cron manager for retrieval.
-					if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-						WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $metadata['result'] );
-					}
 				}
 			}
 
 			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-			$completion_message = 'completed' === $metadata['status']
-				? 'Veo async video generation completed successfully'
-				: 'Veo async video generation completed with errors';
-
 			WP_MCP_AI_Logger::log_event(
 				'veo_async_completed',
-				$completion_message,
+				'Veo async video generation completed',
 				array(
 					'job_id'   => $job_id,
-					'status'   => $metadata['status'],
 					'attempts' => $metadata['poll_attempt'],
 				)
 			);
-
-			/**
-			 * Fires when a video generation job completes (success or failure).
-			 *
-			 * This action allows other components to react to video generation completion
-			 * and notify users in real-time instead of relying on polling.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $job_id  Job identifier (e.g., 'veo_abc123').
-			 * @param array  $metadata Complete job metadata including result or error.
-			 * @param string $status  Job status ('completed' or 'failed').
-			 */
-			do_action( 'wp_mcp_ai_video_job_completed', $job_id, $metadata, $metadata['status'] );
-
 			return;
 		}
 
@@ -1327,116 +1062,25 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param array  $metadata Job metadata.
 	 */
 	protected function schedule_next_poll( $job_id, $metadata ) {
-		// Update metadata and save BEFORE scheduling cron event.
-		// This prevents race conditions where cron executes before transient is saved.
+		// Update metadata.
 		$metadata['status'] = 'polling';
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-		// Force database write to ensure transient is committed before cron scheduling.
-		// This addresses race conditions in high-traffic environments.
-		wp_cache_flush();
-
 		// Schedule next poll.
 		$next_poll = time() + self::POLLING_INTERVAL;
-		$scheduled = wp_schedule_single_event( $next_poll, self::CRON_POLL_HOOK, array( $job_id ) );
-
-		// Log scheduling result for debugging.
-		if ( false === $scheduled ) {
-			WP_MCP_AI_Logger::log_error(
-				'Failed to schedule next video poll',
-				array(
-					'job_id'    => $job_id,
-					'next_poll' => $next_poll,
-					'hook'      => self::CRON_POLL_HOOK,
-				)
-			);
-
-			// Mark job as failed since we can't schedule the next poll.
-			$this->mark_job_as_failed(
-				$job_id,
-				$metadata,
-				__( 'Failed to schedule video polling cron job.', 'wp-mcp-ai' ),
-				'wp_mcp_ai_cron_schedule_failed',
-				'Veo poll scheduling failed',
-				array( 'next_poll' => $next_poll )
-			);
-			return;
-		}
+		wp_schedule_single_event( $next_poll, self::CRON_POLL_HOOK, array( $job_id ) );
 
 		// Record in cron manager.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id      = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
-			$assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+			$user_id = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_POLL_HOOK,
 				array( $job_id ),
 				'single',
 				$next_poll,
-				$user_id,
-				$job_id,  // Use the veo_xxx job_id directly instead of generating MD5 hash.
-				$assistant_id
+				$user_id
 			);
 		}
-
-		// Log successful scheduling.
-		WP_MCP_AI_Logger::log_event(
-			'veo_poll_scheduled',
-			'Next video poll scheduled',
-			array(
-				'job_id'    => $job_id,
-				'next_poll' => $next_poll,
-				'attempt'   => $metadata['poll_attempt'],
-			)
-		);
-	}
-
-	/**
-	 * Mark job as failed with error message and fire completion action.
-	 *
-	 * Centralizes failure handling to reduce code duplication.
-	 * Ensures consistent behavior across all failure paths.
-	 *
-	 * @param string $job_id      Job identifier.
-	 * @param array  $metadata    Job metadata.
-	 * @param string $error       Error message.
-	 * @param string $error_code  Optional error code for WP_Error.
-	 * @param string $log_event   Optional event name for logging.
-	 * @param array  $log_context Optional context for logging.
-	 */
-	protected function mark_job_as_failed( $job_id, &$metadata, $error, $error_code = 'wp_mcp_ai_veo_failed', $log_event = 'veo_job_failed', $log_context = array() ) {
-		$metadata['status']       = 'failed';
-		$metadata['error']        = $error;
-		$metadata['completed_at'] = time();
-		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
-
-		// Store result in cron manager for retrieval.
-		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			WP_MCP_AI_Cron_Manager::store_job_result(
-				$job_id,
-				new WP_Error( $error_code, $error )
-			);
-		}
-
-		// Log the failure.
-		WP_MCP_AI_Logger::log_error(
-			$log_event,
-			array_merge(
-				array(
-					'job_id' => $job_id,
-					'error'  => $error,
-				),
-				$log_context
-			)
-		);
-
-		/**
-		 * Fires when video job fails.
-		 *
-		 * @param string $job_id   Job identifier.
-		 * @param array  $metadata Job metadata.
-		 * @param string $status   Status ('failed').
-		 */
-		do_action( 'wp_mcp_ai_video_job_completed', $job_id, $metadata, 'failed' );
 	}
 
 	/**
@@ -1547,19 +1191,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Generate attachment metadata.
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
-		
-		// Log metadata generation results for debugging.
-		if ( empty( $attach_data ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'veo_video_metadata_empty',
-				'wp_generate_attachment_metadata returned empty array - this is normal for some video files',
-				array(
-					'attachment_id' => $attachment_id,
-					'file'          => basename( $upload['file'] ),
-				)
-			);
-		}
-		
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
 		WP_MCP_AI_Logger::log_event(
@@ -1568,8 +1199,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'attachment_id' => $attachment_id,
 				'duration'      => $result['duration'],
-				'file_path'     => $upload['file'],
-				'user_id'       => $user_id,
 			)
 		);
 

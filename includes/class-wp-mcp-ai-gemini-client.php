@@ -21,16 +21,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_EMBED_CONTENT   = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
 
 		/**
-		 * Key used to wrap numeric arrays for Gemini API compatibility.
-		 *
-		 * Gemini requires functionCall args to be JSON objects, not arrays.
-		 * Numeric arrays are wrapped in {"items": [...]} to force object serialization.
-		 *
-		 * @var string
-		 */
-		const NUMERIC_ARRAY_WRAPPER_KEY = 'items';
-
-		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -1434,68 +1424,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['responseJsonSchema'] = $options['response_json_schema'];
 			}
 
-			// Add topP if specified (nucleus sampling).
-			if ( isset( $options['top_p'] ) && '' !== $options['top_p'] && null !== $options['top_p'] ) {
-				$top_p = (float) $options['top_p'];
-				// Validate topP is between 0 and 1.
-				if ( $top_p >= 0 && $top_p <= 1 ) {
-					$payload['generationConfig']['topP'] = $top_p;
-				}
-			}
-
-			// Add topK if specified (top-K sampling).
-			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
-				$top_k = absint( $options['top_k'] );
-				// topK should be positive.
-				if ( $top_k > 0 ) {
-					$payload['generationConfig']['topK'] = $top_k;
-				}
-			}
-
-			// Add stopSequences if specified.
-			if ( ! empty( $options['stop'] ) || ! empty( $options['stop_sequences'] ) ) {
-				$stop = $options['stop_sequences'] ?? $options['stop'] ?? array();
-				
-				if ( is_string( $stop ) ) {
-					$stop = array( $stop );
-				}
-				
-				if ( is_array( $stop ) && ! empty( $stop ) ) {
-					// Gemini supports up to 5 stop sequences.
-					$stop_sequences = array_slice( array_map( 'sanitize_text_field', $stop ), 0, 5 );
-					if ( ! empty( $stop_sequences ) ) {
-						$payload['generationConfig']['stopSequences'] = $stop_sequences;
-					}
-				}
-			}
-
-			// Add frequencyPenalty if specified.
-			if ( isset( $options['frequency_penalty'] ) && '' !== $options['frequency_penalty'] && null !== $options['frequency_penalty'] ) {
-				$frequency_penalty = (float) $options['frequency_penalty'];
-				// Gemini accepts frequency penalty (typically -2 to 2).
-				if ( $frequency_penalty >= -2 && $frequency_penalty <= 2 ) {
-					$payload['generationConfig']['frequencyPenalty'] = $frequency_penalty;
-				}
-			}
-
-			// Add presencePenalty if specified.
-			if ( isset( $options['presence_penalty'] ) && '' !== $options['presence_penalty'] && null !== $options['presence_penalty'] ) {
-				$presence_penalty = (float) $options['presence_penalty'];
-				// Gemini accepts presence penalty (typically -2 to 2).
-				if ( $presence_penalty >= -2 && $presence_penalty <= 2 ) {
-					$payload['generationConfig']['presencePenalty'] = $presence_penalty;
-				}
-			}
-
-			// Add candidateCount if specified (number of response variations).
-			if ( isset( $options['candidate_count'] ) && is_numeric( $options['candidate_count'] ) ) {
-				$candidate_count = absint( $options['candidate_count'] );
-				// Typically 1-8, but Gemini may have different limits.
-				if ( $candidate_count >= 1 && $candidate_count <= 8 ) {
-					$payload['generationConfig']['candidateCount'] = $candidate_count;
-				}
-			}
-
 			if ( empty( $payload['generationConfig'] ) ) {
 				unset( $payload['generationConfig'] );
 			}
@@ -1767,27 +1695,23 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		/**
 		 * Normalise tool arguments into an array suitable for Gemini.
 		 *
-		 * Gemini API requires the 'args' field of a functionCall to be a JSON object,
-		 * not a JSON array. This method ensures that arguments are properly structured
-		 * by recursively converting numeric arrays to objects.
-		 *
 		 * @param mixed $arguments Raw arguments payload.
 		 * @return array
 		 */
 		protected function normalise_tool_arguments( $arguments ) {
 			if ( is_array( $arguments ) ) {
-				return $this->ensure_args_object_structure( $arguments );
+				return $arguments;
 			}
 
 			if ( is_object( $arguments ) ) {
-				return $this->ensure_args_object_structure( (array) $arguments );
+				return (array) $arguments;
 			}
 
 			if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
 				$decoded = json_decode( (string) $arguments, true );
 
 				if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-					return $this->ensure_args_object_structure( $decoded );
+					return $decoded;
 				}
 
 				$text = sanitize_textarea_field( (string) $arguments );
@@ -1798,65 +1722,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array();
-		}
-
-		/**
-		 * Ensure arguments are structured as objects for Gemini API compatibility.
-		 *
-		 * Recursively processes the arguments array to ensure that all nested values
-		 * are compatible with Gemini's requirement that the 'args' field be a JSON object.
-		 * Numeric arrays are converted to objects to prevent JSON array serialization.
-		 *
-		 * This fix applies universally to ALL tools with array parameters, including:
-		 * - create_cron_job (args parameter)
-		 * - create_google_calendar_event (attendees parameter)
-		 * - create_woo_product (categories, images parameters)
-		 * - create_chart (labels, data parameters)
-		 * - And any other tool with numeric array parameters
-		 *
-		 * @param array $args Arguments array to process.
-		 * @return array Processed arguments as an associative array.
-		 */
-		protected function ensure_args_object_structure( array $args ) {
-			// If the array is numeric (sequential keys starting at 0), wrap it.
-			// This includes empty arrays to prevent JSON array serialization.
-			if ( wp_is_numeric_array( $args ) ) {
-				return $this->wrap_numeric_array( $args );
-			}
-
-			// For associative arrays, recursively process nested values.
-			$processed = array();
-			foreach ( $args as $key => $value ) {
-				if ( is_array( $value ) ) {
-					// Recursively process nested arrays.
-					if ( wp_is_numeric_array( $value ) ) {
-						// Wrap numeric arrays in an object structure.
-						$processed[ $key ] = $this->wrap_numeric_array( $value );
-					} else {
-						// Recursively process associative arrays.
-						$processed[ $key ] = $this->ensure_args_object_structure( $value );
-					}
-				} else {
-					// Keep scalar values as-is.
-					$processed[ $key ] = $value;
-				}
-			}
-
-			return $processed;
-		}
-
-		/**
-		 * Wrap a numeric array for Gemini API compatibility.
-		 *
-		 * Gemini API requires the 'args' field in functionCall to be a JSON object.
-		 * This method wraps numeric arrays in an object structure to prevent them
-		 * from being serialized as JSON arrays.
-		 *
-		 * @param array $array Numeric array to wrap.
-		 * @return array Array wrapped in object structure.
-		 */
-		private function wrap_numeric_array( array $array ) {
-			return array( self::NUMERIC_ARRAY_WRAPPER_KEY => $array );
 		}
 
 		/**

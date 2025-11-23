@@ -39,9 +39,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
 		const STREAMING_CHUNK_SIZE        = 50;    // Characters per chunk for simulated streaming.
 		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
-		const JOB_POLLING_INTERVAL        = 3;     // Seconds between job status polls for SSE streaming.
-		const JOB_POLLING_TIMEOUT         = 180;   // Maximum seconds to poll before timeout (3 minutes).
-		const JOB_POLLING_SAFETY_BUFFER   = 10;    // Extra iterations beyond calculated max to prevent edge cases.
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -406,12 +403,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 		 */
 		public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
-			// Check if user_id was explicitly provided in the request.
-			// We need to check the raw parameter before absint() to distinguish between
-			// "not provided" (null) and "explicitly set to 0" (for guest transcripts).
-			$user_id_param = $request->get_param( 'user_id' );
-			$user_id       = absint( $user_id_param );
-			$current_user  = get_current_user_id();
+			$user_id      = absint( $request->get_param( 'user_id' ) );
+			$current_user = get_current_user_id();
 
 			// Check for guest token authentication.
 			$guest_token = $this->extract_guest_token( $request );
@@ -422,7 +415,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $guest_assistant ) {
 					// Guest users (not logged in) can access their own transcripts (user_id = 0).
 					// Set user_id to 0 if not explicitly provided, matching how chat transcripts are saved for guests.
-					if ( null === $user_id_param || '' === $user_id_param ) {
+					if ( ! $user_id ) {
 						$user_id = 0;
 						$request->set_param( 'user_id', $user_id );
 					}
@@ -434,9 +427,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			// Only set user_id to current user if it was NOT explicitly provided.
-			// This allows admins to query other users' transcripts (including user_id=0 for guests).
-			if ( ( null === $user_id_param || '' === $user_id_param ) && $current_user ) {
+			if ( ! $user_id && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
 			}
@@ -891,15 +882,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_id = absint( $assistant_id );
 			}
 
-			$context = $request->get_param( 'context' );
-			if ( ! $context ) {
-				$context = 'admin';
-			}
-
-			// Get status summary and counts with optional assistant filter and context.
-			// When context is 'chat', internal async tool jobs are excluded.
-			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id, $context );
-			$counts = $service->get_status_counts( $user_id, $assistant_id, $context );
+			// Get status summary and counts with optional assistant filter.
+			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id );
+			$counts = $service->get_status_counts( $user_id, $assistant_id );
 
 			$response = array(
 				'jobs'   => $jobs,
@@ -948,123 +933,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Stream the job details via SSE with polling until completion.
-				return $this->stream_job_status_with_polling( $service, $job_id, $user_id );
+				// Stream the job details via SSE.
+				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
 			}
 
 			return rest_ensure_response( $job_details );
-		}
-
-		/**
-		 * Check if a job status represents a terminal state.
-		 *
-		 * Terminal states indicate the job has finished processing and will not change.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param string $status Job status to check.
-		 * @return bool True if status is terminal, false otherwise.
-		 */
-		protected function is_terminal_job_status( $status ) {
-			$terminal_statuses = array( 'completed', 'failed', 'error' );
-			return in_array( strtolower( (string) $status ), $terminal_statuses, true );
-		}
-
-		/**
-		 * Stream job status via SSE with polling until completion.
-		 *
-		 * Continuously polls the job status and sends SSE events until the job
-		 * reaches a terminal state (completed or failed), or until timeout/max iterations.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param WP_MCP_AI_Cron_Status_Service $service Cron status service instance.
-		 * @param string                        $job_id  Job identifier.
-		 * @param int                           $user_id User ID for permission checks.
-		 * @return WP_REST_Response Response object.
-		 */
-		protected function stream_job_status_with_polling( $service, $job_id, $user_id ) {
-			// Enable connection abort detection.
-			// The false parameter allows the script to detect when the client disconnects,
-			// preventing wasted resources polling for an abandoned connection.
-			if ( function_exists( 'ignore_user_abort' ) ) {
-				ignore_user_abort( false );
-			}
-
-			// Send SSE headers and establish connection.
-			$this->sse_handler->send_sse_headers();
-
-			// Polling configuration using class constants.
-			$poll_interval  = self::JOB_POLLING_INTERVAL;
-			$max_duration   = self::JOB_POLLING_TIMEOUT;
-			$start_time     = time();
-			$max_iterations = ceil( $max_duration / max( 1, $poll_interval ) ) + self::JOB_POLLING_SAFETY_BUFFER;
-			$iteration      = 0;
-			$status         = ''; // Initialize status variable for timeout scenario.
-
-			while ( ( time() - $start_time ) < $max_duration && $iteration < $max_iterations ) {
-				++$iteration;
-
-				// Check if client disconnected.
-				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
-					// Send disconnect event and exit.
-					$this->sse_handler->send_sse_event(
-						'disconnect',
-						array(
-							'message' => 'Client disconnected',
-							'job_id'  => $job_id,
-						)
-					);
-					exit;
-				}
-
-				// Get current job details.
-				$job_details = $service->get_job_details( $job_id, $user_id );
-
-				if ( is_wp_error( $job_details ) ) {
-					// Send error event and exit.
-					$this->sse_handler->send_sse_event(
-						'error',
-						array(
-							'message' => $job_details->get_error_message(),
-							'job_id'  => $job_id,
-						)
-					);
-					// Send [DONE] marker.
-					$this->sse_handler->send_sse_done();
-					exit;
-				}
-
-				// Send current status as SSE event.
-				$this->sse_handler->send_sse_event( 'cron_job_status', $job_details );
-
-				// Check if job has reached a terminal state.
-				$status = isset( $job_details['status'] ) ? (string) $job_details['status'] : '';
-				if ( $this->is_terminal_job_status( $status ) ) {
-					// Job finished - send [DONE] and exit.
-					$this->sse_handler->send_sse_done();
-					exit;
-				}
-
-				// Job still pending/polling - wait before next poll.
-				// NOTE: Using sleep() in a web request can cause worker exhaustion under high load.
-				// Consider implementing async polling for high-traffic environments.
-				sleep( $poll_interval );
-			}
-
-			// Timeout reached - send timeout event.
-			$this->sse_handler->send_sse_event(
-				'timeout',
-				array(
-					'message' => 'Job status polling timed out',
-					'job_id'  => $job_id,
-					'status'  => $status,
-				)
-			);
-
-			// Send [DONE] marker.
-			$this->sse_handler->send_sse_done();
-			exit;
 		}
 
 		/**
@@ -6141,16 +6014,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			// Query using user_id field (cct_author_id does not exist in the schema).
-			// When user_id is 0, retrieve all messages for the session_key regardless of user.
-			// This allows retrieving a session first, then verifying user access afterward.
-			$where_clauses = array( 'session_key = %s' );
-			$where_values  = array( $session_key );
-
-			if ( $user_id > 0 ) {
-				$where_clauses[] = 'user_id = %d';
-				$where_values[]  = $user_id;
-			}
+			$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+			$where_values  = array( $session_key, $user_id );
 
 			if ( $assistant_id > 0 ) {
 				$where_clauses[] = 'assistant_id = %d';
@@ -6167,28 +6032,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$query = $wpdb->prepare( $query_template, $where_values );
 
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'get_transcript_session: executing SQL query',
-				array(
-					'query'       => $query,
-					'user_id'     => $user_id,
-					'session_key' => $session_key,
-				)
-			);
-
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
+			// If no rows found with cct_author_id, try with user_id column as fallback.
+			// This handles cases where JetEngine might be using the custom user_id field
+			// instead of the built-in cct_author_id column.
 			if ( empty( $rows ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
-					'get_transcript_session: no rows found in database',
+					'get_transcript_session: no rows found with cct_author_id, trying user_id fallback',
 					array(
 						'table'       => $table,
 						'user_id'     => $user_id,
 						'session_key' => $session_key,
-						'query'       => $query,
-						'wpdb_error'  => $wpdb->last_error,
+					)
+				);
+
+				// Build fallback query using user_id instead of cct_author_id.
+				$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
+				$fallback_where_values  = array( $session_key, $user_id );
+
+				if ( $assistant_id > 0 ) {
+					$fallback_where_clauses[] = 'assistant_id = %d';
+					$fallback_where_values[]  = $assistant_id;
+				}
+
+				$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
+
+				$select_fields           = $this->get_transcript_select_fields();
+				$fallback_query_template = "SELECT {$select_fields}
+             FROM {$table}
+             WHERE {$fallback_where_sql}
+             ORDER BY cct_created ASC, id ASC";
+
+				$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
+
+				$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+			}
+
+			if ( empty( $rows ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'get_transcript_session: no rows found in database after fallback',
+					array(
+						'table'       => $table,
+						'user_id'     => $user_id,
+						'session_key' => $session_key,
 					)
 				);
 
@@ -6247,7 +6136,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! empty( $request_messages ) ) {
 					$existing_count = count( $messages );
 
-					$this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'], $row['user_id'] );
+					$this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
 
 					$pending_tool_responses = $this->extract_appended_tool_responses( $messages, $existing_count );
 
@@ -6262,7 +6151,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				$before_response = count( $messages );
-				$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'], $row['user_id'] );
+				$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
 
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -6274,7 +6163,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				if ( ! empty( $pending_tool_responses ) ) {
 					$before_tool = count( $messages );
-					$this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'], $row['user_id'] );
+					$this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'] );
 
 					WP_MCP_AI_Logger::log_event(
 						'debug',
@@ -6378,15 +6267,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			// Trim whitespace first (consistent with Chat_Transcript_Recorder).
-			$value = trim( (string) $value );
-
-			if ( '' === $value ) {
-				return '';
-			}
-
-			// Remove any characters that are not alphanumeric, underscore, or hyphen.
-			$value = preg_replace( '/[^a-zA-Z0-9_-]/', '', $value );
+			$value = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $value );
 
 			if ( ! is_string( $value ) || '' === $value ) {
 				return '';
@@ -6529,7 +6410,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$query = $wpdb->prepare(
 				"SELECT request_payload
              FROM {$table}
-             WHERE session_key = %s AND user_id = %d
+             WHERE session_key = %s AND cct_author_id = %d
              ORDER BY cct_created ASC
              LIMIT 1",
 				$session_key,
@@ -7158,9 +7039,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param array  $new_messages      New messages to append.
 		 * @param string $primary_timestamp Primary timestamp.
 		 * @param string $fallback_timestamp Fallback timestamp.
-		 * @param int    $user_id           User ID to associate with messages.
 		 */
-		protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp, $user_id = 0 ) {
+		protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp ) {
 			if ( empty( $new_messages ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -7181,7 +7061,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'existing_count' => $existing_count,
 					'new_count'      => $new_count,
 					'timestamp'      => $timestamp,
-					'user_id'        => $user_id,
 				)
 			);
 
@@ -7202,7 +7081,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			for ( $index = $position; $index < $new_count; $index++ ) {
 				$message              = $new_messages[ $index ];
 				$message['timestamp'] = $timestamp;
-				$message['user_id']   = absint( $user_id );
 				$conversation[]       = $message;
 				++$added_count;
 			}
@@ -7847,17 +7725,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string SQL SELECT fields.
 		 */
 		private function get_transcript_select_fields() {
-			return "id,
-			        user_id,
-			        request_payload,
-			        response_payload,
-			        metadata,
-			        request_started_at,
-			        response_completed_at,
-			        cct_created,
-			        assistant_id,
-			        assistant_model,
-			        latency_ms";
+			return "request_payload,
+                    response_payload,
+                    metadata,
+                    request_started_at,
+                    response_completed_at,
+                    cct_created,
+                    assistant_id,
+                    assistant_model,
+                    latency_ms";
 		}
 	}
 }

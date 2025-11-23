@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns basic information about a WordPress user.
  */
-class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -116,39 +116,5 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function sanitize_for_llm( $result ) {
-		if ( ! is_array( $result ) ) {
-			return $result;
-		}
-
-		// Strip sensitive personally identifiable information (PII) before sending to LLM.
-		// The LLM doesn't need email addresses or real names to understand user context,
-		// and sending this data to external providers creates privacy concerns.
-		$sanitized = $result;
-
-		// Remove email address - this is PII that shouldn't be sent to external LLMs.
-		unset( $sanitized['user_email'] );
-
-		// Remove first and last names - these are PII.
-		// The display_name is usually sufficient for LLM context.
-		unset( $sanitized['first_name'] );
-		unset( $sanitized['last_name'] );
-
-		// Remove registration date - not needed for most LLM interactions.
-		unset( $sanitized['registered'] );
-
-		// Keep essential fields that the LLM may need:
-		// - ID: User identifier for references
-		// - display_name: Public name for context
-		// - user_login: Username (less sensitive than email)
-		// - roles: User capabilities/permissions context
-		// - summary: Human-readable summary
-
-		return $sanitized;
 	}
 }

@@ -94,7 +94,6 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 					'success'       => true,
 					'status'        => 'completed',
 					'job_id'        => $job_id,
-					'id'            => $job_id, // Include 'id' for provider compatibility.
 					'attachment_id' => $result['attachment_id'],
 					'url'           => isset( $result['url'] ) ? $result['url'] : wp_get_attachment_url( $result['attachment_id'] ),
 					'message'       => __( 'Video generation completed successfully.', 'wp-mcp-ai' ),
@@ -106,7 +105,6 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 				'success' => true,
 				'status'  => 'completed',
 				'job_id'  => $job_id,
-				'id'      => $job_id, // Include 'id' for provider compatibility.
 				'result'  => $result,
 				'message' => __( 'Video generation completed successfully.', 'wp-mcp-ai' ),
 			);
@@ -116,7 +114,6 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'      => true,
 			'job_id'       => $job_id,
-			'id'           => $job_id, // Include 'id' for provider compatibility.
 			'status'       => $status['status'],
 			'poll_attempt' => $status['poll_attempt'],
 			'max_attempts' => $status['max_attempts'],

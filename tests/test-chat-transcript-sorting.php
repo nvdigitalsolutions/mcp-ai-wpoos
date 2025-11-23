@@ -76,7 +76,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 		// Clean up any existing test data.
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE user_id = %d AND session_key LIKE %s",
+				"DELETE FROM {$table} WHERE cct_author_id = %d AND session_key LIKE %s",
 				$this->admin_id,
 				'test_sort_%'
 			)
@@ -91,7 +91,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			array(
 				'session_key'           => 'test_sort_session_3',
 				'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time + 7200 ), // +2 hours.
-				'user_id'         => $this->admin_id,
+				'cct_author_id'         => $this->admin_id,
 				'assistant_id'          => $this->assistant_id,
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 7200,
@@ -103,7 +103,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			array(
 				'session_key'           => 'test_sort_session_1',
 				'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time + 3600 ), // +1 hour.
-				'user_id'         => $this->admin_id,
+				'cct_author_id'         => $this->admin_id,
 				'assistant_id'          => $this->assistant_id,
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 3600,
@@ -115,7 +115,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			array(
 				'session_key'           => 'test_sort_session_4',
 				'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time + 1800 ), // +30 minutes.
-				'user_id'         => $this->admin_id,
+				'cct_author_id'         => $this->admin_id,
 				'assistant_id'          => $this->assistant_id,
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 1800,
@@ -127,7 +127,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			array(
 				'session_key'           => 'test_sort_session_2',
 				'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time + 900 ), // +15 minutes.
-				'user_id'         => $this->admin_id,
+				'cct_author_id'         => $this->admin_id,
 				'assistant_id'          => $this->assistant_id,
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 900,
@@ -139,7 +139,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			array(
 				'session_key'           => 'test_sort_session_5',
 				'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time ), // Base time (oldest).
-				'user_id'         => $this->admin_id,
+				'cct_author_id'         => $this->admin_id,
 				'assistant_id'          => $this->assistant_id,
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time,
@@ -174,7 +174,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 		// Clean up test data.
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE user_id = %d AND session_key LIKE %s",
+				"DELETE FROM {$table} WHERE cct_author_id = %d AND session_key LIKE %s",
 				$this->admin_id,
 				'test_sort_%'
 			)
@@ -208,7 +208,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 		// Clean up any existing test data.
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE user_id = %d AND session_key LIKE %s",
+				"DELETE FROM {$table} WHERE cct_author_id = %d AND session_key LIKE %s",
 				$this->admin_id,
 				'test_page_%'
 			)
@@ -223,7 +223,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				array(
 					'session_key'           => 'test_page_session_' . $i,
 					'cct_created'           => gmdate( 'Y-m-d H:i:s', $base_time + ( $i * 60 ) ), // Each session 1 minute apart.
-					'user_id'         => $this->admin_id,
+					'cct_author_id'         => $this->admin_id,
 					'assistant_id'          => $this->assistant_id,
 					'assistant_model'       => 'gpt-4',
 					'request_started_at'    => $base_time + ( $i * 60 ),
@@ -258,7 +258,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 		// Clean up test data.
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE user_id = %d AND session_key LIKE %s",
+				"DELETE FROM {$table} WHERE cct_author_id = %d AND session_key LIKE %s",
 				$this->admin_id,
 				'test_page_%'
 			)
