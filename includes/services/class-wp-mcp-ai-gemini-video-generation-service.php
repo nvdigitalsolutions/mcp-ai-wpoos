@@ -161,6 +161,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Users can explicitly request Veo 3.1 via the model parameter for higher resolution.
 	 * Default model can be configured in Settings > Providers > Google Gemini.
 	 *
+	 * Model Name Handling:
+	 * - Accepts BOTH simplified names ('veo-2.0', 'veo-3.1') AND actual API identifiers
+	 * - Simplified names are converted to API identifiers internally:
+	 *   - 'veo-2.0' → 'veo-2.0-generate-001'
+	 *   - 'veo-3.1' → 'veo-3.1-generate-preview'
+	 * - This allows for user-friendly names while maintaining API compatibility
+	 * - Invalid model names (e.g., assistant's chat model) are rejected by the tool
+	 *
 	 * @param array $args {
 	 *     Video generation arguments.
 	 *
@@ -174,7 +182,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     @type string $image_mime_type  MIME type of reference image.
 	 *     @type bool   $async            Whether to use async mode (cron fallback).
 	 *     @type int    $user_id          User ID for async operations.
-	 *     @type string $model            Optional. Force specific model ('veo-2.0' or 'veo-3.1').
+	 *     @type string $model            Optional. Force specific model ('veo-2.0', 'veo-3.1', or full API names).
 	 * }
 	 * @return array|WP_Error Video data or async job info on success, error on failure.
 	 */
@@ -193,8 +201,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$default_model = $this->get_default_model();
 
 		// Check if a specific model is explicitly requested.
-		$force_veo_3 = isset( $args['model'] ) && 'veo-3.1' === $args['model'];
-		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
+		// Accept both simplified names ('veo-2.0', 'veo-3.1') and actual API identifiers.
+		$force_veo_3 = isset( $args['model'] ) && ( 'veo-3.1' === $args['model'] || self::VEO_3_MODEL === $args['model'] );
+		$force_veo_2 = isset( $args['model'] ) && ( 'veo-2.0' === $args['model'] || self::VEO_MODEL === $args['model'] );
 
 		// If no explicit model specified, use the default from settings.
 		if ( ! $force_veo_3 && ! $force_veo_2 ) {
@@ -257,6 +266,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	/**
 	 * Get the default video model from settings
 	 *
+	 * Model hierarchy (in order of precedence):
+	 * 1. Explicit model in $args['model'] parameter (validated by caller)
+	 * 2. Settings value: default_gemini_video_model ('veo-2.0' or 'veo-3.1')
+	 * 3. Constant default: VEO_MODEL ('veo-2.0-generate-001')
+	 *
 	 * @return string Model identifier (veo-2.0-generate-001 or veo-3.1-generate-preview).
 	 */
 	protected function get_default_model() {
@@ -268,7 +282,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return self::VEO_3_MODEL;
 		}
 
-		// Default to Veo 2.0.
+		// Default to Veo 2.0 when no valid setting is configured.
 		return self::VEO_MODEL;
 	}
 

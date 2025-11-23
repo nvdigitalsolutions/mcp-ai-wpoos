@@ -100,8 +100,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'Force a specific Veo model: "veo-2.0" (default, stable 720p) or "veo-3.1" (supports 1080p). If not specified, automatically uses Veo 2.0 with fallback to Veo 3.1 on quota/availability issues.', 'wp-mcp-ai' ),
-					'enum'        => array( 'veo-2.0', 'veo-3.1' ),
+					'description' => __( 'Force a specific Veo model: "veo-2.0" (default, stable 720p) or "veo-3.1" (supports 1080p). Also accepts full API identifiers: "veo-2.0-generate-001", "veo-3.1-generate-preview". If not specified, automatically uses Veo 2.0 with fallback to Veo 3.1 on quota/availability issues.', 'wp-mcp-ai' ),
+					'enum'        => array( 'veo-2.0', 'veo-3.1', 'veo-2.0-generate-001', 'veo-3.1-generate-preview' ),
 					'default'     => 'veo-2.0',
 				),
 				'background_music'   => array(
@@ -180,6 +180,29 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Add duration if provided (let service apply default if not provided).
 		if ( isset( $arguments['duration'] ) ) {
 			$generation_args['duration'] = absint( $arguments['duration'] );
+		}
+
+		// Handle model parameter with validation.
+		// Only pass valid Veo model names to prevent assistant's model name from reaching the service.
+		// Valid values: 'veo-2.0', 'veo-3.1' (simplified) or 'veo-2.0-generate-001', 'veo-3.1-generate-preview' (actual API names)
+		if ( ! empty( $arguments['model'] ) ) {
+			$model = sanitize_text_field( $arguments['model'] );
+			// Validate that it's a valid Veo model identifier (accept both simplified and actual API names).
+			$valid_models = array( 'veo-2.0', 'veo-3.1', 'veo-2.0-generate-001', 'veo-3.1-generate-preview' );
+			if ( in_array( $model, $valid_models, true ) ) {
+				$generation_args['model'] = $model;
+			} else {
+				// Log invalid model name for debugging (e.g., when assistant's model leaks through).
+				WP_MCP_AI_Logger::log_event(
+					'veo_invalid_model_filtered',
+					'Invalid model parameter filtered from Veo tool arguments',
+					array(
+						'invalid_model' => $model,
+						'tool'          => 'generate_veo_video',
+						'valid_models'  => $valid_models,
+					)
+				);
+			}
 		}
 
 		// Add optional parameters.
