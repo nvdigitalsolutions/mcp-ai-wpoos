@@ -415,14 +415,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return bool True if async mode should be used.
 	 */
 	protected function should_use_async( $arguments, $context = array() ) {
-		// CRITICAL: If already running in async executor context, do NOT use tool-level async.
-		// This prevents double-async execution where orchestrator queues the tool async,
-		// then the tool itself queues another async job. This causes the client to get
-		// a nested async response it doesn't know how to handle.
-		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
-			return false;
-		}
-
 		// Check if explicitly set in arguments.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
@@ -430,9 +422,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Default to async for better reliability.
 		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
-		// NOTE: We no longer check agentic_loop here because the REST API orchestrator
-		// will handle async execution properly via the async executor when the tool
-		// is marked as 'background-only', which is the correct pattern for long-running tools.
+		// This tool uses its own async mechanism (veo_xxx polling via wp_mcp_ai_poll_veo_video cron)
+		// instead of relying on the orchestrator's async executor.
 		return true;
 	}
 
@@ -568,11 +559,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'external-api',         // Makes external API requests.
 			'network-dependent',    // Requires internet connection.
 			'consumes-tokens',      // Uses AI credits.
-			'async',                // Takes significant time (60-120 seconds).
-			'long-running',         // Video generation is async.
-			'background-only',      // Must run in background even in agentic loops (prevents HTTP timeouts).
+			// NOTE: async/long-running/may-timeout/background-only flags removed to prevent orchestrator wrapping.
+			// This tool implements its own robust async mechanism (veo_xxx polling via wp_mcp_ai_poll_veo_video cron).
+			// The tool's should_use_async() method internally determines when to use async mode.
+			// If the orchestrator wraps this tool in async_xxx execution, it creates double-async nesting
+			// where the tool can't use its own polling mechanism properly.
 			'rate-limited',         // Subject to API rate limits (10 RPM for preview, higher for paid tiers).
-			'may-timeout',          // May exceed typical HTTP timeouts.
 		);
 	}
 
