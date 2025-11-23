@@ -896,7 +896,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'async'   => true,
 			'job_id'  => $job_id,
 			'status'  => 'pending',
-			'message' => __( 'Video generation started. Use the job_id to check status.', 'wp-mcp-ai' ),
+			'message' => __( 'Video generation started. Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
 		);
 	}
 
