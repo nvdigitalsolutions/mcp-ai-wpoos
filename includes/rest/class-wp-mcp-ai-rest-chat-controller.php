@@ -762,10 +762,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
 
-		// Build a proper response payload for the recorder.
-		// Extract the last assistant message and any tool responses from the conversation
-		// to construct a realistic response structure.
-		$response = $this->build_response_from_messages( $clean_messages, $model );
+		// Build response payload for the recorder.
+		// When saving a complete conversation (not during a chat interaction), we store ALL messages
+		// in request_payload.messages. The response_payload represents the AI's response for this "turn",
+		// but since we're just persisting an existing conversation, there's no new response.
+		// We keep choices empty to avoid duplicating messages that are already in request_payload.
+		$response = array(
+			'model'   => $model,
+			'choices' => array(),
+		);
 
 		// Build context for the transcript recorder.
 		// Use current timestamp for both started and completed since this is a save operation.
@@ -935,9 +940,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		// Retrieve the session - this now gets ALL messages by session_key.
-		// Pass 0 as user_id since it's no longer used in the query.
-		$session = $this->main_controller->get_transcript_session( 0, $session_key, $assistant_id );
+		// Retrieve the session - DON'T filter by assistant_id when fetching by session_key.
+		// Session keys are unique UUIDs, so filtering by assistant_id can prevent users from
+		// viewing their own conversations if they switch between assistants/widgets.
+		// The session contains the correct assistant_id, and authorization is verified separately.
+		// Pass 0 for both user_id and assistant_id to get all messages for this session_key.
+		$session = $this->main_controller->get_transcript_session( 0, $session_key, 0 );
 
 		if ( is_wp_error( $session ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -1021,46 +1029,6 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return rest_ensure_response( array( 'session' => $session ) );
-	}
-
-	/**
-	 * Build a proper response payload from conversation messages.
-	 *
-	 * Extracts the last assistant message and constructs a realistic response structure
-	 * instead of an empty choices array, which ensures proper conversation reconstruction.
-	 *
-	 * @param array  $messages Array of conversation messages.
-	 * @param string $model    Model identifier.
-	 * @return array Response payload structure.
-	 */
-	private function build_response_from_messages( array $messages, $model ) {
-		$response = array(
-			'model'   => $model,
-			'choices' => array(),
-		);
-
-		// Find the last assistant message to use as the response
-		$last_assistant_message = null;
-		foreach ( array_reverse( $messages ) as $message ) {
-			if ( isset( $message['role'] ) && 'assistant' === $message['role'] ) {
-				$last_assistant_message = $message;
-				break;
-			}
-		}
-
-		// If we found an assistant message, construct a proper choice structure
-		if ( $last_assistant_message ) {
-			$response['choices'] = array(
-				array(
-					'index'          => 0,
-					'message'        => $last_assistant_message,
-					'finish_reason'  => 'stop',
-					'logprobs'       => null,
-				),
-			);
-		}
-
-		return $response;
 	}
 
 	/**
