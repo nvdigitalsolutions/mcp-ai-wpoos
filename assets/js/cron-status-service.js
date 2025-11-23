@@ -83,7 +83,7 @@
 				})
 				.catch(function (error) {
 					if (window.console && console.error) {
-						console.error('[WP oOS] Cron status REST fetch error:', error);
+						console.error('[WP MCP AI] Cron status REST fetch error:', error);
 					}
 					return null;
 				});
@@ -131,14 +131,14 @@
 						},
 						onError: function (error) {
 							if (window.console && console.warn) {
-								console.warn('[WP oOS] SSE cron status failed, falling back to REST polling:', error);
+								console.warn('[WP MCP AI] SSE cron status failed, falling back to REST polling:', error);
 							}
 							// Fall back to REST polling
 							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
 						},
 						onOpen: function () {
 							if (window.console && console.log) {
-								console.log('[WP oOS] SSE cron status connection established for', containerId);
+								console.log('[WP MCP AI] SSE cron status connection established for', containerId);
 							}
 						}
 					});
@@ -151,7 +151,7 @@
 							// If SSE hasn't received data yet, fall back to polling
 							if (!self.cache[containerId]) {
 								if (window.console && console.warn) {
-									console.warn('[WP oOS] SSE cron status timeout, falling back to REST polling');
+									console.warn('[WP MCP AI] SSE cron status timeout, falling back to REST polling');
 								}
 								self.stopSSE(containerId);
 								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
@@ -163,7 +163,7 @@
 					}
 				} catch (error) {
 					if (window.console && console.error) {
-						console.error('[WP oOS] SSE cron status connection error:', error);
+						console.error('[WP MCP AI] SSE cron status connection error:', error);
 					}
 					// Fall back to REST polling
 					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
@@ -308,14 +308,14 @@
 		// Legacy API compatibility - deprecated, use startMonitoring/stopMonitoring
 		startPolling: function (containerId, endpoint, nonce, callback, assistantId) {
 			if (window.console && console.warn) {
-				console.warn('[WP oOS] CronStatusService.startPolling is deprecated, use startMonitoring instead');
+				console.warn('[WP MCP AI] CronStatusService.startPolling is deprecated, use startMonitoring instead');
 			}
 			return this.startMonitoring(containerId, endpoint, nonce, callback, assistantId);
 		},
 
 		stopPolling: function (containerId) {
 			if (window.console && console.warn) {
-				console.warn('[WP oOS] CronStatusService.stopPolling is deprecated, use stopMonitoring instead');
+				console.warn('[WP MCP AI] CronStatusService.stopPolling is deprecated, use stopMonitoring instead');
 			}
 			return this.stopMonitoring(containerId);
 		}
