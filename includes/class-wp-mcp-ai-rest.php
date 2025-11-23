@@ -2790,6 +2790,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
+					// Sanitize the tool result for display once (preserves full result with base64 content).
+					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name );
+
 					// Stream tool result event.
 					$this->send_sse_event(
 						'tool_execution',
@@ -2797,14 +2800,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'type'      => 'tool_result',
 							'tool_name' => $tool_name,
 							'tool_id'   => $tool_call_id,
-							'result'    => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+							'result'    => $display_result,
 						)
 					);
 
 					// Create full tool message for frontend.
+					// JSON-encode the content to match the non-streaming path format.
+					// This ensures consistent handling in the JavaScript SSE processor.
+					if ( is_string( $display_result ) ) {
+						$result_content = $display_result;
+					} else {
+						// Use JSON_UNESCAPED_SLASHES to prevent escaping URLs in image results.
+						$result_content = wp_json_encode( $display_result, JSON_UNESCAPED_SLASHES );
+						// Handle JSON encoding failure gracefully.
+						if ( false === $result_content ) {
+							// Log the error with context for debugging.
+							WP_MCP_AI_Logger::log_error(
+								'SSE Streaming: Failed to JSON-encode tool result',
+								array(
+									'tool_name'   => $tool_name,
+									'result_type' => gettype( $display_result ),
+									'json_error'  => json_last_error_msg(),
+								)
+							);
+							// Use hardcoded JSON string as ultimate fallback.
+							$result_content = '{"error":"Tool result encoding failed"}';
+						}
+					}
+
 					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						'content' => $result_content,
 					);
 
 					if ( '' !== $tool_call_id ) {
