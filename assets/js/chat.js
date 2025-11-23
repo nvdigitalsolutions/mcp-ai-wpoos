@@ -11115,8 +11115,8 @@
 				}
 				window.wpMcpAiJobCounts[instanceId] = data.job_counts;
 				
-				// Update cron bar UI directly
-				updateJobBarDisplay(container, data.job_counts);
+				// Update cron bar UI directly (polling mode)
+				updateJobBarDisplay(container, data.job_counts, false);
 				
 				if (window.console && console.log) {
 					console.log('[WP oOS] Cron bar updated via polling:', data.job_counts);
@@ -11215,14 +11215,14 @@
 						}
 						window.wpMcpAiJobCounts[instanceId] = counts;
 						
-						// Update cron bar UI
-						updateJobBarDisplay(container, counts);
+						// Update cron bar UI (SSE mode - stays open always)
+						updateJobBarDisplay(container, counts, true);
 						
 						if (window.console && console.log) {
 							console.log('[WP oOS] Cron bar updated via SSE:', counts);
 						}
 						
-						// Note: Keep SSE connection open even when no jobs to detect new jobs immediately
+						// Note: SSE connection stays open even when no jobs to detect new jobs immediately
 					},
 					notification: function(notification) {
 						// Display notification in chat
@@ -11352,15 +11352,16 @@
 	 * Updates the job status bar UI with current job counts.
 	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
 	 * 
-	 * Implements intelligent polling lifecycle:
+	 * Implements intelligent polling lifecycle for polling mode only:
 	 * - Continues polling while jobs are active
-	 * - Stops after 5 consecutive checks with no jobs (2.5 minutes for polling, 10s for SSE)
-	 * - Allows new jobs to be detected before stopping
+	 * - Stops after 5 consecutive checks with no jobs (2.5 minutes for polling)
+	 * - SSE connections remain open indefinitely to detect new jobs immediately
 	 * 
 	 * @param {HTMLElement} container - Chat container element
 	 * @param {Object} counts - Job counts object with pending, running, completed properties
+	 * @param {boolean} isSSE - True if called from SSE stream, false if from polling
 	 */
-	function updateJobBarDisplay(container, counts) {
+	function updateJobBarDisplay(container, counts, isSSE) {
 		if (!container || !counts) {
 			return;
 		}
@@ -11372,18 +11373,20 @@
 
 		const instanceId = container.getAttribute('id');
 		
-		// Track job activity for intelligent polling lifecycle
+		// Track job activity for intelligent polling lifecycle (polling mode only)
+		// SSE connections stay open always to detect new jobs immediately
 		const hasJobs = (counts.pending || 0) > 0 || (counts.running || 0) > 0;
 		
 		if (hasJobs) {
 			// Reset no-job counter when jobs are detected
 			notificationPollers.noJobChecks[instanceId] = 0;
 			notificationPollers.lastJobTime[instanceId] = Date.now();
-		} else {
+		} else if (!isSSE) {
+			// Only stop polling mode after no jobs - SSE stays open always
 			// Increment no-job counter
 			notificationPollers.noJobChecks[instanceId] = (notificationPollers.noJobChecks[instanceId] || 0) + 1;
 			
-			// Stop polling after 5 consecutive checks with no jobs
+			// Stop polling after 5 consecutive checks with no jobs (polling mode only)
 			// This gives new jobs time to be detected before shutting down
 			if (notificationPollers.noJobChecks[instanceId] >= 5) {
 				if (window.console && console.log) {
