@@ -203,6 +203,22 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		?>
 		<script>
 		(function($) {
+			// Helper function to escape HTML and prevent XSS
+			function escapeHtml(text) {
+				// Handle null, undefined, and objects
+				if (text === null || text === undefined) return '';
+				if (typeof text === 'object') return '';
+				
+				var map = {
+					'&': '&amp;',
+					'<': '&lt;',
+					'>': '&gt;',
+					'"': '&quot;',
+					"'": '&#039;'
+				};
+				return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+			}
+
 			$(document).ready(function() {
 				$('.wp-mcp-ai-test-runner__button').on('click', function(e) {
 					e.preventDefault();
@@ -234,7 +250,35 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 									);
 								}
 							} else {
-								statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + (response.data || '<?php echo esc_js( __( 'Unknown error', 'wp-mcp-ai' ) ); ?>') + '</p>');
+								// Handle both string and object error responses
+								var errorMessage = '<?php echo esc_js( __( 'Unknown error', 'wp-mcp-ai' ) ); ?>';
+								if (response.data) {
+									if (typeof response.data === 'object') {
+										// Extract message from object
+										errorMessage = response.data.message || errorMessage;
+										
+										// Build detailed error HTML with proper escaping
+										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
+										
+										// Add additional details if available
+										if (response.data.details) {
+											errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
+										}
+										if (response.data.cli_command) {
+											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
+										}
+										if (response.data.setup_command) {
+											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
+										}
+										
+										statusDiv.html(errorHtml);
+									} else {
+										// Handle string error
+										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(response.data) + '</p>');
+									}
+								} else {
+									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');
+								}
 							}
 						},
 						error: function() {
@@ -293,6 +337,28 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		}
 		.wp-mcp-ai-error {
 			color: #dc3232;
+		}
+		.wp-mcp-ai-error-details {
+			color: #646970;
+			font-size: 14px;
+			margin-top: 10px;
+		}
+		.wp-mcp-ai-cli-command,
+		.wp-mcp-ai-setup-command {
+			background: #f0f0f1;
+			padding: 10px;
+			margin-top: 10px;
+			border-left: 3px solid #2271b1;
+			font-size: 13px;
+		}
+		.wp-mcp-ai-cli-command code,
+		.wp-mcp-ai-setup-command code {
+			background: #fff;
+			padding: 2px 6px;
+			border-radius: 3px;
+			font-family: Consolas, Monaco, monospace;
+			display: inline-block;
+			margin-top: 5px;
 		}
 		</style>
 		<?php
