@@ -939,11 +939,95 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Stream the job details via SSE.
-				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
+				// Stream job status updates via SSE until completion or timeout.
+				return $this->stream_job_status_updates( $job_details, $job_id, $service, $user_id );
 			}
 
 			return rest_ensure_response( $job_details );
+		}
+
+		/**
+		 * Stream job status updates via SSE.
+		 *
+		 * Keeps the SSE connection open and periodically polls for job status updates,
+		 * sending events to the client as the job progresses from pending → polling → completed.
+		 *
+		 * @param array                          $initial_details Initial job details.
+		 * @param string                         $job_id          Job identifier.
+		 * @param WP_MCP_AI_Cron_Status_Service $service         Cron status service instance.
+		 * @param int                            $user_id         User ID for permission checks.
+		 * @return WP_REST_Response Response with SSE streaming configured.
+		 */
+		protected function stream_job_status_updates( $initial_details, $job_id, $service, $user_id ) {
+			// Send SSE headers and initialize streaming.
+			$this->sse_handler->send_sse_headers();
+
+			// Send initial status.
+			$this->sse_handler->send_sse_event( 'cron_job_status', $initial_details );
+
+			// Check if job is already in a terminal state.
+			$status = isset( $initial_details['status'] ) ? $initial_details['status'] : 'unknown';
+			if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
+				// Job is already done, send completion marker and exit.
+				$this->sse_handler->send_sse_done();
+				exit;
+			}
+
+			// Poll for updates until job completes or times out.
+			$max_polls     = 120; // 120 * 3 seconds = 6 minutes max.
+			$poll_interval = 3; // Poll every 3 seconds.
+			$poll_count    = 0;
+			$last_status   = $status;
+
+			while ( $poll_count < $max_polls ) {
+				// Wait before next poll.
+				sleep( $poll_interval );
+				++$poll_count;
+
+				// Get updated job details.
+				$updated_details = $service->get_job_details( $job_id, $user_id );
+
+				// Handle errors (permissions changed, job deleted, etc.).
+				if ( is_wp_error( $updated_details ) ) {
+					$this->sse_handler->send_sse_event(
+						'cron_job_status',
+						array(
+							'job_id' => $job_id,
+							'status' => 'failed',
+							'error'  => $updated_details->get_error_message(),
+						)
+					);
+					$this->sse_handler->send_sse_done();
+					exit;
+				}
+
+				$current_status = isset( $updated_details['status'] ) ? $updated_details['status'] : 'unknown';
+
+				// Send update if status changed or if this is a periodic heartbeat.
+				if ( $current_status !== $last_status || 0 === $poll_count % 5 ) {
+					$this->sse_handler->send_sse_event( 'cron_job_status', $updated_details );
+					$last_status = $current_status;
+				}
+
+				// Check if job reached terminal state.
+				if ( in_array( $current_status, array( 'completed', 'failed' ), true ) ) {
+					// Job finished - send final update and close.
+					$this->sse_handler->send_sse_done();
+					exit;
+				}
+			}
+
+			// Timeout reached - send timeout event.
+			$this->sse_handler->send_sse_event(
+				'cron_job_status',
+				array(
+					'job_id' => $job_id,
+					'status' => 'timeout',
+					'error'  => __( 'Job status polling timed out. Job may still be running.', 'wp-mcp-ai' ),
+				)
+			);
+			$this->sse_handler->send_sse_done();
+			exit;
 		}
 
 		/**
