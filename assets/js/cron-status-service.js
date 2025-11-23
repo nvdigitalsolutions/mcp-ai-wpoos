@@ -114,13 +114,15 @@
 				}
 
 				// Note: EventSource doesn't support custom headers
-				// WordPress will use cookie-based authentication automatically
-				// The endpoint supports nonces via cookies when user is logged in
+				// WordPress will use session cookie authentication automatically
+
+				let sseReceived = false; // Track if we received any SSE data
 
 				try {
 					const sseConnection = window.wpMcpAiSSE.connect(sseUrl, {
 						eventHandlers: {
 							'cron_status': function (data) {
+								sseReceived = true; // Mark that SSE is working
 								if (data) {
 									self.cache[containerId] = data;
 									if (callback && typeof callback === 'function') {
@@ -146,12 +148,12 @@
 					if (sseConnection) {
 						this.sseConnections[containerId] = sseConnection;
 						
-						// Set timeout to fall back to polling after 30 seconds
+						// Set timeout to fall back to polling after 30 seconds if no SSE data received
 						setTimeout(function () {
-							// If SSE hasn't received data yet, fall back to polling
-							if (!self.cache[containerId]) {
+							// If SSE hasn't received any data yet, fall back to polling
+							if (!sseReceived) {
 								if (window.console && console.warn) {
-									console.warn('[WP MCP AI] SSE cron status timeout, falling back to REST polling');
+									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
 								}
 								self.stopSSE(containerId);
 								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
