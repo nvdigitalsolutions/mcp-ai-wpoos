@@ -97,6 +97,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 	/**
 	 * Static flag to track if hooks have been registered.
 	 * Ensures init() is idempotent and can be called multiple times safely.
+	 * 
+	 * Note: PHP (which WordPress runs on) is single-threaded, so this static
+	 * flag is safe from race conditions. Each HTTP/cron request has its own
+	 * process and flag state. During tests, use @runInSeparateProcess or
+	 * reset the flag via reflection in setUp().
 	 *
 	 * @var bool
 	 */

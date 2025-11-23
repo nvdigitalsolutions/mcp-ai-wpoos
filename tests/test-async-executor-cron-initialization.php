@@ -6,6 +6,8 @@
  * WordPress cron execution even when the root security key is required.
  *
  * @package WP_MCP_AI
+ * @runInSeparateProcess
+ * @preserveGlobalState disabled
  */
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
@@ -17,16 +19,40 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-exec
 class WP_MCP_AI_Async_Executor_Cron_Initialization_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure DOING_CRON is defined for cron context tests.
+		if ( ! defined( 'DOING_CRON' ) ) {
+			define( 'DOING_CRON', true );
+		}
+
+		// Reset the executor's static hooks flag before each test.
+		// This is safe because @runInSeparateProcess isolates each test.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Async_Executor' );
+		$property   = $reflection->getProperty( 'hooks_registered' );
+		$property->setAccessible( true );
+		$property->setValue( null, false );
+	}
+
+	/**
+	 * Clean up after each test.
+	 */
+	public function tearDown(): void {
+		// Clean up options.
+		delete_option( 'wp_mcp_ai_require_root_key' );
+
+		parent::tearDown();
+	}
+
+	/**
 	 * Test that bootstrap proceeds during cron execution when security key is required.
 	 */
 	public function test_bootstrap_allowed_during_cron_with_security_key() {
 		// Enable root security key requirement.
 		update_option( 'wp_mcp_ai_require_root_key', true );
-
-		// Simulate WordPress cron context.
-		if ( ! defined( 'DOING_CRON' ) ) {
-			define( 'DOING_CRON', true );
-		}
 
 		// Get security key instance.
 		$security_key = WP_MCP_AI_Root_Security_Key::get_instance();
@@ -38,9 +64,6 @@ class WP_MCP_AI_Async_Executor_Cron_Initialization_Test extends WP_UnitTestCase 
 			$can_initialize,
 			'Plugin should be allowed to initialize during cron execution even when root security key is required'
 		);
-
-		// Cleanup.
-		delete_option( 'wp_mcp_ai_require_root_key' );
 	}
 
 	/**
@@ -52,11 +75,6 @@ class WP_MCP_AI_Async_Executor_Cron_Initialization_Test extends WP_UnitTestCase 
 		// Enable root security key requirement.
 		update_option( 'wp_mcp_ai_require_root_key', true );
 
-		// Simulate WordPress cron context.
-		if ( ! defined( 'DOING_CRON' ) ) {
-			define( 'DOING_CRON', true );
-		}
-
 		// Create and initialize executor (simulates what happens during bootstrap).
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 		$executor->init();
@@ -67,9 +85,6 @@ class WP_MCP_AI_Async_Executor_Cron_Initialization_Test extends WP_UnitTestCase 
 			isset( $wp_filter[ $hook_name ] ),
 			'Async executor cron hook should be registered during cron execution'
 		);
-
-		// Cleanup.
-		delete_option( 'wp_mcp_ai_require_root_key' );
 	}
 
 	/**
