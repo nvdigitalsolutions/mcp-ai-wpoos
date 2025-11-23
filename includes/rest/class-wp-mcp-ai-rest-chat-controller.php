@@ -147,7 +147,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'messages'     => array(
+						'messages'          => array(
 							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
 							'type'              => 'array',
 							'required'          => true,
@@ -174,6 +174,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 									),
 								),
 							),
+						),
+						'response_metadata' => array(
+							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'wp-mcp-ai' ),
+							'type'        => 'object',
+							'required'    => false,
 						),
 					),
 				),
@@ -673,12 +678,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Get assistant configuration for metadata.
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
+		$provider         = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
+
+		// Get optional response metadata (usage data, provider info, etc.) if provided.
+		$response_metadata = $request->get_param( 'response_metadata' );
+		if ( ! is_array( $response_metadata ) ) {
+			$response_metadata = array();
+		}
 
 		// Build a response payload from the conversation messages.
 		// When manually saving a conversation, we need to construct a response that includes
 		// the assistant messages in the expected OpenAI format so they can be properly extracted
 		// when the transcript is loaded later.
-		$response = $this->build_response_from_messages( $clean_messages, $model );
+		$response = $this->build_response_from_messages( $clean_messages, $model, $response_metadata );
+
+		// Add provider to response if available and not already set.
+		if ( '' !== $provider && ! isset( $response['provider'] ) ) {
+			$response['provider'] = $provider;
+		}
 
 		// Build context for the transcript recorder.
 		$context = array(
@@ -971,11 +988,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * The response payload will include all assistant messages from the conversation
 	 * in the 'choices' array, formatted according to the OpenAI API response schema.
 	 *
-	 * @param array  $messages Clean sanitized messages array.
-	 * @param string $model    Model identifier.
+	 * Optionally accepts response metadata (usage data, provider info, etc.) that
+	 * will be merged into the response payload to preserve this information.
+	 *
+	 * @param array  $messages         Clean sanitized messages array.
+	 * @param string $model            Model identifier.
+	 * @param array  $response_metadata Optional response metadata (usage, provider, etc.).
 	 * @return array Response payload with choices containing assistant messages.
 	 */
-	private function build_response_from_messages( array $messages, $model ) {
+	private function build_response_from_messages( array $messages, $model, array $response_metadata = array() ) {
 		$choices = array();
 		$index   = 0;
 
@@ -1006,11 +1027,47 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			}
 		}
 
-		// Build the response payload in OpenAI format.
+		// Build the base response payload in OpenAI format.
 		$response = array(
 			'model'   => $model,
 			'choices' => $choices,
 		);
+
+		// Merge in optional response metadata if provided.
+		// This allows preserving usage data, provider info, response IDs, etc.
+		if ( ! empty( $response_metadata ) && is_array( $response_metadata ) ) {
+			// Sanitize and merge the metadata.
+			$allowed_fields = array( 'usage', 'provider', 'id', 'object', 'created', 'service_tier', 'system_fingerprint' );
+
+			foreach ( $allowed_fields as $field ) {
+				if ( isset( $response_metadata[ $field ] ) ) {
+					// Sanitize based on field type.
+					switch ( $field ) {
+						case 'usage':
+							// Usage is an array/object, preserve as-is if it's an array.
+							if ( is_array( $response_metadata[ $field ] ) ) {
+								$response[ $field ] = $response_metadata[ $field ];
+							}
+							break;
+
+						case 'provider':
+							$response[ $field ] = sanitize_key( $response_metadata[ $field ] );
+							break;
+
+						case 'id':
+						case 'object':
+						case 'service_tier':
+						case 'system_fingerprint':
+							$response[ $field ] = sanitize_text_field( $response_metadata[ $field ] );
+							break;
+
+						case 'created':
+							$response[ $field ] = absint( $response_metadata[ $field ] );
+							break;
+					}
+				}
+			}
+		}
 
 		return $response;
 	}

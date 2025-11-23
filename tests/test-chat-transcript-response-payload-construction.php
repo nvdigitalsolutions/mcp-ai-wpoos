@@ -308,4 +308,73 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		$this->assertEquals( 'assistant', $response_payload['choices'][0]['message']['role'], 'Choice should contain assistant message' );
 		$this->assertEquals( 'Hi there!', $response_payload['choices'][0]['message']['content'], 'Content should match' );
 	}
+
+	/**
+	 * Test that response_metadata parameter is preserved when provided.
+	 *
+	 * This allows the frontend to pass usage data and other response metadata
+	 * when manually saving a conversation, preserving important analytics data.
+	 */
+	public function test_response_metadata_is_preserved() {
+		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
+
+		$session_key = 'test-metadata-' . wp_generate_uuid4();
+		$messages    = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Hi!',
+			),
+		);
+
+		// Provide response metadata with usage data.
+		$response_metadata = array(
+			'usage'             => array(
+				'prompt_tokens'     => 100,
+				'completion_tokens' => 50,
+				'total_tokens'      => 150,
+			),
+			'provider'          => 'openai',
+			'id'                => 'chatcmpl-test123',
+			'created'           => 1234567890,
+			'service_tier'      => 'default',
+			'system_fingerprint' => 'fp_test123',
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id'      => $this->assistant_id,
+					'session_key'       => $session_key,
+					'messages'          => $messages,
+					'response_metadata' => $response_metadata,
+				)
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status(), 'Save request should succeed' );
+
+		// Get the stored record.
+		$record           = $this->transcript_handler->records[0];
+		$response_payload = json_decode( $record['response_payload'], true );
+
+		// Verify usage data is preserved.
+		$this->assertArrayHasKey( 'usage', $response_payload, 'response_payload should have usage data' );
+		$this->assertEquals( 100, $response_payload['usage']['prompt_tokens'], 'Prompt tokens should match' );
+		$this->assertEquals( 50, $response_payload['usage']['completion_tokens'], 'Completion tokens should match' );
+		$this->assertEquals( 150, $response_payload['usage']['total_tokens'], 'Total tokens should match' );
+
+		// Verify other metadata fields.
+		$this->assertEquals( 'openai', $response_payload['provider'], 'Provider should match' );
+		$this->assertEquals( 'chatcmpl-test123', $response_payload['id'], 'Response ID should match' );
+		$this->assertEquals( 1234567890, $response_payload['created'], 'Created timestamp should match' );
+		$this->assertEquals( 'default', $response_payload['service_tier'], 'Service tier should match' );
+		$this->assertEquals( 'fp_test123', $response_payload['system_fingerprint'], 'System fingerprint should match' );
+	}
 }
