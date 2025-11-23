@@ -200,14 +200,39 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		$session_key = '';
 		if ( ! empty( $context['session_key'] ) ) {
 			$session_key = self::normalise_session_key( $context['session_key'] );
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'build_record: Using session_key from context',
+				array(
+					'raw_key'        => $context['session_key'],
+					'normalized_key' => $session_key,
+				)
+			);
 		}
 
 		if ( '' === $session_key ) {
-			$session_key = self::normalise_session_key( $request->get_param( 'session_key' ) );
+			$param_key   = $request->get_param( 'session_key' );
+			$session_key = self::normalise_session_key( $param_key );
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'build_record: Using session_key from request param',
+				array(
+					'raw_key'        => $param_key,
+					'normalized_key' => $session_key,
+				)
+			);
 		}
 
 		if ( '' === $session_key ) {
 			$session_key = self::generate_session_key( $assistant_id );
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'build_record: Generated new session_key',
+				array(
+					'generated_key' => $session_key,
+					'assistant_id'  => $assistant_id,
+				)
+			);
 		}
 
 		$model = self::determine_model( $options, $response );
