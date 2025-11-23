@@ -1090,8 +1090,80 @@
      * @returns {Promise<{success: boolean, error?: string}>} Promise that resolves with save status
      */
     /**
+     * Strip display-only data from attachment segments.
+     * Removes url and name fields that contain blob:/data: URLs used only for display.
+     * Preserves attachment_id and API-required fields (display_name, caption, detail).
+     * 
+     * @param {Object} segment - Attachment segment object
+     * @return {Object} Cleaned segment object with only API-compatible fields
+     */
+    function stripSegmentDisplayData(segment) {
+        if (!segment || typeof segment !== 'object') {
+            return segment;
+        }
+
+        // Only process attachment segments
+        if (segment.type !== 'input_image' && segment.type !== 'input_file') {
+            return segment;
+        }
+
+        // Create clean segment with API-required fields only
+        const cleanSegment = {
+            type: segment.type,
+            attachment_id: segment.attachment_id
+        };
+
+        // Preserve API-required fields (but not display-only url/name)
+        if (segment.display_name !== undefined) {
+            cleanSegment.display_name = segment.display_name;
+        }
+        if (segment.caption !== undefined) {
+            cleanSegment.caption = segment.caption;
+        }
+        if (segment.detail !== undefined) {
+            cleanSegment.detail = segment.detail;
+        }
+
+        return cleanSegment;
+    }
+
+    /**
+     * Strip UI-only metadata from message content.
+     * Handles both string content and array of segments.
+     * For segments, removes display-only data like blob:/data: URLs.
+     * 
+     * @param {string|Array<Object>} content - Message content (string or array of segment objects)
+     * @return {string|Array<Object>} Cleaned content
+     */
+    function stripContentDisplayData(content) {
+        // String content passes through unchanged
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        // Array content (segments) needs cleaning
+        if (Array.isArray(content)) {
+            return content.map(function(segment) {
+                // Text segments pass through unchanged
+                if (!segment || typeof segment !== 'object') {
+                    return segment;
+                }
+                if (segment.type === 'text') {
+                    return segment;
+                }
+                // Attachment segments get display data stripped
+                return stripSegmentDisplayData(segment);
+            });
+        }
+
+        // Other content types pass through unchanged
+        return content;
+    }
+
+    /**
      * Strip UI-only metadata from a message for API submission.
      * Removes fields like 'display' that are used for UI rendering but not part of the API schema.
+     * Also strips display-only data (blob:/data: URLs) from attachment segments.
      * 
      * @param {Object} message - Original message object
      * @return {Object} Cleaned message object with only API-compatible fields
@@ -1116,7 +1188,7 @@
         // Create a new object with only API-compatible fields
         const cleanMessage = {
             role: message.role,
-            content: message.content
+            content: stripContentDisplayData(message.content)
         };
 
         // Preserve other API-required fields if present
@@ -8045,9 +8117,15 @@
             return message && message.role !== 'system';
         });
 
+        // Strip display-only metadata (including blob:/data: URLs from attachments) before sending to API
+        // The REST API schema only accepts specific fields and will reject extra properties
+        const cleanMessages = filteredMessages
+            .map(stripMessageDisplayMetadata)
+            .filter(function(msg) { return msg !== null; });
+
         const payload = {
             assistant_id: state.originalAssistantId || state.config.assistantId,
-            messages: filteredMessages,
+            messages: cleanMessages,
             save_transcript: state.config.saveTranscript !== false,
         };
 
