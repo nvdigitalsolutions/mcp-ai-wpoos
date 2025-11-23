@@ -4973,6 +4973,9 @@
 
     function createSegmentFromAttachment(attachment) {
         if (!attachment) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] createSegmentFromAttachment: No attachment provided');
+            }
             return null;
         }
 
@@ -4986,6 +4989,14 @@
         }
 
         if (!id) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] createSegmentFromAttachment: No valid ID found in attachment:', {
+                    has_id: !!attachment.id,
+                    has_fileId: !!attachment.fileId,
+                    fileId: attachment.fileId,
+                    attachment: attachment
+                });
+            }
             return null;
         }
 
@@ -7988,6 +7999,22 @@
             const segment = createSegmentFromAttachment(attachment);
             if (segment) {
                 segments.push(segment);
+                // Debug logging for attachment segments
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Created segment from attachment:', {
+                        attachment_id: attachment.id,
+                        fileId: attachment.fileId,
+                        segment_type: segment.type,
+                        segment_attachment_id: segment.attachment_id,
+                        has_url: !!segment.url,
+                        has_name: !!segment.name
+                    });
+                }
+            } else {
+                // Warning if segment creation failed
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Failed to create segment from attachment:', attachment);
+                }
             }
 
             const displayAttachment = buildDisplayAttachment(attachment, state);
@@ -8011,6 +8038,15 @@
             payloadContent = segments[0].text;
         } else {
             payloadContent = segments;
+        }
+
+        // Debug logging for payload content
+        if (window.console && console.log) {
+            console.log('[WP oOS] Created payloadContent:', {
+                is_array: Array.isArray(payloadContent),
+                segment_count: Array.isArray(payloadContent) ? payloadContent.length : 0,
+                segments: Array.isArray(payloadContent) ? payloadContent : null
+            });
         }
 
         const previousConversationLength = state.conversation.length;
@@ -8122,6 +8158,11 @@
         const cleanMessages = filteredMessages
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
+
+        // Debug logging to trace attachment segments
+        if (window.console && console.log) {
+            console.log('[WP oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
+        }
 
         const payload = {
             assistant_id: state.originalAssistantId || state.config.assistantId,

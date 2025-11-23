@@ -671,12 +671,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$resolved_file_id = isset( $metadata['file_id'] ) && '' !== $metadata['file_id'] ? $metadata['file_id'] : $file_id;
 
 			$payload = array(
-				'id'        => $resolved_file_id,
-				'file_id'   => $resolved_file_id,
-				'filename'  => isset( $metadata['filename'] ) && '' !== $metadata['filename'] ? $metadata['filename'] : wp_basename( $file_path ),
-				'mime_type' => isset( $metadata['mime_type'] ) && '' !== $metadata['mime_type'] ? $metadata['mime_type'] : $mime_type,
-				'bytes'     => isset( $metadata['bytes'] ) ? (int) $metadata['bytes'] : (int) $file_size,
-				'purpose'   => isset( $metadata['purpose'] ) && '' !== $metadata['purpose'] ? $metadata['purpose'] : $purpose,
+				'id'            => $resolved_file_id,
+				'file_id'       => $resolved_file_id,
+				'attachment_id' => $attachment_id,
+				'filename'      => isset( $metadata['filename'] ) && '' !== $metadata['filename'] ? $metadata['filename'] : wp_basename( $file_path ),
+				'mime_type'     => isset( $metadata['mime_type'] ) && '' !== $metadata['mime_type'] ? $metadata['mime_type'] : $mime_type,
+				'bytes'         => isset( $metadata['bytes'] ) ? (int) $metadata['bytes'] : (int) $file_size,
+				'purpose'       => isset( $metadata['purpose'] ) && '' !== $metadata['purpose'] ? $metadata['purpose'] : $purpose,
 			);
 
 			if ( ! empty( $metadata['status'] ) ) {
