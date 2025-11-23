@@ -2802,9 +2802,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 
 					// Create full tool message for frontend.
+					// Sanitize the tool result for display (preserves full result with base64 content).
+					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name );
+
+					// JSON-encode the content to match the non-streaming path format.
+					// This ensures consistent handling in the JavaScript SSE processor.
+					$result_content = is_string( $display_result ) ? $display_result : wp_json_encode( $display_result );
+
 					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						'content' => $result_content,
 					);
 
 					if ( '' !== $tool_call_id ) {
