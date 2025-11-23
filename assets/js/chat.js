@@ -8479,6 +8479,41 @@
                                         }
                                     }
                                     
+                                    // If no message content found, check for tool results text (agentic loop).
+                                    // This ensures Gemini image generation and other tools show proper feedback.
+                                    if (!finalText && data.tool_results && Array.isArray(data.tool_results)) {
+                                        for (let i = 0; i < data.tool_results.length; i++) {
+                                            const toolResult = data.tool_results[i];
+                                            if (!toolResult || !toolResult.content) {
+                                                continue;
+                                            }
+                                            
+                                            // Parse tool result content (usually JSON string)
+                                            let parsedContent = toolResult.content;
+                                            if (typeof parsedContent === 'string') {
+                                                try {
+                                                    parsedContent = JSON.parse(parsedContent);
+                                                } catch (e) {
+                                                    // If parsing fails, treat as plain text
+                                                    parsedContent = toolResult.content;
+                                                }
+                                            }
+                                            
+                                            // Extract text field from tool result
+                                            if (parsedContent && typeof parsedContent === 'object' && parsedContent.text) {
+                                                if (finalText) {
+                                                    finalText += '\n\n';
+                                                }
+                                                finalText += parsedContent.text;
+                                            } else if (typeof parsedContent === 'string') {
+                                                if (finalText) {
+                                                    finalText += '\n\n';
+                                                }
+                                                finalText += parsedContent;
+                                            }
+                                        }
+                                    }
+                                    
                                     // Ensure finalText is a string before using it
                                     if (finalText && typeof finalText === 'string') {
                                         fullContent = finalText;
