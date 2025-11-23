@@ -8481,7 +8481,7 @@
                                     
                                     // If no message content found, check for tool results text (agentic loop).
                                     // This ensures Gemini image generation and other tools show proper feedback.
-                                    if (!finalText && data.tool_results && Array.isArray(data.tool_results)) {
+                                    if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                                         for (const toolResult of data.tool_results) {
                                             if (!toolResult || !toolResult.content) {
                                                 continue;
@@ -8493,7 +8493,7 @@
                                                 try {
                                                     parsedContent = JSON.parse(parsedContent);
                                                 } catch (e) {
-                                                    // If parsing fails, keep original content as-is for text extraction
+                                                    // If parsing fails, keep original content - extractTextFromContent handles both strings and objects
                                                     parsedContent = toolResult.content;
                                                 }
                                             }
