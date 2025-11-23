@@ -133,6 +133,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'description'    => __( 'Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'show_usage_costs'                      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Show Usage Costs', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Display token usage and estimated costs in chat interface', 'wp-mcp-ai' ),
+					'description'    => __( 'Shows small badges with total tokens and estimated cost (in USD) after each assistant response in the frontend chat. Helps users understand API usage and costs in real-time. Phase 7: Enhanced Token Tracking with Real-Time Cost Attribution.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 				'delete_on_uninstall'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Delete Data on Uninstall', 'wp-mcp-ai' ),

@@ -9162,11 +9162,17 @@
         }
 
         if (hasDisplayContent) {
+            // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
+            const usage = chatData && chatData.usage ? chatData.usage : null;
+            const cost = data && data.cost ? data.cost : null;
+
             const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
                     text: assistantDisplay.text || '',
                 },
+                usage: usage,
+                cost: cost,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
