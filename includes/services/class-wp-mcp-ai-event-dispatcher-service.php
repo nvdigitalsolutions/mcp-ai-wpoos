@@ -95,6 +95,12 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 		// Video generation hooks.
 		add_action( 'wp_mcp_ai_video_job_queued', array( $this, 'handle_video_job_queued' ), 10, 3 );
 		add_action( 'wp_mcp_ai_video_job_completed', array( $this, 'handle_video_job_completed' ), 10, 3 );
+
+		// Cron job lifecycle hooks (orchestration layer integration).
+		add_action( 'wp_mcp_ai_cron_job_created', array( $this, 'handle_cron_job_created' ), 10, 2 );
+		add_action( 'wp_mcp_ai_cron_job_deleted', array( $this, 'handle_cron_job_deleted' ), 10, 2 );
+		add_action( 'wp_mcp_ai_cron_job_executed', array( $this, 'handle_cron_job_executed' ), 10, 2 );
+		add_action( 'wp_mcp_ai_cron_job_failed', array( $this, 'handle_cron_job_failed' ), 10, 3 );
 	}
 
 	/**
@@ -324,6 +330,178 @@ class WP_MCP_AI_Event_Dispatcher_Service {
 			$error = new WP_Error( 'video_generation_failed', $error_message );
 			do_action( 'wp_mcp_ai_job_failed', $job_id, $error, $metadata );
 		}
+	}
+
+	/**
+	 * Handle cron job created event
+	 *
+	 * Bridges cron events to chat client notifications (agentic loop integration).
+	 * Follows SOC: Only routes events and formats messages, doesn't contain business logic.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param array  $metadata Job metadata.
+	 */
+	public function handle_cron_job_created( $job_id, $metadata ) {
+		$hook         = isset( $metadata['hook'] ) ? $metadata['hook'] : 'unknown';
+		$schedule     = isset( $metadata['schedule'] ) ? $metadata['schedule'] : 'single';
+		$next_run     = isset( $metadata['next_run'] ) ? $metadata['next_run'] : '';
+		$user_id      = isset( $metadata['user_id'] ) ? absint( $metadata['user_id'] ) : 0;
+		$assistant_id = isset( $metadata['assistant_id'] ) ? absint( $metadata['assistant_id'] ) : 0;
+
+		// Format schedule type for display.
+		$schedule_type = ( 'single' === $schedule ) ? __( 'one-time', 'wp-mcp-ai' ) : $schedule;
+
+		// Create notification message.
+		$message = sprintf(
+			/* translators: 1: Hook name, 2: Schedule type, 3: Next run time */
+			__( 'Scheduled %1$s event (%2$s) - next run: %3$s', 'wp-mcp-ai' ),
+			sanitize_text_field( $hook ),
+			sanitize_text_field( $schedule_type ),
+			sanitize_text_field( $next_run )
+		);
+
+		// Dispatch notification to chat client.
+		$this->dispatch_notification(
+			$job_id,
+			array(
+				'context' => array(
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+				),
+			),
+			'scheduled',
+			$message,
+			array(
+				'type'     => 'cron_job_created',
+				'hook'     => $hook,
+				'schedule' => $schedule,
+				'next_run' => $next_run,
+			)
+		);
+
+		// Log for debugging.
+		$this->log_notification( 'cron_job_created', $job_id, $metadata );
+	}
+
+	/**
+	 * Handle cron job deleted event
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param array  $metadata Job metadata.
+	 */
+	public function handle_cron_job_deleted( $job_id, $metadata ) {
+		$hook         = isset( $metadata['hook'] ) ? $metadata['hook'] : 'unknown';
+		$user_id      = isset( $metadata['user_id'] ) ? absint( $metadata['user_id'] ) : 0;
+		$assistant_id = isset( $metadata['assistant_id'] ) ? absint( $metadata['assistant_id'] ) : 0;
+
+		$message = sprintf(
+			/* translators: %s: Hook name */
+			__( 'Cancelled scheduled event: %s', 'wp-mcp-ai' ),
+			sanitize_text_field( $hook )
+		);
+
+		$this->dispatch_notification(
+			$job_id,
+			array(
+				'context' => array(
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+				),
+			),
+			'cancelled',
+			$message,
+			array(
+				'type' => 'cron_job_deleted',
+				'hook' => $hook,
+			)
+		);
+
+		$this->log_notification( 'cron_job_deleted', $job_id, $metadata );
+	}
+
+	/**
+	 * Handle cron job executed event
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param array  $metadata Job metadata.
+	 */
+	public function handle_cron_job_executed( $job_id, $metadata ) {
+		$hook         = isset( $metadata['hook'] ) ? $metadata['hook'] : 'unknown';
+		$user_id      = isset( $metadata['user_id'] ) ? absint( $metadata['user_id'] ) : 0;
+		$assistant_id = isset( $metadata['assistant_id'] ) ? absint( $metadata['assistant_id'] ) : 0;
+		$duration     = isset( $metadata['duration'] ) ? $metadata['duration'] : null;
+
+		$message = sprintf(
+			/* translators: %s: Hook name */
+			__( 'Executed scheduled event: %s', 'wp-mcp-ai' ),
+			sanitize_text_field( $hook )
+		);
+
+		if ( null !== $duration ) {
+			$message .= sprintf(
+				/* translators: %s: Duration in seconds */
+				__( ' (completed in %ss)', 'wp-mcp-ai' ),
+				number_format( $duration, 2 )
+			);
+		}
+
+		$this->dispatch_notification(
+			$job_id,
+			array(
+				'context' => array(
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+				),
+			),
+			'completed',
+			$message,
+			array(
+				'type'     => 'cron_job_executed',
+				'hook'     => $hook,
+				'duration' => $duration,
+			)
+		);
+
+		$this->log_notification( 'cron_job_executed', $job_id, $metadata );
+	}
+
+	/**
+	 * Handle cron job failed event
+	 *
+	 * @param string $job_id       Job identifier.
+	 * @param array  $metadata     Job metadata.
+	 * @param string $error_message Error message.
+	 */
+	public function handle_cron_job_failed( $job_id, $metadata, $error_message ) {
+		$hook         = isset( $metadata['hook'] ) ? $metadata['hook'] : 'unknown';
+		$user_id      = isset( $metadata['user_id'] ) ? absint( $metadata['user_id'] ) : 0;
+		$assistant_id = isset( $metadata['assistant_id'] ) ? absint( $metadata['assistant_id'] ) : 0;
+
+		$message = sprintf(
+			/* translators: 1: Hook name, 2: Error message */
+			__( 'Scheduled event failed: %1$s - %2$s', 'wp-mcp-ai' ),
+			sanitize_text_field( $hook ),
+			sanitize_text_field( $error_message )
+		);
+
+		$this->dispatch_notification(
+			$job_id,
+			array(
+				'context' => array(
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+				),
+			),
+			'failed',
+			$message,
+			array(
+				'type'  => 'cron_job_failed',
+				'hook'  => $hook,
+				'error' => $error_message,
+			)
+		);
+
+		$this->log_notification( 'cron_job_failed', $job_id, array_merge( $metadata, array( 'error' => $error_message ) ) );
 	}
 
 	/**
