@@ -182,8 +182,8 @@ class WP_MCP_AI_Transcript_Repository {
 			$fallback_where_values         = array( $user_id );
 
 			if ( $assistant_id > 0 ) {
-				$fallback_where_clauses[] = 'assistant_id = %d';
-				$fallback_where_values[]  = $assistant_id;
+				$fallback_where_clauses[] = 'assistant_id = %s';
+				$fallback_where_values[]  = (string) $assistant_id;
 			}
 
 			$fallback_where_sql            = implode( ' AND ', $fallback_where_clauses );
@@ -454,8 +454,8 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// Add assistant_id filter if provided.
 		if ( $assistant_id > 0 ) {
-			$where_clauses[] = 'assistant_id = %d';
-			$where_values[]  = $assistant_id;
+			$where_clauses[] = 'assistant_id = %s';
+			$where_values[]  = (string) $assistant_id;
 		}
 
 		return array(
