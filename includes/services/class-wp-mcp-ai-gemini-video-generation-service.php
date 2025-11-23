@@ -894,6 +894,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
+		// Trigger WordPress cron immediately to ensure the polling job runs.
+		// WordPress cron is virtual and only runs on page loads by default.
+		// Calling spawn_cron() ensures the cron job executes even if no subsequent page loads occur.
+		// This is critical for SSE connections where the client may remain on the same page.
+		spawn_cron();
+
 		WP_MCP_AI_Logger::log_event(
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
@@ -1177,6 +1183,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$user_id
 			);
 		}
+
+		// Trigger WordPress cron to ensure continued polling.
+		// This is necessary because WordPress cron only runs on page loads,
+		// and during video generation polling, there may be no user activity.
+		spawn_cron();
 	}
 
 	/**

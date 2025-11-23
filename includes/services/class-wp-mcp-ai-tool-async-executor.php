@@ -191,6 +191,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 			);
 		}
 
+		// Trigger WordPress cron immediately to ensure the async tool execution runs.
+		// WordPress cron is virtual and only runs on page loads by default.
+		// Calling spawn_cron() ensures the job executes even if no subsequent page loads occur.
+		spawn_cron();
+
 		// Log queuing event.
 		$this->log_event(
 			'async_tool_queued',

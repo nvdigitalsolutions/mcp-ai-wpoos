@@ -260,6 +260,10 @@ class WP_MCP_AI_Job_Notifier {
 					$user_id
 				);
 			}
+
+			// Trigger WordPress cron immediately to ensure the webhook job runs.
+			// WordPress cron is virtual and only runs on page loads by default.
+			spawn_cron();
 		}
 	}
 

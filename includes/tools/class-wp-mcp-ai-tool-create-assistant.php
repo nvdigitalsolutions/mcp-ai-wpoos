@@ -264,6 +264,10 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Record the job.
 		WP_MCP_AI_Cron_Manager::record_job( $hook, $args, 'single', $timestamp, $user_id );
 
+		// Trigger WordPress cron immediately to ensure the job runs.
+		// WordPress cron is virtual and only runs on page loads by default.
+		spawn_cron();
+
 		return array(
 			'job_id'        => $job_id,
 			'status'        => 'scheduled',
