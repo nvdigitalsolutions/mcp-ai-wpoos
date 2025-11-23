@@ -8494,22 +8494,18 @@
                                                 try {
                                                     parsedContent = JSON.parse(parsedContent);
                                                 } catch (e) {
-                                                    // If parsing fails, treat as plain text
+                                                    // If parsing fails, use existing helper to extract text
                                                     parsedContent = toolResult.content;
                                                 }
                                             }
                                             
-                                            // Extract text field from tool result
-                                            if (parsedContent && typeof parsedContent === 'object' && parsedContent.text) {
+                                            // Use existing extractTextFromContent helper for consistent text extraction
+                                            const toolText = extractTextFromContent(parsedContent);
+                                            if (toolText) {
                                                 if (finalText) {
                                                     finalText += '\n\n';
                                                 }
-                                                finalText += parsedContent.text;
-                                            } else if (typeof parsedContent === 'string') {
-                                                if (finalText) {
-                                                    finalText += '\n\n';
-                                                }
-                                                finalText += parsedContent;
+                                                finalText += toolText;
                                             }
                                         }
                                     }
