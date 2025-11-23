@@ -113,12 +113,9 @@
 					sseUrl += '&assistant_id=' + encodeURIComponent(assistantId);
 				}
 
-				// Add nonce as header if available
-				if (nonce) {
-					// Note: EventSource doesn't support custom headers
-					// The REST API should use cookies for authentication in SSE mode
-					sseUrl += '&_wpnonce=' + encodeURIComponent(nonce);
-				}
+				// Note: EventSource doesn't support custom headers
+				// WordPress will use cookie-based authentication automatically
+				// The endpoint supports nonces via cookies when user is logged in
 
 				try {
 					const sseConnection = window.wpMcpAiSSE.connect(sseUrl, {
