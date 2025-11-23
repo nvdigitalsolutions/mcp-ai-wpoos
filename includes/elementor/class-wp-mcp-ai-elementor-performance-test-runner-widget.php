@@ -203,6 +203,18 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		?>
 		<script>
 		(function($) {
+			// Helper function to escape HTML and prevent XSS
+			function escapeHtml(text) {
+				var map = {
+					'&': '&amp;',
+					'<': '&lt;',
+					'>': '&gt;',
+					'"': '&quot;',
+					"'": '&#039;'
+				};
+				return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+			}
+
 			$(document).ready(function() {
 				$('.wp-mcp-ai-test-runner__button').on('click', function(e) {
 					e.preventDefault();
@@ -241,27 +253,27 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										// Extract message from object
 										errorMessage = response.data.message || errorMessage;
 										
-										// Build detailed error HTML
-										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + errorMessage + '</p>';
+										// Build detailed error HTML with proper escaping
+										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
 										
 										// Add additional details if available
 										if (response.data.details) {
-											errorHtml += '<p class="wp-mcp-ai-error-details">' + response.data.details + '</p>';
+											errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
 										}
 										if (response.data.cli_command) {
-											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + response.data.cli_command + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
 										}
 										if (response.data.setup_command) {
-											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + response.data.setup_command + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
 										}
 										
 										statusDiv.html(errorHtml);
 									} else {
 										// Handle string error
-										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + response.data + '</p>');
+										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(String(response.data)) + '</p>');
 									}
 								} else {
-									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + errorMessage + '</p>');
+									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');
 								}
 							}
 						},

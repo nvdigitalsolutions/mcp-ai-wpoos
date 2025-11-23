@@ -63,6 +63,20 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			'Widget should extract message property from error object'
 		);
 
+		// Verify the escapeHtml function exists for XSS prevention.
+		$this->assertStringContainsString(
+			'function escapeHtml',
+			$output,
+			'Widget should have escapeHtml function for XSS prevention'
+		);
+
+		// Verify that escapeHtml is used for error messages.
+		$this->assertStringContainsString(
+			'escapeHtml(errorMessage)',
+			$output,
+			'Widget should escape error messages to prevent XSS'
+		);
+
 		// Verify handling of details field.
 		$this->assertStringContainsString(
 			'response.data.details',
@@ -146,7 +160,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		);
 
 		// The widget should still display string errors.
-		$this->assertRegExp(
+		$this->assertMatchesRegularExpression(
 			'/response\.data\s*\+\s*[\'"]<\/p>/',
 			$output,
 			'Widget should handle string error responses for backward compatibility'
