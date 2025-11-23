@@ -237,6 +237,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// queueing its own async job when already running in async context).
 		$context['in_async_executor'] = true;
 
+		// Add parent job ID to context so nested async jobs (like veo video generation)
+		// can complete the parent job when they finish.
+		$context['parent_job_id'] = $job_id;
+
 		// Log execution start.
 		$this->log_event(
 			'async_tool_started',
