@@ -194,6 +194,28 @@ class WP_MCP_AI_REST_Validator {
 	}
 
 	/**
+	 * Passthrough sanitize callback for messages array.
+	 *
+	 * This prevents WordPress REST API from applying schema-based sanitization
+	 * (rest_sanitize_value_from_schema) which would strip properties not defined
+	 * in the schema. By providing an explicit sanitize_callback that returns the
+	 * value unchanged, we allow additional properties from AI providers (like
+	 * 'refusal', 'audio', etc.) to pass through while still validating structure
+	 * via validate_messages_array().
+	 *
+	 * @param mixed           $value   The messages array to sanitize (passthrough).
+	 * @param WP_REST_Request $request The request object.
+	 * @param string          $param   The parameter name.
+	 * @return mixed The unchanged value.
+	 */
+	public function sanitize_messages_array( $value, $request, $param ) {
+		// Return value unchanged - validation is handled by validate_messages_array().
+		// This prevents WordPress from applying rest_sanitize_value_from_schema() which
+		// would reject the array due to missing 'items' schema definition.
+		return $value;
+	}
+
+	/**
 	 * Validate attachments array structure for chat endpoint.
 	 *
 	 * Validates that each attachment has either a file_id or url, and that
