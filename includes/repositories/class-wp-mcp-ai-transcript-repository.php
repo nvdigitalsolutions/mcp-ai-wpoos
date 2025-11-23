@@ -133,10 +133,67 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
+		// If no rows found with cct_author_id, try with user_id column as fallback.
+		// This handles cases where JetEngine might be using the custom user_id field
+		// instead of the built-in cct_author_id column.
+		if ( empty( $rows ) ) {
+			// Build fallback query using user_id instead of cct_author_id.
+			$fallback_where_clauses = array( 'user_id = %d' );
+			$fallback_where_values  = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
+
+			$fallback_query_values   = array_merge( $fallback_where_values, array( $per_page, $offset ) );
+			$fallback_query_template = "SELECT session_key,
+                MIN(request_started_at) AS started_at,
+                MAX(response_completed_at) AS completed_at,
+                MIN(cct_created) AS first_created,
+                MAX(cct_created) AS last_created,
+                MAX(assistant_id) AS assistant_id,
+                MAX(assistant_model) AS assistant_model,
+                COUNT(*) AS turn_count
+         FROM {$table}
+         WHERE {$fallback_where_sql}
+         GROUP BY session_key
+         ORDER BY MAX(cct_created) DESC, session_key ASC
+         LIMIT %d OFFSET %d";
+
+			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_query_values );
+
+			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+
+			if ( ! is_array( $rows ) ) {
+				$rows = array();
+			}
+		}
+
 		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
 		$total_query          = $wpdb->prepare( $total_query_template, $where_values );
 
 		$total = (int) $wpdb->get_var( $total_query );
+
+		// If we had to use fallback, also use fallback for total count.
+		if ( 0 === $total && ! empty( $rows ) ) {
+			// We got rows from fallback but total was 0, recalculate total with fallback query.
+			$fallback_where_clauses = array( 'user_id = %d' );
+			$fallback_where_values  = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql         = implode( ' AND ', $fallback_where_clauses );
+			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where_sql}";
+			$fallback_total_query          = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
+
+			$total = (int) $wpdb->get_var( $fallback_total_query );
+		}
 
 		return array(
 			'items' => $rows,
