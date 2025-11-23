@@ -1516,6 +1516,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Generate attachment metadata.
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+		
+		// Log metadata generation results for debugging.
+		if ( empty( $attach_data ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'veo_video_metadata_empty',
+				'wp_generate_attachment_metadata returned empty array - this is normal for some video files',
+				array(
+					'attachment_id' => $attachment_id,
+					'file'          => basename( $upload['file'] ),
+				)
+			);
+		}
+		
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
 		WP_MCP_AI_Logger::log_event(
@@ -1524,6 +1537,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'attachment_id' => $attachment_id,
 				'duration'      => $result['duration'],
+				'file_path'     => $upload['file'],
+				'user_id'       => $user_id,
 			)
 		);
 
