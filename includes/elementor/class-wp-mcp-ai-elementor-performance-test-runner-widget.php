@@ -205,6 +205,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		(function($) {
 			// Helper function to escape HTML and prevent XSS
 			function escapeHtml(text) {
+				if (!text) return '';
 				var map = {
 					'&': '&amp;',
 					'<': '&lt;',
@@ -212,7 +213,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 					'"': '&quot;',
 					"'": '&#039;'
 				};
-				return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+				return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
 			}
 
 			$(document).ready(function() {
