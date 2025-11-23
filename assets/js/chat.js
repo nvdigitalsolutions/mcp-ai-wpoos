@@ -1092,10 +1092,10 @@
     /**
      * Strip display-only data from attachment segments.
      * Removes url and name fields that contain blob:/data: URLs used only for display.
-     * Preserves attachment_id and other API-required fields.
+     * Preserves attachment_id and API-required fields (display_name, caption, detail).
      * 
      * @param {Object} segment - Attachment segment object
-     * @return {Object} Cleaned segment object
+     * @return {Object} Cleaned segment object with only API-compatible fields
      */
     function stripSegmentDisplayData(segment) {
         if (!segment || typeof segment !== 'object') {
@@ -1132,8 +1132,8 @@
      * Handles both string content and array of segments.
      * For segments, removes display-only data like blob:/data: URLs.
      * 
-     * @param {string|Array} content - Message content
-     * @return {string|Array} Cleaned content
+     * @param {string|Array<Object>} content - Message content (string or array of segment objects)
+     * @return {string|Array<Object>} Cleaned content
      */
     function stripContentDisplayData(content) {
         // String content passes through unchanged
