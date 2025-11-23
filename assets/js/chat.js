@@ -4973,6 +4973,9 @@
 
     function createSegmentFromAttachment(attachment) {
         if (!attachment) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] createSegmentFromAttachment: No attachment provided');
+            }
             return null;
         }
 
@@ -4986,6 +4989,14 @@
         }
 
         if (!id) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] createSegmentFromAttachment: No valid ID found in attachment:', {
+                    has_id: !!attachment.id,
+                    has_fileId: !!attachment.fileId,
+                    fileId: attachment.fileId,
+                    attachment: attachment
+                });
+            }
             return null;
         }
 
@@ -7998,6 +8009,11 @@
                         has_url: !!segment.url,
                         has_name: !!segment.name
                     });
+                }
+            } else {
+                // Warning if segment creation failed
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Failed to create segment from attachment:', attachment);
                 }
             }
 
