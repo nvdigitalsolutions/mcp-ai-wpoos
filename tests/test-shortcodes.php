@@ -398,4 +398,44 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
 		}
 	}
+
+	/**
+	 * Test that shortcode capability check distinguishes between authenticated and unauthenticated users.
+	 */
+	public function test_shortcode_capability_check_for_unauthenticated_users() {
+		// Create an assistant that requires edit_posts capability.
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Capability Test Assistant',
+			)
+		);
+
+		// Test 1: Unauthenticated user without allow_guests should show permission notice.
+		wp_set_current_user( 0 );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'You do not have permission to chat with this assistant', $markup );
+
+		// Test 2: Unauthenticated user WITH allow_guests should render the chat interface.
+		wp_set_current_user( 0 );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="true"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+		$this->assertStringNotContainsString( 'You do not have permission', $markup );
+
+		// Test 3: Authenticated user with sufficient capability should render chat.
+		wp_set_current_user( $this->admin_id );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+		$this->assertStringNotContainsString( 'You do not have permission', $markup );
+
+		// Test 4: Authenticated user without sufficient capability should show permission notice.
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'You do not have permission to chat with this assistant', $markup );
+
+		// Reset to admin user for cleanup.
+		wp_set_current_user( $this->admin_id );
+	}
 }
