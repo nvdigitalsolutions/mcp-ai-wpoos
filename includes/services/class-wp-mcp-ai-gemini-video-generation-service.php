@@ -753,11 +753,35 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Download the video.
+		WP_MCP_AI_Logger::log_event(
+			'veo_downloading_video',
+			'Downloading generated video from Google',
+			array(
+				'uri_host' => wp_parse_url( $video_uri, PHP_URL_HOST ),
+				'uri_path' => wp_parse_url( $video_uri, PHP_URL_PATH ),
+			)
+		);
+		
 		$video_data = $this->download_video( $video_uri );
 
 		if ( is_wp_error( $video_data ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Veo video download failed',
+				array(
+					'error' => $video_data->get_error_message(),
+					'code'  => $video_data->get_error_code(),
+				)
+			);
 			return $video_data;
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_video_downloaded',
+			'Successfully downloaded video from Google',
+			array(
+				'size_bytes' => strlen( $video_data ),
+			)
+		);
 
 		// Determine actual resolution used.
 		// Veo 2.0 always outputs 720p (resolution parameter not supported).
@@ -1098,12 +1122,31 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			// Operation succeeded - process video.
 			$model  = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
+			
+			WP_MCP_AI_Logger::log_event(
+				'veo_async_processing_video',
+				'Processing completed video from Google',
+				array(
+					'job_id' => $job_id,
+					'model'  => $model,
+				)
+			);
+			
 			$result = $this->process_completed_video( $data, $metadata['args'], $model );
 
 			if ( is_wp_error( $result ) ) {
 				$metadata['status']       = 'failed';
 				$metadata['error']        = $result->get_error_message();
 				$metadata['completed_at'] = time();
+
+				WP_MCP_AI_Logger::log_error(
+					'Veo video processing failed',
+					array(
+						'job_id' => $job_id,
+						'error'  => $result->get_error_message(),
+						'code'   => $result->get_error_code(),
+					)
+				);
 
 				// Store error result in cron manager for retrieval.
 				if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -1116,6 +1159,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					: true;
 
 				if ( $save_to_media ) {
+					WP_MCP_AI_Logger::log_event(
+						'veo_async_saving_to_media',
+						'Attempting to save video to WordPress media library',
+						array(
+							'job_id'          => $job_id,
+							'user_id'         => isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0,
+							'has_video_data'  => ! empty( $result['video_data'] ),
+							'video_size'      => isset( $result['video_data'] ) ? strlen( $result['video_data'] ) : 0,
+						)
+					);
+					
 					$save_result = $this->save_video_to_media(
 						$result,
 						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0
@@ -1125,6 +1179,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						$metadata['status']       = 'failed';
 						$metadata['error']        = $save_result->get_error_message();
 						$metadata['completed_at'] = time();
+
+						WP_MCP_AI_Logger::log_error(
+							'Veo video save to media library failed',
+							array(
+								'job_id' => $job_id,
+								'error'  => $save_result->get_error_message(),
+								'code'   => $save_result->get_error_code(),
+							)
+						);
 
 						// Store error result in cron manager for retrieval.
 						if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -1142,6 +1205,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'resolution'    => $result['resolution'],
 							'model'         => $result['model'],
 							'provider'      => $result['provider'],
+						);
+
+						WP_MCP_AI_Logger::log_event(
+							'veo_video_saved_successfully',
+							'Veo video successfully saved to WordPress media library',
+							array(
+								'job_id'        => $job_id,
+								'attachment_id' => $save_result['attachment_id'],
+								'url'           => $save_result['url'],
+							)
 						);
 
 						// Store success result in cron manager for retrieval.
@@ -1175,11 +1248,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
+			$completion_message = 'completed' === $metadata['status']
+				? 'Veo async video generation completed successfully'
+				: 'Veo async video generation completed with errors';
+
 			WP_MCP_AI_Logger::log_event(
 				'veo_async_completed',
-				'Veo async video generation completed',
+				$completion_message,
 				array(
 					'job_id'   => $job_id,
+					'status'   => $metadata['status'],
 					'attempts' => $metadata['poll_attempt'],
 				)
 			);
@@ -1432,6 +1510,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Generate attachment metadata.
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+		
+		// Log metadata generation results for debugging.
+		if ( empty( $attach_data ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'veo_video_metadata_empty',
+				'wp_generate_attachment_metadata returned empty array - this is normal for some video files',
+				array(
+					'attachment_id' => $attachment_id,
+					'file'          => basename( $upload['file'] ),
+				)
+			);
+		}
+		
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
 		WP_MCP_AI_Logger::log_event(
@@ -1440,6 +1531,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'attachment_id' => $attachment_id,
 				'duration'      => $result['duration'],
+				'file_path'     => $upload['file'],
+				'user_id'       => $user_id,
 			)
 		);
 
