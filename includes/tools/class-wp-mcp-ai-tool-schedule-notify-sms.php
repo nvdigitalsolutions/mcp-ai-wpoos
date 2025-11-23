@@ -231,6 +231,10 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 
 		$job_id = WP_MCP_AI_Cron_Manager::record_job( self::CRON_HOOK, $payload, 'single', $timestamp, $user_id );
 
+		// Trigger WordPress cron immediately to ensure the SMS job runs.
+		// WordPress cron is virtual and only runs on page loads by default.
+		spawn_cron();
+
 		WP_MCP_AI_Logger::log_event(
 			'notifylk_schedule_sms',
 			'Scheduled Notify.lk SMS.',

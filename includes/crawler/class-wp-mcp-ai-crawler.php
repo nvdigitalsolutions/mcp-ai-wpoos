@@ -359,6 +359,11 @@ class WP_MCP_AI_Crawler {
 					$user_id
 				);
 			}
+
+			// Trigger WordPress cron to ensure continued polling.
+			// This is necessary because WordPress cron only runs on page loads,
+			// and during crawl job polling, there may be no user activity.
+			spawn_cron();
 		}
 	}
 
