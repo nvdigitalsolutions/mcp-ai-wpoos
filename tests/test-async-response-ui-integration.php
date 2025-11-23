@@ -316,19 +316,27 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 
 		$chat_js = file_get_contents( $chat_js_path );
 
-		// Verify job_id is included in the pending message for SSE.
+		// Verify job_id is included in the initial pending message for SSE and polling.
 		$this->assertStringContainsString(
 			'Job ID: ${jobId}',
 			$chat_js,
-			'JavaScript should display job_id in pending message (SSE)'
+			'JavaScript should display job_id in pending message'
 		);
 
-		// Count occurrences - should appear in both SSE and polling functions.
+		// Verify job_id is also included in status update messages (toolPolling).
+		// This ensures the job_id persists when status updates replace the message.
+		$this->assertStringContainsString(
+			"getString('toolPolling', 'Tool is processing…')} Job ID: \${jobId}",
+			$chat_js,
+			'JavaScript should display job_id in status update messages'
+		);
+
+		// Count occurrences - should appear in initial message (2x) + status updates (3x) = at least 5.
 		$count = substr_count( $chat_js, 'Job ID: ${jobId}' );
 		$this->assertGreaterThanOrEqual(
-			2,
+			5,
 			$count,
-			'Job ID should be displayed in both SSE and polling functions'
+			'Job ID should be displayed in initial messages and status updates'
 		);
 	}
 }

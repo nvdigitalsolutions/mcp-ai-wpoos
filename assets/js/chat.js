@@ -6688,8 +6688,8 @@
                             const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
                             handleError(errorMessage);
                         } else {
-                            // Still pending or running - update status
-                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                            // Still pending or running - update status with job_id
+                            updatePendingTaskEntry(pendingEntry, `${getString('toolPolling', 'Tool is processing…')} Job ID: ${jobId}`);
                         }
                     }
                 },
@@ -6789,7 +6789,7 @@
                 fetchAsyncToolResult(state, jobId)
                     .then(function (payload) {
                         if (!payload) {
-                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                            updatePendingTaskEntry(pendingEntry, `${getString('toolPolling', 'Tool is processing…')} Job ID: ${jobId}`);
                             scheduleNext();
                             return;
                         }
@@ -6822,8 +6822,8 @@
                             return;
                         }
 
-                        // Still pending or running
-                        updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                        // Still pending or running - update status with job_id
+                        updatePendingTaskEntry(pendingEntry, `${getString('toolPolling', 'Tool is processing…')} Job ID: ${jobId}`);
                         scheduleNext();
                     })
                     .catch(function (error) {
