@@ -989,6 +989,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$poll_count    = 0;
 			$last_status   = $status;
 
+			// Extend PHP execution time limit for long-running SSE connection.
+			// The polling loop can run up to 6 minutes (120 polls × 3 seconds).
+			// Default WordPress/PHP timeout is often 30 seconds, which would kill the connection.
+			// Calculate required time: (max_polls * poll_interval) + buffer for processing.
+			$required_time = ( $max_polls * $poll_interval ) + 60; // 6 minutes + 1 minute buffer = 420 seconds.
+
+			// Set timeout if function exists. Some hosting environments disable set_time_limit
+			// for security reasons (safe mode, disable_functions in php.ini).
+			// Silencing errors because set_time_limit may trigger:
+			// - Warning when disabled in php.ini (disable_functions)
+			// - Warning when safe mode is enabled
+			// - Warning when running as Apache module with certain configurations
+			// These warnings are expected and can be safely ignored as we're providing
+			// a best-effort timeout extension for SSE streaming.
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+
 			while ( $poll_count < $max_polls ) {
 				// Wait before next poll.
 				sleep( $poll_interval );
