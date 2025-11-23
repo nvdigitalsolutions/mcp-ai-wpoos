@@ -1131,14 +1131,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Record in cron manager.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
+			$user_id      = isset( $metadata['args']['user_id'] ) ? absint( $metadata['args']['user_id'] ) : 0;
+			$assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_POLL_HOOK,
 				array( $job_id ),
 				'single',
 				$next_poll,
 				$user_id,
-				$job_id  // Use the veo_xxx job_id directly instead of generating MD5 hash.
+				$job_id,  // Use the veo_xxx job_id directly instead of generating MD5 hash.
+				$assistant_id
 			);
 		}
 	}

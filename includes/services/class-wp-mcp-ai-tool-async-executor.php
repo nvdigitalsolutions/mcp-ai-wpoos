@@ -115,7 +115,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 					array(),
 					'hourly',
 					$cleanup_timestamp,
-					0 // System-created job.
+					0,    // System-created job.
+					null, // No custom ID for system jobs.
+					0     // No assistant for system jobs.
 				);
 			}
 		}
@@ -180,14 +182,16 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Record cron job in cron manager for visibility and management.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_HOOK,
 				array( $job_id ),
 				'single',
 				$timestamp,
 				$user_id,
-				$job_id  // Use the async_xxx job_id directly instead of generating MD5 hash.
+				$job_id,  // Use the async_xxx job_id directly instead of generating MD5 hash.
+				$assistant_id
 			);
 		}
 
