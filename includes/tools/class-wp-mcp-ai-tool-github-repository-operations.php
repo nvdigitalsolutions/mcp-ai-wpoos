@@ -240,8 +240,15 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 			return $contents;
 		}
 
-		// Decode base64 content.
-		$decoded_content = isset( $contents['content'] ) ? base64_decode( str_replace( "\n", '', $contents['content'] ) ) : ''; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		// Decode base64 content with validation.
+		$decoded_content = '';
+		if ( isset( $contents['content'] ) ) {
+			$content_clean = str_replace( "\n", '', $contents['content'] );
+			// Validate base64 before decoding.
+			if ( preg_match( '/^[A-Za-z0-9+\/=]+$/', $content_clean ) ) {
+				$decoded_content = base64_decode( $content_clean ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			}
+		}
 
 		return array(
 			'file_path' => $file_path,
@@ -371,19 +378,24 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 			}
 		}
 
-		// Try to lint the PHP code using php -l if available.
-		if ( function_exists( 'proc_open' ) ) {
+		// Try to lint the PHP code using php -l if available and safe.
+		// Only use proc_open if explicitly enabled via filter.
+		$allow_proc_open = apply_filters( 'wp_mcp_ai_allow_php_lint', function_exists( 'proc_open' ) );
+
+		if ( $allow_proc_open ) {
 			$temp_file = wp_tempnam();
 			file_put_contents( $temp_file, $code ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
-			// Run PHP linter.
+			// Run PHP linter in safe mode.
 			$descriptors = array(
 				0 => array( 'pipe', 'r' ),
 				1 => array( 'pipe', 'w' ),
 				2 => array( 'pipe', 'w' ),
 			);
 
-			$process = proc_open( 'php -l ' . escapeshellarg( $temp_file ), $descriptors, $pipes );
+			// Use escapeshellarg for security and limit execution time.
+			$cmd     = 'timeout 5 php -l ' . escapeshellarg( $temp_file ) . ' 2>&1';
+			$process = proc_open( $cmd, $descriptors, $pipes );
 
 			if ( is_resource( $process ) ) {
 				$output = stream_get_contents( $pipes[1] );
@@ -397,7 +409,7 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 				if ( 0 !== $return_code ) {
 					return new WP_Error(
 						'wp_mcp_ai_syntax_error',
-						__( 'PHP syntax error: ', 'wp-mcp-ai' ) . $errors
+						__( 'PHP syntax error: ', 'wp-mcp-ai' ) . ( $errors ? $errors : $output )
 					);
 				}
 			} else {

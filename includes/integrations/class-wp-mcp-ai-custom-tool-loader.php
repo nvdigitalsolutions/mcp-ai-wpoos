@@ -1,6 +1,6 @@
 <?php
 /**
- * Custom Tool Loader for WP oOS
+ * Custom Tool Loader for WP MCP AI
  *
  * Safely loads and manages custom tools from the custom-tools directory.
  *
@@ -67,8 +67,8 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 				// Create a README file.
 				$readme_file = $this->custom_tools_dir . '/README.txt';
 				if ( ! file_exists( $readme_file ) ) {
-					$readme_content  = "Custom Tools Directory for WP Open Operator System\n";
-					$readme_content .= "================================================\n\n";
+					$readme_content  = "Custom Tools Directory for WP MCP AI\n";
+					$readme_content .= "====================================\n\n";
 					$readme_content .= "This directory contains custom tools developed via the GitHub integration.\n";
 					$readme_content .= "Only tools in this directory can be modified via the plugin interface.\n";
 					$readme_content .= "Core plugin tools in the includes/tools/ directory are protected.\n\n";
@@ -381,11 +381,11 @@ class {$class_name} implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Execute the tool.
 	 *
-	 * @param array \$arguments Tool arguments.
-	 * @param array \$context   Execution context including user_id.
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
 	 */
-	public function execute( array \$arguments = array(), array \$context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Implement your tool logic here.
 		return array(
 			'success' => true,

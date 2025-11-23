@@ -1,6 +1,6 @@
 <?php
 /**
- * GitHub API Client for WP oOS
+ * GitHub API Client for WP MCP AI
  *
  * Provides methods to interact with the GitHub REST API.
  *
@@ -343,6 +343,14 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 		 * @return array|WP_Error Commit data or WP_Error on failure.
 		 */
 		public function create_or_update_file( $owner, $repo, $path, $message, $content, $branch, $sha = '' ) {
+			// Validate content is not too large (GitHub has a 100MB limit).
+			if ( strlen( $content ) > 100 * 1024 * 1024 ) {
+				return new WP_Error(
+					'wp_mcp_ai_github_file_too_large',
+					__( 'File content exceeds GitHub size limit of 100MB.', 'wp-mcp-ai' )
+				);
+			}
+
 			$endpoint = "/repos/{$owner}/{$repo}/contents/{$path}";
 			$body     = array(
 				'message' => $message,

@@ -1,6 +1,6 @@
 <?php
 /**
- * GitHub OAuth Handler for WP oOS
+ * GitHub OAuth Handler for WP MCP AI
  *
  * Handles OAuth flows for GitHub integration.
  *
