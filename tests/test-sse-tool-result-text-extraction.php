@@ -15,13 +15,44 @@
 class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 
 	/**
+	 * Reflection method for testing protected extract_text_from_tool_results().
+	 *
+	 * @var ReflectionMethod
+	 */
+	private $extract_method;
+
+	/**
+	 * REST controller instance for testing.
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	private $rest;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		
+		$this->rest = new WP_MCP_AI_REST();
+		$this->extract_method = new ReflectionMethod( $this->rest, 'extract_text_from_tool_results' );
+		$this->extract_method->setAccessible( true );
+	}
+
+	/**
+	 * Helper method to invoke extract_text_from_tool_results.
+	 *
+	 * @param array $tool_result_messages Tool result messages array.
+	 * @return string Extracted text.
+	 */
+	private function extract_text( $tool_result_messages ) {
+		return $this->extract_method->invoke( $this->rest, $tool_result_messages );
+	}
+
+	/**
 	 * Test that extract_text_from_tool_results extracts text from single tool result.
 	 */
 	public function test_extract_text_from_single_tool_result() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
-
 		$tool_result_messages = array(
 			array(
 				'role'         => 'tool',
@@ -37,7 +68,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertIsString( $result );
 		$this->assertStringContainsString( 'Successfully generated image', $result );
@@ -49,9 +80,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles multiple tool results.
 	 */
 	public function test_extract_text_from_multiple_tool_results() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -78,7 +106,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertIsString( $result );
 		$this->assertStringContainsString( 'First image created successfully', $result );
@@ -91,9 +119,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results returns empty string when no text field exists.
 	 */
 	public function test_extract_text_returns_empty_when_no_text_field() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -110,7 +135,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertSame( '', $result );
 	}
@@ -119,9 +144,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles plain string content.
 	 */
 	public function test_extract_text_handles_plain_string_content() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -132,7 +154,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertSame( 'Simple text result', $result );
 	}
@@ -141,9 +163,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles empty array.
 	 */
 	public function test_extract_text_handles_empty_array() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $rest, array() );
 
@@ -154,9 +173,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles malformed JSON.
 	 */
 	public function test_extract_text_handles_malformed_json() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -167,7 +183,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		// Should treat it as plain string and return it
 		$this->assertSame( '{invalid json', $result );
@@ -177,9 +193,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results handles tool result with array content.
 	 */
 	public function test_extract_text_handles_array_content() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -193,7 +206,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertSame( 'Tool executed successfully.', $result );
 	}
@@ -202,9 +215,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results skips empty content.
 	 */
 	public function test_extract_text_skips_empty_content() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -221,7 +231,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertSame( 'Valid text', $result );
 	}
@@ -230,9 +240,6 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 * Test that extract_text_from_tool_results trims whitespace.
 	 */
 	public function test_extract_text_trims_whitespace() {
-		$rest = new WP_MCP_AI_REST();
-		$method = new ReflectionMethod( $rest, 'extract_text_from_tool_results' );
-		$method->setAccessible( true );
 
 		$tool_result_messages = array(
 			array(
@@ -243,7 +250,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 			),
 		);
 
-		$result = $method->invoke( $rest, $tool_result_messages );
+		$result = $this->extract_text( $tool_result_messages );
 
 		$this->assertSame( 'Text with spaces', $result );
 	}
