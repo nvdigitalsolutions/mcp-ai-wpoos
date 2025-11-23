@@ -74,13 +74,16 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $result;
 		}
 
-		// Check if this request has a context query parameter.
-		// We must check query params directly because context is a query string parameter.
+		// Check if context parameter was explicitly provided by the client.
+		// We check both query params and body params, but NOT route defaults.
+		// This ensures we only apply no-cache headers when the client actually requested
+		// a specific context, not when the endpoint just has a default context value.
 		$query_params = $request->get_query_params();
-		$context      = isset( $query_params['context'] ) ? $query_params['context'] : '';
+		$body_params  = $request->get_body_params();
+		$has_explicit_context = isset( $query_params['context'] ) || isset( $body_params['context'] );
 
-		// For requests with context parameter or edit-related endpoints, ensure no caching.
-		if ( ! empty( $context ) || self::is_edit_endpoint( $route ) ) {
+		// For requests with explicit context parameter or edit-related endpoints, ensure no caching.
+		if ( $has_explicit_context || self::is_edit_endpoint( $route ) ) {
 			// Set aggressive no-cache headers to prevent any caching.
 			$result->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
 			$result->header( 'Pragma', 'no-cache' );
@@ -174,6 +177,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 				parse_str( $parsed['query'], $uri_params );
 
 				// Check for context parameter in URI but not in request query params.
+				// We check query params specifically because we're detecting if query strings are stripped.
 				$query_params = $request->get_query_params();
 				if ( isset( $uri_params['context'] ) && ! isset( $query_params['context'] ) ) {
 					// Query string is being stripped - log for debugging.
@@ -238,6 +242,8 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $response;
 		}
 
+		// Check if context parameter in URI might have been stripped from query params.
+		// We check query params specifically to detect query string stripping.
 		$query_params = $request->get_query_params();
 		if ( strpos( $request_uri, '?context=' ) !== false && ! isset( $query_params['context'] ) ) {
 			// Add diagnostic information to the error.
