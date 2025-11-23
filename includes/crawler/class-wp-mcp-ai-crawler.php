@@ -342,7 +342,23 @@ class WP_MCP_AI_Crawler {
 		$delay = max( 5, $delay );
 
 		if ( ! wp_next_scheduled( self::CRON_HOOK, array( $task_id ) ) ) {
-			wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $task_id ) );
+			$timestamp = time() + $delay;
+			wp_schedule_single_event( $timestamp, self::CRON_HOOK, array( $task_id ) );
+
+			// Record in cron manager for visibility and management.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$user_id = 0;
+				if ( isset( $job['context']['user_id'] ) ) {
+					$user_id = absint( $job['context']['user_id'] );
+				}
+				WP_MCP_AI_Cron_Manager::record_job(
+					self::CRON_HOOK,
+					array( $task_id ),
+					'single',
+					$timestamp,
+					$user_id
+				);
+			}
 		}
 	}
 

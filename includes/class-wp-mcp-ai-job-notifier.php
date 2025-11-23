@@ -219,19 +219,43 @@ class WP_MCP_AI_Job_Notifier {
 			}
 
 			// Send webhook asynchronously to avoid blocking.
-			wp_schedule_single_event(
-				time(),
-				'wp_mcp_ai_send_webhook',
-				array(
-					'url'     => $webhook['url'],
-					'payload' => array(
-						'event'   => $event,
-						'job_id'  => $job_id,
-						'data'    => $data,
-						'sent_at' => current_time( 'c', true ),
-					),
-				)
+			$timestamp = time();
+			$webhook_args = array(
+				'url'     => $webhook['url'],
+				'payload' => array(
+					'event'   => $event,
+					'job_id'  => $job_id,
+					'data'    => $data,
+					'sent_at' => current_time( 'c', true ),
+				),
 			);
+
+			wp_schedule_single_event(
+				$timestamp,
+				'wp_mcp_ai_send_webhook',
+				$webhook_args
+			);
+
+			// Record in cron manager for visibility and management.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				// Try to get user_id from metadata or data.
+				$user_id = 0;
+				if ( isset( $data['metadata']['user_id'] ) ) {
+					$user_id = absint( $data['metadata']['user_id'] );
+				} elseif ( isset( $data['user_id'] ) ) {
+					$user_id = absint( $data['user_id'] );
+				} else {
+					$user_id = get_current_user_id();
+				}
+
+				WP_MCP_AI_Cron_Manager::record_job(
+					'wp_mcp_ai_send_webhook',
+					$webhook_args,
+					'single',
+					$timestamp,
+					$user_id
+				);
+			}
 		}
 	}
 
