@@ -137,11 +137,11 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	public function test_real_uniqid_format_all_endpoints() {
 		wp_set_current_user( $this->user_id );
 
-		// Generate a real job ID the way the code does.
+		// Generate a real job ID the way the code does (dots removed for consistency).
 		$job_id = 'veo_' . str_replace( '.', '', uniqid( '', true ) );
 
-		// Verify it contains a dot.
-		$this->assertStringContainsString( '.', $job_id, 'uniqid with more_entropy should contain a dot' );
+		// Verify it does NOT contain a dot (dots are removed).
+		$this->assertStringNotContainsString( '.', $job_id, 'Job IDs should not contain dots after str_replace' );
 
 		// Create status for the job.
 		$status = array(
