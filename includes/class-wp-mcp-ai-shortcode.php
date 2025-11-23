@@ -470,10 +470,9 @@ class WP_MCP_AI_Shortcode {
 						)
 					);
 				} else {
-					// Log as debug-level info for unauthenticated access (expected on public pages).
-					WP_MCP_AI_Logger::log_event(
-						'shortcode_guest_access_denied',
-						'Shortcode access denied for unauthenticated user',
+					// Log as debug-level for unauthenticated access (expected on public pages).
+					WP_MCP_AI_Logger::log_debug(
+						'Shortcode access denied for unauthenticated user (expected behavior)',
 						array(
 							'assistant_id'        => $assistant_id,
 							'required_capability' => $capability,
