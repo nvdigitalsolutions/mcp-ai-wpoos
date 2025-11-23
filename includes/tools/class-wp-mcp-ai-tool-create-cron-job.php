@@ -134,13 +134,15 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_invalid_hook', __( 'A valid hook name is required to schedule a cron job.', 'wp-mcp-ai' ) );
 		}
 
+		// Capture current time once to avoid race conditions between default timestamp and validation.
+		$current_time = time();
+
 		$timestamp = isset( $arguments['timestamp'] ) ? (int) $arguments['timestamp'] : 0;
 
 		if ( $timestamp <= 0 ) {
-			$timestamp = time() + MINUTE_IN_SECONDS;
+			$timestamp = $current_time + MINUTE_IN_SECONDS;
 		}
 
-		$current_time = time();
 		if ( $timestamp < $current_time ) {
 			return new WP_Error( 'wp_mcp_ai_past_timestamp', __( 'The requested start time is in the past. Please choose a future timestamp.', 'wp-mcp-ai' ) );
 		}

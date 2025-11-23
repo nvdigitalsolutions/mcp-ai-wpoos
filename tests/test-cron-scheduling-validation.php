@@ -74,7 +74,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertTrue( $result['scheduled'], 'Job should be scheduled successfully' );
+		$this->assertArrayHasKey( 'job_id', $result, 'Result should contain job_id' );
+		$this->assertArrayHasKey( 'message', $result, 'Result should contain success message' );
 
 		// Verify WordPress cron scheduled it.
 		$scheduled = wp_next_scheduled( $hook, $args );
@@ -111,7 +112,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'], 'Recurring job should be scheduled' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'job_id', $result, 'Recurring job should be scheduled' );
 
 		// Verify WordPress cron scheduled it.
 		$event = wp_get_scheduled_event( $hook, array() );
@@ -147,7 +149,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'] );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'job_id', $result );
 
 		// Verify arguments were stored correctly.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
@@ -367,13 +370,14 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'hook'      => $hook,
-				'timestamp' => time() - MINUTE_IN_SECONDS, // Past time to trigger immediately.
+				'timestamp' => time() + MINUTE_IN_SECONDS, // Future time.
 				'schedule'  => 'hourly',
 			),
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'] );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'job_id', $result );
 
 		// Simulate first execution.
 		$event = wp_get_scheduled_event( $hook, array() );
