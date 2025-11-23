@@ -8479,6 +8479,36 @@
                                         }
                                     }
                                     
+                                    // If no message content found, check for tool results text (agentic loop).
+                                    // This ensures Gemini image generation and other tools show proper feedback.
+                                    if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                                        for (const toolResult of data.tool_results) {
+                                            if (!toolResult || !toolResult.content) {
+                                                continue;
+                                            }
+                                            
+                                            // Parse tool result content (usually JSON string)
+                                            let parsedContent = toolResult.content;
+                                            if (typeof parsedContent === 'string') {
+                                                try {
+                                                    parsedContent = JSON.parse(parsedContent);
+                                                } catch (e) {
+                                                    // If parsing fails, parsedContent remains as original string
+                                                    // extractTextFromContent handles both strings and objects
+                                                }
+                                            }
+                                            
+                                            // Use existing extractTextFromContent helper for consistent text extraction
+                                            const toolText = extractTextFromContent(parsedContent);
+                                            if (toolText) {
+                                                if (finalText) {
+                                                    finalText += '\n\n';
+                                                }
+                                                finalText += toolText;
+                                            }
+                                        }
+                                    }
+                                    
                                     // Ensure finalText is a string before using it
                                     if (finalText && typeof finalText === 'string') {
                                         fullContent = finalText;
