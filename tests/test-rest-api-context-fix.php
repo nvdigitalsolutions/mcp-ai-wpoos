@@ -353,4 +353,44 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'no-store', $headers['Cache-Control'] );
 		$this->assertStringContainsString( 'must-revalidate', $headers['Cache-Control'] );
 	}
+
+	/**
+	 * Test that context parameter is correctly detected from set_param()
+	 *
+	 * This test verifies that the fix works when context is set via set_param(),
+	 * which is how some REST endpoints and tools set parameters programmatically.
+	 */
+	public function test_context_set_param_detection() {
+		// Create a test post.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_title'  => 'Test Post',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Create admin user.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Create request and set context via set_param().
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
+		$request->set_param( 'context', 'edit' );
+
+		// Verify that get_param() returns the context.
+		$this->assertEquals( 'edit', $request->get_param( 'context' ) );
+
+		$server   = rest_get_server();
+		$response = $server->dispatch( $request );
+
+		// Check that response is successful.
+		$this->assertEquals( 200, $response->get_status() );
+
+		// Check that no-cache headers are present (proving context was detected).
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Cache-Control', $headers );
+		$this->assertStringContainsString( 'no-cache', $headers['Cache-Control'] );
+		$this->assertStringContainsString( 'no-store', $headers['Cache-Control'] );
+		$this->assertStringContainsString( 'must-revalidate', $headers['Cache-Control'] );
+	}
 }
