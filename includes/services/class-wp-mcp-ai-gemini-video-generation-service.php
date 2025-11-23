@@ -122,6 +122,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	public static function init() {
 		// Register cron hook for async polling.
 		add_action( self::CRON_POLL_HOOK, array( __CLASS__, 'poll_video_async_static' ), 10, 1 );
+		
+		// Log initialization for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'veo_service_initialized',
+			'Video generation service initialized and cron hook registered',
+			array(
+				'hook' => self::CRON_POLL_HOOK,
+				'time' => time(),
+			)
+		);
 	}
 
 	/**
@@ -130,6 +140,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param string $job_id Job identifier.
 	 */
 	public static function poll_video_async_static( $job_id ) {
+		// Log that cron fired - critical for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'veo_cron_fired',
+			'Video polling cron callback executed',
+			array(
+				'job_id' => $job_id,
+				'time'   => time(),
+			)
+		);
+		
 		$service = new self();
 		$service->poll_video_async( $job_id );
 	}
@@ -928,6 +948,18 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$first_poll_time = time() + 3;
 		$scheduled       = wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
 
+		// Log scheduling attempt - critical for debugging cron execution issues.
+		WP_MCP_AI_Logger::log_event(
+			'veo_poll_schedule_attempt',
+			'Attempting to schedule first video poll',
+			array(
+				'job_id'          => $job_id,
+				'first_poll_time' => $first_poll_time,
+				'scheduled_result' => $scheduled,
+				'hook'            => self::CRON_POLL_HOOK,
+			)
+		);
+
 		// Check if scheduling was successful.
 		if ( false === $scheduled ) {
 			WP_MCP_AI_Logger::log_error(
@@ -969,6 +1001,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
+		// Verify the cron event was actually registered.
+		$next_scheduled = wp_next_scheduled( self::CRON_POLL_HOOK, array( $job_id ) );
+		
 		WP_MCP_AI_Logger::log_event(
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
@@ -976,6 +1011,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'job_id'          => $job_id,
 				'operation'       => $operation['operation_name'],
 				'first_poll_time' => $first_poll_time,
+				'next_scheduled'  => $next_scheduled,
+				'verified'        => ( false !== $next_scheduled ),
 			)
 		);
 
