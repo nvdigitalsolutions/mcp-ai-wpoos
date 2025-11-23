@@ -59,7 +59,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
 		rest_get_server();
-		do_action( 'init' );
+		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -83,9 +83,9 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 				public $records = array();
 
 				public function update_item( $record ) {
-					// Store records indexed by session_key and cct_author_id for retrieval.
+					// Store records indexed by session_key and user_id for retrieval.
 					$session_key = isset( $record['session_key'] ) ? $record['session_key'] : '';
-					$user_id     = isset( $record['cct_author_id'] ) ? $record['cct_author_id'] : 0;
+					$user_id     = isset( $record['user_id'] ) ? $record['user_id'] : 0;
 
 					if ( '' === $session_key || 0 === $user_id ) {
 						return new WP_Error( 'invalid_record', 'Invalid session_key or user_id' );
@@ -154,6 +154,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 		// Step 1: Save the conversation via POST /chat-transcripts.
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_body(
 			wp_json_encode(
 				array(
@@ -181,7 +182,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 		// Verify stored record structure.
 		$stored_record = $stored_records[0];
 		$this->assertEquals( $session_key, $stored_record['session_key'], 'Stored session_key should match' );
-		$this->assertEquals( $this->admin_id, $stored_record['cct_author_id'], 'Stored user_id should match' );
+		$this->assertEquals( $this->admin_id, $stored_record['user_id'], 'Stored user_id should match' );
 		$this->assertEquals( (string) $this->assistant_id, $stored_record['assistant_id'], 'Stored assistant_id should match' );
 
 		// Verify request_payload contains the messages.
@@ -193,6 +194,7 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 
 		// Step 2: Retrieve the conversation via GET /chat-transcripts?session_key=xxx.
 		$retrieve_request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$retrieve_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$retrieve_request->set_param( 'session_key', $session_key );
 		$retrieve_request->set_param( 'user_id', $this->admin_id );
 		$retrieve_request->set_param( 'assistant_id', $this->assistant_id );

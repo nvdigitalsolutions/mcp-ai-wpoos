@@ -120,6 +120,118 @@ class WP_MCP_AI_REST_Authenticator {
 	}
 
 	/**
+	 * Authenticate a REST API request.
+	 *
+	 * Handles multiple authentication methods:
+	 * - Mesh network API keys (X-WP-MCP-AI-Mesh-Key header)
+	 * - Bearer tokens (Authorization: Bearer header) - local credentials or Auth0
+	 * - WordPress REST nonces (X-WP-Nonce header)
+	 * - Guest tokens (X-WP-MCP-AI-Guest header)
+	 *
+	 * @param WP_REST_Request $request       REST request object.
+	 * @param string|null     $capability    Required capability (null = public access).
+	 * @param int             $assistant_id  Assistant ID for context.
+	 * @return array|WP_Error Authentication context array or WP_Error on failure.
+	 */
+	public function authenticate( WP_REST_Request $request, $capability = null, $assistant_id = 0 ) {
+		$this->reset_auth_context();
+
+		// Normalize capability.
+		if ( is_string( $capability ) ) {
+			$capability = sanitize_key( $capability );
+		}
+
+		$requires_authenticated_user = ! empty( $capability ) && 'public' !== $capability;
+
+		// Check for mesh API key authentication.
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) ) {
+			$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+			if ( true === $mesh_validated ) {
+				$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $mesh_validated ) ) {
+				return $mesh_validated;
+			}
+		}
+
+		// Check for bearer token authentication (local credentials or Auth0).
+		$bearer = $request->get_header( 'Authorization' );
+		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+			$token = trim( $matches[1] );
+
+			// Try local credential validation first.
+			$local = $this->validate_local_token( $token, $request, $assistant_id );
+
+			if ( true === $local ) {
+				return $this->get_auth_context();
+			} elseif ( $local instanceof WP_Error ) {
+				return $local;
+			}
+
+			// Try Auth0 bearer token validation.
+			$validated = $this->validate_bearer_token( $token, $request );
+
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+
+			return $this->get_auth_context();
+		}
+
+		// Check for WordPress REST nonce.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		// For public endpoints, nonce is optional but respected if provided.
+		if ( ! $requires_authenticated_user ) {
+			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				$this->set_authenticated_user_id( get_current_user_id() );
+			}
+
+			return $this->get_auth_context();
+		}
+
+		// For authenticated endpoints, nonce is required.
+		if ( empty( $nonce ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'Authentication is required. Provide an Auth0 bearer token or a WordPress REST nonce.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Include an Auth0-issued access token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'rest_invalid_nonce',
+				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				array(
+					'status'  => rest_authorization_required_code(),
+					'actions' => array(
+						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		// Check capability before setting user context.
+		if ( $capability && ! current_user_can( $capability ) ) {
+			return $this->insufficient_permissions_error( $capability );
+		}
+
+		// Authentication successful - set user context.
+		$this->set_authenticated_user_id( get_current_user_id() );
+
+		return $this->get_auth_context();
+	}
+
+	/**
 	 * Validate a local assistant credential token.
 	 *
 	 * @param string          $token   Bearer token.

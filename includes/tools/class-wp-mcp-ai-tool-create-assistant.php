@@ -236,6 +236,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 		}
 
+		// Extract assistant_id from context early.
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
 		// Store arguments in a transient for the cron job to access.
 		$job_id    = 'create_assistant_' . uniqid();
 		$transient = 'wp_mcp_ai_async_assistant_' . $job_id;
@@ -243,8 +246,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		set_transient(
 			$transient,
 			array(
-				'arguments' => $arguments,
-				'user_id'   => $user_id,
+				'arguments'    => $arguments,
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
 			),
 			DAY_IN_SECONDS
 		);
@@ -261,8 +265,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule assistant creation.', 'wp-mcp-ai' ) );
 		}
 
-		// Record the job.
-		WP_MCP_AI_Cron_Manager::record_job( $hook, $args, 'single', $timestamp, $user_id );
+		// Record the job with assistant context.
+		WP_MCP_AI_Cron_Manager::record_job( $hook, $args, 'single', $timestamp, $user_id, $job_id, $assistant_id );
 
 		return array(
 			'job_id'        => $job_id,
@@ -292,14 +296,30 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$tool   = new self();
 		$result = $tool->create_assistant( $arguments, $user_id );
 
-		// Clean up transient.
+		// Clean up input transient.
 		delete_transient( $transient );
 
-		// Send notification.
-		if ( ! is_wp_error( $result ) ) {
-			$tool->send_completion_notification( $result, $arguments, $user_id );
-		} else {
+		// Store result using standardized mechanism.
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
+		}
+
+		if ( is_wp_error( $result ) ) {
+			// Store error result.
+			WP_MCP_AI_Cron_Manager::store_job_result( $job_id, $result );
 			$tool->send_error_notification( $result, $arguments, $user_id );
+		} else {
+			// Store success result.
+			WP_MCP_AI_Cron_Manager::store_job_result(
+				$job_id,
+				array(
+					'success'      => true,
+					'assistant_id' => isset( $result['id'] ) ? $result['id'] : null,
+					'name'         => isset( $result['name'] ) ? $result['name'] : null,
+					'created_at'   => time(),
+				)
+			);
+			$tool->send_completion_notification( $result, $arguments, $user_id );
 		}
 	}
 

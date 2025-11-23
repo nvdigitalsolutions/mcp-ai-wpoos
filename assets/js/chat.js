@@ -49,6 +49,20 @@
     const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
     const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
+    // Tool execution timer constants
+    // Duration (in milliseconds) to preserve tool execution info alongside thinking status.
+    // When a tool completes and thinking status arrives within this window, the tool name
+    // and timer are preserved in the status message. This ensures users see which tool
+    // executed and its duration for all tools, not just async tools.
+    const TOOL_TIMER_DISPLAY_DURATION = 1500;
+
+    // System bubble emoji prefixes for different event types
+    const CRON_JOB_STATUS_PREFIXES = {
+        'completed': '✅ ',
+        'failed': '❌ ',
+        'running': '⏳ ',
+    };
+
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -1083,6 +1097,57 @@
     }
 
     /**
+     * Build display metadata from a tool result for persistence.
+     * Separates data parsing, normalization, and metadata construction concerns.
+     * 
+     * @param {Object} toolResult - Tool result object from server
+     * @return {Object} Display metadata object with text and attachments
+     */
+    function buildToolResultDisplayMetadata(toolResult) {
+        if (!toolResult || typeof toolResult !== 'object') {
+            return { text: '', attachments: [] };
+        }
+
+        // Parse tool result content (JSON string to object)
+        let parsedContent = toolResult.content;
+        if (typeof parsedContent === 'string') {
+            try {
+                parsedContent = JSON.parse(parsedContent);
+            } catch (e) {
+                // If parsing fails, use the string as-is
+                parsedContent = toolResult.content;
+            }
+        }
+
+        // Normalize tool result for display (extract text and attachments)
+        const toolName = toolResult.name || '';
+        const normalized = typeof parsedContent === 'object' && parsedContent !== null
+            ? normaliseToolResultForDisplay(toolName, parsedContent)
+            : null;
+
+        // Build display metadata structure
+        const displayMetadata = {
+            text: '',
+            attachments: []
+        };
+
+        if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+            displayMetadata.text = normalized.text || `${toolName}: ${getString('completed', 'Completed')}`;
+            displayMetadata.attachments = normalized.attachments;
+        } else if (parsedContent && parsedContent.text) {
+            displayMetadata.text = parsedContent.text;
+        } else if (parsedContent && parsedContent.message) {
+            displayMetadata.text = parsedContent.message;
+        } else if (typeof parsedContent === 'string') {
+            displayMetadata.text = parsedContent;
+        } else {
+            displayMetadata.text = `${toolName}: ${getString('completed', 'Completed successfully')}`;
+        }
+
+        return displayMetadata;
+    }
+
+    /**
      * Save the current conversation to CCT via the REST API.
      * This is called before clearing a conversation to ensure messages are not lost.
      * 
@@ -1253,6 +1318,21 @@
                             // Log successful save
                             if (!silent && window.console && console.log) {
                                 console.log('[WP oOS] Conversation saved successfully to CCT');
+                            }
+
+                            // Update session_key with the normalized value returned by server
+                            // This ensures client and server are in sync after normalization
+                            if (body && body.session_key && state.config) {
+                                const normalizedKey = sanitizeSessionKey(body.session_key);
+                                if (normalizedKey && normalizedKey !== state.config.sessionKey) {
+                                    if (!silent && window.console && console.log) {
+                                        console.log('[WP oOS] Updating session_key from server response:', {
+                                            old: state.config.sessionKey,
+                                            new: normalizedKey
+                                        });
+                                    }
+                                    state.config.sessionKey = normalizedKey;
+                                }
                             }
 
                             return { success: true, attempt: attempt + 1 };
@@ -3299,22 +3379,28 @@
                 
                 // Refresh history list to include the newly saved conversation
                 // This ensures the history panel shows the correct session_key
+                // Add a small delay (500ms) to allow database write to complete (race condition fix)
                 if (state.historyLoaded) {
-                    var refreshPromise = refreshHistorySessions(state);
-                    
-                    // If history panel is visible, wait for refresh to complete before clearing status
-                    if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
-                        refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
-                            if (window.console && console.error) {
-                                console.error('Error refreshing history after save:', error);
-                            }
+                    setTimeout(function() {
+                        var refreshPromise = refreshHistorySessions(state);
+                        
+                        // If history panel is visible, wait for refresh to complete before clearing status
+                        if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
+                            refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
+                                if (window.console && console.error) {
+                                    console.error('Error refreshing history after save:', error);
+                                }
+                                clearStatusAfterDelay();
+                            });
+                        } else {
+                            // History not visible or refresh not a promise - clear status after delay
                             clearStatusAfterDelay();
-                        });
-                        return;
-                    }
+                        }
+                    }, 500);
+                } else {
+                    // History not loaded - clear status after delay
+                    clearStatusAfterDelay();
                 }
-                
-                clearStatusAfterDelay();
             } else {
                 // Save failed
                 const errorMsg = result.error || 'Failed to save conversation';
@@ -3968,9 +4054,8 @@
 
         updateHistoryToggle(state);
 
-        if (state.historyVisible) {
-            ensureHistorySessions(state);
-        }
+        // Don't auto-fetch when expanding - let users manually refresh via refresh button
+        // This avoids race conditions when history is opened immediately after saving
     }
 
     function ensureHistorySessions(state) {
@@ -4160,7 +4245,7 @@
         });
     }
 
-    function fetchHistorySessionDetails(state, sessionKey) {
+    function fetchHistorySessionDetails(state, sessionKey, retryCount) {
         if (!sessionKey) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
@@ -4170,6 +4255,11 @@
         if (!endpoint) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
+
+        // Default retry count is 0 (first attempt)
+        const attempt = typeof retryCount === 'number' ? retryCount : 0;
+        const maxRetries = 4; // Allow up to 4 retries (5 total attempts) for race condition handling
+        const retryDelay = 750; // 750ms delay before retry (allow database write to complete)
 
         // Construct URL with session_key in path (not as query param)
         let url = endpoint;
@@ -4206,7 +4296,9 @@
                 session_key: sessionKey,
                 url: url,
                 user_id: userId,
-                assistant_id: assistantId
+                assistant_id: assistantId,
+                attempt: attempt + 1,
+                max_attempts: maxRetries + 1
             });
         }
 
@@ -4220,7 +4312,8 @@
                 console.log('[WP oOS] Conversation details response:', {
                     status: response.status,
                     ok: response.ok,
-                    session_key: sessionKey
+                    session_key: sessionKey,
+                    attempt: attempt + 1
                 });
             }
 
@@ -4246,6 +4339,7 @@
                         const message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
                         const error = new Error(message);
                         error.status = response.status;
+                        error.retryable = response.status === 404 && attempt < maxRetries; // 404s might be timing issues
                         throw error;
                     }
 
@@ -4254,7 +4348,8 @@
                         if (window.console && console.log) {
                             console.log('[WP oOS] Conversation details loaded successfully:', {
                                 session_key: sessionKey,
-                                message_count: data.session.messages ? data.session.messages.length : 0
+                                message_count: data.session.messages ? data.session.messages.length : 0,
+                                attempt: attempt + 1
                             });
                         }
                         return data.session;
@@ -4271,8 +4366,36 @@
         }).catch(function (error) {
             // Log error for debugging (handles both network-level and application-level errors)
             if (window.console && console.error) {
-                console.error('[WP oOS] Error fetching conversation details:', error);
+                console.error('[WP oOS] Error fetching conversation details:', {
+                    error: error.message || error,
+                    session_key: sessionKey,
+                    attempt: attempt + 1,
+                    retryable: !!error.retryable
+                });
             }
+
+            // Retry on 404 errors (might be race condition) if we haven't exceeded max retries
+            if (error.retryable && attempt < maxRetries) {
+                // Use exponential backoff with base delay 750ms
+                // Delays for attempts 0-3: 750ms, 1500ms, 3000ms, 6000ms
+                const currentDelay = retryDelay * Math.pow(2, attempt);
+                
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Retrying conversation details fetch after delay:', {
+                        session_key: sessionKey,
+                        delay_ms: currentDelay,
+                        next_attempt: attempt + 2 // Next attempt number (1-based for display)
+                    });
+                }
+                
+                // Wait before retrying with exponential backoff
+                return new Promise(function(resolve) {
+                    setTimeout(function() {
+                        resolve(fetchHistorySessionDetails(state, sessionKey, attempt + 1));
+                    }, currentDelay);
+                });
+            }
+
             // Re-throw the error to propagate it to the caller
             // Errors from the response handler above already have user-friendly messages
             throw error;
@@ -4890,7 +5013,8 @@
             return;
         }
         
-        // Include URL and name for display purposes when restoring from localStorage
+        // Include URL and name for server processing and localStorage restoration
+        // URL allows server to skip database lookups and directly use the attachment URL
         if (attachment.url) {
             segment.url = attachment.url;
         }
@@ -5967,12 +6091,21 @@
                 text = 'Resource created successfully.';
             } else if (result.updated === true) {
                 text = 'Resource updated successfully.';
+            } else if (result.deleted === true) {
+                text = 'Resource deleted successfully.';
             }
         }
 
-        // If we still don't have any extractable content, return null
+        // If we still don't have any extractable content and there are no links,
+        // return a generic success message to maintain the agentic look
+        // This ensures all tool executions are visible in the UI
         if (!text && links.length === 0) {
-            return null;
+            // Check if the result indicates an error
+            if (result.error || result.error_message || result.error_code) {
+                return null; // Let errors be handled by error display logic
+            }
+            // Provide a generic success message for tools without specific output
+            text = 'Tool executed successfully.';
         }
 
         // Format links as attachments-style for consistent display
@@ -7631,8 +7764,46 @@
 
             if (role === 'tool') {
                 // Render tool responses
-                // Use display metadata if available
-                const toolPayload = display || content;
+                // Use display metadata if available, otherwise build from content
+                let toolPayload;
+                
+                if (display && typeof display === 'object') {
+                    // Use saved display metadata for consistency
+                    toolPayload = {
+                        text: display.text || '',
+                        attachments: Array.isArray(display.attachments) ? display.attachments : []
+                    };
+                    
+                    // Preserve bubbleType if present
+                    if (display.bubbleType) {
+                        toolPayload.bubbleType = display.bubbleType;
+                    }
+                } else {
+                    // Fallback: parse content if it's a JSON string
+                    let parsedContent = content;
+                    if (typeof content === 'string') {
+                        try {
+                            parsedContent = JSON.parse(content);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = content;
+                        }
+                    }
+                    
+                    // Build display payload from content
+                    if (typeof parsedContent === 'object' && parsedContent !== null) {
+                        toolPayload = {
+                            text: parsedContent.text || parsedContent.message || String(content),
+                            attachments: []
+                        };
+                    } else {
+                        toolPayload = {
+                            text: String(content),
+                            attachments: []
+                        };
+                    }
+                }
+                
                 appendMessage(state.messagesEl, 'tool', toolPayload);
                 return;
             }
@@ -7996,6 +8167,13 @@
 
         let streamingMessageElement = null;
         let streamCompleted = false;
+        
+        // Typing animation state
+        let typingAnimationRunning = false;
+        let targetContent = '';
+        let displayedContent = '';
+        let typingTimerId = null;
+        const TYPING_SPEED_MS = 10; // Milliseconds per character for typing effect
 
         // Diagnostic logging (Separation of Concerns - delegated to logger utility)
         streamingLogger.logRequestStart({
@@ -8053,6 +8231,66 @@
             }
         }
 
+        // Typing animation function - simulates character-by-character typing
+        function startTypingAnimation() {
+            // If animation is already running, it will continue with the updated targetContent
+            // No need to start a new animation
+            if (typingAnimationRunning) {
+                return;
+            }
+            
+            typingAnimationRunning = true;
+            
+            function typeNextChar() {
+                // Handle case where targetContent changes during animation
+                // Always use current targetContent, not a snapshot
+                if (displayedContent.length < targetContent.length) {
+                    // Add one more character from current target
+                    displayedContent = targetContent.substring(0, displayedContent.length + 1);
+                    
+                    if (streamingMessageElement) {
+                        streamingMessageElement.textContent = displayedContent;
+                        scrollBatcher.scrollToBottom(state.messagesEl);
+                    }
+                    
+                    // Schedule next character
+                    typingTimerId = setTimeout(typeNextChar, TYPING_SPEED_MS);
+                } else if (displayedContent.length > targetContent.length) {
+                    // Handle case where content becomes shorter (e.g., stream reset)
+                    displayedContent = targetContent;
+                    if (streamingMessageElement) {
+                        streamingMessageElement.textContent = displayedContent;
+                        scrollBatcher.scrollToBottom(state.messagesEl);
+                    }
+                    // Typing complete
+                    typingAnimationRunning = false;
+                    typingTimerId = null;
+                } else {
+                    // Typing complete - displayed matches target
+                    typingAnimationRunning = false;
+                    typingTimerId = null;
+                }
+            }
+            
+            typeNextChar();
+        }
+        
+        // Stop typing animation and show full content immediately
+        function stopTypingAnimation() {
+            if (typingTimerId) {
+                clearTimeout(typingTimerId);
+                typingTimerId = null;
+            }
+            typingAnimationRunning = false;
+            
+            // Show complete content immediately
+            if (streamingMessageElement && targetContent) {
+                displayedContent = targetContent;
+                streamingMessageElement.textContent = displayedContent;
+                scrollBatcher.scrollToBottom(state.messagesEl);
+            }
+        }
+
         // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
             // Ensure content is a string
@@ -8072,18 +8310,28 @@
                 createStreamingMessage();
             }
 
-            // Concern 1: Update message bubble content
+            // Concern 1: Update message bubble content with typing animation
             if (streamingMessageElement) {
-                // Update text content with accumulated response
-                // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                streamingMessageElement.textContent = safeContent;
+                // Update target content for typing animation
+                targetContent = safeContent;
                 
-                // VERIFY the text was actually set
+                // IMMEDIATELY show the text content in the bubble (without animation)
+                // This ensures text is visible right away, not just the cursor
+                if (safeContent && safeContent.length > 0) {
+                    // Update displayedContent first to maintain consistency
+                    displayedContent = safeContent;
+                    // Then set text content directly to ensure it's visible
+                    // This order ensures displayedContent always matches what's displayed
+                    streamingMessageElement.textContent = displayedContent;
+                }
+                
+                // VERIFY the content is set
                 if (window.console && console.log) {
-                    console.log('[WP oOS] After setting textContent:', {
-                        elementTextContent: streamingMessageElement.textContent,
-                        elementInnerHTML: streamingMessageElement.innerHTML,
-                        elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
+                    console.log('[WP oOS] Streaming bubble content:', {
+                        targetLength: targetContent.length,
+                        displayedLength: displayedContent.length,
+                        bubbleTextLength: streamingMessageElement.textContent ? streamingMessageElement.textContent.length : 0,
+                        bubbleTextSample: streamingMessageElement.textContent ? streamingMessageElement.textContent.substring(0, 30) : '(empty)'
                     });
                 }
                 
@@ -8167,6 +8415,9 @@
 
                 // Fallback: Add accumulated content to conversation if no final data
                 if (streamResult && streamResult.content) {
+                    // Stop typing animation and show full content before rendering markdown
+                    stopTypingAnimation();
+                    
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
                         // streamingMessageElement is now the bubble itself (merged structure)
@@ -8330,6 +8581,28 @@
                             handleToolExecutionEvent(state, data);
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
+                        } else if (eventType === 'disconnect') {
+                            // Handle client disconnect event
+                            const message = data.message || getString('clientDisconnected', 'Connection lost.');
+                            appendMessage(state.messagesEl, 'system', {
+                                text: '⚠️ ' + message
+                            });
+                        } else if (eventType === 'timeout') {
+                            // Handle timeout event
+                            const message = data.message || getString('requestTimeout', 'Request timed out.');
+                            appendMessage(state.messagesEl, 'system', {
+                                text: '⏱️ ' + message
+                            });
+                        } else if (eventType === 'cron_job_status') {
+                            // Handle cron job status updates
+                            if (data.status && data.message) {
+                                // Map status to emoji prefix using module-level constant
+                                const prefix = CRON_JOB_STATUS_PREFIXES[data.status] || '📋 ';
+                                
+                                appendMessage(state.messagesEl, 'system', {
+                                    text: prefix + data.message
+                                });
+                            }
                         } else if (eventType === 'message' || !eventType) {
                             // Handle streaming responses from different AI providers
                             let contentChunk = null;
@@ -8446,11 +8719,30 @@
                                 updateCallback(state.thinkingText);
                             }
                             
-                            // Check for final response with complete data first
+                            // Process streaming content chunks FIRST, before checking for final response
+                            // This ensures text chunks are displayed in the bubble as they arrive
+                            if (contentChunk) {
+                                fullContent += contentChunk;
+                                // Store in state for status system access
+                                state.streamingContent = fullContent;
+                                
+                                // ALWAYS update the streaming bubble with accumulated content
+                                // This makes the text visible immediately as chunks arrive
+                                updateCallback(fullContent);
+                                
+                                if (DEBUG_MODE && window.console && console.log) {
+                                    console.log('[WP oOS] Content chunk:', {
+                                        chunkLength: contentChunk.length,
+                                        totalLength: fullContent.length
+                                    });
+                                }
+                            }
+                            
+                            // Check for final response with complete data
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
-                                // Extract text from final response if no chunks were received
-                                // This handles cases where streaming chunks weren't sent
+                                // Extract text from final response only if no chunks were received during streaming
+                                // This handles cases where streaming chunks weren't sent (fullContent is empty string)
                                 if (!fullContent) {
                                     let finalText = '';
                                     
@@ -8488,30 +8780,13 @@
                                         if (window.console && console.log) {
                                             console.log('[WP oOS] Extracted final text from data.data:', {
                                                 textLength: finalText.length,
-                                                textSample: finalText.substring(0, 100)
+                                                contentSample: finalText.substring(0, 100)
                                             });
                                         }
                                     }
                                 }
                                 
                                 return { content: fullContent, finalData: data };
-                            }
-                            // If we found streaming content, add it to fullContent and update UI
-                            else if (contentChunk) {
-                                fullContent += contentChunk;
-                                // Store in state for status system access
-                                state.streamingContent = fullContent;
-                                
-                                if (DEBUG_MODE) {
-                                    if (window.console && console.log) {
-                                        console.log('[WP oOS] Content chunk:', {
-                                            chunkLength: contentChunk.length,
-                                            totalLength: fullContent.length
-                                        });
-                                    }
-                                }
-                                
-                                updateCallback(fullContent);
                             }
                         }
                     } catch (parseError) {
@@ -8555,11 +8830,30 @@
                 return;
             }
             
+            // Preserve tool execution timer alongside thinking status
+            // If a tool recently completed, append tool info to thinking message
+            let statusMessage = message;
+            let statusStartTime = Date.now();
+            
+            if (state.lastToolResultTime && 
+                state.lastToolName &&
+                (Date.now() - state.lastToolResultTime < TOOL_TIMER_DISPLAY_DURATION)) {
+                // Tool just completed - preserve tool execution info alongside thinking status
+                const toolExecutionMsg = formatString(
+                    getString('executingTool', 'Executing %s…'),
+                    state.lastToolName
+                );
+                // Combine messages: "Executing tool_name… • Analyzing tool results…"
+                statusMessage = toolExecutionMsg + ' • ' + message;
+                // Use the original tool start time to show elapsed time
+                statusStartTime = state.lastToolStartTime || Date.now();
+            }
+            
             setStatus(state.container, {
-                message: message,
+                message: statusMessage,
                 type: 'thinking',
                 showTime: true,
-                startTime: Date.now()
+                startTime: statusStartTime
             });
         } else if (type === 'generating') {
             // Don't override streaming status if content is actively streaming
@@ -8582,6 +8876,13 @@
                 type: 'default',
                 showTime: false
             });
+            
+            // Show notification in chat as system bubble
+            const prefix = type === 'model_switched' ? '🔄 ' : '✂️ ';
+            appendMessage(state.messagesEl, 'system', {
+                text: prefix + message
+            });
+            
             setTimeout(function() {
                 setStatus(state.container, {
                     message: getString('sending', 'Sending…'),
@@ -8589,6 +8890,18 @@
                     showTime: false
                 });
             }, 2000);
+        } else if (type === 'max_iterations') {
+            // Show max iterations warning
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
+            
+            // Show notification in chat as system bubble
+            appendMessage(state.messagesEl, 'system', {
+                text: '⚠️ ' + message
+            });
         }
     }
 
@@ -8619,14 +8932,25 @@
             });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
+            // Track the tool being executed and when it started
+            state.currentToolName = toolName;
+            state.currentToolStartTime = Date.now();
+            
+            const message = formatString(
+                getString('executingTool', 'Executing %s…'),
+                toolName
+            );
+            
             setStatus(state.container, {
-                message: formatString(
-                    getString('executingTool', 'Executing %s…'),
-                    toolName
-                ),
+                message: message,
                 type: 'tool',
                 showTime: true,
-                startTime: Date.now()
+                startTime: state.currentToolStartTime
+            });
+            
+            // Show tool execution in chat as system bubble
+            appendMessage(state.messagesEl, 'system', {
+                text: '⚙️ ' + message
             });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
@@ -8644,6 +8968,12 @@
                 // Don't display the pending message here - waitForAsyncToolResult handles it
                 return;
             }
+            
+            // Track when the last tool result was received
+            // Store tool name and start time to preserve alongside thinking status
+            state.lastToolName = state.currentToolName || toolName;
+            state.lastToolStartTime = state.currentToolStartTime || Date.now();
+            state.lastToolResultTime = Date.now();
             
             // Extract attachments from tool result (e.g., generated images, audio files)
             const normalized = typeof result === 'object' && result !== null ? 
@@ -8953,7 +9283,21 @@
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
-                    state.conversation.push(toolResult);
+                    // Build display metadata using helper function (SOC)
+                    const displayMetadata = buildToolResultDisplayMetadata(toolResult);
+                    
+                    // Create conversation message with display metadata
+                    const toolMessage = createConversationMessage(
+                        toolResult.role,
+                        toolResult.content,
+                        displayMetadata,
+                        {
+                            tool_call_id: toolResult.tool_call_id,
+                            name: toolResult.name
+                        }
+                    );
+                    
+                    state.conversation.push(toolMessage);
                 }
             });
 
@@ -10641,125 +10985,601 @@
         return div.innerHTML;
     }
 
-    /**
-     * Initialize cron status display for a chat container
-     * 
-     * @param {HTMLElement} container - Chat container element
-     * @param {Object} config - Chat instance configuration
-     */
-    function initializeCronStatus(container, config) {
-        if (!container || !config) {
-            return;
-        }
+	/**
+	 * Job notifications polling and SSE streaming state
+	 * Stores polling timers, SSE connections, retry delays, and backoff state per container
+	 */
+	const notificationPollers = {
+		timers: {},               // Active polling timers by container ID
+		sseConnections: {},       // Active SSE connections by container ID
+		retryDelays: {},          // Current retry delay for each container (for exponential backoff)
+		consecutiveErrors: {},    // Track consecutive errors for backoff
+		lastJobTime: {},          // Timestamp of last detected job per container
+		noJobChecks: {}           // Count of consecutive checks with no jobs
+	};
 
-        const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
-        if (!cronStatusEl) {
-            return;
-        }
+	/**
+	 * Check if there are any active jobs that require notification polling
+	 * 
+	 * Implements fail-safe behavior: returns true when status is unavailable
+	 * to ensure notifications are not missed. Only returns false when we can
+	 * definitively confirm no active jobs exist.
+	 * 
+	 * Uses job counts from consolidated job-notifications endpoint instead of
+	 * separate cron-status polling for better efficiency.
+	 * 
+	 * @param {string} instanceId - Container instance ID
+	 * @return {boolean} True if there are active jobs (pending or running), false otherwise
+	 */
+	function hasActiveJobs(instanceId) {
+		if (!window.wpMcpAiJobCounts || !window.wpMcpAiJobCounts[instanceId]) {
+			// Assume active if we can't check - fail-safe approach
+			// Better to poll unnecessarily than to miss notifications
+			return true;
+		}
+		
+		const counts = window.wpMcpAiJobCounts[instanceId];
+		
+		const pending = counts.pending || 0;
+		const running = counts.running || 0;
+		
+		// Active jobs exist if there are pending or running jobs
+		return pending > 0 || running > 0;
+	}
 
-        // Check if cron status service is available
-        if (typeof window.wpMcpAiCronStatus === 'undefined') {
-            return;
-        }
+	/**
+	 * Poll for job completion notifications
+	 * 
+	 * Fetches pending notifications from the server and displays them in the chat.
+	 * Notifications are cleared after retrieval to avoid duplicates.
+	 * Implements exponential backoff on rate limiting errors.
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function pollJobNotifications(container, config) {
+		if (!container || !config) {
+			return;
+		}
 
-        const instanceId = container.getAttribute('id');
-        if (!instanceId) {
-            return;
-        }
+		const assistantId = config.assistantId;
+		if (!assistantId) {
+			return;
+		}
 
-        // Build cron status endpoint using global restUrl to avoid cross-domain issues
-        // (config.messagesEndpoint might point to an external URL)
-        const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
-        const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
-        const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+		const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+		const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
 
-        // Don't start polling if endpoint is not available
-        if (!cronStatusEndpoint) {
-            return;
-        }
+		if (!restUrl) {
+			return;
+		}
 
-        // Update cron status display
-        function updateCronStatusDisplay(data) {
-            if (!data || !data.counts) {
-                return;
-            }
+		const instanceId = container.getAttribute('id');
+		
+		// Check if there are any active jobs before polling for notifications
+		// This prevents unnecessary API calls when all jobs are complete
+		if (!hasActiveJobs(instanceId)) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] No active jobs. Stopping notification polling for instance:', instanceId);
+			}
+			stopNotificationPolling(instanceId);
+			return;
+		}
+		
+		const notificationsUrl = restUrl + '/job-notifications?assistant_id=' + encodeURIComponent(assistantId) + '&clear=true';
 
-            const counts = data.counts;
-            const total = counts.total || 0;
+		// Fetch notifications
+		fetch(notificationsUrl, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': nonce
+			},
+			credentials: 'same-origin'
+		})
+		.then(function(response) {
+			// Handle rate limiting with exponential backoff
+			if (response.status === 429) {
+				// Increase backoff delay
+				const currentDelay = notificationPollers.retryDelays[instanceId] || 30000;
+				const newDelay = Math.min(currentDelay * 2, 300000); // Max 5 minutes
+				notificationPollers.retryDelays[instanceId] = newDelay;
+				
+				// Track consecutive errors
+				notificationPollers.consecutiveErrors[instanceId] = 
+					(notificationPollers.consecutiveErrors[instanceId] || 0) + 1;
+				
+				if (window.console && console.warn) {
+					console.warn('[WP oOS] Rate limited on job notifications. Backing off to ' + (newDelay / 1000) + 's. Consecutive errors: ' + notificationPollers.consecutiveErrors[instanceId]);
+				}
+				
+				throw new Error('Rate limited (429)');
+			}
+			
+			if (!response.ok) {
+				throw new Error('Failed to fetch notifications (HTTP ' + response.status + ')');
+			}
+			
+			// Reset backoff on success
+			notificationPollers.retryDelays[instanceId] = 30000; // Reset to 30s base interval
+			notificationPollers.consecutiveErrors[instanceId] = 0;
+			
+			return response.json();
+		})
+		.then(function(data) {
+			// Update job counts cache for hasActiveJobs()
+			// This eliminates the need for separate cron-status polling
+			if (data && data.job_counts) {
+				if (!window.wpMcpAiJobCounts) {
+					window.wpMcpAiJobCounts = {};
+				}
+				window.wpMcpAiJobCounts[instanceId] = data.job_counts;
+				
+				// Update cron bar UI directly
+				updateJobBarDisplay(container, data.job_counts);
+				
+				if (window.console && console.log) {
+					console.log('[WP oOS] Cron bar updated via polling:', data.job_counts);
+				}
+			}
+			
+			if (!data || !data.notifications || data.notifications.length === 0) {
+				return;
+			}
 
-            // Hide if no jobs
-            if (total === 0) {
-                cronStatusEl.setAttribute('hidden', '');
-                return;
-            }
+			// Get state for this container
+			const state = states.get(instanceId);
+			if (!state) {
+				return;
+			}
 
-            // Show and update counts
-            cronStatusEl.removeAttribute('hidden');
+			// Display each notification as a system message
+			data.notifications.forEach(function(notification) {
+				// Format message with appropriate emoji prefix
+				let prefix = '📋 ';
+				if (notification.status === 'completed') {
+					prefix = '✅ ';
+				} else if (notification.status === 'failed') {
+					prefix = '❌ ';
+				}
 
-            const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending .wp-mcp-ai-chat__cron-status-count');
-            const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed .wp-mcp-ai-chat__cron-status-count');
+				const message = prefix + notification.message;
 
-            if (pendingEl) {
-                pendingEl.textContent = counts.pending || 0;
-                pendingEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-pending';
-                if (counts.pending > 0) {
-                    pendingEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-pending--active';
-                }
-            }
+				// Append system message to chat
+				appendMessage(state.messagesEl, 'system', {
+					text: message
+				});
 
-            if (completedEl) {
-                completedEl.textContent = counts.completed || 0;
-                completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
-                if (counts.completed > 0) {
-                    completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
-                }
-            }
-        }
+				// Log notification for debugging
+				if (window.console && console.log) {
+					console.log('[WP oOS] Job notification received:', notification);
+				}
+			});
+		})
+		.catch(function(error) {
+			if (window.console && console.error) {
+				console.error('[WP oOS] Failed to fetch job notifications:', error);
+			}
+		});
+	}
 
-        // Start polling for cron status with assistant_id for multi-widget isolation
-        const assistantId = config.assistantId || null;
-        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
+	/**
+	 * Start real-time notifications using SSE (with polling fallback)
+	 * 
+	 * Attempts to establish SSE connection for real-time updates.
+	 * Falls back to polling if SSE is unavailable or fails.
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function startNotificationPolling(container, config) {
+		if (!container || !config) {
+			return;
+		}
 
-        // Stop polling when chat is destroyed or hidden
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
-                    if (container.hasAttribute('hidden')) {
-                        window.wpMcpAiCronStatus.stopPolling(instanceId);
-                    }
-                }
-            });
-        });
+		const instanceId = container.getAttribute('id');
+		const assistantId = config.assistantId;
+		
+		// Stop any existing poller or SSE connection
+		stopNotificationPolling(instanceId);
+		
+		// Initialize/reset job tracking counters
+		notificationPollers.noJobChecks[instanceId] = 0;
+		
+		// Try SSE first if supported and SSE service is available
+		const hasSseService = typeof sseService !== 'undefined' && sseService;
+		if (hasSseService && sseService.isSupported()) {
+			if (window.console && console.log) {
+				console.log('[WP oOS] Attempting SSE connection for notifications on instance:', instanceId);
+			}
+			
+			const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+			const sseUrl = restUrl + '/job-notifications/stream?assistant_id=' + encodeURIComponent(assistantId);
+			
+			const sseConnection = sseService.connect(sseUrl, {
+				onOpen: function() {
+					if (window.console && console.log) {
+						console.log('[WP oOS] SSE connection established for instance:', instanceId);
+					}
+				},
+				eventHandlers: {
+					connected: function(data) {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connected:', data);
+						}
+					},
+					job_counts: function(counts) {
+						// Update job counts cache
+						if (!window.wpMcpAiJobCounts) {
+							window.wpMcpAiJobCounts = {};
+						}
+						window.wpMcpAiJobCounts[instanceId] = counts;
+						
+						// Update cron bar UI
+						updateJobBarDisplay(container, counts);
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] Cron bar updated via SSE:', counts);
+						}
+						
+						// Note: Keep SSE connection open even when no jobs to detect new jobs immediately
+					},
+					notification: function(notification) {
+						// Display notification in chat
+						const state = states.get(instanceId);
+						if (!state) {
+							return;
+						}
+						
+						let prefix = '📋 ';
+						if (notification.status === 'completed') {
+							prefix = '✅ ';
+						} else if (notification.status === 'failed') {
+							prefix = '❌ ';
+						}
+						
+						const message = prefix + notification.message;
+						
+						appendMessage(state.messagesEl, 'system', {
+							text: message
+						});
+						
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE notification received:', notification);
+						}
+					},
+					heartbeat: function() {
+						// Heartbeat received, connection is alive
+					},
+					timeout: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE stream timeout. Reconnecting with polling fallback.');
+						}
+						// Restart with polling
+						stopNotificationPolling(instanceId);
+						startPollingFallback(container, config);
+					},
+					close: function() {
+						if (window.console && console.log) {
+							console.log('[WP oOS] SSE connection closed for instance:', instanceId);
+						}
+					}
+				},
+				onError: function(error) {
+					if (window.console && console.warn) {
+						console.warn('[WP oOS] SSE error, falling back to polling:', error);
+					}
+					// Fall back to polling
+					stopNotificationPolling(instanceId);
+					startPollingFallback(container, config);
+				}
+			});
+			
+			// Store SSE connection for cleanup
+			if (!notificationPollers.sseConnections) {
+				notificationPollers.sseConnections = {};
+			}
+			notificationPollers.sseConnections[instanceId] = sseConnection;
+			
+		} else {
+			// SSE not supported, use polling
+			startPollingFallback(container, config);
+		}
+	}
 
-        observer.observe(container, { attributes: true });
-    }
+	/**
+	 * Start polling for job notifications (fallback mode)
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} config - Chat instance configuration
+	 */
+	function startPollingFallback(container, config) {
+		if (!container || !config) {
+			return;
+		}
 
-    /**
-     * Enhanced init function to include cron status
-     */
-    function initWithCronStatus() {
-        // Call original init
-        init();
+		const instanceId = container.getAttribute('id');
+		
+		if (window.console && console.log) {
+			console.log('[WP oOS] Using polling mode for notifications on instance:', instanceId);
+		}
+		
+		// Initialize backoff state and job tracking
+		notificationPollers.retryDelays[instanceId] = 30000; // Start with 30s base interval
+		notificationPollers.consecutiveErrors[instanceId] = 0;
+		notificationPollers.noJobChecks[instanceId] = 0; // Reset no-job counter
+		
+		// Do initial poll immediately
+		pollJobNotifications(container, config);
+		
+		// Set up polling with dynamic interval
+		function schedulePoll() {
+			const delay = notificationPollers.retryDelays[instanceId] || 30000;
+			
+			notificationPollers.timers[instanceId] = setTimeout(function() {
+				pollJobNotifications(container, config);
+				schedulePoll(); // Schedule next poll
+			}, delay);
+		}
+		
+		schedulePoll();
+	}
 
-        // Initialize cron status for all chat containers after a brief delay
-        // Use requestIdleCallback to avoid blocking main thread
-        setTimeout(function() {
-            domUpdateBatcher.schedule(function() {
-                const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
-                Array.prototype.forEach.call(containers, function(container) {
-                    const instanceId = container.getAttribute('id');
-                    const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
-                    if (config) {
-                        initializeCronStatus(container, config);
-                    }
-                });
-            });
-        }, 500);
-    }
+	/**
+	 * Stop polling or SSE streaming for job notifications
+	 * 
+	 * @param {string} instanceId - Container instance ID
+	 */
+	function stopNotificationPolling(instanceId) {
+		// Stop polling timer if exists
+		if (notificationPollers.timers[instanceId]) {
+			clearTimeout(notificationPollers.timers[instanceId]);
+			delete notificationPollers.timers[instanceId];
+		}
+		
+		// Close SSE connection if exists
+		if (notificationPollers.sseConnections && notificationPollers.sseConnections[instanceId]) {
+			if (notificationPollers.sseConnections[instanceId].close) {
+				notificationPollers.sseConnections[instanceId].close();
+			}
+			delete notificationPollers.sseConnections[instanceId];
+		}
+	}
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initWithCronStatus);
-    } else {
-        initWithCronStatus();
-    }
+	/**
+	 * Update job bar display with counts
+	 * 
+	 * Updates the job status bar UI with current job counts.
+	 * Used by consolidated job-notifications polling to eliminate need for separate cron-status polling.
+	 * 
+	 * Implements intelligent polling lifecycle:
+	 * - Continues polling while jobs are active
+	 * - Stops after 5 consecutive checks with no jobs (2.5 minutes for polling, 10s for SSE)
+	 * - Allows new jobs to be detected before stopping
+	 * 
+	 * @param {HTMLElement} container - Chat container element
+	 * @param {Object} counts - Job counts object with pending, running, completed properties
+	 */
+	function updateJobBarDisplay(container, counts) {
+		if (!container || !counts) {
+			return;
+		}
+
+		const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+		if (!cronStatusEl) {
+			return;
+		}
+
+		const instanceId = container.getAttribute('id');
+		
+		// Track job activity for intelligent polling lifecycle
+		const hasJobs = (counts.pending || 0) > 0 || (counts.running || 0) > 0;
+		
+		if (hasJobs) {
+			// Reset no-job counter when jobs are detected
+			notificationPollers.noJobChecks[instanceId] = 0;
+			notificationPollers.lastJobTime[instanceId] = Date.now();
+		} else {
+			// Increment no-job counter
+			notificationPollers.noJobChecks[instanceId] = (notificationPollers.noJobChecks[instanceId] || 0) + 1;
+			
+			// Stop polling after 5 consecutive checks with no jobs
+			// This gives new jobs time to be detected before shutting down
+			if (notificationPollers.noJobChecks[instanceId] >= 5) {
+				if (window.console && console.log) {
+					console.log('[WP oOS] No jobs for 5 checks. Stopping polling for instance:', instanceId);
+				}
+				stopNotificationPolling(instanceId);
+				// Reset counter for next time polling starts
+				notificationPollers.noJobChecks[instanceId] = 0;
+			}
+		}
+		
+		// Always show status bar to maintain visibility
+		cronStatusEl.removeAttribute('hidden');
+		
+		// Update count elements
+		const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
+		const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
+		const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
+		
+		if (pendingEl) {
+			pendingEl.textContent = counts.pending || 0;
+		}
+		
+		if (runningEl) {
+			runningEl.textContent = counts.running || 0;
+			runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
+			if (counts.running > 0) {
+				runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
+			}
+		}
+		
+		if (completedEl) {
+			completedEl.textContent = counts.completed || 0;
+			completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+			if (counts.completed > 0) {
+				completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+			}
+		}
+	}
+
+/**
+ * Initialize cron status display for a chat container
+ * 
+ * @deprecated since 1.1.0 - Will be removed in version 2.0.0
+ * 
+ * LEGACY MODE: This function is maintained for backwards compatibility only.
+ * The job bar is now updated directly by pollJobNotifications() using consolidated
+ * job counts, eliminating the need for separate cron-status polling.
+ * 
+ * Migration: Remove cron-status-service.js from your enqueues. The chat client
+ * will automatically use consolidated polling or SSE streaming for job updates.
+ * 
+ * This function only runs if cron-status-service.js is still loaded (legacy mode).
+ * 
+ * @param {HTMLElement} container - Chat container element
+ * @param {Object} config - Chat instance configuration
+ */
+function initializeCronStatus(container, config) {
+if (!container || !config) {
+return;
+}
+
+const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+if (!cronStatusEl) {
+return;
+}
+
+// Check if cron status service is available (legacy mode)
+if (typeof window.wpMcpAiCronStatus === 'undefined') {
+	// Modern mode: Using consolidated polling/SSE for job updates (recommended).
+	// No separate cron-status service needed.
+	return;
+}
+
+const instanceId = container.getAttribute('id');
+if (!instanceId) {
+return;
+}
+
+// Build cron status endpoint using global restUrl to avoid cross-domain issues
+// (config.messagesEndpoint might point to an external URL)
+const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
+const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+
+// Don't start polling if endpoint is not available
+if (!cronStatusEndpoint) {
+return;
+}
+
+// Update cron status display (legacy function)
+function updateCronStatusDisplay(data) {
+if (!data || !data.counts) {
+return;
+}
+
+const counts = data.counts;
+
+// Stop notification polling if no active jobs (but keep UI visible)
+if (!hasActiveJobs(instanceId)) {
+stopNotificationPolling(instanceId);
+}
+
+// Always show status bar to maintain visibility
+cronStatusEl.removeAttribute('hidden');
+
+// Update count elements
+const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending span');
+const runningEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-running span');
+const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed span');
+
+if (pendingEl) {
+pendingEl.textContent = counts.pending || 0;
+}
+
+if (runningEl) {
+runningEl.textContent = counts.running || 0;
+runningEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-running';
+if (counts.running > 0) {
+runningEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-running--active';
+}
+}
+
+if (completedEl) {
+completedEl.textContent = counts.completed || 0;
+completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+if (counts.completed > 0) {
+completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+}
+}
+}
+
+// LEGACY MODE: Start polling for cron status with assistant_id for multi-widget isolation
+// This is only used if cron-status-service.js is still enqueued
+const assistantId = config.assistantId || null;
+window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
+
+// Stop polling when chat is destroyed or hidden
+const observer = new MutationObserver(function(mutations) {
+mutations.forEach(function(mutation) {
+if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+if (container.hasAttribute('hidden')) {
+window.wpMcpAiCronStatus.stopPolling(instanceId);
+}
+}
+});
+});
+
+observer.observe(container, { attributes: true });
+}
+
+/**
+ * Enhanced init function to include cron status and job notifications
+ */
+function initWithCronStatus() {
+// Call original init
+init();
+
+// Initialize cron status and notification polling for all chat containers after a brief delay
+// Use requestIdleCallback to avoid blocking main thread
+setTimeout(function() {
+domUpdateBatcher.schedule(function() {
+const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+Array.prototype.forEach.call(containers, function(container) {
+const instanceId = container.getAttribute('id');
+const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+if (config) {
+// Initialize cron status display
+initializeCronStatus(container, config);
+
+// Start polling for job notifications with intelligent backoff
+// Base interval is 30s to match cron status polling
+// Automatically backs off to 5 minutes max on rate limiting
+startNotificationPolling(container, config);
+
+// Stop polling when chat is destroyed or hidden
+const observer = new MutationObserver(function(mutations) {
+mutations.forEach(function(mutation) {
+if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+if (container.hasAttribute('hidden')) {
+stopNotificationPolling(instanceId);
+}
+}
+});
+});
+
+observer.observe(container, { attributes: true });
+}
+});
+});
+}, 500);
+}
+
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', initWithCronStatus);
+} else {
+initWithCronStatus();
+}
 })();

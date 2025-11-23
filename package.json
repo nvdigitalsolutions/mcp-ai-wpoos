@@ -27,6 +27,9 @@
 		"ky": "^1.14.0",
 		"marked": "^17.0.0"
 	},
+	"optionalDependencies": {
+		"@google/genai": "^1.30.0"
+	},
 	"devDependencies": {
 		"@babel/core": "^7.28.5",
 		"@babel/preset-env": "^7.28.5",

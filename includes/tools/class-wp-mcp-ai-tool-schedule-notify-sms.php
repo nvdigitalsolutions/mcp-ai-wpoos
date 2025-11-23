@@ -229,7 +229,14 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the Notify.lk SMS in WordPress cron.', 'wp-mcp-ai' ) );
 		}
 
-		$job_id = WP_MCP_AI_Cron_Manager::record_job( self::CRON_HOOK, $payload, 'single', $timestamp, $user_id );
+		// Extract assistant_id from context for multi-widget isolation.
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Store job_id in payload for result storage later.
+		$payload['_job_id'] = uniqid( 'sms_', true );
+		$job_id             = $payload['_job_id'];
+
+		$job_id = WP_MCP_AI_Cron_Manager::record_job( self::CRON_HOOK, $payload, 'single', $timestamp, $user_id, $job_id, $assistant_id );
 
 		WP_MCP_AI_Logger::log_event(
 			'notifylk_schedule_sms',
@@ -237,6 +244,7 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'job_id'        => $job_id,
 				'user_id'       => $user_id,
+				'assistant_id'  => $assistant_id,
 				'sender_id'     => $sender_id,
 				'recipient'     => $recipient,
 				'scheduled_for' => $schedule_time->setTimezone( new DateTimeZone( 'UTC' ) )->format( DATE_ATOM ),
@@ -271,7 +279,8 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 		$recipient      = isset( $payload['to'] ) ? (string) $payload['to'] : '';
 		$sender_id      = isset( $payload['sender_id'] ) ? (string) $payload['sender_id'] : '';
 
-		$job_id = self::calculate_job_id_for_payload( $payload );
+		// Extract job_id from payload if available.
+		$job_id = isset( $payload['_job_id'] ) ? (string) $payload['_job_id'] : self::calculate_job_id_for_payload( $payload );
 
 		if ( '' === $notify_user_id || '' === $notify_api_key || '' === $message || '' === $recipient || '' === $sender_id ) {
 			WP_MCP_AI_Logger::log_error(
@@ -283,7 +292,11 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 				)
 			);
 			if ( $job_id ) {
-				WP_MCP_AI_Cron_Manager::remove_job( $job_id );
+				// Store failure result before removing job.
+				WP_MCP_AI_Cron_Manager::store_job_result(
+					$job_id,
+					new WP_Error( 'incomplete_payload', __( 'SMS payload was incomplete.', 'wp-mcp-ai' ) )
+				);
 			}
 			return;
 		}
@@ -298,7 +311,7 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 		$type            = isset( $payload['type'] ) ? (string) $payload['type'] : null;
 
 		try {
-			$api->sendSMS(
+			$response = $api->sendSMS(
 				$notify_user_id,
 				$notify_api_key,
 				$message,
@@ -312,6 +325,20 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 				$type
 			);
 
+			// Store successful result.
+			if ( $job_id ) {
+				WP_MCP_AI_Cron_Manager::store_job_result(
+					$job_id,
+					array(
+						'success'    => true,
+						'message_id' => $response ? $response->getData() : null,
+						'recipient'  => $recipient,
+						'sender_id'  => $sender_id,
+						'sent_at'    => time(),
+					)
+				);
+			}
+
 			WP_MCP_AI_Logger::log_event(
 				'notifylk_send_sms',
 				'Dispatched scheduled Notify.lk SMS.',
@@ -322,6 +349,22 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 				)
 			);
 		} catch ( ApiException $exception ) {
+			// Store failure result.
+			if ( $job_id ) {
+				WP_MCP_AI_Cron_Manager::store_job_result(
+					$job_id,
+					new WP_Error(
+						'api_error',
+						$exception->getMessage(),
+						array(
+							'status'     => $exception->getCode(),
+							'recipient'  => $recipient,
+							'sender_id'  => $sender_id,
+						)
+					)
+				);
+			}
+
 			WP_MCP_AI_Logger::log_error(
 				'Notify.lk API error while sending scheduled SMS.',
 				array(
@@ -333,6 +376,21 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 				)
 			);
 		} catch ( \Exception $exception ) {
+			// Store failure result.
+			if ( $job_id ) {
+				WP_MCP_AI_Cron_Manager::store_job_result(
+					$job_id,
+					new WP_Error(
+						'unexpected_error',
+						$exception->getMessage(),
+						array(
+							'recipient' => $recipient,
+							'sender_id' => $sender_id,
+						)
+					)
+				);
+			}
+
 			WP_MCP_AI_Logger::log_error(
 				'Unexpected error while sending scheduled Notify.lk SMS.',
 				array(
@@ -342,10 +400,6 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 					'error'     => $exception->getMessage(),
 				)
 			);
-		}
-
-		if ( $job_id ) {
-			WP_MCP_AI_Cron_Manager::remove_job( $job_id );
 		}
 	}
 

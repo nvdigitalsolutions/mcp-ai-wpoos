@@ -62,22 +62,31 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 		/**
 		 * Record a cron event scheduled through the plugin.
 		 *
-		 * @param string $hook      Cron hook name.
-		 * @param array  $args      Arguments passed to the cron callback.
-		 * @param string $schedule  Schedule slug (or "single" for one-off events).
-		 * @param int    $timestamp Initial timestamp requested for the event.
-		 * @param int    $user_id   User who scheduled the event.
+		 * @param string      $hook         Cron hook name.
+		 * @param array       $args         Arguments passed to the cron callback.
+		 * @param string      $schedule     Schedule slug (or "single" for one-off events).
+		 * @param int         $timestamp    Initial timestamp requested for the event.
+		 * @param int         $user_id      User who scheduled the event.
+		 * @param string|null $custom_id    Optional custom job ID. If provided, this will be used instead of generating an MD5 hash.
+		 *                                   Useful for services that need predictable job IDs for tracking (e.g., veo_xxxxx).
+		 * @param int|null    $assistant_id Optional assistant ID that created this job. Enables multi-widget isolation.
 		 *
 		 * @return string Identifier of the stored job.
 		 */
-		public static function record_job( $hook, $args, $schedule, $timestamp, $user_id ) {
-			$hook      = (string) $hook;
-			$args      = self::normalise_args( $args );
-			$schedule  = $schedule ? (string) $schedule : 'single';
-			$timestamp = (int) $timestamp;
-			$user_id   = (int) $user_id;
+		public static function record_job( $hook, $args, $schedule, $timestamp, $user_id, $custom_id = null, $assistant_id = null ) {
+			$hook         = (string) $hook;
+			$args         = self::normalise_args( $args );
+			$schedule     = $schedule ? (string) $schedule : 'single';
+			$timestamp    = (int) $timestamp;
+			$user_id      = (int) $user_id;
+			$assistant_id = $assistant_id ? absint( $assistant_id ) : 0;
 
-			$job_id = self::generate_job_id( $hook, $args );
+			// Use custom ID if provided, otherwise generate from hook and args.
+			if ( null !== $custom_id && '' !== $custom_id ) {
+				$job_id = sanitize_key( (string) $custom_id );
+			} else {
+				$job_id = self::generate_job_id( $hook, $args );
+			}
 
 			$jobs = self::load_jobs();
 
@@ -92,6 +101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				'first_timestamp' => $first_timestamp,
 				'created_at'      => $created_at,
 				'created_by'      => $user_id,
+				'assistant_id'    => $assistant_id,
 			);
 
 			self::save_jobs( $jobs );
@@ -222,6 +232,64 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 		}
 
 		/**
+		 * Store the result of a completed cron job execution.
+		 *
+		 * This standardized storage mechanism allows cron jobs to persist their execution
+		 * results for later retrieval by chat clients and status services. Enables
+		 * agentic workflows where tools schedule deferred work and return results asynchronously.
+		 *
+		 * @param string     $job_id     Job identifier to store result for.
+		 * @param mixed      $result     Result data (array, WP_Error, or scalar).
+		 * @param int|null   $expiration Optional expiration time in seconds (default: 24 hours).
+		 *
+		 * @return array Stored result data including status and completion time.
+		 */
+		public static function store_job_result( $job_id, $result, $expiration = null ) {
+			if ( null === $expiration ) {
+				$expiration = DAY_IN_SECONDS;
+			}
+
+			$transient_key = 'wp_mcp_ai_cron_result_' . sanitize_key( $job_id );
+
+			$data = array(
+				'job_id'       => $job_id,
+				'result'       => $result,
+				'completed_at' => time(),
+				'status'       => is_wp_error( $result ) ? 'failed' : 'completed',
+			);
+
+			set_transient( $transient_key, $data, absint( $expiration ) );
+
+			// Log for debugging and audit trail.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'cron_job_result_stored',
+					'Cron job execution result stored',
+					array(
+						'job_id'       => $job_id,
+						'status'       => $data['status'],
+						'has_error'    => is_wp_error( $result ),
+						'completed_at' => $data['completed_at'],
+					)
+				);
+			}
+
+			return $data;
+		}
+
+		/**
+		 * Retrieve the stored result of a cron job execution.
+		 *
+		 * @param string $job_id Job identifier to retrieve result for.
+		 *
+		 * @return array|false Result data array or false if not found/expired.
+		 */
+		public static function get_job_result( $job_id ) {
+			$transient_key = 'wp_mcp_ai_cron_result_' . sanitize_key( $job_id );
+			return get_transient( $transient_key );
+		}
+
+		/**
 		 * Generate a stable identifier for a cron job.
 		 *
 		 * @param string $hook Cron hook name.
@@ -271,6 +339,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 					'first_timestamp' => isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0,
 					'created_at'      => isset( $job['created_at'] ) ? (int) $job['created_at'] : 0,
 					'created_by'      => isset( $job['created_by'] ) ? (int) $job['created_by'] : 0,
+					'assistant_id'    => isset( $job['assistant_id'] ) ? (int) $job['assistant_id'] : 0,
 				);
 
 				if ( ! isset( $job['job_id'] ) || $job_id !== $job['job_id'] ) {

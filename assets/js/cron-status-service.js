@@ -48,7 +48,7 @@
 			limit = limit || 10;
 
 			// Build URL with parameters
-		let url = endpoint + '?limit=' + limit;
+		let url = endpoint + '?limit=' + limit + '&context=chat';
 		
 		// Add assistant_id for multi-widget isolation
 		if (assistantId) {

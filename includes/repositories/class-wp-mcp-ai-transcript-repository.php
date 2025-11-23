@@ -100,7 +100,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		$where_clauses = array( 'cct_author_id = %d' );
+		$where_clauses = array( 'user_id = %d' );
 		$where_values  = array( $user_id );
 
 		if ( $assistant_id > 0 ) {
@@ -147,7 +147,13 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Get a single transcript session with all messages.
 	 *
-	 * @param int    $user_id      User identifier.
+	 * Retrieves all messages in a session by session_key, regardless of user_id.
+	 * This allows fetching complete conversation history even when messages were
+	 * created in different contexts (e.g., cron jobs with user_id=0).
+	 *
+	 * Authorization is enforced at the REST API layer, not in this repository method.
+	 *
+	 * @param int    $user_id      User identifier (kept for API compatibility, not used in query).
 	 * @param string $session_key  Session key.
 	 * @param int    $assistant_id Optional assistant ID to filter by.
 	 * @return array|WP_Error Array of transcript rows or WP_Error.
@@ -172,11 +178,13 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		$table        = $this->get_table_name();
-		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
 
-		$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
-		$where_values  = array( $session_key, $user_id );
+		// Query by session_key only - retrieve ALL messages in this session.
+		// This ensures complete conversation history even when messages have different user_id values
+		// (e.g., messages created by cron with user_id=0).
+		$where_clauses = array( 'session_key = %s' );
+		$where_values  = array( $session_key );
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %d';
@@ -194,32 +202,6 @@ class WP_MCP_AI_Transcript_Repository {
 		$query = $wpdb->prepare( $query_template, $where_values );
 
 		$rows = $wpdb->get_results( $query, ARRAY_A );
-
-		// If no rows found with cct_author_id, try with user_id column as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
-		if ( empty( $rows ) ) {
-			// Build fallback query using user_id instead of cct_author_id.
-			$fallback_where_clauses = array( 'session_key = %s', 'user_id = %d' );
-			$fallback_where_values  = array( $session_key, $user_id );
-
-			if ( $assistant_id > 0 ) {
-				$fallback_where_clauses[] = 'assistant_id = %d';
-				$fallback_where_values[]  = $assistant_id;
-			}
-
-			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
-
-			$select_fields           = $this->get_select_fields();
-			$fallback_query_template = "SELECT {$select_fields}
-         FROM {$table}
-         WHERE {$fallback_where_sql}
-         ORDER BY cct_created ASC, id ASC";
-
-			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
-
-			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
-		}
 
 		if ( empty( $rows ) ) {
 			return new WP_Error(
@@ -252,29 +234,15 @@ class WP_MCP_AI_Transcript_Repository {
 			return false;
 		}
 
-		// First try deleting with cct_author_id.
+		// Delete using user_id field (the actual CCT field name).
 		$deleted = $wpdb->delete(
 			$table,
 			array(
-				'session_key'   => $session_key,
-				'cct_author_id' => $user_id,
+				'session_key' => $session_key,
+				'user_id'     => $user_id,
 			),
 			array( '%s', '%d' )
 		);
-
-		// If no rows deleted with cct_author_id, try with user_id as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
-		if ( false !== $deleted && 0 === $deleted ) {
-			$deleted = $wpdb->delete(
-				$table,
-				array(
-					'session_key' => $session_key,
-					'user_id'     => $user_id,
-				),
-				array( '%s', '%d' )
-			);
-		}
 
 		return $deleted;
 	}
@@ -285,14 +253,16 @@ class WP_MCP_AI_Transcript_Repository {
 	 * @return string SQL SELECT fields.
 	 */
 	private function get_select_fields() {
-		return "request_payload,
-                response_payload,
-                metadata,
-                request_started_at,
-                response_completed_at,
-                cct_created,
-                assistant_id,
-                assistant_model,
-                latency_ms";
+		return "id,
+		        user_id,
+		        request_payload,
+		        response_payload,
+		        metadata,
+		        request_started_at,
+		        response_completed_at,
+		        cct_created,
+		        assistant_id,
+		        assistant_model,
+		        latency_ms";
 	}
 }

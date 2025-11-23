@@ -455,15 +455,31 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
-				WP_MCP_AI_Logger::log_warning(
-					'Shortcode access denied due to insufficient capability',
-					array(
-						'assistant_id'        => $assistant_id,
-						'required_capability' => $capability,
-						'user_id'             => get_current_user_id(),
-						'user_capabilities'   => wp_get_current_user()->allcaps ?? array(),
-					)
-				);
+				// Only log as warning if user is authenticated but lacks capability (potential security issue).
+				// Don't log for unauthenticated users viewing public pages (expected behavior).
+				$user_id = get_current_user_id();
+				if ( $user_id > 0 ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Shortcode access denied: authenticated user lacks required capability',
+						array(
+							'assistant_id'        => $assistant_id,
+							'required_capability' => $capability,
+							'user_id'             => $user_id,
+							'user_capabilities'   => wp_get_current_user()->allcaps ?? array(),
+							'allow_guests'        => $allow_guests,
+						)
+					);
+				} else {
+					// Log as debug-level for unauthenticated access (expected on public pages).
+					WP_MCP_AI_Logger::log_debug(
+						'Shortcode access denied for unauthenticated user (expected behavior)',
+						array(
+							'assistant_id'        => $assistant_id,
+							'required_capability' => $capability,
+							'allow_guests'        => $allow_guests,
+						)
+					);
+				}
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
 			}
 

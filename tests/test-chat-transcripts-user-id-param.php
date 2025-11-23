@@ -177,6 +177,30 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that admin can query guest transcripts with user_id=0.
+	 *
+	 * This is a critical edge case: when an admin tries to view guest transcripts,
+	 * the system must NOT override user_id=0 with the admin's user_id.
+	 */
+	public function test_admin_can_query_guest_transcripts() {
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		wp_set_current_user( $admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_param( 'user_id', 0 ); // Query guest transcripts.
+		$request->set_param( 'per_page', 20 );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status(), 'Admin should be able to query guest transcripts with user_id=0' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'sessions', $data, 'Response should include sessions array' );
+		$this->assertArrayHasKey( 'total', $data, 'Response should include total count' );
+	}
+
+	/**
 	 * Test that user_id parameter works with assistant_id filtering.
 	 */
 	public function test_user_id_works_with_assistant_id_filter() {

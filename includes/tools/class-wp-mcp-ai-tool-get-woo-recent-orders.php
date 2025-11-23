@@ -17,7 +17,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Provides a summary of recent WooCommerce orders.
  */
-class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -150,5 +150,44 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'requires-capability',  // Requires 'manage_woocommerce' or 'view_woocommerce_reports' capability.
 			'pii-data',             // Returns personally identifiable information.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip customer PII from order data before sending to LLM.
+		// The LLM needs order status and totals for analysis, but doesn't
+		// need customer names or email addresses which should remain private.
+		$sanitized = array();
+
+		foreach ( $result as $order ) {
+			if ( ! is_array( $order ) ) {
+				$sanitized[] = $order;
+				continue;
+			}
+
+			$sanitized_order = $order;
+
+			// Remove customer email - this is PII.
+			unset( $sanitized_order['billing_email'] );
+
+			// Remove customer name - this is PII.
+			unset( $sanitized_order['billing_name'] );
+
+			// Keep essential fields for LLM analysis:
+			// - id, order_number: Order identifiers
+			// - status: Order state for workflow decisions
+			// - total, currency: Financial data for reporting
+			// - created_at: Temporal analysis
+
+			$sanitized[] = $sanitized_order;
+		}
+
+		return $sanitized;
 	}
 }

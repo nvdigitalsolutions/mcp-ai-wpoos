@@ -15,10 +15,11 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 /**
  * Generates videos from text prompts using Google's Veo models.
  * 
- * Uses Veo 3.1 by default with automatic fallback to Veo 2.0 when:
- * - Veo 3.1 is unavailable
+ * Uses Veo 2.0 by default (stable, 720p) with automatic fallback to Veo 3.1 when:
+ * - Veo 2.0 is unavailable
  * - Quota limits are reached
  * - Rate limits are exceeded
+ * Users can explicitly request Veo 3.1 for 1080p resolution support.
  */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
@@ -39,7 +40,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Note: Veo 3.1 supports up to 1080p resolution and 4-8 second videos; Veo 2.0 supports up to 720p and 5-8 second videos. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Defaults to Veo 2.0 (stable, 720p) with automatic fallback to Veo 3.1 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Optionally generates background music using Gemini Lyria to match the video mood and duration. Note: Veo 2.0 supports 5-8 second videos at 720p; Veo 3.1 supports up to 1080p resolution with 8-second duration requirement. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -55,10 +56,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8 for Veo 3.1, 5-8 for Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
-					'minimum'     => 4,
+					'description' => __( 'Video duration in seconds (5-8 for both models). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'minimum'     => 5,
 					'maximum'     => 8,
-					'default'     => 4,
+					'default'     => 5,
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
@@ -68,7 +69,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default, supported by both models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
@@ -99,8 +100,20 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'wp-mcp-ai' ),
-					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
+					'description' => __( 'Force a specific Veo model: "veo-2.0" (default, stable 720p) or "veo-3.1" (supports 1080p). If not specified, automatically uses Veo 2.0 with fallback to Veo 3.1 on quota/availability issues.', 'wp-mcp-ai' ),
+					'enum'        => array( 'veo-2.0', 'veo-3.1' ),
+					'default'     => 'veo-2.0',
+				),
+				'background_music'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional. Generate background music for the video. Provide a music description (e.g., "upbeat electronic", "calm piano", "cinematic orchestral"). The music will be generated to match the video duration.', 'wp-mcp-ai' ),
+				),
+				'music_volume'       => array(
+					'type'        => 'number',
+					'description' => __( 'Background music volume (0.1-1.0). Default is 0.3 for subtle background. Only used if background_music is specified. Note: Volume adjustment requires post-processing; this parameter is reserved for future implementation when audio mixing is available.', 'wp-mcp-ai' ),
+					'minimum'     => 0.1,
+					'maximum'     => 1.0,
+					'default'     => 0.3,
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -159,6 +172,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'user_id'      => $user_id,
 		);
 
+		// Include assistant_id from context for multi-widget isolation in cron status tracking.
+		if ( isset( $context['assistant_id'] ) ) {
+			$generation_args['assistant_id'] = absint( $context['assistant_id'] );
+		}
+
 		// Add duration if provided (let service apply default if not provided).
 		if ( isset( $arguments['duration'] ) ) {
 			$generation_args['duration'] = absint( $arguments['duration'] );
@@ -199,6 +217,25 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			return $result;
 		}
 
+		// Generate background music if requested.
+		$background_music = isset( $arguments['background_music'] ) ? trim( $arguments['background_music'] ) : '';
+		$music_result     = null;
+
+		if ( ! empty( $background_music ) ) {
+			$music_result = $this->generate_background_music( $background_music, $result['duration'], $user_id, $save_to_media );
+			// Don't fail video generation if music fails - just note it.
+			if ( is_wp_error( $music_result ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'tool_warning',
+					'Background music generation failed for video',
+					array(
+						'error' => $music_result->get_error_message(),
+					)
+				);
+				$music_result = null;
+			}
+		}
+
 		// Save to Media Library if requested.
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
@@ -209,7 +246,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				return $save_result;
 			}
 
-			return array(
+			$response = array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
@@ -225,13 +262,22 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					$save_result['attachment_id']
 				),
 			);
+
+			// Add music info to response if generated.
+			if ( $music_result && isset( $music_result['attachment_id'] ) ) {
+				$response['music_attachment_id'] = $music_result['attachment_id'];
+				$response['music_url']            = $music_result['audio_url'];
+				$response['message']             .= ' ' . __( 'Background music also generated.', 'wp-mcp-ai' );
+			}
+
+			return $response;
 		}
 
 		// Return video data URL.
 		$video_base64 = base64_encode( $result['video_data'] );
 		$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
-		return array(
+		$response = array(
 			'success'      => true,
 			'video_url'    => $data_url,
 			'prompt'       => $result['prompt'],
@@ -242,6 +288,94 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'provider'     => $result['provider'],
 			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
 		);
+
+		// Add music info to response if generated.
+		if ( $music_result && isset( $music_result['audio_url'] ) ) {
+			$response['music_url'] = $music_result['audio_url'];
+			$response['message']  .= ' ' . __( 'Background music also generated.', 'wp-mcp-ai' );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Generate background music for the video.
+	 *
+	 * SoC: Delegates to music service for music generation.
+	 *
+	 * @param string $music_description Music description/prompt.
+	 * @param int    $duration          Video duration in seconds.
+	 * @param int    $user_id           User ID for permission context (reserved for future use).
+	 * @param bool   $save_to_media     Whether to save to media library.
+	 * @return array|WP_Error Music generation result or error.
+	 */
+	protected function generate_background_music( $music_description, $duration, $user_id, $save_to_media ) {
+		// Check if music service is available.
+		if ( ! class_exists( 'WP_MCP_AI_Gemini_Music_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
+		}
+
+		$music_service = new WP_MCP_AI_Gemini_Music_Service();
+
+		// Build music prompt optimized for video background.
+		$music_prompt = sprintf(
+			'Background music: %s. Loopable, instrumental only, no vocals, suitable for video background',
+			$music_description
+		);
+
+		// Try primary provider (segmind) first, fallback to aimlapi if it fails.
+		$providers = array( 'segmind', 'aimlapi' );
+		$result    = null;
+
+		foreach ( $providers as $provider ) {
+			// Generate music matching video duration.
+			$service_options = array(
+				'duration'     => min( $duration, 120 ), // Cap at service max.
+				'mode'         => 'balanced',
+				'api_provider' => $provider,
+				'timeout'      => 90,
+			);
+
+			$result = $music_service->generate_music( $music_prompt, $service_options );
+
+			// Success - break loop.
+			if ( ! is_wp_error( $result ) ) {
+				break;
+			}
+
+			// Log failure and try next provider.
+			WP_MCP_AI_Logger::log_event(
+				'tool_info',
+				'Music provider failed, trying fallback',
+				array(
+					'failed_provider' => $provider,
+					'error'           => $result->get_error_message(),
+				)
+			);
+		}
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Save to media library if requested and URL available.
+		if ( $save_to_media && ! empty( $result['audio_url'] ) ) {
+			/* translators: %s: date and time */
+			$title = sprintf( __( 'Video Background Music - %s', 'wp-mcp-ai' ), gmdate( 'Y-m-d H:i' ) );
+			$attachment_id = $music_service->save_to_media_library(
+				$result['audio_url'],
+				$title,
+				$music_prompt,
+				$result['format'] ?? 'mp3'
+			);
+
+			if ( ! is_wp_error( $attachment_id ) ) {
+				$result['attachment_id'] = $attachment_id;
+				$result['audio_url']     = wp_get_attachment_url( $attachment_id );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -281,14 +415,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return bool True if async mode should be used.
 	 */
 	protected function should_use_async( $arguments, $context = array() ) {
-		// CRITICAL: If already running in async executor context, do NOT use tool-level async.
-		// This prevents double-async execution where orchestrator queues the tool async,
-		// then the tool itself queues another async job. This causes the client to get
-		// a nested async response it doesn't know how to handle.
-		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
-			return false;
-		}
-
 		// Check if explicitly set in arguments.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
@@ -296,9 +422,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Default to async for better reliability.
 		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
-		// NOTE: We no longer check agentic_loop here because the REST API orchestrator
-		// will handle async execution properly via the async executor when the tool
-		// is marked as 'background-only', which is the correct pattern for long-running tools.
+		// This tool uses its own async mechanism (veo_xxx polling via wp_mcp_ai_poll_veo_video cron)
+		// instead of relying on the orchestrator's async executor.
 		return true;
 	}
 
@@ -434,11 +559,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'external-api',         // Makes external API requests.
 			'network-dependent',    // Requires internet connection.
 			'consumes-tokens',      // Uses AI credits.
-			'async',                // Takes significant time (60-120 seconds).
-			'long-running',         // Video generation is async.
-			'background-only',      // Must run in background even in agentic loops (prevents HTTP timeouts).
+			// NOTE: async/long-running/may-timeout/background-only flags removed to prevent orchestrator wrapping.
+			// This tool implements its own robust async mechanism (veo_xxx polling via wp_mcp_ai_poll_veo_video cron).
+			// The tool's should_use_async() method internally determines when to use async mode.
+			// If the orchestrator wraps this tool in async_xxx execution, it creates double-async nesting
+			// where the tool can't use its own polling mechanism properly.
 			'rate-limited',         // Subject to API rate limits (10 RPM for preview, higher for paid tiers).
-			'may-timeout',          // May exceed typical HTTP timeouts.
 		);
 	}
 

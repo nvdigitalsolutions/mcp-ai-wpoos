@@ -58,13 +58,15 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Only includes jobs created by the current user or accessible to admins.
 	 * Now includes async tool execution jobs.
 	 * Supports filtering by assistant_id for multi-widget isolation.
+	 * Supports filtering by context to hide internal jobs from chat clients.
 	 *
 	 * @param int      $user_id User ID to filter jobs by (0 for all if admin).
 	 * @param int      $limit   Maximum number of jobs to return (default 10).
 	 * @param int|null $assistant_id Optional assistant ID to filter jobs for specific chat widget.
+	 * @param string   $context Context for filtering: 'chat' excludes internal async jobs, 'admin' shows all.
 	 * @return array Array of job status objects.
 	 */
-	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null ) {
+	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null, $context = 'admin' ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -76,14 +78,35 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Prune stale jobs first.
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		// Get all jobs.
+		// Get all jobs from three sources.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		// Get async tool jobs with optional assistant filter.
-		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
+		// When context is 'chat', filter out internal infrastructure jobs.
+		// Internal jobs are those with specific system hooks that are not user-initiated.
+		// User-created jobs (via create_cron_job tool, etc.) should always be visible.
+		if ( 'chat' === $context ) {
+			$jobs = $this->filter_internal_jobs( $jobs );
+		}
 
-		// Get video generation jobs.
+		// Get async tool jobs and video jobs with optional assistant filter.
+		// Include async tool jobs in both admin and chat contexts so jobs created via chat are visible.
+		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
+
+		// Log job counts for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'cron_status_summary_requested',
+			'Cron status summary retrieved',
+			array(
+				'user_id'          => $user_id,
+				'is_admin'         => $is_admin,
+				'assistant_id'     => $assistant_id,
+				'context'          => $context,
+				'regular_jobs'     => count( $jobs ),
+				'async_tool_jobs'  => count( $async_jobs ),
+				'video_jobs'       => count( $video_jobs ),
+			)
+		);
 
 		// Merge async tool jobs, video jobs, and regular cron jobs.
 		$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
@@ -104,6 +127,14 @@ class WP_MCP_AI_Cron_Status_Service {
 			$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
 			if ( ! $is_admin && $created_by !== $user_id ) {
 				continue;
+			}
+
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0;
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
 			}
 
 			// Check if this is an async tool job.
@@ -127,12 +158,13 @@ class WP_MCP_AI_Cron_Status_Service {
 
 				// Format job data.
 				$job_data = array(
-					'job_id'     => $job_id,
-					'hook'       => $hook,
-					'status'     => $status,
-					'next_run'   => null,
-					'created_by' => $created_by,
-					'admin_url'  => $this->get_admin_url( $job_id ),
+					'job_id'       => $job_id,
+					'hook'         => $hook,
+					'status'       => $status,
+					'next_run'     => null,
+					'created_by'   => $created_by,
+					'assistant_id' => isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0,
+					'admin_url'    => $this->get_admin_url( $job_id ),
 				);
 
 				if ( 'pending' === $status && $event ) {
@@ -145,6 +177,16 @@ class WP_MCP_AI_Cron_Status_Service {
 						'timestamp' => $first_timestamp,
 						'relative'  => $this->format_relative_time( $first_timestamp, true ),
 					);
+
+					// Check for stored result.
+					$result = WP_MCP_AI_Cron_Manager::get_job_result( $job_id );
+					if ( $result ) {
+						$job_data['has_result'] = true;
+						$job_data['result']     = $result['result'];
+						if ( isset( $result['status'] ) ) {
+							$job_data['status'] = $result['status'];
+						}
+					}
 				}
 			}
 
@@ -303,8 +345,9 @@ class WP_MCP_AI_Cron_Status_Service {
 				}
 			}
 
-			// Add user_id for consistency.
-			$metadata['created_by'] = $job_user_id;
+			// Add user_id and assistant_id for consistency.
+			$metadata['created_by']   = $job_user_id;
+			$metadata['assistant_id'] = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
 
 			$jobs[ $metadata['job_id'] ] = $metadata;
 		}
@@ -373,10 +416,11 @@ class WP_MCP_AI_Cron_Status_Service {
 				}
 			}
 
-			// Add user_id for consistency.
-			$metadata['created_by'] = $job_user_id;
-			$metadata['tool_slug']  = self::VIDEO_GENERATION_TOOL_SLUG;
-			$metadata['type']       = self::VIDEO_GENERATION_JOB_TYPE;
+			// Add user_id and assistant_id for consistency.
+			$metadata['created_by']   = $job_user_id;
+			$metadata['assistant_id'] = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+			$metadata['tool_slug']    = self::VIDEO_GENERATION_TOOL_SLUG;
+			$metadata['type']         = self::VIDEO_GENERATION_JOB_TYPE;
 
 			$jobs[ $metadata['job_id'] ] = $metadata;
 		}
@@ -472,12 +516,14 @@ class WP_MCP_AI_Cron_Status_Service {
 	 *
 	 * Now includes async tool jobs in counts.
 	 * Supports filtering by assistant_id for multi-widget isolation.
+	 * Supports filtering by context to hide internal jobs from chat clients.
 	 *
 	 * @param int      $user_id User ID to filter by.
 	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @param string   $context Context for filtering: 'chat' excludes internal async jobs, 'admin' shows all.
 	 * @return array Array with counts: pending, running, completed, failed, total.
 	 */
-	public function get_status_counts( $user_id = 0, $assistant_id = null ) {
+	public function get_status_counts( $user_id = 0, $assistant_id = null, $context = 'admin' ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -488,10 +534,16 @@ class WP_MCP_AI_Cron_Status_Service {
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
+		// When context is 'chat', filter out internal infrastructure jobs.
+		if ( 'chat' === $context ) {
+			$jobs = $this->filter_internal_jobs( $jobs );
+		}
+
 		// Include async tool jobs and video jobs with optional assistant filter.
+		// Include async tool jobs in both admin and chat contexts so jobs created via chat are visible.
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
-		$all_jobs   = array_merge( $jobs, $async_jobs, $video_jobs );
+		$all_jobs           = array_merge( $jobs, $async_jobs, $video_jobs );
 
 		$counts = array(
 			'pending'   => 0,
@@ -507,9 +559,24 @@ class WP_MCP_AI_Cron_Status_Service {
 				continue;
 			}
 
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $job['assistant_id'] ) ? absint( $job['assistant_id'] ) : 0;
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
+			}
+
 			// Check if async tool job.
 			if ( isset( $job['tool_slug'] ) && isset( $job['status'] ) ) {
 				$status = $job['status'];
+				
+				// Validate async tool job status by checking if cron event still exists.
+				// This prevents stale 'pending', 'running', or 'polling' jobs from being counted
+				// when the underlying WordPress cron event has already executed or failed.
+				if ( 'pending' === $status || 'running' === $status || 'polling' === $status ) {
+					$status = $this->validate_async_job_status( $job, $status );
+				}
 			} else {
 				$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
 				$args            = isset( $job['args'] ) ? $job['args'] : array();
@@ -534,7 +601,170 @@ class WP_MCP_AI_Cron_Status_Service {
 			++$counts['total'];
 		}
 
+		// Log final counts for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'cron_status_counts_calculated',
+			'Cron status counts calculated',
+			array(
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+				'context'      => $context,
+				'counts'       => $counts,
+				'total_jobs'   => count( $all_jobs ),
+				'regular'      => count( $jobs ),
+				'async'        => count( $async_jobs ),
+				'video'        => count( $video_jobs ),
+			)
+		);
+
 		return $counts;
+	}
+
+	/**
+	 * Filter out internal infrastructure jobs from the jobs array
+	 *
+	 * Internal jobs are those created by the system for async tool execution
+	 * and cleanup. User-initiated jobs should always be visible:
+	 * - User-created cron jobs (via create_cron_job tool)
+	 * - Video generation jobs (user explicitly requested)
+	 *
+	 * @param array $jobs Array of jobs to filter.
+	 * @return array Filtered array with internal jobs removed.
+	 */
+	protected function filter_internal_jobs( $jobs ) {
+		if ( empty( $jobs ) ) {
+			return $jobs;
+		}
+
+		// List of internal system hooks that should be hidden from chat clients.
+		// Note: wp_mcp_ai_poll_veo_video is NOT included because video generation
+		// is a user-initiated action, not internal infrastructure.
+		$internal_hooks = array(
+			'wp_mcp_ai_async_tool_execution', // Async tool executor (internal infrastructure).
+			'wp_mcp_ai_cleanup_async_results', // Cleanup job (internal maintenance).
+		);
+
+		$filtered_jobs = array();
+
+		foreach ( $jobs as $job_id => $job ) {
+			$hook = isset( $job['hook'] ) ? $job['hook'] : '';
+
+			// Skip internal infrastructure jobs.
+			if ( in_array( $hook, $internal_hooks, true ) ) {
+				continue;
+			}
+
+			$filtered_jobs[ $job_id ] = $job;
+		}
+
+		return $filtered_jobs;
+	}
+
+	/**
+	 * Validate async job status by checking if WordPress cron event still exists
+	 *
+	 * For async tool jobs with 'pending' or 'running' status, this method verifies
+	 * that the underlying WordPress cron event is still scheduled. If the cron event
+	 * doesn't exist, the job is likely stale (completed/failed without updating metadata).
+	 *
+	 * This fixes the issue where jobs show as "running" in the chat client even though
+	 * the cron event has already executed or been removed.
+	 *
+	 * Handles both:
+	 * - Regular async tool jobs (hook: wp_mcp_ai_async_tool_execution)
+	 * - Video generation jobs (hook: wp_mcp_ai_poll_veo_video)
+	 *
+	 * @param array  $job    Async tool job metadata.
+	 * @param string $status Current status from metadata.
+	 * @return string Validated status (may be changed to 'failed' if stale).
+	 */
+	protected function validate_async_job_status( $job, $status ) {
+		// Get job_id to check for corresponding cron event.
+		$job_id = isset( $job['job_id'] ) ? $job['job_id'] : '';
+		
+		if ( empty( $job_id ) ) {
+			return $status;
+		}
+
+		// Determine which cron hook to check based on job type.
+		$job_type = isset( $job['type'] ) ? $job['type'] : '';
+		
+		if ( self::VIDEO_GENERATION_JOB_TYPE === $job_type ) {
+			// Video generation jobs use wp_mcp_ai_poll_veo_video hook.
+			$cron_hook = 'wp_mcp_ai_poll_veo_video';
+		} else {
+			// Regular async tool jobs use wp_mcp_ai_async_tool_execution hook.
+			$cron_hook = 'wp_mcp_ai_async_tool_execution';
+		}
+
+		// Check if WordPress cron event still exists for this job.
+		$event = wp_get_scheduled_event( $cron_hook, array( $job_id ) );
+
+		// If cron event exists, job is still active - return status unchanged.
+		if ( false !== $event ) {
+			WP_MCP_AI_Logger::log_event(
+				'async_job_validated_active',
+				sprintf( 'Async job %s validated as active (cron event exists)', $job_id ),
+				array(
+					'job_id'         => $job_id,
+					'job_type'       => $job_type,
+					'cron_hook'      => $cron_hook,
+					'status'         => $status,
+					'next_run'       => $event->timestamp,
+					'seconds_until'  => $event->timestamp - time(),
+				)
+			);
+			return $status;
+		}
+
+		// No cron event exists - check if job is stale.
+		// Check how long the job has been in this state.
+		$queued_at  = isset( $job['queued_at'] ) ? absint( $job['queued_at'] ) : 0;
+		$started_at = isset( $job['started_at'] ) ? absint( $job['started_at'] ) : 0;
+		
+		// Use started_at if available (running status), otherwise queued_at (pending/polling status).
+		$timestamp = $started_at > 0 ? $started_at : $queued_at;
+		
+		// If job was queued/started more than 10 minutes ago and no cron event exists,
+		// consider it failed (likely the cron event executed but didn't update metadata,
+		// or the cron event was removed/never ran).
+		$stale_threshold = 10 * MINUTE_IN_SECONDS;
+		$age = $timestamp > 0 ? ( time() - $timestamp ) : 0;
+		
+		if ( $timestamp > 0 && $age > $stale_threshold ) {
+			WP_MCP_AI_Logger::log_event(
+				'async_job_marked_as_failed',
+				sprintf( 'Async job %s marked as failed (stale, no cron event)', $job_id ),
+				array(
+					'job_id'     => $job_id,
+					'job_type'   => $job_type,
+					'cron_hook'  => $cron_hook,
+					'old_status' => $status,
+					'timestamp'  => $timestamp,
+					'age'        => $age,
+				)
+			);
+			
+			return 'failed';
+		}
+		
+		// Job is recent (< 10 minutes) and no cron event exists.
+		// This could be normal - cron might be about to run, or job might have just been queued.
+		// Keep original status for now.
+		WP_MCP_AI_Logger::log_event(
+			'async_job_validated_recent',
+			sprintf( 'Async job %s has no cron event but is recent (< 10 min)', $job_id ),
+			array(
+				'job_id'     => $job_id,
+				'job_type'   => $job_type,
+				'cron_hook'  => $cron_hook,
+				'status'     => $status,
+				'timestamp'  => $timestamp,
+				'age'        => $age,
+			)
+		);
+
+		return $status;
 	}
 
 	/**
@@ -673,6 +903,19 @@ class WP_MCP_AI_Cron_Status_Service {
 		$event           = wp_get_scheduled_event( $hook, $args );
 		$job['status']   = $this->determine_job_status( $event, $first_timestamp );
 		$job['next_run'] = $event ? $event->timestamp : null;
+
+		// Check for stored result.
+		$result = WP_MCP_AI_Cron_Manager::get_job_result( $job_id );
+		if ( $result ) {
+			$job['has_result'] = true;
+			$job['result']     = $result['result'];
+			if ( isset( $result['completed_at'] ) ) {
+				$job['completed_at'] = $result['completed_at'];
+			}
+			if ( isset( $result['status'] ) ) {
+				$job['status'] = $result['status'];
+			}
+		}
 
 		// Add admin URL.
 		$job['admin_url'] = $this->get_admin_url( $job_id );

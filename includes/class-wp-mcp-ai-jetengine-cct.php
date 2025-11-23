@@ -238,8 +238,8 @@ class WP_MCP_AI_JetEngine_CCT {
 			'create_index'        => true,
 			'hide_field_names'    => false,
 			'rest_get_enabled'    => true,
-			'rest_put_enabled'    => false,
-			'rest_post_enabled'   => false,
+			'rest_put_enabled'    => true,
+			'rest_post_enabled'   => true,
 			'rest_delete_enabled' => false,
 			'rest_get_access'     => 'manage_options',
 			'rest_put_access'     => 'edit_posts',
@@ -311,8 +311,10 @@ class WP_MCP_AI_JetEngine_CCT {
 				10003,
 				'assistant_id',
 				__( 'Assistant ID', 'wp-mcp-ai' ),
-				'text',
+				'number',
 				array(
+					'min'         => 0,
+					'step'        => 1,
 					'description' => __( 'Internal assistant identifier handling the request.', 'wp-mcp-ai' ),
 				)
 			),

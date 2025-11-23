@@ -263,6 +263,22 @@ add_action( 'wp_mcp_ai_job_started', function( $job_id, $metadata ) {
 - Heartbeat every 15 seconds to keep connection alive
 - Consider using Redis for job status cache in high-traffic scenarios
 
+### Client-Side Polling (Chat UI)
+- Base polling interval: 30 seconds (matches cron status polling)
+- Exponential backoff on 429 errors (doubles up to 5 minutes max)
+- Automatically resets to base interval on successful fetch
+- Polls stop when chat container is hidden
+- Tracks consecutive errors for debugging
+
+The chat client polls the `/job-notifications` endpoint to check for completed async jobs:
+
+```javascript
+// Polling behavior:
+// - Normal: Every 30 seconds
+// - After 429: 60s → 2m → 4m → 5m (max)
+// - On success: Reset to 30s
+```
+
 ### Webhooks
 - Delivered asynchronously via WP-Cron
 - 10-second timeout per webhook

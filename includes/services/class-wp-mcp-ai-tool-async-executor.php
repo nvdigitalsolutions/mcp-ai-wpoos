@@ -95,9 +95,35 @@ class WP_MCP_AI_Tool_Async_Executor {
 	protected $logger = null;
 
 	/**
-	 * Initialize the executor and register hooks
+	 * Static flag to track if hooks have been registered.
+	 * Ensures init() is idempotent and can be called multiple times safely.
+	 * 
+	 * Note: PHP (which WordPress runs on) is single-threaded, so this static
+	 * flag is safe from race conditions. Each HTTP/cron request has its own
+	 * process and flag state. During tests, use @runInSeparateProcess or
+	 * reset the flag via reflection in setUp().
+	 *
+	 * @var bool
+	 */
+	protected static $hooks_registered = false;
+
+	/**
+	 * Initialize the executor and register hooks.
+	 * 
+	 * This method is idempotent - it can be called multiple times safely.
+	 * Hooks are only registered once per request, even if init() is called
+	 * multiple times or from different executor instances.
+	 * 
+	 * This is critical for WordPress cron execution where the executor must
+	 * register its cron hook handler on every request, not just the first time
+	 * an instance is created.
 	 */
 	public function init() {
+		// Only register hooks once per request, even if called multiple times.
+		if ( self::$hooks_registered ) {
+			return;
+		}
+
 		add_action( self::CRON_HOOK, array( $this, 'execute_async_tool' ), 10, 1 );
 
 		// Cleanup expired results periodically.
@@ -115,10 +141,15 @@ class WP_MCP_AI_Tool_Async_Executor {
 					array(),
 					'hourly',
 					$cleanup_timestamp,
-					0 // System-created job.
+					0,    // System-created job.
+					null, // No custom ID for system jobs.
+					0     // No assistant for system jobs.
 				);
 			}
 		}
+
+		// Mark hooks as registered for this request.
+		self::$hooks_registered = true;
 	}
 
 	/**
@@ -180,13 +211,16 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Record cron job in cron manager for visibility and management.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
 			WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_HOOK,
 				array( $job_id ),
 				'single',
 				$timestamp,
-				$user_id
+				$user_id,
+				$job_id,  // Use the async_xxx job_id directly instead of generating MD5 hash.
+				$assistant_id
 			);
 		}
 
@@ -199,6 +233,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 				'tool_slug' => $tool_slug,
 			)
 		);
+
+		/**
+		 * Fires when an async tool execution is queued.
+		 *
+		 * This action allows other components to react to job queuing
+		 * and track job lifecycle from start to finish.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $job_id    Job identifier.
+		 * @param array  $metadata  Job metadata at queue time.
+		 * @param string $tool_slug Tool slug being queued.
+		 */
+		do_action( 'wp_mcp_ai_async_job_queued', $job_id, $metadata, $tool_slug );
 
 		return $job_id;
 	}
@@ -246,6 +294,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 				'tool_slug' => $tool_slug,
 			)
 		);
+
+		/**
+		 * Fires when an async tool execution starts.
+		 *
+		 * This action allows other components to track when a queued job
+		 * actually begins execution (not just queued).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $job_id    Job identifier.
+		 * @param array  $metadata  Job metadata at start time.
+		 * @param string $tool_slug Tool slug being executed.
+		 */
+		do_action( 'wp_mcp_ai_async_job_started', $job_id, $metadata, $tool_slug );
 
 		// Get tool instance.
 		$registry = $this->get_registry();
@@ -308,6 +370,21 @@ class WP_MCP_AI_Tool_Async_Executor {
 				)
 			);
 
+			/**
+			 * Fires when an async tool execution completes successfully.
+			 *
+			 * This action allows other components (e.g., chat client notification system)
+			 * to react to job completion in real-time instead of relying on polling.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $job_id    Job identifier.
+			 * @param array  $metadata  Complete job metadata including result.
+			 * @param mixed  $result    Uncompressed tool execution result.
+			 * @param string $tool_slug Tool slug that was executed.
+			 */
+			do_action( 'wp_mcp_ai_async_job_completed', $job_id, $metadata, $result, $tool_slug );
+
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );
 		}
@@ -340,6 +417,21 @@ class WP_MCP_AI_Tool_Async_Executor {
 				'error'     => $error_message,
 			)
 		);
+
+		/**
+		 * Fires when an async tool execution fails.
+		 *
+		 * This action allows other components to react to job failures
+		 * and notify users or take corrective action.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string        $job_id        Job identifier.
+		 * @param array         $metadata      Complete job metadata including error.
+		 * @param string        $error_message Error message.
+		 * @param WP_Error|null $error         WP_Error object if available.
+		 */
+		do_action( 'wp_mcp_ai_async_job_failed', $job_id, $metadata, $error_message, $error );
 	}
 
 	/**

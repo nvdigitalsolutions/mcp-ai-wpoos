@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_gemini_model'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
-					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
+					'description' => __( 'The default model to use for Gemini text/chat requests. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
 					'options'     => array(
 						'gemini-2.5-flash'     => 'Gemini 2.5 Flash (Latest - Stable)',
 						'gemini-2.0-flash'     => 'Gemini 2.0 Flash',
@@ -208,6 +208,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'gemini-pro'           => 'Gemini Pro',
 					),
 					'default'     => 'gemini-2.5-flash',
+				),
+				'default_gemini_video_model'  => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Gemini Video Model', 'wp-mcp-ai' ),
+					'description' => __( 'The default model to use for video generation with Veo. Veo 2.0 is the stable default (720p, 4-8 seconds). Veo 3.1 is optional for higher resolution (1080p support, requires 8 seconds for 1080p). Both models support automatic fallback on quota/availability issues.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'veo-2.0' => 'Veo 2.0 (Stable - 720p, 4-8s)',
+						'veo-3.1' => 'Veo 3.1 (1080p support, 4-8s)',
+					),
+					'default'     => 'veo-2.0',
+				),
+
+				// Music Generation API Keys (Third-party Lyria providers).
+				'segmind_api_key'             => array(
+					'type'         => 'password',
+					'label'        => __( 'Segmind API Key (Third-Party Music)', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: Segmind URL */
+						__( 'Optional third-party API key for Segmind Lyria music generation service (not affiliated with Google). Get one from <a href="%s" target="_blank">Segmind.com</a>. Required for the generate_gemini_music and generate_audio_effects tools.', 'wp-mcp-ai' ),
+						'https://www.segmind.com/'
+					),
+					'placeholder'  => 'SG_...',
+					'autocomplete' => 'new-password',
+				),
+				'aimlapi_key'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'AIMLAPI Key (Third-Party Alternative)', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: AIMLAPI URL */
+						__( 'Optional third-party alternative to Segmind for Lyria music generation (not affiliated with Google). Get one from <a href="%s" target="_blank">AIMLAPI.com</a>.', 'wp-mcp-ai' ),
+						'https://aimlapi.com/'
+					),
+					'placeholder'  => 'api_...',
+					'autocomplete' => 'new-password',
 				),
 
 				// Ollama Settings.
@@ -311,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'default_gemini_video_model', 'segmind_api_key', 'aimlapi_key' ),
 				),
 				'ollama'    => array(
 					'id'     => 'ollama',

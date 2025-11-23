@@ -170,9 +170,33 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio response.', array( 'body' => $body ) );
+				// Enhanced error logging to help diagnose malformed JSON issues.
+				$error_context = array(
+					'json_error'      => $json_err,
+					'json_error_msg'  => json_last_error_msg(),
+					'response_code'   => $code,
+					'body_preview'    => substr( $body, 0, 500 ), // First 500 chars to identify format.
+					'body_length'     => strlen( $body ),
+					'is_sse_response' => strpos( $body, 'data: ' ) === 0, // Check if it's SSE format.
+				);
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'wp-mcp-ai' ) );
+				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio list_models response.', $error_context );
+
+				// Provide helpful error message based on response format.
+				if ( strpos( $body, 'data: ' ) === 0 || strpos( $body, 'event: ' ) === 0 ) {
+					$error_message = __( 'LM Studio returned Server-Sent Events format instead of JSON. This usually means the "stream" parameter was set to true. Please check your request configuration.', 'wp-mcp-ai' );
+				} else {
+					$error_message = __( 'The LM Studio API returned malformed JSON. Check LM Studio logs with: lms log stream', 'wp-mcp-ai' );
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					$error_message,
+					array(
+						'json_error' => json_last_error_msg(),
+						'preview'    => substr( $body, 0, 200 ),
+					)
+				);
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -271,7 +295,26 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 			);
 
-			WP_MCP_AI_Logger::log_event( 'lm_studio_request', 'Sending request to LM Studio.', array( 'model' => $model ) );
+			// Log request with full payload for debugging.
+			// Note: messages are not logged to avoid exposing sensitive data.
+			$log_context = array(
+				'model'       => $model,
+				'has_tools'   => ! empty( $payload['tools'] ),
+				'tool_count'  => ! empty( $payload['tools'] ) ? count( $payload['tools'] ) : 0,
+				'temperature' => $payload['temperature'] ?? null,
+				'max_tokens'  => $payload['max_tokens'] ?? null,
+				'stream'      => $payload['stream'] ?? null,
+			);
+
+			// Add response_format info if present.
+			if ( ! empty( $payload['response_format'] ) ) {
+				$log_context['response_format_type'] = $payload['response_format']['type'] ?? null;
+				if ( isset( $payload['response_format']['json_schema']['name'] ) ) {
+					$log_context['json_schema_name'] = $payload['response_format']['json_schema']['name'];
+				}
+			}
+
+			WP_MCP_AI_Logger::log_event( 'lm_studio_request', 'Sending request to LM Studio.', $log_context );
 
 			$response = wp_remote_post( $url, $request_args );
 
@@ -293,9 +336,33 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio response.', array( 'body' => $body ) );
+				// Enhanced error logging to help diagnose malformed JSON issues.
+				$error_context = array(
+					'json_error'      => $json_err,
+					'json_error_msg'  => json_last_error_msg(),
+					'response_code'   => $code,
+					'body_preview'    => substr( $body, 0, 500 ), // First 500 chars to identify format.
+					'body_length'     => strlen( $body ),
+					'is_sse_response' => strpos( $body, 'data: ' ) === 0, // Check if it's SSE format.
+				);
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'wp-mcp-ai' ) );
+				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio chat_completion response.', $error_context );
+
+				// Provide helpful error message based on response format.
+				if ( strpos( $body, 'data: ' ) === 0 || strpos( $body, 'event: ' ) === 0 ) {
+					$error_message = __( 'LM Studio returned Server-Sent Events format instead of JSON. This usually means the "stream" parameter was set to true. Please check your request configuration.', 'wp-mcp-ai' );
+				} else {
+					$error_message = __( 'The LM Studio API returned malformed JSON. Check LM Studio logs with: lms log stream', 'wp-mcp-ai' );
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					$error_message,
+					array(
+						'json_error' => json_last_error_msg(),
+						'preview'    => substr( $body, 0, 200 ),
+					)
+				);
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -549,6 +616,70 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add top_p if specified.
+			if ( isset( $options['top_p'] ) && '' !== $options['top_p'] && null !== $options['top_p'] ) {
+				$top_p = (float) $options['top_p'];
+				// Validate top_p is between 0 and 1.
+				if ( $top_p >= 0 && $top_p <= 1 ) {
+					$payload['top_p'] = $top_p;
+				}
+			}
+
+			// Add frequency_penalty if specified.
+			if ( isset( $options['frequency_penalty'] ) && '' !== $options['frequency_penalty'] && null !== $options['frequency_penalty'] ) {
+				$frequency_penalty = (float) $options['frequency_penalty'];
+				// Validate frequency_penalty is between -2 and 2.
+				if ( $frequency_penalty >= -2 && $frequency_penalty <= 2 ) {
+					$payload['frequency_penalty'] = $frequency_penalty;
+				}
+			}
+
+			// Add presence_penalty if specified.
+			if ( isset( $options['presence_penalty'] ) && '' !== $options['presence_penalty'] && null !== $options['presence_penalty'] ) {
+				$presence_penalty = (float) $options['presence_penalty'];
+				// Validate presence_penalty is between -2 and 2.
+				if ( $presence_penalty >= -2 && $presence_penalty <= 2 ) {
+					$payload['presence_penalty'] = $presence_penalty;
+				}
+			}
+
+			// Add response_format if specified (for structured output/JSON mode).
+			// LM Studio supports OpenAI-compatible structured output.
+			if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+				$response_format = $options['response_format'];
+				
+				// Validate response_format structure.
+				if ( isset( $response_format['type'] ) ) {
+					$format_type = sanitize_key( $response_format['type'] );
+					
+					// LM Studio supports: text, json_object, json_schema.
+					if ( in_array( $format_type, array( 'text', 'json_object', 'json_schema' ), true ) ) {
+						$payload['response_format'] = array(
+							'type' => $format_type,
+						);
+						
+						// Add json_schema if provided.
+						if ( 'json_schema' === $format_type && ! empty( $response_format['json_schema'] ) ) {
+							$payload['response_format']['json_schema'] = $response_format['json_schema'];
+						}
+					}
+				}
+			}
+
+			// Add seed if specified (for reproducible outputs).
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = absint( $options['seed'] );
+			}
+
+			// Add stop sequences if specified.
+			if ( ! empty( $options['stop'] ) ) {
+				if ( is_string( $options['stop'] ) ) {
+					$payload['stop'] = array( sanitize_text_field( $options['stop'] ) );
+				} elseif ( is_array( $options['stop'] ) ) {
+					$payload['stop'] = array_map( 'sanitize_text_field', $options['stop'] );
+				}
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
@@ -568,6 +699,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			} else {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
 			}
+
+			// Ensure stream is ALWAYS false at the end, even if somehow added by filters.
+			// This is critical: LM Studio returns Server-Sent Events format when stream=true,
+			// which causes "malformed JSON" errors since the response starts with "data: " prefixes.
+			$payload['stream'] = false;
 
 			return $payload;
 		}

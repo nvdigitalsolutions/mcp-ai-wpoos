@@ -100,6 +100,17 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete the cron job. It may have already been removed.', 'wp-mcp-ai' ) );
 		}
 
+		// Dispatch notification for cron job deletion (orchestration layer integration).
+		do_action(
+			'wp_mcp_ai_cron_job_deleted',
+			$job_id,
+			array(
+				'hook'         => isset( $job['hook'] ) ? $job['hook'] : '',
+				'user_id'      => $user_id,
+				'assistant_id' => isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0,
+			)
+		);
+
 		return array(
 			'job_id'  => $job_id,
 			'hook'    => isset( $job['hook'] ) ? $job['hook'] : '',
@@ -112,9 +123,10 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
+			'write',                // Deletes scheduled tasks.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
+			'state-changing',       // Modifies scheduled tasks.
 		);
 	}
 }
