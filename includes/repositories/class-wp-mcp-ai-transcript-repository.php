@@ -100,7 +100,8 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		$where_clauses = array( 'cct_author_id = %d' );
+		// Use user_id as primary filter (cct_author_id may not exist in all JetEngine setups).
+		$where_clauses = array( 'user_id = %d' );
 		$where_values  = array( $user_id );
 
 		if ( $assistant_id > 0 ) {
@@ -133,12 +134,20 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
-		// If no rows found with cct_author_id, try with user_id column as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
+		// If no rows found with user_id, try with cct_author_id column as fallback.
+		// This handles cases where JetEngine might be using the built-in cct_author_id field
+		// instead of the custom user_id field.
 		if ( empty( $rows ) ) {
-			$fallback_where             = $this->build_user_id_fallback_where( $user_id, $assistant_id );
-			$fallback_query_values      = array_merge( $fallback_where['where_values'], array( $per_page, $offset ) );
+			$fallback_where_clauses = array( 'cct_author_id = %d' );
+			$fallback_where_values  = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql      = implode( ' AND ', $fallback_where_clauses );
+			$fallback_query_values   = array_merge( $fallback_where_values, array( $per_page, $offset ) );
 			$fallback_query_template = "SELECT session_key,
                 MIN(request_started_at) AS started_at,
                 MAX(response_completed_at) AS completed_at,
@@ -148,7 +157,7 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
          FROM {$table}
-         WHERE {$fallback_where['where_sql']}
+         WHERE {$fallback_where_sql}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
          LIMIT %d OFFSET %d";
@@ -169,9 +178,17 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// If we had to use fallback, also use fallback for total count.
 		if ( 0 === $total && ! empty( $rows ) ) {
-			$fallback_where                = $this->build_user_id_fallback_where( $user_id, $assistant_id );
-			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where['where_sql']}";
-			$fallback_total_query          = $wpdb->prepare( $fallback_total_query_template, $fallback_where['where_values'] );
+			$fallback_where_clauses        = array( 'cct_author_id = %d' );
+			$fallback_where_values         = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql            = implode( ' AND ', $fallback_where_clauses );
+			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where_sql}";
+			$fallback_total_query          = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
 
 			$total = (int) $wpdb->get_var( $fallback_total_query );
 		}
@@ -213,7 +230,10 @@ class WP_MCP_AI_Transcript_Repository {
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
 
-		$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+		// Build WHERE clause - use user_id as primary filter.
+		// Note: cct_author_id is a JetEngine built-in field that may not always be present.
+		// The custom user_id field is more reliable for filtering transcripts.
+		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
 		$where_values  = array( $session_key, $user_id );
 
 		if ( $assistant_id > 0 ) {
@@ -231,25 +251,107 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$query = $wpdb->prepare( $query_template, $where_values );
 
+		// Log the query being executed for debugging.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'Transcript Repository: get_session query',
+				array(
+					'session_key'  => $session_key,
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+					'query'        => $query,
+					'table'        => $table,
+				)
+			);
+		}
+
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
+		// Log query results.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'Transcript Repository: get_session query results',
+				array(
+					'session_key'  => $session_key,
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+					'row_count'    => is_array( $rows ) ? count( $rows ) : 0,
+					'wpdb_error'   => $wpdb->last_error ? $wpdb->last_error : 'none',
+				)
+			);
+		}
+
 		// If no rows found with cct_author_id, try with user_id column as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
+		// If no rows found with user_id, try with cct_author_id column as fallback.
+		// This handles cases where JetEngine might be using the built-in cct_author_id 
+		// field instead of the custom user_id field.
 		if ( empty( $rows ) ) {
-			$fallback_where          = $this->build_user_id_fallback_where( $user_id, $assistant_id, 'session_key = %s', array( $session_key ) );
+			$fallback_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+			$fallback_where_values  = array( $session_key, $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %d';
+				$fallback_where_values[]  = $assistant_id;
+			}
+
+			$fallback_where_sql      = implode( ' AND ', $fallback_where_clauses );
 			$select_fields           = $this->get_select_fields();
 			$fallback_query_template = "SELECT {$select_fields}
          FROM {$table}
-         WHERE {$fallback_where['where_sql']}
+         WHERE {$fallback_where_sql}
          ORDER BY cct_created ASC, id ASC";
 
-			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where['where_values'] );
+			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
+
+			// Log fallback query.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session fallback query (trying cct_author_id)',
+					array(
+						'session_key'     => $session_key,
+						'user_id'         => $user_id,
+						'assistant_id'    => $assistant_id,
+						'fallback_query'  => $fallback_query,
+					)
+				);
+			}
 
 			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+
+			// Log fallback results.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session fallback query results',
+					array(
+						'session_key'  => $session_key,
+						'user_id'      => $user_id,
+						'assistant_id' => $assistant_id,
+						'row_count'    => is_array( $rows ) ? count( $rows ) : 0,
+						'wpdb_error'   => $wpdb->last_error ? $wpdb->last_error : 'none',
+					)
+				);
+			}
 		}
 
 		if ( empty( $rows ) ) {
+			// Log the 404 error with context.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session returning 404',
+					array(
+						'session_key'  => $session_key,
+						'user_id'      => $user_id,
+						'assistant_id' => $assistant_id,
+						'table_exists' => $this->table_exists(),
+					)
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
 				__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
