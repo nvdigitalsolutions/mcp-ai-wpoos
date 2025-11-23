@@ -270,7 +270,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										statusDiv.html(errorHtml);
 									} else {
 										// Handle string error
-										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(String(response.data)) + '</p>');
+										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(response.data) + '</p>');
 									}
 								} else {
 									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');

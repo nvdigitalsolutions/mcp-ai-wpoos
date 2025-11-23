@@ -41,6 +41,18 @@ Result: "Test failed: [object Object]"
 
 ### After (Fixed)
 ```javascript
+// Helper function to escape HTML and prevent XSS
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 // Handle both string and object error responses
 var errorMessage = 'Unknown error';
 if (response.data) {
@@ -48,26 +60,26 @@ if (response.data) {
         // Extract message from object
         errorMessage = response.data.message || errorMessage;
         
-        // Build detailed error HTML with all available info
-        var errorHtml = '<p class="wp-mcp-ai-error">Test failed: ' + errorMessage + '</p>';
+        // Build detailed error HTML with all available info (with XSS protection)
+        var errorHtml = '<p class="wp-mcp-ai-error">Test failed: ' + escapeHtml(errorMessage) + '</p>';
         
         if (response.data.details) {
-            errorHtml += '<p class="wp-mcp-ai-error-details">' + response.data.details + '</p>';
+            errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
         }
         if (response.data.cli_command) {
-            errorHtml += '<p class="wp-mcp-ai-cli-command"><strong>CLI Command:</strong> <code>' + response.data.cli_command + '</code></p>';
+            errorHtml += '<p class="wp-mcp-ai-cli-command"><strong>CLI Command:</strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
         }
         if (response.data.setup_command) {
-            errorHtml += '<p class="wp-mcp-ai-setup-command"><strong>Setup Command:</strong> <code>' + response.data.setup_command + '</code></p>';
+            errorHtml += '<p class="wp-mcp-ai-setup-command"><strong>Setup Command:</strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
         }
         
         statusDiv.html(errorHtml);
     } else {
         // Handle string error
-        statusDiv.html('<p class="wp-mcp-ai-error">Test failed: ' + response.data + '</p>');
+        statusDiv.html('<p class="wp-mcp-ai-error">Test failed: ' + escapeHtml(response.data) + '</p>');
     }
 } else {
-    statusDiv.html('<p class="wp-mcp-ai-error">Test failed: ' + errorMessage + '</p>');
+    statusDiv.html('<p class="wp-mcp-ai-error">Test failed: ' + escapeHtml(errorMessage) + '</p>');
 }
 ```
 
@@ -112,6 +124,18 @@ wp_send_json_error( 'Invalid test type' );
 ```
 Test failed: Invalid test type
 ```
+
+## Security
+All error messages (message, details, cli_command, setup_command) are now properly escaped before being inserted into the DOM, preventing potential XSS vulnerabilities.
+
+The `escapeHtml()` function converts potentially dangerous HTML characters to their entity equivalents:
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
+- `'` → `&#039;`
+
+This ensures that even if the server returns malicious content, it will be displayed as plain text rather than executed as HTML/JavaScript.
 
 ## CSS Styling
 The fix also adds appropriate CSS styling for the new error detail elements:
