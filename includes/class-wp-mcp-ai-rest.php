@@ -3063,6 +3063,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$text_content = $this->normalise_message_content( $response['content'] );
 			}
 
+			// FALLBACK: If LLM returned no content but we have tool results, extract text from them.
+			// This happens when the LLM determines tool results are sufficient without adding commentary.
+			// Common with image generation tools where the tool result contains descriptive text.
+			if ( ( '' === $text_content || ! is_string( $text_content ) ) && ! empty( $tool_result_messages ) ) {
+				$text_content = $this->extract_text_from_tool_results( $tool_result_messages );
+				
+				if ( '' !== $text_content ) {
+					// Update response to include the extracted text so it appears in the message payload.
+					if ( ! isset( $response['choices'][0]['message'] ) ) {
+						$response['choices'][0]['message'] = array();
+					}
+					$response['choices'][0]['message']['content'] = $text_content;
+					
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'SSE Streaming: Extracted text from tool results',
+						array(
+							'extracted_length' => strlen( $text_content ),
+							'tool_count'       => count( $tool_result_messages ),
+							'assistant_id'     => $assistant_id,
+						)
+					);
+				}
+			}
+
 			// Send text content in chunks to simulate streaming (for better UX).
 			if ( is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
@@ -3088,6 +3113,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'has_text_content' => ! empty( $text_content ),
 						'is_string'        => is_string( $text_content ),
 						'response_keys'    => array_keys( $response ),
+						'tool_result_count' => count( $tool_result_messages ),
 						'assistant_id'     => $assistant_id,
 					)
 				);
@@ -6608,6 +6634,62 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Extract text content from tool result messages.
+		 *
+		 * When an LLM returns an empty response after tool execution in the agentic loop,
+		 * this method extracts descriptive text from the tool results themselves.
+		 * This ensures the chat UI always has content to display.
+		 *
+		 * @since 1.0.0
+		 * @param array $tool_result_messages Array of tool result messages from agentic loop.
+		 * @return string Extracted text content, or empty string if none found.
+		 */
+		protected function extract_text_from_tool_results( $tool_result_messages ) {
+			if ( empty( $tool_result_messages ) || ! is_array( $tool_result_messages ) ) {
+				return '';
+			}
+
+			$text_parts = array();
+
+			foreach ( $tool_result_messages as $tool_message ) {
+				if ( ! isset( $tool_message['content'] ) || '' === $tool_message['content'] ) {
+					continue;
+				}
+
+				$content = $tool_message['content'];
+
+				// Tool result content can be a JSON string or already an array.
+				if ( is_string( $content ) ) {
+					$decoded = json_decode( $content, true );
+					if ( is_array( $decoded ) ) {
+						$content = $decoded;
+					}
+				}
+
+				// Extract text field from tool result.
+				if ( is_array( $content ) && isset( $content['text'] ) && is_string( $content['text'] ) ) {
+					$text = trim( $content['text'] );
+					if ( '' !== $text ) {
+						$text_parts[] = $text;
+					}
+				} elseif ( is_string( $content ) ) {
+					// If content is just a string, use it directly.
+					$text = trim( $content );
+					if ( '' !== $text ) {
+						$text_parts[] = $text;
+					}
+				}
+			}
+
+			if ( empty( $text_parts ) ) {
+				return '';
+			}
+
+			// Join multiple tool results with double newlines.
+			return implode( "\n\n", $text_parts );
 		}
 
 		/**
