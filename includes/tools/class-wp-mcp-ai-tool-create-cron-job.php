@@ -210,20 +210,25 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			)
 		);
 
-		$time_until_run = $timestamp - time();
+		// Calculate human-readable time until execution.
+		// Use $current_time to maintain consistency with earlier validation.
+		$time_until_run = $timestamp - $current_time;
 		$human_time     = '';
 
 		if ( $time_until_run < MINUTE_IN_SECONDS ) {
 			$human_time = __( 'in less than a minute', 'wp-mcp-ai' );
 		} elseif ( $time_until_run < HOUR_IN_SECONDS ) {
+			$minutes = (int) ( $time_until_run / MINUTE_IN_SECONDS );
 			/* translators: %d: number of minutes */
-			$human_time = sprintf( _n( 'in %d minute', 'in %d minutes', (int) ( $time_until_run / MINUTE_IN_SECONDS ), 'wp-mcp-ai' ), (int) ( $time_until_run / MINUTE_IN_SECONDS ) );
+			$human_time = sprintf( _n( 'in %d minute', 'in %d minutes', $minutes, 'wp-mcp-ai' ), $minutes );
 		} elseif ( $time_until_run < DAY_IN_SECONDS ) {
+			$hours = (int) ( $time_until_run / HOUR_IN_SECONDS );
 			/* translators: %d: number of hours */
-			$human_time = sprintf( _n( 'in %d hour', 'in %d hours', (int) ( $time_until_run / HOUR_IN_SECONDS ), 'wp-mcp-ai' ), (int) ( $time_until_run / HOUR_IN_SECONDS ) );
+			$human_time = sprintf( _n( 'in %d hour', 'in %d hours', $hours, 'wp-mcp-ai' ), $hours );
 		} else {
+			$days = (int) ( $time_until_run / DAY_IN_SECONDS );
 			/* translators: %d: number of days */
-			$human_time = sprintf( _n( 'in %d day', 'in %d days', (int) ( $time_until_run / DAY_IN_SECONDS ), 'wp-mcp-ai' ), (int) ( $time_until_run / DAY_IN_SECONDS ) );
+			$human_time = sprintf( _n( 'in %d day', 'in %d days', $days, 'wp-mcp-ai' ), $days );
 		}
 
 		return array(
