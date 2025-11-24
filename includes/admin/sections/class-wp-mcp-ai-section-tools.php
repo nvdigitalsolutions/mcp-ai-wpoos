@@ -1237,7 +1237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'checks' => array(
 						array(
 							'check' => 'function_exists',
-							'value' => 'WPCode',
+							'value' => 'wpcode',
 						),
 						array(
 							'check' => 'class_exists',

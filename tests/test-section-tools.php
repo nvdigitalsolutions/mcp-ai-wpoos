@@ -166,7 +166,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'missing', $result );
 
 		// In test environment, WPCode likely won't be available.
-		if ( ! function_exists( 'WPCode' ) ) {
+		if ( ! function_exists( 'wpcode' ) ) {
 			$this->assertFalse( $result['available'], 'create_wpcode_snippet should not be available without WPCode' );
 			$this->assertContains( 'WPCode', $result['missing'], 'WPCode should be in missing dependencies' );
 		}
