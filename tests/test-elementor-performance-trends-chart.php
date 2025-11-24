@@ -26,7 +26,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Chart_Test extends WP_UnitTestCase 
 
 		// Load Elementor widget class if not already loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Elementor_Performance_Trends_Widget' ) ) {
-			$plugin_dir = dirname( dirname( __FILE__ ) );
+			$plugin_dir = dirname( __DIR__ );
 			require_once $plugin_dir . '/includes/elementor/class-wp-mcp-ai-elementor-performance-trends-widget.php';
 		}
 	}
@@ -218,7 +218,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Chart_Test extends WP_UnitTestCase 
 	 */
 	private function get_mock_widget( $widget_id ) {
 		// Create a mock widget that extends the actual widget class.
-		$widget = $this->getMockBuilder( 'WP_MCP_AI_Elementor_Performance_Trends_Widget' )
+		$widget = $this->getMockBuilder( WP_MCP_AI_Elementor_Performance_Trends_Widget::class )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'get_id', 'get_settings_for_display' ) )
 			->getMock();

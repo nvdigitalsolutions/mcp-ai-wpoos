@@ -277,7 +277,11 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				// Destroy existing chart instance if it exists (prevents "canvas already in use" error).
 				var chartId = '<?php echo esc_js( $chart_id ); ?>';
 				if (window.wpMcpAiCharts[chartId]) {
-					window.wpMcpAiCharts[chartId].destroy();
+					try {
+						window.wpMcpAiCharts[chartId].destroy();
+					} catch (e) {
+						console.warn('Error destroying chart:', e);
+					}
 					delete window.wpMcpAiCharts[chartId];
 				}
 
