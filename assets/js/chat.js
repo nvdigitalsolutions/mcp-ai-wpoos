@@ -6849,7 +6849,7 @@
                                 statusMessage = payload.progress_message;
                             } else if (payload && typeof payload.progress === 'number' && payload.progress > 0) {
                                 // Fall back to percentage if available
-                                statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%d%%)'), Math.round(payload.progress));
+                                statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%s%%)'), String(Math.round(payload.progress)));
                             }
                             
                             updatePendingTaskEntry(pendingEntry, statusMessage);
@@ -6992,7 +6992,7 @@
                             statusMessage = payload.progress_message;
                         } else if (payload && typeof payload.progress === 'number' && payload.progress > 0) {
                             // Fall back to percentage if available
-                            statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%d%%)'), Math.round(payload.progress));
+                            statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%s%%)'), String(Math.round(payload.progress)));
                         }
                         
                         updatePendingTaskEntry(pendingEntry, statusMessage);
