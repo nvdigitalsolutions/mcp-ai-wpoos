@@ -1012,6 +1012,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				sleep( $poll_interval );
 				++$poll_count;
 
+				// Trigger WordPress cron to ensure async jobs continue processing.
+				// WordPress cron only runs on page loads by default. When a client
+				// is waiting on an SSE connection, no new page loads occur, so cron
+				// jobs (including veo video polling) may not run. Calling spawn_cron()
+				// ensures any scheduled cron events execute, allowing the job to progress.
+				// We call this periodically (every heartbeat interval) to balance
+				// responsiveness with avoiding excessive cron triggers.
+				// Note: spawn_cron() is non-blocking and returns quickly; failures
+				// are silently ignored to prevent disrupting the SSE polling loop.
+				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL && function_exists( 'spawn_cron' ) ) {
+					spawn_cron();
+				}
+
 				// Get updated job details.
 				$updated_details = $service->get_job_details( $job_id, $user_id );
 
