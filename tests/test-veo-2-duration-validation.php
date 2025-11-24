@@ -16,6 +16,40 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-ge
 class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 
 	/**
+	 * Service instance for testing.
+	 *
+	 * @var WP_MCP_AI_Gemini_Video_Generation_Service
+	 */
+	private $service;
+
+	/**
+	 * Veo 2.0 model constant.
+	 *
+	 * @var string
+	 */
+	private $veo_2_model;
+
+	/**
+	 * Veo 3.1 model constant.
+	 *
+	 * @var string
+	 */
+	private $veo_3_model;
+
+	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		$reflection    = new ReflectionClass( $this->service );
+
+		$this->veo_2_model = $reflection->getConstant( 'VEO_2_MODEL' );
+		$this->veo_3_model = $reflection->getConstant( 'VEO_MODEL' );
+	}
+
+	/**
 	 * Clean up between tests.
 	 */
 	public function tearDown(): void {
@@ -28,8 +62,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * This is the main bug fix - Veo 2 requires minimum 5 seconds, not 4.
 	 */
 	public function test_veo_2_adjusts_duration_4_to_5() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		$args = array(
@@ -37,8 +70,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			'duration' => 4, // Valid for Veo 3.1 but below Veo 2.0 minimum.
 		);
 
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$payload        = $method->invoke( $service, $args, $veo_2_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -60,8 +92,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that duration 4 is preserved for Veo 3.1.
 	 */
 	public function test_veo_3_preserves_duration_4() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		$args = array(
@@ -69,8 +100,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			'duration' => 4, // Valid for Veo 3.1.
 		);
 
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
-		$payload        = $method->invoke( $service, $args, $veo_3_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -87,19 +117,15 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that invalid durations (0, negative, non-integer) default to model minimum.
 	 */
 	public function test_invalid_durations_default_to_model_minimum() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
 
 		// Test duration 0 with Veo 2.0.
 		$args    = array(
 			'prompt'   => 'Test video',
 			'duration' => 0,
 		);
-		$payload = $method->invoke( $service, $args, $veo_2_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 		$this->assertEquals(
 			5,
@@ -108,7 +134,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		);
 
 		// Test duration 0 with Veo 3.1.
-		$payload = $method->invoke( $service, $args, $veo_3_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 		$this->assertEquals(
 			4,
@@ -121,12 +147,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that durations 1-3 are adjusted to model minimum.
 	 */
 	public function test_below_minimum_durations_adjusted() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
 
 		$below_min_values = array( 1, 2, 3 );
 
@@ -136,7 +158,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 				'prompt'   => 'Test video',
 				'duration' => $test_duration,
 			);
-			$payload = $method->invoke( $service, $args, $veo_2_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 			$this->assertEquals(
 				5,
@@ -145,7 +167,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			);
 
 			// Test with Veo 3.1.
-			$payload = $method->invoke( $service, $args, $veo_3_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 			$this->assertEquals(
 				4,
@@ -159,11 +181,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that all valid durations (5-8) work correctly with Veo 2.0.
 	 */
 	public function test_veo_2_valid_durations() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
 
 		// Valid durations for Veo 2.0: 5-8 seconds.
 		foreach ( array( 5, 6, 7, 8 ) as $valid_duration ) {
@@ -171,7 +190,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 				'prompt'   => 'Test video',
 				'duration' => $valid_duration,
 			);
-			$payload = $method->invoke( $service, $args, $veo_2_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 			$this->assertEquals(
 				$valid_duration,
@@ -185,11 +204,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that all valid durations (4-8) work correctly with Veo 3.1.
 	 */
 	public function test_veo_3_valid_durations() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
 
 		// Valid durations for Veo 3.1: 4-8 seconds.
 		foreach ( array( 4, 5, 6, 7, 8 ) as $valid_duration ) {
@@ -197,7 +213,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 				'prompt'   => 'Test video',
 				'duration' => $valid_duration,
 			);
-			$payload = $method->invoke( $service, $args, $veo_3_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 			$this->assertEquals(
 				$valid_duration,
@@ -211,12 +227,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that excessive durations are clamped to maximum (8).
 	 */
 	public function test_above_maximum_durations_clamped() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
 
 		$above_max_values = array( 9, 10, 15, 100 );
 
@@ -226,7 +238,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 				'prompt'   => 'Test video',
 				'duration' => $test_duration,
 			);
-			$payload = $method->invoke( $service, $args, $veo_2_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 			$this->assertEquals(
 				8,
@@ -235,7 +247,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			);
 
 			// Test with Veo 3.1.
-			$payload = $method->invoke( $service, $args, $veo_3_constant );
+			$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 			$this->assertEquals(
 				8,
@@ -249,12 +261,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	 * Test that default duration (5) works for both models.
 	 */
 	public function test_default_duration_works_for_both_models() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
-
-		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
 
 		// Test without duration parameter (should use default 5).
 		$args = array(
@@ -262,7 +270,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		);
 
 		// Test with Veo 2.0.
-		$payload = $method->invoke( $service, $args, $veo_2_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
 
 		$this->assertEquals(
 			5,
@@ -271,7 +279,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		);
 
 		// Test with Veo 3.1.
-		$payload = $method->invoke( $service, $args, $veo_3_constant );
+		$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 		$this->assertEquals(
 			5,
