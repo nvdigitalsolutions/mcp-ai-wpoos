@@ -400,6 +400,84 @@
     fill: currentColor;
 }
 
+/* Delete button styles */
+.wp-mcp-ai-delete-button {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--wp-mcp-ai-color-delete-button-background, rgba(220, 38, 38, 0.82));
+    color: var(--wp-mcp-ai-color-delete-button-text, #fff);
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.wp-mcp-ai-delete-button:hover {
+    background: var(--wp-mcp-ai-color-delete-button-hover-background, rgba(220, 38, 38, 0.94));
+}
+
+.wp-mcp-ai-delete-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-delete-button-focus-ring, rgba(220, 38, 38, 0.45));
+    opacity: 1;
+    visibility: visible;
+}
+
+.wp-mcp-ai-delete-button:disabled {
+    opacity: 0.65;
+    cursor: default;
+}
+
+.wp-mcp-ai-delete-button .wp-mcp-ai-delete-icon {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
+}
+
+/* Delete button position for user bubbles (centered) */
+.wp-mcp-ai-delete-button--user {
+    left: 50%;
+    bottom: 50%;
+    transform: translate(-50%, 50%);
+}
+
+/* Hover visibility for action buttons on bubbles */
+.wp-mcp-ai-chat__bubble:hover .wp-mcp-ai-speech-button,
+.wp-mcp-ai-chat__bubble:hover .wp-mcp-ai-copy-button,
+.wp-mcp-ai-chat__bubble:hover .wp-mcp-ai-delete-button {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Make speech and copy buttons hidden by default, visible on hover */
+.wp-mcp-ai-speech-button,
+.wp-mcp-ai-copy-button {
+    opacity: 0;
+    visibility: hidden;
+    transition: background-color 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Ensure focus state shows buttons */
+.wp-mcp-ai-speech-button:focus,
+.wp-mcp-ai-copy-button:focus {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Delete enabled class for bubbles */
+.wp-mcp-ai-chat__bubble.wp-mcp-ai-delete-enabled {
+    position: relative;
+}
+
 @keyframes wp-mcp-ai-speech-spin {
     from {
         transform: rotate(0deg);
