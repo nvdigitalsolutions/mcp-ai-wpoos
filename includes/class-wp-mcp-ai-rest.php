@@ -7853,9 +7853,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Get the allowed properties from the schema.
+			// Handle both array properties and stdClass objects (used for empty schemas like {}).
 			$allowed_properties = array();
-			if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
-				$allowed_properties = array_keys( $schema['properties'] );
+			if ( isset( $schema['properties'] ) ) {
+				$properties = $schema['properties'];
+				if ( is_array( $properties ) ) {
+					$allowed_properties = array_keys( $properties );
+				} elseif ( $properties instanceof stdClass ) {
+					// stdClass is used for empty properties ({}) in JSON schemas.
+					// Convert to array to get property keys (will be empty for new stdClass()).
+					$allowed_properties = array_keys( get_object_vars( $properties ) );
+				} else {
+					// Unexpected type for properties - skip filtering to avoid dropping valid arguments.
+					// This is a defensive fallback for malformed schemas.
+					WP_MCP_AI_Logger::log_event(
+						'tool_schema_warning',
+						'Unexpected properties type in tool schema, skipping argument filtering',
+						array(
+							'tool_slug'       => $tool->get_slug(),
+							'properties_type' => gettype( $properties ),
+						)
+					);
+					return $arguments;
+				}
 			}
 
 			// Filter arguments to only include allowed properties.
