@@ -6839,6 +6839,19 @@
                         } else if (status === 'failed' || status === 'error') {
                             const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
                             handleError(errorMessage);
+                        } else if (status === 'delegated' && payload.delegated_to) {
+                            // Job was delegated to a nested async job (e.g., veo video generation).
+                            // Close current SSE connection and switch to polling the delegated job.
+                            // This prevents timeout when the parent job remains in 'delegated' status.
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] Job delegated to:', payload.delegated_to);
+                            }
+                            cleanup();
+                            updatePendingTaskEntry(pendingEntry, getString('toolDelegated', 'Video generation in progress…'));
+                            // Switch to polling the delegated job instead
+                            waitForAsyncToolResultPolling(state, payload.delegated_to, toolName, pendingEntry)
+                                .then(resolve)
+                                .catch(reject);
                         } else {
                             // Still pending, polling or running - update status with progress message
                             // Use progress_message from server if available for more informative updates
@@ -6981,6 +6994,22 @@
                                 updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
                                 resolve(payload);
                             }
+                            return;
+                        }
+
+                        // Handle delegated status - job was handed off to nested async job (e.g., veo video generation)
+                        if (status === 'delegated' && payload.delegated_to) {
+                            // Switch to polling the delegated job instead
+                            // This prevents timeout when the parent job remains in 'delegated' status
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] Job delegated to:', payload.delegated_to);
+                            }
+                            cleanup();
+                            updatePendingTaskEntry(pendingEntry, getString('toolDelegated', 'Video generation in progress…'));
+                            // Continue polling the delegated job with a fresh timeout
+                            waitForAsyncToolResultPolling(state, payload.delegated_to, record.toolName, pendingEntry)
+                                .then(resolve)
+                                .catch(reject);
                             return;
                         }
 
