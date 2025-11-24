@@ -174,6 +174,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			$generation_args['parent_job_id'] = sanitize_key( $context['parent_job_id'] );
 		}
 
+		// Pass in_async_executor flag to prevent dual async.
+		// This tells the service to NOT fall back to async mode during polling.
+		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
+			$generation_args['in_async_executor'] = true;
+		}
+
 		// Add duration if provided and valid.
 		// Only pass to service if it's a positive integer, otherwise use settings default.
 		// This prevents sending 0 or invalid values when OpenAI sends null/false/empty.

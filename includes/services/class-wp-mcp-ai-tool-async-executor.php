@@ -300,7 +300,59 @@ class WP_MCP_AI_Tool_Async_Executor {
 				return;
 			}
 
-			// Success - store result.
+			// Check if the tool returned a nested async response.
+			// This happens when a tool (like veo video generation) falls back to its own async mode
+			// due to timeout or other reasons. In this case, the parent job should be marked as
+			// 'delegated' rather than 'completed', and the nested job will complete the parent later.
+			$is_nested_async = is_array( $result ) && 
+			                   isset( $result['async'] ) && 
+			                   $result['async'] === true && 
+			                   isset( $result['job_id'] );
+
+			if ( $is_nested_async ) {
+				// Tool returned a nested async response.
+				// Update parent job to 'delegated' status and store the nested job info.
+				$metadata['status']       = 'delegated';
+				$metadata['delegated_at'] = time();
+				$metadata['delegated_to'] = $result['job_id']; // The nested veo job ID.
+				$metadata['result']       = $this->compress_result( $result );
+				$metadata['duration']     = $duration;
+				$metadata['error']        = null;
+
+				$this->save_metadata( $job_id, $metadata );
+
+				// Log delegation.
+				$this->log_event(
+					'async_tool_delegated',
+					sprintf( 'Tool %s delegated to nested async job %s', $tool_slug, $result['job_id'] ),
+					array(
+						'parent_job_id' => $job_id,
+						'nested_job_id' => $result['job_id'],
+						'tool_slug'     => $tool_slug,
+						'duration'      => $duration,
+					)
+				);
+
+				// Fire job started hook to notify the chat client that the job is now in progress.
+				// The nested job (veo_xxx) will call complete_parent_job() when it finishes,
+				// which will update this parent job to 'completed' and fire wp_mcp_ai_job_completed.
+				do_action(
+					'wp_mcp_ai_job_started',
+					$job_id,
+					array(
+						'tool'          => $tool_slug,
+						'delegated_to'  => $result['job_id'],
+						'status'        => isset( $result['status'] ) ? $result['status'] : 'pending',
+						'message'       => isset( $result['message'] ) ? $result['message'] : '',
+					)
+				);
+
+				// Don't fire job_completed or after_tool_execution here.
+				// The nested job will handle that when it completes.
+				return;
+			}
+
+			// Normal completion - tool returned a final result (not a nested async response).
 			$metadata['status']       = 'completed';
 			$metadata['completed_at'] = time();
 			$metadata['result']       = $this->compress_result( $result );
