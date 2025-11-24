@@ -65,6 +65,8 @@ This adds (~140 MB):
 - WordPress stubs for IDE support
 - PHP compatibility checker
 
+**Note:** When you run `composer install`, a patch is automatically applied to the `wp-phpunit/wp-phpunit` package to fix a PHP warning about the `WP_LANG_DIR` constant being already defined. This patch adds a guard check to prevent duplicate constant definitions when running performance tests or activating the plugin. See `patches/README.md` for details.
+
 **Alternative: Pre-packaged Dev Dependencies**
 
 If you don't have internet access or want to distribute the test framework separately:
