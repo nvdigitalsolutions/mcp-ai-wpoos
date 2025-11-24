@@ -46,11 +46,16 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			$state     = wp_generate_uuid4();
 			$transient = $this->get_github_state_transient_key( $state );
 
+			// Store the referrer URL to redirect back after OAuth.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- URL validation handled by wp_safe_redirect.
+			$referer = isset( $_SERVER['HTTP_REFERER'] ) ? wp_unslash( $_SERVER['HTTP_REFERER'] ) : '';
+
 			set_transient(
 				$transient,
 				array(
 					'user_id' => get_current_user_id(),
 					'time'    => time(),
+					'referer' => $referer,
 				),
 				10 * MINUTE_IN_SECONDS
 			);
@@ -270,7 +275,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice( 'github_oauth_success', $notice_message, 'updated' );
 
-			$this->redirect_to_settings_page();
+			$this->redirect_to_settings_page( $state_data );
 		}
 
 		/**
@@ -324,14 +329,30 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 * @return string
 		 */
 		private function get_settings_page_url() {
-			return admin_url( 'options-general.php?page=' . WP_MCP_AI_Admin_Settings::PAGE_SLUG );
+			// Return the new dashboard URL with tools tab and external_tools subtab.
+			return admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=external_tools' );
 		}
 
 		/**
 		 * Redirect the current request back to the settings page and exit.
+		 *
+		 * @param array|null $state_data Optional state data containing referer URL.
 		 */
-		private function redirect_to_settings_page() {
-			wp_safe_redirect( $this->get_settings_page_url() );
+		private function redirect_to_settings_page( $state_data = null ) {
+			$redirect_url = $this->get_settings_page_url();
+
+			// If state data contains a referer URL, use it for redirect.
+			if ( ! empty( $state_data['referer'] ) ) {
+				$referer = $state_data['referer'];
+
+				// Only redirect to admin URLs on the same site.
+				$admin_url = admin_url();
+				if ( 0 === strpos( $referer, $admin_url ) ) {
+					$redirect_url = $referer;
+				}
+			}
+
+			wp_safe_redirect( $redirect_url );
 			exit;
 		}
 

@@ -71,8 +71,8 @@ class Test_Github_OAuth_Handler extends WP_UnitTestCase {
 		add_filter(
 			'wp_redirect',
 			function ( $location ) {
-				// Verify redirect location contains settings page.
-				$this->assertStringContainsString( 'wp-mcp-ai-settings', $location );
+				// Verify redirect location contains dashboard page.
+				$this->assertStringContainsString( 'wp-mcp-ai-dashboard', $location );
 				// Prevent actual redirect.
 				return false;
 			}
