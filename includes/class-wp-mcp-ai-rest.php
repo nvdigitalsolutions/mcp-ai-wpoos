@@ -2614,6 +2614,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'model'        => $model_name,
 							'is_estimated' => false, // We have actual provider/model from the request.
 						);
+
+						// Log cost calculation when logging is enabled (integrates with logging layer).
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'cost_calculation',
+								'Real-time cost calculated for chat response',
+								array(
+									'assistant_id'      => $assistant_id,
+									'user_id'           => $user_id,
+									'provider'          => $provider_key,
+									'model'             => $model_name,
+									'prompt_tokens'     => $prompt_tokens,
+									'completion_tokens' => $completion_tokens,
+									'total_tokens'      => $prompt_tokens + $completion_tokens,
+									'cost_usd'          => $calculated_cost,
+									'is_estimated'      => false,
+								)
+							);
+						}
 					}
 				}
 			}
@@ -2626,6 +2645,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Include cost data if available (Phase 7 Week 5-6).
 			if ( $cost_data ) {
 				$payload['cost'] = $cost_data;
+
+				/**
+				 * Fires when cost data is calculated and added to chat response.
+				 *
+				 * Allows integration with caching layers, transients, AJAX handlers,
+				 * or third-party analytics systems.
+				 *
+				 * @since 1.1.0
+				 *
+				 * @param array           $cost_data    Cost calculation data.
+				 * @param int             $assistant_id Assistant identifier.
+				 * @param int             $user_id      User identifier.
+				 * @param array           $response     Full AI response with usage data.
+				 * @param WP_REST_Request $request      REST request instance.
+				 */
+				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
 			// Include the session key in the response so the client can save it

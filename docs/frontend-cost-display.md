@@ -6,6 +6,32 @@
 
 WP oOS now supports real-time display of token usage and estimated costs directly in the frontend chat interface. This feature helps users understand the API usage and associated costs for each AI interaction.
 
+## Integration with Plugin Layers
+
+This feature integrates seamlessly with existing plugin infrastructure:
+
+### Logging Layer Integration
+- **Automatic Logging**: When `enable_logging` is enabled in General Settings, cost calculations are automatically logged
+- **Log Event Type**: `cost_calculation` - viewable in system logs
+- **Logged Data**: provider, model, tokens (input/output/total), calculated cost, estimation flag
+- **Use Case**: Debugging cost calculations, auditing API usage, tracking cost trends
+
+### Enhanced Token Tracking Integration  
+- **Automatic Recording**: Cost data is recorded via `WP_MCP_AI_Enhanced_Token_Tracking`
+- **Database Storage**: Stored in `wp_mcp_ai_hourly_token_usage` table with provider/model/cost details
+- **Action Hook**: `wp_mcp_ai_cost_calculated` fires when cost is calculated
+- **Use Case**: Historical cost analysis, budget reporting, analytics dashboards
+
+### Transient/Caching Layer
+- **No Automatic Caching**: Cost data is calculated per request (lightweight operation <5ms)
+- **Custom Caching**: Use `wp_mcp_ai_cost_calculated` hook to implement custom caching if needed
+- **Use Case**: High-traffic sites can cache aggregated cost data for analytics
+
+### AJAX Layer Compatibility
+- **No Direct AJAX**: Cost data flows through REST API responses automatically
+- **Analytics Endpoints**: Existing AJAX endpoints (`get_usage_trend`, `get_provider_distribution`) work with stored cost data
+- **Custom Integration**: Use `wp_mcp_ai_cost_calculated` hook to integrate with custom AJAX handlers
+
 ## Features
 
 - **Token Count Display**: Shows total tokens used (prompt + completion)
@@ -143,9 +169,34 @@ Dark mode is automatically supported via `prefers-color-scheme: dark`.
 ## Privacy & Data
 
 - **No External Tracking**: Costs are calculated locally, not sent to external services
-- **No Storage**: Costs are displayed but not stored in database (unless using Enhanced Token Tracking)
+- **Optional Logging**: Cost calculations are logged when logging is enabled in General Settings
+- **Optional Storage**: Costs are stored in database only if Enhanced Token Tracking is enabled
 - **User Context**: Costs are only shown to users with the setting enabled
 - **No PII**: Cost calculations use only token counts and model information
+
+### Viewing Logged Cost Data
+
+When logging is enabled (`enable_logging` in General Settings):
+
+1. **Via System Logs Tool**:
+   - Navigate to WP oOS → Tools
+   - Use "Get System Logs" tool
+   - Filter for event type: `cost_calculation`
+
+2. **Via Recent Activity**:
+   - Navigate to WP oOS → Advanced
+   - View Recent Activity section
+   - Cost calculations appear with full details
+
+3. **Programmatically**:
+```php
+// Get recent cost calculations
+$activity = WP_MCP_AI_Logger::get_recent_activity_entries( 20, ['cost_calculation'] );
+foreach ( $activity as $entry ) {
+    echo "Cost: $" . $entry['context']['cost_usd'] . "\n";
+    echo "Tokens: " . $entry['context']['total_tokens'] . "\n";
+}
+```
 
 ## Compatibility
 
@@ -218,6 +269,45 @@ Planned features for future releases:
 - **Cost Optimization**: Suggest cheaper models/providers
 
 ## API Reference
+
+### Action Hooks
+
+**`wp_mcp_ai_cost_calculated`** (New in 1.1.0)
+```php
+do_action( 'wp_mcp_ai_cost_calculated', array $cost_data, int $assistant_id, int $user_id, array $response, WP_REST_Request $request );
+```
+Fires when cost data is calculated and added to chat response. Allows integration with caching layers, transients, AJAX handlers, or third-party analytics systems.
+
+**Parameters:**
+- `$cost_data` (array) - Cost calculation data: `{cost_usd, provider, model, is_estimated}`
+- `$assistant_id` (int) - Assistant identifier
+- `$user_id` (int) - User identifier  
+- `$response` (array) - Full AI response with usage data
+- `$request` (WP_REST_Request) - REST request instance
+
+**Example - Cache cost data in transient:**
+```php
+add_action( 'wp_mcp_ai_cost_calculated', function( $cost_data, $assistant_id, $user_id, $response, $request ) {
+    // Cache cumulative cost for user
+    $cache_key = "user_cost_today_{$user_id}_" . date('Y-m-d');
+    $current = get_transient( $cache_key ) ?: 0;
+    set_transient( $cache_key, $current + $cost_data['cost_usd'], DAY_IN_SECONDS );
+}, 10, 5 );
+```
+
+**Example - Send to analytics:**
+```php
+add_action( 'wp_mcp_ai_cost_calculated', function( $cost_data, $assistant_id, $user_id ) {
+    // Track in Google Analytics or custom system
+    if ( function_exists( 'track_event' ) ) {
+        track_event( 'ai_cost', [
+            'user_id' => $user_id,
+            'cost' => $cost_data['cost_usd'],
+            'provider' => $cost_data['provider'],
+        ]);
+    }
+}, 10, 3 );
+```
 
 ### Filter Hooks
 
