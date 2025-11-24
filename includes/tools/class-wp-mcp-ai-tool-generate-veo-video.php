@@ -505,6 +505,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'provider',
 			'message',
 			'video_data_stripped', // Flag indicating data was stripped
+			'usage',               // Token usage data for UI display.
+			'cost',                // Cost data for UI display.
 		);
 
 		$sanitized = array();

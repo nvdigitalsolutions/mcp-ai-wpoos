@@ -606,7 +606,9 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			'frames',  // Keep if it's attachment IDs, not base64
 			'frame_count',
 			'message',
-			'frames_data_stripped',  // Flag indicating data was stripped
+			'frames_data_stripped', // Flag indicating data was stripped
+			'usage',                // Token usage data for UI display.
+			'cost',                 // Cost data for UI display.
 		);
 
 		$sanitized = array();

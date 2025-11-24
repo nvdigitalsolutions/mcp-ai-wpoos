@@ -830,7 +830,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'provider',
 			'prompt',
 			'revised_prompt',
-			'text', // Descriptive message about the generated image.
+			'text',  // Descriptive message about the generated image.
+			'usage', // Token usage data for UI display.
+			'cost',  // Cost data for UI display.
 		);
 
 		$sanitized = array();

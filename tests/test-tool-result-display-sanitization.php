@@ -22,7 +22,7 @@ class WP_MCP_AI_Tool_Result_Display_Sanitization_Test extends WP_UnitTestCase {
 		$tool      = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$validator = new WP_MCP_AI_REST_Validator();
 
-		// Simulate a tool result with base64 content
+		// Simulate a tool result with base64 content and usage/cost data
 		$tool_result = array(
 			'attachment_id'   => 123,
 			'url'             => 'https://example.com/image.png',
@@ -36,6 +36,18 @@ class WP_MCP_AI_Tool_Result_Display_Sanitization_Test extends WP_UnitTestCase {
 			'provider'        => 'openai',
 			'response_format' => 'b64_json',
 			'text'            => 'Successfully generated image (ID: 123).',
+			'usage'           => array(
+				'prompt_tokens'     => 42,
+				'completion_tokens' => 2048,
+				'total_tokens'      => 2090,
+				'is_estimated'      => true,
+			),
+			'cost'            => array(
+				'cost_usd'     => 0.042,
+				'is_estimated' => true,
+				'provider'     => 'openai',
+				'model'        => 'gpt-image-1',
+			),
 			'content'         => array(
 				'encoding'  => 'base64',
 				'data'      => str_repeat( 'A', 100000 ), // Large base64 string
@@ -60,6 +72,12 @@ class WP_MCP_AI_Tool_Result_Display_Sanitization_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'text', $display_result );
 		$this->assertEquals( 123, $display_result['attachment_id'] );
 		$this->assertEquals( 'https://example.com/image.png', $display_result['url'] );
+
+		// Verify usage/cost data is preserved (critical for UI token/cost tracking)
+		$this->assertArrayHasKey( 'usage', $display_result, 'Usage data should be preserved for UI display' );
+		$this->assertArrayHasKey( 'cost', $display_result, 'Cost data should be preserved for UI display' );
+		$this->assertEquals( 2090, $display_result['usage']['total_tokens'] );
+		$this->assertEquals( 0.042, $display_result['cost']['cost_usd'] );
 	}
 
 	/**
