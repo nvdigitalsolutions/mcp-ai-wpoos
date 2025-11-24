@@ -1186,7 +1186,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				if ( $save_to_media ) {
 					$save_result = $this->save_video_to_media(
 						$result,
-						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0
+						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0,
+						$job_id
 					);
 
 					if ( is_wp_error( $save_result ) ) {
@@ -1422,6 +1423,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	/**
 	 * Get async job status.
 	 *
+	 * When the job transient is not found (expired or deleted), this method
+	 * checks if a media attachment was created with the matching job_id stored
+	 * in metadata. This allows recovery of completion status for jobs where
+	 * the video was successfully generated but the transient expired.
+	 *
 	 * @param string $job_id Job identifier.
 	 * @return array|WP_Error Job status or error.
 	 */
@@ -1429,6 +1435,44 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
 
 		if ( ! $metadata ) {
+			// Transient not found - check if media file was created with this job_id.
+			// This handles the case where video generation completed but transient expired.
+			$attachment = $this->find_attachment_by_job_id( $job_id );
+
+			if ( $attachment ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_status_recovered_from_media',
+					'Job status recovered from media attachment',
+					array(
+						'job_id'        => $job_id,
+						'attachment_id' => $attachment['attachment_id'],
+					)
+				);
+
+				// Fire job completed hook to update notification cache.
+				// This ensures the chat client can receive the completion notification
+				// even when the original transient has expired.
+				do_action(
+					'wp_mcp_ai_job_completed',
+					$job_id,
+					$attachment,
+					array(
+						'tool'      => 'generate_veo_video',
+						'recovered' => true,
+					)
+				);
+
+				// Return completed status with attachment info.
+				return array(
+					'job_id'       => $job_id,
+					'status'       => 'completed',
+					'poll_attempt' => 0,
+					'max_attempts' => self::MAX_POLLING_ATTEMPTS,
+					'result'       => $attachment,
+					'recovered'    => true, // Flag indicating this was recovered from media.
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_job_not_found',
 				__( 'Video generation job not found or expired.', 'wp-mcp-ai' ),
@@ -1466,17 +1510,93 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
+	 * Find media attachment by job ID.
+	 *
+	 * Searches for attachments with the veo_job_id metadata matching the given job_id.
+	 * This allows recovery of completion status when the job transient has expired.
+	 *
+	 * @param string $job_id Job identifier to search for.
+	 * @return array|null Attachment data array or null if not found.
+	 */
+	protected function find_attachment_by_job_id( $job_id ) {
+		$sanitized_job_id = sanitize_key( $job_id );
+
+		if ( empty( $sanitized_job_id ) ) {
+			return null;
+		}
+
+		// Query for attachments with matching job_id in metadata.
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => 1,
+			'meta_query'     => array(
+				array(
+					'key'     => '_veo_job_id',
+					'value'   => $sanitized_job_id,
+					'compare' => '=',
+				),
+			),
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( ! $query->have_posts() ) {
+			return null;
+		}
+
+		$attachment    = $query->posts[0];
+		$attachment_id = $attachment->ID;
+
+		// Get stored metadata.
+		$prompt       = get_post_meta( $attachment_id, '_veo_prompt', true );
+		$duration     = get_post_meta( $attachment_id, '_veo_duration', true );
+		$aspect_ratio = get_post_meta( $attachment_id, '_veo_aspect_ratio', true );
+		$resolution   = get_post_meta( $attachment_id, '_veo_resolution', true );
+		$model        = get_post_meta( $attachment_id, '_veo_model', true );
+		$provider     = get_post_meta( $attachment_id, '_veo_provider', true );
+
+		// Build result matching the format from poll_video_async completion.
+		$url      = wp_get_attachment_url( $attachment_id );
+		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+
+		return array(
+			'success'       => true,
+			'job_id'        => $job_id,
+			'attachment_id' => $attachment_id,
+			'url'           => $url,
+			'edit_url'      => $edit_url,
+			'prompt'        => $prompt,
+			'duration'      => absint( $duration ),
+			'aspect_ratio'  => $aspect_ratio,
+			'resolution'    => $resolution,
+			'model'         => $model,
+			'provider'      => $provider,
+			'message'       => sprintf(
+				/* translators: 1: media library edit URL, 2: attachment ID */
+				__( 'Video generation completed. Saved to <a href="%1$s" target="_blank">Media Library (ID %2$d)</a>.', 'wp-mcp-ai' ),
+				esc_url( $edit_url ),
+				$attachment_id
+			),
+		);
+	}
+
+	/**
 	 * Save generated video to Media Library.
 	 *
 	 * Note: This method is duplicated in the tool class for sync mode.
 	 * This is intentional to keep the service and tool layers independent.
 	 * The service needs it for async completion, the tool needs it for sync mode.
 	 *
-	 * @param array $result  Video generation result.
-	 * @param int   $user_id User ID for ownership.
-	 * @return int|WP_Error Attachment ID or error.
+	 * @param array  $result  Video generation result.
+	 * @param int    $user_id User ID for ownership.
+	 * @param string $job_id  Optional. Job ID for tracking. Stored as metadata to allow
+	 *                        recovery of completion status when transient expires.
+	 * @return array|WP_Error Attachment result array or error.
 	 */
-	protected function save_video_to_media( $result, $user_id ) {
+	protected function save_video_to_media( $result, $user_id, $job_id = '' ) {
 		// Generate unique filename.
 		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
 
@@ -1520,6 +1640,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'veo_provider'     => $result['provider'],
 		);
 
+		// Store job_id if provided - allows recovery of completion status when transient expires.
+		if ( ! empty( $job_id ) ) {
+			$metadata['veo_job_id'] = sanitize_key( $job_id );
+		}
+
 		foreach ( $metadata as $key => $value ) {
 			update_post_meta( $attachment_id, '_' . $key, $value );
 		}
@@ -1535,6 +1660,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'attachment_id' => $attachment_id,
 				'duration'      => $result['duration'],
+				'job_id'        => $job_id,
 			)
 		);
 
