@@ -9589,6 +9589,8 @@
                             state: state,
                             text: assistantDisplay.text || '',
                         },
+                        usage: aggregatedUsage,
+                        cost: aggregatedCost,
                     });
                     
                     // Update conversation content with text from tool results
@@ -9609,6 +9611,8 @@
                             state: state,
                             text: assistantDisplay.text || '',
                         },
+                        usage: aggregatedUsage,
+                        cost: aggregatedCost,
                     });
                     // For OpenAI API compatibility, use null instead of empty string
                     // when we have tool_calls but no content
