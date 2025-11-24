@@ -1,5 +1,7 @@
 # GitHub Integration for Custom Tool Development
 
+> **Note**: This document describes the **GitHub Integration for Custom Tool Development** feature. This is different from the **Auth0 GitHub Bridge** feature (found in Settings → WP oOS → Authentication → GitHub Bridge), which maps Auth0 tokens with GitHub identities to WordPress users for authentication purposes. The GitHub Integration feature documented here enables AI assistants to directly interact with GitHub repositories, create Codespaces, and develop custom tools.
+
 ## Overview
 
 The GitHub integration feature allows WordPress administrators to connect their GitHub account and develop custom tools for WP MCP AI directly from GitHub Codespaces, without risk of breaking the live site.
@@ -35,21 +37,25 @@ The GitHub integration feature allows WordPress administrators to connect their 
 
 ### 2. Configure WP MCP AI Settings
 
-1. In WordPress admin, go to **Settings → WP MCP AI**
-2. Find the GitHub Integration section
-3. Enter your **GitHub Client ID**
-4. Enter your **GitHub Client Secret**
-5. Click **Save Changes**
+1. In WordPress admin, go to **Settings → WP oOS** (or **Settings → WP MCP AI**)
+2. Navigate to the **Tools** tab
+3. Click on the **External Tools** sub-tab
+4. Scroll down to the **GitHub Integration** section
+5. Enter your **GitHub OAuth Client ID**
+6. Enter your **GitHub OAuth Client Secret**
+7. Click **Save Changes**
 
 ### 3. Connect Your GitHub Account
 
-1. Click the **Connect GitHub** button
-2. You'll be redirected to GitHub to authorize the application
-3. Grant the requested permissions:
+1. After saving your credentials, you'll see the **GitHub Connection** status section
+2. Click the **Connect GitHub Account** button (it will appear as a blue primary button)
+3. You'll be redirected to GitHub to authorize the application
+4. Grant the requested permissions:
    - `repo`: Full control of private repositories
    - `user`: Read user profile data
    - `codespace`: Manage GitHub Codespaces
-4. After authorization, you'll be redirected back to WordPress
+5. After authorization, you'll be redirected back to WordPress
+6. The connection status will update to show **Connected to GitHub** with your username
 
 ## Using the GitHub Tools
 
