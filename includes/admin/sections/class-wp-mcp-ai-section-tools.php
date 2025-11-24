@@ -1264,7 +1264,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 						// Validate check function is in allowlist.
 						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
-							continue; // Skip invalid check functions.
+							// Invalid check function - mark tool as unavailable.
+							$missing[] = $requirement['plugin'];
+							break;
 						}
 
 						if ( ! $check_func( $check_value ) ) {
@@ -1278,10 +1280,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$check_value = $requirement['value'];
 
 					// Validate check function is in allowlist.
-					if ( in_array( $check_func, $allowed_check_functions, true ) ) {
-						if ( ! $check_func( $check_value ) ) {
-							$missing[] = $requirement['plugin'];
-						}
+					if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+						// Invalid check function - mark tool as unavailable.
+						$missing[] = $requirement['plugin'];
+					} elseif ( ! $check_func( $check_value ) ) {
+						// Check failed - mark tool as unavailable.
+						$missing[] = $requirement['plugin'];
 					}
 				}
 			}
