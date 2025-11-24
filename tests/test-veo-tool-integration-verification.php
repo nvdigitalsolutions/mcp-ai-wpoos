@@ -65,9 +65,9 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		$duration_schema = $schema['properties']['duration'];
 		$this->assertArrayHasKey( 'default', $duration_schema, 'Duration should have default value' );
 		$this->assertEquals(
-			4,
+			5,
 			$duration_schema['default'],
-			'Duration default should be 4 seconds'
+			'Duration default should be 5 seconds'
 		);
 
 		// Verify range constraints.
@@ -87,9 +87,9 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 	 */
 	public function test_service_constant_has_correct_value() {
 		$this->assertEquals(
-			4,
+			5,
 			WP_MCP_AI_Gemini_Video_Generation_Service::DEFAULT_DURATION,
-			'Service DEFAULT_DURATION constant should be 4'
+			'Service DEFAULT_DURATION constant should be 5'
 		);
 
 		$this->assertEquals(
@@ -106,7 +106,7 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test tool execution without duration uses service default of 4.
+	 * Test tool execution without duration uses service default of 5.
 	 */
 	public function test_tool_execution_without_duration_uses_default() {
 		$tool              = new WP_MCP_AI_Tool_Generate_Veo_Video();
@@ -188,14 +188,14 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
 		$this->assertNotNull( $captured_request, 'Request should have been captured' );
 
-		// Verify the duration sent to API is 4 (the new default).
+		// Verify the duration sent to API is 5 (the new default).
 		$request_body = json_decode( $captured_request['body'], true );
 		$this->assertArrayHasKey( 'parameters', $request_body, 'Request should have parameters' );
 		$this->assertArrayHasKey( 'durationSeconds', $request_body['parameters'], 'Parameters should have durationSeconds' );
 		$this->assertEquals(
-			4,
+			5,
 			$request_body['parameters']['durationSeconds'],
-			'Duration should default to 4 seconds when not provided'
+			'Duration should default to 5 seconds when not provided'
 		);
 
 		// Verify result is not an error.
@@ -375,13 +375,13 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Verify the duration sent to API is 4 (service corrected it).
+		// Verify the duration sent to API is 8 (service clamped it to MAX_DURATION).
 		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
 		$request_body = json_decode( $captured_request['body'], true );
 		$this->assertEquals(
-			4,
+			8,
 			$request_body['parameters']['durationSeconds'],
-			'Invalid duration (10) should be corrected to default (4) by service'
+			'Invalid duration (10) should be clamped to maximum (8) by service'
 		);
 
 		// Verify result is not an error.
@@ -413,9 +413,9 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		$payload               = $reflection_method->invoke( $service, $args_without_duration );
 
 		$this->assertEquals(
-			4,
+			5,
 			$payload['parameters']['durationSeconds'],
-			'Service should apply default (4) when duration not provided'
+			'Service should apply default (5) when duration not provided'
 		);
 
 		// Test 2: Service uses provided valid duration.
@@ -431,7 +431,7 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 			'Service should use provided valid duration (7)'
 		);
 
-		// Test 3: Service corrects invalid duration to default.
+		// Test 3: Service clamps invalid duration to maximum.
 		$args_with_invalid_duration = array(
 			'prompt'   => 'Test',
 			'duration' => 15,
@@ -439,9 +439,9 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		$payload                    = $reflection_method->invoke( $service, $args_with_invalid_duration );
 
 		$this->assertEquals(
-			4,
+			8,
 			$payload['parameters']['durationSeconds'],
-			'Service should correct invalid duration (15) to default (4)'
+			'Service should clamp invalid duration (15) to maximum (8)'
 		);
 	}
 

@@ -6,7 +6,7 @@
  * 1. REST API endpoint handles tool execution correctly
  * 2. Tool orchestrator processes video generation requests
  * 3. Service layer validation works end-to-end
- * 4. Default duration (4 seconds) is applied correctly through the entire stack
+ * 4. Default duration (5 seconds) is applied correctly through the entire stack
  *
  * @package WP_MCP_AI
  */
@@ -99,7 +99,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test REST endpoint with no duration parameter uses service default of 4.
+	 * Test REST endpoint with no duration parameter uses service default of 5.
 	 */
 	public function test_rest_endpoint_no_duration_uses_default() {
 		wp_set_current_user( $this->user_id );
@@ -175,7 +175,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 			'arguments',
 			array(
 				'prompt' => 'Test video via REST endpoint without duration',
-				// No duration parameter - should use service default of 4.
+				// No duration parameter - should use service default of 5.
 			)
 		);
 
@@ -194,9 +194,9 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'parameters', $request_body, 'Request should have parameters' );
 		$this->assertArrayHasKey( 'durationSeconds', $request_body['parameters'], 'Parameters should have durationSeconds' );
 		$this->assertEquals(
-			4,
+			5,
 			$request_body['parameters']['durationSeconds'],
-			'Duration should default to 4 seconds when not provided via REST'
+			'Duration should default to 5 seconds when not provided via REST'
 		);
 	}
 
@@ -384,13 +384,13 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		// Verify response.
 		$this->assertEquals( 200, $response->get_status(), 'REST request should return 200 status' );
 
-		// Verify API was called with corrected duration (4).
+		// Verify API was called with corrected duration (8 = MAX_DURATION).
 		$this->assertTrue( $generation_called, 'Video generation API should have been called' );
 		$request_body = json_decode( $captured_request['body'], true );
 		$this->assertEquals(
-			4,
+			8,
 			$request_body['parameters']['durationSeconds'],
-			'Invalid duration (15) should be corrected to default (4) via REST'
+			'Invalid duration (15) should be clamped to maximum (8) via REST'
 		);
 	}
 

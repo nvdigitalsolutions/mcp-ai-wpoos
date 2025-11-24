@@ -55,10 +55,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8 for Veo 3.1, 5-8 for Veo 2.0). Default is 4 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (4-8 for Veo 3.1, 5-8 for Veo 2.0). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
-					'default'     => 4,
+					'default'     => 5,
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
