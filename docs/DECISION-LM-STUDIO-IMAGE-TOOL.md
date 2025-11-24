@@ -11,7 +11,7 @@ After thorough analysis of PR #1342 and the current codebase, **we do not recomm
 ## Background
 
 ### Original Request
-> "can i make this local model a backup/open for image creation when available google/gemma-3-12b with chat-clent connected to local lm studio with has this model"
+> "can i make this local model a backup/open for image creation when available google/gemma-3-12b with chat-client connected to local lm studio with has this model"
 
 ### PR #1342 Proposal
 The closed PR proposed a two-stage architecture:
