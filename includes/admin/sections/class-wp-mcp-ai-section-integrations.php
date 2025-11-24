@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => '{"type": "service_account", ...}',
 				),
 
-				// Meta (Facebook/Instagram/WhatsApp).
+				// Meta.
 				'meta_access_token'            => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta Access Token', 'wp-mcp-ai' ),
@@ -322,7 +322,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 				'meta'             => array(
 					'id'     => 'meta',
-					'label'  => __( 'Meta (Facebook/Instagram/WhatsApp)', 'wp-mcp-ai' ),
+					'label'  => __( 'Meta', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-share',
 					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id' ),
 				),
