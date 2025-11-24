@@ -280,11 +280,12 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that invalid duration values are handled correctly.
+	 * Test that invalid duration values are clamped to valid range.
 	 *
-	 * Duration must be 4-8 seconds. Values outside this range should default to 4.
+	 * Duration must be 4-8 seconds. Values below minimum are clamped to model minimum (4 for Veo 3.1).
+	 * Values above maximum are clamped to 8.
 	 */
-	public function test_invalid_duration_defaults_to_4_seconds() {
+	public function test_invalid_duration_clamped_to_valid_range() {
 		// Set up API key.
 		$settings = array(
 			'gemini_api_key' => 'test-api-key-12345',
@@ -306,17 +307,17 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Should succeed and default to 4 seconds.
+		// Should succeed and clamp to 4 seconds (minimum for Veo 3.1).
 		$this->assertFalse( is_wp_error( $result ), 'Video generation should succeed with invalid duration' );
 
 		// Decode the request body.
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Verify duration was set to default (4 seconds).
+		// Verify duration was clamped to minimum (4 seconds for Veo 3.1).
 		$this->assertEquals(
 			4,
 			$request_body['parameters']['durationSeconds'],
-			'Duration below minimum (3) should default to 4 seconds'
+			'Duration below minimum (3) should be clamped to 4 seconds (Veo 3.1 minimum)'
 		);
 
 		// Reset for next test.
@@ -330,17 +331,17 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Should succeed and default to 4 seconds.
+		// Should succeed and clamp to 8 seconds (maximum).
 		$this->assertFalse( is_wp_error( $result ), 'Video generation should succeed with invalid duration' );
 
 		// Decode the request body.
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Verify duration was set to default (4 seconds).
+		// Verify duration was clamped to maximum (8 seconds).
 		$this->assertEquals(
-			4,
+			8,
 			$request_body['parameters']['durationSeconds'],
-			'Duration above maximum (10) should default to 4 seconds'
+			'Duration above maximum (10) should be clamped to 8 seconds (maximum)'
 		);
 	}
 
