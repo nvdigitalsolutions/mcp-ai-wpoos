@@ -75,6 +75,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * - Message count
 	 *
 	 * Sessions are sorted by most recent activity first (MAX(cct_created) DESC).
+	 * Uses fallback from user_id to cct_author_id for compatibility.
 	 *
 	 * @param int $user_id      User identifier.
 	 * @param int $per_page     Number of sessions to return.
@@ -100,7 +101,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		// Use user_id as primary filter (cct_author_id may not exist in all JetEngine setups).
+		// Try with user_id first (custom field defined in CCT schema).
 		$where_clauses = array( 'user_id = %d' );
 		$where_values  = array( $user_id );
 
@@ -134,9 +135,8 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
-		// If no rows found with user_id, try with cct_author_id column as fallback.
-		// This handles cases where JetEngine might be using the built-in cct_author_id field
-		// instead of the custom user_id field.
+		// Fallback: If no rows found with user_id, try with cct_author_id.
+		// This handles JetEngine's built-in author tracking field.
 		if ( empty( $rows ) ) {
 			$fallback_where_clauses = array( 'cct_author_id = %d' );
 			$fallback_where_values  = array( $user_id );
@@ -146,8 +146,9 @@ class WP_MCP_AI_Transcript_Repository {
 				$fallback_where_values[]  = (string) $assistant_id;
 			}
 
-			$fallback_where_sql      = implode( ' AND ', $fallback_where_clauses );
-			$fallback_query_values   = array_merge( $fallback_where_values, array( $per_page, $offset ) );
+			$fallback_where_sql    = implode( ' AND ', $fallback_where_clauses );
+			$fallback_query_values = array_merge( $fallback_where_values, array( $per_page, $offset ) );
+
 			$fallback_query_template = "SELECT session_key,
                 MIN(request_started_at) AS started_at,
                 MAX(response_completed_at) AS completed_at,
@@ -171,15 +172,16 @@ class WP_MCP_AI_Transcript_Repository {
 			}
 		}
 
+		// Get total count.
 		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
 		$total_query          = $wpdb->prepare( $total_query_template, $where_values );
 
 		$total = (int) $wpdb->get_var( $total_query );
 
-		// If we had to use fallback, also use fallback for total count.
+		// If we used fallback for rows, also use fallback for total count.
 		if ( 0 === $total && ! empty( $rows ) ) {
-			$fallback_where_clauses        = array( 'cct_author_id = %d' );
-			$fallback_where_values         = array( $user_id );
+			$fallback_where_clauses = array( 'cct_author_id = %d' );
+			$fallback_where_values  = array( $user_id );
 
 			if ( $assistant_id > 0 ) {
 				$fallback_where_clauses[] = 'assistant_id = %s';
@@ -201,6 +203,12 @@ class WP_MCP_AI_Transcript_Repository {
 
 	/**
 	 * Get a single transcript session with all messages.
+	 *
+	 * Uses progressive fallback queries to handle various edge cases:
+	 * 1. First tries with session_key + user_id + assistant_id (most specific)
+	 * 2. Then tries with session_key + cct_author_id + assistant_id (JetEngine built-in)
+	 * 3. Then tries without assistant_id filter (in case of mismatch)
+	 * 4. Finally tries with session_key only (for legacy data issues)
 	 *
 	 * @param int    $user_id      User identifier.
 	 * @param string $session_key  Session key.
@@ -230,9 +238,9 @@ class WP_MCP_AI_Transcript_Repository {
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
 
-		// Build WHERE clause - use user_id as primary filter.
-		// Note: cct_author_id is a JetEngine built-in field that may not always be present.
-		// The custom user_id field is more reliable for filtering transcripts.
+		$select_fields = $this->get_select_fields();
+
+		// Query 1: Try with session_key + user_id + assistant_id (custom user_id field).
 		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
 		$where_values  = array( $session_key, $user_id );
 
@@ -241,21 +249,18 @@ class WP_MCP_AI_Transcript_Repository {
 			$where_values[]  = (string) $assistant_id;
 		}
 
-		$where_sql = implode( ' AND ', $where_clauses );
-
-		$select_fields  = $this->get_select_fields();
+		$where_sql      = implode( ' AND ', $where_clauses );
 		$query_template = "SELECT {$select_fields}
          FROM {$table}
          WHERE {$where_sql}
-         ORDER BY cct_created ASC, id ASC";
+         ORDER BY cct_created ASC, _ID ASC";
 
 		$query = $wpdb->prepare( $query_template, $where_values );
 
-		// Log the query being executed for debugging.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'debug',
-				'Transcript Repository: get_session query',
+				'Transcript Repository: get_session query (user_id)',
 				array(
 					'session_key'  => $session_key,
 					'user_id'      => $user_id,
@@ -268,11 +273,10 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
-		// Log query results.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'debug',
-				'Transcript Repository: get_session query results',
+				'Transcript Repository: get_session query results (user_id)',
 				array(
 					'session_key'  => $session_key,
 					'user_id'      => $user_id,
@@ -283,48 +287,43 @@ class WP_MCP_AI_Transcript_Repository {
 			);
 		}
 
-		// If no rows found with user_id, try with cct_author_id column as fallback.
-		// This handles cases where JetEngine might be using the built-in cct_author_id
-		// field instead of the custom user_id field.
+		// Query 2: If no rows, try with cct_author_id (JetEngine built-in field).
 		if ( empty( $rows ) ) {
-			$fallback_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
-			$fallback_where_values  = array( $session_key, $user_id );
+			$author_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+			$author_where_values  = array( $session_key, $user_id );
 
 			if ( $assistant_id > 0 ) {
-				$fallback_where_clauses[] = 'assistant_id = %s';
-				$fallback_where_values[]  = (string) $assistant_id;
+				$author_where_clauses[] = 'assistant_id = %s';
+				$author_where_values[]  = (string) $assistant_id;
 			}
 
-			$fallback_where_sql      = implode( ' AND ', $fallback_where_clauses );
-			$select_fields           = $this->get_select_fields();
-			$fallback_query_template = "SELECT {$select_fields}
+			$author_where_sql      = implode( ' AND ', $author_where_clauses );
+			$author_query_template = "SELECT {$select_fields}
          FROM {$table}
-         WHERE {$fallback_where_sql}
-         ORDER BY cct_created ASC, id ASC";
+         WHERE {$author_where_sql}
+         ORDER BY cct_created ASC, _ID ASC";
 
-			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_where_values );
+			$author_query = $wpdb->prepare( $author_query_template, $author_where_values );
 
-			// Log fallback query.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
-					'Transcript Repository: get_session fallback query (trying cct_author_id)',
+					'Transcript Repository: get_session query (cct_author_id)',
 					array(
-						'session_key'     => $session_key,
-						'user_id'         => $user_id,
-						'assistant_id'    => $assistant_id,
-						'fallback_query'  => $fallback_query,
+						'session_key'  => $session_key,
+						'user_id'      => $user_id,
+						'assistant_id' => $assistant_id,
+						'query'        => $author_query,
 					)
 				);
 			}
 
-			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
+			$rows = $wpdb->get_results( $author_query, ARRAY_A );
 
-			// Log fallback results.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
-					'Transcript Repository: get_session fallback query results',
+					'Transcript Repository: get_session query results (cct_author_id)',
 					array(
 						'session_key'  => $session_key,
 						'user_id'      => $user_id,
@@ -336,8 +335,121 @@ class WP_MCP_AI_Transcript_Repository {
 			}
 		}
 
+		// Query 3: If still no rows and assistant_id was specified, try without assistant_id.
+		if ( empty( $rows ) && $assistant_id > 0 ) {
+			// Try with user_id only.
+			$simple_query_template = "SELECT {$select_fields}
+         FROM {$table}
+         WHERE session_key = %s AND user_id = %d
+         ORDER BY cct_created ASC, _ID ASC";
+
+			$simple_query = $wpdb->prepare( $simple_query_template, array( $session_key, $user_id ) );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session trying without assistant_id (user_id)',
+					array(
+						'session_key' => $session_key,
+						'user_id'     => $user_id,
+						'query'       => $simple_query,
+					)
+				);
+			}
+
+			$rows = $wpdb->get_results( $simple_query, ARRAY_A );
+
+			// If still no rows, try with cct_author_id.
+			if ( empty( $rows ) ) {
+				$simple_author_query_template = "SELECT {$select_fields}
+         FROM {$table}
+         WHERE session_key = %s AND cct_author_id = %d
+         ORDER BY cct_created ASC, _ID ASC";
+
+				$simple_author_query = $wpdb->prepare( $simple_author_query_template, array( $session_key, $user_id ) );
+
+				$rows = $wpdb->get_results( $simple_author_query, ARRAY_A );
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session without assistant_id results',
+					array(
+						'session_key' => $session_key,
+						'user_id'     => $user_id,
+						'row_count'   => is_array( $rows ) ? count( $rows ) : 0,
+						'wpdb_error'  => $wpdb->last_error ? $wpdb->last_error : 'none',
+					)
+				);
+			}
+		}
+
+		// Query 4: Final fallback - try with session_key only.
+		// This handles cases where user_id wasn't stored correctly in legacy data.
 		if ( empty( $rows ) ) {
-			// Log the 404 error with context.
+			$session_only_query_template = "SELECT {$select_fields}
+         FROM {$table}
+         WHERE session_key = %s
+         ORDER BY cct_created ASC, _ID ASC";
+
+			$session_only_query = $wpdb->prepare( $session_only_query_template, array( $session_key ) );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session trying with session_key only (final fallback)',
+					array(
+						'session_key' => $session_key,
+						'user_id'     => $user_id,
+						'query'       => $session_only_query,
+					)
+				);
+			}
+
+			$rows = $wpdb->get_results( $session_only_query, ARRAY_A );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Transcript Repository: get_session with session_key only results',
+					array(
+						'session_key' => $session_key,
+						'row_count'   => is_array( $rows ) ? count( $rows ) : 0,
+						'wpdb_error'  => $wpdb->last_error ? $wpdb->last_error : 'none',
+					)
+				);
+			}
+
+			// Security check: verify the rows belong to the expected user.
+			// This prevents unauthorized access when using the session_key-only fallback.
+			if ( ! empty( $rows ) && $user_id > 0 ) {
+				$first_row      = $rows[0];
+				$row_user_id    = isset( $first_row['user_id'] ) ? absint( $first_row['user_id'] ) : 0;
+				$row_author_id  = isset( $first_row['cct_author_id'] ) ? absint( $first_row['cct_author_id'] ) : 0;
+				$user_matches   = ( $row_user_id === $user_id ) || ( $row_author_id === $user_id );
+
+				if ( ! $user_matches ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'debug',
+							'Transcript Repository: get_session found rows but user_id mismatch',
+							array(
+								'session_key'   => $session_key,
+								'expected_user' => $user_id,
+								'row_user_id'   => $row_user_id,
+								'row_author_id' => $row_author_id,
+							)
+						);
+					}
+
+					// Clear rows - user doesn't own this transcript.
+					$rows = array();
+				}
+			}
+		}
+
+		if ( empty( $rows ) ) {
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -362,7 +474,12 @@ class WP_MCP_AI_Transcript_Repository {
 	}
 
 	/**
-	 * Delete transcript entries for a session and user
+	 * Delete transcript entries for a session and user.
+	 *
+	 * Tries user_id first (our custom CCT field), then falls back to
+	 * cct_author_id (JetEngine built-in) for compatibility with different
+	 * configurations. This order matches the query patterns in get_session()
+	 * and get_sessions() which also prioritize the custom user_id field.
 	 *
 	 * @param string $session_key Session key.
 	 * @param int    $user_id     User ID.
@@ -381,25 +498,23 @@ class WP_MCP_AI_Transcript_Repository {
 			return false;
 		}
 
-		// First try deleting with cct_author_id.
+		// Try deleting using user_id first (custom CCT field).
 		$deleted = $wpdb->delete(
 			$table,
 			array(
-				'session_key'   => $session_key,
-				'cct_author_id' => $user_id,
+				'session_key' => $session_key,
+				'user_id'     => $user_id,
 			),
 			array( '%s', '%d' )
 		);
 
-		// If no rows deleted with cct_author_id, try with user_id as fallback.
-		// This handles cases where JetEngine might be using the custom user_id field
-		// instead of the built-in cct_author_id column.
+		// If no rows deleted with user_id, try with cct_author_id (JetEngine built-in).
 		if ( false !== $deleted && 0 === $deleted ) {
 			$deleted = $wpdb->delete(
 				$table,
 				array(
-					'session_key' => $session_key,
-					'user_id'     => $user_id,
+					'session_key'   => $session_key,
+					'cct_author_id' => $user_id,
 				),
 				array( '%s', '%d' )
 			);
@@ -411,18 +526,24 @@ class WP_MCP_AI_Transcript_Repository {
 	/**
 	 * Get the SELECT fields for transcript queries.
 	 *
+	 * Includes session_key and user identification fields for proper
+	 * reconstruction and debugging.
+	 *
 	 * @return string SQL SELECT fields.
 	 */
 	private function get_select_fields() {
-		return "request_payload,
+		return "session_key,
+                request_payload,
                 response_payload,
                 metadata,
                 request_started_at,
                 response_completed_at,
                 cct_created,
+                cct_author_id,
                 assistant_id,
                 assistant_model,
-                latency_ms";
+                latency_ms,
+                user_id";
 	}
 
 	/**
