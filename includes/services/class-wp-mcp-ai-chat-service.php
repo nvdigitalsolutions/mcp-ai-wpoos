@@ -458,6 +458,15 @@ class WP_MCP_AI_Chat_Service {
 				)
 			);
 
+			// If tool returned async result, wait for completion in agentic loop.
+			// This prevents the LLM from seeing "pending" status and ensures it gets
+			// the actual tool result (e.g., video URL) for proper response generation.
+			if ( ! is_wp_error( $tool_result ) && is_array( $tool_result ) &&
+			     isset( $tool_result['async'] ) && $tool_result['async'] &&
+			     ! empty( $tool_result['job_id'] ) ) {
+				$tool_result = $this->wait_for_async_tool_completion( $tool_result['job_id'], $tool_name );
+			}
+
 			// Format result.
 			if ( is_wp_error( $tool_result ) ) {
 				$error_payload = array(
@@ -485,6 +494,160 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Wait for async tool completion and return final result.
+	 *
+	 * Polls the async executor for job completion. Used in agentic loops to ensure
+	 * the LLM receives the actual tool result (e.g., generated video URL) rather than
+	 * a "pending" status message.
+	 *
+	 * @param string $job_id   Async job identifier.
+	 * @param string $tool_name Tool name for error messages.
+	 * @return array|WP_Error Final tool result or error.
+	 */
+	private function wait_for_async_tool_completion( $job_id, $tool_name ) {
+		// Load async executor.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+
+		// Poll configuration.
+		$max_polls     = 120;  // 120 polls.
+		$poll_interval = 3;    // 3 seconds between polls = max 6 minutes wait.
+		$poll_count    = 0;
+
+		// Extend PHP execution time limit to accommodate long polling.
+		// Calculate required time: (max_polls * poll_interval) + buffer.
+		$required_time = ( $max_polls * $poll_interval ) + 60; // 6 minutes + 1 minute buffer = 420 seconds.
+
+		// Set timeout if function exists. Silencing errors as set_time_limit may be
+		// disabled in some hosting environments (safe mode, disable_functions in php.ini).
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'async_tool_wait_start',
+			sprintf( 'Waiting for async tool completion: %s (job_id: %s)', $tool_name, $job_id ),
+			array(
+				'tool_name' => $tool_name,
+				'job_id'    => $job_id,
+			)
+		);
+
+		while ( $poll_count < $max_polls ) {
+			// Get job status.
+			$job_status = $executor->get_result( $job_id );
+
+			// Check for errors.
+			if ( is_wp_error( $job_status ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Async tool wait failed - job error',
+					array(
+						'tool_name'     => $tool_name,
+						'job_id'        => $job_id,
+						'error_code'    => $job_status->get_error_code(),
+						'error_message' => $job_status->get_error_message(),
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'wp-mcp-ai' ),
+						$tool_name,
+						$job_status->get_error_message()
+					)
+				);
+			}
+
+			// Check if completed.
+			$status = isset( $job_status['status'] ) ? $job_status['status'] : 'unknown';
+
+			if ( 'completed' === $status ) {
+				// Job completed successfully - extract result.
+				$result = isset( $job_status['result'] ) ? $job_status['result'] : array();
+
+				WP_MCP_AI_Logger::log_event(
+					'async_tool_wait_complete',
+					sprintf( 'Async tool completed: %s (job_id: %s, polls: %d)', $tool_name, $job_id, $poll_count ),
+					array(
+						'tool_name'   => $tool_name,
+						'job_id'      => $job_id,
+						'poll_count'  => $poll_count,
+						'has_result'  => ! empty( $result ),
+					)
+				);
+
+				return $result;
+			}
+
+			if ( 'failed' === $status ) {
+				// Job failed.
+				$error_msg = isset( $job_status['error'] ) ? $job_status['error'] : __( 'Unknown error', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Async tool wait failed - job failed',
+					array(
+						'tool_name' => $tool_name,
+						'job_id'    => $job_id,
+						'error'     => $error_msg,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'wp-mcp-ai' ),
+						$tool_name,
+						$error_msg
+					)
+				);
+			}
+
+			// Job still pending/running - wait before next poll.
+			sleep( $poll_interval );
+			++$poll_count;
+
+			// Log progress periodically.
+			if ( 0 === $poll_count % 10 ) {
+				WP_MCP_AI_Logger::log_event(
+					'async_tool_wait_progress',
+					sprintf( 'Still waiting for async tool: %s (poll %d/%d)', $tool_name, $poll_count, $max_polls ),
+					array(
+						'tool_name'  => $tool_name,
+						'job_id'     => $job_id,
+						'poll_count' => $poll_count,
+						'status'     => $status,
+					)
+				);
+			}
+		}
+
+		// Timeout reached.
+		WP_MCP_AI_Logger::log_error(
+			'Async tool wait timeout',
+			array(
+				'tool_name'  => $tool_name,
+				'job_id'     => $job_id,
+				'poll_count' => $poll_count,
+			)
+		);
+
+		return new WP_Error(
+			'wp_mcp_ai_async_tool_timeout',
+			sprintf(
+				/* translators: %s: tool name */
+				__( '%s timed out after 6 minutes. The job may still be processing in the background.', 'wp-mcp-ai' ),
+				$tool_name
+			)
+		);
 	}
 
 	/**
