@@ -222,7 +222,8 @@ class WP_MCP_AI_Token_Usage_Service {
 		uasort(
 			$all_models,
 			function ( $a, $b ) {
-				return $b['total_tokens'] - $a['total_tokens'];
+				// Use spaceship operator for safe comparison (PHP 7+).
+				return $b['total_tokens'] <=> $a['total_tokens'];
 			}
 		);
 
@@ -252,7 +253,7 @@ class WP_MCP_AI_Token_Usage_Service {
 						$all_tools[ $tool_slug ] = array(
 							'tool_slug'    => $tool_slug,
 							'tool_name'    => isset( $available_tools[ $tool_slug ] ) ? $available_tools[ $tool_slug ] : ucwords( str_replace( '_', ' ', $tool_slug ) ),
-							'users'        => array(), // Track unique users as associative array for O(1) lookups.
+							'users'        => array(), // Track unique users as associative array (will be converted to count for output).
 							'requests'     => 0,
 							'total_tokens' => 0,
 						);
@@ -291,7 +292,8 @@ class WP_MCP_AI_Token_Usage_Service {
 			uasort(
 				$prepared_tools,
 				function ( $a, $b ) {
-					return $b['total_tokens'] - $a['total_tokens'];
+					// Use spaceship operator for safe comparison (PHP 7+).
+					return $b['total_tokens'] <=> $a['total_tokens'];
 				}
 			);
 
