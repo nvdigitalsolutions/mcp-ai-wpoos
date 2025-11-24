@@ -107,11 +107,11 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
-		// Duration 0 should have been adjusted to model minimum (4 for Veo 3.1).
+		// Duration 0 should have been adjusted to model minimum (5 for both models).
 		$this->assertEquals(
-			4,
+			5,
 			$request_body['parameters']['durationSeconds'],
-			'Duration 0 should be adjusted to model minimum (4 for Veo 3.1)'
+			'Duration 0 should be adjusted to model minimum (5 for both Veo 3.1 and Veo 2.0)'
 		);
 	}
 
@@ -179,7 +179,7 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that duration values outside 4-8 range are clamped to valid range.
+	 * Test that duration values outside 5-8 range are clamped to valid range.
 	 */
 	public function test_out_of_range_durations_clamped_to_valid_range() {
 		// Set up API key.
@@ -190,8 +190,8 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
-		// Test values below minimum (should be clamped to 4 for Veo 3.1).
-		$below_min_values = array( 1, 2, 3 );
+		// Test values below minimum (should be clamped to 5 for both models).
+		$below_min_values = array( 1, 2, 3, 4 );
 		foreach ( $below_min_values as $test_duration ) {
 			$captured_request = null;
 
@@ -236,9 +236,9 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 			$request_body = json_decode( $captured_request['args']['body'], true );
 
 			$this->assertEquals(
-				4,
+				5,
 				$request_body['parameters']['durationSeconds'],
-				"Duration {$test_duration} (below minimum) should be clamped to 4 seconds (Veo 3.1 minimum)"
+				"Duration {$test_duration} (below minimum) should be clamped to 5 seconds (minimum for both models)"
 			);
 		}
 
@@ -296,7 +296,7 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that all valid duration values (4-8) are passed correctly.
+	 * Test that all valid duration values (5-8) are passed correctly.
 	 */
 	public function test_valid_durations_passed_correctly() {
 		// Set up API key.
@@ -308,7 +308,7 @@ class WP_MCP_AI_Veo_Duration_Validation_Test extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Test all valid duration values.
-		foreach ( array( 4, 5, 6, 7, 8 ) as $valid_duration ) {
+		foreach ( array( 5, 6, 7, 8 ) as $valid_duration ) {
 			$captured_request = null;
 
 			// Mock HTTP requests.

@@ -58,8 +58,8 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that duration 4 (Veo 3.1 minimum) is adjusted to 5 for Veo 2.0.
-	 * This is the main bug fix - Veo 2 requires minimum 5 seconds, not 4.
+	 * Test that duration 4 is adjusted to 5 for both Veo 2.0 and Veo 3.1.
+	 * Both models require minimum 5 seconds.
 	 */
 	public function test_veo_2_adjusts_duration_4_to_5() {
 		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
@@ -67,7 +67,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 
 		$args = array(
 			'prompt'   => 'Test video',
-			'duration' => 4, // Valid for Veo 3.1 but below Veo 2.0 minimum.
+			'duration' => 4, // Below minimum for both models.
 		);
 
 		$payload = $method->invoke( $this->service, $args, $this->veo_2_model );
@@ -89,15 +89,16 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that duration 4 is preserved for Veo 3.1.
+	 * Test that duration 4 is also adjusted to 5 for Veo 3.1.
+	 * Updated: Veo 3.1 preview API also requires minimum 5 seconds.
 	 */
-	public function test_veo_3_preserves_duration_4() {
+	public function test_veo_3_adjusts_duration_4_to_5() {
 		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		$args = array(
 			'prompt'   => 'Test video',
-			'duration' => 4, // Valid for Veo 3.1.
+			'duration' => 4, // Below minimum for Veo 3.1 preview.
 		);
 
 		$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
@@ -107,9 +108,9 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'durationSeconds', $payload['parameters'] );
 
 		$this->assertEquals(
-			4,
+			5,
 			$payload['parameters']['durationSeconds'],
-			'Duration 4 should be preserved for Veo 3.1 (minimum 4 seconds)'
+			'Duration 4 should be adjusted to 5 for Veo 3.1 preview (minimum 5 seconds)'
 		);
 	}
 
@@ -137,20 +138,20 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 		$this->assertEquals(
-			4,
+			5,
 			$payload['parameters']['durationSeconds'],
-			'Duration 0 should default to 4 for Veo 3.1'
+			'Duration 0 should default to 5 for Veo 3.1 preview'
 		);
 	}
 
 	/**
-	 * Test that durations 1-3 are adjusted to model minimum.
+	 * Test that durations 1-4 are adjusted to model minimum (5 seconds for both models).
 	 */
 	public function test_below_minimum_durations_adjusted() {
 		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
-		$below_min_values = array( 1, 2, 3 );
+		$below_min_values = array( 1, 2, 3, 4 );
 
 		foreach ( $below_min_values as $test_duration ) {
 			// Test with Veo 2.0.
@@ -170,9 +171,9 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			$payload = $method->invoke( $this->service, $args, $this->veo_3_model );
 
 			$this->assertEquals(
-				4,
+				5,
 				$payload['parameters']['durationSeconds'],
-				"Duration {$test_duration} should be adjusted to 4 for Veo 3.1"
+				"Duration {$test_duration} should be adjusted to 5 for Veo 3.1 preview"
 			);
 		}
 	}
@@ -201,14 +202,15 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that all valid durations (4-8) work correctly with Veo 3.1.
+	 * Test that all valid durations (5-8) work correctly with Veo 3.1 preview.
+	 * Updated: Veo 3.1 preview now also requires 5-8 seconds (same as Veo 2.0).
 	 */
 	public function test_veo_3_valid_durations() {
 		$method = new ReflectionMethod( $this->service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
-		// Valid durations for Veo 3.1: 4-8 seconds.
-		foreach ( array( 4, 5, 6, 7, 8 ) as $valid_duration ) {
+		// Valid durations for Veo 3.1 preview: 5-8 seconds.
+		foreach ( array( 5, 6, 7, 8 ) as $valid_duration ) {
 			$args    = array(
 				'prompt'   => 'Test video',
 				'duration' => $valid_duration,
@@ -218,7 +220,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 			$this->assertEquals(
 				$valid_duration,
 				$payload['parameters']['durationSeconds'],
-				"Valid duration {$valid_duration} should be preserved for Veo 3.1"
+				"Valid duration {$valid_duration} should be preserved for Veo 3.1 preview"
 			);
 		}
 	}
@@ -284,13 +286,13 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			5,
 			$payload['parameters']['durationSeconds'],
-			'Default duration (5) should work for Veo 3.1 (minimum 4 seconds)'
+			'Default duration (5) should work for Veo 3.1 preview (minimum 5 seconds)'
 		);
 	}
 
 	/**
 	 * Test the actual API request flow with Veo 2.0 and duration 4.
-	 * This simulates the real-world scenario that was failing.
+	 * This simulates the scenario where duration 4 should be adjusted to 5.
 	 */
 	public function test_veo_2_api_request_with_duration_4() {
 		// Set up API key.
@@ -374,7 +376,7 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test the actual API request flow with Veo 3.1 and duration 4.
-	 * Verifies that duration 4 is preserved for Veo 3.1.
+	 * Updated: Verifies that duration 4 is now adjusted to 5 for Veo 3.1 preview.
 	 */
 	public function test_veo_3_api_request_with_duration_4() {
 		// Set up API key.
@@ -440,13 +442,13 @@ class WP_MCP_AI_Veo_2_Duration_Validation_Test extends WP_UnitTestCase {
 		// Parse request body.
 		$request_body = json_decode( $captured_request['body'], true );
 
-		// Verify duration 4 is preserved.
+		// Verify duration 4 is adjusted to 5.
 		$this->assertArrayHasKey( 'parameters', $request_body );
 		$this->assertArrayHasKey( 'durationSeconds', $request_body['parameters'] );
 		$this->assertEquals(
-			4,
+			5,
 			$request_body['parameters']['durationSeconds'],
-			'Duration 4 should be preserved in actual API request for Veo 3.1'
+			'Duration 4 should be adjusted to 5 in actual API request for Veo 3.1 preview'
 		);
 	}
 }

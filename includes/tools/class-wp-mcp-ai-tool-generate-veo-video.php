@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 4-8 seconds (Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. 1080p videos require exactly 8 seconds duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 5-8 seconds (both Veo 3.1 and Veo 2.0 support 5-8 seconds). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. 1080p videos require exactly 8 seconds duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -56,8 +56,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
-					'minimum'     => 4,
+					'description' => __( 'Video duration in seconds (5-8). Default is 5 seconds. Both Veo 3.1 and Veo 2.0 support 5-8 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'minimum'     => 5,
 					'maximum'     => 8,
 					'default'     => 5,
 				),

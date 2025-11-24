@@ -12,6 +12,7 @@
  * - Watermarking: All videos automatically include SynthID digital watermark by Google
  * - Content Policy: Relies on Google's API-side content moderation
  * - Timeout Handling: 60s initial timeout + 5min max polling (300s)
+ * - Duration: Both Veo 3.1 preview and Veo 2.0 require 5-8 seconds (MIN_DURATION = 5)
  * - 1080p Requirement: Enforces 8 seconds duration for 1080p resolution (REQUIRED_1080P_DURATION constant)
  * - Aspect Ratio: 1080p only supported for 16:9 (line 165-168)
  *
@@ -60,11 +61,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	const VEO_2_MODEL = 'veo-2.0-generate-001';
 
 	/**
-	 * Minimum video duration in seconds
+	 * Minimum video duration in seconds (applies to both Veo 3.1 preview and Veo 2.0)
+	 * Note: Veo 3.1 preview API requires 5 seconds minimum, not 4 seconds.
 	 *
 	 * @var int
 	 */
-	const MIN_DURATION = 4;
+	const MIN_DURATION = 5;
 
 	/**
 	 * Maximum video duration in seconds
@@ -147,7 +149,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     Video generation arguments.
 	 *
 	 *     @type string $prompt           Video description/prompt (required).
-	 *     @type int    $duration         Duration in seconds (4-8, default 5).
+	 *     @type int    $duration         Duration in seconds (5-8, default 5).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type string $negative_prompt  What to avoid in generation.
@@ -218,8 +220,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				);
 
 				// Adjust args for Veo 2.0 compatibility before fallback.
-				// Veo 2.0 requires minimum 5 seconds, while Veo 3.1 allows 4 seconds.
-				// If duration is 4, adjust to 5 to prevent "out of bound" errors.
+				// Both Veo 3.1 and Veo 2.0 require minimum 5 seconds.
+				// This adjustment is kept for compatibility with any edge cases.
 				$veo_2_args = $args;
 				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
 					$original_duration = $veo_2_args['duration'];
@@ -391,8 +393,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Validates and sanitizes all parameters before sending to the Gemini API.
 	 * Adjusts constraints based on the model being used (Veo 3.1 vs Veo 2.0).
 	 * Duration validation is performed in multiple stages:
-	 * 1. Initial validation: Convert to integer and check range based on model
-	 * 2. Model-specific adjustments: Veo 2 min 5s, 1080p requires 8s for Veo 3
+	 * 1. Initial validation: Convert to integer and check range (both models: 5-8 seconds)
+	 * 2. Model-specific adjustments: 1080p requires 8s for Veo 3.1
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
 	 * @param array  $args  Generation arguments.
