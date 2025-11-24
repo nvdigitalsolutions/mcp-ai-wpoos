@@ -827,6 +827,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'size',
 			'quality',
 			'model',
+			'provider',
 			'prompt',
 			'revised_prompt',
 			'text', // Descriptive message about the generated image.
