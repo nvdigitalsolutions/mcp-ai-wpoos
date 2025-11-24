@@ -543,9 +543,16 @@ class WP_MCP_AI_Chat_Service {
 	 * the LLM receives the actual tool result (e.g., generated video URL) rather than
 	 * a "pending" status message.
 	 *
-	 * Note: This method intentionally uses sleep() to block and hold the connection
-	 * while waiting for async job completion. This is the desired behavior in the
-	 * agentic loop context to ensure the LLM receives the final result.
+	 * IMPORTANT: This method intentionally uses sleep() to block the PHP process while
+	 * waiting for async job completion. This blocking behavior is REQUIRED in the agentic
+	 * loop context to ensure the LLM receives the final tool result before generating its
+	 * response. Without blocking, the LLM would see only the "pending" status and cannot
+	 * produce a meaningful response (e.g., "Here's your video: [URL]").
+	 *
+	 * This is NOT a performance issue because:
+	 * - It only blocks during async tool execution (rare in typical conversations)
+	 * - The SSE connection is already held for streaming responses anyway
+	 * - The alternative (client-side polling) creates worse UX and never delivers final LLM response
 	 *
 	 * @param string $job_id   Async job identifier.
 	 * @param string $tool_name Tool name for error messages.
