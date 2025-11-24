@@ -94,13 +94,27 @@ class WP_MCP_AI_Tool_CAD_Drawing_Generator implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Log tool execution start.
+		WP_MCP_AI_Logger::log_event(
+			'cad_tool_start',
+			'CAD drawing generation started',
+			array(
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+				'drawing_type' => isset( $arguments['drawing_type'] ) ? $arguments['drawing_type'] : '',
+			)
+		);
 
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
+			WP_MCP_AI_Logger::log_error( 'CAD drawing permission denied', array( 'user_id' => $user_id ) );
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate CAD drawings.', 'wp-mcp-ai' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			WP_MCP_AI_Logger::log_error( 'CAD drawing multisite access denied', array( 'user_id' => $user_id ) );
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
 
@@ -117,6 +131,13 @@ class WP_MCP_AI_Tool_CAD_Drawing_Generator implements WP_MCP_AI_Tool_Interface {
 		$height     = isset( $dimensions['height'] ) ? floatval( $dimensions['height'] ) : 0;
 
 		if ( $width <= 0 || $length <= 0 ) {
+			WP_MCP_AI_Logger::log_error(
+				'CAD drawing invalid dimensions',
+				array(
+					'width'  => $width,
+					'length' => $length,
+				)
+			);
 			return new WP_Error( 'wp_mcp_ai_invalid_dimensions', __( 'Width and length must be greater than zero.', 'wp-mcp-ai' ) );
 		}
 
@@ -176,6 +197,18 @@ class WP_MCP_AI_Tool_CAD_Drawing_Generator implements WP_MCP_AI_Tool_Interface {
 				ucwords( str_replace( '_', ' ', $params['drawing_type'] ) ),
 				strtoupper( $params['format'] )
 			),
+		);
+
+		// Log successful generation.
+		WP_MCP_AI_Logger::log_event(
+			'cad_tool_success',
+			'CAD drawing generated successfully',
+			array(
+				'drawing_id'   => $drawing_id,
+				'drawing_type' => $params['drawing_type'],
+				'format'       => $params['format'],
+				'user_id'      => $user_id,
+			)
 		);
 
 		/**

@@ -90,7 +90,20 @@ class WP_MCP_AI_Tool_3D_Model_Generator implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Log tool execution start.
+		WP_MCP_AI_Logger::log_event(
+			'3d_model_tool_start',
+			'3D model generation started',
+			array(
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+			)
+		);
+
+
 
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate 3D models.', 'wp-mcp-ai' ) );

@@ -90,19 +90,36 @@ class WP_MCP_AI_Tool_AI_Rendering_Assistant implements WP_MCP_AI_Tool_Interface 
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Log tool execution start.
+		WP_MCP_AI_Logger::log_event(
+			'rendering_tool_start',
+			'AI rendering generation started',
+			array(
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+			)
+		);
 
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
+			WP_MCP_AI_Logger::log_error( 'Rendering permission denied', array( 'user_id' => $user_id ) );
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create renderings.', 'wp-mcp-ai' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			WP_MCP_AI_Logger::log_error( 'Rendering multisite access denied', array( 'user_id' => $user_id ) );
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
 
 		// Validate attachment.
 		$attachment_id = isset( $arguments['design_attachment_id'] ) ? absint( $arguments['design_attachment_id'] ) : 0;
 		if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Rendering invalid attachment',
+				array( 'attachment_id' => $attachment_id )
+			);
 			return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'Invalid design attachment ID.', 'wp-mcp-ai' ) );
 		}
 
@@ -110,6 +127,13 @@ class WP_MCP_AI_Tool_AI_Rendering_Assistant implements WP_MCP_AI_Tool_Interface 
 		$attachment = get_post( $attachment_id );
 		if ( ! $attachment || absint( $attachment->post_author ) !== $user_id ) {
 			if ( ! user_can( $user_id, 'edit_others_posts' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Rendering attachment permission denied',
+					array(
+						'attachment_id' => $attachment_id,
+						'user_id'       => $user_id,
+					)
+				);
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to render this design.', 'wp-mcp-ai' ) );
 			}
 		}
@@ -160,6 +184,19 @@ class WP_MCP_AI_Tool_AI_Rendering_Assistant implements WP_MCP_AI_Tool_Interface 
 				ucwords( str_replace( '_', ' ', $style ) ),
 				strtoupper( $resolution )
 			),
+		);
+
+		// Log successful rendering queue.
+		WP_MCP_AI_Logger::log_event(
+			'rendering_tool_success',
+			'Rendering queued successfully',
+			array(
+				'rendering_id'  => $rendering_id,
+				'attachment_id' => $attachment_id,
+				'style'         => $style,
+				'resolution'    => $resolution,
+				'user_id'       => $user_id,
+			)
 		);
 
 		/**
