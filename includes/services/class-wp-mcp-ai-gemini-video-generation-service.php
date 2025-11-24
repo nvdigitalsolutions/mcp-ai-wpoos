@@ -1143,6 +1143,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					} else {
 						$metadata['status'] = 'completed';
 						$metadata['result'] = array(
+							'success'       => true,
 							'attachment_id' => $save_result['attachment_id'],
 							'url'           => $save_result['url'],
 							'prompt'        => $result['prompt'],
@@ -1151,6 +1152,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'resolution'    => $result['resolution'],
 							'model'         => $result['model'],
 							'provider'      => $result['provider'],
+							'message'       => sprintf(
+								/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
+								__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to Media Library.', 'wp-mcp-ai' ),
+								$result['duration'],
+								$result['resolution'],
+								$result['aspect_ratio']
+							),
 						);
 					}
 				} else {
@@ -1160,6 +1168,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 					$metadata['status'] = 'completed';
 					$metadata['result'] = array(
+						'success'      => true,
 						'video_url'    => $data_url,
 						'prompt'       => $result['prompt'],
 						'duration'     => $result['duration'],
@@ -1167,6 +1176,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'resolution'   => $result['resolution'],
 						'model'        => $result['model'],
 						'provider'     => $result['provider'],
+						'message'      => sprintf(
+							/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
+							__( 'Video generated successfully (%1$ds, %2$s, %3$s). Temporary video not saved to Media Library.', 'wp-mcp-ai' ),
+							$result['duration'],
+							$result['resolution'],
+							$result['aspect_ratio']
+						),
 					);
 				}
 			}
