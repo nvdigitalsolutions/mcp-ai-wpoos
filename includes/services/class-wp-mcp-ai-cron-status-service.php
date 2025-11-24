@@ -557,6 +557,66 @@ class WP_MCP_AI_Cron_Status_Service {
 	}
 
 	/**
+	 * Merge Job Notifier status into result array.
+	 *
+	 * Checks Job Notifier cache for completion/failure status and merges
+	 * the authoritative status into the result. This ensures the chat client
+	 * receives completion notifications promptly, even if the transient
+	 * hasn't been updated yet.
+	 *
+	 * @param array  $result The result array to merge status into.
+	 * @param string $job_id Job identifier.
+	 * @return array Modified result array with merged notifier status.
+	 */
+	protected function merge_notifier_status( $result, $job_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+			return $result;
+		}
+
+		$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		if ( ! $notifier_status || ! is_array( $notifier_status ) ) {
+			return $result;
+		}
+
+		// If Job Notifier shows completed or failed, use that status.
+		// This is authoritative because the completion hook has already fired.
+		if ( isset( $notifier_status['status'] ) ) {
+			$notifier_job_status = $notifier_status['status'];
+
+			if ( 'completed' === $notifier_job_status ) {
+				$result['status'] = 'completed';
+
+				// Merge result data from notifier if available and not already set.
+				if ( isset( $notifier_status['result'] ) && is_array( $notifier_status['result'] ) ) {
+					if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
+						$result['result'] = $notifier_status['result'];
+					}
+				}
+			} elseif ( 'failed' === $notifier_job_status ) {
+				$result['status'] = 'failed';
+
+				// Merge error from notifier if available.
+				if ( isset( $notifier_status['error'] ) ) {
+					$result['error'] = $notifier_status['error'];
+				}
+			}
+		}
+
+		// Add progress data if available.
+		if ( isset( $notifier_status['progress'] ) ) {
+			$result['progress'] = $notifier_status['progress'];
+		}
+		if ( isset( $notifier_status['metadata']['message'] ) ) {
+			$result['progress_message'] = $notifier_status['metadata']['message'];
+		}
+		if ( isset( $notifier_status['metadata']['poll_attempt'] ) ) {
+			$result['poll_attempt'] = $notifier_status['metadata']['poll_attempt'];
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Get details for a specific cron job
 	 *
 	 * Returns detailed information about a single cron job.
@@ -609,54 +669,8 @@ class WP_MCP_AI_Cron_Status_Service {
 				);
 			}
 
-			// Check Job Notifier cache for completion/failure status.
-			// The Job Notifier receives wp_mcp_ai_job_completed and wp_mcp_ai_job_failed hooks
-			// which may contain more up-to-date status than the transient (especially if the
-			// video file was created but the transient wasn't updated yet due to timing).
-			// This ensures the chat client receives completion notifications promptly.
-			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
-				$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
-				if ( $notifier_status && is_array( $notifier_status ) ) {
-					// If Job Notifier shows completed or failed, use that status.
-					// This is authoritative because the completion hook has already fired.
-					if ( isset( $notifier_status['status'] ) ) {
-						$notifier_job_status = $notifier_status['status'];
-
-						if ( 'completed' === $notifier_job_status ) {
-							// Update result status to completed.
-							$result['status'] = 'completed';
-
-							// Merge result data from notifier if available and not already set.
-							if ( isset( $notifier_status['result'] ) && is_array( $notifier_status['result'] ) ) {
-								if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
-									$result['result'] = $notifier_status['result'];
-								}
-							}
-						} elseif ( 'failed' === $notifier_job_status ) {
-							// Update result status to failed.
-							$result['status'] = 'failed';
-
-							// Merge error from notifier if available.
-							if ( isset( $notifier_status['error'] ) ) {
-								$result['error'] = $notifier_status['error'];
-							}
-						}
-					}
-
-					// Add progress percentage if available.
-					if ( isset( $notifier_status['progress'] ) ) {
-						$result['progress'] = $notifier_status['progress'];
-					}
-					// Add progress message from metadata if available.
-					if ( isset( $notifier_status['metadata']['message'] ) ) {
-						$result['progress_message'] = $notifier_status['metadata']['message'];
-					}
-					// Add poll attempt info if available.
-					if ( isset( $notifier_status['metadata']['poll_attempt'] ) ) {
-						$result['poll_attempt'] = $notifier_status['metadata']['poll_attempt'];
-					}
-				}
-			}
+			// Merge Job Notifier status (completion/failure/progress).
+			$result = $this->merge_notifier_status( $result, $job_id );
 
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
@@ -688,36 +702,8 @@ class WP_MCP_AI_Cron_Status_Service {
 				);
 			}
 
-			// Check Job Notifier cache for completion/failure status.
-			// The Job Notifier receives wp_mcp_ai_job_completed and wp_mcp_ai_job_failed hooks
-			// which may contain more up-to-date status (especially for delegated jobs where
-			// the nested veo job completes the parent async job).
-			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
-				$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
-				if ( $notifier_status && is_array( $notifier_status ) ) {
-					// If Job Notifier shows completed or failed, use that status.
-					if ( isset( $notifier_status['status'] ) ) {
-						$notifier_job_status = $notifier_status['status'];
-
-						if ( 'completed' === $notifier_job_status ) {
-							$result['status'] = 'completed';
-
-							// Merge result data from notifier if available.
-							if ( isset( $notifier_status['result'] ) && is_array( $notifier_status['result'] ) ) {
-								if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
-									$result['result'] = $notifier_status['result'];
-								}
-							}
-						} elseif ( 'failed' === $notifier_job_status ) {
-							$result['status'] = 'failed';
-
-							if ( isset( $notifier_status['error'] ) ) {
-								$result['error'] = $notifier_status['error'];
-							}
-						}
-					}
-				}
-			}
+			// Merge Job Notifier status (completion/failure/progress).
+			$result = $this->merge_notifier_status( $result, $job_id );
 
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
