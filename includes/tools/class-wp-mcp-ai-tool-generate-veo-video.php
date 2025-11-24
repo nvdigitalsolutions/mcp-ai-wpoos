@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Supports 5-8 second videos. Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. 1080p videos require exactly 8 seconds duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached or the model is unavailable. Supports text-to-video and image-to-video generation with cinematic quality output. Duration: 4-8 seconds (Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds). Note: Veo 3.1 supports up to 1080p resolution; Veo 2.0 supports up to 720p. 1080p videos require exactly 8 seconds duration. Audio generation is not currently supported. All generated videos include Google\'s SynthID watermark for AI provenance.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -55,8 +55,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (5-8). Default is 5 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
-					'minimum'     => 5,
+					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: 1080p resolution requires exactly 8 seconds and is only available with Veo 3.1.', 'wp-mcp-ai' ),
+					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 5,
 				),
@@ -170,9 +170,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			$generation_args['parent_job_id'] = sanitize_key( $context['parent_job_id'] );
 		}
 
-		// Add duration if provided (let service apply default if not provided).
+		// Add duration if provided and valid.
+		// Only pass to service if it's a positive integer, otherwise let service apply default.
+		// This prevents sending 0 or invalid values when OpenAI sends null/false/empty.
 		if ( isset( $arguments['duration'] ) ) {
-			$generation_args['duration'] = absint( $arguments['duration'] );
+			$duration = absint( $arguments['duration'] );
+			if ( $duration > 0 ) {
+				$generation_args['duration'] = $duration;
+			}
 		}
 
 		// Add optional parameters.

@@ -217,8 +217,25 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					)
 				);
 
+				// Adjust args for Veo 2.0 compatibility before fallback.
+				// Veo 2.0 requires minimum 5 seconds, while Veo 3.1 allows 4 seconds.
+				// If duration is 4, adjust to 5 to prevent "out of bound" errors.
+				$veo_2_args = $args;
+				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
+					$original_duration = $veo_2_args['duration'];
+					$veo_2_args['duration'] = self::VEO_2_MIN_DURATION;
+					WP_MCP_AI_Logger::log_event(
+						'veo_2_duration_adjusted',
+						'Adjusted duration for Veo 2.0 compatibility',
+						array(
+							'original' => $original_duration,
+							'adjusted' => $veo_2_args['duration'],
+						)
+					);
+				}
+
 				// Attempt with Veo 2.0.
-				$veo_2_result = $this->generate_video_with_model( $args, self::VEO_2_MODEL );
+				$veo_2_result = $this->generate_video_with_model( $veo_2_args, self::VEO_2_MODEL );
 
 				// If Veo 2 succeeds, add metadata about fallback.
 				if ( ! is_wp_error( $veo_2_result ) ) {
