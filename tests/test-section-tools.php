@@ -331,9 +331,11 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'button-primary', $output, 'Connect button should be primary' );
 		$this->assertStringContainsString( 'admin-post.php?action=wp_mcp_ai_github_oauth_start', $output, 'Should have OAuth start URL' );
 
-		// Should show required permissions.
-		$this->assertStringContainsString( 'repo', $output, 'Should list repo permission' );
-		$this->assertStringContainsString( 'user', $output, 'Should list user permission' );
-		$this->assertStringContainsString( 'codespace', $output, 'Should list codespace permission' );
+		// Should show required permissions from OAuth handler constant.
+		$expected_scopes = explode( ',', WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES );
+		foreach ( $expected_scopes as $scope ) {
+			$scope = trim( $scope );
+			$this->assertStringContainsString( $scope, $output, "Should list {$scope} permission" );
+		}
 	}
 }

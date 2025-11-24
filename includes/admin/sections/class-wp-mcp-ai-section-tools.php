@@ -569,9 +569,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<strong><?php esc_html_e( 'Required Permissions:', 'wp-mcp-ai' ); ?></strong>
 						</p>
 						<ul style="list-style: disc; margin-left: 20px;">
-							<li><code>repo</code>: <?php esc_html_e( 'Full control of private repositories', 'wp-mcp-ai' ); ?></li>
-							<li><code>user</code>: <?php esc_html_e( 'Read user profile data', 'wp-mcp-ai' ); ?></li>
-							<li><code>codespace</code>: <?php esc_html_e( 'Manage GitHub Codespaces', 'wp-mcp-ai' ); ?></li>
+							<?php
+							// Get scopes from OAuth handler constant.
+							$scopes = defined( 'WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES' )
+								? WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES
+								: 'repo,user,codespace';
+							$scope_descriptions = array(
+								'repo'      => __( 'Full control of private repositories', 'wp-mcp-ai' ),
+								'user'      => __( 'Read user profile data', 'wp-mcp-ai' ),
+								'codespace' => __( 'Manage GitHub Codespaces', 'wp-mcp-ai' ),
+							);
+							foreach ( explode( ',', $scopes ) as $scope ) {
+								$scope = trim( $scope );
+								if ( isset( $scope_descriptions[ $scope ] ) ) {
+									echo '<li><code>' . esc_html( $scope ) . '</code>: ' . esc_html( $scope_descriptions[ $scope ] ) . '</li>';
+								}
+							}
+							?>
 						</ul>
 					<?php else : ?>
 						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
@@ -628,7 +642,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms like Gmail, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, Google Analytics, and GitHub.',
+								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms including Gmail, GitHub, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, and Google Analytics.',
 								'wp-mcp-ai'
 							)
 						);
