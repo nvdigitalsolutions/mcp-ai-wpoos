@@ -563,7 +563,8 @@ class WP_MCP_AI_Chat_Service {
 			);
 		} else {
 			$old_limit = ini_get( 'max_execution_time' );
-			@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.system_calls_set_time_limit
+			@set_time_limit( $required_time );
 			
 			// Check if it actually changed (some hosts disable this via safe mode or disable_functions).
 			$new_limit = ini_get( 'max_execution_time' );
@@ -692,12 +693,16 @@ class WP_MCP_AI_Chat_Service {
 			)
 		);
 
+		// Calculate actual timeout duration for error message.
+		$timeout_minutes = ceil( ( $max_polls * $poll_interval ) / 60 );
+
 		return new WP_Error(
 			'wp_mcp_ai_async_tool_timeout',
 			sprintf(
-				/* translators: %s: tool name */
-				__( '%s timed out after 6 minutes. The job may still be processing in the background.', 'wp-mcp-ai' ),
-				$tool_name
+				/* translators: 1: tool name, 2: timeout in minutes */
+				__( '%1$s timed out after %2$d minutes. The job may still be processing in the background.', 'wp-mcp-ai' ),
+				$tool_name,
+				$timeout_minutes
 			)
 		);
 	}
