@@ -239,10 +239,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				return $save_result;
 			}
 
+			// Generate media library edit link.
+			$edit_url = admin_url( 'post.php?post=' . $save_result['attachment_id'] . '&action=edit' );
+
 			return array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
+				'edit_url'      => $edit_url,
 				'prompt'        => $result['prompt'],
 				'duration'      => $result['duration'],
 				'aspect_ratio'  => $result['aspect_ratio'],
@@ -250,9 +254,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'model'         => $result['model'],
 				'provider'      => $result['provider'],
 				'message'       => sprintf(
-					/* translators: %d: attachment ID */
-					__( 'Video generated successfully and saved as attachment ID %d.', 'wp-mcp-ai' ),
-					$save_result['attachment_id']
+					/* translators: 1: attachment ID, 2: media library edit URL */
+					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'wp-mcp-ai' ),
+					$save_result['attachment_id'],
+					esc_url( $edit_url )
 				),
 			);
 		}
@@ -557,6 +562,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'success',
 			'attachment_id',
 			'url',
+			'edit_url',            // Media library edit link
+			'job_id',              // Async job identifier (veo_*)
+			'parent_job_id',       // Parent async job identifier (async_*)
 			'prompt',
 			'duration',
 			'aspect_ratio',
