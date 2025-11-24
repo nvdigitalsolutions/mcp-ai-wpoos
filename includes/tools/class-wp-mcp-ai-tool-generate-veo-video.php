@@ -569,6 +569,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'attachment_id',
 			'url',
 			'edit_url',            // Media library edit link
+			'async',               // Async mode flag - CRITICAL for UI detection
+			'status',              // Job status (pending/completed/failed) - CRITICAL for UI
 			'job_id',              // Async job identifier (veo_*)
 			'parent_job_id',       // Parent async job identifier (async_*)
 			'prompt',
