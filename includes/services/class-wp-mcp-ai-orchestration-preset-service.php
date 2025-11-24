@@ -431,8 +431,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	/**
 	 * Design Professional preset - optimized for creative professionals.
 	 *
-	 * Tailored for CAD, rendering, 3D modeling, branding, and vector graphics workflows.
-	 * Higher token limits for resource-intensive image/video generation and vision tasks.
+	 * Tailored for image generation, video production, vision analysis, and data visualization workflows.
+	 * Higher token limits accommodate resource-intensive operations like AI image/video generation.
 	 *
 	 * @return array Preset configuration.
 	 */
@@ -450,15 +450,17 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				'low_priority_budget'             => 70,
 				'critical_health_reduction'       => 55,
 				'warning_health_reduction'        => 80,
-				// Higher token limits for design tools (image/video generation).
+				// Higher token limits for design tools (image/video generation, vision analysis).
+				// 2x balanced preset to accommodate DALL-E, Gemini Imagen, Veo video generation.
 				'low_tier_max_tokens'             => 4000,
 				'medium_tier_max_tokens'          => 16000,
-				'high_tier_max_tokens'            => 64000,
+				'high_tier_max_tokens'            => 64000, // Double enterprise for AI-generated media workflows.
 				// Per-call limits - Higher for design operations.
+				// Design tools often require multiple API calls per operation (e.g., generate + edit image).
 				'enable_per_call_limits'          => true,
 				'per_call_token_limit'            => 20000,
 				'enable_per_session_limits'       => true,
-				'per_session_token_limit'         => 100000,
+				'per_session_token_limit'         => 100000, // Double enterprise for iterative creative workflows.
 				'prediction_confidence_threshold' => 35,
 				'prediction_safety_buffer'        => 15,
 			),
