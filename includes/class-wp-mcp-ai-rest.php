@@ -7853,9 +7853,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Get the allowed properties from the schema.
+			// Handle both array properties and stdClass objects (used for empty schemas like {}).
 			$allowed_properties = array();
-			if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
-				$allowed_properties = array_keys( $schema['properties'] );
+			if ( isset( $schema['properties'] ) ) {
+				$properties = $schema['properties'];
+				if ( is_array( $properties ) ) {
+					$allowed_properties = array_keys( $properties );
+				} elseif ( $properties instanceof stdClass ) {
+					// stdClass is used for empty properties ({}) in JSON schemas.
+					// Convert to array to get property keys (will be empty for new stdClass()).
+					$allowed_properties = array_keys( get_object_vars( $properties ) );
+				}
 			}
 
 			// Filter arguments to only include allowed properties.
