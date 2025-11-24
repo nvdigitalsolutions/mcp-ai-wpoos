@@ -181,6 +181,30 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'quickbooks_report',
 					),
 				),
+				'design_professional' => array(
+					'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
+					'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'generate_openai_image',
+						'generate_gemini_image',
+						'edit_gemini_image',
+						'generate_veo_video',
+						'check_video_status',
+						'resize_image',
+						'crop_image',
+						'rotate_image',
+						'convert_image_format',
+						'create_chart',
+						'generate_music',
+						'analyze_video',
+						'extract_video_frames',
+						'get_video_metadata',
+						'vision_object_localization',
+						'vision_product_search',
+						'generate_image_alt_text',
+						'generate_image_caption',
+					),
+				),
 			);
 
 			/**

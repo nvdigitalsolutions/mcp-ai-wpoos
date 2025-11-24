@@ -85,6 +85,19 @@ class WP_MCP_AI_Tool_Token_Limits {
 		'search_content'         => 1.5,
 		'web_search'             => 1.5,
 		'submit_document_prompt' => 2.0,
+		// Design Professional tools - higher multipliers for resource-intensive operations.
+		'generate_openai_image'  => 3.0,
+		'generate_gemini_image'  => 3.0,
+		'edit_gemini_image'      => 2.5,
+		'generate_veo_video'     => 5.0,
+		'check_video_status'     => 1.0,
+		'analyze_video'          => 2.5,
+		'extract_video_frames'   => 2.0,
+		'generate_music'         => 3.5,
+		'vision_object_localization' => 2.0,
+		'vision_product_search'  => 2.0,
+		'generate_image_alt_text' => 1.5,
+		'generate_image_caption' => 1.5,
 	);
 
 	/**
