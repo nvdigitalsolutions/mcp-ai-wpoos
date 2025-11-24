@@ -6,126 +6,126 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
  * Provides a summary of recent WooCommerce orders.
  */
 class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
-    /**
-     * Determine whether WooCommerce is available.
-     *
-     * @return bool
-     */
-    public static function is_available() {
-        return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_orders' );
-    }
+	/**
+	 * Determine whether WooCommerce is available.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_orders' );
+	}
 
-    /**
-     * Message explaining why the tool is unavailable.
-     *
-     * @return string
-     */
-    public static function get_unavailable_reason() {
-        return __( 'The WooCommerce Orders tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
-    }
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The WooCommerce Orders tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_slug() {
-        return 'get_woo_recent_orders';
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'get_woo_recent_orders';
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_name() {
-        return __( 'Get Recent WooCommerce Orders', 'wp-mcp-ai' );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Get Recent WooCommerce Orders', 'wp-mcp-ai' );
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_description() {
-        return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'wp-mcp-ai' );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'wp-mcp-ai' );
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_parameters_schema() {
-        return array(
-            'type'                 => 'object',
-            'properties'           => array(
-                'limit'  => array(
-                    'type'        => 'integer',
-                    'description' => __( 'Maximum number of orders to retrieve.', 'wp-mcp-ai' ),
-                    'minimum'     => 1,
-                    'maximum'     => 20,
-                    'default'     => 5,
-                ),
-                'status' => array(
-                    'type'        => 'string',
-                    'description' => __( 'Optional order status to filter by (e.g. completed).', 'wp-mcp-ai' ),
-                ),
-            ),
-            'additionalProperties' => false,
-        );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'limit'  => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of orders to retrieve.', 'wp-mcp-ai' ),
+					'minimum'     => 1,
+					'maximum'     => 20,
+					'default'     => 5,
+				),
+				'status' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional order status to filter by (e.g. completed).', 'wp-mcp-ai' ),
+				),
+			),
+			'additionalProperties' => false,
+		);
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function execute( array $arguments = array(), array $context = array() ) {
-        if ( ! self::is_available() ) {
-            return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
-        }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
+		}
 
-        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-        if ( ! $user_id ) {
-            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce orders.', 'wp-mcp-ai' ) );
-        }
+		if ( ! $user_id ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce orders.', 'wp-mcp-ai' ) );
+		}
 
-        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
-        }
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
 
-        if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'view_woocommerce_reports' ) ) {
-            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce orders.', 'wp-mcp-ai' ) );
-        }
+		if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'view_woocommerce_reports' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce orders.', 'wp-mcp-ai' ) );
+		}
 
-        $limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
-        $limit = $limit > 0 ? min( $limit, 20 ) : 5;
-        $args  = array(
-            'limit'   => $limit,
-            'orderby' => 'date',
-            'order'   => 'DESC',
-        );
+		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
+		$limit = $limit > 0 ? min( $limit, 20 ) : 5;
+		$args  = array(
+			'limit'   => $limit,
+			'orderby' => 'date',
+			'order'   => 'DESC',
+		);
 
-        if ( ! empty( $arguments['status'] ) ) {
-            $args['status'] = sanitize_key( $arguments['status'] );
-        }
+		if ( ! empty( $arguments['status'] ) ) {
+			$args['status'] = sanitize_key( $arguments['status'] );
+		}
 
-        $orders  = wc_get_orders( $args );
-        $results = array();
+		$orders  = wc_get_orders( $args );
+		$results = array();
 
-        foreach ( $orders as $order ) {
-            /** @var WC_Order $order */
-            $results[] = array(
-                'id'            => $order->get_id(),
-                'order_number'  => $order->get_order_number(),
-                'status'        => $order->get_status(),
-                'total'         => $order->get_total(),
-                'currency'      => $order->get_currency(),
-                'created_at'    => gmdate( DATE_W3C, $order->get_date_created() ? $order->get_date_created()->getTimestamp() : time() ),
-                'billing_name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
-                'billing_email' => $order->get_billing_email(),
-            );
-        }
+		foreach ( $orders as $order ) {
+			/** @var WC_Order $order */
+			$results[] = array(
+				'id'            => $order->get_id(),
+				'order_number'  => $order->get_order_number(),
+				'status'        => $order->get_status(),
+				'total'         => $order->get_total(),
+				'currency'      => $order->get_currency(),
+				'created_at'    => gmdate( DATE_W3C, $order->get_date_created() ? $order->get_date_created()->getTimestamp() : time() ),
+				'billing_name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
+				'billing_email' => $order->get_billing_email(),
+			);
+		}
 
-        return $results;
-    }
+		return $results;
+	}
 }

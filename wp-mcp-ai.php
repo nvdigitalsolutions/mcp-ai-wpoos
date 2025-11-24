@@ -10,7 +10,9 @@
  * Text Domain: wp-mcp-ai
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 define( 'WP_MCP_AI_VERSION', '1.0.0' );
 define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
@@ -32,29 +34,29 @@ define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
  *                      or a falsy value to skip the check entirely.
  */
 function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = 'general' ) {
-    $assistant_id = absint( $assistant_id );
-    $context      = $context ? sanitize_key( $context ) : 'general';
+	$assistant_id = absint( $assistant_id );
+	$context      = $context ? sanitize_key( $context ) : 'general';
 
-    /**
-     * Filters the capability required to use the front-end chat interface.
-     *
-     * Returning `'public'`, `false`, or an empty string disables the capability
-     * check, making the chat available to all visitors who satisfy the
-     * authentication requirements.
-     *
-     * @since 1.0.0
-     *
-     * @param string $capability  Capability required to access the chat. Defaults to `edit_posts`.
-     * @param int    $assistant_id Assistant post ID, when available.
-     * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
-     */
-    $capability = apply_filters( 'wp_mcp_ai_chat_capability', 'edit_posts', $assistant_id, $context );
+	/**
+	 * Filters the capability required to use the front-end chat interface.
+	 *
+	 * Returning `'public'`, `false`, or an empty string disables the capability
+	 * check, making the chat available to all visitors who satisfy the
+	 * authentication requirements.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $capability  Capability required to access the chat. Defaults to `edit_posts`.
+	 * @param int    $assistant_id Assistant post ID, when available.
+	 * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+	 */
+	$capability = apply_filters( 'wp_mcp_ai_chat_capability', 'edit_posts', $assistant_id, $context );
 
-    if ( is_string( $capability ) ) {
-        $capability = sanitize_key( $capability );
-    }
+	if ( is_string( $capability ) ) {
+		$capability = sanitize_key( $capability );
+	}
 
-    return $capability;
+	return $capability;
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
@@ -78,7 +80,7 @@ WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
  * Load the plugin textdomain for localisation support.
  */
 function wp_mcp_ai_load_textdomain() {
-    load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
 add_action( 'init', 'wp_mcp_ai_load_textdomain', 0 );
@@ -87,22 +89,22 @@ add_action( 'init', 'wp_mcp_ai_load_textdomain', 0 );
  * Bootstrap the plugin once all dependencies are loaded.
  */
 function wp_mcp_ai_bootstrap() {
-    $registry = WP_MCP_AI_Tool_Registry::get_instance();
+	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-    if ( did_action( 'init' ) ) {
-        $registry->init();
-    } else {
-        add_action( 'init', array( $registry, 'init' ), 5 );
-    }
+	if ( did_action( 'init' ) ) {
+		$registry->init();
+	} else {
+		add_action( 'init', array( $registry, 'init' ), 5 );
+	}
 
-    $openai_client = new WP_MCP_AI_OpenAI_Client();
-    $gemini_client = new WP_MCP_AI_Gemini_Client();
-    $router        = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client );
+	$openai_client = new WP_MCP_AI_OpenAI_Client();
+	$gemini_client = new WP_MCP_AI_Gemini_Client();
+	$router        = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client );
 
-    $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
-    $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
-    $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
-    $GLOBALS['wp_mcp_ai_shortcode'] = new WP_MCP_AI_Shortcode();
+	$GLOBALS['wp_mcp_ai_admin_settings']  = new WP_MCP_AI_Admin_Settings();
+	$GLOBALS['wp_mcp_ai_assistant_cpt']   = new WP_MCP_AI_Assistant_CPT( $registry );
+	$GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
+	$GLOBALS['wp_mcp_ai_shortcode']       = new WP_MCP_AI_Shortcode();
 }
 
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
@@ -111,11 +113,11 @@ add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
  * Plugin activation handler.
  */
 function wp_mcp_ai_activate() {
-    $registry = WP_MCP_AI_Tool_Registry::get_instance();
-    $registry->init();
+	$registry = WP_MCP_AI_Tool_Registry::get_instance();
+	$registry->init();
 
-    WP_MCP_AI_Assistant_CPT::register_post_type();
-    flush_rewrite_rules();
+	WP_MCP_AI_Assistant_CPT::register_post_type();
+	flush_rewrite_rules();
 }
 
 register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
@@ -124,7 +126,7 @@ register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
  * Plugin deactivation handler.
  */
 function wp_mcp_ai_deactivate() {
-    flush_rewrite_rules();
+	flush_rewrite_rules();
 }
 
 register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
@@ -133,53 +135,53 @@ register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
  * Plugin uninstall handler.
  */
 function wp_mcp_ai_uninstall() {
-    $settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+	$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-    if ( ! is_array( $settings ) ) {
-        $settings = array();
-    }
+	if ( ! is_array( $settings ) ) {
+		$settings = array();
+	}
 
-    $settings = wp_parse_args( $settings, WP_MCP_AI_Admin_Settings::get_default_settings() );
+	$settings = wp_parse_args( $settings, WP_MCP_AI_Admin_Settings::get_default_settings() );
 
-    if ( empty( $settings['delete_on_uninstall'] ) ) {
-        return;
-    }
+	if ( empty( $settings['delete_on_uninstall'] ) ) {
+		return;
+	}
 
-    /**
-     * Fires before WP MCP AI performs its uninstall cleanup routines.
-     */
-    do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
+	/**
+	 * Fires before WP MCP AI performs its uninstall cleanup routines.
+	 */
+	do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
 
-    $assistant_ids = get_posts(
-        array(
-            'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-            'post_status'    => 'any',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-        )
-    );
+	$assistant_ids = get_posts(
+		array(
+			'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		)
+	);
 
-    if ( ! empty( $assistant_ids ) ) {
-        foreach ( $assistant_ids as $assistant_id ) {
-            wp_delete_post( $assistant_id, true );
-        }
-    }
+	if ( ! empty( $assistant_ids ) ) {
+		foreach ( $assistant_ids as $assistant_id ) {
+			wp_delete_post( $assistant_id, true );
+		}
+	}
 
-    $settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
-    delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
+	$settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+	delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
 
-    /**
-     * Fires after WP MCP AI completes its uninstall cleanup routines.
-     *
-     * @param array $summary Summary of cleanup actions performed.
-     */
-    do_action(
-        'wp_mcp_ai_after_uninstall_cleanup',
-        array(
-            'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
-            'settings_deleted'   => (bool) $settings_deleted,
-        )
-    );
+	/**
+	 * Fires after WP MCP AI completes its uninstall cleanup routines.
+	 *
+	 * @param array $summary Summary of cleanup actions performed.
+	 */
+	do_action(
+		'wp_mcp_ai_after_uninstall_cleanup',
+		array(
+			'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
+			'settings_deleted'   => (bool) $settings_deleted,
+		)
+	);
 }
 
 register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );

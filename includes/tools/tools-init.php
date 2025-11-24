@@ -6,9 +6,13 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
-add_action( 'init', function() {
-    WP_MCP_AI_Tool_Registry::get_instance()->init();
-}, 5 );
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Tool_Registry::get_instance()->init();
+	},
+	5
+);
