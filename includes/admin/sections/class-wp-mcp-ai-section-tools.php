@@ -1259,6 +1259,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						$check_func  = $check_config['check'];
 						$check_value = $check_config['value'];
 
+						// Validate check function is in allowlist.
+						$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
+						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+							continue; // Skip invalid check functions.
+						}
+
 						if ( ! $check_func( $check_value ) ) {
 							$missing[] = $requirement['plugin'];
 							break; // No need to check further once one fails.
@@ -1269,8 +1275,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$check_func  = $requirement['check'];
 					$check_value = $requirement['value'];
 
-					if ( ! $check_func( $check_value ) ) {
-						$missing[] = $requirement['plugin'];
+					// Validate check function is in allowlist.
+					$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
+					if ( in_array( $check_func, $allowed_check_functions, true ) ) {
+						if ( ! $check_func( $check_value ) ) {
+							$missing[] = $requirement['plugin'];
+						}
 					}
 				}
 			}
