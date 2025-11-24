@@ -33,18 +33,19 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	public static function get_presets() {
 		return array(
-			'custom'           => self::get_custom_preset(),
-			'auto'             => self::get_auto_preset(),
-			'balanced'         => self::get_balanced_preset(),
-			'conservative'     => self::get_conservative_preset(),
-			'aggressive'       => self::get_aggressive_preset(),
-			'development'      => self::get_development_preset(),
-			'high_traffic'     => self::get_high_traffic_preset(),
-			'burst_workload'   => self::get_burst_workload_preset(),
-			'cost_optimized'   => self::get_cost_optimized_preset(),
-			'enterprise'       => self::get_enterprise_preset(),
-			'failsafe'         => self::get_failsafe_preset(),
-			'predictive_first' => self::get_predictive_first_preset(),
+			'custom'              => self::get_custom_preset(),
+			'auto'                => self::get_auto_preset(),
+			'balanced'            => self::get_balanced_preset(),
+			'conservative'        => self::get_conservative_preset(),
+			'aggressive'          => self::get_aggressive_preset(),
+			'development'         => self::get_development_preset(),
+			'high_traffic'        => self::get_high_traffic_preset(),
+			'burst_workload'      => self::get_burst_workload_preset(),
+			'cost_optimized'      => self::get_cost_optimized_preset(),
+			'enterprise'          => self::get_enterprise_preset(),
+			'failsafe'            => self::get_failsafe_preset(),
+			'predictive_first'    => self::get_predictive_first_preset(),
+			'design_professional' => self::get_design_professional_preset(),
 		);
 	}
 
@@ -423,6 +424,43 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				'per_session_token_limit'         => 50000,
 				'prediction_confidence_threshold' => 25,
 				'prediction_safety_buffer'        => 12,
+			),
+		);
+	}
+
+	/**
+	 * Design Professional preset - optimized for creative professionals.
+	 *
+	 * Tailored for CAD, rendering, 3D modeling, branding, and vector graphics workflows.
+	 * Higher token limits for resource-intensive image/video generation and vision tasks.
+	 *
+	 * @return array Preset configuration.
+	 */
+	private static function get_design_professional_preset() {
+		return array(
+			'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
+			'description' => __( 'Optimized for creative professionals with image generation, video production, and vision tools. Higher token limits for resource-intensive design workflows.', 'wp-mcp-ai' ),
+			'settings'    => array(
+				'memory_warning_threshold'        => 75,
+				'memory_critical_threshold'       => 88,
+				'error_rate_warning_threshold'    => 6,
+				'error_rate_critical_threshold'   => 12,
+				'high_priority_budget'            => 100,
+				'medium_priority_budget'          => 90,
+				'low_priority_budget'             => 70,
+				'critical_health_reduction'       => 55,
+				'warning_health_reduction'        => 80,
+				// Higher token limits for design tools (image/video generation).
+				'low_tier_max_tokens'             => 4000,
+				'medium_tier_max_tokens'          => 16000,
+				'high_tier_max_tokens'            => 64000,
+				// Per-call limits - Higher for design operations.
+				'enable_per_call_limits'          => true,
+				'per_call_token_limit'            => 20000,
+				'enable_per_session_limits'       => true,
+				'per_session_token_limit'         => 100000,
+				'prediction_confidence_threshold' => 35,
+				'prediction_safety_buffer'        => 15,
 			),
 		);
 	}
