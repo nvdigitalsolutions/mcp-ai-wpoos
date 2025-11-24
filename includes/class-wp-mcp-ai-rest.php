@@ -1877,7 +1877,10 @@ class WP_MCP_AI_REST {
 			$text = wp_strip_all_tags( $text );
 		}
 
-		$text = preg_replace( "/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/", ' ', $text );
+		// Remove null bytes first to prevent "Null byte in regex" errors.
+		$text = str_replace( "\x00", '', $text );
+
+		$text = preg_replace( "/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/", ' ', $text );
 		$text = preg_replace( "/\r\n|\r/", "\n", $text );
 		$text = preg_replace( "/[ \t]+/", ' ', $text );
 		$text = preg_replace( "/\n{3,}/", "\n\n", $text );
