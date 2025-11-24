@@ -571,7 +571,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<ul style="list-style: disc; margin-left: 20px;">
 							<?php
 							// Get scopes from OAuth handler constant.
-							$scopes = defined( 'WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES' )
+							$scopes = class_exists( 'WP_MCP_AI_Github_OAuth_Handler' )
 								? WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES
 								: 'repo,user,codespace';
 							$scope_descriptions = array(
