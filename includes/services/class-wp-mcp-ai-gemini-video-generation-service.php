@@ -666,6 +666,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		$attempts = 0;
 
+		// Check if we're running in async executor context.
+		// If so, we should NOT fall back to async again (prevents dual async).
+		$in_async_executor = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
+
 		// Initialize timeout detector for async fallback.
 		// Note: Service is already loaded in services-init.php, but we require here
 		// to ensure it's available even if called directly without full initialization.
@@ -683,7 +687,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Check if we're approaching PHP timeout (10 seconds before).
-			if ( $timeout_detector->is_approaching_timeout() ) {
+			// BUT: If running in async executor context, skip async fallback to prevent dual async.
+			if ( ! $in_async_executor && $timeout_detector->is_approaching_timeout() ) {
 				// Approaching timeout - fall back to async mode.
 				WP_MCP_AI_Logger::log_event(
 					'veo_timeout_async_fallback',
@@ -752,7 +757,32 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 		}
 
-		// Max polling attempts reached - fall back to async mode.
+		// Max polling attempts reached.
+		// If running in async executor, return error instead of falling back to async (prevents dual async).
+		if ( $in_async_executor ) {
+			$error_message = sprintf(
+				/* translators: %d: number of polling attempts */
+				__( 'Video generation timed out after %d polling attempts. The video may still be processing. Please check back later.', 'wp-mcp-ai' ),
+				$attempts
+			);
+
+			WP_MCP_AI_Logger::log_error(
+				'veo_sync_polling_timeout',
+				$error_message,
+				array(
+					'attempts'          => $attempts,
+					'in_async_executor' => true,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_veo_polling_timeout',
+				$error_message,
+				array( 'status' => 500 )
+			);
+		}
+
+		// Not in async executor - fall back to async mode.
 		WP_MCP_AI_Logger::log_event(
 			'veo_max_attempts_async_fallback',
 			'Max polling attempts reached, falling back to async mode',

@@ -34,7 +34,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 			'metadata'       => array(),
 		);
 
-		// Mock args with user_id.
+		// Mock args with user_id (NO in_async_executor flag).
 		$args = array(
 			'prompt'  => 'Test video generation',
 			'user_id' => 1,
@@ -56,6 +56,52 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		$this->assertTrue( $result['async'], 'Async flag should be true' );
 		$this->assertArrayHasKey( 'job_id', $result, 'Result should have job_id' );
 		$this->assertStringStartsWith( 'veo_', $result['job_id'], 'Job ID should start with veo_' );
+	}
+
+	/**
+	 * Test that polling does NOT fall back to async when in async executor context (prevents dual async).
+	 */
+	public function test_polling_no_async_fallback_in_executor_context() {
+		// Load service.
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create service instance.
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		// Use reflection to access protected poll_for_completion method.
+		$reflection = new ReflectionClass( $service );
+		$method     = $reflection->getMethod( 'poll_for_completion' );
+		$method->setAccessible( true );
+
+		// Mock operation data.
+		$operation = array(
+			'operation_name' => 'operations/test-operation-456',
+			'metadata'       => array(),
+		);
+
+		// Mock args WITH in_async_executor flag.
+		$args = array(
+			'prompt'            => 'Test video in async executor',
+			'user_id'           => 1,
+			'in_async_executor' => true, // This should prevent async fallback.
+		);
+
+		// Temporarily set max_execution_time to a very low value.
+		$original_max_execution_time = ini_get( 'max_execution_time' );
+		ini_set( 'max_execution_time', '1' ); // 1 second.
+
+		// Execute poll_for_completion - should return error instead of falling back to async.
+		$result = $method->invoke( $service, $operation, $args );
+
+		// Restore original max_execution_time.
+		ini_set( 'max_execution_time', $original_max_execution_time );
+
+		// Verify result is an error (NOT an async fallback).
+		$this->assertInstanceOf( 'WP_Error', $result, 'Result should be WP_Error when in async executor' );
+		$this->assertEquals( 'wp_mcp_ai_veo_polling_timeout', $result->get_error_code(), 'Error code should be polling timeout' );
+
+		// Verify it's NOT an async response.
+		$this->assertFalse( is_array( $result ) && isset( $result['async'] ), 'Should not return async response' );
 	}
 
 	/**
@@ -148,26 +194,28 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'should_use_async' );
 		$method->setAccessible( true );
 
-		// Test 1: When in_async_executor is set, should return false.
+		// Test 1: When in_async_executor is set, should return false (prevents dual async).
 		$context = array( 'in_async_executor' => true );
 		$result  = $method->invoke( $tool, array(), $context );
 		$this->assertFalse( $result, 'Should not use tool-level async when in_async_executor is true' );
 
-		// Test 2: When in agentic loop, should return false.
-		$context = array( 'agentic_loop' => true );
-		$result  = $method->invoke( $tool, array(), $context );
-		$this->assertFalse( $result, 'Should not use async in agentic loop' );
-
-		// Test 3: Normal execution should default to true (async).
+		// Test 2: Normal execution should default to true (async for reliability).
+		// Note: agentic_loop check was removed - orchestrator handles async routing via background-only flag.
 		$context = array();
 		$result  = $method->invoke( $tool, array(), $context );
 		$this->assertTrue( $result, 'Should default to async for reliability' );
 
-		// Test 4: Explicit async=false in arguments.
+		// Test 3: Explicit async=false in arguments should be respected.
 		$args    = array( 'async' => false );
 		$context = array();
 		$result  = $method->invoke( $tool, $args, $context );
 		$this->assertFalse( $result, 'Should respect explicit async=false' );
+
+		// Test 4: Explicit async=true in arguments overrides in_async_executor.
+		$args    = array( 'async' => true );
+		$context = array( 'in_async_executor' => true );
+		$result  = $method->invoke( $tool, $args, $context );
+		$this->assertTrue( $result, 'Explicit async=true should override in_async_executor check' );
 	}
 
 	/**
