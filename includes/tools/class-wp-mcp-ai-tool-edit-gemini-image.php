@@ -807,7 +807,8 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'source_attachment',
 			'provider',
 			'usage',
-			'text', // Descriptive message about the edited image.
+			'cost',  // Cost data for UI display.
+			'text',  // Descriptive message about the edited image.
 		);
 
 		$sanitized = array();

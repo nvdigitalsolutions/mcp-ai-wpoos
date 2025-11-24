@@ -2402,10 +2402,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
+					// Get the tool instance for interface-based sanitization.
+					$tool_instance   = null;
+					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+						$tool_instance = $this->registry->get_tool( $tool_slug );
+					}
+
 					// Create a full tool message with structured result for frontend.
+					// Use the tool's sanitize_for_llm method if available to strip base64 content.
 					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance ),
 					);
 
 					if ( '' !== $tool_call_id ) {
@@ -2416,17 +2426,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$full_tool_message['name'] = $tool_name;
 					}
 
-					// Store original tool result for frontend.
+					// Store sanitized tool result for frontend.
 					$tool_result_messages[] = $full_tool_message;
-
-					// Get the tool instance for interface-based sanitization.
-					$tool_instance   = null;
-					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
-					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
-					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
-						$tool_instance = $this->registry->get_tool( $tool_slug );
-					}
 
 					// Create a sanitized version for the LLM (strip large content fields).
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
@@ -2858,8 +2859,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
-					// Sanitize the tool result for display once (preserves full result with base64 content).
-					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name );
+					// Get the tool instance for interface-based sanitization.
+					$tool_instance   = null;
+					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+						$tool_instance = $this->registry->get_tool( $tool_slug );
+					}
+
+					// Sanitize the tool result for display (strips base64 content if tool implements sanitization).
+					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance );
 
 					// Stream tool result event.
 					$this->send_sse_event(
@@ -2910,15 +2920,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 
 					$tool_result_messages[] = $full_tool_message;
-
-					// Get the tool instance for interface-based sanitization.
-					$tool_instance   = null;
-					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
-					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
-					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
-						$tool_instance = $this->registry->get_tool( $tool_slug );
-					}
 
 					// Create sanitized version for LLM.
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );

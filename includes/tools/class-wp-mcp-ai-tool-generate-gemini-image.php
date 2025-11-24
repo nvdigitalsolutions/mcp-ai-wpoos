@@ -796,7 +796,8 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'revised_prompt',
 			'provider',
 			'usage',
-			'text', // Descriptive message about the generated image.
+			'cost',  // Cost data for UI display.
+			'text',  // Descriptive message about the generated image.
 		);
 
 		$sanitized = array();
