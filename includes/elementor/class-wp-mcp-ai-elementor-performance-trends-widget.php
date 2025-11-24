@@ -185,14 +185,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 			echo '</div>';
 		}
 
-		// Chart canvas.
+		// Chart canvas - use unique ID per widget instance to avoid conflicts.
+		$chart_id = 'wp-mcp-ai-trends-chart-' . $this->get_id();
 		echo '<div class="wp-mcp-ai-performance-trends__chart-container">';
-		echo '<canvas id="wp-mcp-ai-trends-chart" height="' . esc_attr( $chart_height ) . '"></canvas>';
+		echo '<canvas id="' . esc_attr( $chart_id ) . '" height="' . esc_attr( $chart_height ) . '"></canvas>';
 		echo '</div>';
 
 		echo '</div>';
 
-		$this->enqueue_chart_script( $trends, $chart_height );
+		$this->enqueue_chart_script( $trends, $chart_height, $chart_id );
 	}
 
 	/**
@@ -251,14 +252,20 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	/**
 	 * Render the chart script.
 	 *
-	 * @param array $trends       Trend data.
-	 * @param int   $chart_height Chart height.
+	 * @param array  $trends       Trend data.
+	 * @param int    $chart_height Chart height.
+	 * @param string $chart_id     Unique chart canvas ID.
 	 */
-	protected function enqueue_chart_script( $trends, $chart_height ) {
+	protected function enqueue_chart_script( $trends, $chart_height, $chart_id ) {
 		// Chart.js is loaded via get_script_depends().
 		?>
 		<script>
 		(function() {
+			// Global registry for chart instances to enable proper cleanup.
+			if (typeof window.wpMcpAiCharts === 'undefined') {
+				window.wpMcpAiCharts = {};
+			}
+
 			// Wait for Chart to be available (in case of async loading).
 			function initChart() {
 				if (typeof Chart === 'undefined') {
@@ -267,8 +274,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 					return;
 				}
 
-				var ctx = document.getElementById('wp-mcp-ai-trends-chart');
+				var ctx = document.getElementById('<?php echo esc_js( $chart_id ); ?>');
 				if (!ctx) return;
+
+				// Destroy existing chart instance if it exists (prevents "canvas already in use" error).
+				var chartId = '<?php echo esc_js( $chart_id ); ?>';
+				if (window.wpMcpAiCharts[chartId]) {
+					window.wpMcpAiCharts[chartId].destroy();
+					delete window.wpMcpAiCharts[chartId];
+				}
 
 				// Sample data - in real implementation, this would come from $trends.
 				var chartData = {
@@ -289,7 +303,8 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 					}]
 				};
 
-				new Chart(ctx, {
+				// Create and store the chart instance.
+				window.wpMcpAiCharts[chartId] = new Chart(ctx, {
 					type: 'line',
 					data: chartData,
 					options: {
