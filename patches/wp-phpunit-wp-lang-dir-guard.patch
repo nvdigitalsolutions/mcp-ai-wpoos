@@ -1,0 +1,16 @@
+diff --git a/includes/bootstrap.php b/includes/bootstrap.php
+index 1234567..abcdefg 100644
+--- a/includes/bootstrap.php
++++ b/includes/bootstrap.php
+@@ -215,7 +215,9 @@ tests_reset__SERVER();
+ define( 'WP_TESTS_TABLE_PREFIX', $table_prefix );
+ define( 'DIR_TESTDATA', __DIR__ . '/../data' );
+ define( 'DIR_TESTROOT', realpath( dirname( __DIR__ ) ) );
+-
+-define( 'WP_LANG_DIR', realpath( DIR_TESTDATA . '/languages' ) );
++
++if ( ! defined( 'WP_LANG_DIR' ) ) {
++	define( 'WP_LANG_DIR', realpath( DIR_TESTDATA . '/languages' ) );
++}
+ 
+ if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {

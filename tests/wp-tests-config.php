@@ -72,13 +72,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	define( 'ABSPATH', rtrim( $core_dir, '/\\' ) . '/' );
 }
-
-/*
- * Define WP_LANG_DIR to prevent "Constant WP_LANG_DIR already defined" warning.
- * WordPress core defines this in wp-includes/default-constants.php, but wp-phpunit
- * also tries to define it in its bootstrap.php. By defining it here first, we
- * prevent the duplicate definition warning.
- */
-if ( ! defined( 'WP_LANG_DIR' ) ) {
-	define( 'WP_LANG_DIR', ABSPATH . 'wp-content/languages' );
-}
