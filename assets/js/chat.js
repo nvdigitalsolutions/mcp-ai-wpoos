@@ -9211,7 +9211,7 @@
 
             // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
             let aggregatedUsage = usage ? Object.assign({}, usage) : null;
-            let aggregatedCost = cost ? Object.assign({}, cost) : null;
+            const aggregatedCost = cost ? Object.assign({}, cost) : null;
 
             // Collect usage from all tool results
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
@@ -9246,19 +9246,6 @@
                         aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
                         aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
                         aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
-
-                        // Calculate cost for this tool if provider/model available
-                        if (parsedContent.provider && parsedContent.model && typeof WP_MCP_AI_Cost_Calculator !== 'undefined') {
-                            // Cost calculation would need to be done server-side or with cost data
-                            // For now, mark that we have tool costs to aggregate
-                            if (!aggregatedCost) {
-                                aggregatedCost = {
-                                    cost_usd: 0,
-                                    is_estimated: true,
-                                    has_tool_costs: true
-                                };
-                            }
-                        }
                     }
                 });
             }
