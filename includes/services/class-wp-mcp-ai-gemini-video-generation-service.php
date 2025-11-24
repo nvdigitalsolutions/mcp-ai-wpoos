@@ -196,7 +196,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
-		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
+		// Check for both short form (veo-2.0) and full model ID (veo-2.0-generate-001).
+		$force_veo_2 = false;
+		if ( isset( $args['model'] ) ) {
+			$model = $args['model'];
+			// Match short form or full Veo 2 model ID.
+			$force_veo_2 = ( 'veo-2.0' === $model || self::VEO_2_MODEL === $model || false !== stripos( $model, 'veo-2' ) );
+		}
 
 		if ( ! $force_veo_2 ) {
 			$result = $this->generate_video_with_model( $args, self::VEO_MODEL );
