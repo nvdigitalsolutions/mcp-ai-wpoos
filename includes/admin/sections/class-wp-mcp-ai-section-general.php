@@ -269,6 +269,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'enable_api_logging',
 						'enable_tool_execution_logging',
 						'enable_chat_interaction_logging',
+						'show_usage_costs',
 						'delete_on_uninstall',
 					),
 				),
