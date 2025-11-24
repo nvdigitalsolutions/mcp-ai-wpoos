@@ -26,7 +26,8 @@ class WP_MCP_AI_Elementor_Performance_Trends_Chart_Test extends WP_UnitTestCase 
 
 		// Load Elementor widget class if not already loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Elementor_Performance_Trends_Widget' ) ) {
-			require_once dirname( __DIR__ ) . '/includes/elementor/class-wp-mcp-ai-elementor-performance-trends-widget.php';
+			$plugin_dir = dirname( dirname( __FILE__ ) );
+			require_once $plugin_dir . '/includes/elementor/class-wp-mcp-ai-elementor-performance-trends-widget.php';
 		}
 	}
 

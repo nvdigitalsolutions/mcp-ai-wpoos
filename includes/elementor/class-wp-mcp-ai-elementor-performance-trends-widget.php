@@ -274,15 +274,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 					return;
 				}
 
-				var ctx = document.getElementById('<?php echo esc_js( $chart_id ); ?>');
-				if (!ctx) return;
-
 				// Destroy existing chart instance if it exists (prevents "canvas already in use" error).
 				var chartId = '<?php echo esc_js( $chart_id ); ?>';
 				if (window.wpMcpAiCharts[chartId]) {
 					window.wpMcpAiCharts[chartId].destroy();
 					delete window.wpMcpAiCharts[chartId];
 				}
+
+				var ctx = document.getElementById(chartId);
+				if (!ctx) return;
 
 				// Sample data - in real implementation, this would come from $trends.
 				var chartData = {
