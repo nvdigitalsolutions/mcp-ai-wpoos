@@ -1988,8 +1988,9 @@
      * @param {HTMLElement} bubble - The bubble element
      * @param {Object} state - Chat state object
      * @param {string} role - Message role ('user' or 'assistant')
+     * @param {number} messageIndex - Optional index of the message in the conversation array
      */
-    function attachDeleteButton(bubble, state, role) {
+    function attachDeleteButton(bubble, state, role, messageIndex) {
         if (!bubble || !state) {
             return;
         }
@@ -1997,6 +1998,11 @@
         // Add delete-enabled class
         if (bubble.classList) {
             bubble.classList.add(DELETE_ENABLED_CLASS);
+        }
+
+        // Store message index on the bubble element for proper tracking
+        if (typeof messageIndex === 'number' && messageIndex >= 0) {
+            bubble.dataset.messageIndex = String(messageIndex);
         }
 
         // Check if button already exists
@@ -2028,6 +2034,26 @@
                 : 'Delete this assistant response?';
             
             if (window.confirm(confirmMessage)) {
+                // Find the message index before removing from DOM
+                var indexToRemove = -1;
+                var messagesEl = state.messagesEl;
+                
+                if (messagesEl && bubble.parentNode === messagesEl) {
+                    // Get the current index by counting previous siblings
+                    var siblings = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
+                    for (var i = 0; i < siblings.length; i++) {
+                        if (siblings[i] === bubble) {
+                            indexToRemove = i;
+                            break;
+                        }
+                    }
+                }
+                
+                // Fallback: use stored message index if available
+                if (indexToRemove < 0 && bubble.dataset.messageIndex) {
+                    indexToRemove = parseInt(bubble.dataset.messageIndex, 10);
+                }
+                
                 // Remove the bubble from DOM
                 if (bubble.parentNode) {
                     bubble.parentNode.removeChild(bubble);
@@ -2035,20 +2061,16 @@
                 
                 // Remove from conversation state if available
                 if (state && state.conversation && Array.isArray(state.conversation)) {
-                    // Find the message index by matching the bubble element
-                    var messagesEl = state.messagesEl;
+                    if (indexToRemove >= 0 && indexToRemove < state.conversation.length) {
+                        // Remove by exact index
+                        state.conversation.splice(indexToRemove, 1);
+                    }
+                    
+                    // Update message indices on remaining bubbles
                     if (messagesEl) {
-                        var allBubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
-                        var bubbleIndex = -1;
-                        
-                        // The bubble is already removed, so we need to find its original position
-                        // by counting remaining bubbles and finding where this one was
-                        // This is a simplified approach - we just remove the last message of matching role
-                        for (var i = state.conversation.length - 1; i >= 0; i--) {
-                            if (state.conversation[i].role === role) {
-                                state.conversation.splice(i, 1);
-                                break;
-                            }
+                        var remainingBubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
+                        for (var j = 0; j < remainingBubbles.length; j++) {
+                            remainingBubbles[j].dataset.messageIndex = String(j);
                         }
                     }
                 }
@@ -2060,6 +2082,7 @@
                 if (window.console && console.log) {
                     console.log('[WP oOS] Message deleted:', {
                         role: role,
+                        deletedIndex: indexToRemove,
                         conversationLength: state.conversation ? state.conversation.length : 0
                     });
                 }
@@ -10247,8 +10270,10 @@
             attachCopyButton(entry, speechText);
             
             // Attach delete button for assistant messages
-            if (speechState) {
-                attachDeleteButton(entry, speechState, role);
+            // Use options.state if available, fallback to speech state
+            const deleteState = (options && options.state) || speechState;
+            if (deleteState) {
+                attachDeleteButton(entry, deleteState, role);
             }
 
             // Attach usage and cost badges if data is available
@@ -10273,7 +10298,8 @@
         
         // Attach delete button for user messages
         if (role === 'user') {
-            const userState = options && options.speech ? options.speech.state || null : null;
+            // Use options.state if available, fallback to speech state
+            const userState = (options && options.state) || (options && options.speech ? options.speech.state : null);
             if (userState) {
                 attachDeleteButton(entry, userState, role);
             }
