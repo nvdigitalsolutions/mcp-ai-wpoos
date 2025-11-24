@@ -72,6 +72,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
+				'gmail_refresh_token'                  => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
+				),
+				'gmail_user_email'                     => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
+				),
 				'crawl4ai_base_url'                    => array(
 					'type'         => 'url',
 					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
@@ -188,6 +198,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+				),
+				'github_access_token'                  => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
+				),
+				'github_username'                      => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
 				),
 
 				// Plugins Integration fields.

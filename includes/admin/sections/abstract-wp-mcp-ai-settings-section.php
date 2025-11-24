@@ -153,8 +153,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
-				// Skip display-only field types (html, custom) as they don't have user input.
-				if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
+				// Skip display-only field types (html, custom, hidden) as they don't have user input.
+				// Hidden fields are used to preserve OAuth tokens and other programmatically-set values.
+				if ( in_array( $type, array( 'html', 'custom', 'hidden' ), true ) ) {
 					continue;
 				}
 
