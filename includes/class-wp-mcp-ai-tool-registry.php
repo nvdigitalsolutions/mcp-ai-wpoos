@@ -395,6 +395,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Assistant management.
 				'create_assistant'                => 'wordpress-core',
 
+				// Profession management.
+				'list_professions'                => 'wordpress-core',
+				'get_profession'                  => 'wordpress-core',
+				'save_profession'                 => 'wordpress-core',
+				'get_profession_stats'            => 'wordpress-core',
+
 				// Site management and configuration.
 				'update_option'                   => 'wordpress-core',
 				'install_and_activate_plugin'     => 'wordpress-core',

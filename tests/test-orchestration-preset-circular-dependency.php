@@ -35,6 +35,7 @@ class Test_Orchestration_Preset_Circular_Dependency extends WP_UnitTestCase {
 			'enterprise',
 			'failsafe',
 			'predictive_first',
+			'design_professional',
 		);
 
 		foreach ( $expected_presets as $preset_id ) {
