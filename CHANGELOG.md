@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **WP_LANG_DIR Constant Warning (November 24, 2025)**
+  - Fixed PHP warning: "Constant WP_LANG_DIR already defined" during plugin activation and performance tests
+  - Applied Composer patch to wp-phpunit package to add guard check before defining WP_LANG_DIR
+  - Warning occurred when WordPress core had already defined the constant before wp-phpunit bootstrap ran
+  - Affected scenarios: plugin activation via WP-CLI, performance tests via admin UI
+  - Patch automatically applied during `composer install` via cweagans/composer-patches
+  - See `patches/README.md` for technical details
+  
 - **Chat Client Attachment Visibility (PR #1630, November 24, 2025)**
   - Fixed issue where file attachments (images, PDFs, etc.) were appearing in the chat UI but not being passed to OpenAI
   - Added `input_image` and `input_file` segment types to REST validator's processable types
