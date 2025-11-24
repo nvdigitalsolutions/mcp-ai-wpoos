@@ -10,11 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 
 /**
  * Extracts frames from videos at specific timestamps or intervals for analysis.
  */
-class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -559,5 +560,62 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			'async',                // May take significant time.
 			'rate-limited',         // Subject to FFmpeg processing limits.
 		);
+	}
+
+	/**
+	 * Sanitize video frame extraction results for LLM consumption.
+	 *
+	 * Frame extraction can return base64-encoded image data for each frame when
+	 * save_to_media=false. Multiple frames can result in several MB of base64 data.
+	 * The LLM doesn't need this binary data - it only needs metadata about the frames.
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with only metadata.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip base64-encoded frame data if present.
+		// When save_to_media=false, frames are returned as base64 data URLs.
+		if ( isset( $result['frames'] ) && is_array( $result['frames'] ) ) {
+			$has_base64 = false;
+			
+			// Check if frames contain base64 data (look at first frame)
+			if ( ! empty( $result['frames'] ) ) {
+				$first_frame = reset( $result['frames'] );
+				if ( is_string( $first_frame ) && strpos( $first_frame, 'data:image/' ) === 0 ) {
+					$has_base64 = true;
+				}
+			}
+
+			if ( $has_base64 ) {
+				// Strip base64 data but keep frame count
+				$frame_count = count( $result['frames'] );
+				$result['frame_count'] = $frame_count;
+				$result['frames_data_stripped'] = true;
+				unset( $result['frames'] );
+			}
+		}
+
+		// Keep only essential metadata.
+		$keep_fields = array(
+			'video_url',
+			'attachment_id',
+			'frames',  // Keep if it's attachment IDs, not base64
+			'frame_count',
+			'message',
+			'frames_data_stripped',  // Flag indicating data was stripped
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }

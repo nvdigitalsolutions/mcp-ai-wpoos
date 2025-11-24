@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
@@ -20,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Quota limits are reached
  * - Rate limits are exceeded
  */
-class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -463,5 +464,56 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_model_requirements() {
 		return array( 'video-generation' );
+	}
+
+	/**
+	 * Sanitize video generation results for LLM consumption.
+	 *
+	 * Video generation can return base64-encoded video data in data URLs that can be
+	 * several megabytes in size. The LLM doesn't need this binary data - it only needs
+	 * metadata to reference the generated video (attachment_id, url, etc.).
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with only metadata.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip base64-encoded video data URL if present.
+		// This is set when save_to_media=false and can be several MB.
+		if ( isset( $result['video_url'] ) && is_string( $result['video_url'] ) ) {
+			// Check if it's a base64 data URL
+			if ( strpos( $result['video_url'], 'data:video/' ) === 0 ) {
+				// Strip the data URL but keep a reference that one existed
+				unset( $result['video_url'] );
+				$result['video_data_stripped'] = true;
+			}
+		}
+
+		// Keep only essential metadata.
+		$keep_fields = array(
+			'success',
+			'attachment_id',
+			'url',
+			'prompt',
+			'duration',
+			'aspect_ratio',
+			'resolution',
+			'model',
+			'provider',
+			'message',
+			'video_data_stripped', // Flag indicating data was stripped
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }
