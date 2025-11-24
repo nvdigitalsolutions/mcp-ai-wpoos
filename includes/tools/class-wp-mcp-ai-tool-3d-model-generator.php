@@ -103,8 +103,6 @@ class WP_MCP_AI_Tool_3D_Model_Generator implements WP_MCP_AI_Tool_Interface {
 			)
 		);
 
-
-
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate 3D models.', 'wp-mcp-ai' ) );
 		}

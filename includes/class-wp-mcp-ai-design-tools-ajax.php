@@ -321,7 +321,13 @@ class WP_MCP_AI_Design_Tools_AJAX {
 			)
 		);
 
-		// For now, return a JSON placeholder. In production, this would stream the actual file.
+		// @todo Implement actual file streaming for production.
+		// This is a placeholder that returns JSON. In production, this should:
+		// 1. Generate or retrieve the actual file from storage
+		// 2. Set appropriate Content-Type header for the format
+		// 3. Stream the file content directly
+		// 4. Handle large files efficiently with chunked transfer
+		// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/XXX
 		header( 'Content-Type: application/json' );
 		header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( $job_id . '.' . $format ) . '"' );
 
