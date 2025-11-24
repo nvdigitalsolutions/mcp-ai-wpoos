@@ -249,4 +249,51 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Hello world', $filtered['text'] );
 		$this->assertSame( 'test', $filtered['mode'] );
 	}
+
+	/**
+	 * Test that filtering skips and preserves arguments for unexpected property types.
+	 *
+	 * If the schema has an unexpected properties type (not array or stdClass),
+	 * the filter should skip filtering and return all arguments to avoid data loss.
+	 */
+	public function test_skips_filtering_for_unexpected_properties_type() {
+		// Load the REST class.
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
+		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
+
+		$rest_controller = new WP_MCP_AI_REST();
+
+		// Create a mock tool with unexpected properties type (string instead of array/object).
+		$mock_tool = $this->createMock( WP_MCP_AI_Tool_Interface::class );
+
+		$mock_tool->method( 'get_slug' )->willReturn( 'mock_malformed_tool' );
+		$mock_tool->method( 'get_parameters_schema' )->willReturn(
+			array(
+				'type'                 => 'object',
+				'properties'           => 'this_is_invalid', // Invalid: should be array or object.
+				'additionalProperties' => false,
+			)
+		);
+
+		// Create arguments.
+		$arguments = array(
+			'text'     => 'Hello world',
+			'messages' => 'Extra parameter',
+		);
+
+		// Use reflection to access the protected filter_tool_arguments_by_schema method.
+		$reflection = new ReflectionClass( $rest_controller );
+		$method     = $reflection->getMethod( 'filter_tool_arguments_by_schema' );
+		$method->setAccessible( true );
+
+		// Filter the arguments.
+		$filtered = $method->invoke( $rest_controller, $mock_tool, $arguments );
+
+		// Verify that all arguments are preserved (no filtering applied due to malformed schema).
+		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
+		$this->assertArrayHasKey( 'text', $filtered, 'text parameter should be preserved' );
+		$this->assertArrayHasKey( 'messages', $filtered, 'messages parameter should be preserved (no filtering)' );
+		$this->assertSame( 'Hello world', $filtered['text'] );
+		$this->assertSame( 'Extra parameter', $filtered['messages'] );
+	}
 }
