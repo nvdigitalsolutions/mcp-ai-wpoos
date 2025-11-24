@@ -1011,6 +1011,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<?php endif; ?>
 				</tbody>
 			</table>
+
+			<!-- Top Tools -->
+			<h4 style="margin-top: 30px;"><?php esc_html_e( 'Top Tools by Usage', 'wp-mcp-ai' ); ?></h4>
+			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
+				<?php esc_html_e( 'Top 10 AI tools sorted by total token usage across all users.', 'wp-mcp-ai' ); ?>
+			</p>
+			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-tools-table">
+				<thead>
+					<tr>
+						<th style="width: 35%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 20%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					if ( ! empty( $site_stats['top_tools'] ) ) :
+						foreach ( $site_stats['top_tools'] as $tool_data ) :
+							?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $tool_data['tool_name'] ); ?></strong>
+								</td>
+								<td>
+									<code><?php echo esc_html( $tool_data['tool_slug'] ); ?></code>
+								</td>
+								<td><?php echo number_format_i18n( $tool_data['total_users'] ); ?></td>
+								<td><?php echo number_format_i18n( $tool_data['requests'] ); ?></td>
+								<td><?php echo number_format_i18n( $tool_data['total_tokens'] ); ?></td>
+							</tr>
+							<?php
+						endforeach;
+					else :
+						?>
+						<tr>
+							<td colspan="5" class="no-items"><?php esc_html_e( 'No tool data available yet.', 'wp-mcp-ai' ); ?></td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
 			<?php
 		}
 

@@ -140,6 +140,7 @@ class WP_MCP_AI_Token_Usage_Service {
 				'total_cost'     => 0.0,
 				'by_provider'    => array(),
 				'top_models'     => array(),
+				'top_tools'      => array(),
 				'tools_used'     => 0,
 			);
 		}
@@ -161,10 +162,12 @@ class WP_MCP_AI_Token_Usage_Service {
 			'total_cost'     => 0.0,
 			'by_provider'    => array(),
 			'top_models'     => array(),
+			'top_tools'      => array(),
 			'tools_used'     => 0,
 		);
 
 		$all_models = array();
+		$all_tools  = array();
 
 		foreach ( $user_ids as $user_id ) {
 			$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
@@ -225,7 +228,7 @@ class WP_MCP_AI_Token_Usage_Service {
 
 		$stats['top_models'] = array_slice( $all_models, 0, 10 );
 
-		// Count tools used.
+		// Collect tool usage statistics.
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
 			$tool_users    = $wpdb->get_col(
@@ -235,15 +238,57 @@ class WP_MCP_AI_Token_Usage_Service {
 				)
 			);
 
-			$tools_set = array();
+			$tools_set       = array();
+			$available_tools = self::get_all_available_tools();
+
 			foreach ( $tool_users as $user_id ) {
 				$tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
-				foreach ( array_keys( $tool_usage ) as $tool_slug ) {
+
+				foreach ( $tool_usage as $tool_slug => $tool_data ) {
 					$tools_set[ $tool_slug ] = true;
+
+					// Initialize tool stats if not exists.
+					if ( ! isset( $all_tools[ $tool_slug ] ) ) {
+						$all_tools[ $tool_slug ] = array(
+							'tool_slug'    => $tool_slug,
+							'tool_name'    => isset( $available_tools[ $tool_slug ] ) ? $available_tools[ $tool_slug ] : ucwords( str_replace( '_', ' ', $tool_slug ) ),
+							'total_users'  => 0,
+							'requests'     => 0,
+							'total_tokens' => 0,
+							'total_cost'   => 0.0,
+						);
+					}
+
+					// Increment user count for this tool.
+					++$all_tools[ $tool_slug ]['total_users'];
+
+					// Add requests.
+					if ( isset( $tool_data['requests'] ) ) {
+						$all_tools[ $tool_slug ]['requests'] += (int) $tool_data['requests'];
+					}
+
+					// Add total tokens.
+					if ( isset( $tool_data['total_tokens'] ) ) {
+						$all_tools[ $tool_slug ]['total_tokens'] += (int) $tool_data['total_tokens'];
+					}
+
+					// Calculate cost (simplified - actual cost would need provider/model info).
+					// For now, we'll use a basic estimation or leave as 0.0.
+					// Cost tracking by tool would require enhanced tracking.
 				}
 			}
 
 			$stats['tools_used'] = count( $tools_set );
+
+			// Sort tools by total tokens and get top 10.
+			uasort(
+				$all_tools,
+				function ( $a, $b ) {
+					return $b['total_tokens'] - $a['total_tokens'];
+				}
+			);
+
+			$stats['top_tools'] = array_slice( $all_tools, 0, 10 );
 		}
 
 		return $stats;
