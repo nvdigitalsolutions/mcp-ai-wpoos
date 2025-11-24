@@ -5926,10 +5926,24 @@
             }
         }
 
-        return {
+        const crawlResult = {
             text: textParts.join('\n\n'),
             attachments: []
         };
+
+        // Preserve usage and cost data for token cost display (Phase 7 Week 5-6)
+        // Crawl4AI results may include usage data from the original result object
+        if (result.usage && typeof result.usage === 'object') {
+            crawlResult.usage = result.usage;
+        }
+        if (result.provider && typeof result.provider === 'string') {
+            crawlResult.provider = result.provider;
+        }
+        if (result.model && typeof result.model === 'string') {
+            crawlResult.model = result.model;
+        }
+
+        return crawlResult;
     }
 
     /**
@@ -6068,10 +6082,23 @@
             };
         });
 
-        return {
+        const genericResult = {
             text: text,
             attachments: attachments.length > 0 ? attachments : []
         };
+
+        // Preserve usage and cost data for token cost display (Phase 7 Week 5-6)
+        if (result.usage && typeof result.usage === 'object') {
+            genericResult.usage = result.usage;
+        }
+        if (result.provider && typeof result.provider === 'string') {
+            genericResult.provider = result.provider;
+        }
+        if (result.model && typeof result.model === 'string') {
+            genericResult.model = result.model;
+        }
+
+        return genericResult;
     }
 
     function normaliseToolResultForDisplay(toolName, result) {
@@ -6298,10 +6325,26 @@
             text = getString('veoVideoToolSuccess', 'Video generated successfully and saved to the Media Library.');
         }
 
-        return {
+        // Extract usage and cost data for token cost display (Phase 7 Week 5-6)
+        const normalizedResult = {
             text: text,
             attachments: attachments,
         };
+
+        // Preserve usage data if present in tool result
+        if (result.usage && typeof result.usage === 'object') {
+            normalizedResult.usage = result.usage;
+        }
+
+        // Preserve provider and model for cost calculation
+        if (result.provider && typeof result.provider === 'string') {
+            normalizedResult.provider = result.provider;
+        }
+        if (result.model && typeof result.model === 'string') {
+            normalizedResult.model = result.model;
+        }
+
+        return normalizedResult;
     }
 
     function parseToolMessagePayload(content, seen) {
@@ -9166,13 +9209,54 @@
             const usage = chatData && chatData.usage ? chatData.usage : null;
             const cost = data && data.cost ? data.cost : null;
 
+            // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
+            let aggregatedUsage = usage ? Object.assign({}, usage) : null;
+            const aggregatedCost = cost ? Object.assign({}, cost) : null;
+
+            // Collect usage from all tool results
+            if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult || !toolResult.content) {
+                        return;
+                    }
+
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            return;
+                        }
+                    }
+
+                    // Extract tool usage data
+                    if (parsedContent && typeof parsedContent === 'object' && parsedContent.usage) {
+                        const toolUsage = parsedContent.usage;
+                        
+                        // Initialize aggregated usage if not present
+                        if (!aggregatedUsage) {
+                            aggregatedUsage = {
+                                prompt_tokens: 0,
+                                completion_tokens: 0,
+                                total_tokens: 0
+                            };
+                        }
+
+                        // Aggregate token counts
+                        aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
+                        aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
+                        aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
+                    }
+                });
+            }
+
             const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
                     text: assistantDisplay.text || '',
                 },
-                usage: usage,
-                cost: cost,
+                usage: aggregatedUsage,
+                cost: aggregatedCost,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
