@@ -6840,8 +6840,19 @@
                             const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
                             handleError(errorMessage);
                         } else {
-                            // Still pending or running - update status
-                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                            // Still pending, polling or running - update status with progress message
+                            // Use progress_message from server if available for more informative updates
+                            let statusMessage = getString('toolPolling', 'Tool is processing…');
+                            
+                            if (payload && payload.progress_message) {
+                                // Use the detailed progress message from the server
+                                statusMessage = payload.progress_message;
+                            } else if (payload && typeof payload.progress === 'number' && payload.progress > 0) {
+                                // Fall back to percentage if available
+                                statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%d%%)'), Math.round(payload.progress));
+                            }
+                            
+                            updatePendingTaskEntry(pendingEntry, statusMessage);
                         }
                     }
                 },
@@ -6973,8 +6984,18 @@
                             return;
                         }
 
-                        // Still pending or running
-                        updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                        // Still pending, polling or running - update with progress message if available
+                        let statusMessage = getString('toolPolling', 'Tool is processing…');
+                        
+                        if (payload && payload.progress_message) {
+                            // Use the detailed progress message from the server
+                            statusMessage = payload.progress_message;
+                        } else if (payload && typeof payload.progress === 'number' && payload.progress > 0) {
+                            // Fall back to percentage if available
+                            statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%d%%)'), Math.round(payload.progress));
+                        }
+                        
+                        updatePendingTaskEntry(pendingEntry, statusMessage);
                         scheduleNext();
                     })
                     .catch(function (error) {

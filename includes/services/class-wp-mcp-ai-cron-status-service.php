@@ -609,6 +609,27 @@ class WP_MCP_AI_Cron_Status_Service {
 				);
 			}
 
+			// Merge progress data from Job Notifier cache if available.
+			// The Job Notifier receives wp_mcp_ai_job_progress hooks during polling
+			// and caches progress percentage and status message for SSE clients.
+			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+				$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+				if ( $notifier_status && is_array( $notifier_status ) ) {
+					// Add progress percentage if available.
+					if ( isset( $notifier_status['progress'] ) ) {
+						$result['progress'] = $notifier_status['progress'];
+					}
+					// Add progress message from metadata if available.
+					if ( isset( $notifier_status['metadata']['message'] ) ) {
+						$result['progress_message'] = $notifier_status['metadata']['message'];
+					}
+					// Add poll attempt info if available.
+					if ( isset( $notifier_status['metadata']['poll_attempt'] ) ) {
+						$result['poll_attempt'] = $notifier_status['metadata']['poll_attempt'];
+					}
+				}
+			}
+
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
 

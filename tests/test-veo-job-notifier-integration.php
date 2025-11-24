@@ -305,4 +305,130 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Verify hook was called.
 		$this->assertTrue( $hook_called, 'Timeout should trigger wp_mcp_ai_job_failed hook' );
 	}
+
+	/**
+	 * Test that progress hook is fired during video polling.
+	 */
+	public function test_progress_hook_fired_during_polling() {
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		// Create a mock job.
+		$job_id   = 'veo_test_progress_' . uniqid();
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test-op-progress',
+			'model'          => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
+			'args'           => array(
+				'prompt'  => 'Test video for progress hook',
+				'user_id' => 1,
+			),
+			'status'         => 'pending',
+			'queued_at'      => time(),
+			'poll_attempt'   => 0,
+			'max_attempts'   => 60,
+		);
+
+		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Track if hook was called.
+		$hook_called    = false;
+		$hook_job_id    = null;
+		$hook_progress  = null;
+		$hook_metadata  = null;
+
+		add_action(
+			'wp_mcp_ai_job_progress',
+			function( $id, $progress, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_progress, &$hook_metadata ) {
+				$hook_called   = true;
+				$hook_job_id   = $id;
+				$hook_progress = $progress;
+				$hook_metadata = $meta;
+			},
+			10,
+			3
+		);
+
+		// Use reflection to call schedule_next_poll.
+		$reflection = new ReflectionClass( $service );
+		$method     = $reflection->getMethod( 'schedule_next_poll' );
+		$method->setAccessible( true );
+
+		// Simulate multiple poll attempts.
+		$metadata['poll_attempt'] = 5;
+		$method->invoke( $service, $job_id, $metadata );
+
+		// Verify hook was called.
+		$this->assertTrue( $hook_called, 'wp_mcp_ai_job_progress hook should be fired during polling' );
+		$this->assertEquals( $job_id, $hook_job_id, 'Job ID should match' );
+		$this->assertIsFloat( $hook_progress, 'Progress should be a float' );
+		$this->assertGreaterThan( 0, $hook_progress, 'Progress should be greater than 0' );
+		$this->assertLessThanOrEqual( 100, $hook_progress, 'Progress should be at most 100' );
+		$this->assertIsArray( $hook_metadata, 'Metadata should be an array' );
+		$this->assertEquals( 'generate_veo_video', $hook_metadata['tool'], 'Tool should be generate_veo_video' );
+		$this->assertArrayHasKey( 'message', $hook_metadata, 'Metadata should have message' );
+		$this->assertArrayHasKey( 'poll_attempt', $hook_metadata, 'Metadata should have poll_attempt' );
+		$this->assertEquals( 5, $hook_metadata['poll_attempt'], 'Poll attempt should be 5' );
+
+		// Verify Job Notifier cached the progress.
+		$cached_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		$this->assertIsArray( $cached_status, 'Job status should be cached' );
+		$this->assertArrayHasKey( 'progress', $cached_status, 'Cached status should have progress' );
+
+		// Cleanup.
+		delete_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id );
+		wp_clear_scheduled_hook( WP_MCP_AI_Gemini_Video_Generation_Service::CRON_POLL_HOOK, array( $job_id ) );
+	}
+
+	/**
+	 * Test that cron status service returns progress data.
+	 */
+	public function test_cron_status_service_returns_progress_data() {
+		$job_id = 'veo_test_status_progress_' . uniqid();
+
+		// Create video job metadata.
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/test-op-status',
+			'model'          => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
+			'args'           => array(
+				'prompt'  => 'Test video for status progress',
+				'user_id' => 1,
+			),
+			'status'         => 'polling',
+			'queued_at'      => time(),
+			'poll_attempt'   => 10,
+			'max_attempts'   => 60,
+		);
+
+		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Fire progress hook to populate Job Notifier cache.
+		do_action(
+			'wp_mcp_ai_job_progress',
+			$job_id,
+			20.0, // 20% progress
+			array(
+				'tool'         => 'generate_veo_video',
+				'status'       => 'polling',
+				'poll_attempt' => 10,
+				'message'      => 'Video generation in progress (check 10)…',
+			)
+		);
+
+		// Get job details from cron status service.
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
+		$service = new WP_MCP_AI_Cron_Status_Service();
+		$result  = $service->get_job_details( $job_id, 1 );
+
+		// Verify result includes progress data.
+		$this->assertIsArray( $result, 'Result should be an array' );
+		$this->assertArrayHasKey( 'progress', $result, 'Result should have progress' );
+		$this->assertEquals( 20.0, $result['progress'], 'Progress should be 20' );
+		$this->assertArrayHasKey( 'progress_message', $result, 'Result should have progress_message' );
+		$this->assertStringContainsString( 'check 10', $result['progress_message'], 'Progress message should contain poll attempt' );
+
+		// Cleanup.
+		delete_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id );
+		delete_transient( WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id );
+	}
 }
