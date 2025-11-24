@@ -1,11 +1,11 @@
 <?php
 /**
- * Integration test to verify Veo video tool works with new default duration.
+ * Integration test to verify Veo video tool works with duration parameter.
  *
  * This test confirms:
- * 1. Tool parameter schema has correct default (4)
+ * 1. Tool parameter schema has correct default (5) and minimum (5)
  * 2. Tool passes arguments correctly to service
- * 3. Service applies default (4) when not provided
+ * 3. Service applies default (5) when not provided
  * 4. Service validates and corrects invalid durations
  * 5. End-to-end flow works as expected
  *
@@ -61,7 +61,7 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'properties', $schema, 'Schema should have properties' );
 		$this->assertArrayHasKey( 'duration', $schema['properties'], 'Schema should have duration property' );
 
-		// Verify default value is 4.
+		// Verify default value is 5.
 		$duration_schema = $schema['properties']['duration'];
 		$this->assertArrayHasKey( 'default', $duration_schema, 'Duration should have default value' );
 		$this->assertEquals(
@@ -71,14 +71,14 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 		);
 
 		// Verify range constraints.
-		$this->assertEquals( 4, $duration_schema['minimum'], 'Minimum duration should be 4' );
+		$this->assertEquals( 5, $duration_schema['minimum'], 'Minimum duration should be 5 (safe for both Veo 3.1 and Veo 2.0)' );
 		$this->assertEquals( 8, $duration_schema['maximum'], 'Maximum duration should be 8' );
 
 		// Verify description mentions the new default.
 		$this->assertStringContainsString(
-			'Default is 4 seconds',
+			'Default is 5 seconds',
 			$duration_schema['description'],
-			'Description should mention default is 4 seconds'
+			'Description should mention default is 5 seconds'
 		);
 	}
 
