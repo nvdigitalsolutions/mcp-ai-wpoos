@@ -1766,8 +1766,18 @@
     color: var(--wp-mcp-ai-color-success, #10b981);
 }
 
+.wp-mcp-ai-chat__usage-badge--model {
+    color: var(--wp-mcp-ai-color-info, #8b5cf6);
+}
+
+.wp-mcp-ai-chat__usage-badge--provider {
+    color: var(--wp-mcp-ai-color-warning, #f59e0b);
+}
+
 .wp-mcp-ai-chat__usage-badge--estimated {
     font-style: italic;
+    border-style: dashed;
+    opacity: 0.85;
 }
 
 .wp-mcp-ai-chat__usage-badge-icon {
@@ -1801,6 +1811,14 @@
     
     .wp-mcp-ai-chat__usage-badge--cost {
         color: #34d399;
+    }
+    
+    .wp-mcp-ai-chat__usage-badge--model {
+        color: #a78bfa;
+    }
+    
+    .wp-mcp-ai-chat__usage-badge--provider {
+        color: #fbbf24;
     }
 }
 
