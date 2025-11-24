@@ -1231,13 +1231,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'create_wpcode_snippet'          => array(
 					'plugin' => 'WPCode',
-					'check'  => 'class_exists',
+					'check'  => 'function_exists',
 					'value'  => 'WPCode',
 				),
 				'generate_simple_jwt_token'      => array(
 					'plugin' => 'Simple JWT Login',
 					'check'  => 'class_exists',
-					'value'  => 'SimpleJWTLogin\SimpleJWTLogin',
+					'value'  => '\\SimpleJWTLogin\\Modules\\WordPressData',
 				),
 			);
 

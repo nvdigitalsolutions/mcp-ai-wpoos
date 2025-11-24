@@ -31,6 +31,28 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 	protected $allowed_code_types = array( 'html', 'text', 'css', 'scss', 'js', 'php', 'universal', 'blocks' );
 
 	/**
+	 * Determine whether the tool can be registered.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		return function_exists( 'WPCode' ) && class_exists( 'WPCode_Snippet' );
+	}
+
+	/**
+	 * Describe why the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		if ( ! function_exists( 'WPCode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
+			return __( 'Install and activate the WPCode plugin to manage code snippets.', 'wp-mcp-ai' );
+		}
+
+		return '';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {

@@ -149,6 +149,54 @@ class Test_Section_Tools extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test WPCode tool dependency checking uses function_exists.
+	 */
+	public function test_wpcode_tool_dependency_check() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'check_tool_dependencies' );
+		$method->setAccessible( true );
+
+		// Test WPCode tool dependency.
+		$result = $method->invoke( $section, 'create_wpcode_snippet' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'available', $result );
+		$this->assertArrayHasKey( 'missing', $result );
+
+		// In test environment, WPCode likely won't be available.
+		if ( ! function_exists( 'WPCode' ) ) {
+			$this->assertFalse( $result['available'], 'create_wpcode_snippet should not be available without WPCode' );
+			$this->assertContains( 'WPCode', $result['missing'], 'WPCode should be in missing dependencies' );
+		}
+	}
+
+	/**
+	 * Test Simple JWT Login tool dependency checking uses correct class.
+	 */
+	public function test_simple_jwt_token_dependency_check() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'check_tool_dependencies' );
+		$method->setAccessible( true );
+
+		// Test Simple JWT Login tool dependency.
+		$result = $method->invoke( $section, 'generate_simple_jwt_token' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'available', $result );
+		$this->assertArrayHasKey( 'missing', $result );
+
+		// In test environment, Simple JWT Login likely won't be available.
+		if ( ! class_exists( '\\SimpleJWTLogin\\Modules\\WordPressData' ) ) {
+			$this->assertFalse( $result['available'], 'generate_simple_jwt_token should not be available without Simple JWT Login' );
+			$this->assertContains( 'Simple JWT Login', $result['missing'], 'Simple JWT Login should be in missing dependencies' );
+		}
+	}
+
+	/**
 	 * Test that tool display name generation works.
 	 */
 	public function test_tool_display_name_generation() {
