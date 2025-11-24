@@ -142,6 +142,53 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'org-...',
 					'autocomplete' => 'off',
 				),
+				'openai_image_model'          => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Image Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1 is the latest model with quality options. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'gpt-image-1' => 'gpt-image-1 (Latest)',
+						'dall-e-3'    => 'DALL-E 3',
+						'dall-e-2'    => 'DALL-E 2',
+					),
+					'default'     => 'gpt-image-1',
+				),
+				'openai_image_size'           => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Image Size', 'wp-mcp-ai' ),
+					'description' => __( 'Default size for generated images. Square format (1024x1024) works best for most purposes. Portrait and landscape formats offer creative flexibility.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'1024x1024' => '1024x1024 (Square)',
+						'1024x1792' => '1024x1792 (Portrait)',
+						'1792x1024' => '1792x1024 (Landscape)',
+						'auto'      => 'Auto (Let AI decide)',
+					),
+					'default'     => '1024x1024',
+				),
+				'openai_image_quality'        => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Image Quality', 'wp-mcp-ai' ),
+					'description' => __( 'Default quality setting for image generation. For gpt-image-1: low is faster/cheaper, medium balances quality and cost, high provides best results. For DALL-E models: standard or hd.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'low'      => 'Low (gpt-image-1)',
+						'medium'   => 'Medium (gpt-image-1)',
+						'high'     => 'High (gpt-image-1)',
+						'auto'     => 'Auto (gpt-image-1)',
+						'standard' => 'Standard (DALL-E)',
+						'hd'       => 'HD (DALL-E)',
+					),
+					'default'     => 'medium',
+				),
+				'openai_image_response_format' => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Image Response Format', 'wp-mcp-ai' ),
+					'description' => __( 'Format for receiving generated images from OpenAI. b64_json returns base64-encoded data directly (recommended). URL provides a hosted image link (expires after 1 hour).', 'wp-mcp-ai' ),
+					'options'     => array(
+						'b64_json' => 'Base64 JSON (Recommended)',
+						'url'      => 'URL (Expires in 1 hour)',
+					),
+					'default'     => 'b64_json',
+				),
 
 				// Anthropic Settings.
 				'enable_anthropic'            => array(
@@ -208,6 +255,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'gemini-pro'           => 'Gemini Pro',
 					),
 					'default'     => 'gemini-2.5-flash',
+				),
+				'gemini_image_model'          => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Image Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for image generation via Gemini. gemini-2.5-flash-image is the latest specialized image generation model. gemini-exp-1206 provides experimental features.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'gemini-2.5-flash-image' => 'Gemini 2.5 Flash Image (Latest)',
+						'gemini-exp-1206'        => 'Gemini Exp 1206 (Experimental)',
+					),
+					'default'     => 'gemini-2.5-flash-image',
+				),
+				'gemini_image_mime_type'      => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Image MIME Type', 'wp-mcp-ai' ),
+					'description' => __( 'Default image format for Gemini-generated images. PNG offers lossless compression, JPEG is smaller for photos, WebP provides best compression.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'image/png'  => 'PNG (Lossless)',
+						'image/jpeg' => 'JPEG (Photo-optimized)',
+						'image/webp' => 'WebP (Modern format)',
+					),
+					'default'     => 'image/png',
+				),
+				'gemini_image_aspect_ratio'   => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Image Aspect Ratio', 'wp-mcp-ai' ),
+					'description' => __( 'Default aspect ratio for Gemini-generated images. Square (1:1) works for most purposes. Portrait (3:4, 9:16) and landscape (4:3, 16:9) offer creative flexibility.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'1:1'  => '1:1 (Square)',
+						'3:4'  => '3:4 (Portrait)',
+						'4:3'  => '4:3 (Landscape)',
+						'9:16' => '9:16 (Vertical)',
+						'16:9' => '16:9 (Widescreen)',
+					),
+					'default'     => '1:1',
 				),
 
 				// Ollama Settings.
@@ -299,7 +380,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format' ),
 				),
 				'anthropic' => array(
 					'id'     => 'anthropic',
@@ -311,7 +392,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio' ),
 				),
 				'ollama'    => array(
 					'id'     => 'ollama',
