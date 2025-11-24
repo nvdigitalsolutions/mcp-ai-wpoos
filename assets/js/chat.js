@@ -9491,7 +9491,9 @@
                         assistantMessage.content = hasToolCalls ? null : '';
                     }
                     // Add to conversation if not already added
-                    if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
+                    // Use indexOf to check entire array, not just last element,
+                    // since tool results may have been pushed after the assistant message
+                    if (state.conversation.indexOf(assistantMessage) === -1) {
                         // Extract and preserve display metadata
                         const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay);
                         if (displayMetadata) {
