@@ -8,8 +8,10 @@
 /**
  * Test that OAuth tokens are preserved when saving settings.
  *
- * This test verifies the fix for GitHub issue where github_access_token and
+ * This test verifies the fix for the issue where github_access_token and
  * github_username were being cleared when saving settings on the external_tools subtab.
+ * The root cause was that OAuth tokens saved by handlers were not defined as fields,
+ * so they were lost during the field sanitization process.
  */
 class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 
