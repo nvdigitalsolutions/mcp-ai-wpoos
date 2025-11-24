@@ -87,9 +87,9 @@ class WP_MCP_AI_Veo_Tool_Integration_Verification_Test extends WP_UnitTestCase {
 	 */
 	public function test_service_constant_has_correct_value() {
 		$this->assertEquals(
-			4,
+			5,
 			WP_MCP_AI_Gemini_Video_Generation_Service::DEFAULT_DURATION,
-			'Service DEFAULT_DURATION constant should be 4'
+			'Service DEFAULT_DURATION constant should be 5'
 		);
 
 		$this->assertEquals(
