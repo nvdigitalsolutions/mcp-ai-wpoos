@@ -1201,6 +1201,26 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				isset( $metadata['result'] ) ? $metadata['result'] : array(),
 				$hook_metadata
 			);
+
+			// Fire tool execution hook for token tracking.
+			// This ensures veo jobs without parent async jobs are still tracked.
+			// For veo jobs with parent jobs, the parent completion will also fire this hook,
+			// but firing it here ensures direct veo job token tracking when there's no parent.
+			// The hook handler (WP_MCP_AI_Tool_Token_Limits::record_tool_usage) is idempotent
+			// per session, so duplicate calls for the same job won't double-count tokens.
+			$tool_slug = 'generate_veo_video';
+			$arguments = isset( $metadata['args'] ) ? $metadata['args'] : array();
+			$context   = array();
+			
+			// Build context from metadata.
+			if ( isset( $metadata['args']['user_id'] ) ) {
+				$context['user_id'] = absint( $metadata['args']['user_id'] );
+			}
+			if ( isset( $metadata['assistant_id'] ) ) {
+				$context['assistant_id'] = absint( $metadata['assistant_id'] );
+			}
+			
+			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, isset( $metadata['result'] ) ? $metadata['result'] : array() );
 			return;
 		}
 
@@ -1431,5 +1451,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'note' => 'Parent async job completed by veo service',
 			)
 		);
+
+		// Fire tool execution hook for token tracking.
+		// This ensures the parent async job's token usage is tracked when
+		// veo completes it, enabling proper orchestration and agentic loop completion.
+		// Extract tool_slug, arguments, and context from parent metadata.
+		$tool_slug = isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'generate_veo_video';
+		$arguments = isset( $parent_metadata['arguments'] ) ? $parent_metadata['arguments'] : array();
+		$context   = isset( $parent_metadata['context'] ) ? $parent_metadata['context'] : array();
+		
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
 	}
 }

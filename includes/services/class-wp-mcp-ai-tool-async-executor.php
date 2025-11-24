@@ -334,6 +334,14 @@ class WP_MCP_AI_Tool_Async_Executor {
 				)
 			);
 
+			// Fire tool execution hook for token tracking and orchestration.
+			// This ensures async tools are properly tracked by the token manager,
+			// enabling proper orchestration and agentic loop completion for tools
+			// with media-only responses (like veo video generation).
+			// NOTE: This must fire AFTER the result is stored but BEFORE job cleanup,
+			// so token usage can be recorded for the completed async job.
+			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );
 		}
