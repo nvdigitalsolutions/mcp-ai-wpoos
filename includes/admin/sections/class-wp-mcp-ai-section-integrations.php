@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 	/**
-	 * Integrations settings section - Gmail and Crawl4AI.
+	 * Integrations settings section - External Tools.
 	 */
 	class WP_MCP_AI_Section_Integrations extends WP_MCP_AI_Settings_Section {
 		/**
@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure third-party service integrations including search APIs, email services, cloud platforms, web crawlers, and analytics.', 'wp-mcp-ai' );
+			return __( 'Configure third-party service integrations including search APIs, email services, cloud platforms, web crawlers, and social media.', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -69,21 +69,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'gmail_client_id'     => array(
+				// Gmail OAuth.
+				'gmail_client_id'              => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'gmail_client_secret' => array(
+				'gmail_client_secret'          => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'crawl4ai_base_url'   => array(
+
+				// Crawl4AI.
+				'crawl4ai_base_url'            => array(
 					'type'         => 'url',
 					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
 					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
@@ -98,7 +101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// Brave Search Section.
+				// Brave Search.
 				'brave_search_api_key'         => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'wp-mcp-ai' ),
@@ -111,7 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// Cloudflare Section.
+				// Cloudflare.
 				'cloudflare_api_token'         => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'wp-mcp-ai' ),
@@ -126,7 +129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => '',
 				),
 
-				// Cloudways Section.
+				// Cloudways.
 				'cloudways_api_key'            => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'wp-mcp-ai' ),
@@ -141,7 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => 'you@example.com',
 				),
 
-				// Mailjet Section.
+				// Mailjet.
 				'mailjet_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
@@ -156,14 +159,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
+				'mailjet_from_email'           => array(
+					'type'        => 'email',
+					'label'       => __( 'Mailjet From Email', 'wp-mcp-ai' ),
+					'description' => __( 'Default "from" email address for Mailjet messages.', 'wp-mcp-ai' ),
+					'placeholder' => 'noreply@example.com',
+				),
+				'mailjet_from_name'            => array(
+					'type'        => 'text',
+					'label'       => __( 'Mailjet From Name', 'wp-mcp-ai' ),
+					'description' => __( 'Default "from" name for Mailjet messages.', 'wp-mcp-ai' ),
+					'placeholder' => 'My Site',
+				),
 
-				// QuickBooks Section.
+				// QuickBooks.
 				'quickbooks_api_key'           => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+				),
+				'quickbooks_company_id'        => array(
+					'type'        => 'text',
+					'label'       => __( 'QuickBooks Company ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your QuickBooks company (realm) ID.', 'wp-mcp-ai' ),
+					'placeholder' => '',
 				),
 				'quickbooks_client_id'         => array(
 					'type'        => 'text',
@@ -179,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// Google Analytics Section.
+				// Google Analytics.
 				'google_analytics_property_id' => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
@@ -192,18 +213,336 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ),
 					'placeholder' => '{"type": "service_account", ...}',
 				),
+
+				// Meta (Facebook/Instagram/WhatsApp).
+				'meta_access_token'            => array(
+					'type'         => 'password',
+					'label'        => __( 'Meta Access Token', 'wp-mcp-ai' ),
+					'description'  => __( 'Long-lived access token for Meta Graph API. Used for Facebook, Instagram, and WhatsApp integrations.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'meta_app_id'                  => array(
+					'type'        => 'text',
+					'label'       => __( 'Meta App ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your Meta (Facebook) App ID.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+				'meta_app_secret'              => array(
+					'type'         => 'password',
+					'label'        => __( 'Meta App Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'Your Meta (Facebook) App Secret.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'meta_business_account_id'     => array(
+					'type'        => 'text',
+					'label'       => __( 'Meta Business Account ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your Meta Business Account ID (for WhatsApp Business API).', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+
+				// TikTok.
+				'tiktok_access_token'          => array(
+					'type'         => 'password',
+					'label'        => __( 'TikTok Access Token', 'wp-mcp-ai' ),
+					'description'  => __( 'Access token for TikTok Open API with video.share scope.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'tiktok_client_key'            => array(
+					'type'        => 'text',
+					'label'       => __( 'TikTok Client Key', 'wp-mcp-ai' ),
+					'description' => __( 'Client Key from TikTok developer portal.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+				'tiktok_client_secret'         => array(
+					'type'         => 'password',
+					'label'        => __( 'TikTok Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'Client Secret from TikTok developer portal.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
 			);
+		}
+
+		/**
+		 * Get sub-tab groups configuration.
+		 *
+		 * @return array
+		 */
+		protected function get_subtab_groups() {
+			return array(
+				'gmail'            => array(
+					'id'     => 'gmail',
+					'label'  => __( 'Gmail', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-email',
+					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
+				),
+				'crawl4ai'         => array(
+					'id'     => 'crawl4ai',
+					'label'  => __( 'Crawl4AI', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-search',
+					'fields' => array( 'crawl4ai_base_url', 'crawl4ai_api_key' ),
+				),
+				'brave_search'     => array(
+					'id'     => 'brave_search',
+					'label'  => __( 'Brave Search', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-search',
+					'fields' => array( 'brave_search_api_key' ),
+				),
+				'cloudflare'       => array(
+					'id'     => 'cloudflare',
+					'label'  => __( 'Cloudflare', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'cloudflare_api_token', 'cloudflare_zone_id' ),
+				),
+				'cloudways'        => array(
+					'id'     => 'cloudways',
+					'label'  => __( 'Cloudways', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-cloud-upload',
+					'fields' => array( 'cloudways_api_key', 'cloudways_email' ),
+				),
+				'mailjet'          => array(
+					'id'     => 'mailjet',
+					'label'  => __( 'Mailjet', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-email-alt',
+					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name' ),
+				),
+				'quickbooks'       => array(
+					'id'     => 'quickbooks',
+					'label'  => __( 'QuickBooks', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-money-alt',
+					'fields' => array( 'quickbooks_api_key', 'quickbooks_company_id', 'quickbooks_client_id', 'quickbooks_client_secret' ),
+				),
+				'google_analytics' => array(
+					'id'     => 'google_analytics',
+					'label'  => __( 'Google Analytics', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-chart-bar',
+					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials' ),
+				),
+				'meta'             => array(
+					'id'     => 'meta',
+					'label'  => __( 'Meta (Facebook/Instagram/WhatsApp)', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-share',
+					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id' ),
+				),
+				'tiktok'           => array(
+					'id'     => 'tiktok',
+					'label'  => __( 'TikTok', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-video-alt3',
+					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+			);
+		}
+
+		/**
+		 * Get active sub-tab.
+		 *
+		 * @return string
+		 */
+		protected function get_active_subtab() {
+			$subtab        = '';
+			$subtab_groups = $this->get_subtab_groups();
+
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+
+			// Default to 'gmail' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
+				$subtab = 'gmail';
+			}
+
+			return $subtab;
 		}
 
 		/**
 		 * Render section fields.
 		 */
 		public function render() {
-			$fields = $this->get_fields();
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
 
-			foreach ( $fields as $key => $field ) {
-				$this->render_field( $key, $field );
+			// Get the active group.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return;
 			}
+
+			$active_group = $subtab_groups[ $active_subtab ];
+
+			// Render fields for the active sub-tab.
+			foreach ( $active_group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
+			}
+
+			// Render additional content based on active sub-tab.
+			$this->render_subtab_footer( $active_subtab );
+		}
+
+		/**
+		 * Render footer content for specific sub-tabs.
+		 *
+		 * @param string $subtab Active sub-tab ID.
+		 */
+		private function render_subtab_footer( $subtab ) {
+			switch ( $subtab ) {
+				case 'gmail':
+					$this->render_gmail_footer();
+					break;
+				case 'meta':
+					$this->render_meta_footer();
+					break;
+				case 'tiktok':
+					$this->render_tiktok_footer();
+					break;
+				case 'quickbooks':
+					$this->render_quickbooks_footer();
+					break;
+			}
+		}
+
+		/**
+		 * Render Gmail footer content.
+		 */
+		private function render_gmail_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'How to get Gmail OAuth credentials:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Go to Google Cloud Console and create a new project', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Enable the Gmail API for your project', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application)', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Add authorized redirect URI pointing to your WordPress site', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Meta footer content.
+		 */
+		private function render_meta_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Meta Platform Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Access Token is used for Facebook Page posts and Instagram business posts', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Business Account ID is required for WhatsApp Business API', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Create a Meta App at developers.facebook.com to get credentials', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Request appropriate permissions for posting and messaging', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render TikTok footer content.
+		 */
+		private function render_tiktok_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'TikTok Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Register your app at developers.tiktok.com', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Request video.share scope for posting videos', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Access tokens expire and need to be refreshed periodically', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render QuickBooks footer content.
+		 */
+		private function render_quickbooks_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'QuickBooks Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Company ID is also known as Realm ID in QuickBooks', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'OAuth credentials are obtained from developer.intuit.com', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'API Key is used for authentication with reports endpoint', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Override render_wrapper to include sub-tab navigation.
+		 */
+		public function render_wrapper() {
+			$description   = $this->get_description();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+				<?php if ( $description ) : ?>
+					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+
+				<div class="wp-mcp-ai-provider-subtabs">
+					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'External tools settings sub-tabs', 'wp-mcp-ai' ); ?>">
+						<?php foreach ( $subtab_groups as $group ) : ?>
+							<?php
+							$subtab_url = add_query_arg(
+								array(
+									'page'   => 'wp-mcp-ai-dashboard',
+									'tab'    => 'tools',
+									'subtab' => $group['id'],
+								),
+								admin_url( 'admin.php' )
+							);
+							$is_active  = ( $group['id'] === $active_subtab );
+							?>
+							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+								class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
+								<?php echo esc_html( $group['label'] ); ?>
+							</a>
+						<?php endforeach; ?>
+					</nav>
+
+					<!-- Hidden field to preserve subtab during form submission -->
+					<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+
+					<div class="wp-mcp-ai-subtab-content">
+						<table class="form-table" role="presentation">
+							<?php $this->render(); ?>
+						</table>
+					</div>
+				</div>
+			</div>
+			<?php
 		}
 
 		/**
