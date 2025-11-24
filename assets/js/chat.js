@@ -9246,6 +9246,26 @@
                         aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
                         aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
                         aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
+                        
+                        // Preserve is_estimated flag if any tool usage is estimated
+                        if (toolUsage.is_estimated) {
+                            aggregatedUsage.is_estimated = true;
+                        }
+                    }
+                    
+                    // Extract model and provider for display
+                    if (parsedContent && typeof parsedContent === 'object') {
+                        if (!aggregatedUsage) {
+                            aggregatedUsage = {};
+                        }
+                        
+                        // Prefer tool's explicit model/provider over defaults
+                        if (parsedContent.model && !aggregatedUsage.model) {
+                            aggregatedUsage.model = parsedContent.model;
+                        }
+                        if (parsedContent.provider && !aggregatedUsage.provider) {
+                            aggregatedUsage.provider = parsedContent.provider;
+                        }
                     }
                 });
             }
@@ -9768,6 +9788,11 @@
         const promptTokens = parseInt(usage.prompt_tokens || 0, 10);
         const completionTokens = parseInt(usage.completion_tokens || 0, 10);
         const totalTokens = parseInt(usage.total_tokens || (promptTokens + completionTokens), 10);
+        const isEstimated = usage.is_estimated === true || usage.is_estimated === 1;
+
+        // Extract model and provider
+        const model = usage.model || (costData && costData.model) || '';
+        const provider = usage.provider || (costData && costData.provider) || '';
 
         // Don't show if no tokens
         if (totalTokens === 0) {
@@ -9781,10 +9806,13 @@
         // Create tokens badge
         const tokensBadge = document.createElement('span');
         tokensBadge.className = 'wp-mcp-ai-chat__usage-badge wp-mcp-ai-chat__usage-badge--tokens';
+        if (isEstimated) {
+            tokensBadge.classList.add('wp-mcp-ai-chat__usage-badge--estimated');
+        }
         
         const tokensLabel = document.createElement('span');
         tokensLabel.className = 'wp-mcp-ai-chat__usage-badge-label';
-        tokensLabel.textContent = getString('tokensLabel', 'Tokens') + ': ';
+        tokensLabel.textContent = (isEstimated ? '~' : '') + getString('tokensLabel', 'Tokens') + ': ';
         
         const tokensValue = document.createElement('span');
         tokensValue.className = 'wp-mcp-ai-chat__usage-badge-value';
@@ -9799,7 +9827,11 @@
                 .replace('%1$d', totalTokens.toLocaleString())
                 .replace('%2$d', promptTokens.toLocaleString())
                 .replace('%3$d', completionTokens.toLocaleString());
-            tokensBadge.title = breakdownText;
+            const tooltipParts = [breakdownText];
+            if (isEstimated) {
+                tooltipParts.push('(Estimated)');
+            }
+            tokensBadge.title = tooltipParts.join(' ');
         }
         
         usageInfoEl.appendChild(tokensBadge);
@@ -9844,6 +9876,51 @@
             }
             
             usageInfoEl.appendChild(costBadge);
+        }
+
+        // Create model badge if model is available
+        if (model) {
+            const modelBadge = document.createElement('span');
+            modelBadge.className = 'wp-mcp-ai-chat__usage-badge wp-mcp-ai-chat__usage-badge--model';
+            if (isEstimated) {
+                modelBadge.classList.add('wp-mcp-ai-chat__usage-badge--estimated');
+            }
+            
+            const modelLabel = document.createElement('span');
+            modelLabel.className = 'wp-mcp-ai-chat__usage-badge-label';
+            modelLabel.textContent = getString('modelLabel', 'Model') + ': ';
+            
+            const modelValue = document.createElement('span');
+            modelValue.className = 'wp-mcp-ai-chat__usage-badge-value';
+            modelValue.textContent = model;
+            
+            modelBadge.appendChild(modelLabel);
+            modelBadge.appendChild(modelValue);
+            
+            usageInfoEl.appendChild(modelBadge);
+        }
+
+        // Create provider badge if provider is available
+        if (provider) {
+            const providerBadge = document.createElement('span');
+            providerBadge.className = 'wp-mcp-ai-chat__usage-badge wp-mcp-ai-chat__usage-badge--provider';
+            if (isEstimated) {
+                providerBadge.classList.add('wp-mcp-ai-chat__usage-badge--estimated');
+            }
+            
+            const providerLabel = document.createElement('span');
+            providerLabel.className = 'wp-mcp-ai-chat__usage-badge-label';
+            providerLabel.textContent = getString('providerLabel', 'Provider') + ': ';
+            
+            const providerValue = document.createElement('span');
+            providerValue.className = 'wp-mcp-ai-chat__usage-badge-value';
+            // Capitalize first letter of provider
+            providerValue.textContent = provider.charAt(0).toUpperCase() + provider.slice(1);
+            
+            providerBadge.appendChild(providerLabel);
+            providerBadge.appendChild(providerValue);
+            
+            usageInfoEl.appendChild(providerBadge);
         }
 
         // Append to message element

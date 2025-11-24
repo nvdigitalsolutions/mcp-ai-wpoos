@@ -320,11 +320,32 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'size'            => $size,
 			'quality'         => $quality,
 			'model'           => $image['model'],
+			'provider'        => 'openai', // Track provider for accurate cost attribution.
 			'response_format' => $response_format,
 			'revised_prompt'  => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'         => isset( $image['created'] ) ? $image['created'] : 0,
 			'text'            => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
+
+		// Add estimated usage metadata for UI display.
+		// OpenAI's image API doesn't return usage data, so we estimate it.
+		$estimated_usage = $this->estimate_image_token_usage( $prompt, $size, $image['model'] );
+		if ( ! empty( $estimated_usage ) ) {
+			$result['usage'] = $estimated_usage;
+		}
+
+		// Calculate estimated cost based on usage.
+		if ( ! empty( $estimated_usage ) ) {
+			$cost_usd = $this->estimate_image_cost( $image['model'], $size, $quality );
+			if ( $cost_usd > 0 ) {
+				$result['cost'] = array(
+					'cost_usd'     => $cost_usd,
+					'is_estimated' => true,
+					'provider'     => 'openai',
+					'model'        => $image['model'],
+				);
+			}
+		}
 
 		$inline_content = $this->build_inline_content_payload( $storage );
 
@@ -806,6 +827,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'size',
 			'quality',
 			'model',
+			'provider',
 			'prompt',
 			'revised_prompt',
 			'text', // Descriptive message about the generated image.
@@ -887,5 +909,122 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 				'max_retries'      => 3,
 			),
 		);
+	}
+
+	/**
+	 * Estimate token usage for image generation.
+	 *
+	 * OpenAI's image generation API doesn't return usage metadata, so we estimate
+	 * based on prompt length and output image size. These are approximations for
+	 * display purposes only.
+	 *
+	 * Token estimation based on OpenAI's pricing documentation:
+	 * - Input tokens: ~1.3 tokens per word for the text prompt
+	 * - Output tokens: Based on image size (varies by model and size)
+	 *
+	 * @param string $prompt Text prompt for image generation.
+	 * @param string $size   Image size (e.g., '1024x1024', '1024x1792').
+	 * @param string $model  Model identifier (e.g., 'gpt-image-1', 'dall-e-3').
+	 * @return array Estimated usage array with is_estimated flag.
+	 */
+	protected function estimate_image_token_usage( $prompt, $size, $model ) {
+		// Estimate input tokens from prompt (roughly 1.3 tokens per word).
+		$words         = str_word_count( $prompt );
+		$prompt_tokens = (int) ceil( $words * 1.3 );
+
+		// Estimate output tokens based on image size.
+		// These are rough estimates based on OpenAI's image generation token consumption.
+		$output_tokens_map = array(
+			'1024x1024' => 2048,  // Standard square image.
+			'1024x1792' => 3584,  // Portrait format.
+			'1792x1024' => 3584,  // Landscape format.
+			'512x512'   => 512,   // DALL-E 2 size.
+			'256x256'   => 256,   // DALL-E 2 size.
+		);
+
+		$completion_tokens = isset( $output_tokens_map[ $size ] ) ? $output_tokens_map[ $size ] : 2048;
+
+		// Adjust for quality if it affects token usage (model-dependent).
+		// For gpt-image-1, higher quality may use more tokens.
+		// This is an approximation - actual usage may vary.
+
+		$total_tokens = $prompt_tokens + $completion_tokens;
+
+		return array(
+			'prompt_tokens'     => $prompt_tokens,
+			'completion_tokens' => $completion_tokens,
+			'total_tokens'      => $total_tokens,
+			'is_estimated'      => true, // Flag to indicate this is an estimate.
+		);
+	}
+
+	/**
+	 * Estimate cost for image generation.
+	 *
+	 * Based on OpenAI's pricing as of 2024-2025:
+	 * - gpt-image-1: $5/1M input tokens, $40/1M output tokens
+	 *   - Low quality (1024x1024): ~$0.011
+	 *   - Medium quality (1024x1024): ~$0.042
+	 *   - High quality (1024x1024): ~$0.167
+	 * - DALL-E 3:
+	 *   - Standard quality (1024x1024): $0.04
+	 *   - HD quality (1024x1024): $0.08
+	 *   - Larger sizes (1024x1792): Standard $0.08, HD $0.12
+	 *
+	 * @param string $model   Model identifier.
+	 * @param string $size    Image size.
+	 * @param string $quality Quality setting.
+	 * @return float Estimated cost in USD.
+	 */
+	protected function estimate_image_cost( $model, $size, $quality ) {
+		$model = strtolower( $model );
+
+		// gpt-image-1 pricing (token-based).
+		if ( 'gpt-image-1' === $model ) {
+			$base_cost = 0.042; // Medium quality 1024x1024.
+
+			// Adjust for quality.
+			if ( 'low' === $quality ) {
+				$base_cost = 0.011;
+			} elseif ( 'high' === $quality ) {
+				$base_cost = 0.167;
+			} elseif ( 'auto' === $quality ) {
+				$base_cost = 0.042; // Assume medium.
+			}
+
+			// Adjust for larger sizes (approximately 1.5x cost for larger).
+			if ( in_array( $size, array( '1024x1792', '1792x1024' ), true ) ) {
+				$base_cost *= 1.5;
+			}
+
+			return $base_cost;
+		}
+
+		// DALL-E 3 pricing (per-image).
+		if ( 'dall-e-3' === $model ) {
+			$is_large = in_array( $size, array( '1024x1792', '1792x1024' ), true );
+			$is_hd    = 'hd' === $quality;
+
+			if ( $is_large ) {
+				return $is_hd ? 0.12 : 0.08;
+			}
+
+			return $is_hd ? 0.08 : 0.04;
+		}
+
+		// DALL-E 2 pricing (per-image).
+		if ( 'dall-e-2' === $model ) {
+			// DALL-E 2 sizes: 1024x1024, 512x512, 256x256.
+			$size_costs = array(
+				'1024x1024' => 0.02,
+				'512x512'   => 0.018,
+				'256x256'   => 0.016,
+			);
+
+			return isset( $size_costs[ $size ] ) ? $size_costs[ $size ] : 0.02;
+		}
+
+		// Unknown model, return 0.
+		return 0.0;
 	}
 }
