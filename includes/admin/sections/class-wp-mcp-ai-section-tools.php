@@ -466,11 +466,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				return;
 			}
 
-			// Special handling for connections subtab - render Integrations section with nested subtabs.
-			if ( 'connections' === $active_subtab ) {
-				$this->render_connections();
-				return;
-			}
+			// The 'connections' subtab is handled by the Integrations section itself,
+			// which will render when the subtab is active. No special rendering needed here.
 
 			// Render fields for the active sub-tab.
 			foreach ( $active_group['fields'] as $key ) {
@@ -1137,20 +1134,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 			</div>
 			<?php
-		}
-
-		/**
-		 * Render the Connections subtab with nested service subtabs.
-		 *
-		 * This renders the Integrations section which provides organized connection areas
-		 * for external services like Gmail, Meta, TikTok, etc.
-		 */
-		private function render_connections() {
-			// Instantiate and render the Integrations section with proper wrapper.
-			$integrations_section = new WP_MCP_AI_Section_Integrations();
-			
-			// Render the integrations section with its nested subtab navigation and wrapper.
-			$integrations_section->render_wrapper();
 		}
 
 		/**

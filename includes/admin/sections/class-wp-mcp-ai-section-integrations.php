@@ -35,13 +35,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Get tab ID.
 		 *
-		 * Note: This section is now integrated as a subtab within the Tools section.
-		 * Return an empty string to prevent it from appearing as a standalone section.
+		 * This section is integrated within the Tools tab under the Connections subtab.
 		 *
 		 * @return string
 		 */
 		public function get_tab() {
-			return '';
+			return 'tools';
 		}
 
 		/**
@@ -506,8 +505,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 		/**
 		 * Override render_wrapper to include sub-tab navigation.
+		 * Only renders when the 'connections' subtab is active in the Tools tab.
 		 */
 		public function render_wrapper() {
+			// Only render this section when the 'connections' subtab is active in Tools.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$current_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
+			
+			// This section is embedded within Tools > Connections subtab.
+			// Don't render if we're not in the connections subtab.
+			if ( 'connections' !== $current_subtab ) {
+				return;
+			}
+
 			$description   = $this->get_description();
 			$subtab_groups = $this->get_subtab_groups();
 			$active_subtab = $this->get_active_subtab();
