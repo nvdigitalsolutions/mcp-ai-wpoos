@@ -196,7 +196,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
-		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
+		// Check for both short form (veo-2.0) and full model ID (veo-2.0-generate-001).
+		$force_veo_2 = false;
+		if ( isset( $args['model'] ) ) {
+			$model = $args['model'];
+			// Match short form or full Veo 2 model ID.
+			$force_veo_2 = ( 'veo-2.0' === $model || self::VEO_2_MODEL === $model || false !== stripos( $model, 'veo-2' ) );
+		}
 
 		if ( ! $force_veo_2 ) {
 			$result = $this->generate_video_with_model( $args, self::VEO_MODEL );
@@ -1141,16 +1147,44 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						);
 						return;
 					} else {
+						// Generate media library edit link.
+						$edit_url = admin_url( 'post.php?post=' . $save_result['attachment_id'] . '&action=edit' );
+
 						$metadata['status'] = 'completed';
 						$metadata['result'] = array(
+							'success'       => true,
+							'job_id'        => $job_id,
 							'attachment_id' => $save_result['attachment_id'],
 							'url'           => $save_result['url'],
+							'edit_url'      => $edit_url,
 							'prompt'        => $result['prompt'],
 							'duration'      => $result['duration'],
 							'aspect_ratio'  => $result['aspect_ratio'],
 							'resolution'    => $result['resolution'],
 							'model'         => $result['model'],
 							'provider'      => $result['provider'],
+						);
+
+						// Include parent_job_id if available.
+						if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+							$metadata['result']['parent_job_id'] = $metadata['parent_job_id'];
+						}
+
+						// Build message with job IDs.
+						$job_info = 'Job ID: ' . $job_id;
+						if ( isset( $metadata['result']['parent_job_id'] ) ) {
+							$job_info .= ', Parent Job ID: ' . $metadata['result']['parent_job_id'];
+						}
+
+						$metadata['result']['message'] = sprintf(
+							/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: media library edit URL, 5: attachment ID, 6: job information string */
+							__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to <a href="%4$s" target="_blank">Media Library (ID %5$d)</a>. %6$s', 'wp-mcp-ai' ),
+							$result['duration'],
+							$result['resolution'],
+							$result['aspect_ratio'],
+							esc_url( $edit_url ),
+							$save_result['attachment_id'],
+							$job_info
 						);
 					}
 				} else {
@@ -1160,6 +1194,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 					$metadata['status'] = 'completed';
 					$metadata['result'] = array(
+						'success'      => true,
+						'job_id'       => $job_id,
 						'video_url'    => $data_url,
 						'prompt'       => $result['prompt'],
 						'duration'     => $result['duration'],
@@ -1167,6 +1203,26 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'resolution'   => $result['resolution'],
 						'model'        => $result['model'],
 						'provider'     => $result['provider'],
+					);
+
+					// Include parent_job_id if available.
+					if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+						$metadata['result']['parent_job_id'] = $metadata['parent_job_id'];
+					}
+
+					// Build message with job IDs.
+					$job_info = 'Job ID: ' . $job_id;
+					if ( isset( $metadata['result']['parent_job_id'] ) ) {
+						$job_info .= ', Parent Job ID: ' . $metadata['result']['parent_job_id'];
+					}
+
+					$metadata['result']['message'] = sprintf(
+						/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: job information string */
+						__( 'Video generated successfully (%1$ds, %2$s, %3$s). Temporary video not saved to Media Library. %4$s', 'wp-mcp-ai' ),
+						$result['duration'],
+						$result['resolution'],
+						$result['aspect_ratio'],
+						$job_info
 					);
 				}
 			}

@@ -151,11 +151,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Enhance prompt with style if specified.
 		$prompt = $this->enhance_prompt_with_style( $arguments );
 
-		// Prepare generation arguments.
+		// Get default settings from admin configuration.
+		$defaults = $this->get_default_video_settings();
+
+		// Prepare generation arguments with settings fallback.
 		$generation_args = array(
 			'prompt'       => $prompt,
-			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : '16:9',
-			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : '720p',
+			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : $defaults['aspect_ratio'],
+			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : $defaults['resolution'],
 			'async'        => $use_async,
 			'user_id'      => $user_id,
 		);
@@ -172,13 +175,23 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Add duration if provided and valid.
-		// Only pass to service if it's a positive integer, otherwise let service apply default.
+		// Only pass to service if it's a positive integer, otherwise use settings default.
 		// This prevents sending 0 or invalid values when OpenAI sends null/false/empty.
 		if ( isset( $arguments['duration'] ) ) {
 			$duration = absint( $arguments['duration'] );
 			if ( $duration > 0 ) {
 				$generation_args['duration'] = $duration;
 			}
+		} else {
+			// Use settings default duration.
+			$generation_args['duration'] = $defaults['duration'];
+		}
+
+		// Add model if provided, otherwise use settings default.
+		if ( ! empty( $arguments['model'] ) ) {
+			$generation_args['model'] = sanitize_text_field( $arguments['model'] );
+		} elseif ( ! empty( $defaults['model'] ) ) {
+			$generation_args['model'] = $defaults['model'];
 		}
 
 		// Add optional parameters.
@@ -226,10 +239,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				return $save_result;
 			}
 
+			// Generate media library edit link.
+			$edit_url = admin_url( 'post.php?post=' . $save_result['attachment_id'] . '&action=edit' );
+
 			return array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
+				'edit_url'      => $edit_url,
 				'prompt'        => $result['prompt'],
 				'duration'      => $result['duration'],
 				'aspect_ratio'  => $result['aspect_ratio'],
@@ -237,9 +254,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'model'         => $result['model'],
 				'provider'      => $result['provider'],
 				'message'       => sprintf(
-					/* translators: %d: attachment ID */
-					__( 'Video generated successfully and saved as attachment ID %d.', 'wp-mcp-ai' ),
-					$save_result['attachment_id']
+					/* translators: 1: attachment ID, 2: media library edit URL */
+					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'wp-mcp-ai' ),
+					$save_result['attachment_id'],
+					esc_url( $edit_url )
 				),
 			);
 		}
@@ -259,6 +277,53 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'provider'     => $result['provider'],
 			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
 		);
+	}
+
+	/**
+	 * Get default video settings from admin configuration.
+	 *
+	 * Retrieves settings for video model, resolution, aspect ratio, and duration
+	 * that were configured in the Gemini provider settings panel.
+	 *
+	 * @return array Default settings with model, resolution, aspect_ratio, and duration.
+	 */
+	protected function get_default_video_settings() {
+		$defaults = array(
+			'model'        => 'veo-2.0-generate-001', // Conservative default.
+			'resolution'   => '720p',
+			'aspect_ratio' => '16:9',
+			'duration'     => 5,
+		);
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( ! empty( $settings['gemini_video_model'] ) ) {
+				$defaults['model'] = sanitize_text_field( $settings['gemini_video_model'] );
+			}
+
+			if ( ! empty( $settings['gemini_video_resolution'] ) ) {
+				$defaults['resolution'] = sanitize_text_field( $settings['gemini_video_resolution'] );
+			}
+
+			if ( ! empty( $settings['gemini_video_aspect_ratio'] ) ) {
+				$defaults['aspect_ratio'] = sanitize_text_field( $settings['gemini_video_aspect_ratio'] );
+			}
+
+			if ( ! empty( $settings['gemini_video_duration'] ) ) {
+				$duration = absint( $settings['gemini_video_duration'] );
+				if ( $duration >= 4 && $duration <= 8 ) {
+					$defaults['duration'] = $duration;
+				}
+			}
+		}
+
+		/**
+		 * Allow third parties to filter the default Veo video settings.
+		 *
+		 * @param array $defaults Default settings array.
+		 */
+		return apply_filters( 'wp_mcp_ai_veo_default_settings', $defaults );
 	}
 
 	/**
@@ -497,6 +562,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'success',
 			'attachment_id',
 			'url',
+			'edit_url',            // Media library edit link
+			'job_id',              // Async job identifier (veo_*)
+			'parent_job_id',       // Parent async job identifier (async_*)
 			'prompt',
 			'duration',
 			'aspect_ratio',
