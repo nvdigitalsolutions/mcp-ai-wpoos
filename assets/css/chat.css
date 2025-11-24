@@ -1732,3 +1732,87 @@
     }
 }
 
+/**
+ * Cost Display Badges
+ * Small tabs showing token usage and estimated cost
+ * Phase 7 Week 5-6: Enhanced Token Tracking
+ */
+.wp-mcp-ai-chat__usage-info {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.wp-mcp-ai-chat__usage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--wp-mcp-ai-color-background-secondary, rgba(241, 245, 249, 0.9));
+    border: 1px solid var(--wp-mcp-ai-color-border, rgba(226, 232, 240, 1));
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--wp-mcp-ai-color-text-secondary, rgba(100, 116, 139, 1));
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__usage-badge--tokens {
+    color: var(--wp-mcp-ai-color-primary, #3b82f6);
+}
+
+.wp-mcp-ai-chat__usage-badge--cost {
+    color: var(--wp-mcp-ai-color-success, #10b981);
+}
+
+.wp-mcp-ai-chat__usage-badge--estimated {
+    font-style: italic;
+}
+
+.wp-mcp-ai-chat__usage-badge-icon {
+    font-size: 0.875rem;
+}
+
+.wp-mcp-ai-chat__usage-badge-label {
+    font-weight: 600;
+}
+
+.wp-mcp-ai-chat__usage-badge-value {
+    font-weight: 400;
+}
+
+/* Tooltip for usage breakdown */
+.wp-mcp-ai-chat__usage-badge[title] {
+    cursor: help;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .wp-mcp-ai-chat__usage-badge {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: rgba(51, 65, 85, 1);
+        color: rgba(148, 163, 184, 1);
+    }
+    
+    .wp-mcp-ai-chat__usage-badge--tokens {
+        color: #60a5fa;
+    }
+    
+    .wp-mcp-ai-chat__usage-badge--cost {
+        color: #34d399;
+    }
+}
+
+@media (max-width: 600px) {
+    .wp-mcp-ai-chat__usage-info {
+        gap: 0.375rem;
+    }
+    
+    .wp-mcp-ai-chat__usage-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+

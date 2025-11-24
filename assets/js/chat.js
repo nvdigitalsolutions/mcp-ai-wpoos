@@ -9162,11 +9162,17 @@
         }
 
         if (hasDisplayContent) {
+            // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
+            const usage = chatData && chatData.usage ? chatData.usage : null;
+            const cost = data && data.cost ? data.cost : null;
+
             const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
                     text: assistantDisplay.text || '',
                 },
+                usage: usage,
+                cost: cost,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
@@ -9655,6 +9661,111 @@
         setStatus(container, '');
     }
 
+    /**
+     * Attach usage and cost badges to an assistant message element.
+     * Phase 7 Week 5-6: Enhanced Token Tracking with Real-Time Cost Attribution
+     * 
+     * @param {HTMLElement} messageElement - The message element to attach badges to
+     * @param {Object|null} usage - Usage data {prompt_tokens, completion_tokens, total_tokens}
+     * @param {Object|null} costData - Cost data {cost_usd, is_estimated, provider, model}
+     */
+    function attachUsageBadges(messageElement, usage, costData) {
+        // Only show if setting is enabled
+        if (!globalConfig.showUsageCosts) {
+            return;
+        }
+
+        // Need at least usage data
+        if (!usage || typeof usage !== 'object') {
+            return;
+        }
+
+        // Extract token counts
+        const promptTokens = parseInt(usage.prompt_tokens || 0, 10);
+        const completionTokens = parseInt(usage.completion_tokens || 0, 10);
+        const totalTokens = parseInt(usage.total_tokens || (promptTokens + completionTokens), 10);
+
+        // Don't show if no tokens
+        if (totalTokens === 0) {
+            return;
+        }
+
+        // Create container for badges
+        const usageInfoEl = document.createElement('div');
+        usageInfoEl.className = 'wp-mcp-ai-chat__usage-info';
+
+        // Create tokens badge
+        const tokensBadge = document.createElement('span');
+        tokensBadge.className = 'wp-mcp-ai-chat__usage-badge wp-mcp-ai-chat__usage-badge--tokens';
+        
+        const tokensLabel = document.createElement('span');
+        tokensLabel.className = 'wp-mcp-ai-chat__usage-badge-label';
+        tokensLabel.textContent = getString('tokensLabel', 'Tokens') + ': ';
+        
+        const tokensValue = document.createElement('span');
+        tokensValue.className = 'wp-mcp-ai-chat__usage-badge-value';
+        tokensValue.textContent = totalTokens.toLocaleString();
+        
+        tokensBadge.appendChild(tokensLabel);
+        tokensBadge.appendChild(tokensValue);
+        
+        // Add tooltip with breakdown
+        if (promptTokens > 0 || completionTokens > 0) {
+            const breakdownText = getString('tokensBreakdown', '%1$d total (%2$d in / %3$d out)')
+                .replace('%1$d', totalTokens.toLocaleString())
+                .replace('%2$d', promptTokens.toLocaleString())
+                .replace('%3$d', completionTokens.toLocaleString());
+            tokensBadge.title = breakdownText;
+        }
+        
+        usageInfoEl.appendChild(tokensBadge);
+
+        // Create cost badge if cost data is available
+        if (costData && typeof costData === 'object' && typeof costData.cost_usd === 'number') {
+            const costBadge = document.createElement('span');
+            const isEstimated = costData.is_estimated === true || costData.is_estimated === 1;
+            
+            costBadge.className = 'wp-mcp-ai-chat__usage-badge wp-mcp-ai-chat__usage-badge--cost';
+            if (isEstimated) {
+                costBadge.classList.add('wp-mcp-ai-chat__usage-badge--estimated');
+            }
+            
+            const costLabel = document.createElement('span');
+            costLabel.className = 'wp-mcp-ai-chat__usage-badge-label';
+            costLabel.textContent = (isEstimated ? getString('estimatedCostLabel', 'Est. Cost') : getString('costLabel', 'Cost')) + ': ';
+            
+            const costValue = document.createElement('span');
+            costValue.className = 'wp-mcp-ai-chat__usage-badge-value';
+            
+            // Format cost as currency
+            const costStr = costData.cost_usd.toFixed(4);
+            costValue.textContent = getString('costAmount', '$%s').replace('%s', costStr);
+            
+            costBadge.appendChild(costLabel);
+            costBadge.appendChild(costValue);
+            
+            // Add tooltip with provider/model if available
+            if (costData.provider || costData.model) {
+                const tooltipParts = [];
+                if (costData.provider) {
+                    tooltipParts.push('Provider: ' + costData.provider);
+                }
+                if (costData.model) {
+                    tooltipParts.push('Model: ' + costData.model);
+                }
+                if (isEstimated) {
+                    tooltipParts.push('(Estimated)');
+                }
+                costBadge.title = tooltipParts.join(' | ');
+            }
+            
+            usageInfoEl.appendChild(costBadge);
+        }
+
+        // Append to message element
+        messageElement.appendChild(usageInfoEl);
+    }
+
     function appendMessage(listEl, role, payload, allowMarkdown, options) {
         if (typeof payload === 'undefined' || payload === null) {
             return null;
@@ -9856,6 +9967,12 @@
             const speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(entry, speechState, speechText);
             attachCopyButton(entry, speechText);
+
+            // Attach usage and cost badges if data is available
+            // Phase 7 Week 5-6: Enhanced Token Tracking
+            const usage = options && options.usage ? options.usage : null;
+            const costData = options && options.cost ? options.cost : null;
+            attachUsageBadges(entry, usage, costData);
 
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {

@@ -186,6 +186,13 @@ class WP_MCP_AI_Shortcode {
 			return;
 		}
 
+		// Get plugin settings for cost display configuration.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+
+		// Allow filtering of cost display setting.
+		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+
 		wp_localize_script(
 			self::SCRIPT_HANDLE,
 			'wpMcpAiChat',
@@ -197,6 +204,7 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'      => 20,
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                          => __( 'Send', 'wp-mcp-ai' ),
@@ -284,6 +292,15 @@ class WP_MCP_AI_Shortcode {
 					'downloadVideo'                 => __( 'Download video', 'wp-mcp-ai' ),
 					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'wp-mcp-ai' ),
 					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'wp-mcp-ai' ),
+					'tokensLabel'                   => __( 'Tokens', 'wp-mcp-ai' ),
+					'costLabel'                     => __( 'Cost', 'wp-mcp-ai' ),
+					'estimatedCostLabel'            => __( 'Est. Cost', 'wp-mcp-ai' ),
+					/* translators: %d: number of tokens used */
+					'tokensUsed'                    => __( '%d tokens', 'wp-mcp-ai' ),
+					/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
+					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'wp-mcp-ai' ),
+					/* translators: %s: cost in USD */
+					'costAmount'                    => __( '$%s', 'wp-mcp-ai' ),
 					'roleLabels'                    => array(
 						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
 						'user'      => __( 'You', 'wp-mcp-ai' ),
