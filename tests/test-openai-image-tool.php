@@ -429,7 +429,13 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	/**
 	 * The tool should include inline base64 content for immediate rendering.
 	 */
-	public function test_execute_includes_inline_content_payload() {
+	/**
+	 * Test that execute() does NOT include inline content payload by default.
+	 *
+	 * Inline content (base64 encoded image data) should not be included in the
+	 * default response to prevent bloating tool results sent to chat clients and LLMs.
+	 */
+	public function test_execute_does_not_include_inline_content_by_default() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -470,16 +476,12 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'content', $result );
-		$this->assertIsArray( $result['content'] );
-		$this->assertArrayHasKey( 'encoding', $result['content'] );
-		$this->assertSame( 'base64', $result['content']['encoding'] );
-		$this->assertArrayHasKey( 'data', $result['content'] );
-		$this->assertNotEmpty( $result['content']['data'] );
-		$this->assertArrayHasKey( 'mime_type', $result['content'] );
-		$this->assertSame( 'image/png', $result['content']['mime_type'] );
-		$this->assertArrayHasKey( 'data_url', $result['content'] );
-		$this->assertStringStartsWith( 'data:image/png;base64,', $result['content']['data_url'] );
+		// Verify that inline content is NOT included by default to prevent bloating responses.
+		$this->assertArrayNotHasKey( 'content', $result, 'Inline base64 content should not be included by default' );
+		// Verify that essential metadata is still present.
+		$this->assertArrayHasKey( 'attachment_id', $result );
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'file_name', $result );
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );

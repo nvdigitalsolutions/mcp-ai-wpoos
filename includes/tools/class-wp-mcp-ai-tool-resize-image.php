@@ -182,10 +182,9 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			),
 		);
 
-		$inline_content = $this->build_inline_content_payload( $storage );
-		if ( ! empty( $inline_content ) ) {
-			$result['content'] = $inline_content;
-		}
+		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
+		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
+		// If base64 content is needed, it should be retrieved via a separate endpoint or parameter.
 
 		/**
 		 * Filter the resize image result.
