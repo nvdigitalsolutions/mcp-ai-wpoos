@@ -1177,6 +1177,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		private function check_tool_dependencies( $slug ) {
 			$missing = array();
 
+			// Allowed check functions for security.
+			$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
+
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
 				'get_elementor_templates'        => array(
@@ -1260,7 +1263,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						$check_value = $check_config['value'];
 
 						// Validate check function is in allowlist.
-						$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
 						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
 							continue; // Skip invalid check functions.
 						}
@@ -1276,7 +1278,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$check_value = $requirement['value'];
 
 					// Validate check function is in allowlist.
-					$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
 					if ( in_array( $check_func, $allowed_check_functions, true ) ) {
 						if ( ! $check_func( $check_value ) ) {
 							$missing[] = $requirement['plugin'];
