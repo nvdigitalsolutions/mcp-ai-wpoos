@@ -170,6 +170,31 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
+		// Validate 1080p requirements upfront.
+		if ( isset( $args['resolution'] ) && '1080p' === $args['resolution'] ) {
+			// 1080p only supported for 16:9 aspect ratio.
+			if ( isset( $args['aspect_ratio'] ) && '9:16' === $args['aspect_ratio'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_arguments',
+					__( '1080p resolution is only supported with 16:9 aspect ratio. Please use 720p for 9:16 videos.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+			
+			// 1080p requires exactly 8 seconds duration.
+			if ( isset( $args['duration'] ) && self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_arguments',
+					sprintf(
+						/* translators: %d: required duration in seconds */
+						__( '1080p resolution requires exactly %d seconds duration. Please adjust the duration or use 720p resolution.', 'wp-mcp-ai' ),
+						self::REQUIRED_1080P_DURATION
+					),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
 		// Try Veo 3.1 first, unless Veo 2 is explicitly requested.
 		$force_veo_2 = isset( $args['model'] ) && 'veo-2.0' === $args['model'];
 
@@ -547,12 +572,24 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 
 			$error_message = __( 'Video generation request failed.', 'wp-mcp-ai' );
+			$error_code    = 'wp_mcp_ai_veo_request_failed';
+			
 			if ( isset( $data['error']['message'] ) ) {
-				$error_message = $data['error']['message'];
+				$api_error_message = $data['error']['message'];
+				$error_message     = $api_error_message;
+				
+				// Provide more helpful error messages for common issues.
+				if ( 429 === $code || stripos( $api_error_message, 'quota' ) !== false || stripos( $api_error_message, 'rate limit' ) !== false ) {
+					$error_code    = 'wp_mcp_ai_quota_exceeded';
+					$error_message = __( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits.', 'wp-mcp-ai' ) . ' ' . $api_error_message;
+				} elseif ( stripos( $api_error_message, 'invalid' ) !== false || stripos( $api_error_message, 'argument' ) !== false || stripos( $api_error_message, 'parameter' ) !== false ) {
+					$error_code    = 'wp_mcp_ai_invalid_arguments';
+					$error_message = __( 'Invalid video generation parameters:', 'wp-mcp-ai' ) . ' ' . $api_error_message;
+				}
 			}
 
 			return new WP_Error(
-				'wp_mcp_ai_veo_request_failed',
+				$error_code,
 				$error_message,
 				array( 'status' => $code )
 			);
