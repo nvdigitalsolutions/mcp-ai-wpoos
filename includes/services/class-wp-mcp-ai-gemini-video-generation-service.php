@@ -579,12 +579,24 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$error_message     = $api_error_message;
 				
 				// Provide more helpful error messages for common issues.
-				if ( 429 === $code || stripos( $api_error_message, 'quota' ) !== false || stripos( $api_error_message, 'rate limit' ) !== false ) {
-					$error_code    = 'wp_mcp_ai_quota_exceeded';
-					$error_message = __( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits.', 'wp-mcp-ai' ) . ' ' . $api_error_message;
-				} elseif ( stripos( $api_error_message, 'invalid' ) !== false || stripos( $api_error_message, 'argument' ) !== false || stripos( $api_error_message, 'parameter' ) !== false ) {
-					$error_code    = 'wp_mcp_ai_invalid_arguments';
-					$error_message = __( 'Invalid video generation parameters:', 'wp-mcp-ai' ) . ' ' . $api_error_message;
+				$quota_keywords = array( 'quota', 'rate limit' );
+				if ( 429 === $code || $this->error_message_contains( $api_error_message, $quota_keywords ) ) {
+					$error_code = 'wp_mcp_ai_quota_exceeded';
+					$error_message = sprintf(
+						/* translators: %s: API error message */
+						__( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits. Details: %s', 'wp-mcp-ai' ),
+						$api_error_message
+					);
+				} else {
+					$invalid_keywords = array( 'invalid', 'argument', 'parameter' );
+					if ( $this->error_message_contains( $api_error_message, $invalid_keywords ) ) {
+						$error_code = 'wp_mcp_ai_invalid_arguments';
+						$error_message = sprintf(
+							/* translators: %s: API error message */
+							__( 'Invalid video generation parameters: %s', 'wp-mcp-ai' ),
+							$api_error_message
+						);
+					}
 				}
 			}
 
