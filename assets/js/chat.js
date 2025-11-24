@@ -2029,13 +2029,16 @@
             
             if (window.confirm(confirmMessage)) {
                 // Find the message index before removing from DOM
+                // Only count conversation bubbles (user, assistant, tool) - not system messages
                 var indexToRemove = -1;
                 var messagesEl = state.messagesEl;
                 
                 if (messagesEl && bubble.parentNode === messagesEl) {
-                    // Get the current index using Array.prototype.indexOf for better performance
-                    var siblings = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
-                    indexToRemove = Array.prototype.indexOf.call(siblings, bubble);
+                    // Get only conversation-relevant bubbles (exclude system messages)
+                    var conversationBubbles = messagesEl.querySelectorAll(
+                        '.wp-mcp-ai-chat__bubble--user, .wp-mcp-ai-chat__bubble--assistant, .wp-mcp-ai-chat__bubble--tool'
+                    );
+                    indexToRemove = Array.prototype.indexOf.call(conversationBubbles, bubble);
                 }
                 
                 // Remove the bubble from DOM
@@ -2048,14 +2051,6 @@
                     if (indexToRemove >= 0 && indexToRemove < state.conversation.length) {
                         // Remove by exact index
                         state.conversation.splice(indexToRemove, 1);
-                    }
-                    
-                    // Update message indices only on bubbles after the deleted index
-                    if (messagesEl && indexToRemove >= 0) {
-                        var remainingBubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
-                        for (var j = indexToRemove; j < remainingBubbles.length; j++) {
-                            remainingBubbles[j].dataset.messageIndex = String(j);
-                        }
                     }
                 }
                 
@@ -8067,7 +8062,7 @@
                     }
                 }
 
-                appendMessage(state.messagesEl, 'user', displayPayload);
+                appendMessage(state.messagesEl, 'user', displayPayload, false, { state: state });
                 return;
             }
 
@@ -8195,7 +8190,7 @@
         };
 
         if (trimmedMessage || displayAttachments.length) {
-            userMessageElement = appendMessage(state.messagesEl, 'user', displayPayload);
+            userMessageElement = appendMessage(state.messagesEl, 'user', displayPayload, false, { state: state });
         }
 
         let payloadContent;
