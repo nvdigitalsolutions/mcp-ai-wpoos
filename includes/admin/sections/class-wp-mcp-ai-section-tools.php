@@ -351,6 +351,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'connections'    => array(
+					'id'     => 'connections',
+					'label'  => __( 'Connections', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-links',
+					'fields' => array(), // Custom rendering via Integrations section.
+				),
 				'external_tools' => array(
 					'id'     => 'external_tools',
 					'label'  => __( 'External Tools', 'wp-mcp-ai' ),
@@ -457,6 +463,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Special handling for tools_manager subtab.
 			if ( 'tools_manager' === $active_subtab ) {
 				$this->render_tools_manager();
+				return;
+			}
+
+			// Special handling for connections subtab - render Integrations section with nested subtabs.
+			if ( 'connections' === $active_subtab ) {
+				$this->render_connections();
 				return;
 			}
 
@@ -1125,6 +1137,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Render the Connections subtab with nested service subtabs.
+		 *
+		 * This renders the Integrations section which provides organized connection areas
+		 * for external services like Gmail, Meta, TikTok, etc.
+		 */
+		private function render_connections() {
+			// Instantiate and render the Integrations section.
+			$integrations_section = new WP_MCP_AI_Section_Integrations();
+			
+			// Render the integrations section with its nested subtab navigation.
+			$integrations_section->render();
 		}
 
 		/**

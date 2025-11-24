@@ -372,8 +372,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 * @return string
 		 */
 		private function get_settings_page_url() {
-			// Redirect to the Tools tab > External Tools subtab (where Gmail OAuth fields are located).
-			return admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=external_tools' );
+			// Redirect to the Tools tab > Connections subtab (where Gmail OAuth fields are located).
+			return admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections' );
 		}
 
 		/**
