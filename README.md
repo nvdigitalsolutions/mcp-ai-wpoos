@@ -47,6 +47,16 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
+- 🏗️ **Design Professional Tools** – Comprehensive suite for construction, interior design, and branding (see [Design Tools Documentation](docs/design-tools.md)):
+  - 📐 CAD Drawing Generator (DWG/DXF export for AutoCAD, SketchUp, Revit)
+  - 🎨 AI Rendering Assistant (photorealistic rendering with lighting/texture suggestions)
+  - 🎭 Material & Color Recommendations (AI-powered design suggestions)
+  - 🧊 3D Model Generator (2D to 3D conversion, OBJ/FBX/STL export)
+  - 💰 Cost Estimation Tool (budget projections and detailed breakdowns)
+  - 🏷️ Logo Generator (AI-driven professional logo creation, SVG/EPS/AI export)
+  - ✏️ Vector Design Assistant (SVG creation and manipulation)
+  - 🎯 Brand Identity Generator (complete brand packages with guidelines)
+  - 🔲 Icon Set Generator (cohesive scalable icon sets)
 
 ---
 
