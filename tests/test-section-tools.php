@@ -188,4 +188,152 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'tool_search', $output, 'Should contain search input' );
 		$this->assertStringContainsString( 'tool_group', $output, 'Should contain category filter' );
 	}
+
+	/**
+	 * Test that GitHub OAuth fields are defined.
+	 */
+	public function test_github_oauth_fields_exist() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+		$fields  = $section->get_fields();
+
+		$this->assertArrayHasKey( 'github_client_id', $fields, 'github_client_id field should exist' );
+		$this->assertArrayHasKey( 'github_client_secret', $fields, 'github_client_secret field should exist' );
+
+		// Verify field types.
+		$this->assertEquals( 'text', $fields['github_client_id']['type'], 'github_client_id should be text field' );
+		$this->assertEquals( 'password', $fields['github_client_secret']['type'], 'github_client_secret should be password field' );
+
+		// Verify labels.
+		$this->assertStringContainsString( 'GitHub OAuth Client ID', $fields['github_client_id']['label'] );
+		$this->assertStringContainsString( 'GitHub OAuth Client Secret', $fields['github_client_secret']['label'] );
+	}
+
+	/**
+	 * Test that GitHub fields are in external_tools subtab.
+	 */
+	public function test_github_fields_in_external_tools_subtab() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
+		$method->setAccessible( true );
+
+		$subtabs = $method->invoke( $section );
+
+		$this->assertArrayHasKey( 'external_tools', $subtabs, 'external_tools subtab should exist' );
+		$this->assertContains( 'github_client_id', $subtabs['external_tools']['fields'], 'github_client_id should be in external_tools fields' );
+		$this->assertContains( 'github_client_secret', $subtabs['external_tools']['fields'], 'github_client_secret should be in external_tools fields' );
+	}
+
+	/**
+	 * Test GitHub connection status rendering when not connected.
+	 */
+	public function test_github_connection_status_not_connected() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up admin user for capability checks.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Clear any existing GitHub settings.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token'] = '';
+		$settings['github_username']     = '';
+		$settings['github_client_id']    = '';
+		$settings['github_client_secret'] = '';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Set up query string for external_tools subtab.
+		$_GET['subtab'] = 'external_tools';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// Should show setup instructions when no credentials.
+		$this->assertStringContainsString( 'GitHub OAuth Credentials Required', $output, 'Should show credentials required message' );
+		$this->assertStringContainsString( 'GitHub Developer Settings', $output, 'Should include link to GitHub Developer Settings' );
+		$this->assertStringContainsString( 'admin-post.php?action=wp_mcp_ai_github_oauth_callback', $output, 'Should show callback URL' );
+	}
+
+	/**
+	 * Test GitHub connection status rendering when connected.
+	 */
+	public function test_github_connection_status_connected() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up admin user for capability checks.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Set up GitHub as connected.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token'] = 'test_token_12345';
+		$settings['github_username']     = 'testuser';
+		$settings['github_client_id']    = 'test_client_id';
+		$settings['github_client_secret'] = 'test_client_secret';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Set up query string for external_tools subtab.
+		$_GET['subtab'] = 'external_tools';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// Should show connected status.
+		$this->assertStringContainsString( 'Connected to GitHub', $output, 'Should show connected message' );
+		$this->assertStringContainsString( 'testuser', $output, 'Should show GitHub username' );
+		$this->assertStringContainsString( 'Reconnect GitHub Account', $output, 'Should show reconnect button' );
+	}
+
+	/**
+	 * Test GitHub connection button when credentials configured but not connected.
+	 */
+	public function test_github_connect_button_with_credentials() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up admin user for capability checks.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Set up GitHub credentials but no access token.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token'] = '';
+		$settings['github_username']     = '';
+		$settings['github_client_id']    = 'test_client_id';
+		$settings['github_client_secret'] = 'test_client_secret';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Set up query string for external_tools subtab.
+		$_GET['subtab'] = 'external_tools';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// Should show connect button when credentials are configured.
+		$this->assertStringContainsString( 'GitHub Not Connected', $output, 'Should show not connected warning' );
+		$this->assertStringContainsString( 'Connect GitHub Account', $output, 'Should show connect button' );
+		$this->assertStringContainsString( 'button-primary', $output, 'Connect button should be primary' );
+		$this->assertStringContainsString( 'admin-post.php?action=wp_mcp_ai_github_oauth_start', $output, 'Should have OAuth start URL' );
+
+		// Should show required permissions.
+		$this->assertStringContainsString( 'repo', $output, 'Should list repo permission' );
+		$this->assertStringContainsString( 'user', $output, 'Should list user permission' );
+		$this->assertStringContainsString( 'codespace', $output, 'Should list codespace permission' );
+	}
 }
