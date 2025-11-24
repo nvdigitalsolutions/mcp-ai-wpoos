@@ -1553,8 +1553,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		$metadata['queued_at']     = current_time( 'mysql', true );
 
 		$pending_result = array(
+			'async'    => true,
 			'status'   => $filtered['status'],
 			'task_id'  => $filtered['task_id'],
+			'job_id'   => $filtered['task_id'], // Alias for consistency with other async tools
+			'message'  => __( 'Crawl job queued for background processing. Results will appear when ready.', 'wp-mcp-ai' ),
 			'results'  => array(),
 			'metadata' => $metadata,
 			'raw'      => isset( $filtered['raw'] ) ? $filtered['raw'] : $formatted['raw'],
@@ -1771,7 +1774,9 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * Keeps:
 	 * - 'markdown' and 'text' (already truncated, most efficient for LLM)
 	 * - 'url', 'status_code', 'status' (essential metadata)
-	 * - 'task_id' (for status tracking)
+	 * - 'task_id' and 'job_id' (for status tracking)
+	 * - 'async' (for UI async detection - CRITICAL)
+	 * - 'message' (user-friendly status message)
 	 *
 	 * @param mixed $result Tool execution result.
 	 * @return mixed Sanitized result.
