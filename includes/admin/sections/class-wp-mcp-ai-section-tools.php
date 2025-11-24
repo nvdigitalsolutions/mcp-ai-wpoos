@@ -170,6 +170,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder' => '{"type": "service_account", ...}',
 				),
 
+				// GitHub Integration fields.
+				'github_client_id'                     => array(
+					'type'         => 'text',
+					'label'        => __( 'GitHub OAuth Client ID', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to GitHub Developer Settings */
+						__( 'OAuth 2.0 Client ID from GitHub Developer Settings. Create an OAuth app at %s.', 'wp-mcp-ai' ),
+						'<a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+				'github_client_secret'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'GitHub OAuth Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
 				// Plugins Integration fields.
 				'enable_jetengine_cct'                 => array(
 					'type'           => 'checkbox',
@@ -352,6 +372,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'quickbooks_client_secret',
 						'google_analytics_property_id',
 						'google_analytics_credentials',
+						'github_client_id',
+						'github_client_secret',
 					),
 				),
 				'plugins'        => array(
@@ -478,7 +500,126 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render External Tools footer content.
 		 */
 		private function render_external_tools_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$github_connected  = ! empty( $settings['github_access_token'] );
+			$github_username   = isset( $settings['github_username'] ) ? $settings['github_username'] : '';
+			$has_credentials   = ! empty( $settings['github_client_id'] ) && ! empty( $settings['github_client_secret'] );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_github_oauth_start' ),
+				'wp_mcp_ai_github_oauth_start'
+			);
 			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'GitHub Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $github_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to GitHub', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $github_username ) : ?>
+									<?php
+									printf(
+										/* translators: %s: GitHub username */
+										esc_html__( 'as %s', 'wp-mcp-ai' ),
+										'<code>' . esc_html( $github_username ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+								<?php esc_html_e( 'Reconnect GitHub Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your GitHub account is connected. You can now use GitHub integration tools to manage repositories, create Codespaces, and develop custom tools.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'GitHub Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Connect GitHub Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to authorize WP MCP AI to access your GitHub account. You will be redirected to GitHub to grant permissions.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Required Permissions:', 'wp-mcp-ai' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><code>repo</code>: <?php esc_html_e( 'Full control of private repositories', 'wp-mcp-ai' ); ?></li>
+							<li><code>user</code>: <?php esc_html_e( 'Read user profile data', 'wp-mcp-ai' ); ?></li>
+							<li><code>codespace</code>: <?php esc_html_e( 'Manage GitHub Codespaces', 'wp-mcp-ai' ); ?></li>
+						</ul>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'GitHub OAuth Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'To connect your GitHub account, first configure your GitHub OAuth Client ID and Client Secret in the fields above, then save your settings.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'wp-mcp-ai' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li>
+								<?php
+								printf(
+									/* translators: %s: URL to GitHub Developer Settings */
+									wp_kses_post( __( 'Go to <a href="%s" target="_blank">GitHub Developer Settings</a>', 'wp-mcp-ai' ) ),
+									esc_url( 'https://github.com/settings/developers' )
+								);
+								?>
+							</li>
+							<li><?php esc_html_e( 'Click "New OAuth App"', 'wp-mcp-ai' ); ?></li>
+							<li>
+								<?php
+								printf(
+									/* translators: %s: Callback URL */
+									esc_html__( 'Set Authorization callback URL to: %s', 'wp-mcp-ai' ),
+									'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_github_oauth_callback' ) ) . '</code>'
+								);
+								?>
+							</li>
+							<li><?php esc_html_e( 'Copy the Client ID and Client Secret to the fields above', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Save your settings', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Click the "Connect GitHub Account" button that will appear', 'wp-mcp-ai' ); ?></li>
+						</ol>
+					<?php endif; ?>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -487,7 +628,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms like Gmail, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, and Google Analytics.',
+								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms like Gmail, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, Google Analytics, and GitHub.',
 								'wp-mcp-ai'
 							)
 						);
