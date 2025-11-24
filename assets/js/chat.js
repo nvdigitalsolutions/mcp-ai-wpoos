@@ -1988,9 +1988,8 @@
      * @param {HTMLElement} bubble - The bubble element
      * @param {Object} state - Chat state object
      * @param {string} role - Message role ('user' or 'assistant')
-     * @param {number} messageIndex - Optional index of the message in the conversation array
      */
-    function attachDeleteButton(bubble, state, role, messageIndex) {
+    function attachDeleteButton(bubble, state, role) {
         if (!bubble || !state) {
             return;
         }
@@ -1998,11 +1997,6 @@
         // Add delete-enabled class
         if (bubble.classList) {
             bubble.classList.add(DELETE_ENABLED_CLASS);
-        }
-
-        // Store message index on the bubble element for proper tracking
-        if (typeof messageIndex === 'number' && messageIndex >= 0) {
-            bubble.dataset.messageIndex = String(messageIndex);
         }
 
         // Check if button already exists
@@ -2039,19 +2033,9 @@
                 var messagesEl = state.messagesEl;
                 
                 if (messagesEl && bubble.parentNode === messagesEl) {
-                    // Get the current index by counting previous siblings
+                    // Get the current index using Array.prototype.indexOf for better performance
                     var siblings = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
-                    for (var i = 0; i < siblings.length; i++) {
-                        if (siblings[i] === bubble) {
-                            indexToRemove = i;
-                            break;
-                        }
-                    }
-                }
-                
-                // Fallback: use stored message index if available
-                if (indexToRemove < 0 && bubble.dataset.messageIndex) {
-                    indexToRemove = parseInt(bubble.dataset.messageIndex, 10);
+                    indexToRemove = Array.prototype.indexOf.call(siblings, bubble);
                 }
                 
                 // Remove the bubble from DOM
@@ -2066,10 +2050,10 @@
                         state.conversation.splice(indexToRemove, 1);
                     }
                     
-                    // Update message indices on remaining bubbles
-                    if (messagesEl) {
+                    // Update message indices only on bubbles after the deleted index
+                    if (messagesEl && indexToRemove >= 0) {
                         var remainingBubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
-                        for (var j = 0; j < remainingBubbles.length; j++) {
+                        for (var j = indexToRemove; j < remainingBubbles.length; j++) {
                             remainingBubbles[j].dataset.messageIndex = String(j);
                         }
                     }
