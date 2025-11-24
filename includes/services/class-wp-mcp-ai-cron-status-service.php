@@ -609,12 +609,40 @@ class WP_MCP_AI_Cron_Status_Service {
 				);
 			}
 
-			// Merge progress data from Job Notifier cache if available.
-			// The Job Notifier receives wp_mcp_ai_job_progress hooks during polling
-			// and caches progress percentage and status message for SSE clients.
+			// Check Job Notifier cache for completion/failure status.
+			// The Job Notifier receives wp_mcp_ai_job_completed and wp_mcp_ai_job_failed hooks
+			// which may contain more up-to-date status than the transient (especially if the
+			// video file was created but the transient wasn't updated yet due to timing).
+			// This ensures the chat client receives completion notifications promptly.
 			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
 				$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
 				if ( $notifier_status && is_array( $notifier_status ) ) {
+					// If Job Notifier shows completed or failed, use that status.
+					// This is authoritative because the completion hook has already fired.
+					if ( isset( $notifier_status['status'] ) ) {
+						$notifier_job_status = $notifier_status['status'];
+
+						if ( 'completed' === $notifier_job_status ) {
+							// Update result status to completed.
+							$result['status'] = 'completed';
+
+							// Merge result data from notifier if available and not already set.
+							if ( isset( $notifier_status['result'] ) && is_array( $notifier_status['result'] ) ) {
+								if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
+									$result['result'] = $notifier_status['result'];
+								}
+							}
+						} elseif ( 'failed' === $notifier_job_status ) {
+							// Update result status to failed.
+							$result['status'] = 'failed';
+
+							// Merge error from notifier if available.
+							if ( isset( $notifier_status['error'] ) ) {
+								$result['error'] = $notifier_status['error'];
+							}
+						}
+					}
+
 					// Add progress percentage if available.
 					if ( isset( $notifier_status['progress'] ) ) {
 						$result['progress'] = $notifier_status['progress'];
@@ -658,6 +686,37 @@ class WP_MCP_AI_Cron_Status_Service {
 					'wp_mcp_ai_forbidden',
 					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
 				);
+			}
+
+			// Check Job Notifier cache for completion/failure status.
+			// The Job Notifier receives wp_mcp_ai_job_completed and wp_mcp_ai_job_failed hooks
+			// which may contain more up-to-date status (especially for delegated jobs where
+			// the nested veo job completes the parent async job).
+			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+				$notifier_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+				if ( $notifier_status && is_array( $notifier_status ) ) {
+					// If Job Notifier shows completed or failed, use that status.
+					if ( isset( $notifier_status['status'] ) ) {
+						$notifier_job_status = $notifier_status['status'];
+
+						if ( 'completed' === $notifier_job_status ) {
+							$result['status'] = 'completed';
+
+							// Merge result data from notifier if available.
+							if ( isset( $notifier_status['result'] ) && is_array( $notifier_status['result'] ) ) {
+								if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
+									$result['result'] = $notifier_status['result'];
+								}
+							}
+						} elseif ( 'failed' === $notifier_job_status ) {
+							$result['status'] = 'failed';
+
+							if ( isset( $notifier_status['error'] ) ) {
+								$result['error'] = $notifier_status['error'];
+							}
+						}
+					}
+				}
 			}
 
 			// Add admin URL.
