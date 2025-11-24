@@ -290,6 +290,49 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '1:1',
 				),
+				'gemini_video_model'          => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for video generation via Gemini Veo. veo-2.0-generate-001 is stable with fewer restrictions (supports 5-8 seconds, 720p max). veo-3.1-generate-preview is the latest with synchronized audio and 1080p support, but requires exactly 8 seconds for 1080p and has stricter quota limits.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Stable, Fewer Restrictions)',
+						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Latest, Audio, 1080p)',
+					),
+					'default'     => 'veo-2.0-generate-001',
+				),
+				'gemini_video_resolution'     => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Resolution', 'wp-mcp-ai' ),
+					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all Veo models and works for all aspect ratios. 1080p is only available with Veo 3.1 for 16:9 aspect ratio and requires exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'720p'  => '720p (All models, all durations)',
+						'1080p' => '1080p (Veo 3.1 only, 16:9, 8s required)',
+					),
+					'default'     => '720p',
+				),
+				'gemini_video_aspect_ratio'   => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Aspect Ratio', 'wp-mcp-ai' ),
+					'description' => __( 'Default aspect ratio for Gemini-generated videos. 16:9 is landscape/widescreen format (supports both 720p and 1080p). 9:16 is vertical/portrait format (supports 720p only).', 'wp-mcp-ai' ),
+					'options'     => array(
+						'16:9' => '16:9 (Landscape/Widescreen)',
+						'9:16' => '9:16 (Vertical/Portrait)',
+					),
+					'default'     => '16:9',
+				),
+				'gemini_video_duration'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Duration', 'wp-mcp-ai' ),
+					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: 1080p resolution requires exactly 8 seconds duration.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'4' => '4 seconds (Veo 3.1 only)',
+						'5' => '5 seconds',
+						'6' => '6 seconds',
+						'7' => '7 seconds',
+						'8' => '8 seconds (Required for 1080p)',
+					),
+					'default'     => '5',
+				),
 
 				// Ollama Settings.
 				'enable_ollama'               => array(
@@ -392,7 +435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration' ),
 				),
 				'ollama'    => array(
 					'id'     => 'ollama',
