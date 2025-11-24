@@ -252,15 +252,16 @@ class WP_MCP_AI_Token_Usage_Service {
 						$all_tools[ $tool_slug ] = array(
 							'tool_slug'    => $tool_slug,
 							'tool_name'    => isset( $available_tools[ $tool_slug ] ) ? $available_tools[ $tool_slug ] : ucwords( str_replace( '_', ' ', $tool_slug ) ),
-							'total_users'  => 0,
+							'users'        => array(), // Track unique users.
 							'requests'     => 0,
 							'total_tokens' => 0,
-							'total_cost'   => 0.0,
 						);
 					}
 
-					// Increment user count for this tool.
-					++$all_tools[ $tool_slug ]['total_users'];
+					// Track unique user for this tool.
+					if ( ! in_array( $user_id, $all_tools[ $tool_slug ]['users'], true ) ) {
+						$all_tools[ $tool_slug ]['users'][] = $user_id;
+					}
 
 					// Add requests.
 					if ( isset( $tool_data['requests'] ) ) {
@@ -271,14 +272,16 @@ class WP_MCP_AI_Token_Usage_Service {
 					if ( isset( $tool_data['total_tokens'] ) ) {
 						$all_tools[ $tool_slug ]['total_tokens'] += (int) $tool_data['total_tokens'];
 					}
-
-					// Calculate cost (simplified - actual cost would need provider/model info).
-					// For now, we'll use a basic estimation or leave as 0.0.
-					// Cost tracking by tool would require enhanced tracking.
 				}
 			}
 
 			$stats['tools_used'] = count( $tools_set );
+
+			// Convert user arrays to counts and prepare for output.
+			foreach ( $all_tools as $tool_slug => $tool_data ) {
+				$all_tools[ $tool_slug ]['total_users'] = count( $tool_data['users'] );
+				unset( $all_tools[ $tool_slug ]['users'] ); // Remove the array, keep only count.
+			}
 
 			// Sort tools by total tokens and get top 10.
 			uasort(
