@@ -91,6 +91,8 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 			'get_user_info',
 			'get_site_summary',
 			'run_crawl4ai_job',
+			'check_video_status',
+			'list_github_repositories',
 		);
 
 		foreach ( $known_tools as $tool_slug ) {

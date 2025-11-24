@@ -459,6 +459,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'purge_varnish_cache'             => 'external-tools',
 				'geocode_address'                 => 'external-tools',
 				'search_places'                   => 'external-tools',
+				'list_github_repositories'        => 'external-tools',
+				'github_repository_operations'    => 'external-tools',
+				'manage_github_codespace'         => 'external-tools',
 			);
 
 			/**
@@ -760,6 +763,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_OpenAI_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
 				'WP_MCP_AI_Tool_Generate_Veo_Video'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php',
+				'WP_MCP_AI_Tool_Check_Video_Status'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-video-status.php',
 				'WP_MCP_AI_Tool_Generate_Music'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
 				'WP_MCP_AI_Tool_Save_Post'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
@@ -812,6 +816,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
+				// GitHub integration tools.
+				'WP_MCP_AI_Tool_List_Github_Repositories' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-github-repositories.php',
+				'WP_MCP_AI_Tool_Github_Repository_Operations' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-github-repository-operations.php',
+				'WP_MCP_AI_Tool_Manage_Github_Codespace' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-github-codespace.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
