@@ -140,6 +140,7 @@ class WP_MCP_AI_Token_Usage_Service {
 				'total_cost'     => 0.0,
 				'by_provider'    => array(),
 				'top_models'     => array(),
+				'top_tools'      => array(),
 				'tools_used'     => 0,
 			);
 		}
@@ -161,10 +162,12 @@ class WP_MCP_AI_Token_Usage_Service {
 			'total_cost'     => 0.0,
 			'by_provider'    => array(),
 			'top_models'     => array(),
+			'top_tools'      => array(),
 			'tools_used'     => 0,
 		);
 
 		$all_models = array();
+		$all_tools  = array();
 
 		foreach ( $user_ids as $user_id ) {
 			$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
@@ -219,13 +222,14 @@ class WP_MCP_AI_Token_Usage_Service {
 		uasort(
 			$all_models,
 			function ( $a, $b ) {
-				return $b['total_tokens'] - $a['total_tokens'];
+				// Use spaceship operator for safe comparison (PHP 7+).
+				return $b['total_tokens'] <=> $a['total_tokens'];
 			}
 		);
 
 		$stats['top_models'] = array_slice( $all_models, 0, 10 );
 
-		// Count tools used.
+		// Collect tool usage statistics.
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
 			$tool_users    = $wpdb->get_col(
@@ -235,15 +239,65 @@ class WP_MCP_AI_Token_Usage_Service {
 				)
 			);
 
-			$tools_set = array();
+			$tools_set       = array();
+			$available_tools = self::get_all_available_tools();
+
 			foreach ( $tool_users as $user_id ) {
 				$tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
-				foreach ( array_keys( $tool_usage ) as $tool_slug ) {
+
+				foreach ( $tool_usage as $tool_slug => $tool_data ) {
 					$tools_set[ $tool_slug ] = true;
+
+					// Initialize tool stats if not exists.
+					if ( ! isset( $all_tools[ $tool_slug ] ) ) {
+						$all_tools[ $tool_slug ] = array(
+							'tool_slug'    => $tool_slug,
+							'tool_name'    => isset( $available_tools[ $tool_slug ] ) ? $available_tools[ $tool_slug ] : ucwords( str_replace( '_', ' ', $tool_slug ) ),
+							'users'        => array(), // Track unique users as associative array (will be converted to count for output).
+							'requests'     => 0,
+							'total_tokens' => 0,
+						);
+					}
+
+					// Track unique user for this tool (O(1) lookup using associative array).
+					$all_tools[ $tool_slug ]['users'][ $user_id ] = true;
+
+					// Add requests.
+					if ( isset( $tool_data['requests'] ) ) {
+						$all_tools[ $tool_slug ]['requests'] += (int) $tool_data['requests'];
+					}
+
+					// Add total tokens.
+					if ( isset( $tool_data['total_tokens'] ) ) {
+						$all_tools[ $tool_slug ]['total_tokens'] += (int) $tool_data['total_tokens'];
+					}
 				}
 			}
 
 			$stats['tools_used'] = count( $tools_set );
+
+			// Prepare tools for output by converting user tracking to counts.
+			$prepared_tools = array();
+			foreach ( $all_tools as $tool_slug => $tool_data ) {
+				$prepared_tools[ $tool_slug ] = array(
+					'tool_slug'    => $tool_data['tool_slug'],
+					'tool_name'    => $tool_data['tool_name'],
+					'total_users'  => count( $tool_data['users'] ),
+					'requests'     => $tool_data['requests'],
+					'total_tokens' => $tool_data['total_tokens'],
+				);
+			}
+
+			// Sort tools by total tokens and get top 10.
+			uasort(
+				$prepared_tools,
+				function ( $a, $b ) {
+					// Use spaceship operator for safe comparison (PHP 7+).
+					return $b['total_tokens'] <=> $a['total_tokens'];
+				}
+			);
+
+			$stats['top_tools'] = array_slice( $prepared_tools, 0, 10 );
 		}
 
 		return $stats;

@@ -270,4 +270,109 @@ class WP_MCP_AI_Token_Usage_Service_Mixed_Providers_Test extends WP_UnitTestCase
 		$this->assertArrayHasKey( 'openai', $stats['by_provider'] );
 		$this->assertSame( 3, $stats['by_provider']['openai']['requests'] );
 	}
+
+	/**
+	 * Test that top_tools is included in site-wide statistics.
+	 */
+	public function test_top_tools_included_in_site_wide_stats() {
+		// Get site-wide statistics.
+		$stats = WP_MCP_AI_Token_Usage_Service::get_site_wide_statistics();
+
+		// Verify that top_tools key exists in the response.
+		$this->assertArrayHasKey( 'top_tools', $stats );
+		$this->assertIsArray( $stats['top_tools'] );
+	}
+
+	/**
+	 * Test that top_tools contains expected data structure when tools are used.
+	 */
+	public function test_top_tools_data_structure() {
+		// Skip if Tool Token Limits class is not available.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Token_Limits class not available' );
+		}
+
+		$user_id = $this->test_users[0];
+
+		// Simulate tool usage for a user.
+		$tool_usage = array(
+			'test_tool' => array(
+				'requests'     => 5,
+				'total_tokens' => 1000,
+			),
+		);
+
+		update_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $tool_usage );
+
+		// Get site-wide statistics.
+		$stats = WP_MCP_AI_Token_Usage_Service::get_site_wide_statistics();
+
+		// Verify top_tools contains data.
+		$this->assertArrayHasKey( 'top_tools', $stats );
+
+		if ( ! empty( $stats['top_tools'] ) ) {
+			$first_tool = reset( $stats['top_tools'] );
+
+			// Verify data structure.
+			$this->assertArrayHasKey( 'tool_slug', $first_tool );
+			$this->assertArrayHasKey( 'tool_name', $first_tool );
+			$this->assertArrayHasKey( 'total_users', $first_tool );
+			$this->assertArrayHasKey( 'requests', $first_tool );
+			$this->assertArrayHasKey( 'total_tokens', $first_tool );
+
+			// Verify the total_users count is correct (should be 1).
+			$this->assertEquals( 1, $first_tool['total_users'], 'Should count 1 unique user' );
+		}
+
+		// Clean up.
+		delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
+	}
+
+	/**
+	 * Test that top_tools correctly counts unique users.
+	 */
+	public function test_top_tools_unique_user_count() {
+		// Skip if Tool Token Limits class is not available.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Token_Limits class not available' );
+		}
+
+		$user1 = $this->test_users[0];
+		$user2 = $this->test_users[1];
+
+		// Simulate the same tool usage for both users.
+		$tool_usage = array(
+			'test_tool' => array(
+				'requests'     => 5,
+				'total_tokens' => 1000,
+			),
+		);
+
+		update_user_meta( $user1, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $tool_usage );
+		update_user_meta( $user2, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $tool_usage );
+
+		// Get site-wide statistics.
+		$stats = WP_MCP_AI_Token_Usage_Service::get_site_wide_statistics();
+
+		// Find the test_tool in top_tools.
+		$test_tool = null;
+		if ( ! empty( $stats['top_tools'] ) ) {
+			foreach ( $stats['top_tools'] as $tool ) {
+				if ( 'test_tool' === $tool['tool_slug'] ) {
+					$test_tool = $tool;
+					break;
+				}
+			}
+		}
+
+		// Verify unique user count.
+		$this->assertNotNull( $test_tool, 'test_tool should be in top_tools' );
+		$this->assertEquals( 2, $test_tool['total_users'], 'Should count 2 unique users' );
+		$this->assertEquals( 10, $test_tool['requests'], 'Should have 10 total requests (5 per user)' );
+		$this->assertEquals( 2000, $test_tool['total_tokens'], 'Should have 2000 total tokens (1000 per user)' );
+
+		// Clean up.
+		delete_user_meta( $user1, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
+		delete_user_meta( $user2, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
+	}
 }
