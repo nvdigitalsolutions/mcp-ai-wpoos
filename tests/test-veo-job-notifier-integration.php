@@ -25,6 +25,63 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that job_started hook is fired when veo job is queued.
+	 */
+	public function test_started_hook_fired_when_veo_job_queued() {
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		// Track if hook was called.
+		$hook_called    = false;
+		$hook_job_id    = null;
+		$hook_metadata  = null;
+
+		add_action(
+			'wp_mcp_ai_job_started',
+			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+				$hook_called   = true;
+				$hook_job_id   = $id;
+				$hook_metadata = $meta;
+			},
+			10,
+			2
+		);
+
+		// Create a mock operation (would normally come from Gemini API).
+		$mock_operation = array(
+			'operation_name' => 'operations/test-op-started',
+			'model_used'     => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
+		);
+
+		$mock_args = array(
+			'prompt'  => 'Test video for started hook',
+			'user_id' => 1,
+		);
+
+		// Use reflection to call queue_async_polling.
+		$reflection = new ReflectionClass( $service );
+		$method     = $reflection->getMethod( 'queue_async_polling' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $service, $mock_operation, $mock_args );
+
+		// Verify hook was called.
+		$this->assertTrue( $hook_called, 'wp_mcp_ai_job_started hook should be fired when veo job is queued' );
+		$this->assertIsString( $hook_job_id, 'Job ID should be a string' );
+		$this->assertStringStartsWith( 'veo_', $hook_job_id, 'Job ID should start with veo_' );
+		$this->assertIsArray( $hook_metadata, 'Metadata should be an array' );
+		$this->assertEquals( 'generate_veo_video', $hook_metadata['tool'], 'Tool should be generate_veo_video' );
+		$this->assertEquals( 'pending', $hook_metadata['status'], 'Status should be pending' );
+
+		// Verify Job Notifier cached the status.
+		$cached_status = WP_MCP_AI_Job_Notifier::get_job_status( $hook_job_id );
+		$this->assertIsArray( $cached_status, 'Job status should be cached' );
+		$this->assertEquals( 'started', $cached_status['status'], 'Status should be started' );
+
+		// Cleanup.
+		delete_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $hook_job_id );
+	}
+
+	/**
 	 * Test that job_completed hook is fired when video generation completes successfully.
 	 */
 	public function test_completion_hook_fired_on_success() {

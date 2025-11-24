@@ -25,6 +25,45 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that job_started hook is fired when async tool is queued.
+	 */
+	public function test_started_hook_fired_when_tool_queued() {
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+
+		// Track if hook was called.
+		$hook_called    = false;
+		$hook_job_id    = null;
+		$hook_metadata  = null;
+
+		add_action(
+			'wp_mcp_ai_job_started',
+			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+				$hook_called   = true;
+				$hook_job_id   = $id;
+				$hook_metadata = $meta;
+			},
+			10,
+			2
+		);
+
+		// Queue a tool - this should fire the job_started hook.
+		$job_id = $executor->queue_tool( 'test_async_tool', array(), array( 'user_id' => 1 ) );
+		$this->assertIsString( $job_id, 'Job ID should be returned' );
+
+		// Verify hook was called.
+		$this->assertTrue( $hook_called, 'wp_mcp_ai_job_started hook should be fired when tool is queued' );
+		$this->assertEquals( $job_id, $hook_job_id, 'Job ID should match' );
+		$this->assertIsArray( $hook_metadata, 'Metadata should be an array' );
+		$this->assertEquals( 'test_async_tool', $hook_metadata['tool'], 'Tool slug should match' );
+		$this->assertEquals( 'pending', $hook_metadata['status'], 'Status should be pending' );
+
+		// Verify Job Notifier cached the status.
+		$cached_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		$this->assertIsArray( $cached_status, 'Job status should be cached' );
+		$this->assertEquals( 'started', $cached_status['status'], 'Status should be started' );
+	}
+
+	/**
 	 * Test that job_completed hook is fired when async tool completes.
 	 */
 	public function test_completion_hook_fired_for_async_tool() {

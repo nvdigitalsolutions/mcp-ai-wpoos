@@ -1013,11 +1013,26 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			)
 		);
 
+		// Fire job started hook to notify the chat client that the veo job has been created.
+		// This allows the UI to display the job_id and status to the user immediately.
+		do_action(
+			'wp_mcp_ai_job_started',
+			$job_id,
+			array(
+				'tool'   => 'generate_veo_video',
+				'status' => 'pending',
+			)
+		);
+
 		return array(
 			'async'   => true,
 			'job_id'  => $job_id,
 			'status'  => 'pending',
-			'message' => __( 'Video generation started. Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
+			'message' => sprintf(
+				/* translators: %s: job ID */
+				__( 'Video generation started (Job ID: %s). Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
+				$job_id
+			),
 		);
 	}
 

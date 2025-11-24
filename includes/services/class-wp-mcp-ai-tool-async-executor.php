@@ -208,6 +208,17 @@ class WP_MCP_AI_Tool_Async_Executor {
 			)
 		);
 
+		// Fire job started hook to notify the chat client that the async job has been created.
+		// This allows the UI to display the job_id and status to the user immediately.
+		do_action(
+			'wp_mcp_ai_job_started',
+			$job_id,
+			array(
+				'tool'   => $tool_slug,
+				'status' => 'pending',
+			)
+		);
+
 		return $job_id;
 	}
 
