@@ -351,6 +351,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'connections'    => array(
+					'id'     => 'connections',
+					'label'  => __( 'Connections', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-links',
+					'fields' => array(), // Custom rendering via Integrations section.
+				),
 				'external_tools' => array(
 					'id'     => 'external_tools',
 					'label'  => __( 'External Tools', 'wp-mcp-ai' ),
@@ -459,6 +465,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				$this->render_tools_manager();
 				return;
 			}
+
+			// The 'connections' subtab is handled by the Integrations section itself,
+			// which will render when the subtab is active. No special rendering needed here.
 
 			// Render fields for the active sub-tab.
 			foreach ( $active_group['fields'] as $key ) {

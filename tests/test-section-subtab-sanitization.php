@@ -108,6 +108,84 @@ class WP_MCP_AI_Section_Subtab_Sanitization_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that Integrations section can sanitize with subtabs.
+	 */
+	public function test_integrations_section_sanitize_with_subtabs() {
+		$section = new WP_MCP_AI_Section_Integrations();
+
+		// Simulate form submission for the 'gmail' subtab.
+		$_POST['subtab'] = 'gmail';
+		$submitted       = array(
+			'gmail_client_id'     => 'test-client-id',
+			'gmail_client_secret' => 'test-secret',
+		);
+
+		// This should not throw a fatal error about private method access.
+		$sanitized = $section->sanitize( $submitted );
+
+		// Verify sanitization worked.
+		$this->assertIsArray( $sanitized );
+		$this->assertArrayHasKey( 'gmail_client_id', $sanitized );
+		$this->assertArrayHasKey( 'gmail_client_secret', $sanitized );
+
+		// Clean up.
+		unset( $_POST['subtab'] );
+	}
+
+	/**
+	 * Test that Integrations section Meta subtab works.
+	 */
+	public function test_integrations_meta_subtab_sanitize() {
+		$section = new WP_MCP_AI_Section_Integrations();
+
+		// Simulate form submission for the 'meta' subtab.
+		$_POST['subtab'] = 'meta';
+		$submitted       = array(
+			'meta_access_token'        => 'test-token',
+			'meta_app_id'              => '123456',
+			'meta_app_secret'          => 'secret',
+			'meta_business_account_id' => '789',
+		);
+
+		// This should not throw a fatal error.
+		$sanitized = $section->sanitize( $submitted );
+
+		// Verify sanitization worked.
+		$this->assertIsArray( $sanitized );
+		$this->assertArrayHasKey( 'meta_access_token', $sanitized );
+		$this->assertEquals( 'test-token', $sanitized['meta_access_token'] );
+
+		// Clean up.
+		unset( $_POST['subtab'] );
+	}
+
+	/**
+	 * Test that Integrations section TikTok subtab works.
+	 */
+	public function test_integrations_tiktok_subtab_sanitize() {
+		$section = new WP_MCP_AI_Section_Integrations();
+
+		// Simulate form submission for the 'tiktok' subtab.
+		$_POST['subtab'] = 'tiktok';
+		$submitted       = array(
+			'tiktok_access_token'  => 'test-token',
+			'tiktok_client_key'    => 'client-key',
+			'tiktok_client_secret' => 'secret',
+		);
+
+		// This should not throw a fatal error.
+		$sanitized = $section->sanitize( $submitted );
+
+		// Verify sanitization worked.
+		$this->assertIsArray( $sanitized );
+		$this->assertArrayHasKey( 'tiktok_access_token', $sanitized );
+		$this->assertEquals( 'test-token', $sanitized['tiktok_access_token'] );
+
+		// Clean up.
+		unset( $_POST['subtab'] );
+	}
+
+	/**
 	 * Test that Providers section can sanitize with subtabs (uses get_provider_groups).
 	 */
 	public function test_providers_section_sanitize_with_subtabs() {

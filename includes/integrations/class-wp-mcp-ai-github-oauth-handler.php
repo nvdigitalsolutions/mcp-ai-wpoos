@@ -324,7 +324,8 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 * @return string
 		 */
 		private function get_settings_page_url() {
-			return admin_url( 'options-general.php?page=' . WP_MCP_AI_Admin_Settings::PAGE_SLUG );
+			// Redirect to the Tools tab > Connections subtab (where GitHub OAuth fields are located).
+			return admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections' );
 		}
 
 		/**
