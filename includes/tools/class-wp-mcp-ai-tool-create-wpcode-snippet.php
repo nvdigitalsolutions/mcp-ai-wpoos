@@ -31,6 +31,28 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 	protected $allowed_code_types = array( 'html', 'text', 'css', 'scss', 'js', 'php', 'universal', 'blocks' );
 
 	/**
+	 * Determine whether the tool can be registered.
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		return function_exists( 'wpcode' ) && class_exists( 'WPCode_Snippet' );
+	}
+
+	/**
+	 * Describe why the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		if ( ! function_exists( 'wpcode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
+			return __( 'Install and activate the WPCode plugin to manage code snippets.', 'wp-mcp-ai' );
+		}
+
+		return '';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -146,7 +168,7 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
 
-		if ( ! function_exists( 'WPCode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
+		if ( ! function_exists( 'wpcode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
 			return new WP_Error( 'wp_mcp_ai_wpcode_missing', __( 'WPCode must be installed and active to manage snippets.', 'wp-mcp-ai' ) );
 		}
 
@@ -355,7 +377,8 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
+			'write',                // Creates or modifies data.
+			'state-changing',       // Modifies database or site state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);

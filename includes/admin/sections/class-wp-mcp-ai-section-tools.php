@@ -1177,6 +1177,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		private function check_tool_dependencies( $slug ) {
 			$missing = array();
 
+			// Allowed check functions for security.
+			$allowed_check_functions = array( 'class_exists', 'function_exists', 'interface_exists', 'trait_exists', 'method_exists' );
+
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
 				'get_elementor_templates'        => array(
@@ -1231,23 +1234,59 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'create_wpcode_snippet'          => array(
 					'plugin' => 'WPCode',
-					'check'  => 'class_exists',
-					'value'  => 'WPCode',
+					'checks' => array(
+						array(
+							'check' => 'function_exists',
+							'value' => 'wpcode',
+						),
+						array(
+							'check' => 'class_exists',
+							'value' => 'WPCode_Snippet',
+						),
+					),
 				),
 				'generate_simple_jwt_token'      => array(
 					'plugin' => 'Simple JWT Login',
 					'check'  => 'class_exists',
-					'value'  => 'SimpleJWTLogin\SimpleJWTLogin',
+					'value'  => '\\SimpleJWTLogin\\Modules\\WordPressData',
 				),
 			);
 
 			if ( isset( $plugin_requirements[ $slug ] ) ) {
 				$requirement = $plugin_requirements[ $slug ];
-				$check_func  = $requirement['check'];
-				$check_value = $requirement['value'];
 
-				if ( ! $check_func( $check_value ) ) {
-					$missing[] = $requirement['plugin'];
+				// Support both single check and multiple checks.
+				if ( isset( $requirement['checks'] ) ) {
+					// Multiple checks - all must pass.
+					foreach ( $requirement['checks'] as $check_config ) {
+						$check_func  = $check_config['check'];
+						$check_value = $check_config['value'];
+
+						// Validate check function is in allowlist.
+						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+							// Invalid check function - mark tool as unavailable.
+							$missing[] = $requirement['plugin'];
+							break;
+						}
+
+						if ( ! $check_func( $check_value ) ) {
+							$missing[] = $requirement['plugin'];
+							break; // No need to check further once one fails.
+						}
+					}
+				} else {
+					// Single check.
+					$check_func  = $requirement['check'];
+					$check_value = $requirement['value'];
+
+					// Validate check function is in allowlist.
+					if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+						// Invalid check function - mark tool as unavailable.
+						$missing[] = $requirement['plugin'];
+					} elseif ( ! $check_func( $check_value ) ) {
+						// Check failed - mark tool as unavailable.
+						$missing[] = $requirement['plugin'];
+					}
 				}
 			}
 
