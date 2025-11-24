@@ -427,7 +427,7 @@ class WP_MCP_AI_Transcript_Repository {
 				$first_row      = $rows[0];
 				$row_user_id    = isset( $first_row['user_id'] ) ? absint( $first_row['user_id'] ) : 0;
 				$row_author_id  = isset( $first_row['cct_author_id'] ) ? absint( $first_row['cct_author_id'] ) : 0;
-				$user_matches   = ( $row_user_id === $user_id ) || ( $row_author_id === $user_id ) || ( 0 === $row_user_id && 0 === $row_author_id );
+				$user_matches   = ( $row_user_id === $user_id ) || ( $row_author_id === $user_id );
 
 				if ( ! $user_matches ) {
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -474,10 +474,12 @@ class WP_MCP_AI_Transcript_Repository {
 	}
 
 	/**
-	 * Delete transcript entries for a session and user
+	 * Delete transcript entries for a session and user.
 	 *
-	 * Tries both user_id and cct_author_id fields for compatibility
-	 * with different JetEngine configurations.
+	 * Tries user_id first (our custom CCT field), then falls back to
+	 * cct_author_id (JetEngine built-in) for compatibility with different
+	 * configurations. This order matches the query patterns in get_session()
+	 * and get_sessions() which also prioritize the custom user_id field.
 	 *
 	 * @param string $session_key Session key.
 	 * @param int    $user_id     User ID.
