@@ -1231,8 +1231,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'create_wpcode_snippet'          => array(
 					'plugin' => 'WPCode',
-					'check'  => 'function_exists',
-					'value'  => 'WPCode',
+					'checks' => array(
+						array(
+							'check' => 'function_exists',
+							'value' => 'WPCode',
+						),
+						array(
+							'check' => 'class_exists',
+							'value' => 'WPCode_Snippet',
+						),
+					),
 				),
 				'generate_simple_jwt_token'      => array(
 					'plugin' => 'Simple JWT Login',
@@ -1243,11 +1251,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			if ( isset( $plugin_requirements[ $slug ] ) ) {
 				$requirement = $plugin_requirements[ $slug ];
-				$check_func  = $requirement['check'];
-				$check_value = $requirement['value'];
 
-				if ( ! $check_func( $check_value ) ) {
-					$missing[] = $requirement['plugin'];
+				// Support both single check and multiple checks.
+				if ( isset( $requirement['checks'] ) ) {
+					// Multiple checks - all must pass.
+					foreach ( $requirement['checks'] as $check_config ) {
+						$check_func  = $check_config['check'];
+						$check_value = $check_config['value'];
+
+						if ( ! $check_func( $check_value ) ) {
+							$missing[] = $requirement['plugin'];
+							break; // No need to check further once one fails.
+						}
+					}
+				} else {
+					// Single check.
+					$check_func  = $requirement['check'];
+					$check_value = $requirement['value'];
+
+					if ( ! $check_func( $check_value ) ) {
+						$missing[] = $requirement['plugin'];
+					}
 				}
 			}
 
