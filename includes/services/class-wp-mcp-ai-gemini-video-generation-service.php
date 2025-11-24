@@ -1028,7 +1028,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'async'   => true,
 			'job_id'  => $job_id,
 			'status'  => 'pending',
-			'message' => __( 'Video generation started. Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
+			'message' => sprintf(
+				/* translators: %s: job ID */
+				__( 'Video generation started (Job ID: %s). Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
+				$job_id
+			),
 		);
 	}
 
