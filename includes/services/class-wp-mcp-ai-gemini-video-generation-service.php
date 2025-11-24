@@ -123,6 +123,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	const ASYNC_OP_PREFIX = 'wp_mcp_ai_veo_async_';
 
 	/**
+	 * Estimated number of polls for typical video completion (used for progress calculation)
+	 *
+	 * @var int
+	 */
+	const ESTIMATED_COMPLETION_POLLS = 50;
+
+	/**
+	 * Maximum progress percentage before completion (100% only on actual completion)
+	 *
+	 * @var int
+	 */
+	const MAX_PROGRESS_BEFORE_COMPLETE = 95;
+
+	/**
 	 * Initialize the service and register hooks
 	 */
 	public static function init() {
@@ -1356,6 +1370,32 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Update metadata.
 		$metadata['status'] = 'polling';
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Calculate progress percentage based on poll attempts.
+		// Veo video generation typically completes within 30-60 polls.
+		$poll_attempt  = isset( $metadata['poll_attempt'] ) ? absint( $metadata['poll_attempt'] ) : 1;
+		$max_attempts  = isset( $metadata['max_attempts'] ) ? absint( $metadata['max_attempts'] ) : self::MAX_POLLING_ATTEMPTS;
+		$estimated_max = min( self::ESTIMATED_COMPLETION_POLLS, $max_attempts );
+		$progress      = min( self::MAX_PROGRESS_BEFORE_COMPLETE, ( $poll_attempt / $estimated_max ) * 100 );
+
+		// Fire progress hook to notify SSE clients about ongoing video generation.
+		// This allows the chat UI to display intermediate status messages.
+		do_action(
+			'wp_mcp_ai_job_progress',
+			$job_id,
+			$progress,
+			array(
+				'tool'         => 'generate_veo_video',
+				'status'       => 'polling',
+				'poll_attempt' => $poll_attempt,
+				'max_attempts' => $max_attempts,
+				'message'      => sprintf(
+					/* translators: %d: poll attempt number */
+					__( 'Video generation in progress (check %d)…', 'wp-mcp-ai' ),
+					$poll_attempt
+				),
+			)
+		);
 
 		// Schedule next poll.
 		$next_poll = time() + self::POLLING_INTERVAL;
