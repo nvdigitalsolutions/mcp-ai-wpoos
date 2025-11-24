@@ -252,16 +252,14 @@ class WP_MCP_AI_Token_Usage_Service {
 						$all_tools[ $tool_slug ] = array(
 							'tool_slug'    => $tool_slug,
 							'tool_name'    => isset( $available_tools[ $tool_slug ] ) ? $available_tools[ $tool_slug ] : ucwords( str_replace( '_', ' ', $tool_slug ) ),
-							'users'        => array(), // Track unique users.
+							'users'        => array(), // Track unique users as associative array for O(1) lookups.
 							'requests'     => 0,
 							'total_tokens' => 0,
 						);
 					}
 
-					// Track unique user for this tool.
-					if ( ! in_array( $user_id, $all_tools[ $tool_slug ]['users'], true ) ) {
-						$all_tools[ $tool_slug ]['users'][] = $user_id;
-					}
+					// Track unique user for this tool (O(1) lookup using associative array).
+					$all_tools[ $tool_slug ]['users'][ $user_id ] = true;
 
 					// Add requests.
 					if ( isset( $tool_data['requests'] ) ) {
@@ -277,21 +275,27 @@ class WP_MCP_AI_Token_Usage_Service {
 
 			$stats['tools_used'] = count( $tools_set );
 
-			// Convert user arrays to counts and prepare for output.
+			// Prepare tools for output by converting user tracking to counts.
+			$prepared_tools = array();
 			foreach ( $all_tools as $tool_slug => $tool_data ) {
-				$all_tools[ $tool_slug ]['total_users'] = count( $tool_data['users'] );
-				unset( $all_tools[ $tool_slug ]['users'] ); // Remove the array, keep only count.
+				$prepared_tools[ $tool_slug ] = array(
+					'tool_slug'    => $tool_data['tool_slug'],
+					'tool_name'    => $tool_data['tool_name'],
+					'total_users'  => count( $tool_data['users'] ),
+					'requests'     => $tool_data['requests'],
+					'total_tokens' => $tool_data['total_tokens'],
+				);
 			}
 
 			// Sort tools by total tokens and get top 10.
 			uasort(
-				$all_tools,
+				$prepared_tools,
 				function ( $a, $b ) {
 					return $b['total_tokens'] - $a['total_tokens'];
 				}
 			);
 
-			$stats['top_tools'] = array_slice( $all_tools, 0, 10 );
+			$stats['top_tools'] = array_slice( $prepared_tools, 0, 10 );
 		}
 
 		return $stats;
