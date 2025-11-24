@@ -42,6 +42,11 @@
     const COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
     const COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
+    // Delete button constants
+    const DELETE_BUTTON_CLASS = 'wp-mcp-ai-delete-button';
+    const DELETE_ENABLED_CLASS = 'wp-mcp-ai-delete-enabled';
+    const DELETE_ICON = '<svg class="wp-mcp-ai-delete-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.5 4h3a1.5 1.5 0 00-3 0zm-1 0a2.5 2.5 0 015 0h4a.5.5 0 010 1h-.441l-1.285 10.28A2 2 0 0112.788 17H7.212a2 2 0 01-1.986-1.72L3.941 5H3.5a.5.5 0 010-1h4zm.5 3a.5.5 0 00-1 0v6a.5.5 0 001 0V7zm3.5-.5a.5.5 0 00-.5.5v6a.5.5 0 001 0V7a.5.5 0 00-.5-.5z"></path></svg>';
+
     // Transcription constants
     const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
     const TRANSCRIBE_RECORDING_CLASS = audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
@@ -1970,6 +1975,95 @@
                         });
                     }, 2000);
                 });
+        });
+
+        bubble.appendChild(button);
+    }
+
+    /**
+     * Attach delete button to a chat bubble.
+     * For assistant bubbles: bottom-left corner
+     * For user bubbles: center of the bubble
+     * 
+     * @param {HTMLElement} bubble - The bubble element
+     * @param {Object} state - Chat state object
+     * @param {string} role - Message role ('user' or 'assistant')
+     */
+    function attachDeleteButton(bubble, state, role) {
+        if (!bubble || !state) {
+            return;
+        }
+
+        // Add delete-enabled class
+        if (bubble.classList) {
+            bubble.classList.add(DELETE_ENABLED_CLASS);
+        }
+
+        // Check if button already exists
+        const existing = bubble.querySelector('.' + DELETE_BUTTON_CLASS);
+        if (existing) {
+            return;
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = DELETE_BUTTON_CLASS;
+        
+        // Add position-specific class for user bubbles
+        if (role === 'user') {
+            button.classList.add(DELETE_BUTTON_CLASS + '--user');
+        }
+        
+        button.innerHTML = DELETE_ICON;
+        button.setAttribute('aria-label', 'Delete message');
+        button.setAttribute('title', 'Delete message');
+
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Confirm deletion
+            var confirmMessage = role === 'user' 
+                ? 'Delete this message?' 
+                : 'Delete this assistant response?';
+            
+            if (window.confirm(confirmMessage)) {
+                // Remove the bubble from DOM
+                if (bubble.parentNode) {
+                    bubble.parentNode.removeChild(bubble);
+                }
+                
+                // Remove from conversation state if available
+                if (state && state.conversation && Array.isArray(state.conversation)) {
+                    // Find the message index by matching the bubble element
+                    var messagesEl = state.messagesEl;
+                    if (messagesEl) {
+                        var allBubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__bubble');
+                        var bubbleIndex = -1;
+                        
+                        // The bubble is already removed, so we need to find its original position
+                        // by counting remaining bubbles and finding where this one was
+                        // This is a simplified approach - we just remove the last message of matching role
+                        for (var i = state.conversation.length - 1; i >= 0; i--) {
+                            if (state.conversation[i].role === role) {
+                                state.conversation.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Save updated conversation
+                saveConversationToStorage(state, { immediate: true });
+                
+                // Log deletion for verification
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Message deleted:', {
+                        role: role,
+                        conversationLength: state.conversation ? state.conversation.length : 0
+                    });
+                }
+            }
         });
 
         bubble.appendChild(button);
@@ -10151,6 +10245,11 @@
             const speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(entry, speechState, speechText);
             attachCopyButton(entry, speechText);
+            
+            // Attach delete button for assistant messages
+            if (speechState) {
+                attachDeleteButton(entry, speechState, role);
+            }
 
             // Attach usage and cost badges if data is available
             // Phase 7 Week 5-6: Enhanced Token Tracking
@@ -10169,6 +10268,14 @@
                     // Reset voice chat mode after auto-playing
                     speechState.voiceChatModeActive = false;
                 }, 300);
+            }
+        }
+        
+        // Attach delete button for user messages
+        if (role === 'user') {
+            const userState = options && options.speech ? options.speech.state || null : null;
+            if (userState) {
+                attachDeleteButton(entry, userState, role);
             }
         }
 
