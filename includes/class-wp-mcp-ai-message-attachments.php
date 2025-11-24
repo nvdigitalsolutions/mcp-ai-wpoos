@@ -591,7 +591,23 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			$mime_type = get_post_mime_type( $attachment_id );
 			if ( ! $this->is_supported_mime_type( $mime_type, $usage ) ) {
-				return new WP_Error( 'wp_mcp_ai_attachment_unsupported_mime', __( 'The attachment type is not supported for chat messages.', 'wp-mcp-ai' ) );
+				// Provide specific error message for SVG files on OpenAI.
+				if ( 'image/svg+xml' === $mime_type && 'openai' === $this->provider ) {
+					return new WP_Error(
+						'wp_mcp_ai_attachment_unsupported_mime',
+						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
+				return new WP_Error(
+					'wp_mcp_ai_attachment_unsupported_mime',
+					sprintf(
+						/* translators: %s: MIME type */
+						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'wp-mcp-ai' ),
+						$mime_type
+					),
+					array( 'status' => 400 )
+				);
 			}
 
 			$purpose = apply_filters( 'wp_mcp_ai_openai_file_purpose', 'assistants', $attachment_id, $usage );
@@ -820,9 +836,21 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( '' !== $mime_type && ! $this->is_supported_mime_type( $mime_type, $usage ) ) {
+				// Provide specific error message for SVG files on OpenAI.
+				if ( 'image/svg+xml' === $mime_type && 'openai' === $this->provider ) {
+					return new WP_Error(
+						'wp_mcp_ai_attachment_unsupported_mime',
+						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_attachment_unsupported_mime',
-					__( 'The attachment type is not supported for chat messages.', 'wp-mcp-ai' ),
+					sprintf(
+						/* translators: %s: MIME type */
+						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'wp-mcp-ai' ),
+						$mime_type
+					),
 					array( 'status' => 400 )
 				);
 			}
@@ -1004,7 +1032,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 */
 		protected function is_supported_mime_type( $mime_type, $usage ) {
 			$mime_type     = strtolower( (string) $mime_type );
-			$allowed_mimes = self::get_allowed_mime_types( $usage );
+			$allowed_mimes = self::get_allowed_mime_types( $usage, $this->provider );
 
 			if ( empty( $allowed_mimes ) ) {
 				return false;
@@ -1016,10 +1044,14 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		/**
 		 * Retrieve the allowed MIME types for attachments.
 		 *
-		 * @param string|null $usage Optional usage context (image|file). Null returns both lists.
+		 * @param string|null $usage    Optional usage context (image|file). Null returns both lists.
+		 * @param string      $provider Optional provider name (openai, gemini, etc.). Default 'openai'.
 		 * @return array
 		 */
-		public static function get_allowed_mime_types( $usage = null ) {
+		public static function get_allowed_mime_types( $usage = null, $provider = 'openai' ) {
+			$provider = strtolower( sanitize_key( $provider ) );
+			
+			// Base image MIME types supported by most providers.
 			$image_mimes = array(
 				'image/jpeg',
 				'image/png',
@@ -1028,8 +1060,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				'image/heic',
 				'image/heif',
 				'image/bmp',
-				'image/svg+xml',
 			);
+			
+			// SVG is only supported by Gemini, not by OpenAI.
+			// OpenAI Vision API explicitly does NOT support SVG files.
+			if ( in_array( $provider, array( 'gemini', 'google' ), true ) ) {
+				$image_mimes[] = 'image/svg+xml';
+			}
 
 			$file_mimes = array(
 				'text/plain',
@@ -1114,14 +1151,14 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$image_mimes = array_values(
 				array_unique(
 					array_filter(
-						array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes ) )
+						array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes, $provider ) )
 					)
 				)
 			);
 			$file_mimes  = array_values(
 				array_unique(
 					array_filter(
-						array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_file_mimes', $file_mimes ) )
+						array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_file_mimes', $file_mimes, $provider ) )
 					)
 				)
 			);
@@ -1511,11 +1548,12 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 * Check if a MIME type corresponds to an image file.
 		 *
 		 * @param string $mime_type MIME type to check.
+		 * @param string $provider  Optional provider name. Default 'openai'.
 		 * @return bool True if the MIME type is an image, false otherwise.
 		 */
-		public static function is_image_mime_type( $mime_type ) {
+		public static function is_image_mime_type( $mime_type, $provider = 'openai' ) {
 			$mime_type   = strtolower( (string) $mime_type );
-			$image_mimes = self::get_allowed_mime_types( 'image' );
+			$image_mimes = self::get_allowed_mime_types( 'image', $provider );
 
 			return in_array( $mime_type, $image_mimes, true );
 		}

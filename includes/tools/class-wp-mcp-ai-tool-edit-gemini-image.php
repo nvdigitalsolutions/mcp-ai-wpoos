@@ -305,6 +305,27 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			$mime_type = get_post_mime_type( $attachment_id );
+			
+			// Validate MIME type is supported for image editing.
+			$supported_mime_types = array(
+				'image/jpeg',
+				'image/png',
+				'image/gif',
+				'image/webp',
+				'image/bmp',
+			);
+			
+			if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_unsupported_image_type',
+					sprintf(
+						/* translators: %s: MIME type */
+						__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
+						$mime_type
+					),
+					array( 'status' => 400 )
+				);
+			}
 
 			return array(
 				'data'      => $image_data,
