@@ -48,6 +48,13 @@ class WP_MCP_AI_Chat_Service {
 	const ASYNC_WAIT_TIME_BUFFER = 60;
 
 	/**
+	 * Progress logging frequency for async tool waiting (every N polls)
+	 *
+	 * @var int
+	 */
+	const ASYNC_PROGRESS_LOG_INTERVAL = 10;
+
+	/**
 	 * Language Model Router instance
 	 *
 	 * @var WP_MCP_AI_Language_Model_Router
@@ -482,9 +489,7 @@ class WP_MCP_AI_Chat_Service {
 			// If tool returned async result, wait for completion in agentic loop.
 			// This prevents the LLM from seeing "pending" status and ensures it gets
 			// the actual tool result (e.g., video URL) for proper response generation.
-			if ( ! is_wp_error( $tool_result ) && is_array( $tool_result ) &&
-			     isset( $tool_result['async'] ) && $tool_result['async'] &&
-			     ! empty( $tool_result['job_id'] ) ) {
+			if ( $this->is_async_tool_result( $tool_result ) ) {
 				$tool_result = $this->wait_for_async_tool_completion( $tool_result['job_id'], $tool_name );
 			}
 
@@ -515,6 +520,20 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Check if a tool result indicates async execution.
+	 *
+	 * @param mixed $tool_result Tool execution result.
+	 * @return bool True if result is async and has a job_id.
+	 */
+	private function is_async_tool_result( $tool_result ) {
+		return ! is_wp_error( $tool_result ) &&
+		       is_array( $tool_result ) &&
+		       isset( $tool_result['async'] ) &&
+		       $tool_result['async'] &&
+		       ! empty( $tool_result['job_id'] );
 	}
 
 	/**
@@ -565,10 +584,11 @@ class WP_MCP_AI_Chat_Service {
 			$old_limit = ini_get( 'max_execution_time' );
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.system_calls_set_time_limit
 			@set_time_limit( $required_time );
-			
+
 			// Check if it actually changed (some hosts disable this via safe mode or disable_functions).
+			// Note: '0' means unlimited execution time, which is considered success.
 			$new_limit = ini_get( 'max_execution_time' );
-			if ( $old_limit !== '0' && $new_limit !== '0' && absint( $new_limit ) < $required_time ) {
+			if ( '0' !== $old_limit && '0' !== $new_limit && absint( $new_limit ) < $required_time ) {
 				WP_MCP_AI_Logger::log_event(
 					'async_tool_wait_timeout_warning',
 					'Unable to extend PHP execution time limit - async tool wait may timeout',
@@ -669,7 +689,7 @@ class WP_MCP_AI_Chat_Service {
 			++$poll_count;
 
 			// Log progress periodically.
-			if ( 0 === $poll_count % 10 ) {
+			if ( 0 === $poll_count % self::ASYNC_PROGRESS_LOG_INTERVAL ) {
 				WP_MCP_AI_Logger::log_event(
 					'async_tool_wait_progress',
 					sprintf( 'Still waiting for async tool: %s (poll %d/%d)', $tool_name, $poll_count, $max_polls ),
