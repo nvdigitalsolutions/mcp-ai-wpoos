@@ -27,6 +27,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Chat_Service {
 
 	/**
+	 * Maximum number of polls for async tool completion
+	 *
+	 * @var int
+	 */
+	const MAX_ASYNC_POLLS = 120;
+
+	/**
+	 * Interval between async tool completion polls (in seconds)
+	 *
+	 * @var int
+	 */
+	const ASYNC_POLL_INTERVAL = 3;
+
+	/**
+	 * Buffer time for PHP execution limit extension (in seconds)
+	 *
+	 * @var int
+	 */
+	const ASYNC_WAIT_TIME_BUFFER = 60;
+
+	/**
 	 * Language Model Router instance
 	 *
 	 * @var WP_MCP_AI_Language_Model_Router
@@ -503,6 +524,10 @@ class WP_MCP_AI_Chat_Service {
 	 * the LLM receives the actual tool result (e.g., generated video URL) rather than
 	 * a "pending" status message.
 	 *
+	 * Note: This method intentionally uses sleep() to block and hold the connection
+	 * while waiting for async job completion. This is the desired behavior in the
+	 * agentic loop context to ensure the LLM receives the final result.
+	 *
 	 * @param string $job_id   Async job identifier.
 	 * @param string $tool_name Tool name for error messages.
 	 * @return array|WP_Error Final tool result or error.
@@ -515,19 +540,46 @@ class WP_MCP_AI_Chat_Service {
 
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 
-		// Poll configuration.
-		$max_polls     = 120;  // 120 polls.
-		$poll_interval = 3;    // 3 seconds between polls = max 6 minutes wait.
+		// Poll configuration (can be overridden via filters).
+		$max_polls     = apply_filters( 'wp_mcp_ai_async_max_polls', self::MAX_ASYNC_POLLS );
+		$poll_interval = apply_filters( 'wp_mcp_ai_async_poll_interval', self::ASYNC_POLL_INTERVAL );
 		$poll_count    = 0;
 
 		// Extend PHP execution time limit to accommodate long polling.
 		// Calculate required time: (max_polls * poll_interval) + buffer.
-		$required_time = ( $max_polls * $poll_interval ) + 60; // 6 minutes + 1 minute buffer = 420 seconds.
+		$required_time = ( $max_polls * $poll_interval ) + self::ASYNC_WAIT_TIME_BUFFER;
 
-		// Set timeout if function exists. Silencing errors as set_time_limit may be
-		// disabled in some hosting environments (safe mode, disable_functions in php.ini).
-		if ( function_exists( 'set_time_limit' ) ) {
+		// Attempt to extend timeout if function exists and is not disabled.
+		// Log when we can't extend timeout so administrators can adjust server config if needed.
+		if ( ! function_exists( 'set_time_limit' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'async_tool_wait_timeout_warning',
+				'set_time_limit() is not available - async tool wait may hit PHP execution timeout',
+				array(
+					'tool_name'     => $tool_name,
+					'job_id'        => $job_id,
+					'required_time' => $required_time,
+				)
+			);
+		} else {
+			$old_limit = ini_get( 'max_execution_time' );
 			@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			
+			// Check if it actually changed (some hosts disable this via safe mode or disable_functions).
+			$new_limit = ini_get( 'max_execution_time' );
+			if ( $old_limit !== '0' && $new_limit !== '0' && absint( $new_limit ) < $required_time ) {
+				WP_MCP_AI_Logger::log_event(
+					'async_tool_wait_timeout_warning',
+					'Unable to extend PHP execution time limit - async tool wait may timeout',
+					array(
+						'tool_name'     => $tool_name,
+						'job_id'        => $job_id,
+						'required_time' => $required_time,
+						'old_limit'     => $old_limit,
+						'new_limit'     => $new_limit,
+					)
+				);
+			}
 		}
 
 		WP_MCP_AI_Logger::log_event(
