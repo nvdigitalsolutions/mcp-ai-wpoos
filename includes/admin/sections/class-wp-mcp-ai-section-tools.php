@@ -571,9 +571,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<ul style="list-style: disc; margin-left: 20px;">
 							<?php
 							// Get scopes from OAuth handler constant.
-							$scopes = class_exists( 'WP_MCP_AI_Github_OAuth_Handler' )
-								? WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES
-								: 'repo,user,codespace';
+							$scopes             = WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES;
 							$scope_descriptions = array(
 								'repo'      => __( 'Full control of private repositories', 'wp-mcp-ai' ),
 								'user'      => __( 'Read user profile data', 'wp-mcp-ai' ),
@@ -642,7 +640,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms including Gmail, GitHub, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, and Google Analytics.',
+								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms and services.',
 								'wp-mcp-ai'
 							)
 						);
