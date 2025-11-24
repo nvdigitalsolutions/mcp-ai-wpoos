@@ -10247,6 +10247,9 @@
             entry.appendChild(list);
         }
 
+        // Get state for delete button - use options.state if available, fallback to speech state
+        const chatState = (options && options.state) || (options && options.speech ? options.speech.state : null);
+
         if (role === 'assistant') {
             const speechState = options && options.speech ? options.speech.state || null : null;
             const speechText = options && options.speech ? options.speech.text || '' : text;
@@ -10254,10 +10257,8 @@
             attachCopyButton(entry, speechText);
             
             // Attach delete button for assistant messages
-            // Use options.state if available, fallback to speech state
-            const deleteState = (options && options.state) || speechState;
-            if (deleteState) {
-                attachDeleteButton(entry, deleteState, role);
+            if (chatState) {
+                attachDeleteButton(entry, chatState, role);
             }
 
             // Attach usage and cost badges if data is available
@@ -10281,12 +10282,8 @@
         }
         
         // Attach delete button for user messages
-        if (role === 'user') {
-            // Use options.state if available, fallback to speech state
-            const userState = (options && options.state) || (options && options.speech ? options.speech.state : null);
-            if (userState) {
-                attachDeleteButton(entry, userState, role);
-            }
+        if (role === 'user' && chatState) {
+            attachDeleteButton(entry, chatState, role);
         }
 
         listEl.appendChild(entry);
