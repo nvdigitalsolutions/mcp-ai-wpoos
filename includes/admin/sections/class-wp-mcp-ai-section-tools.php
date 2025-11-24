@@ -1146,11 +1146,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * for external services like Gmail, Meta, TikTok, etc.
 		 */
 		private function render_connections() {
-			// Instantiate and render the Integrations section.
+			// Instantiate and render the Integrations section with proper wrapper.
 			$integrations_section = new WP_MCP_AI_Section_Integrations();
 			
-			// Render the integrations section with its nested subtab navigation.
-			$integrations_section->render();
+			// Render the integrations section with its nested subtab navigation and wrapper.
+			$integrations_section->render_wrapper();
 		}
 
 		/**
