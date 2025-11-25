@@ -22,6 +22,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 	/**
+	 * Whether this section is being rendered embedded inside another section.
+	 *
+	 * When true, the section renders without its outer wrapper (div.wrap and h1 heading)
+	 * to avoid nesting issues when embedded in the Advanced settings tab.
+	 *
+	 * @var bool
+	 */
+	protected $is_embedded = false;
+
+	/**
 	 * Initialize the section.
 	 */
 	public function __construct() {
@@ -34,6 +44,21 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 		if ( is_admin() ) {
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		}
+	}
+
+	/**
+	 * Set the embedded mode for this section.
+	 *
+	 * When rendered in embedded mode, the section skips its outer wrapper
+	 * (div.wrap and h1 heading) to avoid nesting issues when displayed
+	 * inside another settings section like the Advanced tab.
+	 *
+	 * @param bool $embedded Whether to render in embedded mode.
+	 * @return $this For method chaining.
+	 */
+	public function set_embedded( $embedded = true ) {
+		$this->is_embedded = (bool) $embedded;
+		return $this;
 	}
 
 	/**
@@ -116,12 +141,17 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 		// Get orchestration health status for System Health display.
 		$orchestration_health = $this->get_orchestration_health_status();
 
+		// When embedded, use a simpler container class and skip the page heading.
+		$container_class = $this->is_embedded ? 'wp-mcp-ai-performance-section-embedded' : 'wrap wp-mcp-ai-performance-section';
+
 		?>
-		<div class="wrap wp-mcp-ai-performance-section">
-			<h1><?php esc_html_e( 'Performance Monitoring', 'wp-mcp-ai' ); ?></h1>
-			<p class="description">
-				<?php esc_html_e( 'Monitor plugin performance, run diagnostic tests, and view historical trends.', 'wp-mcp-ai' ); ?>
-			</p>
+		<div class="<?php echo esc_attr( $container_class ); ?>">
+			<?php if ( ! $this->is_embedded ) : ?>
+				<h1><?php esc_html_e( 'Performance Monitoring', 'wp-mcp-ai' ); ?></h1>
+				<p class="description">
+					<?php esc_html_e( 'Monitor plugin performance, run diagnostic tests, and view historical trends.', 'wp-mcp-ai' ); ?>
+				</p>
+			<?php endif; ?>
 
 			<!-- Overall Health Status -->
 			<div class="wp-mcp-ai-performance-dashboard">
@@ -336,6 +366,13 @@ composer install</pre>
 		<style>
 			.wp-mcp-ai-performance-section {
 				max-width: 1200px;
+			}
+			/* Embedded mode: remove standalone page constraints */
+			.wp-mcp-ai-performance-section-embedded {
+				max-width: 100%;
+			}
+			.wp-mcp-ai-performance-section-embedded .wp-mcp-ai-performance-dashboard {
+				margin-top: 0;
 			}
 			.wp-mcp-ai-performance-dashboard {
 				background: #fff;
