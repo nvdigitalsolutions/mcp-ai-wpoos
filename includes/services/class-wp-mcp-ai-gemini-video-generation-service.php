@@ -145,6 +145,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
+	 * Generate a unique ID with underscores instead of dots for cleaner filenames.
+	 *
+	 * PHP's uniqid('', true) generates IDs with dots (e.g., '6926100bb2f8e3.59706124'),
+	 * which creates confusing filenames with multiple dots. This helper replaces the dot
+	 * with an underscore for cleaner, more compatible filenames.
+	 *
+	 * @return string Unique ID with underscores (e.g., '6926100bb2f8e3_59706124').
+	 */
+	public static function generate_clean_unique_id() {
+		return str_replace( '.', '_', uniqid( '', true ) );
+	}
+
+	/**
 	 * Static wrapper for cron callback
 	 *
 	 * @param string $job_id Job identifier.
@@ -963,8 +976,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array Async job information.
 	 */
 	protected function queue_async_polling( $operation, $args ) {
-		// Generate unique job ID.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Generate unique job ID using helper method for consistency.
+		$job_id = 'veo_' . self::generate_clean_unique_id();
 
 		// Get model from operation (set by generate_video_with_model).
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
@@ -1625,7 +1638,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( ! empty( $job_id ) ) {
 			$filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 		} else {
-			$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+			// Generate unique filename using helper method for consistency.
+			$filename = 'veo-video-' . self::generate_clean_unique_id() . '.mp4';
 		}
 
 		// Upload video.
