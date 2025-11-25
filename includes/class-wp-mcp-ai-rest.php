@@ -2605,51 +2605,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
-			$cost_data = null;
-			if ( ! is_wp_error( $response ) && isset( $response['usage'] ) && class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
-				$provider_key = isset( $options['provider'] ) ? $options['provider'] : 'openai';
-				$model_name   = isset( $options['model'] ) ? $options['model'] : '';
-
-				$prompt_tokens     = isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0;
-				$completion_tokens = isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0;
-
-				if ( $prompt_tokens > 0 || $completion_tokens > 0 ) {
-					$calculated_cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
-						$provider_key,
-						$model_name,
-						$prompt_tokens,
-						$completion_tokens
-					);
-
-					if ( $calculated_cost > 0 ) {
-						$cost_data = array(
-							'cost_usd'     => $calculated_cost,
-							'provider'     => $provider_key,
-							'model'        => $model_name,
-							'is_estimated' => false, // We have actual provider/model from the request.
-						);
-
-						// Log cost calculation when logging is enabled (integrates with logging layer).
-						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-							WP_MCP_AI_Logger::log_event(
-								'cost_calculation',
-								'Real-time cost calculated for chat response',
-								array(
-									'assistant_id'      => $assistant_id,
-									'user_id'           => $user_id,
-									'provider'          => $provider_key,
-									'model'             => $model_name,
-									'prompt_tokens'     => $prompt_tokens,
-									'completion_tokens' => $completion_tokens,
-									'total_tokens'      => $prompt_tokens + $completion_tokens,
-									'cost_usd'          => $calculated_cost,
-									'is_estimated'      => false,
-								)
-							);
-						}
-					}
-				}
-			}
+			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
 
 			$payload = array(
 				'assistant_id' => $assistant_id,
@@ -3094,6 +3050,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
+			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking (SSE streaming path).
+			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'streaming chat response' );
+
 			// Extract thinking/reasoning text from the response if present.
 			// Supports multiple providers:
 			// - Gemini 2.0 Flash Thinking mode: message['thinking']
@@ -3232,6 +3191,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include cost data if available (Phase 7 Week 5-6).
+			if ( $cost_data ) {
+				$payload['cost'] = $cost_data;
+
+				/**
+				 * Fires when cost data is calculated and added to streaming chat response.
+				 *
+				 * Allows integration with caching layers, transients, AJAX handlers,
+				 * or third-party analytics systems.
+				 *
+				 * @since 1.1.0
+				 *
+				 * @param array           $cost_data    Cost calculation data.
+				 * @param int             $assistant_id Assistant identifier.
+				 * @param int             $user_id      User identifier.
+				 * @param array           $response     Full AI response with usage data.
+				 * @param WP_REST_Request $request      REST request instance.
+				 */
+				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
+			}
 
 			// Include the session key in the response so the client can save it
 			if ( $recorded_session_key ) {
@@ -7997,6 +7977,77 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
                     assistant_id,
                     assistant_model,
                     latency_ms";
+		}
+
+		/**
+		 * Calculate cost data from AI response usage information.
+		 *
+		 * Extracts usage information from the AI response and calculates the cost
+		 * using the Cost Calculator. Returns cost data array if cost can be calculated,
+		 * null otherwise.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array|WP_Error $response     AI response containing usage data.
+		 * @param array          $options      Request options containing provider and model.
+		 * @param int            $assistant_id Assistant identifier for logging.
+		 * @param int            $user_id      User identifier for logging.
+		 * @param string         $context      Context string for logging (e.g., 'chat response' or 'streaming chat response').
+		 * @return array|null Cost data array with cost_usd, provider, model, is_estimated keys, or null if cost cannot be calculated.
+		 */
+		protected function calculate_response_cost( $response, $options, $assistant_id, $user_id, $context = 'chat response' ) {
+			if ( is_wp_error( $response ) || ! isset( $response['usage'] ) || ! class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
+				return null;
+			}
+
+			$provider_key = isset( $options['provider'] ) ? $options['provider'] : 'openai';
+			$model_name   = isset( $options['model'] ) ? $options['model'] : '';
+
+			$prompt_tokens     = isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0;
+			$completion_tokens = isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0;
+
+			if ( $prompt_tokens <= 0 && $completion_tokens <= 0 ) {
+				return null;
+			}
+
+			$calculated_cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
+				$provider_key,
+				$model_name,
+				$prompt_tokens,
+				$completion_tokens
+			);
+
+			if ( $calculated_cost <= 0 ) {
+				return null;
+			}
+
+			$cost_data = array(
+				'cost_usd'     => $calculated_cost,
+				'provider'     => $provider_key,
+				'model'        => $model_name,
+				'is_estimated' => false, // We have actual provider/model from the request.
+			);
+
+			// Log cost calculation when logging is enabled (integrates with logging layer).
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'cost_calculation',
+					'Real-time cost calculated for ' . $context,
+					array(
+						'assistant_id'      => $assistant_id,
+						'user_id'           => $user_id,
+						'provider'          => $provider_key,
+						'model'             => $model_name,
+						'prompt_tokens'     => $prompt_tokens,
+						'completion_tokens' => $completion_tokens,
+						'total_tokens'      => $prompt_tokens + $completion_tokens,
+						'cost_usd'          => $calculated_cost,
+						'is_estimated'      => false,
+					)
+				);
+			}
+
+			return $cost_data;
 		}
 	}
 }
