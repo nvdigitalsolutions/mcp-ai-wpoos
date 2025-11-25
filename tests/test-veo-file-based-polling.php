@@ -281,9 +281,29 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 	public function tearDown(): void {
 		parent::tearDown();
 
-		// Clean up any test transients.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional cleanup in test teardown.
+		// Clean up any test transients using WordPress API.
+		// Get all test transient keys we created.
+		$test_job_ids = array(
+			'veo_test_123',
+			'veo_test_456',
+			'veo_nonexistent_789',
+			'veo_test_poll_123',
+		);
+
+		foreach ( $test_job_ids as $job_id ) {
+			$transient_key = WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id;
+			delete_transient( $transient_key );
+		}
+
+		// Also clean up any transients that may have been created dynamically during tests.
+		// Use a more targeted approach than direct DB query.
 		global $wpdb;
-		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient%wp_mcp_ai%'" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional cleanup in test teardown, targeted to test-specific transients only.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_' . WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . 'veo_test_' ) . '%'
+			)
+		);
 	}
 }

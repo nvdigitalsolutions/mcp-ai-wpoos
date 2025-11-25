@@ -1109,7 +1109,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
 			$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
 
-			if ( ! is_wp_error( $attachment ) && $attachment ) {
+			if ( $attachment && ! is_wp_error( $attachment ) ) {
 				// File was found - video generation is complete!
 				WP_MCP_AI_Logger::log_event(
 					'veo_file_based_completion_detected',
@@ -1775,17 +1775,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array|WP_Error|false Attachment data if file found, WP_Error on error, false if not found.
 	 */
 	protected function check_for_created_video_file( $expected_filename, $job_id ) {
-		// Query for attachments with the expected filename.
-		// This searches the WordPress media library for a post with matching filename.
+		// First, check if an attachment exists with matching job_id in metadata.
+		// This is more reliable than filename matching since metadata is explicitly set.
 		$args = array(
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
 			'meta_query'     => array(
 				array(
-					'key'     => '_wp_attached_file',
-					'value'   => $expected_filename,
-					'compare' => 'LIKE',
+					'key'     => '_veo_job_id',
+					'value'   => sanitize_key( $job_id ),
+					'compare' => '=',
 				),
 			),
 			'orderby'        => 'date',
@@ -1801,6 +1801,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		$attachment    = $query->posts[0];
 		$attachment_id = $attachment->ID;
+
+		// Verify the filename matches to ensure we have the right file.
+		$file_path = get_attached_file( $attachment_id );
+		if ( $file_path && basename( $file_path ) !== $expected_filename ) {
+			// Filename mismatch - wrong file.
+			return false;
+		}
 
 		// Get stored metadata.
 		$prompt       = get_post_meta( $attachment_id, '_veo_prompt', true );
