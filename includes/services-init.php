@@ -284,3 +284,146 @@ function wp_mcp_ai_get_async_tool_executor() {
 function wp_mcp_ai_get_async_health_monitor() {
 	return 'WP_MCP_AI_Async_Health_Monitor';
 }
+
+/**
+ * Add fallback text for Gemini image tool results when using OpenAI provider.
+ *
+ * When OpenAI is the chat provider and calls generate_gemini_image, the tool result
+ * may lack a 'text' field that OpenAI's agentic loop requires. This filter adds
+ * a fallback text response only when the provider is OpenAI.
+ *
+ * @since 1.0.0
+ */
+add_filter(
+	'wp_mcp_ai_sanitize_tool_result_llm_generate_gemini_image',
+	/**
+	 * Generate fallback text for Gemini image results when OpenAI is the provider.
+	 *
+	 * @param mixed $content          The sanitized tool result content.
+	 * @param array $assistant_config Assistant configuration containing provider info.
+	 * @return mixed Modified content with fallback text if needed.
+	 */
+	function ( $content, $assistant_config ) {
+		// Only apply when the chat provider is OpenAI.
+		$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
+		if ( 'openai' !== $provider ) {
+			return $content;
+		}
+
+		// If content is not an array, nothing to modify.
+		if ( ! is_array( $content ) ) {
+			return $content;
+		}
+
+		// If text is already present and non-empty, no need for fallback.
+		if ( ! empty( $content['text'] ) ) {
+			return $content;
+		}
+
+		// Generate fallback text based on available data.
+		$content['text'] = wp_mcp_ai_generate_gemini_image_fallback_text( $content );
+
+		return $content;
+	},
+	10,
+	2
+);
+
+/**
+ * Generate fallback text response for Gemini image tool results.
+ *
+ * Creates a descriptive text message based on available fields in the tool result.
+ * Used when the result lacks a 'text' field but OpenAI's agentic loop requires one.
+ *
+ * @since 1.0.0
+ *
+ * @param array $result Tool result with available fields.
+ * @return string Generated text response.
+ */
+function wp_mcp_ai_generate_gemini_image_fallback_text( array $result ) {
+	// Success with full data (attachment_id + url).
+	if ( ! empty( $result['attachment_id'] ) && ! empty( $result['url'] ) ) {
+		$title = isset( $result['title'] ) ? $result['title'] : __( 'Generated Image', 'wp-mcp-ai' );
+		return sprintf(
+			/* translators: 1: image title, 2: attachment ID */
+			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
+			$title,
+			$result['attachment_id']
+		);
+	}
+
+	// URL only (no attachment).
+	if ( ! empty( $result['url'] ) ) {
+		return __( 'Image generated successfully. The image URL is available for viewing.', 'wp-mcp-ai' );
+	}
+
+	// Check for error information.
+	if ( isset( $result['error'] ) || isset( $result['error_message'] ) ) {
+		$error_msg = isset( $result['error_message'] ) ? $result['error_message'] : $result['error'];
+		return sprintf(
+			/* translators: %s: error message */
+			__( 'Image generation encountered an issue: %s', 'wp-mcp-ai' ),
+			$error_msg
+		);
+	}
+
+	// Metadata only (model/format but no URL) - incomplete result.
+	$has_only_metadata = ! empty( $result['model'] ) || ! empty( $result['format'] ) || ! empty( $result['aspect_ratio'] );
+	$missing_url       = empty( $result['url'] ) && empty( $result['download_url'] );
+
+	if ( $has_only_metadata && $missing_url ) {
+		$model = isset( $result['model'] ) ? $result['model'] : 'Gemini';
+		return sprintf(
+			/* translators: %s: model name */
+			__( 'Image generation was attempted with %s but the result is incomplete. Please try again or check the Gemini API configuration.', 'wp-mcp-ai' ),
+			$model
+		);
+	}
+
+	// Default fallback message.
+	return __( 'Image generation completed. Please check the Media Library for the result.', 'wp-mcp-ai' );
+}
+
+/**
+ * Add fallback text for Gemini edit image tool results when using OpenAI provider.
+ *
+ * Similar to generate_gemini_image, when OpenAI is the chat provider and calls
+ * edit_gemini_image, the tool result may lack a 'text' field. This filter adds
+ * a fallback text response only when the provider is OpenAI.
+ *
+ * @since 1.0.0
+ */
+add_filter(
+	'wp_mcp_ai_sanitize_tool_result_llm_edit_gemini_image',
+	/**
+	 * Generate fallback text for Gemini edit image results when OpenAI is the provider.
+	 *
+	 * @param mixed $content          The sanitized tool result content.
+	 * @param array $assistant_config Assistant configuration containing provider info.
+	 * @return mixed Modified content with fallback text if needed.
+	 */
+	function ( $content, $assistant_config ) {
+		// Only apply when the chat provider is OpenAI.
+		$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
+		if ( 'openai' !== $provider ) {
+			return $content;
+		}
+
+		// If content is not an array, nothing to modify.
+		if ( ! is_array( $content ) ) {
+			return $content;
+		}
+
+		// If text is already present and non-empty, no need for fallback.
+		if ( ! empty( $content['text'] ) ) {
+			return $content;
+		}
+
+		// Reuse the same fallback text generator as generate_gemini_image.
+		$content['text'] = wp_mcp_ai_generate_gemini_image_fallback_text( $content );
+
+		return $content;
+	},
+	10,
+	2
+);
