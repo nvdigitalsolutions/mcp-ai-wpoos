@@ -712,7 +712,7 @@
 			const $groupSelect = $('#tool_group');
 			const baseUrl = $filterControls.data('base-url');
 
-			// Validate baseUrl exists and is a valid admin URL.
+			// Validate baseUrl exists and is a string.
 			if (!baseUrl || typeof baseUrl !== 'string') {
 				console.warn('[WP MCP AI] Tools filter: Missing base URL');
 				return;
@@ -722,19 +722,17 @@
 			const currentOrigin = window.location.origin;
 			const isAbsoluteUrl = baseUrl.startsWith('http://') || baseUrl.startsWith('https://');
 
-			// For absolute URLs, ensure it starts with current origin + admin path.
-			// For relative URLs, ensure it starts with a valid admin path.
+			// For absolute URLs, ensure it starts with current origin + /wp-admin/ path.
+			// For relative URLs, ensure it starts with /wp-admin/.
 			let isValidUrl = false;
 			if (isAbsoluteUrl) {
-				// Absolute URL must start with current origin and path must start with admin path.
+				// Absolute URL must start with current origin and path must start with /wp-admin/.
 				if (baseUrl.startsWith(currentOrigin)) {
 					const urlPath = baseUrl.substring(currentOrigin.length);
-					// Path must start with /wp-admin/ or /wp-admin/admin.php.
 					isValidUrl = urlPath.startsWith('/wp-admin/');
 				}
 			} else {
-				// Relative URL must start with /wp-admin/ path.
-				// This is the most restrictive check - only allow explicit wp-admin paths.
+				// Relative URL must start with /wp-admin/ to prevent path traversal attacks.
 				isValidUrl = baseUrl.startsWith('/wp-admin/');
 			}
 
