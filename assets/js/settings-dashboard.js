@@ -714,14 +714,19 @@
 
 			// Validate baseUrl exists and is a valid admin URL.
 			if (!baseUrl || typeof baseUrl !== 'string') {
-				console.warn('[WP oOS Settings] Tools filter: Missing base URL');
+				console.warn('[WP MCP AI] Tools filter: Missing base URL');
 				return;
 			}
 
-			// Security: Ensure baseUrl starts with the admin URL to prevent open redirects.
-			// The URL should be from admin_url() and contain 'admin.php'.
-			if (!baseUrl.includes('/wp-admin/') && !baseUrl.includes('admin.php')) {
-				console.warn('[WP oOS Settings] Tools filter: Invalid base URL');
+			// Security: Ensure baseUrl is a same-origin admin URL to prevent open redirects.
+			// Check that URL starts with current origin or is a relative path to wp-admin.
+			const currentOrigin = window.location.origin;
+			const isAbsoluteUrl = baseUrl.startsWith('http://') || baseUrl.startsWith('https://');
+			const isSameOrigin = isAbsoluteUrl ? baseUrl.startsWith(currentOrigin) : true;
+			const isAdminUrl = baseUrl.includes('/wp-admin/') || baseUrl.includes('admin.php');
+
+			if (!isSameOrigin || !isAdminUrl) {
+				console.warn('[WP MCP AI] Tools filter: Invalid base URL');
 				return;
 			}
 
