@@ -6,7 +6,9 @@ This implementation adds file-based polling detection for Veo video generation, 
 
 ## Problem Statement
 
-The original request was to change from polling for job completion to polling for file creation based on the filename format: `veo-video-692607824a3408.36654646.mp4`
+The original request was to change from polling for job completion to polling for file creation based on the filename format: `veo-video-692607824a3408_36654646.mp4`
+
+**Note:** Filenames now use underscore instead of dot in the unique ID portion to avoid confusion with file extensions. Previous format `veo-video-6926100bb2f8e3.59706124.mp4` has been changed to `veo-video-6926100bb2f8e3_59706124.mp4`.
 
 ## Solution Architecture
 
@@ -16,15 +18,17 @@ The original request was to change from polling for job completion to polling fo
 
 - **Pre-generate filename**: In `queue_async_polling()`, generate expected filename using job_id
   - Format: `veo-video-{job_id}.mp4`
-  - Example: `veo-video-veo_674472824a3408.36654646.mp4`
+  - Example: `veo-video-veo_674472824a3408_36654646.mp4`
   - Stored in job metadata as `expected_filename`
+  - **Note:** Job IDs use underscore instead of dot for cleaner filenames (changed from `uniqid('', true)` with dot to `str_replace('.', '_', uniqid('', true))`)
 
 - **Use job_id in filename**: Modified `save_video_to_media()` to use job_id when provided
   ```php
   if ( ! empty( $job_id ) ) {
       $filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
   } else {
-      $filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+      // Convert dot to underscore for cleaner filenames
+      $filename = 'veo-video-' . str_replace( '.', '_', uniqid( '', true ) ) . '.mp4';
   }
   ```
 

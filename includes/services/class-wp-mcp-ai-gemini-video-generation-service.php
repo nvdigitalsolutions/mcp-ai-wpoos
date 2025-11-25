@@ -964,7 +964,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	protected function queue_async_polling( $operation, $args ) {
 		// Generate unique job ID.
-		$job_id = 'veo_' . uniqid( '', true );
+		// Use str_replace to convert dot to underscore for cleaner filenames.
+		// uniqid('', true) generates IDs like '6926100bb2f8e3.59706124' which creates
+		// filenames with multiple dots (e.g., veo-video-6926100bb2f8e3.59706124.mp4).
+		// While technically valid, this can confuse some systems/parsers.
+		$job_id = 'veo_' . str_replace( '.', '_', uniqid( '', true ) );
 
 		// Get model from operation (set by generate_video_with_model).
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
@@ -1625,7 +1629,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( ! empty( $job_id ) ) {
 			$filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 		} else {
-			$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+			// Use str_replace to convert dot to underscore for cleaner filenames.
+			// uniqid('', true) generates IDs like '6926100bb2f8e3.59706124' which creates
+			// confusing filenames with multiple dots (e.g., veo-video-6926100bb2f8e3.59706124.mp4).
+			$filename = 'veo-video-' . str_replace( '.', '_', uniqid( '', true ) ) . '.mp4';
 		}
 
 		// Upload video.

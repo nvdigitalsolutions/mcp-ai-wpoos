@@ -470,7 +470,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function save_video_to_media( $result, $user_id ) {
 		// Generate unique filename.
-		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+		// Use str_replace to convert dot to underscore for cleaner filenames.
+		// uniqid('', true) generates IDs like '6926100bb2f8e3.59706124' which creates
+		// confusing filenames with multiple dots (e.g., veo-video-6926100bb2f8e3.59706124.mp4).
+		$filename = 'veo-video-' . str_replace( '.', '_', uniqid( '', true ) ) . '.mp4';
 
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );

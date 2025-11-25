@@ -382,8 +382,11 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Sanitize job ID parameter.
 	 *
 	 * Job IDs are generated using uniqid() with more_entropy=true, which produces
-	 * IDs like 'veo_69203b5b2388f5.11575461'. This sanitization function preserves
-	 * the dot character while blocking path traversal and other malicious input.
+	 * IDs like 'veo_69203b5b2388f5_11575461'. This sanitization function preserves
+	 * dots and underscores while blocking path traversal and other malicious input.
+	 *
+	 * Note: Dots in job IDs have been replaced with underscores to avoid filename
+	 * confusion (e.g., veo-video-id_suffix.mp4 instead of veo-video-id.suffix.mp4).
 	 *
 	 * @param string $job_id Job ID to sanitize.
 	 * @return string Sanitized job ID.
