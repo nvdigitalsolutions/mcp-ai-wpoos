@@ -5724,7 +5724,9 @@
             raw.href,
             raw.source_url,
             typeof raw.image_url === 'string' ? raw.image_url : '',
-            raw.image_url && raw.image_url.url ? raw.image_url.url : ''
+            raw.image_url && raw.image_url.url ? raw.image_url.url : '',
+            typeof raw.video_url === 'string' ? raw.video_url : '',
+            raw.video_url && raw.video_url.url ? raw.video_url.url : ''
         );
 
         let mime = pickString(raw.mime_type, raw.type, raw.mime);
