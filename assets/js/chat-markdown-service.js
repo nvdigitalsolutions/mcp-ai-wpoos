@@ -140,6 +140,7 @@
 		const placeholderBase = 'WP_MCP_AI_' + Math.random().toString(36).slice(2);
 		const codeBlocks = [];
 		const inlineCodes = [];
+		const images = [];
 		const links = [];
 		let processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
 
@@ -164,7 +165,18 @@
 			return placeholder;
 		});
 
-		// Extract links
+		// Extract images BEFORE links (images use ![alt](url) syntax)
+		processed = processed.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function (match, alt, url) {
+			const placeholder = '@@' + placeholderBase + '_IMAGE_' + images.length + '@@';
+			images.push({
+				placeholder: placeholder,
+				alt: alt,
+				url: url,
+			});
+			return placeholder;
+		});
+
+		// Extract links (after images to avoid matching image syntax)
 		processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (match, label, url) {
 			const placeholder = '@@' + placeholderBase + '_LINK_' + links.length + '@@';
 			links.push({
@@ -326,6 +338,15 @@
 		// Restore inline code
 		inlineCodes.forEach(function (item) {
 			html = replaceAll(html, item.placeholder, '<code>' + escapeHtml(item.code) + '</code>');
+		});
+
+		// Restore images
+		images.forEach(function (item) {
+			const src = sanitizeUrl(item.url);
+			const altText = escapeHtml(item.alt || '');
+			let imgHtml = '<img src="' + src + '" alt="' + altText + '" class="wp-mcp-ai-chat__image" loading="lazy"';
+			imgHtml += ' />';
+			html = replaceAll(html, item.placeholder, imgHtml);
 		});
 
 		// Restore links
