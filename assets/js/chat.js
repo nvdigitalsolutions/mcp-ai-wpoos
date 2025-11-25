@@ -9488,23 +9488,51 @@
             // Collect usage from all tool results
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                 data.tool_results.forEach(function (toolResult) {
-                    if (!toolResult || !toolResult.content) {
+                    if (!toolResult) {
                         return;
                     }
 
-                    let parsedContent = toolResult.content;
-                    if (typeof parsedContent === 'string') {
-                        try {
-                            parsedContent = JSON.parse(parsedContent);
-                        } catch (e) {
-                            return;
+                    // Phase 7: Enhanced Token Tracking - Check for usage data in two locations:
+                    // 1. Direct usage field on the tool result (new method, preferred)
+                    // 2. Inside parsed content (legacy method, for backwards compatibility)
+                    let toolUsage = null;
+                    let toolModel = null;
+                    let toolProvider = null;
+
+                    // Try direct usage field first (added in Phase 7)
+                    if (toolResult.usage && typeof toolResult.usage === 'object') {
+                        toolUsage = toolResult.usage;
+                        toolModel = toolUsage.model || null;
+                        toolProvider = toolUsage.provider || null;
+                    }
+
+                    // Fall back to parsing content for usage data (legacy support)
+                    if (!toolUsage && toolResult.content) {
+                        let parsedContent = toolResult.content;
+                        if (typeof parsedContent === 'string') {
+                            try {
+                                parsedContent = JSON.parse(parsedContent);
+                            } catch (e) {
+                                parsedContent = null;
+                            }
+                        }
+
+                        if (parsedContent && typeof parsedContent === 'object') {
+                            if (parsedContent.usage && typeof parsedContent.usage === 'object') {
+                                toolUsage = parsedContent.usage;
+                            }
+                            // Extract model and provider from parsed content
+                            if (parsedContent.model && !toolModel) {
+                                toolModel = parsedContent.model;
+                            }
+                            if (parsedContent.provider && !toolProvider) {
+                                toolProvider = parsedContent.provider;
+                            }
                         }
                     }
 
-                    // Extract tool usage data
-                    if (parsedContent && typeof parsedContent === 'object' && parsedContent.usage) {
-                        const toolUsage = parsedContent.usage;
-                        
+                    // Aggregate usage data if found
+                    if (toolUsage) {
                         // Initialize aggregated usage if not present
                         if (!aggregatedUsage) {
                             aggregatedUsage = {
@@ -9524,19 +9552,19 @@
                             aggregatedUsage.is_estimated = true;
                         }
                     }
-                    
-                    // Extract model and provider for display
-                    if (parsedContent && typeof parsedContent === 'object') {
+
+                    // Include model and provider in aggregated usage
+                    if (toolModel || toolProvider) {
                         if (!aggregatedUsage) {
                             aggregatedUsage = {};
                         }
                         
                         // Prefer tool's explicit model/provider over defaults
-                        if (parsedContent.model && !aggregatedUsage.model) {
-                            aggregatedUsage.model = parsedContent.model;
+                        if (toolModel && !aggregatedUsage.model) {
+                            aggregatedUsage.model = toolModel;
                         }
-                        if (parsedContent.provider && !aggregatedUsage.provider) {
-                            aggregatedUsage.provider = parsedContent.provider;
+                        if (toolProvider && !aggregatedUsage.provider) {
+                            aggregatedUsage.provider = toolProvider;
                         }
                     }
                 });
