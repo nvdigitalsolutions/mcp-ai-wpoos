@@ -303,6 +303,14 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.0225, $cost, 0.00001 );
 	}
 
+	public function test_calculate_cost_handles_gemini_25_pro_model() {
+		// Test with Gemini 2.5 Pro (known model with fallback pricing).
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'gemini', 'gemini-2.5-pro', 100000, 50000 );
+
+		// Expected: (100000/1000 * 0.00125) + (50000/1000 * 0.01) = 0.125 + 0.5 = 0.625.
+		$this->assertEqualsWithDelta( 0.625, $cost, 0.00001 );
+	}
+
 	public function test_calculate_cost_handles_claude_model() {
 		// Test with Claude 3.5 Sonnet (known model with fallback pricing).
 		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'anthropic', 'claude-3.5-sonnet', 50000, 25000 );
