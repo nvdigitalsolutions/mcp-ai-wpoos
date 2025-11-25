@@ -52,6 +52,13 @@ class WP_MCP_AI_Cron_Status_Service {
 	protected $async_executor = null;
 
 	/**
+	 * Tool registry instance (lazy loaded)
+	 *
+	 * @var WP_MCP_AI_Tool_Registry|null
+	 */
+	protected $tool_registry = null;
+
+	/**
 	 * Get cron job status summary
 	 *
 	 * Returns a lightweight array of active and recently completed jobs.
@@ -468,6 +475,57 @@ class WP_MCP_AI_Cron_Status_Service {
 	}
 
 	/**
+	 * Get tool registry instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Registry|null Tool registry instance or null if unavailable.
+	 */
+	protected function get_tool_registry() {
+		if ( null === $this->tool_registry ) {
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$this->tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
+			}
+		}
+
+		return $this->tool_registry;
+	}
+
+	/**
+	 * Sanitize async tool result for chat client display
+	 *
+	 * Applies the tool's sanitize_for_llm() method if available to ensure
+	 * proper formatting (e.g., adding video_url structure for videos).
+	 * This is critical for async results because the tool's sanitization
+	 * is applied during synchronous execution but not when results are
+	 * retrieved from the async executor's transient storage.
+	 *
+	 * @param array  $job_metadata Job metadata from async executor.
+	 * @param string $tool_slug    Tool slug to get the tool instance.
+	 * @return array Updated metadata with sanitized result.
+	 */
+	protected function sanitize_async_tool_result( $job_metadata, $tool_slug ) {
+		// Only sanitize if result is present and completed.
+		if ( ! isset( $job_metadata['result'] ) || ! isset( $job_metadata['status'] ) || 'completed' !== $job_metadata['status'] ) {
+			return $job_metadata;
+		}
+
+		$registry = $this->get_tool_registry();
+		if ( ! $registry ) {
+			return $job_metadata;
+		}
+
+		$tool_instance = $registry->get_tool( $tool_slug );
+		if ( ! $tool_instance || ! ( $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) ) {
+			return $job_metadata;
+		}
+
+		// Apply tool's sanitization to the result.
+		// This adds structures like video_url, image_url that the chat client expects.
+		$job_metadata['result'] = $tool_instance->sanitize_for_llm( $job_metadata['result'] );
+
+		return $job_metadata;
+	}
+
+	/**
 	 * Get count of jobs by status
 	 *
 	 * Now includes async tool jobs in counts.
@@ -710,6 +768,15 @@ class WP_MCP_AI_Cron_Status_Service {
 					'wp_mcp_ai_forbidden',
 					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
 				);
+			}
+
+			// Apply tool's sanitize_for_llm() to format result for chat client.
+			// This is critical for tools like generate_veo_video which add video_url structure.
+			// The sanitization is normally applied during sync execution but not when
+			// results are retrieved from async storage.
+			$tool_slug = isset( $result['tool_slug'] ) ? $result['tool_slug'] : '';
+			if ( ! empty( $tool_slug ) ) {
+				$result = $this->sanitize_async_tool_result( $result, $tool_slug );
 			}
 
 			// Merge Job Notifier status (completion/failure/progress).
