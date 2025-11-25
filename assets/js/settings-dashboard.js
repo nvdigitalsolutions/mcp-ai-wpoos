@@ -20,6 +20,7 @@
 			this.initSliders();
 			this.initPresets();
 			this.initMeshPeers();
+			this.initToolsFilter();
 		},
 
 		/**
@@ -692,6 +693,83 @@
 			// Remove peer site (delegated event)
 			$meshPeers.on('click', '.wp-mcp-ai-remove-peer', function() {
 				$(this).closest('tr').remove();
+			});
+		},
+
+		/**
+		 * Initialize Tools Manager filter functionality.
+		 *
+		 * Uses JavaScript navigation instead of a form to avoid nested form issues.
+		 */
+		initToolsFilter: function() {
+			const $filterControls = $('.wp-mcp-ai-tools-filter-controls');
+			if ($filterControls.length === 0) {
+				return;
+			}
+
+			const $filterBtn = $('#wp-mcp-ai-tools-filter-btn');
+			const $searchInput = $('#tool_search');
+			const $groupSelect = $('#tool_group');
+			const baseUrl = $filterControls.data('base-url');
+
+			// Validate baseUrl exists and is a string.
+			if (!baseUrl || typeof baseUrl !== 'string') {
+				console.warn('[WP MCP AI] Tools filter: Missing base URL');
+				return;
+			}
+
+			// Security: Validate URL is a safe same-origin admin URL to prevent open redirects.
+			// We check that the URL is same-origin and contains expected admin path segments.
+			const currentOrigin = window.location.origin;
+			const isAbsoluteUrl = baseUrl.startsWith('http://') || baseUrl.startsWith('https://');
+
+			let isValidUrl = false;
+			if (isAbsoluteUrl) {
+				// Absolute URL must start with current origin (same-origin policy).
+				// Also verify it contains admin.php to ensure it's an admin page URL.
+				isValidUrl = baseUrl.startsWith(currentOrigin + '/') && baseUrl.includes('admin.php');
+			} else {
+				// Relative URL - ensure it's a valid path (not protocol-relative or special scheme).
+				// Must not start with // (protocol-relative) or contain : before first / (scheme).
+				const hasScheme = baseUrl.indexOf(':') !== -1 && baseUrl.indexOf(':') < baseUrl.indexOf('/');
+				isValidUrl = !baseUrl.startsWith('//') && !hasScheme && baseUrl.includes('admin.php');
+			}
+
+			if (!isValidUrl) {
+				console.warn('[WP MCP AI] Tools filter: Invalid base URL');
+				return;
+			}
+
+			/**
+			 * Apply filter and navigate to the filtered URL.
+			 */
+			const applyFilter = function() {
+				const search = $searchInput.val().trim();
+				const group = $groupSelect.val();
+				let url = baseUrl;
+
+				// Add search parameter if provided.
+				if (search) {
+					url += '&tool_search=' + encodeURIComponent(search);
+				}
+
+				// Add group parameter if provided.
+				if (group) {
+					url += '&tool_group=' + encodeURIComponent(group);
+				}
+
+				window.location.href = url;
+			};
+
+			// Handle filter button click.
+			$filterBtn.on('click', applyFilter);
+
+			// Handle Enter key in search input.
+			$searchInput.on('keypress', function(e) {
+				if (e.which === 13) {
+					e.preventDefault();
+					applyFilter();
+				}
 			});
 		},
 
