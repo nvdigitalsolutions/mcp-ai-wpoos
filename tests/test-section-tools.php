@@ -386,4 +386,83 @@ class Test_Section_Tools extends WP_UnitTestCase {
 			$this->assertStringContainsString( $scope, $output, "Should list {$scope} permission" );
 		}
 	}
+
+	/**
+	 * Test that tools manager filter form has proper action attribute.
+	 */
+	public function test_tools_manager_filter_form_has_action() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string to simulate tools_manager subtab.
+		$_GET['subtab'] = 'tools_manager';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// Check that form has proper action attribute (not empty).
+		$this->assertStringContainsString( 'wp-mcp-ai-tools-filter-bar', $output, 'Should contain filter bar' );
+		$this->assertStringContainsString( 'method="get"', $output, 'Form should use GET method' );
+		$this->assertStringContainsString( 'admin.php', $output, 'Form action should point to admin.php' );
+		$this->assertStringNotContainsString( 'action=""', $output, 'Form action should not be empty' );
+
+		// Verify form has required hidden fields.
+		$this->assertStringContainsString( 'name="page"', $output, 'Should have page hidden field' );
+		$this->assertStringContainsString( 'name="tab"', $output, 'Should have tab hidden field' );
+		$this->assertStringContainsString( 'name="subtab"', $output, 'Should have subtab hidden field' );
+
+		// Verify form has search and filter inputs.
+		$this->assertStringContainsString( 'name="tool_search"', $output, 'Should have tool_search input' );
+		$this->assertStringContainsString( 'name="tool_group"', $output, 'Should have tool_group select' );
+	}
+
+	/**
+	 * Test that tools manager filter respects search parameter.
+	 */
+	public function test_tools_manager_filter_respects_search() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string with search parameter.
+		$_GET['subtab']     = 'tools_manager';
+		$_GET['tool_search'] = 'test_search_term';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'], $_GET['tool_search'] );
+
+		// Check that search value is preserved in the input.
+		$this->assertStringContainsString( 'value="test_search_term"', $output, 'Search input should have the search value' );
+		$this->assertStringContainsString( 'Clear', $output, 'Clear button should be visible when search is active' );
+	}
+
+	/**
+	 * Test that tools manager filter respects category parameter.
+	 */
+	public function test_tools_manager_filter_respects_category() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string with category filter.
+		$_GET['subtab']    = 'tools_manager';
+		$_GET['tool_group'] = 'wordpress-core';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'], $_GET['tool_group'] );
+
+		// Check that category is selected.
+		$this->assertStringContainsString( 'selected', $output, 'Selected category should be marked' );
+		$this->assertStringContainsString( 'Clear', $output, 'Clear button should be visible when filter is active' );
+	}
 }
