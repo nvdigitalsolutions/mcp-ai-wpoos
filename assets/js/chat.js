@@ -6051,6 +6051,111 @@
      * @param {Object} result Tool result object
      * @returns {Object|null} Normalized response with text and/or attachments, or null if nothing to extract
      */
+    /**
+     * Check if a result object has the structure of a site health response.
+     * 
+     * Site health responses have both a 'summary' object and a 'tests' object.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a site health response
+     */
+    function isSiteHealthStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.summary === 'object' && 
+               result.summary !== null &&
+               typeof result.tests === 'object' && 
+               result.tests !== null;
+    }
+
+    /**
+     * Extract site health summary from get_site_health tool result.
+     * 
+     * Formats the summary counts and badge information into a readable string.
+     * Example: "Site Health: 0 critical, 1 warning, 18 passing [Performance, Security]"
+     * 
+     * @param {Object} result - Tool result object with summary and tests properties
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractSiteHealthSummary(result) {
+        if (!isSiteHealthStructure(result)) {
+            return null;
+        }
+
+        const summary = result.summary;
+        const tests = result.tests;
+
+        // Build summary count string
+        if (typeof summary.critical === 'number') {
+            parts.push(summary.critical + ' critical');
+        }
+        if (typeof summary.warning === 'number') {
+            parts.push(summary.warning + ' warning' + (summary.warning !== 1 ? 's' : ''));
+        }
+        if (typeof summary.pass === 'number') {
+            parts.push(summary.pass + ' passing');
+        }
+
+        if (parts.length === 0) {
+            return null;
+        }
+
+        let text = 'Site Health: ' + parts.join(', ');
+
+        // Extract badge information from tests
+        const badgeLabels = extractSiteHealthBadges(tests);
+        if (badgeLabels.length > 0) {
+            text += ' [' + badgeLabels.join(', ') + ']';
+        }
+
+        return text;
+    }
+
+    /**
+     * Extract unique badge labels from site health tests.
+     * 
+     * Collects badge labels from critical and warning tests, returning
+     * only unique values to avoid duplication in the summary.
+     * 
+     * @param {Object} tests - Tests object containing critical, warning, and pass arrays
+     * @return {Array<string>} Array of unique badge labels
+     */
+    function extractSiteHealthBadges(tests) {
+        if (!tests || typeof tests !== 'object') {
+            return [];
+        }
+
+        const badgeInfo = [];
+
+        // Check for badges in critical tests
+        if (Array.isArray(tests.critical)) {
+            tests.critical.forEach(function(test) {
+                if (test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim()) {
+                    badgeInfo.push(test.badge.label.trim());
+                }
+            });
+        }
+
+        // Check for badges in warning tests
+        if (Array.isArray(tests.warning)) {
+            tests.warning.forEach(function(test) {
+                if (test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim()) {
+                    badgeInfo.push(test.badge.label.trim());
+                }
+            });
+        }
+
+        // Return unique badge labels
+        const uniqueBadges = [];
+        badgeInfo.forEach(function(badge) {
+            if (uniqueBadges.indexOf(badge) === -1) {
+                uniqueBadges.push(badge);
+            }
+        });
+
+        return uniqueBadges;
+    }
+
     function extractGenericToolResponse(result) {
         if (!result || typeof result !== 'object') {
             return null;
@@ -6066,6 +6171,12 @@
             text = result.text.trim();
         } else if (typeof result.summary === 'string' && result.summary.trim()) {
             text = result.summary.trim();
+        } else if (isSiteHealthStructure(result)) {
+            // Handle get_site_health tool result structure with summary object
+            const siteHealthText = extractSiteHealthSummary(result);
+            if (siteHealthText) {
+                text = siteHealthText;
+            }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
         } else if (Array.isArray(result.notices) && result.notices.length > 0) {
