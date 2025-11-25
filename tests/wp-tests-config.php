@@ -1,6 +1,8 @@
 <?php
 /**
  * Local configuration for the WordPress PHPUnit test suite.
+ *
+ * @package WP_MCP_AI
  */
 
 if ( ! defined( 'DB_NAME' ) ) {
@@ -27,21 +29,21 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-// SQLite configuration for local development (optional)
+// SQLite configuration for local development (optional).
 // if ( ! defined( 'DB_TYPE' ) ) {
 // define( 'DB_TYPE', 'sqlite' );
-// }
+// }.
 //
 // if ( ! defined( 'DB_DIR' ) ) {
 // define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
-// }
+// }.
 //
 // if ( ! defined( 'DB_FILE' ) ) {
 // define( 'DB_FILE', 'wptests.sqlite' );
-// }
+// }.
 
 if ( ! isset( $table_prefix ) ) {
-	$table_prefix = 'wptests_';
+	$table_prefix = 'wptests_'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for WordPress test suite.
 }
 
 if ( ! defined( 'WP_DEBUG' ) ) {
