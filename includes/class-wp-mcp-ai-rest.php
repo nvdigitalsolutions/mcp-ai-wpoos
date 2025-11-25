@@ -5663,7 +5663,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// If no specific fallback text was generated, create a generic one.
 			if ( empty( $fallback_parts ) && ! empty( $required_providers ) ) {
-				$provider_list = implode( ', ', array_map( 'ucfirst', $required_providers ) );
+				$provider_list = implode( ', ', array_map( array( $this, 'format_provider_name' ), $required_providers ) );
 				$fallback_parts[] = sprintf(
 					/* translators: %s: comma-separated list of required providers */
 					__( 'Note: This tool requires one of the following providers: %s.', 'wp-mcp-ai' ),
@@ -5671,12 +5671,36 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Append fallback text to the description.
+			// Append fallback text to the description with proper punctuation handling.
 			if ( ! empty( $fallback_parts ) ) {
-				$description = trim( $description ) . ' ' . implode( ' ', $fallback_parts );
+				$description = rtrim( $description );
+				// Add period if description doesn't end with punctuation.
+				if ( '' !== $description && ! preg_match( '/[.!?]$/', $description ) ) {
+					$description .= '.';
+				}
+				$description .= ' ' . implode( ' ', $fallback_parts );
 			}
 
 			return $description;
+		}
+
+		/**
+		 * Format a provider identifier to a human-readable name.
+		 *
+		 * @param string $provider The provider identifier (e.g., 'openai', 'gemini').
+		 * @return string The formatted provider name (e.g., 'OpenAI', 'Gemini').
+		 */
+		protected function format_provider_name( $provider ) {
+			$provider_names = array(
+				'openai'    => 'OpenAI',
+				'gemini'    => 'Gemini',
+				'anthropic' => 'Anthropic',
+				'ollama'    => 'Ollama',
+			);
+
+			$provider = strtolower( $provider );
+
+			return isset( $provider_names[ $provider ] ) ? $provider_names[ $provider ] : ucfirst( $provider );
 		}
 
 		/**
