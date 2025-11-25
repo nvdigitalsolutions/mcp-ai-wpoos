@@ -51,11 +51,11 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * Decision hierarchy (SOC - User preference > System intelligence):
 	 * 1. Explicit user parameter (async=true/false) - HIGHEST PRIORITY
 	 * 2. Legacy compatibility (wait_for_completion=false) - COMPATIBILITY
-	 * 3. Background-only flag - SYSTEM REQUIREMENT
+	 * 3. Background-only flag - SYSTEM REQUIREMENT (must run async)
 	 * 4. Agentic loop context - FORCE SYNC (LLM needs complete results)
-	 * 5. Global async setting - SYSTEM CONFIGURATION
-	 * 6. Timeout risk flags - SYSTEM INTELLIGENCE
-	 * 7. Background preference flag - TOOL PREFERENCE
+	 * 5. Global async setting disabled - FORCE SYNC
+	 * 6. No timeout risk flags - FORCE SYNC (tools without async flags run sync)
+	 * 7. Background preference flag - RUN ASYNC
 	 *
 	 * @param object $tool Tool instance implementing WP_MCP_AI_Tool_Interface.
 	 * @param array  $arguments Tool arguments.
