@@ -1555,9 +1555,33 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$model        = get_post_meta( $attachment_id, '_veo_model', true );
 		$provider     = get_post_meta( $attachment_id, '_veo_provider', true );
 
-		// Build result matching the format from poll_video_async completion.
+		// Build result matching the exact format from poll_video_async API-based completion.
+		// This ensures the agentic loop receives a properly formatted response with all necessary fields.
 		$url      = wp_get_attachment_url( $attachment_id );
 		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_message = sprintf(
+			/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
+			__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
+			$attachment_id,
+			absint( $duration ),
+			$resolution,
+			$aspect_ratio
+		);
+
+		// Build message with job ID for consistency with API polling path.
+		$job_info       = 'Job ID: ' . $job_id;
+		$message_with_id = sprintf(
+			/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: media library edit URL, 5: attachment ID, 6: job information string */
+			__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to <a href="%4$s" target="_blank">Media Library (ID %5$d)</a>. %6$s', 'wp-mcp-ai' ),
+			absint( $duration ),
+			$resolution,
+			$aspect_ratio,
+			esc_url( $edit_url ),
+			$attachment_id,
+			$job_info
+		);
 
 		return array(
 			'success'       => true,
@@ -1574,20 +1598,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'video_url'     => array(
 				'url' => $url,
 			),
-			'text'          => sprintf(
-				/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
-				__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
-				$attachment_id,
-				absint( $duration ),
-				$resolution,
-				$aspect_ratio
-			),
-			'message'       => sprintf(
-				/* translators: 1: media library edit URL, 2: attachment ID */
-				__( 'Video generation completed. Saved to <a href="%1$s" target="_blank">Media Library (ID %2$d)</a>.', 'wp-mcp-ai' ),
-				esc_url( $edit_url ),
-				$attachment_id
-			),
+			'text'          => $text_message,
+			'message'       => $message_with_id,
 		);
 	}
 
@@ -1817,9 +1829,33 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$model        = get_post_meta( $attachment_id, '_veo_model', true );
 		$provider     = get_post_meta( $attachment_id, '_veo_provider', true );
 
-		// Build result matching the format from poll_video_async completion.
+		// Build result matching the exact format from poll_video_async API-based completion.
+		// This ensures the agentic loop receives a properly formatted response with all necessary fields.
 		$url      = wp_get_attachment_url( $attachment_id );
 		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_message = sprintf(
+			/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
+			__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
+			$attachment_id,
+			absint( $duration ),
+			$resolution,
+			$aspect_ratio
+		);
+
+		// Build message with job ID for consistency with API polling path.
+		$job_info       = 'Job ID: ' . $job_id;
+		$message_with_id = sprintf(
+			/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: media library edit URL, 5: attachment ID, 6: job information string */
+			__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to <a href="%4$s" target="_blank">Media Library (ID %5$d)</a>. %6$s', 'wp-mcp-ai' ),
+			absint( $duration ),
+			$resolution,
+			$aspect_ratio,
+			esc_url( $edit_url ),
+			$attachment_id,
+			$job_info
+		);
 
 		return array(
 			'success'       => true,
@@ -1836,20 +1872,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'video_url'     => array(
 				'url' => $url,
 			),
-			'text'          => sprintf(
-				/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
-				__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
-				$attachment_id,
-				absint( $duration ),
-				$resolution,
-				$aspect_ratio
-			),
-			'message'       => sprintf(
-				/* translators: 1: media library edit URL, 2: attachment ID */
-				__( 'Video generation completed. Saved to <a href="%1$s" target="_blank">Media Library (ID %2$d)</a>.', 'wp-mcp-ai' ),
-				esc_url( $edit_url ),
-				$attachment_id
-			),
+			'text'          => $text_message,
+			'message'       => $message_with_id,
 		);
 	}
 
