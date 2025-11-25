@@ -6952,7 +6952,10 @@
                                 console.log('[WP oOS] Job delegated to:', payload.delegated_to);
                             }
                             cleanup();
-                            updatePendingTaskEntry(pendingEntry, getString('toolDelegated', 'Video generation in progress…'));
+                            // Use the message from the delegated job if available (includes veo job ID)
+                            // otherwise fall back to generic message
+                            const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
+                            updatePendingTaskEntry(pendingEntry, delegatedMessage);
                             // Switch to polling the delegated job instead
                             waitForAsyncToolResultPolling(state, payload.delegated_to, toolName, pendingEntry)
                                 .then(resolve)
@@ -7110,7 +7113,10 @@
                                 console.log('[WP oOS] Job delegated to:', payload.delegated_to);
                             }
                             cleanup();
-                            updatePendingTaskEntry(pendingEntry, getString('toolDelegated', 'Video generation in progress…'));
+                            // Use the message from the delegated job if available (includes veo job ID)
+                            // otherwise fall back to generic message
+                            const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
+                            updatePendingTaskEntry(pendingEntry, delegatedMessage);
                             // Continue polling the delegated job with a fresh timeout
                             waitForAsyncToolResultPolling(state, payload.delegated_to, record.toolName, pendingEntry)
                                 .then(resolve)
