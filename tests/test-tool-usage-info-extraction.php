@@ -11,8 +11,22 @@
  * Helper class for testing protected methods of WP_MCP_AI_REST_Controller.
  *
  * This class exposes protected methods for unit testing purposes.
+ * It overrides the constructor to avoid requiring dependencies that are not
+ * needed for testing the extract_usage_info_from_tool_result method.
  */
 class WP_MCP_AI_REST_Controller_Test_Helper extends WP_MCP_AI_REST_Controller {
+
+	/**
+	 * Constructor override to avoid dependency requirements for testing.
+	 *
+	 * The parent constructor requires WP_MCP_AI_Tool_Registry and
+	 * WP_MCP_AI_Language_Model_Router, but we don't need them for
+	 * testing the extract_usage_info_from_tool_result method.
+	 */
+	public function __construct() {
+		// Intentionally empty - we don't need parent dependencies for this test.
+	}
+
 	/**
 	 * Public wrapper for testing the protected extract_usage_info_from_tool_result method.
 	 *
