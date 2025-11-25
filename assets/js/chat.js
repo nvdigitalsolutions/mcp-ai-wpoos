@@ -8502,7 +8502,7 @@
                 // Create the message element structure directly for streaming
                 // We can't use appendMessage with empty text as it returns null
                 const entry = document.createElement('div');
-                entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant wp-mcp-ai-chat__bubble--streaming';
+                entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
                 entry.textContent = ''; // Empty initially, will be filled as chunks arrive
                 
                 state.messagesEl.appendChild(entry);
@@ -8581,11 +8581,6 @@
                         elementInnerHTML: streamingMessageElement.innerHTML,
                         elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
                     });
-                }
-                
-                // Add streaming class for visual cursor indicator
-                if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
-                    streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--streaming');
                 }
                 
                 // Concern 3: Auto-scroll to keep content visible
@@ -8699,10 +8694,6 @@
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
                         // streamingMessageElement is now the bubble itself (merged structure)
-                        // Remove streaming class before rendering markdown
-                        if (streamingMessageElement.classList) {
-                            streamingMessageElement.classList.remove('wp-mcp-ai-chat__bubble--streaming');
-                        }
                         
                         // Preserve original content before rendering in case of failure
                         // Note: We use streamResult.content (the accumulated content) rather than
