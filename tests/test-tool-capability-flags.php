@@ -182,4 +182,38 @@ class Test_Tool_Capability_Flags extends WP_UnitTestCase {
 			// Not asserting they're non-empty as some flags might not be used.
 		}
 	}
+
+	/**
+	 * Test that tool execution responses include capability flags.
+	 */
+	public function test_tool_execution_includes_capability_flags() {
+		// Create a test user with admin capabilities.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Test with get_system_logs tool which has capability flags.
+		$tool_slug = 'get_system_logs';
+		$tool      = $this->registry->get_tool( $tool_slug );
+
+		$this->assertNotNull( $tool, 'get_system_logs tool should be registered' );
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Tool_Capability_Flags_Interface',
+			$tool,
+			'get_system_logs should implement capability flags interface'
+		);
+
+		// Execute the tool.
+		$context = array( 'user_id' => $user_id );
+		$result  = $tool->execute( array(), $context );
+
+		$this->assertNotWPError( $result, 'Tool execution should succeed' );
+
+		// Get the expected capability flags directly from the tool.
+		$expected_flags = $tool->get_capability_flags();
+		$this->assertIsArray( $expected_flags, 'Tool should return capability flags array' );
+		$this->assertNotEmpty( $expected_flags, 'get_system_logs should have capability flags' );
+		$this->assertContains( 'read-only', $expected_flags, 'get_system_logs should have read-only flag' );
+		$this->assertContains( 'local-only', $expected_flags, 'get_system_logs should have local-only flag' );
+		$this->assertContains( 'requires-capability', $expected_flags, 'get_system_logs should have requires-capability flag' );
+	}
 }

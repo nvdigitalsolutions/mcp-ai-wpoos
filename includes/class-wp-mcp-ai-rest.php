@@ -2450,6 +2450,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$full_tool_message['usage'] = $tool_usage_info;
 					}
 
+					// Include capability flags for frontend badge display.
+					if ( $tool_instance instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+						$capability_flags = $tool_instance->get_capability_flags();
+						if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
+							$full_tool_message['capability_flags'] = $capability_flags;
+						}
+					}
+
 					// Store sanitized tool result for frontend.
 					$tool_result_messages[] = $full_tool_message;
 
@@ -2907,6 +2915,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Phase 7: Enhanced Token Tracking - Tool-level usage data.
 					if ( ! empty( $tool_usage_info ) ) {
 						$full_tool_message['usage'] = $tool_usage_info;
+					}
+
+					// Include capability flags for frontend badge display.
+					if ( $tool_instance instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+						$capability_flags = $tool_instance->get_capability_flags();
+						if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
+							$full_tool_message['capability_flags'] = $capability_flags;
+						}
 					}
 
 					$tool_result_messages[] = $full_tool_message;
@@ -3926,9 +3942,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			return rest_ensure_response(
 				array(
-					'assistant_id' => $assistant_id,
-					'tool'         => $tool_slug,
-					'result'       => $result,
+					'assistant_id'     => $assistant_id,
+					'tool'             => $tool_slug,
+					'result'           => $result,
+					'capability_flags' => $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ? $tool->get_capability_flags() : array(),
 				)
 			);
 		}
