@@ -7289,6 +7289,13 @@
                 try {
                     contentForApi = JSON.stringify(result);
                 } catch (e) {
+                    // Log serialization error for debugging
+                    if (window.console && console.warn) {
+                        console.warn('[WP oOS] Failed to serialize tool result:', {
+                            tool_name: toolName,
+                            error: e.message || 'Unknown serialization error'
+                        });
+                    }
                     contentForApi = resultText;
                 }
             } else {
@@ -7298,6 +7305,10 @@
             // Extract display metadata for proper UI restoration
             const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
 
+            // Generate a unique tool_call_id for async results
+            // Use timestamp + random suffix to avoid collisions if multiple tools complete simultaneously
+            const toolCallId = 'async_' + toolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
             // Create tool message with display metadata for persistence
             const toolMessage = createConversationMessage(
                 'tool',
@@ -7305,8 +7316,7 @@
                 displayMetadata,
                 {
                     name: toolName,
-                    // Generate a unique tool_call_id for async results
-                    tool_call_id: 'async_' + toolName + '_' + Date.now()
+                    tool_call_id: toolCallId
                 }
             );
 
@@ -7316,6 +7326,7 @@
             if (window.console && console.log) {
                 console.log('[WP oOS] Added async tool result to conversation:', {
                     tool_name: toolName,
+                    tool_call_id: toolCallId,
                     conversation_length: state.conversation.length
                 });
             }
