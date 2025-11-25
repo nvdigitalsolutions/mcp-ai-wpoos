@@ -6045,6 +6045,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					break;
 				}
 
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property uses camelCase.
 				switch ( $reader->nodeType ) {
 					case XMLReader::ELEMENT:
 						switch ( $reader->name ) {
