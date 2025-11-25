@@ -5648,7 +5648,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$fallback_parts[] = sprintf(
 					/* translators: %s: required provider name (e.g., "Gemini") */
 					__( 'Note: This tool uses the %s API for image processing. A valid Gemini API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
-					'Gemini'
+					$this->format_provider_name( 'gemini' )
 				);
 			}
 
@@ -5657,7 +5657,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$fallback_parts[] = sprintf(
 					/* translators: %s: required provider name (e.g., "OpenAI") */
 					__( 'Note: This tool uses the %s API. A valid OpenAI API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
-					'OpenAI'
+					$this->format_provider_name( 'openai' )
 				);
 			}
 
