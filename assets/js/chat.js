@@ -8643,19 +8643,6 @@
             })
             .then(function (streamResult) {
                 streamCompleted = true;
-                
-                // Debug: Log streamResult structure
-                if (window.console && console.log) {
-                    console.log('[WP oOS] Stream completed, checking streamResult:', {
-                        hasStreamResult: !!streamResult,
-                        hasContent: !!(streamResult && streamResult.content),
-                        hasFinalData: !!(streamResult && streamResult.finalData),
-                        contentLength: streamResult && streamResult.content ? streamResult.content.length : 0,
-                        finalDataKeys: streamResult && streamResult.finalData ? Object.keys(streamResult.finalData) : [],
-                        finalDataHasData: !!(streamResult && streamResult.finalData && streamResult.finalData.data),
-                        finalDataHasToolResults: !!(streamResult && streamResult.finalData && streamResult.finalData.tool_results)
-                    });
-                }
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
@@ -9003,18 +8990,6 @@
                             // Check for final response with complete data first
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
-                                // Debug: Log when final data is detected
-                                if (window.console && console.log) {
-                                    console.log('[WP oOS] Final data.data detected in SSE event:', {
-                                        hasChoices: !!(data.data.choices),
-                                        hasToolResults: !!(data.tool_results),
-                                        toolResultsCount: data.tool_results ? data.tool_results.length : 0,
-                                        fullContentLength: fullContent.length,
-                                        dataKeys: Object.keys(data),
-                                        dataDataKeys: Object.keys(data.data)
-                                    });
-                                }
-                                
                                 // Capture the final data for use when stream ends
                                 // This preserves tool_results and complete response structure
                                 capturedFinalData = data;
@@ -9084,23 +9059,14 @@
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
-                                        
-                                        if (window.console && console.log) {
-                                            console.log('[WP oOS] Extracted final text from data.data:', {
-                                                textLength: finalText.length,
-                                                textSample: finalText.substring(0, 100)
-                                            });
-                                        }
                                     }
                                 }
                                 
-                                // Debug: Log that finalData was captured
-                                if (window.console && console.log) {
-                                    console.log('[WP oOS] Captured finalData from SSE stream, continuing to process remaining events');
-                                }
-                                
-                                // Continue processing - don't return here
-                                // The finalData will be included when the stream ends or [DONE] is received
+                                // IMPORTANT: Don't return here - continue processing remaining events.
+                                // Previously, returning early here would lose capturedFinalData if the
+                                // [DONE] marker or result.done arrived in the same or subsequent chunk.
+                                // By continuing, we ensure capturedFinalData is preserved and included
+                                // in the final return when the stream ends.
                             }
                             // If we found streaming content, add it to fullContent and update UI
                             else if (contentChunk) {
@@ -9404,18 +9370,6 @@
     }
 
     function handleChatResponse(state, data) {
-        // Debug: Log entry into handleChatResponse
-        if (window.console && console.log) {
-            console.log('[WP oOS] handleChatResponse called:', {
-                hasData: !!data,
-                hasDataData: !!(data && data.data),
-                hasToolResults: !!(data && data.tool_results),
-                toolResultsCount: data && data.tool_results ? data.tool_results.length : 0,
-                messagesElExists: !!state.messagesEl,
-                messagesElChildCount: state.messagesEl ? state.messagesEl.children.length : 0
-            });
-        }
-        
         // Capture and save the session key if provided by the server
         if (data && data.sessionKey && state.config) {
             state.config.sessionKey = sanitizeSessionKey(data.sessionKey);
@@ -9427,12 +9381,8 @@
         const message = choice && choice.message ? choice.message : null;
 
         if (!message) {
-            if (window.console && console.error) {
-                console.error('[WP oOS] handleChatResponse: No message found in response', {
-                    chatData: chatData,
-                    choices: choices,
-                    choice: choice
-                });
+            if (DEBUG_MODE && window.console && console.error) {
+                console.error('[WP oOS] handleChatResponse: No message found in response');
             }
             setStatus(state.container, getString('error', 'Something went wrong.'));
             return Promise.resolve();
@@ -9444,19 +9394,6 @@
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
         let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
-        
-        // Debug: Log display content analysis
-        if (window.console && console.log) {
-            console.log('[WP oOS] handleChatResponse display analysis:', {
-                hasDisplayText: hasDisplayText,
-                hasDisplayAttachments: hasDisplayAttachments,
-                hasDisplayContent: hasDisplayContent,
-                hasToolCalls: hasToolCalls,
-                textLength: assistantDisplay.text ? assistantDisplay.text.length : 0,
-                textSample: assistantDisplay.text ? assistantDisplay.text.substring(0, 100) : '',
-                messageContent: message.content ? (typeof message.content === 'string' ? message.content.substring(0, 100) : 'array/object') : 'null'
-            });
-        }
 
         if (!hasDisplayContent) {
             let fallbackText = '';
@@ -9661,17 +9598,6 @@
 
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-            // Debug: Log tool_results processing
-            if (window.console && console.log) {
-                console.log('[WP oOS] Processing tool_results for display:', {
-                    tool_results_count: data.tool_results.length,
-                    hasToolCalls: hasToolCalls,
-                    hasDisplayContent: hasDisplayContent,
-                    assistantDisplay_text_length: assistantDisplay.text ? assistantDisplay.text.length : 0,
-                    assistantDisplay_attachments_before: assistantDisplay.attachments.length
-                });
-            }
-            
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
                     state.conversation.push(toolResult);
