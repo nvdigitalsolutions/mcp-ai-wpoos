@@ -1108,7 +1108,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// This provides faster completion detection than polling the Gemini API.
 		if ( isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
 			$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
-			
+
 			if ( ! is_wp_error( $attachment ) && $attachment ) {
 				// File was found - video generation is complete!
 				WP_MCP_AI_Logger::log_event(
@@ -1898,7 +1898,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				)
 			);
 		}
-		
+
 		do_action(
 			'wp_mcp_ai_job_completed',
 			$job_id,
@@ -1925,7 +1925,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 			// Add 1-second delay before completing parent job.
 			sleep( 1 );
-			
+
 			$this->complete_parent_job( $metadata['parent_job_id'], $result );
 		}
 	}

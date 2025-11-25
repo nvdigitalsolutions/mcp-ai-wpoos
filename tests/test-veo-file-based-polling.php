@@ -67,7 +67,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 
 		$this->assertIsArray( $metadata );
 		$this->assertArrayHasKey( 'expected_filename', $metadata );
-		
+
 		// Verify filename format: veo-video-{job_id}.mp4
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 		$this->assertEquals( $expected_filename, $metadata['expected_filename'] );
@@ -137,7 +137,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
-		
+
 		// Add metadata.
 		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
 		update_post_meta( $attachment_id, '_veo_duration', 5 );
@@ -196,7 +196,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		// Create a mock transient with job metadata.
 		$job_id            = 'veo_test_poll_123';
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
-		
+
 		$metadata = array(
 			'job_id'            => $job_id,
 			'operation_name'    => 'operations/test-op',
@@ -232,7 +232,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
-		
+
 		// Add metadata.
 		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
 		update_post_meta( $attachment_id, '_veo_duration', 5 );
