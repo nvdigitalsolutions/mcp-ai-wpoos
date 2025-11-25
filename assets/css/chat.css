@@ -1314,6 +1314,28 @@
     text-decoration: none;
 }
 
+/* Markdown images in chat messages */
+.wp-mcp-ai-chat__image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    margin: 0.5rem 0;
+}
+
+/* Images inside chat bubbles */
+.wp-mcp-ai-chat__bubble .wp-mcp-ai-chat__image {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+/* Clickable image wrapper for full-size view */
+.wp-mcp-ai-chat__image-link {
+    display: block;
+    cursor: zoom-in;
+}
+
 .wp-mcp-ai-chat__notice {
     border: 1px solid var(--wp-mcp-ai-color-notice-border, rgba(214, 54, 56, 0.35));
     background: var(--wp-mcp-ai-color-notice-background, #fef2f2);
