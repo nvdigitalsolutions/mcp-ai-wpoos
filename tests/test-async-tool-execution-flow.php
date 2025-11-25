@@ -307,4 +307,82 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 		$should_async = $orchestrator->should_execute_async( $mock_tool, array( 'async' => false ), array() );
 		$this->assertFalse( $should_async, 'Explicit async=false should force sync execution' );
 	}
+
+	/**
+	 * Test agentic loop context forces synchronous execution.
+	 *
+	 * When in an agentic loop, tools must execute synchronously so the LLM
+	 * receives complete results (e.g., generated image URLs) before generating
+	 * its response. This test ensures async-capable tools are forced sync
+	 * when the agentic_loop context is set.
+	 */
+	public function test_agentic_loop_forces_sync_execution() {
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+
+		// Create a mock tool with 'async' capability flag (like generate_openai_image).
+		$mock_async_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+			public function get_slug() {
+				return 'async_capable_tool';
+			}
+			public function get_name() {
+				return 'Async Capable Tool';
+			}
+			public function get_description() {
+				return 'Tool with async capability';
+			}
+			public function get_parameters_schema() {
+				return array();
+			}
+			public function execute( array $arguments = array(), array $context = array() ) {
+				return array( 'success' => true );
+			}
+			public function get_capability_flags() {
+				return array( 'async', 'write' );
+			}
+		};
+
+		$orchestrator = new WP_MCP_AI_Async_Tool_Orchestrator();
+
+		// Without agentic loop context, async tool should execute async.
+		$should_async = $orchestrator->should_execute_async( $mock_async_tool, array(), array() );
+		$this->assertTrue( $should_async, 'Async-capable tool should execute async without agentic loop' );
+
+		// With agentic loop context, async tool should execute synchronously.
+		$should_async_in_loop = $orchestrator->should_execute_async(
+			$mock_async_tool,
+			array(),
+			array( 'agentic_loop' => true )
+		);
+		$this->assertFalse( $should_async_in_loop, 'Async-capable tool should execute sync in agentic loop' );
+
+		// Background-only tools should still run async even in agentic loop.
+		$mock_background_only_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+			public function get_slug() {
+				return 'background_only_tool';
+			}
+			public function get_name() {
+				return 'Background Only Tool';
+			}
+			public function get_description() {
+				return 'Tool that must run in background';
+			}
+			public function get_parameters_schema() {
+				return array();
+			}
+			public function execute( array $arguments = array(), array $context = array() ) {
+				return array( 'success' => true );
+			}
+			public function get_capability_flags() {
+				return array( 'background-only', 'long-running' );
+			}
+		};
+
+		// Background-only tools must run async even in agentic loop.
+		$should_async_background = $orchestrator->should_execute_async(
+			$mock_background_only_tool,
+			array(),
+			array( 'agentic_loop' => true )
+		);
+		$this->assertTrue( $should_async_background, 'Background-only tools must run async even in agentic loop' );
+	}
 }
