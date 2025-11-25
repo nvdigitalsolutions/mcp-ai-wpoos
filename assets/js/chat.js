@@ -9570,6 +9570,26 @@
                 });
             }
 
+            // Collect capability flags from tool results
+            let capabilityFlags = [];
+            if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult) {
+                        return;
+                    }
+
+                    // Extract capability flags if present
+                    if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
+                        // Merge unique flags
+                        toolResult.capability_flags.forEach(function (flag) {
+                            if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
+                                capabilityFlags.push(flag);
+                            }
+                        });
+                    }
+                });
+            }
+
             const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
@@ -9577,6 +9597,7 @@
                 },
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
+                capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
@@ -9776,6 +9797,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
+                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     
                     // Update conversation content with text from tool results
@@ -9798,6 +9820,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
+                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     // For OpenAI API compatibility, use null instead of empty string
                     // when we have tool_calls but no content
@@ -10264,6 +10287,63 @@
         messageElement.appendChild(usageInfoEl);
     }
 
+    /**
+     * Attach capability flag badges to a message element.
+     * Displays tool capability flags like 'read-only', 'local-only', etc.
+     * 
+     * @param {HTMLElement} messageElement - The message element to attach badges to
+     * @param {Array|null} capabilityFlags - Array of capability flag strings
+     */
+    function attachCapabilityFlagBadges(messageElement, capabilityFlags) {
+        // Only show if we have flags
+        if (!capabilityFlags || !Array.isArray(capabilityFlags) || capabilityFlags.length === 0) {
+            return;
+        }
+
+        // Create container for capability badges
+        const flagsContainer = document.createElement('div');
+        flagsContainer.className = 'wp-mcp-ai-chat__capability-flags';
+        flagsContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.5rem;';
+
+        // Create a badge for each flag
+        capabilityFlags.forEach(function (flag) {
+            if (!flag || typeof flag !== 'string') {
+                return;
+            }
+
+            const badge = document.createElement('span');
+            badge.className = 'wp-mcp-ai-chat__capability-badge';
+            
+            // Style the badge with appropriate colors based on flag type
+            let backgroundColor = '#6b7280'; // Default gray
+            let color = 'white';
+            
+            // Color coding for different flag types
+            if (flag.includes('read-only') || flag.includes('local-only')) {
+                backgroundColor = '#10b981'; // Green for safe operations
+            } else if (flag.includes('write') || flag.includes('state-changing')) {
+                backgroundColor = '#f59e0b'; // Orange for write operations
+            } else if (flag.includes('requires-')) {
+                backgroundColor = '#3b82f6'; // Blue for requirements
+            } else if (flag.includes('external-api') || flag.includes('network-dependent')) {
+                backgroundColor = '#8b5cf6'; // Purple for external operations
+            } else if (flag.includes('consumes-tokens')) {
+                backgroundColor = '#ec4899'; // Pink for token-consuming operations
+            }
+            
+            badge.style.cssText = 'display: inline-block; font-size: 10px; padding: 2px 6px; ' +
+                'background: ' + backgroundColor + '; color: ' + color + '; border-radius: 3px; ' +
+                'font-weight: 500; text-transform: lowercase;';
+            badge.textContent = flag;
+            badge.title = 'Tool capability: ' + flag;
+            
+            flagsContainer.appendChild(badge);
+        });
+
+        // Append to message element
+        messageElement.appendChild(flagsContainer);
+    }
+
     function appendMessage(listEl, role, payload, allowMarkdown, options) {
         if (typeof payload === 'undefined' || payload === null) {
             return null;
@@ -10479,6 +10559,10 @@
             const usage = options && options.usage ? options.usage : null;
             const costData = options && options.cost ? options.cost : null;
             attachUsageBadges(entry, usage, costData);
+
+            // Attach capability flag badges if data is available
+            const capabilityFlags = options && options.capabilityFlags ? options.capabilityFlags : null;
+            attachCapabilityFlagBadges(entry, capabilityFlags);
 
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {
