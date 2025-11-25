@@ -29,7 +29,7 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-// SQLite configuration for local development (optional).
+// phpcs:ignore Squiz.PHP.CommentedOutCode.Found -- SQLite configuration for local development (optional).
 // if ( ! defined( 'DB_TYPE' ) ) {
 // define( 'DB_TYPE', 'sqlite' );
 // }.
