@@ -650,6 +650,14 @@ class WP_MCP_AI_Cron_Status_Service {
 						$result['result'] = $notifier_status['result'];
 					}
 
+					// Sanitize the result before creating tool_results.
+					// This is critical for tools like generate_veo_video that rely on
+					// sanitize_for_llm() to add display structures (video_url, image_url, etc.).
+					// Without this, notifier-driven completions would have unsanitized payloads.
+					if ( isset( $result['tool_slug'] ) && ! empty( $result['tool_slug'] ) ) {
+						$result = $this->sanitize_async_tool_result( $result, $result['tool_slug'] );
+					}
+
 					// Format result as tool_results array for chat client compatibility.
 					// The chat client expects async tool results in the same format as sync results:
 					// a tool_results array with tool messages containing the result data.

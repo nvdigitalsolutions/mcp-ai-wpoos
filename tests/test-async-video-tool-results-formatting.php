@@ -267,4 +267,81 @@ class Test_Async_Video_Tool_Results_Formatting extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'tool_results', $job_details, 'Failed job should not include tool_results' );
 		$this->assertArrayHasKey( 'error', $job_details, 'Failed job should include error' );
 	}
+
+	/**
+	 * Test that notifier-driven completions apply sanitize_for_llm before creating tool_results.
+	 *
+	 * This test verifies the fix for the issue where Job Notifier completions were
+	 * creating tool_results without first running the result through sanitize_for_llm().
+	 * For tools like generate_veo_video that rely on the sanitizer to add display
+	 * structures (video_url), this was causing videos to not display in the chat UI.
+	 */
+	public function test_notifier_completion_applies_sanitization() {
+		// Create mock async job for a tool that implements sanitize_for_llm.
+		$job_id = 'async_test_sanitization_' . uniqid();
+
+		// Raw video result WITHOUT video_url structure (as would come from API).
+		// The sanitize_for_llm() method should add the video_url structure.
+		$raw_video_result = array(
+			'success'       => true,
+			'attachment_id' => 456,
+			'url'           => 'https://example.com/test-video.mp4',
+			'prompt'        => 'Test video for sanitization',
+			'duration'      => 8,
+			'aspect_ratio'  => '16:9',
+			'resolution'    => '1080p',
+			'model'         => 'veo-3.1',
+			'provider'      => 'gemini',
+			// Note: NO video_url structure yet - sanitizer should add it
+		);
+
+		// Store async job metadata.
+		$metadata = array(
+			'job_id'       => $job_id,
+			'tool_slug'    => 'generate_veo_video',
+			'arguments'    => array( 'prompt' => 'Test video' ),
+			'context'      => array( 'user_id' => $this->user_id ),
+			'status'       => 'pending',
+			'queued_at'    => time(),
+			'started_at'   => null,
+			'completed_at' => null,
+			'result'       => null,
+			'error'        => null,
+		);
+
+		set_transient( 'wp_mcp_ai_async_meta_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Simulate job completion via Job Notifier with raw result.
+		WP_MCP_AI_Job_Notifier::handle_job_completed(
+			$job_id,
+			$raw_video_result,
+			array(
+				'tool'    => 'generate_veo_video',
+				'user_id' => $this->user_id,
+			)
+		);
+
+		// Get job details - this should trigger sanitization before creating tool_results.
+		$job_details = $this->service->get_job_details( $job_id, $this->user_id );
+
+		// Verify sanitization was applied by checking for video_url structure.
+		$this->assertIsArray( $job_details, 'Job details should be an array' );
+		$this->assertEquals( 'completed', $job_details['status'], 'Job status should be completed' );
+
+		// Verify result was sanitized (has video_url structure added by sanitize_for_llm).
+		$this->assertArrayHasKey( 'result', $job_details, 'Job details should have result' );
+		$this->assertArrayHasKey( 'video_url', $job_details['result'], 'Sanitized result should have video_url structure' );
+		$this->assertIsArray( $job_details['result']['video_url'], 'video_url should be an array' );
+		$this->assertEquals( 'https://example.com/test-video.mp4', $job_details['result']['video_url']['url'], 'video_url.url should match main URL' );
+
+		// Verify tool_results includes the sanitized content.
+		$this->assertArrayHasKey( 'tool_results', $job_details, 'Job details should have tool_results' );
+		$tool_result = $job_details['tool_results'][0];
+
+		// Decode the content to verify sanitized data is present.
+		$content = json_decode( $tool_result['content'], true );
+		$this->assertIsArray( $content, 'Tool result content should be valid JSON array' );
+		$this->assertArrayHasKey( 'video_url', $content, 'Tool result content should have video_url structure from sanitizer' );
+		$this->assertEquals( 'https://example.com/test-video.mp4', $content['video_url']['url'], 'Sanitized video_url should be in tool result content' );
+	}
 }
