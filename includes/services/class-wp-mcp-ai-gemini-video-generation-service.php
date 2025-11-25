@@ -153,7 +153,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @return string Unique ID with underscores (e.g., '6926100bb2f8e3_59706124').
 	 */
-	protected static function generate_clean_unique_id() {
+	public static function generate_clean_unique_id() {
 		return str_replace( '.', '_', uniqid( '', true ) );
 	}
 

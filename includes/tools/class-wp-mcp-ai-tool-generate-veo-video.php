@@ -469,9 +469,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return int|WP_Error Attachment ID or error.
 	 */
 	protected function save_video_to_media( $result, $user_id ) {
-		// Generate unique filename with underscores instead of dots.
-		// Uses the same pattern as the service layer for consistency.
-		$filename = 'veo-video-' . str_replace( '.', '_', uniqid( '', true ) ) . '.mp4';
+		// Generate unique filename using centralized helper method for consistency.
+		// This ensures the same clean ID format (underscores, not dots) across the codebase.
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		$filename = 'veo-video-' . WP_MCP_AI_Gemini_Video_Generation_Service::generate_clean_unique_id() . '.mp4';
 
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );
