@@ -20,6 +20,7 @@
 			this.initSliders();
 			this.initPresets();
 			this.initMeshPeers();
+			this.initToolsFilter();
 		},
 
 		/**
@@ -692,6 +693,55 @@
 			// Remove peer site (delegated event)
 			$meshPeers.on('click', '.wp-mcp-ai-remove-peer', function() {
 				$(this).closest('tr').remove();
+			});
+		},
+
+		/**
+		 * Initialize Tools Manager filter functionality.
+		 *
+		 * Uses JavaScript navigation instead of a form to avoid nested form issues.
+		 */
+		initToolsFilter: function() {
+			const $filterControls = $('.wp-mcp-ai-tools-filter-controls');
+			if ($filterControls.length === 0) {
+				return;
+			}
+
+			const $filterBtn = $('#wp-mcp-ai-tools-filter-btn');
+			const $searchInput = $('#tool_search');
+			const $groupSelect = $('#tool_group');
+			const baseUrl = $filterControls.data('base-url');
+
+			/**
+			 * Apply filter and navigate to the filtered URL.
+			 */
+			const applyFilter = function() {
+				const search = $searchInput.val().trim();
+				const group = $groupSelect.val();
+				let url = baseUrl;
+
+				// Add search parameter if provided.
+				if (search) {
+					url += '&tool_search=' + encodeURIComponent(search);
+				}
+
+				// Add group parameter if provided.
+				if (group) {
+					url += '&tool_group=' + encodeURIComponent(group);
+				}
+
+				window.location.href = url;
+			};
+
+			// Handle filter button click.
+			$filterBtn.on('click', applyFilter);
+
+			// Handle Enter key in search input.
+			$searchInput.on('keypress', function(e) {
+				if (e.which === 13) {
+					e.preventDefault();
+					applyFilter();
+				}
 			});
 		},
 

@@ -954,18 +954,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 
 				<!-- Search and Filter Bar -->
+				<?php
+				$filter_base_url = admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=' . $active_subtab );
+				?>
 				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<form method="get" action="" style="display: flex; gap: 10px; align-items: center;">
-						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
-						<input type="hidden" name="tab" value="tools">
-						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>">
-
+					<div class="wp-mcp-ai-tools-filter-controls" style="display: flex; gap: 10px; align-items: center;" data-base-url="<?php echo esc_url( $filter_base_url ); ?>">
 						<label for="tool_search" style="font-weight: 600;">
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
 						</label>
 						<input type="search" 
 								id="tool_search" 
-								name="tool_search" 
 								value="<?php echo esc_attr( $search ); ?>" 
 								placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
 								style="flex: 1; max-width: 300px;">
@@ -973,7 +971,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
 							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
 						</label>
-						<select id="tool_group" name="tool_group" style="min-width: 200px;">
+						<select id="tool_group" style="min-width: 200px;">
 							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
 							<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
 								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
@@ -982,7 +980,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php endforeach; ?>
 						</select>
 
-						<button type="submit" class="button">
+						<button type="button" id="wp-mcp-ai-tools-filter-btn" class="button">
 							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
 						</button>
 
@@ -991,7 +989,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
 							</a>
 						<?php endif; ?>
-					</form>
+					</div>
 				</div>
 
 				<!-- Tools by Category -->
