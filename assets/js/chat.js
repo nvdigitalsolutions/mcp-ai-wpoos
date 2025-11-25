@@ -5724,7 +5724,9 @@
             raw.href,
             raw.source_url,
             typeof raw.image_url === 'string' ? raw.image_url : '',
-            raw.image_url && raw.image_url.url ? raw.image_url.url : ''
+            raw.image_url && raw.image_url.url ? raw.image_url.url : '',
+            typeof raw.video_url === 'string' ? raw.video_url : '',
+            raw.video_url && raw.video_url.url ? raw.video_url.url : ''
         );
 
         let mime = pickString(raw.mime_type, raw.type, raw.mime);
@@ -6208,6 +6210,8 @@
         }
 
         const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
+        // Check for video_url structure (similar to image_url for generate_veo_video)
+        const nestedVideo = result && result.video_url && typeof result.video_url === 'object' ? result.video_url : null;
 
         let url = '';
         if (typeof result.url === 'string' && result.url.trim()) {
@@ -6216,6 +6220,11 @@
             url = result.download_url.trim();
         } else if (typeof result.downloadUrl === 'string' && result.downloadUrl.trim()) {
             url = result.downloadUrl.trim();
+        } else if (nestedVideo) {
+            // Handle video_url structure from generate_veo_video
+            if (typeof nestedVideo.url === 'string' && nestedVideo.url.trim()) {
+                url = nestedVideo.url.trim();
+            }
         } else if (nestedImage) {
             if (typeof nestedImage.url === 'string' && nestedImage.url.trim()) {
                 url = nestedImage.url.trim();

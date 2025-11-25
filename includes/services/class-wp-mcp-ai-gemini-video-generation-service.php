@@ -194,7 +194,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					array( 'status' => 400 )
 				);
 			}
-			
+
 			// 1080p requires exactly 8 seconds duration.
 			if ( isset( $args['duration'] ) && self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
 				return new WP_Error(
@@ -242,7 +242,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				// If duration is 4, adjust to 5 to prevent "out of bound" errors.
 				$veo_2_args = $args;
 				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
-					$original_duration = $veo_2_args['duration'];
+					$original_duration      = $veo_2_args['duration'];
 					$veo_2_args['duration'] = self::VEO_2_MIN_DURATION;
 					WP_MCP_AI_Logger::log_event(
 						'veo_2_duration_adjusted',
@@ -260,7 +260,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				// If Veo 2 succeeds, add metadata about fallback.
 				if ( ! is_wp_error( $veo_2_result ) ) {
 					if ( isset( $veo_2_result['async'] ) && $veo_2_result['async'] ) {
-						$veo_2_result['fallback_used'] = true;
+						$veo_2_result['fallback_used']       = true;
 						$veo_2_result['primary_model_error'] = $result->get_error_message();
 					}
 					return $veo_2_result;
@@ -612,15 +612,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			$error_message = __( 'Video generation request failed.', 'wp-mcp-ai' );
 			$error_code    = 'wp_mcp_ai_veo_request_failed';
-			
+
 			if ( isset( $data['error']['message'] ) ) {
 				$api_error_message = $data['error']['message'];
 				$error_message     = $api_error_message;
-				
+
 				// Provide more helpful error messages for common issues.
 				$quota_keywords = array( 'quota', 'rate limit' );
 				if ( 429 === $code || $this->error_message_contains( $api_error_message, $quota_keywords ) ) {
-					$error_code = 'wp_mcp_ai_quota_exceeded';
+					$error_code    = 'wp_mcp_ai_quota_exceeded';
 					$error_message = sprintf(
 						/* translators: %s: API error message */
 						__( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits. Details: %s', 'wp-mcp-ai' ),
@@ -629,7 +629,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				} else {
 					$invalid_keywords = array( 'invalid', 'argument', 'parameter' );
 					if ( $this->error_message_contains( $api_error_message, $invalid_keywords ) ) {
-						$error_code = 'wp_mcp_ai_invalid_arguments';
+						$error_code    = 'wp_mcp_ai_invalid_arguments';
 						$error_message = sprintf(
 							/* translators: %s: API error message */
 							__( 'Invalid video generation parameters: %s', 'wp-mcp-ai' ),
@@ -1068,7 +1068,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Increment poll attempt.
-		$metadata['poll_attempt']++;
+		++$metadata['poll_attempt'];
 		$metadata['last_poll'] = time();
 
 		// Check if max attempts reached.
@@ -1158,7 +1158,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Operation succeeded - process video.
-			$model = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
+			$model  = isset( $metadata['model'] ) ? $metadata['model'] : self::VEO_MODEL;
 			$result = $this->process_completed_video( $data, $metadata['args'], $model );
 
 			if ( is_wp_error( $result ) ) {
@@ -1225,6 +1225,22 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'provider'      => $result['provider'],
 						);
 
+						// Add video_url structure for the chat client to display the video inline.
+						// This mirrors how generate_gemini_image adds image_url for display.
+						$metadata['result']['video_url'] = array(
+							'url' => $save_result['url'],
+						);
+
+						// Build descriptive text message for the LLM and chat UI.
+						$metadata['result']['text'] = sprintf(
+							/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
+							__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
+							$save_result['attachment_id'],
+							$result['duration'],
+							$result['resolution'],
+							$result['aspect_ratio']
+						);
+
 						// Include parent_job_id if available.
 						if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 							$metadata['result']['parent_job_id'] = $metadata['parent_job_id'];
@@ -1263,6 +1279,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'resolution'   => $result['resolution'],
 						'model'        => $result['model'],
 						'provider'     => $result['provider'],
+					);
+
+					// Build descriptive text message for the LLM and chat UI.
+					$metadata['result']['text'] = sprintf(
+						/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
+						__( 'Successfully generated temporary video. Format: %1$ds, %2$s, %3$s', 'wp-mcp-ai' ),
+						$result['duration'],
+						$result['resolution'],
+						$result['aspect_ratio']
 					);
 
 					// Include parent_job_id if available.
@@ -1344,7 +1369,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$tool_slug = 'generate_veo_video';
 			$arguments = isset( $metadata['args'] ) ? $metadata['args'] : array();
 			$context   = array();
-			
+
 			// Build context from metadata.
 			if ( isset( $metadata['args']['user_id'] ) ) {
 				$context['user_id'] = absint( $metadata['args']['user_id'] );
@@ -1352,7 +1377,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			if ( isset( $metadata['assistant_id'] ) ) {
 				$context['assistant_id'] = absint( $metadata['assistant_id'] );
 			}
-			
+
 			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, isset( $metadata['result'] ) ? $metadata['result'] : array() );
 			return;
 		}
@@ -1574,6 +1599,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'resolution'    => $resolution,
 			'model'         => $model,
 			'provider'      => $provider,
+			'video_url'     => array(
+				'url' => $url,
+			),
+			'text'          => sprintf(
+				/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
+				__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
+				$attachment_id,
+				absint( $duration ),
+				$resolution,
+				$aspect_ratio
+			),
 			'message'       => sprintf(
 				/* translators: 1: media library edit URL, 2: attachment ID */
 				__( 'Video generation completed. Saved to <a href="%1$s" target="_blank">Media Library (ID %2$d)</a>.', 'wp-mcp-ai' ),
@@ -1701,7 +1737,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Update parent job with final result.
 		// Wrap result in async executor's expected format (compress_result structure).
 		// The async executor expects results to have 'compressed' and 'data' keys.
-		$serialized = serialize( $result );
+		$serialized     = serialize( $result );
 		$wrapped_result = array(
 			'compressed'    => false,
 			'data'          => $result,
@@ -1743,7 +1779,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$tool_slug = isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'generate_veo_video';
 		$arguments = isset( $parent_metadata['arguments'] ) ? $parent_metadata['arguments'] : array();
 		$context   = isset( $parent_metadata['context'] ) ? $parent_metadata['context'] : array();
-		
+
 		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
 	}
 }
