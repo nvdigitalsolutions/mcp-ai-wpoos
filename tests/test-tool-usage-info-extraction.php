@@ -8,49 +8,26 @@
  */
 
 /**
- * Helper class for testing protected methods of WP_MCP_AI_REST_Controller.
- *
- * This class exposes protected methods for unit testing purposes.
- * It overrides the constructor to avoid requiring dependencies that are not
- * needed for testing the extract_usage_info_from_tool_result method.
- */
-class WP_MCP_AI_REST_Controller_Test_Helper extends WP_MCP_AI_REST_Controller {
-
-	/**
-	 * Constructor override to avoid dependency requirements for testing.
-	 *
-	 * The parent constructor requires WP_MCP_AI_Tool_Registry and
-	 * WP_MCP_AI_Language_Model_Router, but we don't need them for
-	 * testing the extract_usage_info_from_tool_result method.
-	 */
-	public function __construct() {
-		// Intentionally empty - we don't need parent dependencies for this test.
-	}
-
-	/**
-	 * Public wrapper for testing the protected extract_usage_info_from_tool_result method.
-	 *
-	 * @param mixed $tool_result Tool result to extract usage from.
-	 * @return array|null Usage info or null.
-	 */
-	public function test_extract_usage_info( $tool_result ) {
-		return $this->extract_usage_info_from_tool_result( $tool_result );
-	}
-}
-
-/**
  * Class Test_Tool_Usage_Info_Extraction
  *
  * Tests the extract_usage_info_from_tool_result method functionality.
+ * Uses reflection to access the protected method without extending the class.
  */
 class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 
 	/**
-	 * REST controller test helper instance.
+	 * REST controller instance.
 	 *
-	 * @var WP_MCP_AI_REST_Controller_Test_Helper
+	 * @var WP_MCP_AI_REST_Controller
 	 */
 	protected $controller;
+
+	/**
+	 * Reflection method for testing.
+	 *
+	 * @var ReflectionMethod
+	 */
+	protected $extract_method;
 
 	/**
 	 * Set up test environment.
@@ -58,21 +35,44 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Load the REST controller class.
+		// Load the REST controller class and its dependencies.
 		if ( ! class_exists( 'WP_MCP_AI_REST_Controller' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		}
 
-		// Create test helper instance to access protected methods.
-		$this->controller = new WP_MCP_AI_REST_Controller_Test_Helper();
+		// Create mock dependencies for the controller.
+		$mock_registry = $this->getMockBuilder( 'WP_MCP_AI_Tool_Registry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$mock_router = $this->getMockBuilder( 'WP_MCP_AI_Language_Model_Router' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Create controller with mock dependencies.
+		$this->controller = new WP_MCP_AI_REST_Controller( $mock_registry, $mock_router );
+
+		// Use reflection to access the protected method.
+		$this->extract_method = new ReflectionMethod( $this->controller, 'extract_usage_info_from_tool_result' );
+		$this->extract_method->setAccessible( true );
+	}
+
+	/**
+	 * Helper to invoke the protected method.
+	 *
+	 * @param mixed $tool_result Tool result to extract usage from.
+	 * @return array|null Usage info or null.
+	 */
+	protected function extract_usage_info( $tool_result ) {
+		return $this->extract_method->invoke( $this->controller, $tool_result );
 	}
 
 	/**
 	 * Test that WP_Error returns null.
 	 */
 	public function test_returns_null_for_wp_error() {
-		$error = new WP_Error( 'test_error', 'Test error message' );
-		$result = $this->controller->test_extract_usage_info( $error );
+		$error  = new WP_Error( 'test_error', 'Test error message' );
+		$result = $this->extract_usage_info( $error );
 
 		$this->assertNull( $result );
 	}
@@ -81,7 +81,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 	 * Test that string results return null.
 	 */
 	public function test_returns_null_for_string_result() {
-		$result = $this->controller->test_extract_usage_info( 'Simple string result' );
+		$result = $this->extract_usage_info( 'Simple string result' );
 
 		$this->assertNull( $result );
 	}
@@ -94,7 +94,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 			'success' => true,
 			'data'    => 'Some data',
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertNull( $result );
 	}
@@ -107,7 +107,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 			'success' => true,
 			'usage'   => array(),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertNull( $result );
 	}
@@ -124,7 +124,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'total_tokens'      => 0,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertNull( $result );
 	}
@@ -141,7 +141,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'total_tokens'      => 150,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 100, $result['prompt_tokens'] );
@@ -160,7 +160,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'completion_tokens' => 50,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 150, $result['total_tokens'] );
@@ -179,7 +179,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'is_estimated'      => true,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['is_estimated'] );
@@ -198,7 +198,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'total_tokens'      => 150,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'gpt-4o', $result['model'] );
@@ -217,7 +217,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'total_tokens'      => 150,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'openai', $result['provider'] );
@@ -239,7 +239,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'is_estimated' => true,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 0.0025, $result['cost_usd'] );
@@ -260,7 +260,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'provider'          => 'openai',
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'dall-e-3', $result['model'] );
@@ -281,7 +281,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'model'             => 'gpt-4o',
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'dall-e-3', $result['model'] );
@@ -306,7 +306,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'is_estimated' => false,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 500, $result['prompt_tokens'] );
@@ -335,7 +335,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'is_estimated' => false,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayNotHasKey( 'cost_usd', $result );
@@ -358,7 +358,7 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 				'is_estimated' => true,
 			),
 		);
-		$result = $this->controller->test_extract_usage_info( $tool_result );
+		$result      = $this->extract_usage_info( $tool_result );
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 0.0, $result['cost_usd'] );
