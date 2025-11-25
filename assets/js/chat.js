@@ -6045,6 +6045,232 @@
     }
 
     /**
+     * Check if a result object has the structure of a site health response.
+     * 
+     * Site health responses have both a 'summary' object and a 'tests' object.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a site health response
+     */
+    function isSiteHealthStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.summary === 'object' && 
+               result.summary !== null &&
+               typeof result.tests === 'object' && 
+               result.tests !== null;
+    }
+
+    /**
+     * Extract site health summary from get_site_health tool result.
+     * 
+     * Formats the summary counts and badge information into a readable string.
+     * Example: "Site Health: 0 critical, 1 warning, 18 passing [Performance, Security]"
+     * 
+     * @param {Object} result - Tool result object with summary and tests properties
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractSiteHealthSummary(result) {
+        if (!isSiteHealthStructure(result)) {
+            return null;
+        }
+
+        const summary = result.summary;
+        const tests = result.tests;
+        const parts = [];
+
+        // Build summary count string
+        if (typeof summary.critical === 'number') {
+            parts.push(summary.critical + ' critical');
+        }
+        if (typeof summary.warning === 'number') {
+            parts.push(summary.warning + ' warning' + (summary.warning !== 1 ? 's' : ''));
+        }
+        if (typeof summary.pass === 'number') {
+            parts.push(summary.pass + ' passing');
+        }
+
+        if (parts.length === 0) {
+            return null;
+        }
+
+        let text = 'Site Health: ' + parts.join(', ');
+
+        // Extract badge information from tests
+        const badgeLabels = extractSiteHealthBadges(tests);
+        if (badgeLabels.length > 0) {
+            text += ' [' + badgeLabels.join(', ') + ']';
+        }
+
+        return text;
+    }
+
+    /**
+     * Extract unique badge labels from site health tests.
+     * 
+     * Collects badge labels from critical and warning tests, returning
+     * only unique values to avoid duplication in the summary.
+     * 
+     * @param {Object} tests - Tests object containing critical, warning, and pass arrays
+     * @return {Array<string>} Array of unique badge labels
+     */
+    function extractSiteHealthBadges(tests) {
+        if (!tests || typeof tests !== 'object') {
+            return [];
+        }
+
+        const badgeInfo = [];
+
+        // Check for badges in critical tests
+        if (Array.isArray(tests.critical)) {
+            tests.critical.forEach(function(test) {
+                if (test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim()) {
+                    badgeInfo.push(test.badge.label.trim());
+                }
+            });
+        }
+
+        // Check for badges in warning tests
+        if (Array.isArray(tests.warning)) {
+            tests.warning.forEach(function(test) {
+                if (test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim()) {
+                    badgeInfo.push(test.badge.label.trim());
+                }
+            });
+        }
+
+        // Return unique badge labels
+        const uniqueBadges = [];
+        badgeInfo.forEach(function(badge) {
+            if (uniqueBadges.indexOf(badge) === -1) {
+                uniqueBadges.push(badge);
+            }
+        });
+
+        return uniqueBadges;
+    }
+
+    /**
+     * Check if a result object has the structure of a site security response.
+     * 
+     * Site security responses have a 'summary' object and a 'checks' object.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a site security response
+     */
+    function isSiteSecurityStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.summary === 'object' && 
+               result.summary !== null &&
+               typeof result.checks === 'object' && 
+               result.checks !== null;
+    }
+
+    /**
+     * Extract site security summary from check_site_security tool result.
+     * 
+     * Formats the summary counts and risk level into a readable string.
+     * Example: "Security: LOW risk - 0 critical, 1 warning, 7 passing"
+     * 
+     * @param {Object} result - Tool result object with summary and checks properties
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractSiteSecuritySummary(result) {
+        if (!isSiteSecurityStructure(result)) {
+            return null;
+        }
+
+        const summary = result.summary;
+        const parts = [];
+
+        // Build summary count string
+        if (typeof summary.critical === 'number') {
+            parts.push(summary.critical + ' critical');
+        }
+        if (typeof summary.warning === 'number') {
+            parts.push(summary.warning + ' warning' + (summary.warning !== 1 ? 's' : ''));
+        }
+        if (typeof summary.pass === 'number') {
+            parts.push(summary.pass + ' passing');
+        }
+
+        if (parts.length === 0) {
+            return null;
+        }
+
+        // Add risk level if available
+        let text = 'Security';
+        if (typeof result.risk_level === 'string' && result.risk_level.trim()) {
+            text += ': ' + result.risk_level.toUpperCase() + ' risk';
+        }
+        text += ' - ' + parts.join(', ');
+
+        return text;
+    }
+
+    /**
+     * Check if a result object has the structure of an update status response.
+     * 
+     * Update status responses have a 'summary' object and a 'components' object.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be an update status response
+     */
+    function isUpdateStatusStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.summary === 'object' && 
+               result.summary !== null &&
+               typeof result.components === 'object' && 
+               result.components !== null;
+    }
+
+    /**
+     * Extract update status summary from get_update_status tool result.
+     * 
+     * Formats the update counts into a readable string.
+     * Example: "Updates: 5 total (1 core, 3 plugins, 1 theme)"
+     * 
+     * @param {Object} result - Tool result object with summary and components properties
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractUpdateStatusSummary(result) {
+        if (!isUpdateStatusStructure(result)) {
+            return null;
+        }
+
+        const summary = result.summary;
+        
+        // Check if there are any updates
+        const total = typeof summary.total === 'number' ? summary.total : 0;
+        
+        if (total === 0) {
+            return 'Updates: No updates available';
+        }
+
+        const parts = [];
+
+        // Build component breakdown
+        if (typeof summary.core === 'number' && summary.core > 0) {
+            parts.push(summary.core + ' core');
+        }
+        if (typeof summary.plugins === 'number' && summary.plugins > 0) {
+            parts.push(summary.plugins + ' plugin' + (summary.plugins !== 1 ? 's' : ''));
+        }
+        if (typeof summary.themes === 'number' && summary.themes > 0) {
+            parts.push(summary.themes + ' theme' + (summary.themes !== 1 ? 's' : ''));
+        }
+
+        let text = 'Updates: ' + total + ' total';
+        if (parts.length > 0) {
+            text += ' (' + parts.join(', ') + ')';
+        }
+
+        return text;
+    }
+
+    /**
      * Extract displayable content from generic tool responses that don't have downloadable assets.
      * Looks for common fields like message, text, links, IDs, and status information.
      *
@@ -6066,6 +6292,24 @@
             text = result.text.trim();
         } else if (typeof result.summary === 'string' && result.summary.trim()) {
             text = result.summary.trim();
+        } else if (isSiteHealthStructure(result)) {
+            // Handle get_site_health tool result structure with summary object and tests
+            const siteHealthText = extractSiteHealthSummary(result);
+            if (siteHealthText) {
+                text = siteHealthText;
+            }
+        } else if (isSiteSecurityStructure(result)) {
+            // Handle check_site_security tool result structure with summary object and checks
+            const siteSecurityText = extractSiteSecuritySummary(result);
+            if (siteSecurityText) {
+                text = siteSecurityText;
+            }
+        } else if (isUpdateStatusStructure(result)) {
+            // Handle get_update_status tool result structure with summary object and components
+            const updateStatusText = extractUpdateStatusSummary(result);
+            if (updateStatusText) {
+                text = updateStatusText;
+            }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
         } else if (Array.isArray(result.notices) && result.notices.length > 0) {
