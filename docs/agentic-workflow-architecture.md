@@ -169,8 +169,9 @@ while iteration < max_iterations:
     
     iteration++
 
-// Add tool_results to response for frontend
+// Add tool_results and agentic_tool_messages to response for frontend
 response.tool_results = tool_result_messages
+response.agentic_tool_messages = agentic_tool_messages  // Intermediate assistant messages with tool_calls
 ```
 
 #### Step 4: Response Delivery
@@ -188,6 +189,11 @@ response.tool_results = tool_result_messages
         "role": "tool",
         "tool_call_id": "call_xxx",
         "content": "{\"result\": \"data\"}"
+    }],
+    "agentic_tool_messages": [{
+        "role": "assistant",
+        "content": "Let me check that for you...",
+        "tool_calls": [{"id": "call_xxx", "function": {...}}]
     }]
 }
 ```
@@ -195,6 +201,7 @@ response.tool_results = tool_result_messages
 #### Step 5: Frontend Rendering
 ```javascript
 // Frontend: chat.js handleChatResponse()
+- Add agentic_tool_messages to conversation (preserves intermediate assistant messages)
 - Add tool_results to conversation
 - Normalize tool results for display
 - Extract attachments (images, files)
