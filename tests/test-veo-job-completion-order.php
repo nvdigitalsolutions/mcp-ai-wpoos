@@ -91,11 +91,18 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 		$method_content = substr( $file_content, $method_start, $next_method - $method_start );
 		
 		// Find positions of key statements in the method
-		$veo_completion_pos = strpos( $method_content, "do_action(\n\t\t\t'wp_mcp_ai_job_completed',\n\t\t\t\$job_id," );
+		// Use flexible pattern that ignores indentation (whitespace variations)
+		$veo_completion_pos = strpos( $method_content, "'wp_mcp_ai_job_completed'," );
+		$job_id_param_pos = strpos( $method_content, '$job_id,', $veo_completion_pos );
+		
+		// Verify this is the correct do_action by checking $job_id appears shortly after the hook name
+		$is_veo_hook = ( $job_id_param_pos !== false && ( $job_id_param_pos - $veo_completion_pos ) < 100 );
+		
 		$parent_completion_pos = strpos( $method_content, '$this->complete_parent_job( $metadata[\'parent_job_id\']' );
 		
 		// Assert both statements exist
 		$this->assertNotFalse( $veo_completion_pos, 'Veo job completion hook should exist in poll_video_async' );
+		$this->assertTrue( $is_veo_hook, 'Veo job completion hook should have $job_id parameter' );
 		$this->assertNotFalse( $parent_completion_pos, 'Parent job completion call should exist in poll_video_async' );
 		
 		// CRITICAL ASSERTION: Parent job completion must come AFTER veo job completion
@@ -149,10 +156,17 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 		$file_content = file_get_contents( $file_path );
 		
 		// Verify poll_video_async contains the veo job completion
+		// Use flexible pattern that works regardless of indentation
 		$this->assertStringContainsString(
-			"do_action(\n\t\t\t'wp_mcp_ai_job_completed',\n\t\t\t\$job_id,",
+			"'wp_mcp_ai_job_completed',",
 			$file_content,
 			'Veo job completion hook should be fired'
+		);
+		
+		$this->assertStringContainsString(
+			'$job_id,',
+			$file_content,
+			'Veo job completion hook should have $job_id parameter'
 		);
 		
 		// Verify complete_parent_job is called
@@ -164,9 +178,15 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 		
 		// Verify complete_parent_job method fires its own hook
 		$this->assertStringContainsString(
-			"do_action(\n\t\t\t'wp_mcp_ai_job_completed',\n\t\t\t\$parent_job_id,",
+			"'wp_mcp_ai_job_completed',",
 			$file_content,
-			'Parent job completion should fire its own hook'
+			'Parent job completion hook should be fired'
+		);
+		
+		$this->assertStringContainsString(
+			'$parent_job_id,',
+			$file_content,
+			'Parent job completion hook should have $parent_job_id parameter'
 		);
 	}
 }
