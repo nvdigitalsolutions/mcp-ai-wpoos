@@ -8579,9 +8579,7 @@
                     }
 
                     // Process the final response data using standard handler
-                    // Pass the streamed content so it can be used as assistant text
-                    // when the message content is empty but we have tool results
-                    return handleChatResponse(state, streamResult.finalData, streamResult.content).then(function() {
+                    return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
                         finalize();
                         clearStatus(state.container);
@@ -9251,7 +9249,7 @@
         return '';
     }
 
-    function handleChatResponse(state, data, streamedContent) {
+    function handleChatResponse(state, data) {
         // Capture and save the session key if provided by the server
         if (data && data.sessionKey && state.config) {
             state.config.sessionKey = sanitizeSessionKey(data.sessionKey);
@@ -9273,23 +9271,6 @@
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
         let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
-
-        // If we have streamed content but no display text, use the streamed content.
-        // This handles the case where the assistant streams text like "Here's an image..."
-        // before making a tool call (e.g., generate_openai_image), and the final message
-        // content is null/empty because the LLM made a tool call.
-        if (!hasDisplayText && streamedContent && typeof streamedContent === 'string' && streamedContent.trim()) {
-            assistantDisplay.text = streamedContent.trim();
-            hasDisplayText = true;
-            hasDisplayContent = true;
-            
-            if (window.console && console.log) {
-                console.log('[WP oOS] Using streamed content as assistant text:', {
-                    textLength: streamedContent.length,
-                    textSample: streamedContent.substring(0, 100)
-                });
-            }
-        }
 
         if (!hasDisplayContent) {
             let fallbackText = '';
