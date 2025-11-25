@@ -6308,9 +6308,6 @@
             if (typeof firstVideo.width === 'number' && typeof firstVideo.height === 'number') {
                 parts.push(firstVideo.width + 'x' + firstVideo.height);
             }
-            if (typeof firstVideo.codec_name === 'string' && firstVideo.codec_name.trim()) {
-                // Store codec for later
-            }
         }
 
         // Add duration if available
