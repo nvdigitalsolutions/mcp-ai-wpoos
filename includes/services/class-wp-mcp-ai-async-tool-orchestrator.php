@@ -51,8 +51,11 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * Decision hierarchy (SOC - User preference > System intelligence):
 	 * 1. Explicit user parameter (async=true/false) - HIGHEST PRIORITY
 	 * 2. Legacy compatibility (wait_for_completion=false) - COMPATIBILITY
-	 * 3. Background-only flag - SYSTEM REQUIREMENT
-	 * 4. Global async setting + timeout risk flags - SYSTEM INTELLIGENCE
+	 * 3. Background-only flag - SYSTEM REQUIREMENT (must run async)
+	 * 4. Agentic loop context - FORCE SYNC (LLM needs complete results)
+	 * 5. Global async setting disabled - FORCE SYNC
+	 * 6. No timeout risk flags - FORCE SYNC (tools without async flags run sync)
+	 * 7. Background preference flag - RUN ASYNC
 	 *
 	 * @param object $tool Tool instance implementing WP_MCP_AI_Tool_Interface.
 	 * @param array  $arguments Tool arguments.
@@ -77,17 +80,26 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 			return true;
 		}
 
-		// Priority 4: System intelligence - check global setting
+		// Priority 4: Agentic loop context - force synchronous execution
+		// When executing in an agentic loop, tools MUST complete synchronously so the LLM
+		// receives actual results (e.g., generated image URL) before generating its response.
+		// Without this, the LLM would see only "pending" status and cannot produce meaningful output.
+		// Exception: background-only tools (handled above) still run async even in agentic loops.
+		if ( ! empty( $context['agentic_loop'] ) ) {
+			return false;
+		}
+
+		// Priority 5: System intelligence - check global setting
 		if ( ! $this->is_async_execution_enabled() ) {
 			return false;
 		}
 
-		// Priority 5: Check tool capability flags for timeout risk
+		// Priority 6: Check tool capability flags for timeout risk
 		if ( ! $this->has_timeout_risk( $tool ) ) {
 			return false;
 		}
 
-		// Priority 6: Check if tool prefers background execution
+		// Priority 7: Check if tool prefers background execution
 		if ( $this->prefers_background( $tool ) ) {
 			return true;
 		}
