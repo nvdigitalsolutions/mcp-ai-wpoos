@@ -1263,6 +1263,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'job_id'        => $job_id,
 							'attachment_id' => $save_result['attachment_id'],
 							'url'           => $save_result['url'],
+							'file_name'     => isset( $save_result['file_name'] ) ? $save_result['file_name'] : '',
 							'edit_url'      => $edit_url,
 							'prompt'        => $result['prompt'],
 							'duration'      => $result['duration'],

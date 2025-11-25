@@ -67,12 +67,19 @@ class WP_MCP_AI_Media_URL_Utils {
 	 *
 	 * @param int   $attachment_id Attachment ID.
 	 * @param array $upload        Upload result from wp_upload_bits().
-	 * @return array Array with 'attachment_id' and 'url' keys.
+	 * @return array Array with 'attachment_id', 'url', and 'file_name' keys.
 	 */
 	public static function build_attachment_result( $attachment_id, $upload ) {
+		// Extract filename from the upload file path.
+		$file_name = '';
+		if ( isset( $upload['file'] ) && '' !== $upload['file'] ) {
+			$file_name = basename( $upload['file'] );
+		}
+
 		return array(
 			'attachment_id' => (int) $attachment_id,
 			'url'           => self::get_local_upload_url( $upload, $attachment_id ),
+			'file_name'     => $file_name,
 		);
 	}
 }
