@@ -712,6 +712,19 @@
 			const $groupSelect = $('#tool_group');
 			const baseUrl = $filterControls.data('base-url');
 
+			// Validate baseUrl exists and is a valid admin URL.
+			if (!baseUrl || typeof baseUrl !== 'string') {
+				console.warn('[WP oOS Settings] Tools filter: Missing base URL');
+				return;
+			}
+
+			// Security: Ensure baseUrl starts with the admin URL to prevent open redirects.
+			// The URL should be from admin_url() and contain 'admin.php'.
+			if (!baseUrl.includes('/wp-admin/') && !baseUrl.includes('admin.php')) {
+				console.warn('[WP oOS Settings] Tools filter: Invalid base URL');
+				return;
+			}
+
 			/**
 			 * Apply filter and navigate to the filtered URL.
 			 */
