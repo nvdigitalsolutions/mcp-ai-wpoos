@@ -1318,8 +1318,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'veo_async_completed',
 				'Veo async video generation completed',
 				array(
-					'job_id'   => $job_id,
-					'attempts' => $metadata['poll_attempt'],
+					'job_id'        => $job_id,
+					'attempts'      => $metadata['poll_attempt'],
+					'has_video_url' => isset( $metadata['result']['video_url'] ),
+					'has_url'       => isset( $metadata['result']['url'] ),
 				)
 			);
 
@@ -1351,6 +1353,21 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			//
 			// This sequential order ensures the chat client polling either job ID will see the
 			// cached result and receive the video URL properly.
+			
+			// Log the result being sent to ensure video URL is present.
+			if ( isset( $metadata['result'] ) && is_array( $metadata['result'] ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_firing_completion_hook',
+					'Firing veo job completion hook with result',
+					array(
+						'job_id'        => $job_id,
+						'has_video_url' => isset( $metadata['result']['video_url'] ),
+						'has_url'       => isset( $metadata['result']['url'] ),
+						'url_value'     => isset( $metadata['result']['url'] ) ? substr( $metadata['result']['url'], 0, 100 ) : 'none',
+					)
+				);
+			}
+			
 			do_action(
 				'wp_mcp_ai_job_completed',
 				$job_id,
@@ -1378,16 +1395,23 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, isset( $metadata['result'] ) ? $metadata['result'] : array() );
 
-			// IMPORTANT: Complete parent async job AFTER veo job hooks are fired.
+			// IMPORTANT: Complete parent async job AFTER veo job hooks are fired WITH A DELAY.
 			// This ensures proper sequencing:
 			// 1. Veo job completion is cached in notification system (via hook above)
-			// 2. Parent job completion is cached (via complete_parent_job hook)
-			// 3. Chat client polling either job ID will receive the result
+			// 2. Wait 1 second to ensure cache write completes and client can poll veo job
+			// 3. Parent job completion is cached (via complete_parent_job hook)
+			// 4. Chat client polling either job ID will receive the result
 			//
-			// Previously, parent job was completed BEFORE veo job hooks, causing both to
-			// complete simultaneously and resulting in race conditions where the video
-			// didn't return to chat properly.
+			// The 1-second delay prevents race conditions where both jobs complete
+			// simultaneously and the chat client times out or misses the video URL result.
+			// Without this delay, the notification system cache can be overwritten before
+			// the client polls, resulting in the video not appearing in the chat.
 			if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+				// Add 1-second delay before completing parent job.
+				// This gives the notification system time to cache the veo job result
+				// and allows the chat client to poll and receive the video URL.
+				sleep( 1 );
+				
 				$this->complete_parent_job( $metadata['parent_job_id'], $metadata['result'] );
 			}
 
