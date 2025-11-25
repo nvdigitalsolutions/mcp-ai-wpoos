@@ -919,4 +919,356 @@ describe( 'Tool Result Parsing for Chat Display', () => {
 			expect( typeof summary ).toBe( 'string' );
 		} );
 	} );
+
+	describe( 'Video Metadata tool result extraction', () => {
+		// Mock implementation of the functions from chat.js
+		function isVideoMetadataStructure( result ) {
+			return result && 
+				typeof result === 'object' &&
+				typeof result.format === 'object' && 
+				result.format !== null;
+		}
+
+		function extractVideoMetadataSummary( result ) {
+			if ( ! isVideoMetadataStructure( result ) ) {
+				return null;
+			}
+
+			const format = result.format;
+			const parts = [];
+
+			// Extract dimensions from video streams if available
+			if ( Array.isArray( result.video_streams ) && result.video_streams.length > 0 ) {
+				const firstVideo = result.video_streams[ 0 ];
+				if ( typeof firstVideo.width === 'number' && typeof firstVideo.height === 'number' ) {
+					parts.push( firstVideo.width + 'x' + firstVideo.height );
+				}
+			}
+
+			// Add duration if available
+			if ( typeof format.duration_formatted === 'string' && format.duration_formatted.trim() ) {
+				parts.push( format.duration_formatted );
+			} else if ( typeof format.duration === 'number' && format.duration > 0 ) {
+				parts.push( Math.floor( format.duration ) + 's' );
+			}
+
+			// Add file size if available
+			if ( typeof format.size_formatted === 'string' && format.size_formatted.trim() ) {
+				parts.push( format.size_formatted );
+			}
+
+			// Add format name if available
+			if ( typeof format.format_name === 'string' && format.format_name.trim() ) {
+				parts.push( format.format_name );
+			}
+
+			if ( parts.length === 0 ) {
+				return 'Video metadata retrieved';
+			}
+
+			return 'Video: ' + parts.join( ', ' );
+		}
+
+		it( 'should extract complete video metadata summary', () => {
+			const result = {
+				format: {
+					filename: 'test.mp4',
+					format_name: 'mov,mp4,m4a,3gp,3g2,mj2',
+					duration: 150.5,
+					duration_formatted: '00:02:30',
+					size: 15500000,
+					size_formatted: '14.78 MB',
+					bit_rate: 826666,
+				},
+				video_streams: [
+					{
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080,
+						frame_rate: '30 fps',
+					},
+				],
+				audio_streams: [],
+				success: true,
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toBe( 'Video: 1920x1080, 00:02:30, 14.78 MB, mov,mp4,m4a,3gp,3g2,mj2' );
+		} );
+
+		it( 'should handle video without formatted duration', () => {
+			const result = {
+				format: {
+					duration: 45,
+					format_name: 'mp4',
+				},
+				video_streams: [],
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toContain( '45s' );
+			expect( summary ).toContain( 'mp4' );
+		} );
+
+		it( 'should handle minimal video metadata', () => {
+			const result = {
+				format: {
+					format_name: 'webm',
+				},
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toBe( 'Video: webm' );
+		} );
+
+		it( 'should handle video with no extractable fields', () => {
+			const result = {
+				format: {},
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toBe( 'Video metadata retrieved' );
+		} );
+
+		it( 'should return null for invalid structure', () => {
+			const result = {
+				// Missing format object
+				something: 'else',
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should return null when format is not an object', () => {
+			const result = {
+				format: 'some string',
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should not display [object Object] for video metadata results', () => {
+			const result = {
+				format: {
+					duration: 120,
+					format_name: 'mp4',
+				},
+				video_streams: [
+					{
+						width: 1280,
+						height: 720,
+					},
+				],
+			};
+
+			const summary = extractVideoMetadataSummary( result );
+			
+			// This is the main fix: should NOT contain [object Object]
+			expect( summary ).not.toContain( '[object Object]' );
+			expect( summary ).toContain( 'Video' );
+			expect( typeof summary ).toBe( 'string' );
+		} );
+	} );
+
+	describe( 'Environment Status tool result extraction', () => {
+		// Mock implementation of the functions from chat.js
+		function isEnvironmentStatusStructure( result ) {
+			return result && 
+				typeof result === 'object' &&
+				typeof result.environment === 'object' && 
+				result.environment !== null &&
+				typeof result.plugin === 'object' && 
+				result.plugin !== null;
+		}
+
+		function extractEnvironmentStatusSummary( result ) {
+			if ( ! isEnvironmentStatusStructure( result ) ) {
+				return null;
+			}
+
+			const env = result.environment;
+			const plugin = result.plugin;
+			const parts = [];
+
+			// Add WordPress version
+			if ( typeof env.wordpress_version === 'string' && env.wordpress_version.trim() ) {
+				parts.push( 'WordPress ' + env.wordpress_version );
+			}
+
+			// Add PHP version
+			if ( typeof env.php_version === 'string' && env.php_version.trim() ) {
+				parts.push( 'PHP ' + env.php_version );
+			}
+
+			// Add plugin version
+			if ( typeof plugin.version === 'string' && plugin.version.trim() ) {
+				parts.push( 'WP oOS ' + plugin.version );
+			}
+
+			// Add assistant count
+			if ( result.assistants && typeof result.assistants.total_assistants === 'number' ) {
+				parts.push( result.assistants.total_assistants + ' assistant' + ( result.assistants.total_assistants !== 1 ? 's' : '' ) );
+			}
+
+			// Add warnings count if any
+			if ( Array.isArray( result.warnings ) && result.warnings.length > 0 ) {
+				parts.push( result.warnings.length + ' warning' + ( result.warnings.length !== 1 ? 's' : '' ) );
+			}
+
+			if ( parts.length === 0 ) {
+				return 'Environment status retrieved';
+			}
+
+			return 'Environment: ' + parts.join( ', ' );
+		}
+
+		it( 'should extract complete environment status', () => {
+			const result = {
+				checked_at: '2025-11-25T12:00:00Z',
+				environment: {
+					wordpress_version: '6.4.2',
+					php_version: '8.1.0',
+					environment_type: 'production',
+				},
+				plugin: {
+					version: '1.0.0',
+					default_provider: 'openai',
+				},
+				assistants: {
+					total_assistants: 3,
+					default_assistant_id: 1,
+				},
+				warnings: [
+					'No API key configured',
+				],
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( 'Environment: WordPress 6.4.2, PHP 8.1.0, WP oOS 1.0.0, 3 assistants, 1 warning' );
+		} );
+
+		it( 'should handle environment without warnings', () => {
+			const result = {
+				environment: {
+					wordpress_version: '6.4',
+					php_version: '8.2',
+				},
+				plugin: {
+					version: '2.0.0',
+				},
+				assistants: {
+					total_assistants: 1,
+				},
+				warnings: [],
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( 'Environment: WordPress 6.4, PHP 8.2, WP oOS 2.0.0, 1 assistant' );
+		} );
+
+		it( 'should handle singular assistant correctly', () => {
+			const result = {
+				environment: {
+					wordpress_version: '6.4',
+				},
+				plugin: {
+					version: '1.0',
+				},
+				assistants: {
+					total_assistants: 1,
+				},
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toContain( '1 assistant' );
+			expect( summary ).not.toContain( 'assistants' );
+		} );
+
+		it( 'should handle plural assistants correctly', () => {
+			const result = {
+				environment: {},
+				plugin: {},
+				assistants: {
+					total_assistants: 5,
+				},
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toContain( '5 assistants' );
+		} );
+
+		it( 'should handle plural warnings correctly', () => {
+			const result = {
+				environment: {},
+				plugin: {},
+				warnings: [ 'Warning 1', 'Warning 2', 'Warning 3' ],
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toContain( '3 warnings' );
+		} );
+
+		it( 'should handle minimal environment data', () => {
+			const result = {
+				environment: {},
+				plugin: {},
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( 'Environment status retrieved' );
+		} );
+
+		it( 'should return null for invalid structure', () => {
+			const result = {
+				// Missing environment or plugin
+				something: 'else',
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should return null when environment is not an object', () => {
+			const result = {
+				environment: 'some string',
+				plugin: {},
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should return null when plugin is missing', () => {
+			const result = {
+				environment: {
+					wordpress_version: '6.4',
+				},
+				// Missing plugin property
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should not display [object Object] for environment results', () => {
+			const result = {
+				environment: {
+					wordpress_version: '6.4',
+					php_version: '8.1',
+				},
+				plugin: {
+					version: '1.0.0',
+				},
+			};
+
+			const summary = extractEnvironmentStatusSummary( result );
+			
+			// This is the main fix: should NOT contain [object Object]
+			expect( summary ).not.toContain( '[object Object]' );
+			expect( summary ).toContain( 'Environment' );
+			expect( typeof summary ).toBe( 'string' );
+		} );
+	} );
 } );

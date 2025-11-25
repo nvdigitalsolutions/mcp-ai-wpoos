@@ -6271,6 +6271,140 @@
     }
 
     /**
+     * Check if a result object has the structure of a video metadata response.
+     * 
+     * Video metadata responses have a 'format' object with duration and other technical details.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a video metadata response
+     */
+    function isVideoMetadataStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.format === 'object' && 
+               result.format !== null;
+    }
+
+    /**
+     * Extract video metadata summary from get_video_metadata tool result.
+     * 
+     * Formats the video technical details into a readable string.
+     * Example: "Video: 1920x1080, 00:02:30, 15.5 MB, h264"
+     * 
+     * @param {Object} result - Tool result object with format property
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractVideoMetadataSummary(result) {
+        if (!isVideoMetadataStructure(result)) {
+            return null;
+        }
+
+        const format = result.format;
+        const parts = [];
+
+        // Extract dimensions from video streams if available
+        if (Array.isArray(result.video_streams) && result.video_streams.length > 0) {
+            const firstVideo = result.video_streams[0];
+            if (typeof firstVideo.width === 'number' && typeof firstVideo.height === 'number') {
+                parts.push(firstVideo.width + 'x' + firstVideo.height);
+            }
+            if (typeof firstVideo.codec_name === 'string' && firstVideo.codec_name.trim()) {
+                // Store codec for later
+            }
+        }
+
+        // Add duration if available
+        if (typeof format.duration_formatted === 'string' && format.duration_formatted.trim()) {
+            parts.push(format.duration_formatted);
+        } else if (typeof format.duration === 'number' && format.duration > 0) {
+            parts.push(Math.floor(format.duration) + 's');
+        }
+
+        // Add file size if available
+        if (typeof format.size_formatted === 'string' && format.size_formatted.trim()) {
+            parts.push(format.size_formatted);
+        }
+
+        // Add format name if available
+        if (typeof format.format_name === 'string' && format.format_name.trim()) {
+            parts.push(format.format_name);
+        }
+
+        if (parts.length === 0) {
+            return 'Video metadata retrieved';
+        }
+
+        return 'Video: ' + parts.join(', ');
+    }
+
+    /**
+     * Check if a result object has the structure of an environment status response.
+     * 
+     * Environment status responses have environment, plugin, and assistants objects.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be an environment status response
+     */
+    function isEnvironmentStatusStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.environment === 'object' && 
+               result.environment !== null &&
+               typeof result.plugin === 'object' && 
+               result.plugin !== null;
+    }
+
+    /**
+     * Extract environment status summary from get_environment_status tool result.
+     * 
+     * Formats the environment information into a readable string.
+     * Example: "Environment: WordPress 6.4, PHP 8.1, WP oOS v1.0.0, 3 assistants, 2 warnings"
+     * 
+     * @param {Object} result - Tool result object with environment and plugin properties
+     * @return {string|null} Formatted summary text or null if structure is invalid
+     */
+    function extractEnvironmentStatusSummary(result) {
+        if (!isEnvironmentStatusStructure(result)) {
+            return null;
+        }
+
+        const env = result.environment;
+        const plugin = result.plugin;
+        const parts = [];
+
+        // Add WordPress version
+        if (typeof env.wordpress_version === 'string' && env.wordpress_version.trim()) {
+            parts.push('WordPress ' + env.wordpress_version);
+        }
+
+        // Add PHP version
+        if (typeof env.php_version === 'string' && env.php_version.trim()) {
+            parts.push('PHP ' + env.php_version);
+        }
+
+        // Add plugin version
+        if (typeof plugin.version === 'string' && plugin.version.trim()) {
+            parts.push('WP oOS ' + plugin.version);
+        }
+
+        // Add assistant count
+        if (result.assistants && typeof result.assistants.total_assistants === 'number') {
+            parts.push(result.assistants.total_assistants + ' assistant' + (result.assistants.total_assistants !== 1 ? 's' : ''));
+        }
+
+        // Add warnings count if any
+        if (Array.isArray(result.warnings) && result.warnings.length > 0) {
+            parts.push(result.warnings.length + ' warning' + (result.warnings.length !== 1 ? 's' : ''));
+        }
+
+        if (parts.length === 0) {
+            return 'Environment status retrieved';
+        }
+
+        return 'Environment: ' + parts.join(', ');
+    }
+
+    /**
      * Extract displayable content from generic tool responses that don't have downloadable assets.
      * Looks for common fields like message, text, links, IDs, and status information.
      *
@@ -6309,6 +6443,18 @@
             const updateStatusText = extractUpdateStatusSummary(result);
             if (updateStatusText) {
                 text = updateStatusText;
+            }
+        } else if (isVideoMetadataStructure(result)) {
+            // Handle get_video_metadata tool result structure with format object
+            const videoMetadataText = extractVideoMetadataSummary(result);
+            if (videoMetadataText) {
+                text = videoMetadataText;
+            }
+        } else if (isEnvironmentStatusStructure(result)) {
+            // Handle get_environment_status tool result structure
+            const environmentText = extractEnvironmentStatusSummary(result);
+            if (environmentText) {
+                text = environmentText;
             }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
