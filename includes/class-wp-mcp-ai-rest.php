@@ -2425,6 +2425,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$tool_instance = $this->registry->get_tool( $tool_slug );
 					}
 
+					// Extract usage information from tool result before sanitization.
+					// Phase 7: Enhanced Token Tracking - Include usage data in tool responses.
+					$tool_usage_info = $this->extract_usage_info_from_tool_result( $tool_result );
+
 					// Create a full tool message with structured result for frontend.
 					// Use the tool's sanitize_for_llm method if available to strip base64 content.
 					$full_tool_message = array(
@@ -2438,6 +2442,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
+					}
+
+					// Include usage information in tool message for frontend display.
+					// Phase 7: Enhanced Token Tracking - Tool-level usage data.
+					if ( ! empty( $tool_usage_info ) ) {
+						$full_tool_message['usage'] = $tool_usage_info;
 					}
 
 					// Store sanitized tool result for frontend.
@@ -2838,6 +2848,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$tool_instance = $this->registry->get_tool( $tool_slug );
 					}
 
+					// Extract usage information from tool result before sanitization.
+					// Phase 7: Enhanced Token Tracking - Include usage data in tool responses.
+					$tool_usage_info = $this->extract_usage_info_from_tool_result( $tool_result );
+
 					// Sanitize the tool result for display (strips base64 content if tool implements sanitization).
 					$display_result = $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance );
 
@@ -2887,6 +2901,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
+					}
+
+					// Include usage information in tool message for frontend display.
+					// Phase 7: Enhanced Token Tracking - Tool-level usage data.
+					if ( ! empty( $tool_usage_info ) ) {
+						$full_tool_message['usage'] = $tool_usage_info;
 					}
 
 					$tool_result_messages[] = $full_tool_message;
@@ -8080,6 +8100,89 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
                     assistant_id,
                     assistant_model,
                     latency_ms";
+		}
+
+		/**
+		 * Extract usage information from a tool result.
+		 *
+		 * Tools that make API calls (like image generation, text analysis) may include
+		 * usage data in their results. This method extracts that information for
+		 * display in the frontend chat UI (Phase 7: Enhanced Token Tracking).
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param mixed $tool_result The raw tool result, which may be an array with usage data.
+		 * @return array|null Usage info array with prompt_tokens, completion_tokens, total_tokens,
+		 *                    optionally model, provider, is_estimated, and cost data. Null if no usage data.
+		 */
+		protected function extract_usage_info_from_tool_result( $tool_result ) {
+			// Handle WP_Error - no usage data available.
+			if ( is_wp_error( $tool_result ) ) {
+				return null;
+			}
+
+			// Handle string results - no usage data available.
+			if ( ! is_array( $tool_result ) ) {
+				return null;
+			}
+
+			// Check if the tool result contains usage data.
+			if ( ! isset( $tool_result['usage'] ) || ! is_array( $tool_result['usage'] ) ) {
+				return null;
+			}
+
+			$usage = $tool_result['usage'];
+
+			// Validate and extract token counts.
+			$prompt_tokens     = isset( $usage['prompt_tokens'] ) ? absint( $usage['prompt_tokens'] ) : 0;
+			$completion_tokens = isset( $usage['completion_tokens'] ) ? absint( $usage['completion_tokens'] ) : 0;
+			$total_tokens      = isset( $usage['total_tokens'] ) ? absint( $usage['total_tokens'] ) : ( $prompt_tokens + $completion_tokens );
+
+			// If no tokens, return null.
+			if ( $total_tokens <= 0 ) {
+				return null;
+			}
+
+			// Build the usage info array.
+			$usage_info = array(
+				'prompt_tokens'     => $prompt_tokens,
+				'completion_tokens' => $completion_tokens,
+				'total_tokens'      => $total_tokens,
+			);
+
+			// Include is_estimated flag if present in the original usage data.
+			if ( isset( $usage['is_estimated'] ) ) {
+				$usage_info['is_estimated'] = (bool) $usage['is_estimated'];
+			}
+
+			// Include model if available (from tool result or usage data).
+			if ( isset( $tool_result['model'] ) && is_string( $tool_result['model'] ) && '' !== $tool_result['model'] ) {
+				$usage_info['model'] = $tool_result['model'];
+			} elseif ( isset( $usage['model'] ) && is_string( $usage['model'] ) && '' !== $usage['model'] ) {
+				$usage_info['model'] = $usage['model'];
+			}
+
+			// Include provider if available (from tool result or usage data).
+			if ( isset( $tool_result['provider'] ) && is_string( $tool_result['provider'] ) && '' !== $tool_result['provider'] ) {
+				$usage_info['provider'] = $tool_result['provider'];
+			} elseif ( isset( $usage['provider'] ) && is_string( $usage['provider'] ) && '' !== $usage['provider'] ) {
+				$usage_info['provider'] = $usage['provider'];
+			}
+
+			// Include cost data if available in the tool result.
+			if ( isset( $tool_result['cost'] ) && is_array( $tool_result['cost'] ) ) {
+				$cost = $tool_result['cost'];
+				if ( isset( $cost['cost_usd'] ) && is_numeric( $cost['cost_usd'] ) ) {
+					$usage_info['cost_usd'] = (float) $cost['cost_usd'];
+
+					// Include cost is_estimated flag if different from usage is_estimated.
+					if ( isset( $cost['is_estimated'] ) ) {
+						$usage_info['cost_is_estimated'] = (bool) $cost['is_estimated'];
+					}
+				}
+			}
+
+			return $usage_info;
 		}
 
 		/**
