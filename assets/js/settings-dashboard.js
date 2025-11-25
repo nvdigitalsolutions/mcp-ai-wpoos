@@ -726,15 +726,16 @@
 			// For relative URLs, ensure it starts with a valid admin path.
 			let isValidUrl = false;
 			if (isAbsoluteUrl) {
-				// Absolute URL must start with current origin and contain admin path after origin.
-				const urlPath = baseUrl.substring(currentOrigin.length);
-				isValidUrl = baseUrl.startsWith(currentOrigin) &&
-					(urlPath.startsWith('/wp-admin/') || urlPath.includes('/admin.php'));
+				// Absolute URL must start with current origin and path must start with admin path.
+				if (baseUrl.startsWith(currentOrigin)) {
+					const urlPath = baseUrl.substring(currentOrigin.length);
+					// Path must start with /wp-admin/ or /wp-admin/admin.php.
+					isValidUrl = urlPath.startsWith('/wp-admin/');
+				}
 			} else {
-				// Relative URL must start with admin path or be an admin.php URL.
-				isValidUrl = baseUrl.startsWith('/wp-admin/') ||
-					baseUrl.startsWith('wp-admin/') ||
-					baseUrl.includes('admin.php?');
+				// Relative URL must start with /wp-admin/ path.
+				// This is the most restrictive check - only allow explicit wp-admin paths.
+				isValidUrl = baseUrl.startsWith('/wp-admin/');
 			}
 
 			if (!isValidUrl) {
