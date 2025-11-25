@@ -6946,20 +6946,17 @@
                             handleError(errorMessage);
                         } else if (status === 'delegated' && payload.delegated_to) {
                             // Job was delegated to a nested async job (e.g., veo video generation).
-                            // Close current SSE connection and switch to polling the delegated job.
-                            // This prevents timeout when the parent job remains in 'delegated' status.
+                            // Continue polling the PARENT job (not the delegated veo job).
+                            // The veo service will update the parent job when it completes via complete_parent_job().
+                            // This ensures we get the final result on the original job ID.
                             if (window.console && console.log) {
                                 console.log('[WP oOS] Job delegated to:', payload.delegated_to);
                             }
-                            cleanup();
                             // Use the message from the delegated job if available (includes veo job ID)
                             // otherwise fall back to generic message
                             const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
                             updatePendingTaskEntry(pendingEntry, delegatedMessage);
-                            // Switch to polling the delegated job instead
-                            waitForAsyncToolResultPolling(state, payload.delegated_to, toolName, pendingEntry)
-                                .then(resolve)
-                                .catch(reject);
+                            // Continue polling this same parent job - it will be updated when veo completes
                         } else {
                             // Still pending, polling or running - update status with progress message
                             // Use progress_message from server if available for more informative updates
@@ -7107,21 +7104,18 @@
 
                         // Handle delegated status - job was handed off to nested async job (e.g., veo video generation)
                         if (status === 'delegated' && payload.delegated_to) {
-                            // Switch to polling the delegated job instead
-                            // This prevents timeout when the parent job remains in 'delegated' status
+                            // Job was delegated to a nested async job (e.g., veo video generation).
+                            // Continue polling the PARENT job (not the delegated veo job).
+                            // The veo service will update the parent job when it completes via complete_parent_job().
                             if (window.console && console.log) {
                                 console.log('[WP oOS] Job delegated to:', payload.delegated_to);
                             }
-                            cleanup();
                             // Use the message from the delegated job if available (includes veo job ID)
                             // otherwise fall back to generic message
                             const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
                             updatePendingTaskEntry(pendingEntry, delegatedMessage);
-                            // Continue polling the delegated job with a fresh timeout
-                            waitForAsyncToolResultPolling(state, payload.delegated_to, record.toolName, pendingEntry)
-                                .then(resolve)
-                                .catch(reject);
-                            return;
+                            // Continue polling this same parent job - it will be updated when veo completes
+                            // Don't switch to the delegated job or return here
                         }
 
                         // Still pending, polling or running - update with progress message if available
