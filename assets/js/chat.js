@@ -8676,14 +8676,17 @@
                         }
                     }
                     
-                    // Remove temporary streaming message
-                    if (streamingMessageElement && streamingMessageElement.parentNode) {
-                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
-                        streamingMessageElement = null;
-                    }
-
                     // Process the final response data using standard handler
+                    // Note: We keep the streaming message visible until handleChatResponse completes
+                    // to prevent a visual gap where no message is shown
                     return handleChatResponse(state, streamResult.finalData).then(function() {
+                        // Remove temporary streaming message AFTER the final message is rendered
+                        // This prevents the text from disappearing before the new message appears
+                        if (streamingMessageElement && streamingMessageElement.parentNode) {
+                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                            streamingMessageElement = null;
+                        }
+                        
                         saveConversationToStorage(state);
                         finalize();
                         clearStatus(state.container);
