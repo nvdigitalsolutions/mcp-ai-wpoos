@@ -283,29 +283,6 @@
     padding-bottom: 3rem;
 }
 
-/* Streaming bubble - ensure visibility even when empty */
-.wp-mcp-ai-chat__bubble--streaming {
-    min-height: 1.6em; /* Ensure bubble is visible even with no content */
-}
-
-/* Streaming cursor indicator */
-.wp-mcp-ai-chat__bubble--streaming::after {
-    content: '▋';
-    display: inline-block;
-    margin-left: 2px;
-    animation: wp-mcp-ai-cursor-blink 1s step-end infinite;
-    color: var(--wp-mcp-ai-color-bubble-assistant-text, #0f172a);
-}
-
-@keyframes wp-mcp-ai-cursor-blink {
-    0%, 50% {
-        opacity: 1;
-    }
-    51%, 100% {
-        opacity: 0;
-    }
-}
-
 .wp-mcp-ai-speech-button {
     position: absolute;
     top: 0.5rem;
