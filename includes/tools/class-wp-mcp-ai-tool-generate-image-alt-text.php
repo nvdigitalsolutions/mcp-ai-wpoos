@@ -14,7 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Generates descriptive alt text for images using AI vision models.
  */
-class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -423,6 +423,15 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			'requires-vision-model',     // Requires vision-capable model.
 			'read-only',                 // Only reads data.
 			'non-deterministic',         // Results may vary.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_model_requirements() {
+		return array(
+			'vision', // Requires model capable of processing and understanding images.
 		);
 	}
 }
