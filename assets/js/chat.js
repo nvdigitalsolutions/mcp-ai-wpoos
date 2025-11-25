@@ -6052,6 +6052,23 @@
      * @returns {Object|null} Normalized response with text and/or attachments, or null if nothing to extract
      */
     /**
+     * Check if a result object has the structure of a site health response.
+     * 
+     * Site health responses have both a 'summary' object and a 'tests' object.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a site health response
+     */
+    function isSiteHealthStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.summary === 'object' && 
+               result.summary !== null &&
+               typeof result.tests === 'object' && 
+               result.tests !== null;
+    }
+
+    /**
      * Extract site health summary from get_site_health tool result.
      * 
      * Formats the summary counts and badge information into a readable string.
@@ -6061,18 +6078,12 @@
      * @return {string|null} Formatted summary text or null if structure is invalid
      */
     function extractSiteHealthSummary(result) {
-        if (!result || typeof result !== 'object') {
+        if (!isSiteHealthStructure(result)) {
             return null;
         }
 
         const summary = result.summary;
         const tests = result.tests;
-
-        if (!summary || typeof summary !== 'object' || !tests) {
-            return null;
-        }
-
-        const parts = [];
 
         // Build summary count string
         if (typeof summary.critical === 'number') {
@@ -6160,8 +6171,7 @@
             text = result.text.trim();
         } else if (typeof result.summary === 'string' && result.summary.trim()) {
             text = result.summary.trim();
-        } else if (typeof result.summary === 'object' && result.summary !== null && 
-                   typeof result.tests === 'object' && result.tests !== null) {
+        } else if (isSiteHealthStructure(result)) {
             // Handle get_site_health tool result structure with summary object
             const siteHealthText = extractSiteHealthSummary(result);
             if (siteHealthText) {
