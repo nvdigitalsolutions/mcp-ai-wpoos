@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Generates videos from text prompts using Google's Veo models.
- * 
+ *
  * Uses Veo 3.1 by default with automatic fallback to Veo 2.0 when:
  * - Veo 3.1 is unavailable
  * - Quota limits are reached
@@ -248,6 +248,22 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			// Generate media library edit link.
 			$edit_url = admin_url( 'post.php?post=' . $save_result['attachment_id'] . '&action=edit' );
 
+			// Build descriptive text message for the LLM and chat UI (mirrors generate_gemini_image pattern).
+			$text_parts   = array();
+			$text_parts[] = sprintf(
+				/* translators: %d: attachment ID */
+				__( 'Successfully generated video (ID: %d).', 'wp-mcp-ai' ),
+				$save_result['attachment_id']
+			);
+
+			$text_parts[] = sprintf(
+				/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
+				__( 'Format: %1$ds, %2$s, %3$s', 'wp-mcp-ai' ),
+				$result['duration'],
+				$result['resolution'],
+				$result['aspect_ratio']
+			);
+
 			return array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
@@ -265,6 +281,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					$save_result['attachment_id'],
 					esc_url( $edit_url )
 				),
+				'text'          => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 			);
 		}
 
@@ -282,6 +299,13 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'model'        => $result['model'],
 			'provider'     => $result['provider'],
 			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
+			'text'         => sprintf(
+				/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
+				__( 'Successfully generated temporary video. Format: %1$ds, %2$s, %3$s', 'wp-mcp-ai' ),
+				$result['duration'],
+				$result['resolution'],
+				$result['aspect_ratio']
+			),
 		);
 	}
 
@@ -544,6 +568,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * several megabytes in size. The LLM doesn't need this binary data - it only needs
 	 * metadata to reference the generated video (attachment_id, url, etc.).
 	 *
+	 * For videos saved to the Media Library, we add a video_url structure similar to
+	 * how generate_gemini_image adds image_url. This allows the chat client to display
+	 * the video inline with a video player.
+	 *
 	 * @param mixed $result Tool execution result.
 	 * @return mixed Sanitized result with only metadata.
 	 */
@@ -555,9 +583,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Strip base64-encoded video data URL if present.
 		// This is set when save_to_media=false and can be several MB.
 		if ( isset( $result['video_url'] ) && is_string( $result['video_url'] ) ) {
-			// Check if it's a base64 data URL
+			// Check if it's a base64 data URL.
 			if ( strpos( $result['video_url'], 'data:video/' ) === 0 ) {
-				// Strip the data URL but keep a reference that one existed
+				// Strip the data URL but keep a reference that one existed.
 				unset( $result['video_url'] );
 				$result['video_data_stripped'] = true;
 			}
@@ -568,11 +596,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'success',
 			'attachment_id',
 			'url',
-			'edit_url',            // Media library edit link
-			'async',               // Async mode flag - CRITICAL for UI detection
-			'status',              // Job status (pending/completed/failed) - CRITICAL for UI
-			'job_id',              // Async job identifier (veo_*)
-			'parent_job_id',       // Parent async job identifier (async_*)
+			'edit_url',            // Media library edit link.
+			'async',               // Async mode flag - CRITICAL for UI detection.
+			'status',              // Job status (pending/completed/failed) - CRITICAL for UI.
+			'job_id',              // Async job identifier (veo_*).
+			'parent_job_id',       // Parent async job identifier (async_*).
 			'prompt',
 			'duration',
 			'aspect_ratio',
@@ -580,9 +608,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'model',
 			'provider',
 			'message',
-			'video_data_stripped', // Flag indicating data was stripped
+			'video_data_stripped', // Flag indicating data was stripped.
 			'usage',               // Token usage data for UI display.
 			'cost',                // Cost data for UI display.
+			'text',                // Descriptive message for LLM and chat UI.
 		);
 
 		$sanitized = array();
@@ -590,6 +619,17 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			if ( isset( $result[ $key ] ) ) {
 				$sanitized[ $key ] = $result[ $key ];
 			}
+		}
+
+		// Add video_url structure for the chat client to display the video inline.
+		// This mirrors how generate_gemini_image adds image_url for the agentic loop.
+		// The chat client uses isVideoAttachment() to detect video URLs and render a video player.
+		$video_url = isset( $result['url'] ) && '' !== $result['url'] ? $result['url'] : '';
+
+		if ( '' !== $video_url ) {
+			$sanitized['video_url'] = array(
+				'url' => $video_url,
+			);
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
