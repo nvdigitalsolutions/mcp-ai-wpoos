@@ -388,9 +388,9 @@ class Test_Section_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that tools manager filter form has proper action attribute.
+	 * Test that tools manager filter bar has proper structure.
 	 */
-	public function test_tools_manager_filter_form_has_action() {
+	public function test_tools_manager_filter_bar_has_proper_structure() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Set up the query string to simulate tools_manager subtab.
@@ -404,20 +404,21 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		// Clear $_GET.
 		unset( $_GET['subtab'] );
 
-		// Check that form has proper action attribute (not empty).
+		// Check that filter bar exists.
 		$this->assertStringContainsString( 'wp-mcp-ai-tools-filter-bar', $output, 'Should contain filter bar' );
-		$this->assertStringContainsString( 'method="get"', $output, 'Form should use GET method' );
-		$this->assertStringContainsString( 'admin.php', $output, 'Form action should point to admin.php' );
-		$this->assertStringNotContainsString( 'action=""', $output, 'Form action should not be empty' );
+		$this->assertStringContainsString( 'wp-mcp-ai-tools-filter-form', $output, 'Should contain filter form div' );
+		
+		// Verify JavaScript filter button exists.
+		$this->assertStringContainsString( 'id="wp-mcp-ai-filter-tools"', $output, 'Should have filter button' );
+		$this->assertStringContainsString( 'type="button"', $output, 'Filter button should be type button' );
 
-		// Verify form has required hidden fields.
-		$this->assertStringContainsString( 'name="page"', $output, 'Should have page hidden field' );
-		$this->assertStringContainsString( 'name="tab"', $output, 'Should have tab hidden field' );
-		$this->assertStringContainsString( 'name="subtab"', $output, 'Should have subtab hidden field' );
-
-		// Verify form has search and filter inputs.
+		// Verify search and filter inputs exist.
 		$this->assertStringContainsString( 'name="tool_search"', $output, 'Should have tool_search input' );
 		$this->assertStringContainsString( 'name="tool_group"', $output, 'Should have tool_group select' );
+		
+		// Verify JavaScript handler is included.
+		$this->assertStringContainsString( '#wp-mcp-ai-filter-tools', $output, 'Should include JavaScript handler' );
+		$this->assertStringContainsString( 'window.location.href', $output, 'Should navigate using JavaScript' );
 	}
 
 	/**
