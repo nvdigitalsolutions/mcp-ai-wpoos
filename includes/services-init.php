@@ -284,3 +284,105 @@ function wp_mcp_ai_get_async_tool_executor() {
 function wp_mcp_ai_get_async_health_monitor() {
 	return 'WP_MCP_AI_Async_Health_Monitor';
 }
+
+/**
+ * Generate fallback text for Gemini image tool results.
+ *
+ * Creates a contextual text message based on the result fields when the tool
+ * result lacks a text field. This is required for OpenAI's agentic loop
+ * which expects a text response from tool calls.
+ *
+ * @since 1.0.0
+ *
+ * @param array $content Tool result content array.
+ * @return string Generated fallback text describing the result.
+ */
+function wp_mcp_ai_generate_gemini_image_fallback_text( $content ) {
+	// Check for error conditions first.
+	if ( isset( $content['error'] ) ) {
+		return isset( $content['message'] ) ? $content['message'] : __( 'Image generation failed.', 'wp-mcp-ai' );
+	}
+
+	// Success with attachment ID - most complete result.
+	if ( ! empty( $content['attachment_id'] ) ) {
+		$title = isset( $content['title'] ) ? $content['title'] : __( 'Gemini Image', 'wp-mcp-ai' );
+		$text  = sprintf(
+			/* translators: 1: image title, 2: attachment ID */
+			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
+			$title,
+			$content['attachment_id']
+		);
+
+		// Add revised prompt if available.
+		if ( ! empty( $content['revised_prompt'] ) ) {
+			$text .= ' ' . sprintf(
+				/* translators: %s: revised prompt from Gemini */
+				__( 'Description: %s', 'wp-mcp-ai' ),
+				$content['revised_prompt']
+			);
+		}
+
+		// Add format info if available.
+		$format_parts = array();
+		if ( ! empty( $content['aspect_ratio'] ) ) {
+			$format_parts[] = $content['aspect_ratio'];
+		}
+		if ( ! empty( $content['format'] ) ) {
+			$format_parts[] = strtoupper( $content['format'] );
+		}
+		if ( ! empty( $format_parts ) ) {
+			$text .= ' ' . sprintf(
+				/* translators: %s: format details */
+				__( 'Format: %s', 'wp-mcp-ai' ),
+				implode( ', ', $format_parts )
+			);
+		}
+
+		return $text;
+	}
+
+	// URL-only result (no attachment stored).
+	if ( ! empty( $content['url'] ) || ! empty( $content['download_url'] ) ) {
+		$url = ! empty( $content['download_url'] ) ? $content['download_url'] : $content['url'];
+		return sprintf(
+			/* translators: %s: image URL */
+			__( 'Image generated successfully. URL: %s', 'wp-mcp-ai' ),
+			$url
+		);
+	}
+
+	// Incomplete metadata - provide generic success message.
+	return __( 'Image generation completed.', 'wp-mcp-ai' );
+}
+
+/**
+ * Add fallback text to generate_gemini_image tool result when OpenAI is the provider.
+ *
+ * OpenAI's agentic loop requires a text field in tool results. This filter
+ * conditionally adds fallback text only when the chat provider is OpenAI.
+ *
+ * @since 1.0.0
+ *
+ * @param array $content          Tool result content array.
+ * @param array $assistant_config Assistant configuration including provider.
+ * @return array Modified content with text field if needed.
+ */
+function wp_mcp_ai_add_gemini_image_fallback_text( $content, $assistant_config ) {
+	// Only apply when provider is OpenAI.
+	$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
+	if ( 'openai' !== $provider ) {
+		return $content;
+	}
+
+	// Only add text if not already present and non-empty.
+	if ( ! is_array( $content ) || ( isset( $content['text'] ) && '' !== $content['text'] ) ) {
+		return $content;
+	}
+
+	// Generate and add fallback text.
+	$content['text'] = wp_mcp_ai_generate_gemini_image_fallback_text( $content );
+
+	return $content;
+}
+add_filter( 'wp_mcp_ai_sanitize_tool_result_llm_generate_gemini_image', 'wp_mcp_ai_add_gemini_image_fallback_text', 10, 2 );
+add_filter( 'wp_mcp_ai_sanitize_tool_result_llm_edit_gemini_image', 'wp_mcp_ai_add_gemini_image_fallback_text', 10, 2 );
