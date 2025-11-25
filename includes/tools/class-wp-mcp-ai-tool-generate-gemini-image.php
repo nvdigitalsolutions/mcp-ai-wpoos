@@ -818,67 +818,6 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Ensure a text response is always present for the agentic loop.
-		// If essential fields are missing (url, attachment_id), generate a fallback message.
-		if ( empty( $sanitized['text'] ) ) {
-			$sanitized['text'] = $this->generate_fallback_text_response( $sanitized, $result );
-		}
-
 		return ! empty( $sanitized ) ? $sanitized : $result;
-	}
-
-	/**
-	 * Generate a fallback text response when essential fields are missing.
-	 *
-	 * This ensures the agentic loop always receives a meaningful text response
-	 * even when image generation partially fails or returns incomplete data.
-	 *
-	 * @param array $sanitized Sanitized result with available fields.
-	 * @param array $original  Original result before sanitization.
-	 * @return string Generated text response.
-	 */
-	protected function generate_fallback_text_response( array $sanitized, array $original ) {
-		// If we have essential fields, generate a success message.
-		if ( ! empty( $sanitized['attachment_id'] ) && ! empty( $sanitized['url'] ) ) {
-			$title = isset( $sanitized['title'] ) ? $sanitized['title'] : __( 'Generated Image', 'wp-mcp-ai' );
-			return sprintf(
-				/* translators: 1: image title, 2: attachment ID */
-				__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
-				$title,
-				$sanitized['attachment_id']
-			);
-		}
-
-		// If we have a URL but no attachment_id, the image was generated but may not be saved.
-		if ( ! empty( $sanitized['url'] ) ) {
-			return __( 'Image generated successfully. The image URL is available for viewing.', 'wp-mcp-ai' );
-		}
-
-		// Check if the original result contains error information.
-		if ( isset( $original['error'] ) || isset( $original['error_message'] ) ) {
-			$error_msg = isset( $original['error_message'] ) ? $original['error_message'] : $original['error'];
-			return sprintf(
-				/* translators: %s: error message */
-				__( 'Image generation encountered an issue: %s', 'wp-mcp-ai' ),
-				$error_msg
-			);
-		}
-
-		// If we only have model/format metadata without actual image data,
-		// provide a helpful message indicating incomplete results.
-		$has_only_metadata = ! empty( $sanitized['model'] ) || ! empty( $sanitized['format'] ) || ! empty( $sanitized['aspect_ratio'] );
-		$missing_url       = empty( $sanitized['url'] ) && empty( $sanitized['download_url'] );
-
-		if ( $has_only_metadata && $missing_url ) {
-			$model = isset( $sanitized['model'] ) ? $sanitized['model'] : 'Gemini';
-			return sprintf(
-				/* translators: %s: model name */
-				__( 'Image generation was attempted with %s but the result is incomplete. Please try again or check the Gemini API configuration.', 'wp-mcp-ai' ),
-				$model
-			);
-		}
-
-		// Default fallback message.
-		return __( 'Image generation completed. Please check the Media Library for the result.', 'wp-mcp-ai' );
 	}
 }
