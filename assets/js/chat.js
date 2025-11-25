@@ -8594,7 +8594,7 @@
                         // This preserves what the user saw during streaming
                         streamResult.finalData.data.choices[0].message.content = streamResult.content;
                         
-                        if (window.console && console.log) {
+                        if (DEBUG_MODE && window.console && console.log) {
                             console.log('[WP oOS] Injected streamed content into finalData:', {
                                 contentLength: streamResult.content.length,
                                 contentSample: streamResult.content.substring(0, 100)
