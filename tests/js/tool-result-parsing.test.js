@@ -191,4 +191,339 @@ describe( 'Tool Result Parsing for Chat Display', () => {
 			expect( url ).toBe( 'https://example.com/image.png' );
 		} );
 	} );
+
+	describe( 'Site Health tool result extraction', () => {
+		// Mock implementation of the functions from chat.js
+		function extractSiteHealthBadges( tests ) {
+			if ( ! tests || typeof tests !== 'object' ) {
+				return [];
+			}
+
+			const badgeInfo = [];
+
+			// Check for badges in critical tests
+			if ( Array.isArray( tests.critical ) ) {
+				tests.critical.forEach( function ( test ) {
+					if ( test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim() ) {
+						badgeInfo.push( test.badge.label.trim() );
+					}
+				} );
+			}
+
+			// Check for badges in warning tests
+			if ( Array.isArray( tests.warning ) ) {
+				tests.warning.forEach( function ( test ) {
+					if ( test && test.badge && typeof test.badge.label === 'string' && test.badge.label.trim() ) {
+						badgeInfo.push( test.badge.label.trim() );
+					}
+				} );
+			}
+
+			// Return unique badge labels
+			const uniqueBadges = [];
+			badgeInfo.forEach( function ( badge ) {
+				if ( uniqueBadges.indexOf( badge ) === -1 ) {
+					uniqueBadges.push( badge );
+				}
+			} );
+
+			return uniqueBadges;
+		}
+
+		function extractSiteHealthSummary( result ) {
+			if ( ! result || typeof result !== 'object' ) {
+				return null;
+			}
+
+			const summary = result.summary;
+			const tests = result.tests;
+
+			if ( ! summary || typeof summary !== 'object' || ! tests ) {
+				return null;
+			}
+
+			const parts = [];
+
+			// Build summary count string
+			if ( typeof summary.critical === 'number' ) {
+				parts.push( summary.critical + ' critical' );
+			}
+			if ( typeof summary.warning === 'number' ) {
+				parts.push( summary.warning + ' warning' + ( summary.warning !== 1 ? 's' : '' ) );
+			}
+			if ( typeof summary.pass === 'number' ) {
+				parts.push( summary.pass + ' passing' );
+			}
+
+			if ( parts.length === 0 ) {
+				return null;
+			}
+
+			let text = 'Site Health: ' + parts.join( ', ' );
+
+			// Extract badge information from tests
+			const badgeLabels = extractSiteHealthBadges( tests );
+			if ( badgeLabels.length > 0 ) {
+				text += ' [' + badgeLabels.join( ', ' ) + ']';
+			}
+
+			return text;
+		}
+
+		it( 'should extract summary with all counts', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 0 critical, 1 warning, 18 passing' );
+		} );
+
+		it( 'should handle plural warnings correctly', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 2,
+					pass: 17,
+				},
+				tests: {
+					critical: [],
+					warning: [],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 0 critical, 2 warnings, 17 passing' );
+		} );
+
+		it( 'should handle singular warning correctly', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 0 critical, 1 warning, 18 passing' );
+		} );
+
+		it( 'should extract badges from critical tests', () => {
+			const result = {
+				summary: {
+					critical: 1,
+					warning: 0,
+					pass: 18,
+				},
+				tests: {
+					critical: [
+						{
+							test: 'auto_updates',
+							status: 'critical',
+							label: 'Automatic updates disabled',
+							badge: {
+								label: 'Security',
+								color: 'red',
+							},
+						},
+					],
+					warning: [],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 1 critical, 0 warnings, 18 passing [Security]' );
+		} );
+
+		it( 'should extract badges from warning tests', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [
+						{
+							test: 'persistent_object_cache',
+							status: 'recommended',
+							label: 'Persistent object cache',
+							badge: {
+								label: 'Performance',
+								color: 'blue',
+							},
+						},
+					],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 0 critical, 1 warning, 18 passing [Performance]' );
+		} );
+
+		it( 'should extract and deduplicate multiple badges', () => {
+			const result = {
+				summary: {
+					critical: 1,
+					warning: 2,
+					pass: 16,
+				},
+				tests: {
+					critical: [
+						{
+							badge: {
+								label: 'Security',
+								color: 'red',
+							},
+						},
+					],
+					warning: [
+						{
+							badge: {
+								label: 'Performance',
+								color: 'blue',
+							},
+						},
+						{
+							badge: {
+								label: 'Security',
+								color: 'orange',
+							},
+						},
+					],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			// Should have unique badges only (Security appears twice but should only be listed once)
+			expect( summary ).toBe( 'Site Health: 1 critical, 2 warnings, 16 passing [Security, Performance]' );
+		} );
+
+		it( 'should handle tests without badges', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [
+						{
+							test: 'some_test',
+							status: 'recommended',
+							label: 'Some test',
+							// No badge property
+						},
+					],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( 'Site Health: 0 critical, 1 warning, 18 passing' );
+		} );
+
+		it( 'should return null for invalid structure', () => {
+			const result = {
+				// Missing summary or tests
+				something: 'else',
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should return null when summary is not an object', () => {
+			const result = {
+				summary: 'some string',
+				tests: {},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should return null when tests is missing', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				// Missing tests property
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			expect( summary ).toBe( null );
+		} );
+
+		it( 'should handle empty badge labels gracefully', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [
+						{
+							badge: {
+								label: '',
+								color: 'blue',
+							},
+						},
+					],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			// Empty badge labels should be ignored
+			expect( summary ).toBe( 'Site Health: 0 critical, 1 warning, 18 passing' );
+		} );
+
+		it( 'should not display [object Object] for site health results', () => {
+			const result = {
+				summary: {
+					critical: 0,
+					warning: 1,
+					pass: 18,
+				},
+				tests: {
+					critical: [],
+					warning: [],
+					pass: [],
+				},
+			};
+
+			const summary = extractSiteHealthSummary( result );
+			
+			// This is the main fix: should NOT contain [object Object]
+			expect( summary ).not.toContain( '[object Object]' );
+			expect( summary ).toContain( 'Site Health' );
+			expect( typeof summary ).toBe( 'string' );
+		} );
+	} );
 } );
