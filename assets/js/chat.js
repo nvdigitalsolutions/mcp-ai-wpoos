@@ -8572,6 +8572,36 @@
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
+                    // If we have streamed content, inject it into the finalData structure
+                    // This ensures the complete streamed text is used for rendering
+                    // instead of potentially incomplete message.content from the API
+                    if (streamResult.content && streamResult.content.trim()) {
+                        // Ensure the data structure exists
+                        if (!streamResult.finalData.data) {
+                            streamResult.finalData.data = {};
+                        }
+                        if (!streamResult.finalData.data.choices) {
+                            streamResult.finalData.data.choices = [{}];
+                        }
+                        if (!streamResult.finalData.data.choices[0]) {
+                            streamResult.finalData.data.choices[0] = {};
+                        }
+                        if (!streamResult.finalData.data.choices[0].message) {
+                            streamResult.finalData.data.choices[0].message = { role: 'assistant' };
+                        }
+                        
+                        // Use the streamed content as the message content
+                        // This preserves what the user saw during streaming
+                        streamResult.finalData.data.choices[0].message.content = streamResult.content;
+                        
+                        if (DEBUG_MODE && window.console && console.log) {
+                            console.log('[WP oOS] Injected streamed content into finalData:', {
+                                contentLength: streamResult.content.length,
+                                contentSample: streamResult.content.substring(0, 100)
+                            });
+                        }
+                    }
+                    
                     // Remove temporary streaming message
                     if (streamingMessageElement && streamingMessageElement.parentNode) {
                         streamingMessageElement.parentNode.removeChild(streamingMessageElement);
