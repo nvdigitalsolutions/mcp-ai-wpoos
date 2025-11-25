@@ -8496,13 +8496,19 @@
 
             // Concern 1: Update message bubble content
             if (streamingMessageElement) {
-                // Update text content with accumulated response
-                // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                streamingMessageElement.textContent = safeContent;
+                // Render markdown progressively during streaming
+                // The renderMarkdown function escapes HTML before processing, making it XSS-safe
+                const renderedContent = renderMarkdown(safeContent);
+                if (renderedContent && renderedContent.trim()) {
+                    streamingMessageElement.innerHTML = renderedContent;
+                } else {
+                    // Fallback to escaped text if markdown rendering fails
+                    streamingMessageElement.innerHTML = escapeHtml(safeContent).replace(/\n/g, '<br />');
+                }
                 
-                // VERIFY the text was actually set
+                // VERIFY the content was actually set
                 if (window.console && console.log) {
-                    console.log('[WP oOS] After setting textContent:', {
+                    console.log('[WP oOS] After setting innerHTML:', {
                         elementTextContent: streamingMessageElement.textContent,
                         elementInnerHTML: streamingMessageElement.innerHTML,
                         elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
