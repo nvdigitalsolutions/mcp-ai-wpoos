@@ -26,8 +26,9 @@
 		 * Bind event handlers.
 		 */
 		bindEvents: function() {
-			// Form submission
-			$('form').on('submit', this.handleFormSubmit.bind(this));
+			// Form submission - use event delegation to handle dynamically loaded forms
+			// Only attach handler to POST forms since GET forms (like filters) should use default browser navigation
+			$(document).on('submit', 'form[method="post"], form:not([method])', this.handleFormSubmit.bind(this));
 
 			// Tab switching
 			$('.nav-tab').on('click', this.handleTabSwitch.bind(this));
