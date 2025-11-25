@@ -268,6 +268,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
+				'file_name'     => isset( $save_result['file_name'] ) ? $save_result['file_name'] : '',
 				'edit_url'      => $edit_url,
 				'prompt'        => $result['prompt'],
 				'duration'      => $result['duration'],
@@ -598,6 +599,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'success',
 			'attachment_id',
 			'url',
+			'file_name',           // Filename of the generated video.
 			'edit_url',            // Media library edit link.
 			'async',               // Async mode flag - CRITICAL for UI detection.
 			'status',              // Job status (pending/completed/failed) - CRITICAL for UI.
