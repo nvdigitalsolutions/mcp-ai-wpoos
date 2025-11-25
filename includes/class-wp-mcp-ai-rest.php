@@ -8216,7 +8216,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$capability_flags = $tool_instance->get_capability_flags();
-			
+
 			if ( ! is_array( $capability_flags ) || empty( $capability_flags ) ) {
 				return array();
 			}
