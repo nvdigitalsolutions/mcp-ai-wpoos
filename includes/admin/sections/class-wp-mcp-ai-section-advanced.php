@@ -373,10 +373,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			}
 
 			// Instantiate the performance section to use its rendering methods.
-			// Use embedded mode to avoid nesting issues with the Advanced section wrapper.
 			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
 				$performance_section = new WP_MCP_AI_Section_Performance();
-				$performance_section->set_embedded( true )->render();
+				$performance_section->render();
 			} else {
 				?>
 				<div class="notice notice-info inline">
