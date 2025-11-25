@@ -14,6 +14,36 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.ph
 class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 
 	/**
+	 * Create a chat service instance with mock dependencies.
+	 *
+	 * @return WP_MCP_AI_Chat_Service
+	 */
+	private function create_chat_service() {
+		$mock_router = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$mock_rate_limiter = $this->getMockBuilder( WP_MCP_AI_Rate_Limit_Manager::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$mock_token_budget = $this->getMockBuilder( WP_MCP_AI_Token_Budget_Manager::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$mock_tool_registry = $this->getMockBuilder( WP_MCP_AI_Tool_Registry::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		return new WP_MCP_AI_Chat_Service(
+			$mock_router,
+			$mock_rate_limiter,
+			$mock_token_budget,
+			$mock_tool_registry
+		);
+	}
+
+	/**
 	 * Test that sanitize_for_llm includes image_url structure.
 	 */
 	public function test_sanitize_for_llm_includes_image_url() {
@@ -91,8 +121,7 @@ class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 	 * Test that extract_images_from_tool_results creates proper user message.
 	 */
 	public function test_extract_images_from_tool_results() {
-		// Create a reflection class to access the private method
-		$chat_service = new WP_MCP_AI_Chat_Service();
+		$chat_service = $this->create_chat_service();
 		$reflection   = new ReflectionClass( $chat_service );
 		$method       = $reflection->getMethod( 'extract_images_from_tool_results' );
 		$method->setAccessible( true );
@@ -156,8 +185,7 @@ class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 	 * Test that extract_images_from_tool_results returns null when no images found.
 	 */
 	public function test_extract_images_from_tool_results_no_images() {
-		// Create a reflection class to access the private method
-		$chat_service = new WP_MCP_AI_Chat_Service();
+		$chat_service = $this->create_chat_service();
 		$reflection   = new ReflectionClass( $chat_service );
 		$method       = $reflection->getMethod( 'extract_images_from_tool_results' );
 		$method->setAccessible( true );
@@ -181,5 +209,181 @@ class WP_MCP_AI_OpenAI_Image_Agentic_Loop_Test extends WP_UnitTestCase {
 
 		// Verify null was returned
 		$this->assertNull( $result, 'Should return null when no images found' );
+	}
+
+	/**
+	 * Test that ensure_response_has_content extracts text from tool results when LLM returns no content.
+	 *
+	 * This is the fix for the broken agentic loop when using generate_openai_image.
+	 */
+	public function test_ensure_response_has_content_extracts_text_from_tool_results() {
+		$chat_service = $this->create_chat_service();
+		$reflection   = new ReflectionClass( $chat_service );
+		$method       = $reflection->getMethod( 'ensure_response_has_content' );
+		$method->setAccessible( true );
+
+		// Simulate an empty LLM response (no content)
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => '', // Empty content - this is the issue!
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		// Simulate tool results with text field
+		$tool_result_messages = array(
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'generate_openai_image',
+				'content'      => wp_json_encode(
+					array(
+						'attachment_id' => 123,
+						'url'           => 'https://example.com/image1.png',
+						'text'          => 'Successfully generated image (ID: 123). Size: 1024x1024, Quality: medium',
+					)
+				),
+			),
+		);
+
+		$assistant_id = 1;
+
+		$result = $method->invoke( $chat_service, $response, $tool_result_messages, $assistant_id );
+
+		// Verify the response now has content extracted from tool results
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertArrayHasKey( 'message', $result['choices'][0] );
+		$this->assertArrayHasKey( 'content', $result['choices'][0]['message'] );
+		$this->assertNotEmpty( $result['choices'][0]['message']['content'], 'Content should be extracted from tool results' );
+		$this->assertStringContainsString( 'Successfully generated image', $result['choices'][0]['message']['content'] );
+	}
+
+	/**
+	 * Test that ensure_response_has_content does not modify response when content already exists.
+	 */
+	public function test_ensure_response_has_content_does_not_modify_existing_content() {
+		$chat_service = $this->create_chat_service();
+		$reflection   = new ReflectionClass( $chat_service );
+		$method       = $reflection->getMethod( 'ensure_response_has_content' );
+		$method->setAccessible( true );
+
+		$original_content = 'Here is the image I generated for you.';
+
+		// Simulate a response with existing content
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => $original_content,
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		// Simulate tool results with text field
+		$tool_result_messages = array(
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'generate_openai_image',
+				'content'      => wp_json_encode(
+					array(
+						'text' => 'This should NOT replace the original content.',
+					)
+				),
+			),
+		);
+
+		$assistant_id = 1;
+
+		$result = $method->invoke( $chat_service, $response, $tool_result_messages, $assistant_id );
+
+		// Verify the original content is preserved
+		$this->assertEquals( $original_content, $result['choices'][0]['message']['content'], 'Original content should be preserved' );
+	}
+
+	/**
+	 * Test that ensure_response_has_content handles null content.
+	 */
+	public function test_ensure_response_has_content_handles_null_content() {
+		$chat_service = $this->create_chat_service();
+		$reflection   = new ReflectionClass( $chat_service );
+		$method       = $reflection->getMethod( 'ensure_response_has_content' );
+		$method->setAccessible( true );
+
+		// Simulate a response with null content (common when LLM only wants to call tools)
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => null,
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		// Simulate tool results with text field
+		$tool_result_messages = array(
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'generate_openai_image',
+				'content'      => wp_json_encode(
+					array(
+						'text' => 'Image generated successfully!',
+					)
+				),
+			),
+		);
+
+		$assistant_id = 1;
+
+		$result = $method->invoke( $chat_service, $response, $tool_result_messages, $assistant_id );
+
+		// Verify the response now has content extracted from tool results
+		$this->assertNotEmpty( $result['choices'][0]['message']['content'] );
+		$this->assertEquals( 'Image generated successfully!', $result['choices'][0]['message']['content'] );
+	}
+
+	/**
+	 * Test that ensure_response_has_content returns unchanged response when no tool results.
+	 */
+	public function test_ensure_response_has_content_returns_unchanged_when_no_tool_results() {
+		$chat_service = $this->create_chat_service();
+		$reflection   = new ReflectionClass( $chat_service );
+		$method       = $reflection->getMethod( 'ensure_response_has_content' );
+		$method->setAccessible( true );
+
+		// Simulate a response with empty content
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => '',
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		// Empty tool results
+		$tool_result_messages = array();
+		$assistant_id         = 1;
+
+		$result = $method->invoke( $chat_service, $response, $tool_result_messages, $assistant_id );
+
+		// Verify the response is unchanged (empty content stays empty)
+		$this->assertEmpty( $result['choices'][0]['message']['content'] );
 	}
 }

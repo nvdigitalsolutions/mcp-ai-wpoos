@@ -2573,6 +2573,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Update response completion timestamp after agentic loop.
 			$transcript_context['response_completed_at'] = microtime( true );
 
+			// FALLBACK: If LLM returned no content but we have tool results, extract text from them.
+			// This happens when the LLM determines tool results are sufficient without adding commentary.
+			// Common with image generation tools where the tool result contains descriptive text.
+			$text_content = '';
+			if ( isset( $response['choices'][0]['message']['content'] ) ) {
+				$text_content = $this->normalise_message_content( $response['choices'][0]['message']['content'] );
+			} elseif ( isset( $response['content'] ) ) {
+				$text_content = $this->normalise_message_content( $response['content'] );
+			}
+
+			if ( ( '' === $text_content || ! is_string( $text_content ) ) && ! empty( $tool_result_messages ) ) {
+				$text_content = $this->extract_text_from_tool_results( $tool_result_messages );
+
+				if ( '' !== $text_content ) {
+					// Update response to include the extracted text so it appears in the message payload.
+					if ( ! isset( $response['choices'][0]['message'] ) ) {
+						$response['choices'][0]['message'] = array();
+					}
+					$response['choices'][0]['message']['content'] = $text_content;
+
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'Non-streaming: Extracted text from tool results',
+						array(
+							'extracted_length' => strlen( $text_content ),
+							'tool_count'       => count( $tool_result_messages ),
+							'assistant_id'     => $assistant_id,
+						)
+					);
+				}
+			}
+
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;

@@ -371,6 +371,11 @@ class WP_MCP_AI_Chat_Service {
 		// Update response completion timestamp after agentic loop.
 		$transcript_context['response_completed_at'] = microtime( true );
 
+		// FALLBACK: If LLM returned no content but we have tool results, extract text from them.
+		// This happens when the LLM determines tool results are sufficient without adding commentary.
+		// Common with image generation tools where the tool result contains descriptive text.
+		$response = $this->ensure_response_has_content( $response, $tool_result_messages, $assistant_id );
+
 		// Log orchestration completion.
 		WP_MCP_AI_Logger::log_event(
 			'debug',
@@ -1004,5 +1009,116 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $sanitized_result;
+	}
+
+	/**
+	 * Ensure the response has content, extracting from tool results if needed.
+	 *
+	 * When the LLM returns an empty response after tool execution in the agentic loop,
+	 * this method extracts descriptive text from the tool results themselves.
+	 * This ensures the chat UI always has content to display.
+	 *
+	 * @param array $response             LLM response.
+	 * @param array $tool_result_messages Tool result messages from agentic loop.
+	 * @param int   $assistant_id         Assistant ID for logging.
+	 * @return array Modified response with content if extracted.
+	 */
+	private function ensure_response_has_content( $response, $tool_result_messages, $assistant_id ) {
+		if ( ! is_array( $response ) ) {
+			return $response;
+		}
+
+		// Check if response already has content.
+		$has_content = false;
+		if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			$content = $response['choices'][0]['message']['content'];
+			if ( is_string( $content ) && '' !== trim( $content ) ) {
+				$has_content = true;
+			} elseif ( is_array( $content ) && ! empty( $content ) ) {
+				$has_content = true;
+			}
+		}
+
+		if ( $has_content || empty( $tool_result_messages ) ) {
+			return $response;
+		}
+
+		// Extract text from tool results.
+		$extracted_text = $this->extract_text_from_tool_results_for_response( $tool_result_messages );
+
+		if ( '' === $extracted_text ) {
+			return $response;
+		}
+
+		// Update response to include the extracted text.
+		if ( ! isset( $response['choices'][0]['message'] ) ) {
+			$response['choices'][0]['message'] = array(
+				'role' => 'assistant',
+			);
+		}
+		$response['choices'][0]['message']['content'] = $extracted_text;
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'Chat Service: Extracted text from tool results for empty LLM response',
+			array(
+				'extracted_length' => strlen( $extracted_text ),
+				'tool_count'       => count( $tool_result_messages ),
+				'assistant_id'     => $assistant_id,
+			)
+		);
+
+		return $response;
+	}
+
+	/**
+	 * Extract text content from tool result messages for response injection.
+	 *
+	 * @param array $tool_result_messages Array of tool result messages.
+	 * @return string Extracted text content, or empty string if none found.
+	 */
+	private function extract_text_from_tool_results_for_response( $tool_result_messages ) {
+		if ( empty( $tool_result_messages ) || ! is_array( $tool_result_messages ) ) {
+			return '';
+		}
+
+		$text_parts = array();
+
+		foreach ( $tool_result_messages as $tool_message ) {
+			if ( ! isset( $tool_message['content'] ) || '' === $tool_message['content'] ) {
+				continue;
+			}
+
+			$content = $tool_message['content'];
+
+			// Tool result content can be a JSON string or already an array.
+			if ( is_string( $content ) ) {
+				$decoded = json_decode( $content, true );
+				if ( is_array( $decoded ) ) {
+					$content = $decoded;
+				}
+			}
+
+			// Extract text field from tool result.
+			if ( is_array( $content ) && isset( $content['text'] ) && is_string( $content['text'] ) ) {
+				$text = trim( $content['text'] );
+				if ( '' !== $text ) {
+					$text_parts[] = $text;
+				}
+			} elseif ( is_string( $content ) ) {
+				// If content is just a string, use it directly.
+				$text = trim( $content );
+				if ( '' !== $text ) {
+					$text_parts[] = $text;
+				}
+			}
+		}
+
+		if ( empty( $text_parts ) ) {
+			return '';
+		}
+
+		// Join multiple tool results with double newlines.
+		return implode( "\n\n", $text_parts );
 	}
 }
