@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
@@ -5538,6 +5539,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return array();
 			}
 
+			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
+
 			$tools_payload = array();
 			foreach ( $allowed_tool_slugs as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
@@ -5562,11 +5565,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						continue;
 					}
 
+					$description = $tool->get_description();
+
+					// Add provider-specific fallback text for tools that require a different provider.
+					$description = $this->maybe_add_provider_fallback_text( $tool, $description, $chat_provider );
+
 					$tools_payload[] = array(
 						'type'     => 'function',
 						'function' => array(
 							'name'        => $tool->get_slug(),
-							'description' => $tool->get_description(),
+							'description' => $description,
 							'parameters'  => $schema,
 						),
 					);
@@ -5598,6 +5606,101 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $tools_payload;
+		}
+
+		/**
+		 * Add provider-specific fallback text to tool descriptions when the tool requires a different provider.
+		 *
+		 * When a tool requires a specific provider (e.g., Gemini for image generation) but the chat
+		 * is using a different provider (e.g., OpenAI), this method appends informative fallback text
+		 * to help the LLM understand the tool's requirements and limitations.
+		 *
+		 * @param WP_MCP_AI_Tool_Interface $tool          The tool instance.
+		 * @param string                   $description   The original tool description.
+		 * @param string                   $chat_provider The current chat provider (e.g., 'openai', 'gemini').
+		 * @return string The description with optional fallback text appended.
+		 */
+		protected function maybe_add_provider_fallback_text( $tool, $description, $chat_provider ) {
+			// Only process tools that implement the rules interface.
+			if ( ! $tool instanceof WP_MCP_AI_Tool_Rules_Interface ) {
+				return $description;
+			}
+
+			$rules = $tool->get_tool_rules();
+
+			// Check if the tool has provider requirements.
+			if ( empty( $rules['model_requirements']['providers'] ) || ! is_array( $rules['model_requirements']['providers'] ) ) {
+				return $description;
+			}
+
+			$required_providers = $rules['model_requirements']['providers'];
+
+			// If the current chat provider is in the list of required providers, no fallback needed.
+			if ( in_array( $chat_provider, $required_providers, true ) ) {
+				return $description;
+			}
+
+			// Build fallback text based on the required providers.
+			$fallback_parts = array();
+
+			// Check for Gemini-specific tools when using OpenAI.
+			if ( 'openai' === $chat_provider && in_array( 'gemini', $required_providers, true ) ) {
+				$fallback_parts[] = sprintf(
+					/* translators: %s: required provider name (e.g., "Gemini") */
+					__( 'Note: This tool uses the %s API for image processing. A valid Gemini API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
+					$this->format_provider_name( 'gemini' )
+				);
+			}
+
+			// Check for OpenAI-specific tools when using Gemini.
+			if ( 'gemini' === $chat_provider && in_array( 'openai', $required_providers, true ) ) {
+				$fallback_parts[] = sprintf(
+					/* translators: %s: required provider name (e.g., "OpenAI") */
+					__( 'Note: This tool uses the %s API. A valid OpenAI API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
+					$this->format_provider_name( 'openai' )
+				);
+			}
+
+			// If no specific fallback text was generated, create a generic one.
+			if ( empty( $fallback_parts ) && ! empty( $required_providers ) ) {
+				$provider_list = implode( ', ', array_map( array( $this, 'format_provider_name' ), $required_providers ) );
+				$fallback_parts[] = sprintf(
+					/* translators: %s: comma-separated list of required providers */
+					__( 'Note: This tool requires one of the following providers: %s.', 'wp-mcp-ai' ),
+					$provider_list
+				);
+			}
+
+			// Append fallback text to the description with proper punctuation handling.
+			if ( ! empty( $fallback_parts ) ) {
+				$description = rtrim( $description );
+				// Add period if description doesn't end with punctuation.
+				if ( '' !== $description && ! preg_match( '/[.!?]$/', $description ) ) {
+					$description .= '.';
+				}
+				$description .= ' ' . implode( ' ', $fallback_parts );
+			}
+
+			return $description;
+		}
+
+		/**
+		 * Format a provider identifier to a human-readable name.
+		 *
+		 * @param string $provider The provider identifier (e.g., 'openai', 'gemini').
+		 * @return string The formatted provider name (e.g., 'OpenAI', 'Gemini').
+		 */
+		protected function format_provider_name( $provider ) {
+			$provider_names = array(
+				'openai'    => 'OpenAI',
+				'gemini'    => 'Gemini',
+				'anthropic' => 'Anthropic',
+				'ollama'    => 'Ollama',
+			);
+
+			$provider = strtolower( $provider );
+
+			return isset( $provider_names[ $provider ] ) ? $provider_names[ $provider ] : ucfirst( $provider );
 		}
 
 		/**
