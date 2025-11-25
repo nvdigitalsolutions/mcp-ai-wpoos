@@ -7236,7 +7236,11 @@
     }
 
     /**
-     * Display async tool result in the chat
+     * Display async tool result in the chat and persist it in the conversation.
+     * This ensures tool results are part of the agentic flow and available for:
+     * - Subsequent AI messages (context continuity)
+     * - Conversation restoration from storage
+     * - CCT persistence
      * 
      * @param {Object} state Chat state object
      * @param {string} toolName Tool name
@@ -7266,11 +7270,62 @@
             resultText = toolName + ': ' + getString('completed', 'Completed successfully');
         }
 
-        // Display the tool result with attachments
-        appendMessage(state.messagesEl, 'tool', {
+        // Build display payload for UI rendering
+        const displayPayload = {
             text: '✓ ' + resultText,
             attachments: attachments
-        });
+        };
+
+        // Display the tool result with attachments
+        const messageElement = appendMessage(state.messagesEl, 'tool', displayPayload);
+
+        // Add tool result to conversation state for agentic flow continuity
+        // This ensures the tool result is available for subsequent AI messages
+        if (state.conversation && Array.isArray(state.conversation)) {
+            // Build the tool message for conversation history
+            // Content should be the raw result for API compatibility
+            let contentForApi = '';
+            if (typeof result === 'object') {
+                try {
+                    contentForApi = JSON.stringify(result);
+                } catch (e) {
+                    contentForApi = resultText;
+                }
+            } else {
+                contentForApi = String(result);
+            }
+
+            // Extract display metadata for proper UI restoration
+            const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
+
+            // Create tool message with display metadata for persistence
+            const toolMessage = createConversationMessage(
+                'tool',
+                contentForApi,
+                displayMetadata,
+                {
+                    name: toolName,
+                    // Generate a unique tool_call_id for async results
+                    tool_call_id: 'async_' + toolName + '_' + Date.now()
+                }
+            );
+
+            state.conversation.push(toolMessage);
+
+            // Log for debugging
+            if (window.console && console.log) {
+                console.log('[WP oOS] Added async tool result to conversation:', {
+                    tool_name: toolName,
+                    conversation_length: state.conversation.length
+                });
+            }
+
+            // Save conversation to storage for persistence
+            saveConversationToStorage(state);
+
+            // Also save to CCT if available (silent, non-blocking)
+            saveConversationToCCT(state, { silent: true });
+        }
     }
 
     function formatBytes(bytes) {
