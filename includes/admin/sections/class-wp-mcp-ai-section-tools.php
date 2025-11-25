@@ -955,7 +955,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 				<!-- Search and Filter Bar -->
 				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<form method="get" action="" style="display: flex; gap: 10px; align-items: center;">
+					<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" style="display: flex; gap: 10px; align-items: center;">
 						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
 						<input type="hidden" name="tab" value="tools">
 						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>">
