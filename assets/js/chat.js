@@ -6160,9 +6160,13 @@
             text = result.text.trim();
         } else if (typeof result.summary === 'string' && result.summary.trim()) {
             text = result.summary.trim();
-        } else if (typeof result.summary === 'object' && result.summary !== null && result.tests) {
+        } else if (typeof result.summary === 'object' && result.summary !== null && 
+                   typeof result.tests === 'object' && result.tests !== null) {
             // Handle get_site_health tool result structure with summary object
-            text = extractSiteHealthSummary(result);
+            const siteHealthText = extractSiteHealthSummary(result);
+            if (siteHealthText) {
+                text = siteHealthText;
+            }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
         } else if (Array.isArray(result.notices) && result.notices.length > 0) {
