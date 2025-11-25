@@ -955,11 +955,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 				<!-- Search and Filter Bar -->
 				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" style="display: flex; gap: 10px; align-items: center;">
-						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
-						<input type="hidden" name="tab" value="tools">
-						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>">
-
+					<div id="wp-mcp-ai-tools-filter-form" style="display: flex; gap: 10px; align-items: center;">
 						<label for="tool_search" style="font-weight: 600;">
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
 						</label>
@@ -982,7 +978,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php endforeach; ?>
 						</select>
 
-						<button type="submit" class="button">
+						<button type="button" id="wp-mcp-ai-filter-tools" class="button">
 							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
 						</button>
 
@@ -991,7 +987,45 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
 							</a>
 						<?php endif; ?>
-					</form>
+					</div>
+
+					<script>
+					(function($) {
+						$('#wp-mcp-ai-filter-tools').on('click', function() {
+							const search = $('#tool_search').val();
+							const group = $('#tool_group').val();
+							const url = new URL(window.location.href);
+							
+							// Update URL parameters
+							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+							url.searchParams.set('tab', 'tools');
+							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+							
+							if (search) {
+								url.searchParams.set('tool_search', search);
+							} else {
+								url.searchParams.delete('tool_search');
+							}
+							
+							if (group) {
+								url.searchParams.set('tool_group', group);
+							} else {
+								url.searchParams.delete('tool_group');
+							}
+							
+							// Navigate to filtered URL
+							window.location.href = url.toString();
+						});
+						
+						// Allow Enter key to trigger filter
+						$('#tool_search, #tool_group').on('keypress', function(e) {
+							if (e.which === 13) {
+								e.preventDefault();
+								$('#wp-mcp-ai-filter-tools').click();
+							}
+						});
+					})(jQuery);
+					</script>
 				</div>
 
 				<!-- Tools by Category -->
