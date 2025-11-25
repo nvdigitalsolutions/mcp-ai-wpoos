@@ -7307,7 +7307,9 @@
 
             // Generate a unique tool_call_id for async results
             // Use timestamp + random suffix to avoid collisions if multiple tools complete simultaneously
-            const toolCallId = 'async_' + toolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            // Sanitize toolName to only allow alphanumeric and underscore characters
+            const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
+            const toolCallId = 'async_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 
             // Create tool message with display metadata for persistence
             const toolMessage = createConversationMessage(
