@@ -608,9 +608,19 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 		if ( isset( $notifier_status['metadata']['message'] ) ) {
 			$result['progress_message'] = $notifier_status['metadata']['message'];
+			// Also set 'message' field for delegation messages that include job IDs.
+			// This ensures the chat UI can display the veo job ID to the user.
+			if ( ! isset( $result['message'] ) || empty( $result['message'] ) ) {
+				$result['message'] = $notifier_status['metadata']['message'];
+			}
 		}
 		if ( isset( $notifier_status['metadata']['poll_attempt'] ) ) {
 			$result['poll_attempt'] = $notifier_status['metadata']['poll_attempt'];
+		}
+		// Add delegated_to field if available from Job Notifier metadata.
+		// This indicates the job was delegated to a nested async job (e.g., veo video generation).
+		if ( isset( $notifier_status['metadata']['delegated_to'] ) && ! isset( $result['delegated_to'] ) ) {
+			$result['delegated_to'] = $notifier_status['metadata']['delegated_to'];
 		}
 
 		return $result;
