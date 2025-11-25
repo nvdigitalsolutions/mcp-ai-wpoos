@@ -719,21 +719,20 @@
 			}
 
 			// Security: Validate URL is a safe same-origin admin URL to prevent open redirects.
+			// We check that the URL is same-origin and contains expected admin path segments.
 			const currentOrigin = window.location.origin;
 			const isAbsoluteUrl = baseUrl.startsWith('http://') || baseUrl.startsWith('https://');
 
-			// For absolute URLs, ensure it starts with current origin + /wp-admin/ path.
-			// For relative URLs, ensure it starts with /wp-admin/.
 			let isValidUrl = false;
 			if (isAbsoluteUrl) {
-				// Absolute URL must start with current origin and path must start with /wp-admin/.
-				if (baseUrl.startsWith(currentOrigin)) {
-					const urlPath = baseUrl.substring(currentOrigin.length);
-					isValidUrl = urlPath.startsWith('/wp-admin/');
-				}
+				// Absolute URL must start with current origin (same-origin policy).
+				// Also verify it contains admin.php to ensure it's an admin page URL.
+				isValidUrl = baseUrl.startsWith(currentOrigin + '/') && baseUrl.includes('admin.php');
 			} else {
-				// Relative URL must start with /wp-admin/ to prevent path traversal attacks.
-				isValidUrl = baseUrl.startsWith('/wp-admin/');
+				// Relative URL - ensure it's a valid path (not protocol-relative or special scheme).
+				// Must not start with // (protocol-relative) or contain : before first / (scheme).
+				const hasScheme = baseUrl.indexOf(':') !== -1 && baseUrl.indexOf(':') < baseUrl.indexOf('/');
+				isValidUrl = !baseUrl.startsWith('//') && !hasScheme && baseUrl.includes('admin.php');
 			}
 
 			if (!isValidUrl) {
