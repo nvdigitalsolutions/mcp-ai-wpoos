@@ -8787,6 +8787,10 @@
         let buffer = '';
         let fullContent = '';
         
+        // Track the final data structure containing tool_results and complete response
+        // This is captured when we receive an SSE event with data.data
+        let capturedFinalData = null;
+        
         // Initialize streaming content state variable
         state.streamingContent = '';
 
@@ -8796,8 +8800,15 @@
                     // Diagnostic logging (Separation of Concerns)
                     streamingLogger.logStreamComplete({
                         contentLength: fullContent.length,
-                        contentSample: fullContent.substring(0, 100)
+                        contentSample: fullContent.substring(0, 100),
+                        hasFinalData: !!capturedFinalData
                     });
+                    
+                    // Include captured finalData if we have it
+                    // This ensures tool_results and complete response data are preserved
+                    if (capturedFinalData) {
+                        return { content: fullContent, finalData: capturedFinalData };
+                    }
                     return { content: fullContent };
                 }
 
@@ -8829,6 +8840,10 @@
 
                     // Handle [DONE] marker
                     if (eventData.trim() === '[DONE]') {
+                        // Include captured finalData if we have it
+                        if (capturedFinalData) {
+                            return { content: fullContent, finalData: capturedFinalData };
+                        }
                         return { content: fullContent };
                     }
 
@@ -8975,6 +8990,10 @@
                             // Check for final response with complete data first
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
+                                // Capture the final data for use when stream ends
+                                // This preserves tool_results and complete response structure
+                                capturedFinalData = data;
+                                
                                 // Extract text from final response if no chunks were received
                                 // This handles cases where streaming chunks weren't sent
                                 if (!fullContent) {
@@ -9040,17 +9059,14 @@
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
-                                        
-                                        if (window.console && console.log) {
-                                            console.log('[WP oOS] Extracted final text from data.data:', {
-                                                textLength: finalText.length,
-                                                textSample: finalText.substring(0, 100)
-                                            });
-                                        }
                                     }
                                 }
                                 
-                                return { content: fullContent, finalData: data };
+                                // IMPORTANT: Don't return here - continue processing remaining events.
+                                // Previously, returning early here would lose capturedFinalData if the
+                                // [DONE] marker or result.done arrived in the same or subsequent chunk.
+                                // By continuing, we ensure capturedFinalData is preserved and included
+                                // in the final return when the stream ends.
                             }
                             // If we found streaming content, add it to fullContent and update UI
                             else if (contentChunk) {
@@ -9365,6 +9381,9 @@
         const message = choice && choice.message ? choice.message : null;
 
         if (!message) {
+            if (DEBUG_MODE && window.console && console.error) {
+                console.error('[WP oOS] handleChatResponse: No message found in response');
+            }
             setStatus(state.container, getString('error', 'Something went wrong.'));
             return Promise.resolve();
         }
