@@ -199,8 +199,9 @@ class WP_MCP_AI_Chat_Service {
 		);
 
 		// Execute agentic loop if tools are requested.
-		$iteration            = 0;
-		$tool_result_messages = array();
+		$iteration             = 0;
+		$tool_result_messages  = array();
+		$agentic_tool_messages = array(); // Track intermediate assistant messages with tool_calls for conversation state preservation.
 
 		while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
 			$tool_calls    = $this->extract_tool_calls_from_response( $response );
@@ -262,11 +263,13 @@ class WP_MCP_AI_Chat_Service {
 			}
 
 			// Add assistant message with tool_calls to conversation.
-			$messages[] = array(
+			$assistant_tool_message  = array(
 				'role'       => 'assistant',
 				'content'    => isset( $response['choices'][0]['message']['content'] ) ? $response['choices'][0]['message']['content'] : '',
 				'tool_calls' => $tool_calls,
 			);
+			$messages[]              = $assistant_tool_message;
+			$agentic_tool_messages[] = $assistant_tool_message;
 
 			// Execute each tool with iteration context for flow stage validation.
 			$iteration_start_time = microtime( true );
@@ -376,18 +379,26 @@ class WP_MCP_AI_Chat_Service {
 			'debug',
 			'Chat orchestration completed',
 			array(
-				'assistant_id'       => $assistant_id,
-				'total_iterations'   => $iteration,
-				'max_iterations'     => $max_iterations,
-				'tool_results_count' => count( $tool_result_messages ),
-				'total_messages'     => count( $messages ),
-				'total_time'         => round( ( microtime( true ) - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
+				'assistant_id'                => $assistant_id,
+				'total_iterations'            => $iteration,
+				'max_iterations'              => $max_iterations,
+				'tool_results_count'          => count( $tool_result_messages ),
+				'agentic_tool_messages_count' => count( $agentic_tool_messages ),
+				'total_messages'              => count( $messages ),
+				'total_time'                  => round( ( microtime( true ) - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
 			)
 		);
 
 		// Add tool results to response for frontend display.
 		if ( ! empty( $tool_result_messages ) ) {
 			$response['tool_results'] = $tool_result_messages;
+		}
+
+		// Add intermediate assistant messages with tool_calls to response for conversation state preservation.
+		// This ensures the frontend can reconstruct the full conversation history including which tools
+		// were called and when, which is essential for agentic flow continuity and transcript storage.
+		if ( ! empty( $agentic_tool_messages ) ) {
+			$response['agentic_tool_messages'] = $agentic_tool_messages;
 		}
 
 		// Record transcript if needed.
@@ -530,10 +541,10 @@ class WP_MCP_AI_Chat_Service {
 	 */
 	private function is_async_tool_result( $tool_result ) {
 		return ! is_wp_error( $tool_result ) &&
-		       is_array( $tool_result ) &&
-		       isset( $tool_result['async'] ) &&
-		       $tool_result['async'] &&
-		       ! empty( $tool_result['job_id'] );
+				is_array( $tool_result ) &&
+				isset( $tool_result['async'] ) &&
+				$tool_result['async'] &&
+				! empty( $tool_result['job_id'] );
 	}
 
 	/**
@@ -657,10 +668,10 @@ class WP_MCP_AI_Chat_Service {
 					'async_tool_wait_complete',
 					sprintf( 'Async tool completed: %s (job_id: %s, polls: %d)', $tool_name, $job_id, $poll_count ),
 					array(
-						'tool_name'   => $tool_name,
-						'job_id'      => $job_id,
-						'poll_count'  => $poll_count,
-						'has_result'  => ! empty( $result ),
+						'tool_name'  => $tool_name,
+						'job_id'     => $job_id,
+						'poll_count' => $poll_count,
+						'has_result' => ! empty( $result ),
 					)
 				);
 

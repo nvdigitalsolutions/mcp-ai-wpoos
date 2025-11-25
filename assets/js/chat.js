@@ -9596,6 +9596,37 @@
             state.conversation.push(assistantMessage);
         }
 
+        // Add intermediate assistant messages with tool_calls from agentic loop to conversation.
+        // These messages capture the AI's reasoning and tool invocations during multi-step workflows.
+        // They must be added before tool_results to maintain correct message ordering for API compatibility.
+        if (data && Array.isArray(data.agentic_tool_messages) && data.agentic_tool_messages.length > 0) {
+            data.agentic_tool_messages.forEach(function (agenticMessage) {
+                if (agenticMessage && agenticMessage.role === 'assistant') {
+                    // Create a properly formatted assistant message for conversation state
+                    const formattedMessage = {
+                        role: 'assistant',
+                        content: agenticMessage.content || null
+                    };
+                    
+                    // Include tool_calls if present
+                    if (agenticMessage.tool_calls && Array.isArray(agenticMessage.tool_calls)) {
+                        formattedMessage.tool_calls = agenticMessage.tool_calls;
+                    }
+                    
+                    state.conversation.push(formattedMessage);
+                    
+                    // Log for debugging
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Added agentic assistant message to conversation:', {
+                            has_content: !!agenticMessage.content,
+                            tool_calls_count: agenticMessage.tool_calls ? agenticMessage.tool_calls.length : 0,
+                            conversation_length: state.conversation.length
+                        });
+                    }
+                }
+            });
+        }
+
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             data.tool_results.forEach(function (toolResult) {
