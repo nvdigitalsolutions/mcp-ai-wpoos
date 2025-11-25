@@ -969,16 +969,22 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Get model from operation (set by generate_video_with_model).
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
 
+		// Pre-generate the expected filename for file-based polling.
+		// This allows us to detect completion by checking for file creation
+		// in addition to polling the Gemini API operation endpoint.
+		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+
 		// Store operation metadata in transient.
 		$metadata = array(
-			'job_id'         => $job_id,
-			'operation_name' => $operation['operation_name'],
-			'model'          => $model,
-			'args'           => $args,
-			'status'         => 'pending',
-			'queued_at'      => time(),
-			'poll_attempt'   => 0,
-			'max_attempts'   => self::MAX_POLLING_ATTEMPTS,
+			'job_id'            => $job_id,
+			'operation_name'    => $operation['operation_name'],
+			'model'             => $model,
+			'args'              => $args,
+			'status'            => 'pending',
+			'queued_at'         => time(),
+			'poll_attempt'      => 0,
+			'max_attempts'      => self::MAX_POLLING_ATTEMPTS,
+			'expected_filename' => $expected_filename,
 		);
 
 		// Store parent_job_id if provided (from async executor).
@@ -1096,6 +1102,34 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				)
 			);
 			return;
+		}
+
+		// First, check if the video file has been created in the uploads directory.
+		// This provides faster completion detection than polling the Gemini API.
+		if ( isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
+			$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
+			
+			if ( ! is_wp_error( $attachment ) && $attachment ) {
+				// File was found - video generation is complete!
+				WP_MCP_AI_Logger::log_event(
+					'veo_file_based_completion_detected',
+					'Video file detected in uploads directory',
+					array(
+						'job_id'   => $job_id,
+						'filename' => $metadata['expected_filename'],
+						'attempts' => $metadata['poll_attempt'],
+					)
+				);
+
+				// Mark as completed and store result.
+				$metadata['status'] = 'completed';
+				$metadata['result'] = $attachment;
+				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+				// Fire completion hooks.
+				$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+				return;
+			}
 		}
 
 		// Poll the Gemini API for status.
@@ -1314,106 +1348,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-			WP_MCP_AI_Logger::log_event(
-				'veo_async_completed',
-				'Veo async video generation completed',
-				array(
-					'job_id'        => $job_id,
-					'attempts'      => $metadata['poll_attempt'],
-					'has_video_url' => isset( $metadata['result']['video_url'] ),
-					'has_url'       => isset( $metadata['result']['url'] ),
-				)
-			);
-
-			// Prepare hook metadata with user_id and assistant_id for chat client routing.
-			$hook_metadata = array(
-				'tool'     => 'generate_veo_video',
-				'prompt'   => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
-				'duration' => isset( $metadata['args']['duration'] ) ? $metadata['args']['duration'] : 0,
-			);
-
-			// Include user_id if available.
-			if ( isset( $metadata['args']['user_id'] ) ) {
-				$hook_metadata['user_id'] = absint( $metadata['args']['user_id'] );
-			}
-
-			// Include assistant_id if available.
-			if ( isset( $metadata['assistant_id'] ) ) {
-				$hook_metadata['assistant_id'] = absint( $metadata['assistant_id'] );
-			}
-
-			// CRITICAL ORDER: Fire veo job completion hook FIRST before parent job completion.
-			// This ensures the veo job result is cached in the notification system before
-			// the parent job is completed, preventing race conditions where both jobs complete
-			// simultaneously and the chat client times out or misses the result.
-			//
-			// Execution order:
-			// 1. Fire veo job (veo_xxx) completion hook -> caches result in notification system
-			// 2. Fire parent job (async_xxx) completion hook -> caches result and triggers orchestrator
-			//
-			// This sequential order ensures the chat client polling either job ID will see the
-			// cached result and receive the video URL properly.
-			
-			// Log the result being sent to ensure video URL is present.
-			if ( isset( $metadata['result'] ) && is_array( $metadata['result'] ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'veo_firing_completion_hook',
-					'Firing veo job completion hook with result',
-					array(
-						'job_id'        => $job_id,
-						'has_video_url' => isset( $metadata['result']['video_url'] ),
-						'has_url'       => isset( $metadata['result']['url'] ),
-						'url_value'     => isset( $metadata['result']['url'] ) ? substr( $metadata['result']['url'], 0, 100 ) : 'none',
-					)
-				);
-			}
-			
-			do_action(
-				'wp_mcp_ai_job_completed',
-				$job_id,
-				isset( $metadata['result'] ) ? $metadata['result'] : array(),
-				$hook_metadata
-			);
-
-			// Fire tool execution hook for token tracking.
-			// This ensures veo jobs without parent async jobs are still tracked.
-			// For veo jobs with parent jobs, the parent completion will also fire this hook,
-			// but firing it here ensures direct veo job token tracking when there's no parent.
-			// The hook handler (WP_MCP_AI_Tool_Token_Limits::record_tool_usage) is idempotent
-			// per session, so duplicate calls for the same job won't double-count tokens.
-			$tool_slug = 'generate_veo_video';
-			$arguments = isset( $metadata['args'] ) ? $metadata['args'] : array();
-			$context   = array();
-
-			// Build context from metadata.
-			if ( isset( $metadata['args']['user_id'] ) ) {
-				$context['user_id'] = absint( $metadata['args']['user_id'] );
-			}
-			if ( isset( $metadata['assistant_id'] ) ) {
-				$context['assistant_id'] = absint( $metadata['assistant_id'] );
-			}
-
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, isset( $metadata['result'] ) ? $metadata['result'] : array() );
-
-			// IMPORTANT: Complete parent async job AFTER veo job hooks are fired WITH A DELAY.
-			// This ensures proper sequencing:
-			// 1. Veo job completion is cached in notification system (via hook above)
-			// 2. Wait 1 second to ensure cache write completes and client can poll veo job
-			// 3. Parent job completion is cached (via complete_parent_job hook)
-			// 4. Chat client polling either job ID will receive the result
-			//
-			// The 1-second delay prevents race conditions where both jobs complete
-			// simultaneously and the chat client times out or misses the video URL result.
-			// Without this delay, the notification system cache can be overwritten before
-			// the client polls, resulting in the video not appearing in the chat.
-			if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
-				// Add 1-second delay before completing parent job.
-				// This gives the notification system time to cache the veo job result
-				// and allows the chat client to poll and receive the video URL.
-				sleep( 1 );
-				
-				$this->complete_parent_job( $metadata['parent_job_id'], $metadata['result'] );
-			}
+			// Fire completion hooks using the shared method.
+			$this->fire_job_completion_hooks( $job_id, $metadata, isset( $metadata['result'] ) ? $metadata['result'] : array() );
 
 			return;
 		}
@@ -1666,11 +1602,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param int    $user_id User ID for ownership.
 	 * @param string $job_id  Optional. Job ID for tracking. Stored as metadata to allow
 	 *                        recovery of completion status when transient expires.
+	 *                        When provided, the filename will be based on the job_id to
+	 *                        enable file-based polling detection.
 	 * @return array|WP_Error Attachment result array or error.
 	 */
 	protected function save_video_to_media( $result, $user_id, $job_id = '' ) {
-		// Generate unique filename.
-		$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+		// Generate filename.
+		// If job_id is provided, use it for predictable file-based polling.
+		// Otherwise, generate a unique filename using uniqid().
+		if ( ! empty( $job_id ) ) {
+			$filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
+		} else {
+			$filename = 'veo-video-' . uniqid( '', true ) . '.mp4';
+		}
 
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );
@@ -1817,5 +1761,172 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$context   = isset( $parent_metadata['context'] ) ? $parent_metadata['context'] : array();
 
 		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+	}
+
+	/**
+	 * Check if video file has been created in uploads directory.
+	 *
+	 * This method enables file-based polling detection as an alternative to
+	 * API polling. When a video file with the expected filename is found,
+	 * we can immediately detect completion without waiting for API response.
+	 *
+	 * @param string $expected_filename Expected filename (e.g., 'veo-video-{job_id}.mp4').
+	 * @param string $job_id            Job identifier for logging and metadata.
+	 * @return array|WP_Error|false Attachment data if file found, WP_Error on error, false if not found.
+	 */
+	protected function check_for_created_video_file( $expected_filename, $job_id ) {
+		// Query for attachments with the expected filename.
+		// This searches the WordPress media library for a post with matching filename.
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => 1,
+			'meta_query'     => array(
+				array(
+					'key'     => '_wp_attached_file',
+					'value'   => $expected_filename,
+					'compare' => 'LIKE',
+				),
+			),
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( ! $query->have_posts() ) {
+			// File not created yet.
+			return false;
+		}
+
+		$attachment    = $query->posts[0];
+		$attachment_id = $attachment->ID;
+
+		// Get stored metadata.
+		$prompt       = get_post_meta( $attachment_id, '_veo_prompt', true );
+		$duration     = get_post_meta( $attachment_id, '_veo_duration', true );
+		$aspect_ratio = get_post_meta( $attachment_id, '_veo_aspect_ratio', true );
+		$resolution   = get_post_meta( $attachment_id, '_veo_resolution', true );
+		$model        = get_post_meta( $attachment_id, '_veo_model', true );
+		$provider     = get_post_meta( $attachment_id, '_veo_provider', true );
+
+		// Build result matching the format from poll_video_async completion.
+		$url      = wp_get_attachment_url( $attachment_id );
+		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+
+		return array(
+			'success'       => true,
+			'job_id'        => $job_id,
+			'attachment_id' => $attachment_id,
+			'url'           => $url,
+			'edit_url'      => $edit_url,
+			'prompt'        => $prompt,
+			'duration'      => absint( $duration ),
+			'aspect_ratio'  => $aspect_ratio,
+			'resolution'    => $resolution,
+			'model'         => $model,
+			'provider'      => $provider,
+			'video_url'     => array(
+				'url' => $url,
+			),
+			'text'          => sprintf(
+				/* translators: 1: attachment ID, 2: duration in seconds, 3: resolution, 4: aspect ratio */
+				__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s, %4$s', 'wp-mcp-ai' ),
+				$attachment_id,
+				absint( $duration ),
+				$resolution,
+				$aspect_ratio
+			),
+			'message'       => sprintf(
+				/* translators: 1: media library edit URL, 2: attachment ID */
+				__( 'Video generation completed. Saved to <a href="%1$s" target="_blank">Media Library (ID %2$d)</a>.', 'wp-mcp-ai' ),
+				esc_url( $edit_url ),
+				$attachment_id
+			),
+		);
+	}
+
+	/**
+	 * Fire job completion hooks.
+	 *
+	 * Extracted into a separate method to avoid code duplication between
+	 * file-based polling detection and API-based polling.
+	 *
+	 * @param string $job_id    Job identifier.
+	 * @param array  $metadata  Job metadata.
+	 * @param array  $result    Job result data.
+	 */
+	protected function fire_job_completion_hooks( $job_id, $metadata, $result ) {
+		WP_MCP_AI_Logger::log_event(
+			'veo_async_completed',
+			'Veo async video generation completed',
+			array(
+				'job_id'        => $job_id,
+				'attempts'      => $metadata['poll_attempt'],
+				'has_video_url' => isset( $result['video_url'] ),
+				'has_url'       => isset( $result['url'] ),
+			)
+		);
+
+		// Prepare hook metadata with user_id and assistant_id for chat client routing.
+		$hook_metadata = array(
+			'tool'     => 'generate_veo_video',
+			'prompt'   => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
+			'duration' => isset( $metadata['args']['duration'] ) ? $metadata['args']['duration'] : 0,
+		);
+
+		// Include user_id if available.
+		if ( isset( $metadata['args']['user_id'] ) ) {
+			$hook_metadata['user_id'] = absint( $metadata['args']['user_id'] );
+		}
+
+		// Include assistant_id if available.
+		if ( isset( $metadata['assistant_id'] ) ) {
+			$hook_metadata['assistant_id'] = absint( $metadata['assistant_id'] );
+		}
+
+		// Log the result being sent to ensure video URL is present.
+		if ( isset( $result ) && is_array( $result ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'veo_firing_completion_hook',
+				'Firing veo job completion hook with result',
+				array(
+					'job_id'        => $job_id,
+					'has_video_url' => isset( $result['video_url'] ),
+					'has_url'       => isset( $result['url'] ),
+					'url_value'     => isset( $result['url'] ) ? substr( $result['url'], 0, 100 ) : 'none',
+				)
+			);
+		}
+		
+		do_action(
+			'wp_mcp_ai_job_completed',
+			$job_id,
+			$result,
+			$hook_metadata
+		);
+
+		// Fire tool execution hook for token tracking.
+		$tool_slug = 'generate_veo_video';
+		$arguments = isset( $metadata['args'] ) ? $metadata['args'] : array();
+		$context   = array();
+
+		// Build context from metadata.
+		if ( isset( $metadata['args']['user_id'] ) ) {
+			$context['user_id'] = absint( $metadata['args']['user_id'] );
+		}
+		if ( isset( $metadata['assistant_id'] ) ) {
+			$context['assistant_id'] = absint( $metadata['assistant_id'] );
+		}
+
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+
+		// Complete parent async job if present.
+		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+			// Add 1-second delay before completing parent job.
+			sleep( 1 );
+			
+			$this->complete_parent_job( $metadata['parent_job_id'], $result );
+		}
 	}
 }
