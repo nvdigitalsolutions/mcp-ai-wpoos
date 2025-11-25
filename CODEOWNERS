@@ -1,0 +1,21 @@
+# CODEOWNERS file for automatic PR review assignment
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @nvdigitalsolutions
+
+# Core plugin files
+/wp-mcp-ai.php @nvdigitalsolutions
+/includes/ @nvdigitalsolutions
+
+# Documentation
+/docs/ @nvdigitalsolutions
+*.md @nvdigitalsolutions
+
+# Configuration files
+/.github/ @nvdigitalsolutions
+/composer.json @nvdigitalsolutions
+/package.json @nvdigitalsolutions
+
+# Tests
+/tests/ @nvdigitalsolutions

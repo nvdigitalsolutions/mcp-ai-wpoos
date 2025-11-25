@@ -1,0 +1,50 @@
+{
+"editor.tabSize": 4,
+"editor.insertSpaces": false,
+"editor.detectIndentation": false,
+"editor.formatOnSave": false,
+"files.trimTrailingWhitespace": true,
+"files.insertFinalNewline": true,
+"files.exclude": {
+"**/.git": true,
+"**/.DS_Store": true,
+"**/node_modules": true,
+"**/vendor": false,
+"**/.phpunit.result.cache": true
+},
+"[php]": {
+"editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
+"editor.tabSize": 4,
+"editor.insertSpaces": false
+},
+"[javascript]": {
+"editor.defaultFormatter": "esbenp.prettier-vscode",
+"editor.tabSize": 2,
+"editor.insertSpaces": false
+},
+"[json]": {
+"editor.tabSize": 2,
+"editor.insertSpaces": false
+},
+"[markdown]": {
+"files.trimTrailingWhitespace": false
+},
+"phpcs.enable": true,
+"phpcs.standard": "WordPress",
+"intelephense.files.exclude": [
+"**/.git/**",
+"**/.svn/**",
+"**/.hg/**",
+"**/CVS/**",
+"**/.DS_Store/**",
+"**/node_modules/**",
+"**/bower_components/**"
+],
+"php.suggest.basic": false,
+"search.exclude": {
+"**/node_modules": true,
+"**/vendor": true,
+"**/.phpunit.result.cache": true,
+"**/coverage": true
+}
+}
