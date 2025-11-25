@@ -8,6 +8,23 @@
  */
 
 /**
+ * Helper class for testing protected methods of WP_MCP_AI_REST_Controller.
+ *
+ * This class exposes protected methods for unit testing purposes.
+ */
+class WP_MCP_AI_REST_Controller_Test_Helper extends WP_MCP_AI_REST_Controller {
+	/**
+	 * Public wrapper for testing the protected extract_usage_info_from_tool_result method.
+	 *
+	 * @param mixed $tool_result Tool result to extract usage from.
+	 * @return array|null Usage info or null.
+	 */
+	public function test_extract_usage_info( $tool_result ) {
+		return $this->extract_usage_info_from_tool_result( $tool_result );
+	}
+}
+
+/**
  * Class Test_Tool_Usage_Info_Extraction
  *
  * Tests the extract_usage_info_from_tool_result method functionality.
@@ -15,9 +32,9 @@
 class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 
 	/**
-	 * REST controller instance for testing protected methods.
+	 * REST controller test helper instance.
 	 *
-	 * @var WP_MCP_AI_REST_Controller
+	 * @var WP_MCP_AI_REST_Controller_Test_Helper
 	 */
 	protected $controller;
 
@@ -32,18 +49,8 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		}
 
-		// Create an anonymous subclass to access protected methods.
-		$this->controller = new class() extends WP_MCP_AI_REST_Controller {
-			/**
-			 * Public wrapper for testing the protected method.
-			 *
-			 * @param mixed $tool_result Tool result to extract usage from.
-			 * @return array|null Usage info or null.
-			 */
-			public function test_extract_usage_info( $tool_result ) {
-				return $this->extract_usage_info_from_tool_result( $tool_result );
-			}
-		};
+		// Create test helper instance to access protected methods.
+		$this->controller = new WP_MCP_AI_REST_Controller_Test_Helper();
 	}
 
 	/**
@@ -296,5 +303,51 @@ class Test_Tool_Usage_Info_Extraction extends WP_UnitTestCase {
 		$this->assertEquals( 'openai', $result['provider'] );
 		$this->assertEquals( 0.0035, $result['cost_usd'] );
 		$this->assertFalse( $result['cost_is_estimated'] );
+	}
+
+	/**
+	 * Test that negative cost values are not included.
+	 */
+	public function test_rejects_negative_cost() {
+		$tool_result = array(
+			'success' => true,
+			'usage'   => array(
+				'prompt_tokens'     => 100,
+				'completion_tokens' => 50,
+				'total_tokens'      => 150,
+			),
+			'cost'    => array(
+				'cost_usd'     => -0.0025,
+				'is_estimated' => false,
+			),
+		);
+		$result = $this->controller->test_extract_usage_info( $tool_result );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayNotHasKey( 'cost_usd', $result );
+		$this->assertArrayNotHasKey( 'cost_is_estimated', $result );
+	}
+
+	/**
+	 * Test that zero cost is accepted.
+	 */
+	public function test_accepts_zero_cost() {
+		$tool_result = array(
+			'success' => true,
+			'usage'   => array(
+				'prompt_tokens'     => 100,
+				'completion_tokens' => 50,
+				'total_tokens'      => 150,
+			),
+			'cost'    => array(
+				'cost_usd'     => 0.0,
+				'is_estimated' => true,
+			),
+		);
+		$result = $this->controller->test_extract_usage_info( $tool_result );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 0.0, $result['cost_usd'] );
+		$this->assertTrue( $result['cost_is_estimated'] );
 	}
 }

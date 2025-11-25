@@ -8172,7 +8172,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Include cost data if available in the tool result.
 			if ( isset( $tool_result['cost'] ) && is_array( $tool_result['cost'] ) ) {
 				$cost = $tool_result['cost'];
-				if ( isset( $cost['cost_usd'] ) && is_numeric( $cost['cost_usd'] ) ) {
+				// Validate cost is a non-negative number to prevent erroneous cost tracking.
+				if ( isset( $cost['cost_usd'] ) && is_numeric( $cost['cost_usd'] ) && $cost['cost_usd'] >= 0 ) {
 					$usage_info['cost_usd'] = (float) $cost['cost_usd'];
 
 					// Include cost is_estimated flag if different from usage is_estimated.
