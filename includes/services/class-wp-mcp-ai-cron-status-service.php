@@ -649,6 +649,60 @@ class WP_MCP_AI_Cron_Status_Service {
 					if ( ! isset( $result['result'] ) || empty( $result['result'] ) ) {
 						$result['result'] = $notifier_status['result'];
 					}
+
+					// Format result as tool_results array for chat client compatibility.
+					// The chat client expects async tool results in the same format as sync results:
+					// a tool_results array with tool messages containing the result data.
+					// This ensures videos, images, and other media are properly displayed.
+					if ( ! isset( $result['tool_results'] ) && isset( $result['tool_slug'] ) ) {
+						$tool_name = sanitize_text_field( $result['tool_slug'] );
+
+						// Generate a unique tool_call_id for the async result.
+						// Format: async_{tool_name}_{job_id} for traceability.
+						$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
+						$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
+
+						// Serialize the result for the tool message content.
+						$result_content = wp_json_encode( $result['result'] );
+						if ( false === $result_content ) {
+							// JSON encoding failed - use a simple message instead.
+							$result_content = wp_json_encode(
+								array(
+									'success' => true,
+									'message' => __( 'Tool completed successfully but result could not be serialized.', 'wp-mcp-ai' ),
+								)
+							);
+						}
+
+						// Build tool message for tool_results array.
+						$tool_message = array(
+							'role'         => 'tool',
+							'content'      => $result_content,
+							'tool_call_id' => $tool_call_id,
+							'name'         => $tool_name,
+						);
+
+						// Include usage data from result if available.
+						// This enables cost/token badges in the chat UI.
+						if ( isset( $result['result']['usage'] ) && is_array( $result['result']['usage'] ) ) {
+							$tool_message['usage'] = $result['result']['usage'];
+						}
+
+						// Include cost data from result if available.
+						// This enables cost badges in the chat UI.
+						if ( isset( $result['result']['cost'] ) && is_array( $result['result']['cost'] ) ) {
+							$tool_message['cost'] = $result['result']['cost'];
+						}
+
+						// Build tool_results array in OpenAI format.
+						$result['tool_results'] = array( $tool_message );
+
+						// Also add top-level cost for aggregated display.
+						// The chat client checks both data.cost and data.tool_results[].cost.
+						if ( isset( $result['result']['cost'] ) && ! isset( $result['cost'] ) ) {
+							$result['cost'] = $result['result']['cost'];
+						}
+					}
 				}
 			} elseif ( 'failed' === $notifier_job_status ) {
 				$result['status'] = 'failed';
