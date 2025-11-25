@@ -2451,11 +2451,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 
 					// Include capability flags for frontend badge display.
-					if ( $tool_instance instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
-						$capability_flags = $tool_instance->get_capability_flags();
-						if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
-							$full_tool_message['capability_flags'] = $capability_flags;
-						}
+					$capability_flags = $this->extract_capability_flags_from_tool( $tool_instance );
+					if ( ! empty( $capability_flags ) ) {
+						$full_tool_message['capability_flags'] = $capability_flags;
 					}
 
 					// Store sanitized tool result for frontend.
@@ -2918,11 +2916,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 
 					// Include capability flags for frontend badge display.
-					if ( $tool_instance instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
-						$capability_flags = $tool_instance->get_capability_flags();
-						if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
-							$full_tool_message['capability_flags'] = $capability_flags;
-						}
+					$capability_flags = $this->extract_capability_flags_from_tool( $tool_instance );
+					if ( ! empty( $capability_flags ) ) {
+						$full_tool_message['capability_flags'] = $capability_flags;
 					}
 
 					$tool_result_messages[] = $full_tool_message;
@@ -3945,7 +3941,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'assistant_id'     => $assistant_id,
 					'tool'             => $tool_slug,
 					'result'           => $result,
-					'capability_flags' => $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ? $tool->get_capability_flags() : array(),
+					'capability_flags' => $this->extract_capability_flags_from_tool( $tool ),
 				)
 			);
 		}
@@ -8201,6 +8197,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $usage_info;
+		}
+
+		/**
+		 * Extract capability flags from a tool instance.
+		 *
+		 * Returns an array of capability flag strings if the tool implements
+		 * the capability flags interface, empty array otherwise.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param WP_MCP_AI_Tool_Interface|null $tool_instance Tool instance.
+		 * @return array Array of capability flag strings.
+		 */
+		protected function extract_capability_flags_from_tool( $tool_instance ) {
+			if ( ! $tool_instance || ! ( $tool_instance instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) ) {
+				return array();
+			}
+
+			$capability_flags = $tool_instance->get_capability_flags();
+			
+			if ( ! is_array( $capability_flags ) || empty( $capability_flags ) ) {
+				return array();
+			}
+
+			return $capability_flags;
 		}
 
 		/**
