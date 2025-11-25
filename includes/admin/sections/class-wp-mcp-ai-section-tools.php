@@ -906,10 +906,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Displays all registered tools in a categorized table with enable/disable functionality.
 		 */
 		private function render_tools_manager() {
-			$registry     = WP_MCP_AI_Tool_Registry::get_instance();
-			$all_tools    = $registry->get_tools();
-			$tool_groups  = $registry->get_tool_group_map();
-			$group_labels = $registry->get_tool_group_labels();
+			$registry      = WP_MCP_AI_Tool_Registry::get_instance();
+			$all_tools     = $registry->get_tools();
+			$tool_groups   = $registry->get_tool_group_map();
+			$group_labels  = $registry->get_tool_group_labels();
+			$active_subtab = $this->get_active_subtab();
 
 			// Group tools by category.
 			$categorized_tools = array(
