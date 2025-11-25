@@ -718,14 +718,26 @@
 				return;
 			}
 
-			// Security: Ensure baseUrl is a same-origin admin URL to prevent open redirects.
-			// Check that URL starts with current origin or is a relative path to wp-admin.
+			// Security: Validate URL is a safe same-origin admin URL to prevent open redirects.
 			const currentOrigin = window.location.origin;
 			const isAbsoluteUrl = baseUrl.startsWith('http://') || baseUrl.startsWith('https://');
-			const isSameOrigin = isAbsoluteUrl ? baseUrl.startsWith(currentOrigin) : true;
-			const isAdminUrl = baseUrl.includes('/wp-admin/') || baseUrl.includes('admin.php');
 
-			if (!isSameOrigin || !isAdminUrl) {
+			// For absolute URLs, ensure it starts with current origin + admin path.
+			// For relative URLs, ensure it starts with a valid admin path.
+			let isValidUrl = false;
+			if (isAbsoluteUrl) {
+				// Absolute URL must start with current origin and contain admin path after origin.
+				const urlPath = baseUrl.substring(currentOrigin.length);
+				isValidUrl = baseUrl.startsWith(currentOrigin) &&
+					(urlPath.startsWith('/wp-admin/') || urlPath.includes('/admin.php'));
+			} else {
+				// Relative URL must start with admin path or be an admin.php URL.
+				isValidUrl = baseUrl.startsWith('/wp-admin/') ||
+					baseUrl.startsWith('wp-admin/') ||
+					baseUrl.includes('admin.php?');
+			}
+
+			if (!isValidUrl) {
 				console.warn('[WP MCP AI] Tools filter: Invalid base URL');
 				return;
 			}
