@@ -99,6 +99,27 @@ class WP_MCP_AI_Gemini_Image_OpenAI_Fallback_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that empty string text triggers fallback generation.
+	 */
+	public function test_empty_string_text_triggers_fallback() {
+		$content = array(
+			'attachment_id' => 123,
+			'url'           => 'https://example.com/image.png',
+			'title'         => 'Test Image',
+			'text'          => '',
+		);
+
+		$assistant_config = array(
+			'provider' => 'openai',
+		);
+
+		$result = apply_filters( 'wp_mcp_ai_sanitize_tool_result_llm_generate_gemini_image', $content, $assistant_config );
+
+		$this->assertNotEmpty( $result['text'], 'Empty text should be replaced with fallback' );
+		$this->assertStringContainsString( 'Test Image', $result['text'], 'Fallback text should include image title' );
+	}
+
+	/**
 	 * Test edit_gemini_image tool also gets fallback text for OpenAI provider.
 	 */
 	public function test_edit_tool_fallback_text_for_openai() {

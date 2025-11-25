@@ -374,8 +374,8 @@ function wp_mcp_ai_add_gemini_image_fallback_text( $content, $assistant_config )
 		return $content;
 	}
 
-	// Only add text if not already present.
-	if ( ! is_array( $content ) || ! empty( $content['text'] ) ) {
+	// Only add text if not already present and non-empty.
+	if ( ! is_array( $content ) || ( isset( $content['text'] ) && '' !== $content['text'] ) ) {
 		return $content;
 	}
 
