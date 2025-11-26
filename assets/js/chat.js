@@ -9689,11 +9689,12 @@
             // This handles the case where the server closes the connection after sending [DONE]
             // but before the browser's reader.read() returns {done: true}.
             // The network error is benign in this case - we have all the data we need.
-            if (capturedFinalData || (fullContent && fullContent.length > 0)) {
+            var hasContent = typeof fullContent === 'string' && fullContent.length > 0;
+            if (capturedFinalData || hasContent) {
                 if (window.console && console.log) {
                     console.log('[WP oOS] Stream read error after final data received, treating as successful completion:', {
                         hasFinalData: !!capturedFinalData,
-                        contentLength: fullContent ? fullContent.length : 0,
+                        contentLength: hasContent ? fullContent.length : 0,
                         errorType: streamError ? streamError.name || streamError.constructor.name : 'unknown'
                     });
                 }
