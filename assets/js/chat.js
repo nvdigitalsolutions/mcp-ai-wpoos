@@ -548,8 +548,10 @@
      * @return {string} Extracted error message
      */
     function extractErrorMessage(error, defaultMessage) {
+        const fallback = defaultMessage || 'Unknown error';
+        
         if (!error) {
-            return defaultMessage || 'Unknown error';
+            return fallback;
         }
         
         if (typeof error === 'string') {
@@ -561,7 +563,7 @@
             return error.message;
         }
         
-        return defaultMessage || 'Unknown error';
+        return fallback;
     }
 
     /**
@@ -12346,15 +12348,11 @@
                         })
                         .then(function(data) {
                             if (!response.ok) {
-                                // Extract error message from response - handle both string and object
-                                let errorMsg = 'Save failed with status ' + response.status;
-                                if (data) {
-                                    if (data.message) {
-                                        errorMsg = data.message;
-                                    } else if (data.error) {
-                                        errorMsg = extractErrorMessage(data.error, errorMsg);
-                                    }
-                                }
+                                // Extract error message from response - prefer data.message, fallback to data.error
+                                const defaultMsg = 'Save failed with status ' + response.status;
+                                const errorMsg = data && data.message 
+                                    ? data.message 
+                                    : extractErrorMessage(data && data.error, defaultMsg);
                                 throw new Error(errorMsg);
                             }
                             
