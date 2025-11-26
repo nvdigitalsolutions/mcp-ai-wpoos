@@ -178,19 +178,31 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		if ( false === $scheduled ) {
 			$this->delete_metadata( $job_id );
+			$this->log_error(
+				'Failed to schedule async tool execution via wp_schedule_single_event',
+				array(
+					'job_id'    => $job_id,
+					'tool_slug' => $tool_slug,
+					'timestamp' => $timestamp,
+					'cron_hook' => self::CRON_HOOK,
+				)
+			);
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule async tool execution.', 'wp-mcp-ai' ) );
 		}
 
 		// Record cron job in cron manager for visibility and management.
+		$cron_recorded = false;
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
-			WP_MCP_AI_Cron_Manager::record_job(
+			$cron_job_id = WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_HOOK,
 				array( $job_id ),
 				'single',
 				$timestamp,
 				$user_id
 			);
+			// record_job() returns a job ID string on success.
+			$cron_recorded = is_string( $cron_job_id ) && ! empty( $cron_job_id );
 		}
 
 		// Trigger WordPress cron immediately to ensure the async tool execution runs.
@@ -198,13 +210,17 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Calling spawn_cron() ensures the job executes even if no subsequent page loads occur.
 		spawn_cron();
 
-		// Log queuing event.
+		// Log queuing event with detailed context for debugging.
 		$this->log_event(
 			'async_tool_queued',
 			sprintf( 'Tool %s queued for async execution', $tool_slug ),
 			array(
-				'job_id'    => $job_id,
-				'tool_slug' => $tool_slug,
+				'job_id'         => $job_id,
+				'tool_slug'      => $tool_slug,
+				'scheduled_at'   => $timestamp,
+				'cron_recorded'  => $cron_recorded,
+				'assistant_id'   => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
+				'session_id'     => isset( $context['session_id'] ) ? $context['session_id'] : null,
 			)
 		);
 

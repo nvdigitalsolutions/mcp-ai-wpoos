@@ -48,11 +48,11 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	/**
 	 * Determine if a tool should execute asynchronously
 	 *
-	 * Decision hierarchy (SOC - User preference > System intelligence):
-	 * 1. Explicit user parameter (async=true/false) - HIGHEST PRIORITY
-	 * 2. Legacy compatibility (wait_for_completion=false) - COMPATIBILITY
-	 * 3. Background-only flag - SYSTEM REQUIREMENT (must run async)
-	 * 4. Agentic loop context - FORCE SYNC (LLM needs complete results)
+	 * Decision hierarchy (Separation of Concerns):
+	 * 1. Background-only flag - HIGHEST PRIORITY (system requirement, prevents HTTP timeouts)
+	 * 2. Explicit user parameter (async=true/false) - User preference
+	 * 3. Legacy compatibility (wait_for_completion=false) - Backwards compatibility
+	 * 4. Agentic loop context - FORCE SYNC (LLM needs complete results, except background-only)
 	 * 5. Global async setting disabled - FORCE SYNC
 	 * 6. No timeout risk flags - FORCE SYNC (tools without async flags run sync)
 	 * 7. Background preference flag - RUN ASYNC
@@ -63,28 +63,30 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * @return bool True if tool should execute asynchronously.
 	 */
 	public function should_execute_async( $tool, array $arguments = array(), array $context = array() ) {
-		// Priority 1: Explicit async parameter from user/LLM
+		// Priority 1: Background-only tools MUST run async regardless of other settings.
+		// These tools take so long (60+ seconds) that they would cause HTTP timeouts
+		// if run synchronously. This takes highest priority to prevent timeouts.
+		if ( $this->is_background_only( $tool ) ) {
+			return true;
+		}
+
+		// Priority 2: Explicit async parameter from user/LLM
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
 		}
 
-		// Priority 2: Legacy compatibility - respect wait_for_completion parameter
+		// Priority 3: Legacy compatibility - respect wait_for_completion parameter
 		// If wait_for_completion=false, tool wants async (don't wait)
 		// If wait_for_completion=true, tool wants sync (wait in same request)
 		if ( isset( $arguments['wait_for_completion'] ) ) {
 			return ! (bool) $arguments['wait_for_completion'];
 		}
 
-		// Priority 3: Background-only tools MUST run async
-		if ( $this->is_background_only( $tool ) ) {
-			return true;
-		}
-
 		// Priority 4: Agentic loop context - force synchronous execution
 		// When executing in an agentic loop, tools MUST complete synchronously so the LLM
 		// receives actual results (e.g., generated image URL) before generating its response.
 		// Without this, the LLM would see only "pending" status and cannot produce meaningful output.
-		// Exception: background-only tools (handled above) still run async even in agentic loops.
+		// Exception: background-only tools (Priority 1) still run async even in agentic loops.
 		if ( ! empty( $context['agentic_loop'] ) ) {
 			return false;
 		}
