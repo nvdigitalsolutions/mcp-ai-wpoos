@@ -9943,9 +9943,9 @@
 
             // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
             let aggregatedUsage = usage ? Object.assign({}, usage) : null;
-            const aggregatedCost = cost ? Object.assign({}, cost) : null;
+            let aggregatedCost = cost ? Object.assign({}, cost) : null;
 
-            // Collect usage from all tool results
+            // Collect usage and cost from all tool results
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                 data.tool_results.forEach(function (toolResult) {
                     if (!toolResult) {
@@ -9956,6 +9956,7 @@
                     // 1. Direct usage field on the tool result (new method, preferred)
                     // 2. Inside parsed content (legacy method, for backwards compatibility)
                     let toolUsage = null;
+                    let toolCost = null;
                     let toolModel = null;
                     let toolProvider = null;
 
@@ -9966,8 +9967,19 @@
                         toolProvider = toolUsage.provider || null;
                     }
 
-                    // Fall back to parsing content for usage data (legacy support)
-                    if (!toolUsage && toolResult.content) {
+                    // Try direct cost field (for tools that provide cost estimates like generate_openai_image)
+                    if (toolResult.cost && typeof toolResult.cost === 'object') {
+                        toolCost = toolResult.cost;
+                        if (!toolModel && toolCost.model) {
+                            toolModel = toolCost.model;
+                        }
+                        if (!toolProvider && toolCost.provider) {
+                            toolProvider = toolCost.provider;
+                        }
+                    }
+
+                    // Fall back to parsing content for usage and cost data (legacy support)
+                    if ((!toolUsage || !toolCost) && toolResult.content) {
                         let parsedContent = toolResult.content;
                         if (typeof parsedContent === 'string') {
                             try {
@@ -9978,8 +9990,11 @@
                         }
 
                         if (parsedContent && typeof parsedContent === 'object') {
-                            if (parsedContent.usage && typeof parsedContent.usage === 'object') {
+                            if (!toolUsage && parsedContent.usage && typeof parsedContent.usage === 'object') {
                                 toolUsage = parsedContent.usage;
+                            }
+                            if (!toolCost && parsedContent.cost && typeof parsedContent.cost === 'object') {
+                                toolCost = parsedContent.cost;
                             }
                             // Extract model and provider from parsed content
                             if (parsedContent.model && !toolModel) {
@@ -10010,6 +10025,32 @@
                         // Preserve is_estimated flag if any tool usage is estimated
                         if (toolUsage.is_estimated) {
                             aggregatedUsage.is_estimated = true;
+                        }
+                    }
+
+                    // Aggregate cost data if found
+                    if (toolCost && typeof toolCost.cost_usd === 'number') {
+                        // Initialize aggregated cost if not present
+                        if (!aggregatedCost) {
+                            aggregatedCost = {
+                                cost_usd: 0
+                            };
+                        }
+
+                        // Aggregate cost amounts
+                        aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + (toolCost.cost_usd || 0);
+                        
+                        // Preserve is_estimated flag if any tool cost is estimated
+                        if (toolCost.is_estimated) {
+                            aggregatedCost.is_estimated = true;
+                        }
+
+                        // Preserve provider and model from first tool with cost
+                        if (!aggregatedCost.provider && toolCost.provider) {
+                            aggregatedCost.provider = toolCost.provider;
+                        }
+                        if (!aggregatedCost.model && toolCost.model) {
+                            aggregatedCost.model = toolCost.model;
                         }
                     }
 
