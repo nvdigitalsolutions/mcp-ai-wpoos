@@ -9927,7 +9927,15 @@
 
         // Handle case where we only have tool_results (async tool completion without new message)
         if (!message && hasToolResults) {
-            // Process tool results directly without requiring an assistant message
+            // Dynamically create an assistant message with the tool results
+            // This is similar to how image generation results are displayed
+            
+            const assistantDisplay = {
+                text: '',
+                attachments: []
+            };
+            
+            // Process each tool result and extract attachments
             data.tool_results.forEach(function (toolResult) {
                 if (!toolResult || !toolResult.content) {
                     return;
@@ -9952,12 +9960,54 @@
                     return;
                 }
                 
-                // Display the completed tool result
-                displayAsyncToolResult(state, toolName, parsedContent);
+                // Normalize the tool result for display (extracts attachments, text, etc.)
+                const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+                
+                if (normalized) {
+                    // Add text from tool result to assistant display if available
+                    if (normalized.text && typeof normalized.text === 'string') {
+                        if (assistantDisplay.text) {
+                            assistantDisplay.text += '\n\n' + normalized.text;
+                        } else {
+                            assistantDisplay.text = normalized.text;
+                        }
+                    }
+                    
+                    // Add attachments to the assistant display (videos, images, files)
+                    if (normalized.attachments && normalized.attachments.length > 0) {
+                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                    }
+                }
+                
+                // Add tool result to conversation for agentic flow continuity
+                if (state.conversation && Array.isArray(state.conversation)) {
+                    state.conversation.push(toolResult);
+                }
             });
+
+            // Display the assistant message with attachments if we have any content
+            if (assistantDisplay.text || (assistantDisplay.attachments && assistantDisplay.attachments.length > 0)) {
+                const messageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                    usage: data.cost || null,
+                    cost: data.cost || null
+                });
+                
+                // Add assistant message to conversation
+                if (state.conversation && Array.isArray(state.conversation)) {
+                    const assistantMessage = createConversationMessage(
+                        'assistant',
+                        assistantDisplay.text || '',
+                        extractDisplayMetadata(messageElement, assistantDisplay)
+                    );
+                    state.conversation.push(assistantMessage);
+                }
+            }
 
             // Save conversation after processing tool results
             saveConversationToStorage(state);
+            
+            // Clear status
+            setStatus(state.container, '');
             
             return Promise.resolve();
         }
