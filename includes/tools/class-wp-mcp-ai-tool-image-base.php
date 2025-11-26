@@ -67,21 +67,18 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
 			}
 		} elseif ( '' !== $image_url ) {
-			// Check if this is a local WordPress URL first.
-			// If it is, we can read it directly from the filesystem to avoid HTTP auth issues.
-			$image_contents = null;
-			$file_path      = null;
+			// Try to use local file path first to avoid HTTP auth issues.
+			$file_path = null;
 			
 			if ( $this->is_local_wordpress_url( $image_url ) ) {
 				$local_file_path = $this->get_file_path_from_local_url( $image_url );
 				
 				if ( $local_file_path && file_exists( $local_file_path ) && is_readable( $local_file_path ) ) {
-					// Use the local file path directly.
 					$file_path = $local_file_path;
 				}
 			}
 			
-			// If we couldn't get a local file path, download via HTTP.
+			// If no local file path, download via HTTP.
 			if ( null === $file_path ) {
 				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 

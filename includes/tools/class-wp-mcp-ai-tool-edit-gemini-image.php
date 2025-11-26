@@ -415,6 +415,10 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Check if a URL is a local WordPress URL.
 	 *
+	 * Note: This method is duplicated in both WP_MCP_AI_Tool_Image_Base and this class
+	 * because this tool does not extend the base class. The edit_gemini_image tool
+	 * interfaces directly with the Gemini API and has different requirements.
+	 *
 	 * @param string $url URL to check.
 	 * @return bool True if the URL belongs to this WordPress installation.
 	 */
@@ -449,6 +453,10 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 	/**
 	 * Convert a local WordPress URL to a file path.
+	 *
+	 * Note: This method is duplicated in both WP_MCP_AI_Tool_Image_Base and this class
+	 * because this tool does not extend the base class. The edit_gemini_image tool
+	 * interfaces directly with the Gemini API and has different requirements.
 	 *
 	 * @param string $url Local WordPress URL.
 	 * @return string|false File path on success, false on failure.
