@@ -140,6 +140,15 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
+			// Veo video generation models.
+			// Pricing is per second of generated video.
+			// Based on Google Cloud Vertex AI pricing (as of Nov 2025).
+			'veo-3.1-generate-001' => array(
+				'per_second' => 0.025,  // $0.025 per second of generated video.
+			),
+			'veo-2.0-generate-001' => array(
+				'per_second' => 0.020,  // $0.020 per second of generated video.
+			),
 		),
 		'anthropic' => array(
 			// Claude 4.5 series (November 2025).
