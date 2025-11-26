@@ -9914,11 +9914,51 @@
         const choice = choices.length ? choices[0] : null;
         const message = choice && choice.message ? choice.message : null;
 
-        if (!message) {
+        // Check if we have tool_results even without a message (async tool completion case)
+        const hasToolResults = data && Array.isArray(data.tool_results) && data.tool_results.length > 0;
+
+        if (!message && !hasToolResults) {
             if (DEBUG_MODE && window.console && console.error) {
-                console.error('[WP oOS] handleChatResponse: No message found in response');
+                console.error('[WP oOS] handleChatResponse: No message or tool_results found in response');
             }
             setStatus(state.container, getString('error', 'Something went wrong.'));
+            return Promise.resolve();
+        }
+
+        // Handle case where we only have tool_results (async tool completion without new message)
+        if (!message && hasToolResults) {
+            // Process tool results directly without requiring an assistant message
+            data.tool_results.forEach(function (toolResult) {
+                if (!toolResult || !toolResult.content) {
+                    return;
+                }
+
+                const toolName = toolResult.name || '';
+                
+                // Parse the tool result content (JSON string) into an object
+                let parsedContent = toolResult.content;
+                if (typeof parsedContent === 'string') {
+                    try {
+                        parsedContent = JSON.parse(parsedContent);
+                    } catch (e) {
+                        // If parsing fails, use the string as-is
+                        parsedContent = toolResult.content;
+                    }
+                }
+                
+                // Check if this is an async tool result that's still pending
+                if (parsedContent && parsedContent.async === true && parsedContent.status === 'pending' && parsedContent.job_id) {
+                    // This is handled by waitForAsyncToolResult, skip it here
+                    return;
+                }
+                
+                // Display the completed tool result
+                displayAsyncToolResult(state, toolName, parsedContent);
+            });
+
+            // Save conversation after processing tool results
+            saveConversationToStorage(state);
+            
             return Promise.resolve();
         }
 
