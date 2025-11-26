@@ -7700,6 +7700,13 @@
             resultText = toolName + ': ' + getString('completed', 'Completed successfully');
         }
 
+        // Update status indicator with tool completion
+        setStatus(state.container, {
+            message: '✓ ' + resultText,
+            type: 'text-stream',
+            showTime: false
+        });
+
         // Build display payload for UI rendering
         const displayPayload = {
             text: '✓ ' + resultText,
