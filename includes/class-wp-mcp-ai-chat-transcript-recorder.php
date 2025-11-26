@@ -274,14 +274,6 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			$record['response_completed_at'] = $completed_at;
 		}
 
-		// Check if a transcript already exists for this session_key and user_id.
-		// If it exists, include the _ID so JetEngine updates the existing record
-		// instead of creating a new one.
-		$existing_id = self::find_existing_transcript_id( $session_key, $user_id, $assistant_id );
-		if ( $existing_id > 0 ) {
-			$record['_ID'] = $existing_id;
-		}
-
 		return $record;
 	}
 
@@ -498,46 +490,5 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		}
 
 		return ! empty( $value );
-	}
-
-	/**
-	 * Find the ID of an existing transcript for the given session_key and user_id.
-	 *
-	 * This method uses the transcript repository to check if a transcript already exists for
-	 * the given session. If found, it returns the _ID so that JetEngine can update
-	 * the existing record instead of creating a duplicate.
-	 *
-	 * @param string $session_key  Normalised session key.
-	 * @param int    $user_id      WordPress user ID.
-	 * @param int    $assistant_id Assistant identifier.
-	 * @return int The _ID of the existing transcript, or 0 if none found.
-	 */
-	protected static function find_existing_transcript_id( $session_key, $user_id, $assistant_id ) {
-		if ( '' === $session_key ) {
-			return 0;
-		}
-
-		/**
-		 * Filter the existing transcript ID lookup.
-		 *
-		 * Allows tests to mock the database query for finding existing transcripts.
-		 *
-		 * @param int|null $existing_id   The existing _ID if found via filter, or null to use default logic.
-		 * @param string   $session_key   Normalised session key.
-		 * @param int      $user_id       WordPress user ID.
-		 * @param int      $assistant_id  Assistant identifier.
-		 */
-		$filtered_id = apply_filters( 'wp_mcp_ai_find_existing_transcript_id', null, $session_key, $user_id, $assistant_id );
-		if ( null !== $filtered_id ) {
-			return absint( $filtered_id );
-		}
-
-		// Use the transcript repository if available.
-		if ( class_exists( 'WP_MCP_AI_Transcript_Repository' ) ) {
-			$repository = new WP_MCP_AI_Transcript_Repository();
-			return $repository->find_existing_transcript_id( $session_key, $user_id, $assistant_id );
-		}
-
-		return 0;
 	}
 }
