@@ -7724,6 +7724,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request          Original REST request.
 		 * @param int             $iteration        Current iteration number (default 0).
 		 * @param int             $max_iterations   Maximum iterations (default 5).
+	 * @param array           $transcript_context Transcript context containing session_key for async job routing (default empty array).
 		 * @return mixed Tool execution result.
 		 */
 		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5, $transcript_context = array() ) {
