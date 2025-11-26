@@ -1856,8 +1856,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// (e.g., webhook, external service) without the job_id metadata.
 			// Extract the unique ID portion from the expected filename for flexible matching.
 			// Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4
-			$unique_id = str_replace( array( 'veo-video-', '.mp4', 'veo_' ), '', $expected_filename );
-			
+
+			// Validate expected_filename format before proceeding with pattern extraction.
+			if ( ! preg_match( '/^veo-video-(.+)\.mp4$/', $expected_filename, $matches ) ) {
+				// Invalid filename format - cannot extract unique ID.
+				return false;
+			}
+
+			// Extract the unique ID portion, handling both formats:
+			// - veo_69264137e396a4_03027627 (from job_id)
+			// - 69264137e396a4_03027627 (from external upload)
+			$filename_id = $matches[1]; // e.g., "veo_69264137e396a4_03027627"
+			$unique_id   = str_replace( 'veo_', '', $filename_id ); // e.g., "69264137e396a4_03027627"
+
 			// Search for veo video attachments created recently (within last hour).
 			// Only search for videos with veo metadata to avoid false positives.
 			$args_fallback = array(
@@ -1900,13 +1911,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				}
 
 				$basename = basename( $file_path );
-				
+
 				// Check for exact match or match without veo_ prefix.
-				// Also check if the unique ID is contained in the filename.
-				if ( $basename === $expected_filename || 
-					 $basename === 'veo-video-' . $unique_id . '.mp4' ||
-					 strpos( $basename, $unique_id ) !== false ) {
-					
+				// Use strict pattern matching to avoid false positives.
+				if ( $basename === $expected_filename ||
+					 $basename === 'veo-video-' . $unique_id . '.mp4' ) {
+
 					WP_MCP_AI_Logger::log_event(
 						'veo_file_found_by_filename',
 						'Video file found via filename fallback (uploaded by external process)',
@@ -1917,12 +1927,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'attachment_id'     => $post->ID,
 						)
 					);
-					
+
 					$attachment_id = $post->ID;
-					
+
 					// Set the job_id metadata now so future checks will find it.
 					update_post_meta( $attachment_id, '_veo_job_id', sanitize_key( $job_id ) );
-					
+
 					break;
 				}
 			}

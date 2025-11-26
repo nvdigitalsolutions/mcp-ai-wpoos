@@ -337,7 +337,7 @@ class Test_Veo_Async_Video_Generation extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'result', $updated );
 		$this->assertEquals( $attachment_id, $updated['result']['attachment_id'] );
 		$this->assertArrayNotHasKey( 'error', $updated, 'Job should not have an error when file is found' );
-		
+
 		// Verify job_id metadata was retroactively added.
 		$job_id_meta = get_post_meta( $attachment_id, '_veo_job_id', true );
 		$this->assertEquals( sanitize_key( $job_id ), $job_id_meta, 'Job ID should be retroactively added to attachment metadata' );
