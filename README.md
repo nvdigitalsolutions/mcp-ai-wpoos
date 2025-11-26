@@ -78,7 +78,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
-**WP oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're helping to **peel back decades of API wrappers with the help of AI**, providing:
+**WP oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
 
 - **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, and Ollama without custom development
 - **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
