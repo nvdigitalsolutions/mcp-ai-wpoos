@@ -556,7 +556,8 @@
             return error;
         }
         
-        if (typeof error === 'object' && error.message) {
+        // Check for object (but not null, since typeof null === 'object')
+        if (error !== null && typeof error === 'object' && error.message) {
             return error.message;
         }
         
