@@ -1157,9 +1157,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'veo_file_based_completion_detected',
 					'Video file detected in uploads directory',
 					array(
-						'job_id'   => $job_id,
-						'filename' => $metadata['expected_filename'],
-						'attempts' => $metadata['poll_attempt'],
+						'job_id'         => $job_id,
+						'filename'       => $metadata['expected_filename'],
+						'attempts'       => $metadata['poll_attempt'],
+						'attachment_id'  => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
+						'has_url'        => isset( $attachment['url'] ),
+						'has_video_url'  => isset( $attachment['video_url'] ),
+						'parent_job_id'  => isset( $metadata['parent_job_id'] ) ? $metadata['parent_job_id'] : 'not_set',
 					)
 				);
 
@@ -1167,6 +1171,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$metadata['status'] = 'completed';
 				$metadata['result'] = $attachment;
 				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+				WP_MCP_AI_Logger::log_event(
+					'veo_transient_updated_completed',
+					'Updated veo transient with completed status',
+					array(
+						'job_id'        => $job_id,
+						'transient_key' => self::ASYNC_OP_PREFIX . $job_id,
+					)
+				);
 
 				// Fire completion hooks.
 				$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
@@ -1513,11 +1526,53 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				);
 			}
 
+			WP_MCP_AI_Logger::log_event(
+				'veo_job_not_found',
+				'Video generation job not found in transients or media',
+				array(
+					'job_id'        => $job_id,
+					'transient_key' => self::ASYNC_OP_PREFIX . $job_id,
+				)
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_job_not_found',
 				__( 'Video generation job not found or expired.', 'wp-mcp-ai' ),
 				array( 'status' => 404 )
 			);
+		}
+
+		// Metadata found - check if video file exists even if status isn't completed.
+		// This handles the case where WP-Cron isn't running and the polling hasn't detected completion.
+		if ( 'completed' !== $metadata['status'] && isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
+			$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
+
+			if ( $attachment && ! is_wp_error( $attachment ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'veo_completion_detected_on_status_check',
+					'Video file found during status check - updating to completed',
+					array(
+						'job_id'        => $job_id,
+						'current_status' => $metadata['status'],
+						'filename'      => $metadata['expected_filename'],
+						'attachment_id' => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
+					)
+				);
+
+				// Update metadata to completed.
+				$metadata['status'] = 'completed';
+				$metadata['result'] = $attachment;
+				$metadata['completed_at'] = time();
+				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+				// Fire completion hooks.
+				$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+
+				// Complete parent job if present.
+				if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+					$this->complete_parent_job( $metadata['parent_job_id'], $attachment );
+				}
+			}
 		}
 
 		// Return sanitized status.
@@ -1539,6 +1594,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		if ( 'completed' === $metadata['status'] && isset( $metadata['result'] ) ) {
 			$response['result'] = $metadata['result'];
+
+			WP_MCP_AI_Logger::log_event(
+				'veo_status_returning_completed',
+				'Returning completed status with result',
+				array(
+					'job_id'        => $job_id,
+					'has_url'       => isset( $metadata['result']['url'] ),
+					'has_video_url' => isset( $metadata['result']['video_url'] ),
+				)
+			);
 		}
 
 		// Include args for permission checking and context.
@@ -1755,8 +1820,23 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param array  $result        Final video generation result.
 	 */
 	protected function complete_parent_job( $parent_job_id, $result ) {
+		WP_MCP_AI_Logger::log_event(
+			'veo_completing_parent_job',
+			'Attempting to complete parent async job',
+			array(
+				'parent_job_id' => $parent_job_id,
+				'has_result'    => ! empty( $result ),
+				'has_url'       => isset( $result['url'] ),
+			)
+		);
+
 		// Check if parent job exists.
-		$parent_metadata = get_transient( 'wp_mcp_ai_async_meta_' . $parent_job_id );
+		// Use constant from async executor for consistency.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+		$parent_transient_key = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $parent_job_id;
+		$parent_metadata      = get_transient( $parent_transient_key );
 
 		if ( ! $parent_metadata ) {
 			// Parent job not found or expired - log and continue.
@@ -1764,11 +1844,22 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'veo_parent_job_not_found',
 				'Parent async job not found when completing veo job',
 				array(
-					'parent_job_id' => $parent_job_id,
+					'parent_job_id'   => $parent_job_id,
+					'transient_key'   => $parent_transient_key,
 				)
 			);
 			return;
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_parent_job_found',
+			'Parent job metadata found, updating with result',
+			array(
+				'parent_job_id'    => $parent_job_id,
+				'current_status'   => isset( $parent_metadata['status'] ) ? $parent_metadata['status'] : 'not_set',
+				'tool_slug'        => isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'not_set',
+			)
+		);
 
 		// Update parent job with final result.
 		// Wrap result in async executor's expected format (compress_result structure).
@@ -1785,7 +1876,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$parent_metadata['result']       = $wrapped_result;
 
 		// Save updated metadata.
-		set_transient( 'wp_mcp_ai_async_meta_' . $parent_job_id, $parent_metadata, DAY_IN_SECONDS );
+		set_transient( $parent_transient_key, $parent_metadata, DAY_IN_SECONDS );
 
 		WP_MCP_AI_Logger::log_event(
 			'veo_parent_job_completed',
@@ -1793,6 +1884,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'parent_job_id' => $parent_job_id,
 				'has_url'       => isset( $result['url'] ),
+				'transient_saved' => true,
 			)
 		);
 
@@ -1805,6 +1897,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			array(
 				'tool' => 'generate_veo_video',
 				'note' => 'Parent async job completed by veo service',
+			)
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'veo_parent_completion_hook_fired',
+			'Fired wp_mcp_ai_job_completed hook for parent job',
+			array(
+				'parent_job_id' => $parent_job_id,
 			)
 		);
 

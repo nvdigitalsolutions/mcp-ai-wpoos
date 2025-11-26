@@ -7964,16 +7964,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					// Return a structured response indicating the tool is processing asynchronously.
 					// The LLM should understand this and inform the user about the job ID.
-					// Include the job_id prominently in the message so the LLM knows to tell the user.
-					return array(
-						'status'    => 'pending',
-						'job_id'    => $job_id,
-						'message'   => sprintf(
+					// Include the job_id and tool_call_id prominently in the message so the LLM knows to tell the user.
+					// Build the message with Call ID if available.
+					$message = '';
+					if ( '' !== $tool_call_id ) {
+						$message = sprintf(
+							/* translators: 1: tool name, 2: job ID, 3: call ID */
+							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'wp-mcp-ai' ),
+							$tool_name,
+							$job_id,
+							$tool_call_id
+						);
+					} else {
+						$message = sprintf(
 							/* translators: 1: tool name, 2: job ID */
 							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready.', 'wp-mcp-ai' ),
 							$tool_name,
 							$job_id
-						),
+						);
+					}
+
+					return array(
+						'status'    => 'pending',
+						'job_id'    => $job_id,
+						'message'   => $message,
 						'async'     => true,
 						'tool_slug' => $tool_slug,
 					);
