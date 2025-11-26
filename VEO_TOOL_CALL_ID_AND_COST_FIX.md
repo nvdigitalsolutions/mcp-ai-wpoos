@@ -85,7 +85,8 @@ if ( isset( $result['context']['tool_call_id'] ) && '' !== $result['context']['t
     
     // Veo video generation models.
     // Pricing is per second of generated video.
-    // Based on Google Cloud Vertex AI pricing (as of Nov 2025).
+    // Based on Google Cloud Vertex AI documentation.
+    // Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing
     'veo-3.1-generate-001' => array(
         'per_second' => 0.025,  // $0.025 per second of generated video.
     ),
@@ -159,9 +160,10 @@ The existing test `test_completed_job_includes_usage_and_cost_data` already veri
 5. ✅ Cost data appears in SSE messages for UI display
 6. ✅ Fallback ID generation still works for backwards compatibility
 
-### Example Cost Calculation
-- 5-second Veo 2.0 video: `5 seconds × $0.020/second = $0.10`
-- 8-second Veo 3.1 video: `8 seconds × $0.025/second = $0.20`
+#			// Veo video generation models.
+			// Pricing is per second of generated video.
+			// Based on Google Cloud Vertex AI documentation.
+			// Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing
 
 ### SSE Message Structure
 The chat client now receives complete tool results:

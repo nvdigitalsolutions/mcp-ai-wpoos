@@ -554,16 +554,21 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array Cost data array with cost_usd, provider, model, and is_estimated.
 	 */
 	protected function calculate_video_cost( $result ) {
+		// Get duration in seconds.
+		$duration = isset( $result['duration'] ) ? absint( $result['duration'] ) : 0;
+		
+		// Get model identifier.
+		$model = isset( $result['model'] ) ? $result['model'] : 'unknown';
+		
 		// Default cost structure.
 		$cost = array(
 			'cost_usd'     => 0.0,
 			'provider'     => isset( $result['provider'] ) ? $result['provider'] : 'gemini',
-			'model'        => isset( $result['model'] ) ? $result['model'] : 'unknown',
+			'model'        => $model,
 			'is_estimated' => false,
 		);
 
-		// Get duration in seconds.
-		$duration = isset( $result['duration'] ) ? absint( $result['duration'] ) : 0;
+		// No cost if duration is invalid.
 		if ( $duration <= 0 ) {
 			return $cost;
 		}
@@ -572,8 +577,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
 		}
-
-		$model = isset( $result['model'] ) ? $result['model'] : '';
 
 		// Get pricing for the model.
 		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'gemini', $model );
