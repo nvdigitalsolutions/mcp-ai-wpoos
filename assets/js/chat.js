@@ -6663,6 +6663,14 @@
             return null;
         }
 
+        // Skip async pending tool results - they are handled by waitForAsyncToolResult
+        // and should not be displayed as completed results in the chat UI.
+        // This prevents the "Tool is processing in the background" message from being
+        // shown after the video generation has already completed.
+        if (isAsyncPendingToolResult(result)) {
+            return null;
+        }
+
         // Special handling for run_crawl4ai_job tool
         if (toolName === 'run_crawl4ai_job') {
             return normaliseCrawl4aiResult(result);
@@ -10661,6 +10669,11 @@
                         }
                     }
                     
+                    // Skip async pending tool results - handled by waitForAsyncToolResult
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        return;
+                    }
+                    
                     const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
                     if (normalized) {
@@ -10703,6 +10716,11 @@
                             // If parsing fails, use the string as-is
                             parsedContent = toolResult.content;
                         }
+                    }
+                    
+                    // Skip async pending tool results - handled by waitForAsyncToolResult
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        return;
                     }
                     
                     const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
