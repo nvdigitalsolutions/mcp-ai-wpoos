@@ -10235,15 +10235,14 @@
                 }
             }
 
-            // Also collect from top-level provider/model if present
-            if (normalized.provider && !aggregatedUsage) {
-                aggregatedUsage = {};
-            }
-            if (normalized.provider && aggregatedUsage && !aggregatedUsage.provider) {
-                aggregatedUsage.provider = normalized.provider;
-            }
-            if (normalized.model && aggregatedUsage && !aggregatedUsage.model) {
-                aggregatedUsage.model = normalized.model;
+            // Also collect top-level provider/model if not already set from usage
+            if (aggregatedUsage) {
+                if (normalized.provider && !aggregatedUsage.provider) {
+                    aggregatedUsage.provider = normalized.provider;
+                }
+                if (normalized.model && !aggregatedUsage.model) {
+                    aggregatedUsage.model = normalized.model;
+                }
             }
 
             return { usage: aggregatedUsage, cost: aggregatedCost };
