@@ -9729,10 +9729,10 @@
                     showTime: false
                 });
                 
-                // Display initial message with job ID if provided
+                // Display initial message if provided
+                // Note: The backend already includes Job ID in the message, so we don't add it again
                 if (result.message) {
-                    const messageWithJobId = result.message + ' (Job ID: ' + result.job_id + ')';
-                    appendMessage(state.messagesEl, 'system', messageWithJobId);
+                    appendMessage(state.messagesEl, 'system', result.message);
                 }
                 
                 // Start polling for the async result
