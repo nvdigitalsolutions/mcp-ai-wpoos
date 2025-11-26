@@ -34,7 +34,7 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 		// The REST API returns an array with 'status', 'job_id', 'message', 'async', 'tool_slug'.
 		// The message should include the job_id.
 
-		// Simulate what the REST API does (line 7741-7751 in class-wp-mcp-ai-rest.php).
+		// Simulate what the REST API does without call_id.
 		$job_id    = 'async_test_12345';
 		$tool_name = 'Test Tool';
 
@@ -57,6 +57,39 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 		$this->assertEquals( $job_id, $response['job_id'], 'job_id should match' );
 		$this->assertStringContainsString( $job_id, $response['message'], 'Message should include job_id' );
 		$this->assertStringContainsString( 'Job ID:', $response['message'], 'Message should explicitly label the job ID' );
+	}
+
+	/**
+	 * Test that async tool response includes both job_id and call_id in message when call_id is available.
+	 */
+	public function test_async_tool_response_includes_call_id_in_message() {
+		// Simulate what the REST API does WITH call_id.
+		$job_id       = 'async_test_12345';
+		$tool_name    = 'Test Tool';
+		$tool_call_id = 'call_RjVTeBLbeoS4CASwywIbsDWk';
+
+		$response = array(
+			'status'    => 'pending',
+			'job_id'    => $job_id,
+			'message'   => sprintf(
+				/* translators: 1: tool name, 2: job ID, 3: call ID */
+				__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'wp-mcp-ai' ),
+				$tool_name,
+				$job_id,
+				$tool_call_id
+			),
+			'async'     => true,
+			'tool_slug' => 'test_tool',
+		);
+
+		// Verify response structure.
+		$this->assertArrayHasKey( 'job_id', $response, 'Response should have job_id field' );
+		$this->assertArrayHasKey( 'message', $response, 'Response should have message field' );
+		$this->assertEquals( $job_id, $response['job_id'], 'job_id should match' );
+		$this->assertStringContainsString( $job_id, $response['message'], 'Message should include job_id' );
+		$this->assertStringContainsString( 'Job ID:', $response['message'], 'Message should explicitly label the job ID' );
+		$this->assertStringContainsString( $tool_call_id, $response['message'], 'Message should include call_id' );
+		$this->assertStringContainsString( 'Call ID:', $response['message'], 'Message should explicitly label the Call ID' );
 	}
 
 	/**
