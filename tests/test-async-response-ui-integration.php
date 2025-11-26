@@ -305,4 +305,57 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		// Cleanup.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 	}
+
+	/**
+	 * Test that async pending results are filtered out from normaliseToolResultForDisplay
+	 *
+	 * This test verifies that the fix for the "still showing tool process for completed video"
+	 * issue is in place. The fix ensures that async pending tool results (with async=true,
+	 * status=pending, and job_id) are not displayed as regular completed results.
+	 */
+	public function test_javascript_filters_async_pending_from_normalise() {
+		// Load chat.js to verify filtering exists.
+		$chat_js_path = WP_MCP_AI_PATH . 'assets/js/chat.js';
+		$this->assertFileExists( $chat_js_path, 'chat.js should exist' );
+
+		$chat_js = file_get_contents( $chat_js_path );
+
+		// Verify isAsyncPendingToolResult function exists.
+		$this->assertStringContainsString(
+			'function isAsyncPendingToolResult',
+			$chat_js,
+			'JavaScript should have isAsyncPendingToolResult helper function'
+		);
+
+		// Verify normaliseToolResultForDisplay checks for async pending results.
+		// The fix adds this check at the start of the function.
+		$this->assertStringContainsString(
+			'isAsyncPendingToolResult(result)',
+			$chat_js,
+			'normaliseToolResultForDisplay should check for async pending results'
+		);
+
+		// Verify the check in normaliseToolResultForDisplay returns null for async pending.
+		// Look for the specific pattern of checking and returning null.
+		$normalise_check_pattern = '/if\s*\(\s*isAsyncPendingToolResult\s*\(\s*result\s*\)\s*\)\s*\{\s*return\s+null\s*;/';
+		$this->assertMatchesRegularExpression(
+			$normalise_check_pattern,
+			$chat_js,
+			'normaliseToolResultForDisplay should return null for async pending results'
+		);
+
+		// Verify the fix adds comments explaining the purpose.
+		$this->assertStringContainsString(
+			'Skip async pending tool results',
+			$chat_js,
+			'Should have comment explaining async pending filtering'
+		);
+
+		// Verify ASYNC_PENDING_STATUSES includes 'pending', 'queued', 'running'.
+		$this->assertStringContainsString(
+			"ASYNC_PENDING_STATUSES = ['pending', 'queued', 'running']",
+			$chat_js,
+			'Should have ASYNC_PENDING_STATUSES constant with expected values'
+		);
+	}
 }
