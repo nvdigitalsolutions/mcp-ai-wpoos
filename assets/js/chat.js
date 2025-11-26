@@ -6623,6 +6623,41 @@
         return genericResult;
     }
 
+    /**
+     * Async tool status values that indicate a tool is still processing.
+     * Used for checking if a tool result represents a pending background job.
+     */
+    const ASYNC_PENDING_STATUSES = ['pending', 'queued', 'running'];
+
+    /**
+     * Parse tool result content from JSON string or return as-is if already an object.
+     * @param {string|Object} content - The tool result content to parse
+     * @return {Object|string} Parsed content object or original string if parsing fails
+     */
+    function parseToolResultContent(content) {
+        if (typeof content === 'string') {
+            try {
+                return JSON.parse(content);
+            } catch (e) {
+                // If parsing fails, return original string
+                return content;
+            }
+        }
+        return content;
+    }
+
+    /**
+     * Check if a parsed tool result represents an async pending job.
+     * @param {Object} parsedContent - The parsed tool result content
+     * @return {boolean} True if the tool is async and still pending/processing
+     */
+    function isAsyncPendingToolResult(parsedContent) {
+        return parsedContent && 
+               parsedContent.async === true && 
+               ASYNC_PENDING_STATUSES.indexOf(parsedContent.status) !== -1 && 
+               parsedContent.job_id;
+    }
+
     function normaliseToolResultForDisplay(toolName, result) {
         if (!result || typeof result !== 'object') {
             return null;
@@ -9539,20 +9574,9 @@
                                             continue;
                                         }
                                         
-                                        // Parse tool result content to check for async status
-                                        let parsedContent = toolResult.content;
-                                        if (typeof parsedContent === 'string') {
-                                            try {
-                                                parsedContent = JSON.parse(parsedContent);
-                                            } catch (e) {
-                                                // If parsing fails, parsedContent remains as original string
-                                            }
-                                        }
-                                        
-                                        // Check if this is an async tool that's still pending
-                                        if (parsedContent && parsedContent.async === true && 
-                                            (parsedContent.status === 'pending' || parsedContent.status === 'queued' || parsedContent.status === 'running') && 
-                                            parsedContent.job_id) {
+                                        // Parse and check if this is an async tool that's still pending
+                                        const parsedContent = parseToolResultContent(toolResult.content);
+                                        if (isAsyncPendingToolResult(parsedContent)) {
                                             hasAsyncPending = true;
                                             break;
                                         }
@@ -9580,20 +9604,11 @@
                                             continue;
                                         }
                                         
-                                        // Parse tool result content (usually JSON string)
-                                        let parsedContent = toolResult.content;
-                                        if (typeof parsedContent === 'string') {
-                                            try {
-                                                parsedContent = JSON.parse(parsedContent);
-                                            } catch (e) {
-                                                // If parsing fails, parsedContent remains as original string
-                                                // extractTextFromContent handles both strings and objects
-                                            }
-                                        }
+                                        // Parse tool result content
+                                        const parsedContent = parseToolResultContent(toolResult.content);
                                         
                                         // Skip async pending results - they'll be handled by waitForAsyncToolResult
-                                        if (parsedContent && parsedContent.async === true && 
-                                            (parsedContent.status === 'pending' || parsedContent.status === 'queued' || parsedContent.status === 'running')) {
+                                        if (isAsyncPendingToolResult(parsedContent)) {
                                             continue;
                                         }
                                         
