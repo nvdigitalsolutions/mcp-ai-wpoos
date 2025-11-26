@@ -6034,6 +6034,9 @@
         if (result.usage && typeof result.usage === 'object') {
             crawlResult.usage = result.usage;
         }
+        if (result.cost && typeof result.cost === 'object') {
+            crawlResult.cost = result.cost;
+        }
         if (result.provider && typeof result.provider === 'string') {
             crawlResult.provider = result.provider;
         }
@@ -6576,6 +6579,9 @@
         if (result.usage && typeof result.usage === 'object') {
             genericResult.usage = result.usage;
         }
+        if (result.cost && typeof result.cost === 'object') {
+            genericResult.cost = result.cost;
+        }
         if (result.provider && typeof result.provider === 'string') {
             genericResult.provider = result.provider;
         }
@@ -6826,6 +6832,11 @@
         // Preserve usage data if present in tool result
         if (result.usage && typeof result.usage === 'object') {
             normalizedResult.usage = result.usage;
+        }
+
+        // Preserve cost data if present in tool result
+        if (result.cost && typeof result.cost === 'object') {
+            normalizedResult.cost = result.cost;
         }
 
         // Preserve provider and model for cost calculation
