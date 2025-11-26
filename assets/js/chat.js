@@ -9174,17 +9174,17 @@
                         }
                     }
                     
+                    // Remove temporary streaming message BEFORE calling handleChatResponse
+                    // This prevents duplicate messages from appearing in the chat.
+                    // The streamed content has already been captured in streamResult.content
+                    // and injected into finalData, so the final message will have the same content.
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                        streamingMessageElement = null;
+                    }
+                    
                     // Process the final response data using standard handler
-                    // Note: We keep the streaming message visible until handleChatResponse completes
-                    // to prevent a visual gap where no message is shown
                     return handleChatResponse(state, streamResult.finalData).then(function() {
-                        // Remove temporary streaming message AFTER the final message is rendered
-                        // This prevents the text from disappearing before the new message appears
-                        if (streamingMessageElement && streamingMessageElement.parentNode) {
-                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
-                            streamingMessageElement = null;
-                        }
-                        
                         saveConversationToStorage(state);
                         finalize();
                         clearStatus(state.container);
@@ -9218,6 +9218,7 @@
                         
                         attachSpeechButton(streamingMessageElement, state, streamResult.content);
                         attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachDeleteButton(streamingMessageElement, state, 'assistant');
 
                         // Auto-play speech if voice chat mode is active
                         if (state.voiceChatModeActive && streamingMessageElement) {
