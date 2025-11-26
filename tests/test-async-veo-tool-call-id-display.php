@@ -234,8 +234,10 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		$tool_message = $job_details['tool_results'][0];
 		$this->assertArrayHasKey( 'tool_call_id', $tool_message, 'Should have fallback tool_call_id' );
 
-		// Fallback format: async_{tool_name}_{job_id}.
+		// Fallback format in PHP: async_{tool_name}_{job_id}.
+		// Note: JavaScript uses async_{tool_name}_{timestamp}_{random} format which is different.
+		// PHP backend generates: async_generate_veo_video_{job_id}
 		$fallback_pattern = '/^async_generate_veo_video_' . preg_quote( $job_id, '/' ) . '$/';
-		$this->assertMatchesRegularExpression( $fallback_pattern, $tool_message['tool_call_id'], 'Fallback tool_call_id should follow expected pattern' );
+		$this->assertMatchesRegularExpression( $fallback_pattern, $tool_message['tool_call_id'], 'Fallback tool_call_id should follow expected PHP backend pattern' );
 	}
 }

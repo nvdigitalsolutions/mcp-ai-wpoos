@@ -7748,13 +7748,13 @@
                 // Check tool_results array first (OpenAI/backend format)
                 if (Array.isArray(result.tool_results) && result.tool_results.length > 0) {
                     const firstToolResult = result.tool_results[0];
-                    if (typeof firstToolResult === 'object' && firstToolResult.tool_call_id) {
+                    if (typeof firstToolResult === 'object' && firstToolResult !== null && firstToolResult.tool_call_id) {
                         toolCallId = String(firstToolResult.tool_call_id);
                     }
                 }
                 
                 // Fallback to direct tool_call_id field
-                if (!toolCallId && result.tool_call_id) {
+                if (!toolCallId && result.tool_call_id && typeof result.tool_call_id === 'string' && result.tool_call_id !== '') {
                     toolCallId = String(result.tool_call_id);
                 }
             }
