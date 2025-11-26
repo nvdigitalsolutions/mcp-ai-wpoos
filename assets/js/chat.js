@@ -9732,6 +9732,16 @@
      * - 'model_switched': Switched to fallback model due to token limits
      * - 'messages_truncated': Reduced context to fit token limits
      * - 'max_iterations': Agentic loop reached maximum tool execution iterations
+     * - 'processing_attachments': Processing uploaded files/images before AI call
+     * - 'loading_memory': Loading memory documents from assistant configuration
+     * 
+     * Additional status types supported for future PHP enhancements:
+     * - 'executing_tool': Detailed tool execution (with tool name)
+     * - 'saving': Saving data (post, transcript, etc.)
+     * - 'searching': Performing search operations
+     * - 'crawling': Web crawling in progress
+     * - 'generating_media': Creating images/audio/video
+     * - 'transcribing': Audio transcription in progress
      * 
      * @param {Object} state - Chat state object
      * @param {Object} data - Event data from PHP containing type and message
@@ -9789,6 +9799,36 @@
         } else if (type === 'max_iterations') {
             // PHP sends this when agentic loop reaches maximum tool execution iterations.
             // Show warning that tool loop was capped, then allow response to display.
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
+        } else if (type === 'processing_attachments' || type === 'loading_memory' ||
+                   type === 'transcribing' || type === 'crawling' || 
+                   type === 'searching' || type === 'generating_media') {
+            // Status types for operations that may take a moment.
+            // 'processing_attachments': Processing uploaded files/images before AI call
+            // 'loading_memory': Loading memory documents from assistant configuration
+            // Show with timer since these operations can take a while.
+            setStatus(state.container, {
+                message: message,
+                type: 'text-stream',
+                showTime: true,
+                startTime: Date.now()
+            });
+        } else if (type === 'saving' || type === 'executing_tool') {
+            // Status types for shorter operations.
+            // Show without timer as these should complete quickly.
+            setStatus(state.container, {
+                message: message,
+                type: 'text-stream',
+                showTime: false
+            });
+        } else if (type && message) {
+            // Generic fallback handler for any unknown status type from PHP.
+            // This ensures forward compatibility - new status types added to PHP
+            // will still be displayed even if the frontend hasn't been updated.
             setStatus(state.container, {
                 message: message,
                 type: 'default',
