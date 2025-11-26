@@ -15,6 +15,17 @@
 class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 	/**
+	 * Get a simple 1x1 red pixel PNG image as binary data.
+	 *
+	 * @return string Binary PNG image data.
+	 */
+	protected function get_test_png_data() {
+		return base64_decode(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+		);
+	}
+
+	/**
 	 * Test that is_local_wordpress_url correctly identifies local URLs
 	 */
 	public function test_is_local_wordpress_url_detects_upload_urls() {
@@ -83,9 +94,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$test_file  = $upload_dir['basedir'] . '/test-image-' . time() . '.png';
 
 		// Create a simple 1x1 PNG image (red pixel).
-		$png_data = base64_decode(
-			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
-		);
+		$png_data = $this->get_test_png_data();
 
 		// Write test file.
 		file_put_contents( $test_file, $png_data );
@@ -171,9 +180,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$test_file  = $upload_dir['basedir'] . '/test-attachment-' . time() . '.png';
 
 		// Create a simple 1x1 PNG image (red pixel).
-		$png_data = base64_decode(
-			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
-		);
+		$png_data = $this->get_test_png_data();
 
 		// Write test file.
 		file_put_contents( $test_file, $png_data );
@@ -271,9 +278,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$test_file  = $upload_dir['basedir'] . '/test-local-not-temp-' . time() . '.png';
 
 		// Create a simple 1x1 PNG image (red pixel).
-		$png_data = base64_decode(
-			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
-		);
+		$png_data = $this->get_test_png_data();
 
 		// Write test file.
 		file_put_contents( $test_file, $png_data );
@@ -346,9 +351,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		};
 
 		// Test with base64 data (which creates a temp file).
-		$png_data = base64_decode(
-			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
-		);
+		$png_data = $this->get_test_png_data();
 		$base64_image = base64_encode( $png_data );
 
 		$arguments = array(

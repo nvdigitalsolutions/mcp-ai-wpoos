@@ -69,8 +69,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			}
 		} elseif ( '' !== $image_url ) {
 			// Try to use local file path first to avoid HTTP auth issues.
-			$file_path      = null;
-			$is_local_file  = false;
+			$file_path = null;
 			
 			if ( $this->is_local_wordpress_url( $image_url ) ) {
 				$local_file_path = $this->get_file_path_from_local_url( $image_url );
