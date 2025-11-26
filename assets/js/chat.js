@@ -10693,7 +10693,42 @@
             }
         }
 
-        setStatus(state.container, '');
+        // Check if there are tool results that have completed (not async pending)
+        // If so, set "Tool completed successfully" status instead of clearing
+        // This allows the calling code's delayed clearStatus to work properly
+        var hasToolResults = data && Array.isArray(data.tool_results) && data.tool_results.length > 0;
+        var hasAsyncPending = false;
+        
+        if (hasToolResults) {
+            // Check if any tool results are async pending
+            for (var i = 0; i < data.tool_results.length; i++) {
+                var toolResult = data.tool_results[i];
+                if (toolResult && toolResult.content) {
+                    var parsedContent = parseToolResultContent(toolResult.content);
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        hasAsyncPending = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!hasAsyncPending) {
+                // All tools have completed - set completion status
+                // The calling code will clear this after a delay
+                setStatus(state.container, {
+                    message: getString('toolSuccess', 'Tool completed successfully.'),
+                    type: 'tool',
+                    showTime: false
+                });
+            } else {
+                // Async tools still pending - clear status (polling will update it)
+                setStatus(state.container, '');
+            }
+        } else {
+            // No tool results - clear status as before
+            setStatus(state.container, '');
+        }
+        
         return Promise.resolve();
     }
 
