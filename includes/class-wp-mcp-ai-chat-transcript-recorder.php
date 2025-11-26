@@ -503,7 +503,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Find the ID of an existing transcript for the given session_key and user_id.
 	 *
-	 * This method queries the database to check if a transcript already exists for
+	 * This method uses the transcript repository to check if a transcript already exists for
 	 * the given session. If found, it returns the _ID so that JetEngine can update
 	 * the existing record instead of creating a duplicate.
 	 *
@@ -513,78 +513,31 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	 * @return int The _ID of the existing transcript, or 0 if none found.
 	 */
 	protected static function find_existing_transcript_id( $session_key, $user_id, $assistant_id ) {
-		global $wpdb;
-
 		if ( '' === $session_key ) {
 			return 0;
 		}
 
-		// Get the transcript table name.
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
-			return 0;
+		/**
+		 * Filter the existing transcript ID lookup.
+		 *
+		 * Allows tests to mock the database query for finding existing transcripts.
+		 *
+		 * @param int|null $existing_id   The existing _ID if found via filter, or null to use default logic.
+		 * @param string   $session_key   Normalised session key.
+		 * @param int      $user_id       WordPress user ID.
+		 * @param int      $assistant_id  Assistant identifier.
+		 */
+		$filtered_id = apply_filters( 'wp_mcp_ai_find_existing_transcript_id', null, $session_key, $user_id, $assistant_id );
+		if ( null !== $filtered_id ) {
+			return absint( $filtered_id );
 		}
 
-		$slug = WP_MCP_AI_JetEngine_CCT::get_slug();
-		if ( '' === $slug ) {
-			return 0;
+		// Use the transcript repository if available.
+		if ( class_exists( 'WP_MCP_AI_Transcript_Repository' ) ) {
+			$repository = new WP_MCP_AI_Transcript_Repository();
+			return $repository->find_existing_transcript_id( $session_key, $user_id, $assistant_id );
 		}
 
-		$table = $wpdb->prefix . 'jet_cct_' . $slug;
-
-		// Check if table exists.
-		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-		if ( $table_exists !== $table ) {
-			return 0;
-		}
-
-		$user_id      = absint( $user_id );
-		$assistant_id = absint( $assistant_id );
-
-		// Try to find existing transcript with session_key, user_id, and assistant_id.
-		// We prioritize the most recent entry (highest _ID) in case there are duplicates.
-		$query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
-			$session_key,
-			$user_id,
-			(string) $assistant_id
-		);
-
-		$existing_id = $wpdb->get_var( $query );
-
-		// Fallback: Try with cct_author_id if user_id didn't return results.
-		if ( ! $existing_id && $user_id > 0 ) {
-			$fallback_query = $wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
-				$session_key,
-				$user_id,
-				(string) $assistant_id
-			);
-
-			$existing_id = $wpdb->get_var( $fallback_query );
-		}
-
-		// Additional fallback: Try without assistant_id in case of mismatch.
-		if ( ! $existing_id ) {
-			$simple_query = $wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d ORDER BY _ID DESC LIMIT 1",
-				$session_key,
-				$user_id
-			);
-
-			$existing_id = $wpdb->get_var( $simple_query );
-
-			// If still no result, try with cct_author_id without assistant_id.
-			if ( ! $existing_id && $user_id > 0 ) {
-				$simple_author_query = $wpdb->prepare(
-					"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d ORDER BY _ID DESC LIMIT 1",
-					$session_key,
-					$user_id
-				);
-
-				$existing_id = $wpdb->get_var( $simple_author_query );
-			}
-		}
-
-		return $existing_id ? absint( $existing_id ) : 0;
+		return 0;
 	}
 }

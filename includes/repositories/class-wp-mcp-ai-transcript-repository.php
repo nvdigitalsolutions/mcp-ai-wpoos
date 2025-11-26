@@ -524,6 +524,81 @@ class WP_MCP_AI_Transcript_Repository {
 	}
 
 	/**
+	 * Find the _ID of an existing transcript for update operations.
+	 *
+	 * This method queries the database to check if a transcript already exists for
+	 * the given session. If found, it returns the _ID so that JetEngine can update
+	 * the existing record instead of creating a duplicate.
+	 *
+	 * @param string $session_key  Normalised session key.
+	 * @param int    $user_id      WordPress user ID.
+	 * @param int    $assistant_id Assistant identifier.
+	 * @return int The _ID of the existing transcript, or 0 if none found.
+	 */
+	public function find_existing_transcript_id( $session_key, $user_id, $assistant_id = 0 ) {
+		global $wpdb;
+
+		if ( '' === $session_key ) {
+			return 0;
+		}
+
+		if ( ! $this->table_exists() ) {
+			return 0;
+		}
+
+		$table        = $this->get_table_name();
+		$user_id      = absint( $user_id );
+		$assistant_id = absint( $assistant_id );
+
+		// Try to find existing transcript with session_key, user_id, and assistant_id.
+		// We prioritize the most recent entry (highest _ID) in case there are duplicates.
+		$query = $wpdb->prepare(
+			"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
+			$session_key,
+			$user_id,
+			(string) $assistant_id
+		);
+
+		$existing_id = $wpdb->get_var( $query );
+
+		// Fallback: Try with cct_author_id if user_id didn't return results.
+		if ( ! $existing_id && $user_id > 0 ) {
+			$fallback_query = $wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
+				$session_key,
+				$user_id,
+				(string) $assistant_id
+			);
+
+			$existing_id = $wpdb->get_var( $fallback_query );
+		}
+
+		// Additional fallback: Try without assistant_id in case of mismatch.
+		if ( ! $existing_id ) {
+			$simple_query = $wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d ORDER BY _ID DESC LIMIT 1",
+				$session_key,
+				$user_id
+			);
+
+			$existing_id = $wpdb->get_var( $simple_query );
+
+			// If still no result, try with cct_author_id without assistant_id.
+			if ( ! $existing_id && $user_id > 0 ) {
+				$simple_author_query = $wpdb->prepare(
+					"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d ORDER BY _ID DESC LIMIT 1",
+					$session_key,
+					$user_id
+				);
+
+				$existing_id = $wpdb->get_var( $simple_author_query );
+			}
+		}
+
+		return $existing_id ? absint( $existing_id ) : 0;
+	}
+
+	/**
 	 * Get the SELECT fields for transcript queries.
 	 *
 	 * Includes session_key and user identification fields for proper
