@@ -216,10 +216,9 @@ class Test_Newly_Registered_Tools extends WP_UnitTestCase {
 		foreach ( $tool_files as $file ) {
 			$filename = basename( $file );
 
-			// Skip interface/base/trait files.
-			if ( strpos( $filename, 'interface' ) !== false ||
-				 strpos( $filename, 'trait' ) !== false ||
-				 strpos( $filename, 'base' ) !== false ) {
+			// Skip trait/base files (interfaces are now in includes/interfaces/).
+			if ( strpos( $filename, 'trait-' ) === 0 ||
+				 strpos( $filename, 'base-' ) === 0 ) {
 				continue;
 			}
 
