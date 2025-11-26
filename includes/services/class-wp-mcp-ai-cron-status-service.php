@@ -665,10 +665,19 @@ class WP_MCP_AI_Cron_Status_Service {
 					if ( ! isset( $result['tool_results'] ) && isset( $result['tool_slug'] ) ) {
 						$tool_name = sanitize_text_field( $result['tool_slug'] );
 
-						// Generate a unique tool_call_id for the async result.
-						// Format: async_{tool_name}_{job_id} for traceability.
-						$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
-						$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
+						// Use the original tool_call_id from context if available (stored during async queueing).
+						// This ensures the async result has the same tool_call_id that the LLM provided
+						// in the original tool call, allowing proper correlation in the chat client.
+						// If not available, generate a fallback tool_call_id for traceability.
+						$tool_call_id = '';
+						if ( isset( $result['context']['tool_call_id'] ) && '' !== $result['context']['tool_call_id'] ) {
+							$tool_call_id = sanitize_text_field( $result['context']['tool_call_id'] );
+						} else {
+							// Fallback: Generate a unique tool_call_id for async results without stored IDs.
+							// Format: async_{tool_name}_{job_id} for traceability.
+							$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
+							$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
+						}
 
 						// Serialize the result for the tool message content.
 						$result_content = wp_json_encode( $result['result'] );

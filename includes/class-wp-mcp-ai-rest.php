@@ -7744,6 +7744,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return new WP_Error( 'wp_mcp_ai_tool_missing', sprintf( __( 'Tool "%s" is not registered.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 404 ) );
 			}
 
+			// Extract tool_call_id if available (from OpenAI/Gemini tool calls).
+			// This is critical for async tools to preserve the original tool_call_id
+			// in their completion responses instead of generating a new one.
+			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
+
 			$context = array(
 				'user_id'               => $user_id,
 				'assistant_id'          => $assistant_id,
@@ -7755,6 +7760,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'endpoint'              => $request->get_route(),
 				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
+
+			// Add tool_call_id to context if available.
+			// This ensures async jobs can preserve the original tool_call_id for proper
+			// correlation with the LLM's tool call requests.
+			if ( '' !== $tool_call_id ) {
+				$context['tool_call_id'] = $tool_call_id;
+			}
 
 			// Special handling for run_openai_external_action tool.
 			if ( 'run_openai_external_action' === $tool_slug ) {
