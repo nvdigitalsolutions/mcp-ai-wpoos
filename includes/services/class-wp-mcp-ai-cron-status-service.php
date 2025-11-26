@@ -725,12 +725,13 @@ class WP_MCP_AI_Cron_Status_Service {
 				$result['status'] = 'failed';
 
 				// Merge error from notifier if available.
-				// Job Notifier stores errors as objects with 'message' and 'code' fields,
-				// but the chat client expects a simple string in the 'error' field.
-				// Extract the message string for 'error' and keep the full object in 'error_data'.
+				// Job Notifier stores errors as associative arrays (PHP) with 'message' and 'code' fields,
+				// which become objects when sent to JavaScript. The chat client expects a simple string
+				// in the 'error' field. Extract the message string for 'error' and keep the full
+				// structure in 'error_data' for backward compatibility.
 				if ( isset( $notifier_status['error'] ) ) {
 					if ( is_array( $notifier_status['error'] ) && isset( $notifier_status['error']['message'] ) ) {
-						// Error is an object - extract the message string.
+						// Error is a structured array - extract the message string.
 						$result['error']      = $notifier_status['error']['message'];
 						$result['error_data'] = $notifier_status['error'];
 					} else {

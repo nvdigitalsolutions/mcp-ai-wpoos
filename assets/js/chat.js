@@ -540,6 +540,30 @@
     }
 
     /**
+     * Extract error message from error value.
+     * Handles both string errors and error objects with a 'message' property.
+     * 
+     * @param {*} error - Error value (string, object, or other)
+     * @param {string} defaultMessage - Default message if error is empty or invalid
+     * @return {string} Extracted error message
+     */
+    function extractErrorMessage(error, defaultMessage) {
+        if (!error) {
+            return defaultMessage || 'Unknown error';
+        }
+        
+        if (typeof error === 'string') {
+            return error;
+        }
+        
+        if (typeof error === 'object' && error.message) {
+            return error.message;
+        }
+        
+        return defaultMessage || 'Unknown error';
+    }
+
+    /**
      * Export conversation to various formats.
      * Uses storage service if available, otherwise uses internal implementation.
      * 
@@ -3400,15 +3424,7 @@
         const result = exportConversation(state, normalizedFormat);
         
         if (!result.success) {
-            // Handle error object or string
-            let errorMsg = 'Unknown error';
-            if (result.error) {
-                if (typeof result.error === 'string') {
-                    errorMsg = result.error;
-                } else if (typeof result.error === 'object' && result.error.message) {
-                    errorMsg = result.error.message;
-                }
-            }
+            const errorMsg = extractErrorMessage(result.error, 'Unknown error');
             alert(getString('exportFailed', 'Export failed: ') + errorMsg);
             return;
         }
@@ -3494,15 +3510,7 @@
                 clearStatusAfterDelay();
             } else {
                 // Save failed
-                // Handle error object or string
-                let errorMsg = 'Failed to save conversation';
-                if (result.error) {
-                    if (typeof result.error === 'string') {
-                        errorMsg = result.error;
-                    } else if (typeof result.error === 'object' && result.error.message) {
-                        errorMsg = result.error.message;
-                    }
-                }
+                const errorMsg = extractErrorMessage(result.error, 'Failed to save conversation');
                 setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
                 
                 if (window.console && console.error) {
@@ -3572,15 +3580,7 @@
                         restoreFormState();
                     } else {
                         // Save failed - ask user whether to proceed
-                        // Handle error object or string
-                        let errorMsg = 'Unknown error';
-                        if (result && result.error) {
-                            if (typeof result.error === 'string') {
-                                errorMsg = result.error;
-                            } else if (typeof result.error === 'object' && result.error.message) {
-                                errorMsg = result.error.message;
-                            }
-                        }
+                        const errorMsg = extractErrorMessage(result && result.error, 'Unknown error');
                         clearStatus(state.container);
                         
                         const proceedMessage = getString(
@@ -5957,12 +5957,10 @@
             
             // Include error information if present
             if (result.metadata && result.metadata.error) {
-                // Handle error object or string
-                let errorMsg = result.metadata.error;
-                if (typeof errorMsg === 'object' && errorMsg.message) {
-                    errorMsg = errorMsg.message;
+                const errorMsg = extractErrorMessage(result.metadata.error, '');
+                if (errorMsg) {
+                    text += '\nError: ' + errorMsg;
                 }
-                text += '\nError: ' + errorMsg;
             }
             
             return {
@@ -7525,14 +7523,10 @@
                             cleanup();
                             // Extract error message - handle both string and object formats.
                             // The backend may send error as a string or as an object with {message, code} fields.
-                            let errorMessage = getString('toolError', 'The tool request failed.');
-                            if (payload && payload.error) {
-                                if (typeof payload.error === 'string') {
-                                    errorMessage = payload.error;
-                                } else if (typeof payload.error === 'object' && payload.error.message) {
-                                    errorMessage = payload.error.message;
-                                }
-                            }
+                            const errorMessage = extractErrorMessage(
+                                payload && payload.error,
+                                getString('toolError', 'The tool request failed.')
+                            );
                             const toolDisplayName = record.toolName || 'Tool';
                             updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
                             reject(new Error(errorMessage));
@@ -9864,10 +9858,9 @@
 
             // Handle error as string or object
             if (metadata.error) {
-                if (typeof metadata.error === 'string' && metadata.error.trim()) {
-                    return metadata.error.trim();
-                } else if (typeof metadata.error === 'object' && metadata.error.message) {
-                    return metadata.error.message.trim();
+                const errorMsg = extractErrorMessage(metadata.error, '');
+                if (errorMsg) {
+                    return errorMsg.trim();
                 }
             }
         }
@@ -12358,11 +12351,7 @@
                                     if (data.message) {
                                         errorMsg = data.message;
                                     } else if (data.error) {
-                                        if (typeof data.error === 'string') {
-                                            errorMsg = data.error;
-                                        } else if (typeof data.error === 'object' && data.error.message) {
-                                            errorMsg = data.error.message;
-                                        }
+                                        errorMsg = extractErrorMessage(data.error, errorMsg);
                                     }
                                 }
                                 throw new Error(errorMsg);
