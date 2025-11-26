@@ -10780,7 +10780,7 @@
         // Check if there are tool results that have completed (not async pending)
         // If so, set "Tool completed successfully" status instead of clearing
         // This allows the calling code's delayed clearStatus to work properly
-        var hasToolResults = data && Array.isArray(data.tool_results) && data.tool_results.length > 0;
+        // hasToolResults was already declared at the start of this function
         var hasAsyncPending = false;
         
         if (hasToolResults) {
