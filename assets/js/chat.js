@@ -9563,9 +9563,16 @@
                                     }
                                 }
                                 
-                                // If no message content found, check for tool results text (agentic loop).
-                                // This ensures Gemini image generation and other tools show proper feedback.
-                                if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                                // Handle tool_results from PHP's final 'message' SSE event.
+                                // PHP (class-wp-mcp-ai-rest.php line ~3341-3345) sends:
+                                //   $payload['tool_results'] = $tool_result_messages;
+                                //   $this->send_sse_event('message', $payload);
+                                // 
+                                // BUG FIX: Previously this was inside `if (!finalText && ...)` which meant
+                                // when both message content AND tool_results were present, the status would
+                                // remain stuck on "Tool is processing..." instead of updating to completion.
+                                // This now runs REGARDLESS of whether finalText was extracted from message content.
+                                if (data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                                     // Check if any tool results are async/pending (e.g., Veo video generation)
                                     let hasAsyncPending = false;
                                     
@@ -9592,6 +9599,7 @@
                                         });
                                     } else {
                                         // All tools have completed - show completion message
+                                        // This status will be cleared by setTimeout in sendChatStreaming after 1.5s
                                         setStatus(state.container, {
                                             message: getString('toolSuccess', 'Tool completed successfully.'),
                                             type: 'tool',
@@ -9599,26 +9607,31 @@
                                         });
                                     }
                                     
-                                    for (const toolResult of data.tool_results) {
-                                        if (!toolResult || !toolResult.content) {
-                                            continue;
-                                        }
-                                        
-                                        // Parse tool result content
-                                        const parsedContent = parseToolResultContent(toolResult.content);
-                                        
-                                        // Skip async pending results - they'll be handled by waitForAsyncToolResult
-                                        if (isAsyncPendingToolResult(parsedContent)) {
-                                            continue;
-                                        }
-                                        
-                                        // Use existing extractTextFromContent helper for consistent text extraction
-                                        const toolText = extractTextFromContent(parsedContent);
-                                        if (toolText) {
-                                            if (finalText) {
-                                                finalText += '\n\n';
+                                    // If no message content found, extract text from tool results.
+                                    // This handles the "agentic loop" case where AI uses tools without
+                                    // generating additional text (e.g., image generation tools).
+                                    if (!finalText) {
+                                        for (const toolResult of data.tool_results) {
+                                            if (!toolResult || !toolResult.content) {
+                                                continue;
                                             }
-                                            finalText += toolText;
+                                            
+                                            // Parse tool result content
+                                            const parsedContent = parseToolResultContent(toolResult.content);
+                                            
+                                            // Skip async pending results - they'll be handled by waitForAsyncToolResult
+                                            if (isAsyncPendingToolResult(parsedContent)) {
+                                                continue;
+                                            }
+                                            
+                                            // Use existing extractTextFromContent helper for consistent text extraction
+                                            const toolText = extractTextFromContent(parsedContent);
+                                            if (toolText) {
+                                                if (finalText) {
+                                                    finalText += '\n\n';
+                                                }
+                                                finalText += toolText;
+                                            }
                                         }
                                     }
                                 }
@@ -9710,6 +9723,29 @@
         });
     }
 
+    /**
+     * Handle status SSE events from PHP backend.
+     * 
+     * PHP sends these status event types during chat processing:
+     * - 'thinking': Initial processing or analyzing tool results
+     * - 'generating': AI is generating a response  
+     * - 'model_switched': Switched to fallback model due to token limits
+     * - 'messages_truncated': Reduced context to fit token limits
+     * - 'max_iterations': Agentic loop reached maximum tool execution iterations
+     * - 'processing_attachments': Processing uploaded files/images before AI call
+     * - 'loading_memory': Loading memory documents from assistant configuration
+     * 
+     * Additional status types supported for future PHP enhancements:
+     * - 'executing_tool': Detailed tool execution (with tool name)
+     * - 'saving': Saving data (post, transcript, etc.)
+     * - 'searching': Performing search operations
+     * - 'crawling': Web crawling in progress
+     * - 'generating_media': Creating images/audio/video
+     * - 'transcribing': Audio transcription in progress
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} data - Event data from PHP containing type and message
+     */
     function handleStatusEvent(state, data) {
         if (!data || !state || !state.container) {
             return;
@@ -9760,9 +9796,58 @@
                     showTime: false
                 });
             }, 2000);
+        } else if (type === 'max_iterations') {
+            // PHP sends this when agentic loop reaches maximum tool execution iterations.
+            // Show warning that tool loop was capped, then allow response to display.
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
+        } else if (type === 'processing_attachments' || type === 'loading_memory' ||
+                   type === 'transcribing' || type === 'crawling' || 
+                   type === 'searching' || type === 'generating_media') {
+            // Status types for operations that may take a moment.
+            // 'processing_attachments': Processing uploaded files/images before AI call
+            // 'loading_memory': Loading memory documents from assistant configuration
+            // Show with timer since these operations can take a while.
+            setStatus(state.container, {
+                message: message,
+                type: 'text-stream',
+                showTime: true,
+                startTime: Date.now()
+            });
+        } else if (type === 'saving' || type === 'executing_tool') {
+            // Status types for shorter operations.
+            // Show without timer as these should complete quickly.
+            setStatus(state.container, {
+                message: message,
+                type: 'text-stream',
+                showTime: false
+            });
+        } else if (type && message) {
+            // Generic fallback handler for any unknown status type from PHP.
+            // This ensures forward compatibility - new status types added to PHP
+            // will still be displayed even if the frontend hasn't been updated.
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
         }
     }
 
+    /**
+     * Handle tool_execution SSE events from PHP backend.
+     * 
+     * PHP sends these event types during the agentic loop:
+     * - 'start': Beginning of tool execution batch (includes tool names and count)
+     * - 'tool_start': Individual tool starting execution
+     * - 'tool_result': Individual tool completed with result
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} data - Event data from PHP containing type, tool_name, result, etc.
+     */
     function handleToolExecutionEvent(state, data) {
         if (!data || !state || !state.messagesEl) {
             return;

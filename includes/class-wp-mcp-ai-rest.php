@@ -2812,6 +2812,51 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration            = 0;
 			$tool_result_messages = array();
 
+			// Send status for attachment processing if attachments are present.
+			// This provides user feedback when images or documents are being analyzed.
+			if ( ! empty( $options['attachments'] ) ) {
+				$attachment_count = count( $options['attachments'] );
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'processing_attachments',
+						'message' => sprintf(
+							/* translators: %d: Number of attachments being processed */
+							_n(
+								'Processing %d attachment…',
+								'Processing %d attachments…',
+								$attachment_count,
+								'wp-mcp-ai'
+							),
+							$attachment_count
+						),
+						'count'   => $attachment_count,
+					)
+				);
+			}
+
+			// Send status for memory document loading if present.
+			if ( ! empty( $options['memory_documents'] ) ) {
+				$memory_count = count( $options['memory_documents'] );
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'loading_memory',
+						'message' => sprintf(
+							/* translators: %d: Number of memory documents being loaded */
+							_n(
+								'Loading %d memory document…',
+								'Loading %d memory documents…',
+								$memory_count,
+								'wp-mcp-ai'
+							),
+							$memory_count
+						),
+						'count'   => $memory_count,
+					)
+				);
+			}
+
 			// Send status update to indicate AI is generating response.
 			$this->send_sse_event(
 				'status',
