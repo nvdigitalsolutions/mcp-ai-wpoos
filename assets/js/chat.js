@@ -9975,7 +9975,7 @@
                     
                     // Add attachments to the assistant display (videos, images, files)
                     if (normalized.attachments && normalized.attachments.length > 0) {
-                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        assistantDisplay.attachments = assistantDisplay.attachments.concat(normalized.attachments);
                     }
                 }
                 
@@ -9987,9 +9987,13 @@
 
             // Display the assistant message with attachments if we have any content
             if (assistantDisplay.text || (assistantDisplay.attachments && assistantDisplay.attachments.length > 0)) {
+                // Extract usage and cost from data (similar to normal flow)
+                const usage = chatData && chatData.usage ? chatData.usage : null;
+                const cost = data && data.cost ? data.cost : null;
+                
                 const messageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
-                    usage: data.cost || null,
-                    cost: data.cost || null
+                    usage: usage,
+                    cost: cost
                 });
                 
                 // Add assistant message to conversation
