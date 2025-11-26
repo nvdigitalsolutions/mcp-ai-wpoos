@@ -43,7 +43,7 @@ if ( ! function_exists( 'esc_html__' ) ) {
 echo "=== Capability Flags Integration Test ===\n\n";
 
 // Load required files.
-require_once __DIR__ . '/includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once __DIR__ . '/includes/interfaces/interface-wp-mcp-ai-tool-interface.php';
 require_once __DIR__ . '/includes/class-wp-mcp-ai-tool-registry.php';
 
 echo "1. Testing tool registry initialization...\n";

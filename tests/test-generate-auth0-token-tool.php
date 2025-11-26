@@ -36,7 +36,7 @@ class Test_WP_MCP_AI_Tool_Generate_Auth0_Token extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-interface.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php';
 
 		$this->tool = new WP_MCP_AI_Tool_Generate_Auth0_Token();

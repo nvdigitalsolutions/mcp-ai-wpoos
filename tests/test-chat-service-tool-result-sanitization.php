@@ -10,7 +10,7 @@
 
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 
 /**
  * Tests for Chat Service tool result sanitization in agentic loop.
