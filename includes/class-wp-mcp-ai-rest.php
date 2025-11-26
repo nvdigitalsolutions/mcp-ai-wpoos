@@ -7503,6 +7503,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Compare two message structures.
 		 *
+		 * Checks if two messages are semantically the same by comparing role, content,
+		 * and relevant metadata fields (tool_call_id, name, tool_calls). This prevents
+		 * duplicate messages when reconstructing conversations from multiple database rows.
+		 *
 		 * @param array $existing Existing message.
 		 * @param array $candidate Candidate message.
 		 * @return bool
@@ -7514,10 +7518,69 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$existing_role  = isset( $existing['role'] ) ? (string) $existing['role'] : '';
 			$candidate_role = isset( $candidate['role'] ) ? (string) $candidate['role'] : '';
-			$existing_text  = isset( $existing['content'] ) ? (string) $existing['content'] : '';
-			$candidate_text = isset( $candidate['content'] ) ? (string) $candidate['content'] : '';
 
-			return $existing_role === $candidate_role && $existing_text === $candidate_text;
+			// Role must match.
+			if ( $existing_role !== $candidate_role ) {
+				return false;
+			}
+
+			// Content comparison - handle both string and array formats.
+			$existing_content  = isset( $existing['content'] ) ? $existing['content'] : '';
+			$candidate_content = isset( $candidate['content'] ) ? $candidate['content'] : '';
+
+			// If both are strings, compare directly.
+			if ( is_string( $existing_content ) && is_string( $candidate_content ) ) {
+				if ( $existing_content !== $candidate_content ) {
+					return false;
+				}
+			} elseif ( is_array( $existing_content ) && is_array( $candidate_content ) ) {
+				// For array content (e.g., multimodal messages with images), do a deep comparison.
+				// Use JSON encoding for reliable comparison.
+				if ( wp_json_encode( $existing_content ) !== wp_json_encode( $candidate_content ) ) {
+					return false;
+				}
+			} else {
+				// Different types (one string, one array) - not a match.
+				return false;
+			}
+
+			// For tool messages, also compare tool_call_id and name.
+			if ( 'tool' === $existing_role ) {
+				$existing_tool_call_id  = isset( $existing['tool_call_id'] ) ? (string) $existing['tool_call_id'] : '';
+				$candidate_tool_call_id = isset( $candidate['tool_call_id'] ) ? (string) $candidate['tool_call_id'] : '';
+
+				if ( $existing_tool_call_id !== $candidate_tool_call_id ) {
+					return false;
+				}
+
+				$existing_name  = isset( $existing['name'] ) ? (string) $existing['name'] : '';
+				$candidate_name = isset( $candidate['name'] ) ? (string) $candidate['name'] : '';
+
+				if ( $existing_name !== $candidate_name ) {
+					return false;
+				}
+			}
+
+			// For assistant messages with tool_calls, compare the tool_calls array.
+			if ( 'assistant' === $existing_role ) {
+				$existing_has_tool_calls  = isset( $existing['tool_calls'] ) && is_array( $existing['tool_calls'] );
+				$candidate_has_tool_calls = isset( $candidate['tool_calls'] ) && is_array( $candidate['tool_calls'] );
+
+				// Both must have or not have tool_calls.
+				if ( $existing_has_tool_calls !== $candidate_has_tool_calls ) {
+					return false;
+				}
+
+				// If both have tool_calls, compare them.
+				if ( $existing_has_tool_calls && $candidate_has_tool_calls ) {
+					// Use JSON encoding for reliable deep comparison.
+					if ( wp_json_encode( $existing['tool_calls'] ) !== wp_json_encode( $candidate['tool_calls'] ) ) {
+						return false;
+					}
+				}
+			}
+
+			return true;
 		}
 
 		/**
