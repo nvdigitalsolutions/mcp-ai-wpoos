@@ -10183,8 +10183,33 @@
             // Save conversation after processing tool results
             saveConversationToStorage(state);
             
-            // Clear status
-            setStatus(state.container, '');
+            // Check if any tool results are async pending before setting final status.
+            // This mirrors the logic at the end of handleChatResponse (lines ~10780-10814).
+            // By setting "Tool completed successfully" here instead of clearing immediately,
+            // the calling code's delayed clearStatus (after 1.5s) will work properly,
+            // giving users time to see the completion message.
+            var hasAsyncPendingTools = false;
+            data.tool_results.forEach(function(toolResult) {
+                if (toolResult && toolResult.content) {
+                    var parsedContent = parseToolResultContent(toolResult.content);
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        hasAsyncPendingTools = true;
+                    }
+                }
+            });
+            
+            if (!hasAsyncPendingTools) {
+                // All tools have completed - set completion status
+                // The calling code (sendChatStreaming) will clear this after 1.5s delay
+                setStatus(state.container, {
+                    message: getString('toolSuccess', 'Tool completed successfully.'),
+                    type: 'tool',
+                    showTime: false
+                });
+            } else {
+                // Async tools still pending - clear status (polling will update it)
+                setStatus(state.container, '');
+            }
             
             return Promise.resolve();
         }
