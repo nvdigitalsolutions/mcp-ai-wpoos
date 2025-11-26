@@ -553,45 +553,45 @@ class WP_MCP_AI_Transcript_Repository {
 		// Try to find existing transcript with session_key, user_id, and assistant_id.
 		// We prioritize the most recent entry (highest _ID) in case there are duplicates.
 		$query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
+			"SELECT _ID FROM `{$table}` WHERE session_key = %s AND user_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via get_table_name() and table_exists().
 			$session_key,
 			$user_id,
 			(string) $assistant_id
 		);
 
-		$existing_id = $wpdb->get_var( $query );
+		$existing_id = $wpdb->get_var( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above with $wpdb->prepare().
 
 		// Fallback: Try with cct_author_id if user_id didn't return results.
 		if ( ! $existing_id && $user_id > 0 ) {
 			$fallback_query = $wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1",
+				"SELECT _ID FROM `{$table}` WHERE session_key = %s AND cct_author_id = %d AND assistant_id = %s ORDER BY _ID DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via get_table_name() and table_exists().
 				$session_key,
 				$user_id,
 				(string) $assistant_id
 			);
 
-			$existing_id = $wpdb->get_var( $fallback_query );
+			$existing_id = $wpdb->get_var( $fallback_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above with $wpdb->prepare().
 		}
 
 		// Additional fallback: Try without assistant_id in case of mismatch.
 		if ( ! $existing_id ) {
 			$simple_query = $wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE session_key = %s AND user_id = %d ORDER BY _ID DESC LIMIT 1",
+				"SELECT _ID FROM `{$table}` WHERE session_key = %s AND user_id = %d ORDER BY _ID DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via get_table_name() and table_exists().
 				$session_key,
 				$user_id
 			);
 
-			$existing_id = $wpdb->get_var( $simple_query );
+			$existing_id = $wpdb->get_var( $simple_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above with $wpdb->prepare().
 
 			// If still no result, try with cct_author_id without assistant_id.
 			if ( ! $existing_id && $user_id > 0 ) {
 				$simple_author_query = $wpdb->prepare(
-					"SELECT _ID FROM {$table} WHERE session_key = %s AND cct_author_id = %d ORDER BY _ID DESC LIMIT 1",
+					"SELECT _ID FROM `{$table}` WHERE session_key = %s AND cct_author_id = %d ORDER BY _ID DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via get_table_name() and table_exists().
 					$session_key,
 					$user_id
 				);
 
-				$existing_id = $wpdb->get_var( $simple_author_query );
+				$existing_id = $wpdb->get_var( $simple_author_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above with $wpdb->prepare().
 			}
 		}
 
