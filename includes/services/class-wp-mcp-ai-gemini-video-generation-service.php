@@ -1092,6 +1092,35 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Check if max attempts reached.
 		if ( $metadata['poll_attempt'] > $metadata['max_attempts'] ) {
+			// Before marking as failed, check one last time for the video file in media library.
+			// The file might have been created but not detected in previous polling attempts.
+			if ( isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
+				$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
+
+				if ( $attachment && ! is_wp_error( $attachment ) ) {
+					// File was found - video generation is complete despite timeout!
+					WP_MCP_AI_Logger::log_event(
+						'veo_timeout_recovery',
+						'Video file found in media library on final timeout check',
+						array(
+							'job_id'   => $job_id,
+							'filename' => $metadata['expected_filename'],
+							'attempts' => $metadata['poll_attempt'],
+						)
+					);
+
+					// Mark as completed and store result.
+					$metadata['status'] = 'completed';
+					$metadata['result'] = $attachment;
+					set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+					// Fire completion hooks.
+					$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+					return;
+				}
+			}
+
+			// File not found - mark as failed.
 			$metadata['status'] = 'failed';
 			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
 			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
