@@ -973,6 +973,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Send SSE headers and initialize streaming.
 			$this->sse_handler->send_sse_headers();
 
+			// Normalize initial details to ensure JSON serializability.
+			// This converts any WP_Error objects to serializable arrays.
+			$initial_details = $this->normalize_data_recursive( $initial_details );
+
 			// Send initial status.
 			$this->sse_handler->send_sse_event( 'cron_job_status', $initial_details );
 
@@ -1042,6 +1046,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$this->sse_handler->send_sse_done();
 					exit;
 				}
+
+				// Normalize updated details to ensure JSON serializability.
+				// This converts any WP_Error objects to serializable arrays.
+				$updated_details = $this->normalize_data_recursive( $updated_details );
 
 				$current_status = isset( $updated_details['status'] ) ? $updated_details['status'] : 'unknown';
 
@@ -8343,6 +8351,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $error_array;
+		}
+
+		/**
+		 * Recursively normalize data structures to ensure JSON serializability.
+		 *
+		 * Walks through arrays and objects to convert any WP_Error instances
+		 * to serializable array format. This prevents JSON encoding failures
+		 * when sending data through SSE streams or REST API responses.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param mixed $data Data to normalize, can be any type.
+		 * @return mixed Normalized data with all WP_Error objects converted to arrays.
+		 */
+		protected function normalize_data_recursive( $data ) {
+			// Handle WP_Error directly.
+			if ( is_wp_error( $data ) ) {
+				return $this->normalize_tool_result( $data );
+			}
+
+			// Handle arrays - recursively process each element.
+			if ( is_array( $data ) ) {
+				$normalized = array();
+				foreach ( $data as $key => $value ) {
+					$normalized[ $key ] = $this->normalize_data_recursive( $value );
+				}
+				return $normalized;
+			}
+
+			// Handle objects - convert to array and process, then keep as array.
+			// Objects are converted to arrays to ensure JSON serialization.
+			if ( is_object( $data ) ) {
+				// Check if it's a WP_Error first.
+				if ( $data instanceof WP_Error ) {
+					return $this->normalize_tool_result( $data );
+				}
+				// Convert other objects to array and recurse.
+				return $this->normalize_data_recursive( (array) $data );
+			}
+
+			// Scalars pass through unchanged.
+			return $data;
 		}
 
 		/**

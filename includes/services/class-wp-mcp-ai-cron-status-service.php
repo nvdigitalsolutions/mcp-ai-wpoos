@@ -825,7 +825,8 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
 
-			return $result;
+			// Normalize result to ensure JSON serializability.
+			return $this->normalize_data_recursive( $result );
 		}
 
 		// Check if it's an async tool job.
@@ -867,7 +868,8 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
 
-			return $result;
+			// Normalize result to ensure JSON serializability.
+			return $this->normalize_data_recursive( $result );
 		}
 
 		// Regular cron job.
@@ -902,6 +904,70 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Add admin URL.
 		$job['admin_url'] = $this->get_admin_url( $job_id );
 
-		return $job;
+		// Normalize result to ensure JSON serializability.
+		return $this->normalize_data_recursive( $job );
+	}
+
+	/**
+	 * Recursively normalize data structures to ensure JSON serializability.
+	 *
+	 * Walks through arrays and objects to convert any WP_Error instances
+	 * to serializable array format. This prevents JSON encoding failures
+	 * when sending data through SSE streams or REST API responses.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param mixed $data Data to normalize, can be any type.
+	 * @return mixed Normalized data with all WP_Error objects converted to arrays.
+	 */
+	protected function normalize_data_recursive( $data ) {
+		// Handle WP_Error directly.
+		if ( is_wp_error( $data ) ) {
+			$error_data = $data->get_error_data();
+			$error_array = array(
+				'error'   => true,
+				'code'    => $data->get_error_code(),
+				'message' => $data->get_error_message(),
+			);
+
+			if ( ! empty( $error_data ) ) {
+				$error_array['data'] = $error_data;
+			}
+
+			return $error_array;
+		}
+
+		// Handle arrays - recursively process each element.
+		if ( is_array( $data ) ) {
+			$normalized = array();
+			foreach ( $data as $key => $value ) {
+				$normalized[ $key ] = $this->normalize_data_recursive( $value );
+			}
+			return $normalized;
+		}
+
+		// Handle objects - convert to array and process.
+		if ( is_object( $data ) ) {
+			// Check if it's a WP_Error first.
+			if ( $data instanceof WP_Error ) {
+				$error_data = $data->get_error_data();
+				$error_array = array(
+					'error'   => true,
+					'code'    => $data->get_error_code(),
+					'message' => $data->get_error_message(),
+				);
+
+				if ( ! empty( $error_data ) ) {
+					$error_array['data'] = $error_data;
+				}
+
+				return $error_array;
+			}
+			// Convert other objects to array and recurse.
+			return $this->normalize_data_recursive( (array) $data );
+		}
+
+		// Scalars pass through unchanged.
+		return $data;
 	}
 }
