@@ -10180,6 +10180,75 @@
             });
         }
 
+        /**
+         * Helper function to aggregate usage and cost data from a normalized tool result.
+         * 
+         * @param {Object} normalized - The normalized tool result containing usage/cost data
+         * @param {Object|null} aggregatedUsage - Current aggregated usage object (will be modified)
+         * @param {Object|null} aggregatedCost - Current aggregated cost object (will be modified)
+         * @return {Object} Object with updated aggregatedUsage and aggregatedCost
+         */
+        function aggregateToolUsageAndCost(normalized, aggregatedUsage, aggregatedCost) {
+            if (!normalized) {
+                return { usage: aggregatedUsage, cost: aggregatedCost };
+            }
+
+            // Aggregate usage from normalized tool result
+            if (normalized.usage && typeof normalized.usage === 'object') {
+                if (!aggregatedUsage) {
+                    aggregatedUsage = {
+                        prompt_tokens: 0,
+                        completion_tokens: 0,
+                        total_tokens: 0
+                    };
+                }
+                aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (normalized.usage.prompt_tokens || 0);
+                aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (normalized.usage.completion_tokens || 0);
+                aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (normalized.usage.total_tokens || 0);
+                if (normalized.usage.is_estimated) {
+                    aggregatedUsage.is_estimated = true;
+                }
+                if (normalized.usage.model && !aggregatedUsage.model) {
+                    aggregatedUsage.model = normalized.usage.model;
+                }
+                if (normalized.usage.provider && !aggregatedUsage.provider) {
+                    aggregatedUsage.provider = normalized.usage.provider;
+                }
+            }
+
+            // Aggregate cost from normalized tool result
+            if (normalized.cost && typeof normalized.cost === 'object' && typeof normalized.cost.cost_usd === 'number') {
+                if (!aggregatedCost) {
+                    aggregatedCost = {
+                        cost_usd: 0
+                    };
+                }
+                aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + normalized.cost.cost_usd;
+                if (normalized.cost.is_estimated) {
+                    aggregatedCost.is_estimated = true;
+                }
+                if (!aggregatedCost.provider && normalized.cost.provider) {
+                    aggregatedCost.provider = normalized.cost.provider;
+                }
+                if (!aggregatedCost.model && normalized.cost.model) {
+                    aggregatedCost.model = normalized.cost.model;
+                }
+            }
+
+            // Also collect from top-level provider/model if present
+            if (normalized.provider && !aggregatedUsage) {
+                aggregatedUsage = {};
+            }
+            if (normalized.provider && aggregatedUsage && !aggregatedUsage.provider) {
+                aggregatedUsage.provider = normalized.provider;
+            }
+            if (normalized.model && aggregatedUsage && !aggregatedUsage.model) {
+                aggregatedUsage.model = normalized.model;
+            }
+
+            return { usage: aggregatedUsage, cost: aggregatedCost };
+        }
+
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             // Update status to indicate tool results are being added (use existing string)
@@ -10249,57 +10318,9 @@
                         }
 
                         // Aggregate usage and cost from normalized tool result
-                        if (normalized.usage && typeof normalized.usage === 'object') {
-                            if (!aggregatedUsage) {
-                                aggregatedUsage = {
-                                    prompt_tokens: 0,
-                                    completion_tokens: 0,
-                                    total_tokens: 0
-                                };
-                            }
-                            aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (normalized.usage.prompt_tokens || 0);
-                            aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (normalized.usage.completion_tokens || 0);
-                            aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (normalized.usage.total_tokens || 0);
-                            if (normalized.usage.is_estimated) {
-                                aggregatedUsage.is_estimated = true;
-                            }
-                            if (normalized.usage.model && !aggregatedUsage.model) {
-                                aggregatedUsage.model = normalized.usage.model;
-                            }
-                            if (normalized.usage.provider && !aggregatedUsage.provider) {
-                                aggregatedUsage.provider = normalized.usage.provider;
-                            }
-                        }
-
-                        // Aggregate cost from normalized tool result
-                        if (normalized.cost && typeof normalized.cost === 'object' && typeof normalized.cost.cost_usd === 'number') {
-                            if (!aggregatedCost) {
-                                aggregatedCost = {
-                                    cost_usd: 0
-                                };
-                            }
-                            aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + normalized.cost.cost_usd;
-                            if (normalized.cost.is_estimated) {
-                                aggregatedCost.is_estimated = true;
-                            }
-                            if (!aggregatedCost.provider && normalized.cost.provider) {
-                                aggregatedCost.provider = normalized.cost.provider;
-                            }
-                            if (!aggregatedCost.model && normalized.cost.model) {
-                                aggregatedCost.model = normalized.cost.model;
-                            }
-                        }
-
-                        // Also collect from top-level provider/model if present
-                        if (normalized.provider && !aggregatedUsage) {
-                            aggregatedUsage = {};
-                        }
-                        if (normalized.provider && aggregatedUsage && !aggregatedUsage.provider) {
-                            aggregatedUsage.provider = normalized.provider;
-                        }
-                        if (normalized.model && aggregatedUsage && !aggregatedUsage.model) {
-                            aggregatedUsage.model = normalized.model;
-                        }
+                        const aggregated = aggregateToolUsageAndCost(normalized, aggregatedUsage, aggregatedCost);
+                        aggregatedUsage = aggregated.usage;
+                        aggregatedCost = aggregated.cost;
                     }
                 });
             } else {
@@ -10341,57 +10362,9 @@
                         }
 
                         // Aggregate usage and cost from normalized tool result
-                        if (normalized.usage && typeof normalized.usage === 'object') {
-                            if (!aggregatedUsage) {
-                                aggregatedUsage = {
-                                    prompt_tokens: 0,
-                                    completion_tokens: 0,
-                                    total_tokens: 0
-                                };
-                            }
-                            aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (normalized.usage.prompt_tokens || 0);
-                            aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (normalized.usage.completion_tokens || 0);
-                            aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (normalized.usage.total_tokens || 0);
-                            if (normalized.usage.is_estimated) {
-                                aggregatedUsage.is_estimated = true;
-                            }
-                            if (normalized.usage.model && !aggregatedUsage.model) {
-                                aggregatedUsage.model = normalized.usage.model;
-                            }
-                            if (normalized.usage.provider && !aggregatedUsage.provider) {
-                                aggregatedUsage.provider = normalized.usage.provider;
-                            }
-                        }
-
-                        // Aggregate cost from normalized tool result
-                        if (normalized.cost && typeof normalized.cost === 'object' && typeof normalized.cost.cost_usd === 'number') {
-                            if (!aggregatedCost) {
-                                aggregatedCost = {
-                                    cost_usd: 0
-                                };
-                            }
-                            aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + normalized.cost.cost_usd;
-                            if (normalized.cost.is_estimated) {
-                                aggregatedCost.is_estimated = true;
-                            }
-                            if (!aggregatedCost.provider && normalized.cost.provider) {
-                                aggregatedCost.provider = normalized.cost.provider;
-                            }
-                            if (!aggregatedCost.model && normalized.cost.model) {
-                                aggregatedCost.model = normalized.cost.model;
-                            }
-                        }
-
-                        // Also collect from top-level provider/model if present
-                        if (normalized.provider && !aggregatedUsage) {
-                            aggregatedUsage = {};
-                        }
-                        if (normalized.provider && aggregatedUsage && !aggregatedUsage.provider) {
-                            aggregatedUsage.provider = normalized.provider;
-                        }
-                        if (normalized.model && aggregatedUsage && !aggregatedUsage.model) {
-                            aggregatedUsage.model = normalized.model;
-                        }
+                        const aggregated = aggregateToolUsageAndCost(normalized, aggregatedUsage, aggregatedCost);
+                        aggregatedUsage = aggregated.usage;
+                        aggregatedCost = aggregated.cost;
                     }
                 });
             }
