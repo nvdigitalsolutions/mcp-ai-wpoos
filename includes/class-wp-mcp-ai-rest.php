@@ -2410,7 +2410,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Execute each tool and collect results.
 				foreach ( $tool_calls as $tool_call ) {
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
 
 					// Extract tool call metadata for message construction.
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
@@ -2843,7 +2843,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
 
 					// Get the tool instance for interface-based sanitization.
 					$tool_instance   = null;
@@ -7724,9 +7724,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request          Original REST request.
 		 * @param int             $iteration        Current iteration number (default 0).
 		 * @param int             $max_iterations   Maximum iterations (default 5).
+	 * @param array           $transcript_context Transcript context containing session_key for async job routing (default empty array).
 		 * @return mixed Tool execution result.
 		 */
-		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5 ) {
+		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5, $transcript_context = array() ) {
 			if ( ! isset( $tool_call['function']['name'] ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'wp-mcp-ai' ) );
 			}
@@ -7829,6 +7830,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// correlation with the LLM's tool call requests.
 			if ( '' !== $tool_call_id ) {
 				$context['tool_call_id'] = $tool_call_id;
+			}
+
+			// Add session_key to context if available from transcript_context.
+			// This enables async job completion notifications to be routed back to the correct chat session.
+			// The async executor will sanitize this to session_id (matching the allowed context keys).
+			if ( ! empty( $transcript_context['session_key'] ) ) {
+				$context['session_id'] = $transcript_context['session_key'];
 			}
 
 			// Special handling for run_openai_external_action tool.
