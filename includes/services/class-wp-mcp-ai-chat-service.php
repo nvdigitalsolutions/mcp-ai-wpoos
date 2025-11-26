@@ -1025,19 +1025,24 @@ class WP_MCP_AI_Chat_Service {
 	 * @return mixed Sanitized content, or original content if tool doesn't implement interface.
 	 */
 	private function apply_tool_sanitization( $content, $tool_name ) {
-		if ( ! is_array( $content ) || empty( $tool_name ) ) {
+		// Return early if no tool name provided.
+		if ( empty( $tool_name ) ) {
 			return $content;
 		}
 
+		// Check if tool is registered.
 		if ( ! $this->tool_registry->is_tool_registered( $tool_name ) ) {
 			return $content;
 		}
 
+		// Get tool instance and check if it implements sanitization interface.
 		$tool_instance = $this->tool_registry->get_tool( $tool_name );
 		if ( ! $tool_instance || ! ( $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) ) {
 			return $content;
 		}
 
+		// Apply tool's sanitization method.
+		// The tool's implementation will handle content type validation.
 		return $tool_instance->sanitize_for_llm( $content );
 	}
 }
