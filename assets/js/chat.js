@@ -10503,12 +10503,11 @@
 
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-            // Update status to indicate tool results are being added (use existing string)
-            setStatus(state.container, {
-                message: getString('toolPolling', 'Tool is processing…'),
-                type: 'text-stream',
-                showTime: false
-            });
+            // Note: We don't update status here because the SSE stream processing
+            // has already set the appropriate status (either "Tool completed successfully"
+            // or "Tool is processing" for async pending tools).
+            // Setting "Tool is processing" here would overwrite that completion status,
+            // causing the status to show "Tool is processing" even after tools complete.
             
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
