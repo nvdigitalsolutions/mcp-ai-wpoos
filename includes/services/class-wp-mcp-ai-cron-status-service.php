@@ -83,17 +83,23 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Prune stale jobs first.
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		// Get all jobs.
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-
 		// Get async tool jobs with optional assistant filter.
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 
 		// Get video generation jobs.
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
-		// Merge async tool jobs, video jobs, and regular cron jobs.
-		$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
+		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,
+		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
+		if ( null !== $assistant_id ) {
+			// Multi-widget isolation: only show jobs for this specific assistant.
+			$all_jobs = array_merge( $async_jobs, $video_jobs );
+		} else {
+			// No filter: include all jobs (regular cron + async + video).
+			$jobs     = WP_MCP_AI_Cron_Manager::get_jobs();
+			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+		}
 
 		if ( empty( $all_jobs ) ) {
 			return array();
@@ -544,12 +550,22 @@ class WP_MCP_AI_Cron_Status_Service {
 		$is_admin = user_can( $user_id, 'manage_options' );
 
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
 		// Include async tool jobs and video jobs with optional assistant filter.
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
-		$all_jobs   = array_merge( $jobs, $async_jobs, $video_jobs );
+
+		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
+		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,
+		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
+		if ( null !== $assistant_id ) {
+			// Multi-widget isolation: only show jobs for this specific assistant.
+			$all_jobs = array_merge( $async_jobs, $video_jobs );
+		} else {
+			// No filter: include all jobs (regular cron + async + video).
+			$jobs     = WP_MCP_AI_Cron_Manager::get_jobs();
+			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+		}
 
 		$counts = array(
 			'pending'   => 0,

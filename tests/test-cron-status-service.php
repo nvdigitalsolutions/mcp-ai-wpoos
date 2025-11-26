@@ -334,6 +334,175 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_status_summary filters by assistant_id for multi-widget isolation.
+	 *
+	 * When assistant_id is provided, only jobs for that specific assistant should be returned.
+	 * Regular cron jobs (which don't have assistant_id) should be excluded.
+	 */
+	public function test_get_status_summary_filters_by_assistant_id() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		$assistant_1 = 100;
+		$assistant_2 = 200;
+
+		// Create a regular cron job (no assistant_id - should be excluded when filtering).
+		$hook      = 'wp_mcp_ai_test_cron';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook, array(), 'single', $timestamp, $this->user_id );
+
+		// Create an async tool job for assistant 1.
+		$async_job_1 = 'async_test_assistant_1';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_1,
+			array(
+				'job_id'    => $async_job_1,
+				'tool_slug' => 'test_tool',
+				'status'    => 'pending',
+				'context'   => array(
+					'user_id'      => $this->user_id,
+					'assistant_id' => $assistant_1,
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Create a video job for assistant 2.
+		$video_job_2 = 'veo_assistant_2';
+		set_transient(
+			'wp_mcp_ai_veo_async_' . $video_job_2,
+			array(
+				'job_id'         => $video_job_2,
+				'operation_name' => 'operations/test',
+				'status'         => 'pending',
+				'args'           => array(
+					'user_id'      => $this->user_id,
+					'assistant_id' => $assistant_2,
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Without assistant filter - should return all jobs (cron + async + video).
+		$summary_all = $this->service->get_status_summary( $this->user_id, 10, null );
+		$this->assertCount( 3, $summary_all, 'Without filter, all jobs should be returned' );
+
+		// Filter by assistant_1 - should only return async_job_1, not the regular cron or video_job_2.
+		$summary_1 = $this->service->get_status_summary( $this->user_id, 10, $assistant_1 );
+		$this->assertCount( 1, $summary_1, 'Only assistant 1 job should be returned' );
+		$this->assertEquals( $async_job_1, $summary_1[0]['job_id'] );
+
+		// Filter by assistant_2 - should only return video_job_2.
+		$summary_2 = $this->service->get_status_summary( $this->user_id, 10, $assistant_2 );
+		$this->assertCount( 1, $summary_2, 'Only assistant 2 job should be returned' );
+		$this->assertEquals( $video_job_2, $summary_2[0]['job_id'] );
+
+		// Filter by non-existent assistant - should return no jobs.
+		$summary_none = $this->service->get_status_summary( $this->user_id, 10, 999 );
+		$this->assertCount( 0, $summary_none, 'Non-existent assistant should return no jobs' );
+
+		// Clean up transients.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_1 );
+		delete_transient( 'wp_mcp_ai_veo_async_' . $video_job_2 );
+	}
+
+	/**
+	 * Test get_status_counts filters by assistant_id for multi-widget isolation.
+	 *
+	 * When assistant_id is provided, only jobs for that specific assistant should be counted.
+	 * Regular cron jobs (which don't have assistant_id) should be excluded.
+	 */
+	public function test_get_status_counts_filters_by_assistant_id() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		$assistant_1 = 100;
+		$assistant_2 = 200;
+
+		// Create a regular cron job (no assistant_id - should be excluded when filtering).
+		$hook      = 'wp_mcp_ai_test_cron_counts';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook, array(), 'single', $timestamp, $this->user_id );
+
+		// Create an async tool job for assistant 1.
+		$async_job_1 = 'async_test_counts_1';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_1,
+			array(
+				'job_id'    => $async_job_1,
+				'tool_slug' => 'test_tool',
+				'status'    => 'pending',
+				'context'   => array(
+					'user_id'      => $this->user_id,
+					'assistant_id' => $assistant_1,
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Create a completed video job for assistant 1.
+		$video_job_1 = 'veo_counts_1';
+		set_transient(
+			'wp_mcp_ai_veo_async_' . $video_job_1,
+			array(
+				'job_id'         => $video_job_1,
+				'operation_name' => 'operations/test',
+				'status'         => 'completed',
+				'args'           => array(
+					'user_id'      => $this->user_id,
+					'assistant_id' => $assistant_1,
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Create an async tool job for assistant 2.
+		$async_job_2 = 'async_test_counts_2';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_2,
+			array(
+				'job_id'    => $async_job_2,
+				'tool_slug' => 'test_tool',
+				'status'    => 'pending',
+				'context'   => array(
+					'user_id'      => $this->user_id,
+					'assistant_id' => $assistant_2,
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Without assistant filter - should count all jobs.
+		$counts_all = $this->service->get_status_counts( $this->user_id, null );
+		$this->assertEquals( 4, $counts_all['total'], 'Without filter, all jobs should be counted' );
+		$this->assertEquals( 3, $counts_all['pending'], 'Without filter, pending jobs should include cron + async jobs' );
+		$this->assertEquals( 1, $counts_all['completed'], 'Without filter, completed job should be counted' );
+
+		// Filter by assistant_1 - should only count jobs for assistant 1.
+		$counts_1 = $this->service->get_status_counts( $this->user_id, $assistant_1 );
+		$this->assertEquals( 2, $counts_1['total'], 'Assistant 1 should have 2 jobs' );
+		$this->assertEquals( 1, $counts_1['pending'], 'Assistant 1 should have 1 pending job' );
+		$this->assertEquals( 1, $counts_1['completed'], 'Assistant 1 should have 1 completed job' );
+
+		// Filter by assistant_2 - should only count jobs for assistant 2.
+		$counts_2 = $this->service->get_status_counts( $this->user_id, $assistant_2 );
+		$this->assertEquals( 1, $counts_2['total'], 'Assistant 2 should have 1 job' );
+		$this->assertEquals( 1, $counts_2['pending'], 'Assistant 2 should have 1 pending job' );
+		$this->assertEquals( 0, $counts_2['completed'], 'Assistant 2 should have 0 completed jobs' );
+
+		// Filter by non-existent assistant - should return zero counts.
+		$counts_none = $this->service->get_status_counts( $this->user_id, 999 );
+		$this->assertEquals( 0, $counts_none['total'], 'Non-existent assistant should have 0 jobs' );
+
+		// Clean up transients.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_1 );
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_2 );
+		delete_transient( 'wp_mcp_ai_veo_async_' . $video_job_1 );
+	}
+
+	/**
 	 * Test that polling status is counted as running, not completed.
 	 */
 	public function test_polling_status_counted_as_running() {
