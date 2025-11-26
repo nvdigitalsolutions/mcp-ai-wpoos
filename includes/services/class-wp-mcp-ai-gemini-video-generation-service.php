@@ -1092,6 +1092,35 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Check if max attempts reached.
 		if ( $metadata['poll_attempt'] > $metadata['max_attempts'] ) {
+			// Before marking as failed, check one last time for the video file in media library.
+			// The file might have been created but not detected in previous polling attempts.
+			if ( isset( $metadata['expected_filename'] ) && ! empty( $metadata['expected_filename'] ) ) {
+				$attachment = $this->check_for_created_video_file( $metadata['expected_filename'], $job_id );
+
+				if ( $attachment && ! is_wp_error( $attachment ) ) {
+					// File was found - video generation is complete despite timeout!
+					WP_MCP_AI_Logger::log_event(
+						'veo_timeout_recovery',
+						'Video file found in media library on final timeout check',
+						array(
+							'job_id'   => $job_id,
+							'filename' => $metadata['expected_filename'],
+							'attempts' => $metadata['poll_attempt'],
+						)
+					);
+
+					// Mark as completed and store result.
+					$metadata['status'] = 'completed';
+					$metadata['result'] = $attachment;
+					set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+					// Fire completion hooks.
+					$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+					return;
+				}
+			}
+
+			// File not found - mark as failed.
 			$metadata['status'] = 'failed';
 			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
 			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
@@ -1822,18 +1851,114 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$query = new WP_Query( $args );
 
 		if ( ! $query->have_posts() ) {
-			// File not created yet.
-			return false;
-		}
+			// Fallback: Search by filename pattern if job_id metadata search failed.
+			// This handles cases where the video was uploaded by a separate process
+			// (e.g., webhook, external service) without the job_id metadata.
+			// Extract the unique ID portion from the expected filename for flexible matching.
+			// Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4
 
-		$attachment    = $query->posts[0];
-		$attachment_id = $attachment->ID;
+			// Validate expected_filename format before proceeding with pattern extraction.
+			if ( ! preg_match( '/^veo-video-(.+)\.mp4$/', $expected_filename, $matches ) ) {
+				// Invalid filename format - cannot extract unique ID.
+				return false;
+			}
 
-		// Verify the filename matches to ensure we have the right file.
-		$file_path = get_attached_file( $attachment_id );
-		if ( $file_path && basename( $file_path ) !== $expected_filename ) {
-			// Filename mismatch - wrong file.
-			return false;
+			// Extract the unique ID portion, handling both formats:
+			// - veo_69264137e396a4_03027627 (from job_id)
+			// - 69264137e396a4_03027627 (from external upload)
+			$filename_id = $matches[1]; // e.g., "veo_69264137e396a4_03027627"
+			$unique_id   = str_replace( 'veo_', '', $filename_id ); // e.g., "69264137e396a4_03027627"
+
+			// Search for veo video attachments created recently (within last hour).
+			// Only search for videos with veo metadata to avoid false positives.
+			$args_fallback = array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'post_mime_type' => 'video/mp4',
+				'posts_per_page' => 20,
+				'meta_query'     => array(
+					'relation' => 'OR',
+					array(
+						'key'     => '_veo_prompt',
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => '_veo_model',
+						'compare' => 'EXISTS',
+					),
+				),
+				'date_query'     => array(
+					array(
+						'after' => '1 hour ago',
+					),
+				),
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			);
+
+			$fallback_query = new WP_Query( $args_fallback );
+
+			if ( ! $fallback_query->have_posts() ) {
+				// File not created yet.
+				return false;
+			}
+
+			// Check each attachment for filename match.
+			foreach ( $fallback_query->posts as $post ) {
+				$file_path = get_attached_file( $post->ID );
+				if ( ! $file_path ) {
+					continue;
+				}
+
+				$basename = basename( $file_path );
+
+				// Check for exact match or match without veo_ prefix.
+				// Use strict pattern matching to avoid false positives.
+				if ( $basename === $expected_filename ||
+					 $basename === 'veo-video-' . $unique_id . '.mp4' ) {
+
+					WP_MCP_AI_Logger::log_event(
+						'veo_file_found_by_filename',
+						'Video file found via filename fallback (uploaded by external process)',
+						array(
+							'job_id'            => $job_id,
+							'expected_filename' => $expected_filename,
+							'actual_filename'   => $basename,
+							'attachment_id'     => $post->ID,
+						)
+					);
+
+					$attachment_id = $post->ID;
+
+					// Set the job_id metadata now so future checks will find it.
+					update_post_meta( $attachment_id, '_veo_job_id', sanitize_key( $job_id ) );
+
+					break;
+				}
+			}
+
+			if ( ! isset( $attachment_id ) ) {
+				// File not created yet.
+				return false;
+			}
+		} else {
+			$attachment    = $query->posts[0];
+			$attachment_id = $attachment->ID;
+
+			// Verify the filename matches to ensure we have the right file.
+			$file_path = get_attached_file( $attachment_id );
+			if ( $file_path && basename( $file_path ) !== $expected_filename ) {
+				// Filename mismatch - log but continue with this attachment since job_id matched.
+				WP_MCP_AI_Logger::log_event(
+					'veo_filename_mismatch',
+					'Found attachment by job_id but filename differs',
+					array(
+						'expected' => $expected_filename,
+						'actual'   => basename( $file_path ),
+						'job_id'   => $job_id,
+					)
+				);
+			}
 		}
 
 		// Get stored metadata.

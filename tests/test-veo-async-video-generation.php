@@ -263,4 +263,131 @@ class Test_Veo_Async_Video_Generation extends WP_UnitTestCase {
 		$this->assertContains( 'read', $flags );
 		$this->assertContains( 'requires-credentials', $flags );
 	}
+
+	/**
+	 * Test timeout recovery when video file exists in media library.
+	 *
+	 * Verifies that when polling reaches max attempts, the service checks
+	 * one last time for the video file in the media library before marking
+	 * the job as failed. This test simulates a video uploaded by an external
+	 * process (webhook/AJAX) that has veo metadata but lacks the job_id metadata.
+	 */
+	public function test_timeout_recovery_checks_media_library() {
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		// Create a job that's about to timeout.
+		$job_id   = 'veo_timeout_test';
+		$metadata = array(
+			'job_id'            => $job_id,
+			'operation_name'    => 'operations/test-timeout',
+			'model'             => 'veo-3.1-generate-preview',
+			'args'              => array(
+				'prompt'        => 'Timeout test video',
+				'user_id'       => 1,
+				'save_to_media' => true,
+			),
+			'status'            => 'polling',
+			'queued_at'         => time() - 300,
+			'poll_attempt'      => 60, // At max attempts.
+			'max_attempts'      => 60,
+			'expected_filename' => 'veo-video-' . $job_id . '.mp4',
+		);
+
+		set_transient(
+			WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id,
+			$metadata,
+			DAY_IN_SECONDS
+		);
+
+		// Create a video attachment in the media library as if uploaded by external process.
+		// Simulate the scenario where video is uploaded without job_id metadata.
+		$attachment_id = $this->factory->attachment->create_upload_object(
+			WP_MCP_AI_PATH . 'tests/fixtures/sample-video.mp4'
+		);
+
+		// Set the filename to match the unique ID pattern (without veo_ prefix).
+		// This simulates external upload that uses just the unique ID portion.
+		$upload_dir = wp_upload_dir();
+		$file_path  = get_attached_file( $attachment_id );
+		$unique_id  = str_replace( array( 'veo-video-', '.mp4', 'veo_' ), '', $metadata['expected_filename'] );
+		$new_path   = $upload_dir['path'] . '/veo-video-' . $unique_id . '.mp4';
+
+		// Rename the file to match external upload pattern.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+		rename( $file_path, $new_path );
+		update_attached_file( $attachment_id, $new_path );
+
+		// Add veo metadata (as external process would) but NOT job_id metadata.
+		update_post_meta( $attachment_id, '_veo_prompt', 'Timeout test video' );
+		update_post_meta( $attachment_id, '_veo_duration', 5 );
+		update_post_meta( $attachment_id, '_veo_aspect_ratio', '16:9' );
+		update_post_meta( $attachment_id, '_veo_resolution', '720p' );
+		update_post_meta( $attachment_id, '_veo_model', 'veo-3.1-generate-preview' );
+		update_post_meta( $attachment_id, '_veo_provider', 'gemini' );
+		// NOTE: NOT setting _veo_job_id to simulate external upload.
+
+		// Trigger polling - should detect the file via filename fallback and mark as completed.
+		$service->poll_video_async( $job_id );
+
+		// Verify the job is marked as completed, not failed.
+		$updated = get_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id );
+
+		$this->assertIsArray( $updated );
+		$this->assertEquals( 'completed', $updated['status'], 'Job should be marked as completed after finding file in media library' );
+		$this->assertArrayHasKey( 'result', $updated );
+		$this->assertEquals( $attachment_id, $updated['result']['attachment_id'] );
+		$this->assertArrayNotHasKey( 'error', $updated, 'Job should not have an error when file is found' );
+
+		// Verify job_id metadata was retroactively added.
+		$job_id_meta = get_post_meta( $attachment_id, '_veo_job_id', true );
+		$this->assertEquals( sanitize_key( $job_id ), $job_id_meta, 'Job ID should be retroactively added to attachment metadata' );
+	}
+
+	/**
+	 * Test timeout failure when video file doesn't exist.
+	 *
+	 * Verifies that when polling reaches max attempts and no file exists
+	 * in media library, the job is properly marked as failed.
+	 */
+	public function test_timeout_failure_when_file_not_found() {
+		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+
+		// Create a job that's about to timeout.
+		$job_id   = 'veo_timeout_fail_test';
+		$metadata = array(
+			'job_id'            => $job_id,
+			'operation_name'    => 'operations/test-timeout-fail',
+			'model'             => 'veo-3.1-generate-preview',
+			'args'              => array(
+				'prompt'        => 'Timeout fail test video',
+				'user_id'       => 1,
+				'save_to_media' => true,
+			),
+			'status'            => 'polling',
+			'queued_at'         => time() - 300,
+			'poll_attempt'      => 60, // At max attempts.
+			'max_attempts'      => 60,
+			'expected_filename' => 'veo-video-' . $job_id . '.mp4',
+		);
+
+		set_transient(
+			WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id,
+			$metadata,
+			DAY_IN_SECONDS
+		);
+
+		// DO NOT create a video file - simulating actual timeout.
+
+		// Trigger polling - should mark as failed since file doesn't exist.
+		$service->poll_video_async( $job_id );
+
+		// Verify the job is marked as failed.
+		$updated = get_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id );
+
+		$this->assertIsArray( $updated );
+		$this->assertEquals( 'failed', $updated['status'], 'Job should be marked as failed when file is not found' );
+		$this->assertArrayHasKey( 'error', $updated );
+		$this->assertStringContainsString( 'timed out', $updated['error'] );
+		$this->assertArrayNotHasKey( 'result', $updated, 'Failed job should not have a result' );
+	}
 }
