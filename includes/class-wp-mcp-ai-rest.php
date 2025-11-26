@@ -2412,6 +2412,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
+					// Convert WP_Error to serializable format to prevent JSON encoding failures.
+					$tool_result = $this->normalize_tool_result( $tool_result );
+
 					// Extract tool call metadata for message construction.
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
@@ -2844,6 +2847,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
+
+					// Convert WP_Error to serializable format to prevent JSON encoding failures.
+					$tool_result = $this->normalize_tool_result( $tool_result );
 
 					// Get the tool instance for interface-based sanitization.
 					$tool_instance   = null;
@@ -8297,6 +8303,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $capability_flags;
+		}
+
+		/**
+		 * Convert WP_Error to a serializable error format.
+		 *
+		 * Ensures WP_Error objects can be safely JSON-encoded and sent to chat clients.
+		 * Preserves error information in a structured format that can be displayed to users.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param mixed $result Tool execution result, possibly a WP_Error.
+		 * @return mixed Original result if not WP_Error, error array if WP_Error.
+		 */
+		protected function normalize_tool_result( $result ) {
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Convert WP_Error to a serializable array format.
+			$error_data = $result->get_error_data();
+			$error_array = array(
+				'error'   => true,
+				'code'    => $result->get_error_code(),
+				'message' => $result->get_error_message(),
+			);
+
+			// Include error data if available (e.g., HTTP status codes).
+			if ( ! empty( $error_data ) ) {
+				$error_array['data'] = $error_data;
+			}
+
+			return $error_array;
 		}
 
 		/**
