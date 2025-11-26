@@ -87,6 +87,11 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param array  $metadata Job metadata.
 	 */
 	public static function handle_job_completed( $job_id, $result = array(), $metadata = array() ) {
+		// Normalize result to ensure JSON serializability.
+		// This recursively converts any WP_Error objects to serializable arrays,
+		// preventing JSON encoding failures when the status is retrieved.
+		$result = self::normalize_data_recursive( $result );
+
 		$status = array(
 			'job_id'       => $job_id,
 			'status'       => 'completed',
@@ -316,6 +321,54 @@ class WP_MCP_AI_Job_Notifier {
 				time() - self::CACHE_DURATION
 			)
 		);
+	}
+
+	/**
+	 * Recursively normalize data structures to ensure JSON serializability.
+	 *
+	 * Walks through arrays and objects to convert any WP_Error instances
+	 * to serializable array format. This prevents JSON encoding failures
+	 * when sending data through SSE streams or REST API responses.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param mixed $data Data to normalize, can be any type.
+	 * @return mixed Normalized data with all WP_Error objects converted to arrays.
+	 */
+	protected static function normalize_data_recursive( $data ) {
+		// Handle WP_Error directly.
+		if ( is_wp_error( $data ) ) {
+			$error_data = $data->get_error_data();
+			$error_array = array(
+				'error'   => true,
+				'code'    => $data->get_error_code(),
+				'message' => $data->get_error_message(),
+			);
+
+			if ( ! empty( $error_data ) ) {
+				$error_array['data'] = $error_data;
+			}
+
+			return $error_array;
+		}
+
+		// Handle arrays - recursively process each element.
+		if ( is_array( $data ) ) {
+			$normalized = array();
+			foreach ( $data as $key => $value ) {
+				$normalized[ $key ] = self::normalize_data_recursive( $value );
+			}
+			return $normalized;
+		}
+
+		// Handle objects - convert to array and recurse.
+		// Note: WP_Error is already handled above via is_wp_error() check.
+		if ( is_object( $data ) ) {
+			return self::normalize_data_recursive( (array) $data );
+		}
+
+		// Scalars pass through unchanged.
+		return $data;
 	}
 }
 
