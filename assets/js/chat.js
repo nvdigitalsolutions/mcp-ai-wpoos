@@ -7737,11 +7737,35 @@
             // Extract display metadata for proper UI restoration
             const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
 
-            // Generate a unique tool_call_id for async results
-            // Use timestamp + random suffix to avoid collisions if multiple tools complete simultaneously
-            // Sanitize toolName to only allow alphanumeric and underscore characters
-            const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
-            const toolCallId = 'async_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            // Extract tool_call_id from the result if available (backend preserves original LLM tool call ID)
+            // Priority:
+            // 1. tool_results[0].tool_call_id (from backend's async completion response)
+            // 2. result.tool_call_id (direct field)
+            // 3. Generate new ID as fallback
+            let toolCallId = '';
+            
+            if (typeof result === 'object' && result !== null) {
+                // Check tool_results array first (OpenAI/backend format)
+                if (Array.isArray(result.tool_results) && result.tool_results.length > 0) {
+                    const firstToolResult = result.tool_results[0];
+                    if (typeof firstToolResult === 'object' && firstToolResult !== null && firstToolResult.tool_call_id) {
+                        toolCallId = String(firstToolResult.tool_call_id);
+                    }
+                }
+                
+                // Fallback to direct tool_call_id field
+                if (!toolCallId && result.tool_call_id && typeof result.tool_call_id === 'string' && result.tool_call_id !== '') {
+                    toolCallId = String(result.tool_call_id);
+                }
+            }
+            
+            // Generate fallback tool_call_id if not found in result
+            if (!toolCallId) {
+                // Use timestamp + random suffix to avoid collisions if multiple tools complete simultaneously
+                // Sanitize toolName to only allow alphanumeric and underscore characters
+                const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
+                toolCallId = 'async_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            }
 
             // Create tool message with display metadata for persistence
             const toolMessage = createConversationMessage(
