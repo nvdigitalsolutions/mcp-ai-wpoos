@@ -9521,12 +9521,15 @@
                                     }
                                 }
                                 
-                                // Use the final complete text if it's longer/more complete than streamed content
+                                // Use the final complete text if it's different or more complete than streamed content
                                 // This ensures truncated responses and final messages are properly displayed
                                 if (finalText && typeof finalText === 'string') {
-                                    // If finalText is longer or we have no streamed content, use finalText
-                                    // This handles cases where the stream may have been incomplete
-                                    if (!fullContent || finalText.length > fullContent.length) {
+                                    // Use finalText if:
+                                    // 1. We have no streamed content yet, OR
+                                    // 2. Final text is longer (more complete), OR  
+                                    // 3. Final text is different (may contain corrections/formatting)
+                                    // This handles cases where the stream may have been incomplete or incorrect
+                                    if (!fullContent || finalText.length > fullContent.length || finalText !== fullContent) {
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
