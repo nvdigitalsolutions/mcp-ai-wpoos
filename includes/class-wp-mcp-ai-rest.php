@@ -8380,14 +8380,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $normalized;
 			}
 
-			// Handle objects - convert to array and process, then keep as array.
-			// Objects are converted to arrays to ensure JSON serialization.
+			// Handle objects - convert to array and recurse.
+			// Note: WP_Error is already handled above via is_wp_error() check.
 			if ( is_object( $data ) ) {
-				// Check if it's a WP_Error first.
-				if ( $data instanceof WP_Error ) {
-					return $this->normalize_tool_result( $data );
-				}
-				// Convert other objects to array and recurse.
 				return $this->normalize_data_recursive( (array) $data );
 			}
 

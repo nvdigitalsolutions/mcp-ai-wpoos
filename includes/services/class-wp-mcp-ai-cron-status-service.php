@@ -946,24 +946,9 @@ class WP_MCP_AI_Cron_Status_Service {
 			return $normalized;
 		}
 
-		// Handle objects - convert to array and process.
+		// Handle objects - convert to array and recurse.
+		// Note: WP_Error is already handled above via is_wp_error() check.
 		if ( is_object( $data ) ) {
-			// Check if it's a WP_Error first.
-			if ( $data instanceof WP_Error ) {
-				$error_data = $data->get_error_data();
-				$error_array = array(
-					'error'   => true,
-					'code'    => $data->get_error_code(),
-					'message' => $data->get_error_message(),
-				);
-
-				if ( ! empty( $error_data ) ) {
-					$error_array['data'] = $error_data;
-				}
-
-				return $error_array;
-			}
-			// Convert other objects to array and recurse.
 			return $this->normalize_data_recursive( (array) $data );
 		}
 
