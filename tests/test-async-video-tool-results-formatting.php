@@ -115,8 +115,11 @@ class Test_Async_Video_Tool_Results_Formatting extends WP_UnitTestCase {
 		$tool_result = $job_details['tool_results'][0];
 		$this->assertEquals( 'tool', $tool_result['role'], 'Tool result role should be "tool"' );
 		$this->assertEquals( 'generate_veo_video', $tool_result['name'], 'Tool result name should be "generate_veo_video"' );
-		$this->assertStringStartsWith( 'async_generate_veo_video_', $tool_result['tool_call_id'], 'Tool call ID should have async prefix' );
-		$this->assertStringContainsString( $job_id, $tool_result['tool_call_id'], 'Tool call ID should contain job ID' );
+		$this->assertNotEmpty( $tool_result['tool_call_id'], 'Tool call ID should not be empty' );
+		// Tool call ID could be either original (from LLM) or fallback (async_ prefix).
+		// Since this test doesn't provide tool_call_id in context, it should use fallback.
+		$this->assertStringStartsWith( 'async_generate_veo_video_', $tool_result['tool_call_id'], 'Tool call ID should have async prefix when no original provided' );
+		$this->assertStringContainsString( $job_id, $tool_result['tool_call_id'], 'Tool call ID should contain job ID when using fallback' );
 
 		// Verify content is properly serialized JSON.
 		$this->assertJson( $tool_result['content'], 'Tool result content should be valid JSON' );

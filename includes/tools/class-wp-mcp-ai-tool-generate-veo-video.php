@@ -235,6 +235,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			return $result;
 		}
 
+		// Calculate cost for video generation.
+		// Veo models are charged per second of generated video.
+		$cost = $this->calculate_video_cost( $result );
+
 		// Save to Media Library if requested.
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
@@ -276,6 +280,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'resolution'    => $result['resolution'],
 				'model'         => $result['model'],
 				'provider'      => $result['provider'],
+				'cost'          => $cost,
 				'message'       => sprintf(
 					/* translators: 1: attachment ID, 2: media library edit URL */
 					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'wp-mcp-ai' ),
@@ -299,6 +304,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'resolution'   => $result['resolution'],
 			'model'        => $result['model'],
 			'provider'     => $result['provider'],
+			'cost'         => $cost,
 			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
 			'text'         => sprintf(
 				/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
@@ -536,6 +542,56 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Return attachment result with local WordPress URL.
 		// Uses utility class for SoC compliance and code reusability.
 		return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
+	}
+
+	/**
+	 * Calculate cost for video generation
+	 *
+	 * Veo models are charged per second of generated video.
+	 * Uses the cost calculator to get current pricing.
+	 *
+	 * @param array $result Video generation result with duration, model, and provider.
+	 * @return array Cost data array with cost_usd, provider, model, and is_estimated.
+	 */
+	protected function calculate_video_cost( $result ) {
+		// Get duration in seconds.
+		$duration = isset( $result['duration'] ) ? absint( $result['duration'] ) : 0;
+		
+		// Get model identifier.
+		$model = isset( $result['model'] ) ? $result['model'] : 'unknown';
+		
+		// Default cost structure.
+		$cost = array(
+			'cost_usd'     => 0.0,
+			'provider'     => isset( $result['provider'] ) ? $result['provider'] : 'gemini',
+			'model'        => $model,
+			'is_estimated' => false,
+		);
+
+		// No cost if duration is invalid.
+		if ( $duration <= 0 ) {
+			return $cost;
+		}
+
+		// Load cost calculator.
+		if ( ! class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
+		}
+
+		// Get pricing for the model.
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'gemini', $model );
+
+		// Check if model supports per_second pricing (Veo models).
+		if ( isset( $pricing['per_second'] ) ) {
+			$cost_per_second = (float) $pricing['per_second'];
+			$cost['cost_usd'] = round( $cost_per_second * $duration, 6 );
+		} else {
+			// Model doesn't have per_second pricing - mark as estimated with $0.
+			// This shouldn't happen for Veo models, but provides fallback.
+			$cost['is_estimated'] = true;
+		}
+
+		return $cost;
 	}
 
 	/**
