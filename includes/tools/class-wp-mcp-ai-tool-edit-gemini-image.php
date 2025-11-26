@@ -331,7 +331,31 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'source'    => 'attachment',
 			);
 		} elseif ( '' !== $image_url ) {
-			// Download image from URL.
+			// Check if this is a local WordPress URL first.
+			// If it is, we can read it directly from the filesystem to avoid HTTP auth issues.
+			if ( $this->is_local_wordpress_url( $image_url ) ) {
+				$file_path = $this->get_file_path_from_local_url( $image_url );
+				
+				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
+					// Read the file directly from the filesystem.
+					$image_data = file_get_contents( $file_path );
+					
+					if ( false !== $image_data && '' !== $image_data ) {
+						// Determine MIME type from file.
+						$file_info = wp_check_filetype( $file_path );
+						$mime_type = ! empty( $file_info['type'] ) ? $file_info['type'] : 'image/png';
+						
+						return array(
+							'data'      => $image_data,
+							'mime_type' => $mime_type,
+							'source'    => 'local_url',
+						);
+					}
+				}
+				// If local file reading failed, fall through to HTTP download.
+			}
+			
+			// Download image from URL (for external URLs or if local file reading failed).
 			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -386,6 +410,82 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		} else {
 			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 		}
+	}
+
+	/**
+	 * Check if a URL is a local WordPress URL.
+	 *
+	 * @param string $url URL to check.
+	 * @return bool True if the URL belongs to this WordPress installation.
+	 */
+	protected function is_local_wordpress_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		$url = esc_url_raw( $url );
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Get the WordPress upload directory URL.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+
+		if ( '' !== $base_url && 0 === strpos( $url, $base_url ) ) {
+			return true;
+		}
+
+		// Also check against home_url and site_url as fallback.
+		$home_url = home_url();
+		$site_url = site_url();
+
+		if ( 0 === strpos( $url, $home_url ) || 0 === strpos( $url, $site_url ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Convert a local WordPress URL to a file path.
+	 *
+	 * @param string $url Local WordPress URL.
+	 * @return string|false File path on success, false on failure.
+	 */
+	protected function get_file_path_from_local_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Get the WordPress upload directory information.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+		$base_dir   = isset( $upload_dir['basedir'] ) ? $upload_dir['basedir'] : '';
+
+		if ( '' === $base_url || '' === $base_dir ) {
+			return false;
+		}
+
+		// Check if URL starts with the upload base URL.
+		if ( 0 === strpos( $url, $base_url ) ) {
+			// Replace the base URL with the base directory path.
+			$file_path = str_replace( $base_url, $base_dir, $url );
+			
+			// Normalize path separators.
+			$file_path = wp_normalize_path( $file_path );
+			
+			return $file_path;
+		}
+
+		// Try using WordPress built-in function as fallback.
+		// This handles cases where URL might be in a different format.
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id > 0 ) {
+			return get_attached_file( $attachment_id );
+		}
+
+		return false;
 	}
 
 	/**

@@ -67,27 +67,43 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
 			}
 		} elseif ( '' !== $image_url ) {
-			// Download from URL.
-			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
-
-			if ( is_wp_error( $response ) ) {
-				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'wp-mcp-ai' ), array( 'error' => $response->get_error_message() ) );
+			// Check if this is a local WordPress URL first.
+			// If it is, we can read it directly from the filesystem to avoid HTTP auth issues.
+			$image_contents = null;
+			$file_path      = null;
+			
+			if ( $this->is_local_wordpress_url( $image_url ) ) {
+				$local_file_path = $this->get_file_path_from_local_url( $image_url );
+				
+				if ( $local_file_path && file_exists( $local_file_path ) && is_readable( $local_file_path ) ) {
+					// Use the local file path directly.
+					$file_path = $local_file_path;
+				}
 			}
+			
+			// If we couldn't get a local file path, download via HTTP.
+			if ( null === $file_path ) {
+				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
-			$status_code = wp_remote_retrieve_response_code( $response );
-			if ( $status_code < 200 || $status_code >= 300 ) {
-				return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
-			}
+				if ( is_wp_error( $response ) ) {
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'wp-mcp-ai' ), array( 'error' => $response->get_error_message() ) );
+				}
 
-			$image_contents = wp_remote_retrieve_body( $response );
-			if ( '' === $image_contents ) {
-				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'wp-mcp-ai' ) );
-			}
+				$status_code = wp_remote_retrieve_response_code( $response );
+				if ( $status_code < 200 || $status_code >= 300 ) {
+					return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
+				}
 
-			// Create temporary file.
-			$file_path = $this->create_temp_file( $image_contents, $image_url );
-			if ( is_wp_error( $file_path ) ) {
-				return $file_path;
+				$image_contents = wp_remote_retrieve_body( $response );
+				if ( '' === $image_contents ) {
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'wp-mcp-ai' ) );
+				}
+
+				// Create temporary file from downloaded content.
+				$file_path = $this->create_temp_file( $image_contents, $image_url );
+				if ( is_wp_error( $file_path ) ) {
+					return $file_path;
+				}
 			}
 		} elseif ( '' !== $image_data ) {
 			// Use base64-encoded data.
@@ -156,6 +172,83 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			wp_delete_file( $file_path );
 		}
 	}
+
+	/**
+	 * Check if a URL is a local WordPress URL.
+	 *
+	 * @param string $url URL to check.
+	 * @return bool True if the URL belongs to this WordPress installation.
+	 */
+	protected function is_local_wordpress_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		$url = esc_url_raw( $url );
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Get the WordPress upload directory URL.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+
+		if ( '' !== $base_url && 0 === strpos( $url, $base_url ) ) {
+			return true;
+		}
+
+		// Also check against home_url and site_url as fallback.
+		$home_url = home_url();
+		$site_url = site_url();
+
+		if ( 0 === strpos( $url, $home_url ) || 0 === strpos( $url, $site_url ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Convert a local WordPress URL to a file path.
+	 *
+	 * @param string $url Local WordPress URL.
+	 * @return string|false File path on success, false on failure.
+	 */
+	protected function get_file_path_from_local_url( $url ) {
+		if ( '' === $url ) {
+			return false;
+		}
+
+		// Get the WordPress upload directory information.
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+		$base_dir   = isset( $upload_dir['basedir'] ) ? $upload_dir['basedir'] : '';
+
+		if ( '' === $base_url || '' === $base_dir ) {
+			return false;
+		}
+
+		// Check if URL starts with the upload base URL.
+		if ( 0 === strpos( $url, $base_url ) ) {
+			// Replace the base URL with the base directory path.
+			$file_path = str_replace( $base_url, $base_dir, $url );
+			
+			// Normalize path separators.
+			$file_path = wp_normalize_path( $file_path );
+			
+			return $file_path;
+		}
+
+		// Try using WordPress built-in function as fallback.
+		// This handles cases where URL might be in a different format.
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id > 0 ) {
+			return get_attached_file( $attachment_id );
+		}
+
+		return false;
+	}
+
 
 	/**
 	 * Save image editor contents as WordPress attachment.
