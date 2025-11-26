@@ -10038,8 +10038,8 @@
                         }
 
                         // Aggregate cost amounts
-                        aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + (toolCost.cost_usd || 0);
-                        
+                        aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + toolCost.cost_usd;
+
                         // Preserve is_estimated flag if any tool cost is estimated
                         if (toolCost.is_estimated) {
                             aggregatedCost.is_estimated = true;

@@ -800,4 +800,83 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	/**
+	 * Test that the tool returns estimated usage and cost data for UI display.
+	 */
+	public function test_execute_returns_usage_and_cost_data() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
+			$payload = array(
+				'created' => 123,
+				'model'   => 'gpt-image-1',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A test image',
+				'model'   => 'gpt-image-1',
+				'size'    => '1024x1024',
+				'quality' => 'medium',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+
+		// Verify usage data is present and estimated.
+		$this->assertArrayHasKey( 'usage', $result, 'Result should include usage data' );
+		$this->assertIsArray( $result['usage'] );
+		$this->assertArrayHasKey( 'prompt_tokens', $result['usage'] );
+		$this->assertArrayHasKey( 'completion_tokens', $result['usage'] );
+		$this->assertArrayHasKey( 'total_tokens', $result['usage'] );
+		$this->assertArrayHasKey( 'is_estimated', $result['usage'] );
+		$this->assertTrue( $result['usage']['is_estimated'], 'Usage should be marked as estimated' );
+		$this->assertGreaterThan( 0, $result['usage']['total_tokens'], 'Total tokens should be greater than 0' );
+
+		// Verify cost data is present and estimated.
+		$this->assertArrayHasKey( 'cost', $result, 'Result should include cost data' );
+		$this->assertIsArray( $result['cost'] );
+		$this->assertArrayHasKey( 'cost_usd', $result['cost'] );
+		$this->assertArrayHasKey( 'is_estimated', $result['cost'] );
+		$this->assertArrayHasKey( 'provider', $result['cost'] );
+		$this->assertArrayHasKey( 'model', $result['cost'] );
+		$this->assertTrue( $result['cost']['is_estimated'], 'Cost should be marked as estimated' );
+		$this->assertGreaterThan( 0, $result['cost']['cost_usd'], 'Cost should be greater than 0' );
+		$this->assertSame( 'openai', $result['cost']['provider'] );
+		$this->assertSame( 'gpt-image-1', $result['cost']['model'] );
+
+		// Verify provider is set at top level for normalization functions.
+		$this->assertArrayHasKey( 'provider', $result );
+		$this->assertSame( 'openai', $result['provider'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
 }
