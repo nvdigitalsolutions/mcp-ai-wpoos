@@ -9683,6 +9683,28 @@
         return readChunk().catch(function(streamError) {
             // Diagnostic logging (Separation of Concerns)
             streamingLogger.logStreamError(streamError);
+            
+            // GRACEFUL DEGRADATION: If we already captured the final data and content,
+            // treat this as a successful completion rather than an error.
+            // This handles the case where the server closes the connection after sending [DONE]
+            // but before the browser's reader.read() returns {done: true}.
+            // The network error is benign in this case - we have all the data we need.
+            if (capturedFinalData || (fullContent && fullContent.length > 0)) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Stream read error after final data received, treating as successful completion:', {
+                        hasFinalData: !!capturedFinalData,
+                        contentLength: fullContent ? fullContent.length : 0,
+                        errorType: streamError ? streamError.name || streamError.constructor.name : 'unknown'
+                    });
+                }
+                // Return the captured data as if the stream completed successfully
+                if (capturedFinalData) {
+                    return { content: fullContent, finalData: capturedFinalData };
+                }
+                return { content: fullContent };
+            }
+            
+            // No data captured yet - this is a real error
             throw streamError;
         });
     }

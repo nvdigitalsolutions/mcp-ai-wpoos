@@ -96,13 +96,13 @@ class WP_MCP_AI_SSE_Handler {
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
 
 		// Force flush to send data immediately.
+		// ob_flush() must be called before flush() to ensure PHP output buffers
+		// are flushed to the system buffer, which flush() then sends to the client.
+		if ( ob_get_level() > 0 && function_exists( 'ob_flush' ) ) {
+			ob_flush();
+		}
 		if ( function_exists( 'flush' ) ) {
 			flush();
-		}
-
-		// Also flush output buffer if one exists.
-		if ( ob_get_level() > 0 ) {
-			ob_flush();
 		}
 	}
 
@@ -116,6 +116,12 @@ class WP_MCP_AI_SSE_Handler {
 	public function send_sse_done() {
 		echo "data: [DONE]\n\n";
 
+		// Force flush to send data immediately.
+		// ob_flush() must be called before flush() to ensure PHP output buffers
+		// are flushed to the system buffer, which flush() then sends to the client.
+		if ( ob_get_level() > 0 && function_exists( 'ob_flush' ) ) {
+			ob_flush();
+		}
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
