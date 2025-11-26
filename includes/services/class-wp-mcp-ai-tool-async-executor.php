@@ -194,7 +194,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$cron_recorded = false;
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
-			$cron_job_id = WP_MCP_AI_Cron_Manager::record_job(
+			$cron_recording_result = WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_HOOK,
 				array( $job_id ),
 				'single',
@@ -202,7 +202,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 				$user_id
 			);
 			// record_job() returns a job ID string on success.
-			$cron_recorded = is_string( $cron_job_id ) && ! empty( $cron_job_id );
+			$cron_recorded = is_string( $cron_recording_result ) && ! empty( $cron_recording_result );
 		}
 
 		// Trigger WordPress cron immediately to ensure the async tool execution runs.
