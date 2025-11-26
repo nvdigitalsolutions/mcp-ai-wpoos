@@ -9187,7 +9187,11 @@
                     return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
                         finalize();
-                        clearStatus(state.container);
+                        // Add brief delay before clearing status to allow completion message to be visible
+                        // This ensures users see "Tool completed successfully." before the status clears
+                        setTimeout(function() {
+                            clearStatus(state.container);
+                        }, 1500);
                         return streamResult;
                     });
                 }
@@ -9248,7 +9252,10 @@
 
                 saveConversationToStorage(state);
                 finalize();
-                clearStatus(state.container);
+                // Add brief delay before clearing status to allow completion message to be visible
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 1500);
                 return streamResult;
             })
             .catch(function (error) {
@@ -9524,12 +9531,49 @@
                                 // If no message content found, check for tool results text (agentic loop).
                                 // This ensures Gemini image generation and other tools show proper feedback.
                                 if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-                                    // Update status to show tool results are being processed
-                                    setStatus(state.container, {
-                                        message: getString('toolPolling', 'Tool is processing…'),
-                                        type: 'text-stream',
-                                        showTime: false
-                                    });
+                                    // Check if any tool results are async/pending (e.g., Veo video generation)
+                                    let hasAsyncPending = false;
+                                    
+                                    for (const toolResult of data.tool_results) {
+                                        if (!toolResult || !toolResult.content) {
+                                            continue;
+                                        }
+                                        
+                                        // Parse tool result content to check for async status
+                                        let parsedContent = toolResult.content;
+                                        if (typeof parsedContent === 'string') {
+                                            try {
+                                                parsedContent = JSON.parse(parsedContent);
+                                            } catch (e) {
+                                                // If parsing fails, parsedContent remains as original string
+                                            }
+                                        }
+                                        
+                                        // Check if this is an async tool that's still pending
+                                        if (parsedContent && parsedContent.async === true && 
+                                            (parsedContent.status === 'pending' || parsedContent.status === 'queued' || parsedContent.status === 'running') && 
+                                            parsedContent.job_id) {
+                                            hasAsyncPending = true;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Show appropriate status based on whether tools are still processing
+                                    if (hasAsyncPending) {
+                                        // Async tool is still processing in background - show processing message
+                                        setStatus(state.container, {
+                                            message: getString('toolPolling', 'Tool is processing…'),
+                                            type: 'text-stream',
+                                            showTime: false
+                                        });
+                                    } else {
+                                        // All tools have completed - show completion message
+                                        setStatus(state.container, {
+                                            message: getString('toolSuccess', 'Tool completed successfully.'),
+                                            type: 'tool',
+                                            showTime: false
+                                        });
+                                    }
                                     
                                     for (const toolResult of data.tool_results) {
                                         if (!toolResult || !toolResult.content) {
@@ -9545,6 +9589,12 @@
                                                 // If parsing fails, parsedContent remains as original string
                                                 // extractTextFromContent handles both strings and objects
                                             }
+                                        }
+                                        
+                                        // Skip async pending results - they'll be handled by waitForAsyncToolResult
+                                        if (parsedContent && parsedContent.async === true && 
+                                            (parsedContent.status === 'pending' || parsedContent.status === 'queued' || parsedContent.status === 'running')) {
+                                            continue;
                                         }
                                         
                                         // Use existing extractTextFromContent helper for consistent text extraction
