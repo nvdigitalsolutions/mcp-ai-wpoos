@@ -7347,8 +7347,7 @@
                             setStatus(state.container, {
                                 message: delegatedMessage,
                                 type: 'text-stream',
-                                showTime: true,
-                                startTime: startTime
+                                showTime: false
                             });
                             // Continue polling this same parent job - it will be updated when veo completes
                         } else {
@@ -7369,8 +7368,7 @@
                             setStatus(state.container, {
                                 message: statusMessage,
                                 type: 'text-stream',
-                                showTime: true,
-                                startTime: startTime
+                                showTime: false
                             });
                         }
                     }
@@ -7474,8 +7472,7 @@
                             setStatus(state.container, {
                                 message: getString('toolPolling', 'Tool is processing…'),
                                 type: 'text-stream',
-                                showTime: true,
-                                startTime: startTime
+                                showTime: false
                             });
                             scheduleNext();
                             return;
@@ -7525,8 +7522,7 @@
                             setStatus(state.container, {
                                 message: delegatedMessage,
                                 type: 'text-stream',
-                                showTime: true,
-                                startTime: startTime
+                                showTime: false
                             });
                             // Continue polling this same parent job - it will be updated when veo completes
                             // Don't switch to the delegated job or return here
@@ -7548,8 +7544,7 @@
                         setStatus(state.container, {
                             message: statusMessage,
                             type: 'text-stream',
-                            showTime: true,
-                            startTime: startTime
+                            showTime: false
                         });
                         scheduleNext();
                     })
@@ -9460,7 +9455,7 @@
                                     if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                                         // Update status to show tool results are being processed
                                         setStatus(state.container, {
-                                            message: getString('processingToolResults', 'Processing tool results…'),
+                                            message: getString('toolPolling', 'Tool is processing…'),
                                             type: 'text-stream',
                                             showTime: false
                                         });
@@ -9647,14 +9642,13 @@
             if (result.async === true && result.status === 'pending' && result.job_id) {
                 // Update status indicator with async tool pending message
                 const asyncMessage = result.message || formatString(
-                    getString('toolProcessingAsync', 'Processing %s in background…'),
+                    getString('executingTool', 'Executing %s…'),
                     toolName
                 );
                 setStatus(state.container, {
                     message: asyncMessage,
                     type: 'text-stream',
-                    showTime: true,
-                    startTime: Date.now()
+                    showTime: false
                 });
                 
                 // Display initial message with job ID if provided
@@ -10136,9 +10130,9 @@
 
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-            // Update status to indicate tool results are being added
+            // Update status to indicate tool results are being added (use existing string)
             setStatus(state.container, {
-                message: getString('addingToolResults', 'Adding tool results to conversation…'),
+                message: getString('toolPolling', 'Tool is processing…'),
                 type: 'text-stream',
                 showTime: false
             });
@@ -10509,7 +10503,7 @@
         
         // Build time display
         let timeHTML = '';
-        if (showTime && (type === 'thinking' || type === 'processing' || type === 'tool')) {
+        if (showTime && (type === 'thinking' || type === 'processing' || type === 'tool' || type === 'text-stream')) {
             timeHTML = '<span class="wp-mcp-ai-chat__status-time" data-start-time="' + startTime + '">0s</span>';
         }
         
