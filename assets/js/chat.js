@@ -281,7 +281,7 @@
      * Uses requestAnimationFrame to batch multiple scroll requests.
      */
     const scrollBatcher = (function() {
-        let pendingScrolls = new Map();
+        const pendingScrolls = new Map();
         let rafScheduled = false;
 
         function performScrolls() {
@@ -2023,19 +2023,19 @@
             event.stopPropagation();
             
             // Confirm deletion
-            var confirmMessage = role === 'user' 
+            const confirmMessage = role === 'user' 
                 ? 'Delete this message?' 
                 : 'Delete this assistant response?';
             
             if (window.confirm(confirmMessage)) {
                 // Find the message index before removing from DOM
                 // Only count conversation bubbles (user, assistant, tool) - not system messages
-                var indexToRemove = -1;
-                var messagesEl = state.messagesEl;
+                let indexToRemove = -1;
+                const messagesEl = state.messagesEl;
                 
                 if (messagesEl && bubble.parentNode === messagesEl) {
                     // Get only conversation-relevant bubbles (exclude system messages)
-                    var conversationBubbles = messagesEl.querySelectorAll(
+                    const conversationBubbles = messagesEl.querySelectorAll(
                         '.wp-mcp-ai-chat__bubble--user, .wp-mcp-ai-chat__bubble--assistant, .wp-mcp-ai-chat__bubble--tool'
                     );
                     indexToRemove = Array.prototype.indexOf.call(conversationBubbles, bubble);
@@ -3457,7 +3457,7 @@
                 setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
                 
                 // Helper to clear status after delay
-                var clearStatusAfterDelay = function() {
+                const clearStatusAfterDelay = function() {
                     setTimeout(function() {
                         domUpdateBatcher.schedule(function() {
                             clearStatus(state.container);
@@ -3468,7 +3468,7 @@
                 // Refresh history list to include the newly saved conversation
                 // This ensures the history panel shows the correct session_key
                 if (state.historyLoaded) {
-                    var refreshPromise = refreshHistorySessions(state);
+                    const refreshPromise = refreshHistorySessions(state);
                     
                     // If history panel is visible, wait for refresh to complete before clearing status
                     if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
@@ -9455,75 +9455,78 @@
                                 // This preserves tool_results and complete response structure
                                 capturedFinalData = data;
                                 
-                                // Extract text from final response if no chunks were received
-                                // This handles cases where streaming chunks weren't sent
-                                if (!fullContent) {
-                                    let finalText = '';
-                                    
-                                    // Try to extract text from data.data structure
-                                    // Handle OpenAI/Ollama format - choices[0].message.content
-                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
-                                        finalText = extractTextFromContent(data.data.choices[0].message.content);
-                                    } 
-                                    // Handle generic content field
-                                    else if (data.data.content) {
-                                        finalText = extractTextFromContent(data.data.content);
-                                    } 
-                                    // Handle response field
-                                    else if (data.data.response) {
-                                        finalText = extractTextFromContent(data.data.response);
-                                    } 
-                                    // Handle Gemini format - candidates[0].content.parts
-                                    else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
-                                        // Gemini format - optimize by caching parts array reference
-                                        const parts = data.data.candidates[0].content.parts;
-                                        for (let p = 0; p < parts.length; p++) {
-                                            const part = parts[p];
-                                            if (part.text && typeof part.text === 'string') {
-                                                finalText += part.text;
-                                            }
+                                // ALWAYS extract text from final response to ensure we have the complete message
+                                // This handles cases where streaming chunks weren't sent OR were incomplete
+                                let finalText = '';
+                                
+                                // Try to extract text from data.data structure
+                                // Handle OpenAI/Ollama format - choices[0].message.content
+                                if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
+                                    finalText = extractTextFromContent(data.data.choices[0].message.content);
+                                } 
+                                // Handle generic content field
+                                else if (data.data.content) {
+                                    finalText = extractTextFromContent(data.data.content);
+                                } 
+                                // Handle response field
+                                else if (data.data.response) {
+                                    finalText = extractTextFromContent(data.data.response);
+                                } 
+                                // Handle Gemini format - candidates[0].content.parts
+                                else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
+                                    // Gemini format - optimize by caching parts array reference
+                                    const parts = data.data.candidates[0].content.parts;
+                                    for (let p = 0; p < parts.length; p++) {
+                                        const part = parts[p];
+                                        if (part.text && typeof part.text === 'string') {
+                                            finalText += part.text;
                                         }
                                     }
+                                }
+                                
+                                // If no message content found, check for tool results text (agentic loop).
+                                // This ensures Gemini image generation and other tools show proper feedback.
+                                if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                                    // Update status to show tool results are being processed
+                                    setStatus(state.container, {
+                                        message: getString('toolPolling', 'Tool is processing…'),
+                                        type: 'text-stream',
+                                        showTime: false
+                                    });
                                     
-                                    // If no message content found, check for tool results text (agentic loop).
-                                    // This ensures Gemini image generation and other tools show proper feedback.
-                                    if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-                                        // Update status to show tool results are being processed
-                                        setStatus(state.container, {
-                                            message: getString('toolPolling', 'Tool is processing…'),
-                                            type: 'text-stream',
-                                            showTime: false
-                                        });
+                                    for (const toolResult of data.tool_results) {
+                                        if (!toolResult || !toolResult.content) {
+                                            continue;
+                                        }
                                         
-                                        for (const toolResult of data.tool_results) {
-                                            if (!toolResult || !toolResult.content) {
-                                                continue;
-                                            }
-                                            
-                                            // Parse tool result content (usually JSON string)
-                                            let parsedContent = toolResult.content;
-                                            if (typeof parsedContent === 'string') {
-                                                try {
-                                                    parsedContent = JSON.parse(parsedContent);
-                                                } catch (e) {
-                                                    // If parsing fails, parsedContent remains as original string
-                                                    // extractTextFromContent handles both strings and objects
-                                                }
-                                            }
-                                            
-                                            // Use existing extractTextFromContent helper for consistent text extraction
-                                            const toolText = extractTextFromContent(parsedContent);
-                                            if (toolText) {
-                                                if (finalText) {
-                                                    finalText += '\n\n';
-                                                }
-                                                finalText += toolText;
+                                        // Parse tool result content (usually JSON string)
+                                        let parsedContent = toolResult.content;
+                                        if (typeof parsedContent === 'string') {
+                                            try {
+                                                parsedContent = JSON.parse(parsedContent);
+                                            } catch (e) {
+                                                // If parsing fails, parsedContent remains as original string
+                                                // extractTextFromContent handles both strings and objects
                                             }
                                         }
+                                        
+                                        // Use existing extractTextFromContent helper for consistent text extraction
+                                        const toolText = extractTextFromContent(parsedContent);
+                                        if (toolText) {
+                                            if (finalText) {
+                                                finalText += '\n\n';
+                                            }
+                                            finalText += toolText;
+                                        }
                                     }
-                                    
-                                    // Ensure finalText is a string before using it
-                                    if (finalText && typeof finalText === 'string') {
+                                }
+                                
+                                // Use the final complete text if it's longer/more complete than streamed content
+                                // This ensures truncated responses and final messages are properly displayed
+                                if (finalText && typeof finalText === 'string') {
+                                    // If finalText is longer or we have no streamed content, use finalText
+                                    // This handles cases where the stream may have been incomplete
+                                    if (!fullContent || finalText.length > fullContent.length) {
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
@@ -10096,7 +10099,7 @@
             }
 
             // Collect capability flags from tool results
-            let capabilityFlags = [];
+            const capabilityFlags = [];
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                 data.tool_results.forEach(function (toolResult) {
                     if (!toolResult) {
@@ -10926,7 +10929,7 @@
             
             // Style the badge with appropriate colors based on flag type
             let backgroundColor = '#6b7280'; // Default gray
-            let color = 'white';
+            const color = 'white';
             
             // Color coding for different flag types
             if (flag.includes('read-only') || flag.includes('local-only')) {
@@ -11019,10 +11022,12 @@
             !hasAttachments &&
             shouldDisplayJsonResponse(role, text, allowMarkdown)
         );
+        // Truncated responses should be detected regardless of markdown mode
+        // because orchestration layer truncation is a special case that needs
+        // to be visually distinguished from normal responses
         const showTruncatedResponse = bubbleType === 'truncated' || (
             hasText &&
             !showJsonResponse &&
-            !allowMarkdown &&
             isTruncatedByOrchestration(text)
         );
 
@@ -11753,7 +11758,7 @@
             const lowerUrl = url.toLowerCase();
             
             // Extract the path part of the URL (before query string or hash)
-            let urlPath = lowerUrl.split('?')[0].split('#')[0];
+            const urlPath = lowerUrl.split('?')[0].split('#')[0];
             
             // Check for common video file extensions at the end of the path
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv'];
