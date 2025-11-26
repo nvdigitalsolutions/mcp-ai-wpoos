@@ -675,6 +675,16 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
+				// Apply tool's sanitize_for_llm to ensure result is properly formatted for agentic loop.
+				// This is critical for tools like generate_veo_video which add display structures (video_url)
+				// and need to strip large base64 data before sending to the LLM.
+				if ( is_array( $result ) && ! empty( $tool_name ) && $this->tool_registry->is_tool_registered( $tool_name ) ) {
+					$tool_instance = $this->tool_registry->get_tool( $tool_name );
+					if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
+						$result = $tool_instance->sanitize_for_llm( $result );
+					}
+				}
+
 				return $result;
 			}
 
