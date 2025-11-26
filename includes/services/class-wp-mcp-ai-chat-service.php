@@ -675,6 +675,11 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
+				// Apply tool's sanitize_for_llm to ensure result is properly formatted for agentic loop.
+				// This is critical for tools like generate_veo_video which add display structures (video_url)
+				// and need to strip large base64 data before sending to the LLM.
+				$result = $this->apply_tool_sanitization( $result, $tool_name );
+
 				return $result;
 			}
 
@@ -985,16 +990,8 @@ class WP_MCP_AI_Chat_Service {
 			return $tool_result;
 		}
 
-		// Get tool instance for interface-based sanitization.
-		$tool_instance = null;
-		if ( $tool_name && $this->tool_registry->is_tool_registered( $tool_name ) ) {
-			$tool_instance = $this->tool_registry->get_tool( $tool_name );
-		}
-
-		// Apply tool-specific sanitization if available.
-		if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
-			$content = $tool_instance->sanitize_for_llm( $content );
-		}
+		// Apply tool-specific sanitization if available (delegated to helper method).
+		$content = $this->apply_tool_sanitization( $content, $tool_name );
 
 		// Apply generic sanitization filters.
 		$content = apply_filters( 'wp_mcp_ai_sanitize_tool_result_llm', $content, $tool_name, $assistant_config );
@@ -1015,5 +1012,37 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $sanitized_result;
+	}
+
+	/**
+	 * Apply tool's sanitize_for_llm method if tool implements the interface.
+	 *
+	 * Helper method to reduce code duplication when sanitizing tool results.
+	 * Used by both wait_for_async_tool_completion and sanitize_tool_result_for_llm.
+	 *
+	 * @param mixed  $content   Content to sanitize (typically an array).
+	 * @param string $tool_name Tool name.
+	 * @return mixed Sanitized content, or original content if tool doesn't implement interface.
+	 */
+	private function apply_tool_sanitization( $content, $tool_name ) {
+		// Return early if no tool name provided.
+		if ( empty( $tool_name ) ) {
+			return $content;
+		}
+
+		// Check if tool is registered.
+		if ( ! $this->tool_registry->is_tool_registered( $tool_name ) ) {
+			return $content;
+		}
+
+		// Get tool instance and check if it implements sanitization interface.
+		$tool_instance = $this->tool_registry->get_tool( $tool_name );
+		if ( ! $tool_instance || ! ( $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) ) {
+			return $content;
+		}
+
+		// Apply tool's sanitization method.
+		// The tool's implementation will handle content type validation.
+		return $tool_instance->sanitize_for_llm( $content );
 	}
 }
