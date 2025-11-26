@@ -3400,7 +3400,16 @@
         const result = exportConversation(state, normalizedFormat);
         
         if (!result.success) {
-            alert(getString('exportFailed', 'Export failed: ') + (result.error || 'Unknown error'));
+            // Handle error object or string
+            let errorMsg = 'Unknown error';
+            if (result.error) {
+                if (typeof result.error === 'string') {
+                    errorMsg = result.error;
+                } else if (typeof result.error === 'object' && result.error.message) {
+                    errorMsg = result.error.message;
+                }
+            }
+            alert(getString('exportFailed', 'Export failed: ') + errorMsg);
             return;
         }
 
@@ -3485,7 +3494,15 @@
                 clearStatusAfterDelay();
             } else {
                 // Save failed
-                const errorMsg = result.error || 'Failed to save conversation';
+                // Handle error object or string
+                let errorMsg = 'Failed to save conversation';
+                if (result.error) {
+                    if (typeof result.error === 'string') {
+                        errorMsg = result.error;
+                    } else if (typeof result.error === 'object' && result.error.message) {
+                        errorMsg = result.error.message;
+                    }
+                }
                 setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
                 
                 if (window.console && console.error) {
@@ -3555,7 +3572,15 @@
                         restoreFormState();
                     } else {
                         // Save failed - ask user whether to proceed
-                        const errorMsg = result && result.error ? result.error : 'Unknown error';
+                        // Handle error object or string
+                        let errorMsg = 'Unknown error';
+                        if (result && result.error) {
+                            if (typeof result.error === 'string') {
+                                errorMsg = result.error;
+                            } else if (typeof result.error === 'object' && result.error.message) {
+                                errorMsg = result.error.message;
+                            }
+                        }
                         clearStatus(state.container);
                         
                         const proceedMessage = getString(
@@ -5932,7 +5957,12 @@
             
             // Include error information if present
             if (result.metadata && result.metadata.error) {
-                text += '\nError: ' + result.metadata.error;
+                // Handle error object or string
+                let errorMsg = result.metadata.error;
+                if (typeof errorMsg === 'object' && errorMsg.message) {
+                    errorMsg = errorMsg.message;
+                }
+                text += '\nError: ' + errorMsg;
             }
             
             return {
@@ -7493,7 +7523,16 @@
 
                         if (status === 'failed' || status === 'error') {
                             cleanup();
-                            const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
+                            // Extract error message - handle both string and object formats.
+                            // The backend may send error as a string or as an object with {message, code} fields.
+                            let errorMessage = getString('toolError', 'The tool request failed.');
+                            if (payload && payload.error) {
+                                if (typeof payload.error === 'string') {
+                                    errorMessage = payload.error;
+                                } else if (typeof payload.error === 'object' && payload.error.message) {
+                                    errorMessage = payload.error.message;
+                                }
+                            }
                             const toolDisplayName = record.toolName || 'Tool';
                             updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
                             reject(new Error(errorMessage));
@@ -9823,8 +9862,13 @@
                 return metadata.reason.trim();
             }
 
-            if (typeof metadata.error === 'string' && metadata.error.trim()) {
-                return metadata.error.trim();
+            // Handle error as string or object
+            if (metadata.error) {
+                if (typeof metadata.error === 'string' && metadata.error.trim()) {
+                    return metadata.error.trim();
+                } else if (typeof metadata.error === 'object' && metadata.error.message) {
+                    return metadata.error.message.trim();
+                }
             }
         }
 
@@ -12308,10 +12352,19 @@
                         })
                         .then(function(data) {
                             if (!response.ok) {
-                                // Extract error message from response
-                                const errorMsg = (data && data.message) || 
-                                               (data && data.error) || 
-                                               'Save failed with status ' + response.status;
+                                // Extract error message from response - handle both string and object
+                                let errorMsg = 'Save failed with status ' + response.status;
+                                if (data) {
+                                    if (data.message) {
+                                        errorMsg = data.message;
+                                    } else if (data.error) {
+                                        if (typeof data.error === 'string') {
+                                            errorMsg = data.error;
+                                        } else if (typeof data.error === 'object' && data.error.message) {
+                                            errorMsg = data.error.message;
+                                        }
+                                    }
+                                }
                                 throw new Error(errorMsg);
                             }
                             
