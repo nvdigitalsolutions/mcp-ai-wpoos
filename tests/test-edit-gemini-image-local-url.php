@@ -258,4 +258,115 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result, 'Should return error when file not found' );
 		$this->assertEquals( 'wp_mcp_ai_download_error', $result->get_error_code() );
 	}
+
+	/**
+	 * Test that local files from image_url are not marked as temporary.
+	 * 
+	 * This prevents data loss when image manipulation tools process local URLs
+	 * without attachment_id - the original file should not be deleted.
+	 */
+	public function test_local_url_files_not_marked_as_temp() {
+		// Create a test image file in uploads directory.
+		$upload_dir = wp_upload_dir();
+		$test_file  = $upload_dir['basedir'] . '/test-local-not-temp-' . time() . '.png';
+
+		// Create a simple 1x1 PNG image (red pixel).
+		$png_data = base64_decode(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+		);
+
+		// Write test file.
+		file_put_contents( $test_file, $png_data );
+		$this->assertTrue( file_exists( $test_file ), 'Test file should exist' );
+
+		try {
+			// Load using image base class (used by rotate, crop, resize tools).
+			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+			
+			// Create a test subclass to access protected method.
+			$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
+				public function get_slug() { return 'test'; }
+				public function get_name() { return 'Test'; }
+				public function get_description() { return 'Test'; }
+				public function get_parameters_schema() { return array(); }
+				public function execute( array $arguments = array(), array $context = array() ) { return array(); }
+				
+				public function test_load_source_image( array $arguments, $user_id = 0 ) {
+					return $this->load_source_image( $arguments, $user_id );
+				}
+			};
+
+			// Build URL for the test file.
+			$test_url = $upload_dir['baseurl'] . '/' . basename( $test_file );
+
+			$arguments = array(
+				'image_url' => $test_url,
+			);
+
+			$image_editor = $test_class->test_load_source_image( $arguments, 0 );
+
+			// Verify image editor was loaded successfully.
+			$this->assertInstanceOf( 'WP_Image_Editor', $image_editor, 'Should return WP_Image_Editor instance' );
+
+			// CRITICAL: Verify the file is NOT marked as temporary.
+			$this->assertObjectNotHasProperty( 'temp_file', $image_editor, 'Local upload file should NOT be marked as temp' );
+
+			// Verify the original file still exists (wasn't deleted during loading).
+			$this->assertTrue( file_exists( $test_file ), 'Original upload file should still exist after loading' );
+
+		} finally {
+			// Clean up test file.
+			if ( file_exists( $test_file ) ) {
+				unlink( $test_file );
+			}
+		}
+	}
+
+	/**
+	 * Test that downloaded files (external URLs) ARE marked as temporary.
+	 * 
+	 * This ensures the fix doesn't break the existing behavior for external URLs.
+	 */
+	public function test_external_url_files_marked_as_temp() {
+		// We can't easily test actual HTTP downloads in unit tests,
+		// but we can verify that base64 data creates temp files.
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+		
+		// Create a test subclass.
+		$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
+			public function get_slug() { return 'test'; }
+			public function get_name() { return 'Test'; }
+			public function get_description() { return 'Test'; }
+			public function get_parameters_schema() { return array(); }
+			public function execute( array $arguments = array(), array $context = array() ) { return array(); }
+			
+			public function test_load_source_image( array $arguments, $user_id = 0 ) {
+				return $this->load_source_image( $arguments, $user_id );
+			}
+		};
+
+		// Test with base64 data (which creates a temp file).
+		$png_data = base64_decode(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+		);
+		$base64_image = base64_encode( $png_data );
+
+		$arguments = array(
+			'image_data' => $base64_image,
+		);
+
+		$image_editor = $test_class->test_load_source_image( $arguments, 0 );
+
+		// Verify image editor was loaded successfully.
+		$this->assertInstanceOf( 'WP_Image_Editor', $image_editor, 'Should return WP_Image_Editor instance' );
+
+		// Verify the file IS marked as temporary (base64 data creates temp files).
+		$this->assertObjectHasProperty( 'temp_file', $image_editor, 'Base64 image should be marked as temp' );
+		$this->assertNotEmpty( $image_editor->temp_file, 'temp_file property should contain file path' );
+
+		// Clean up the temp file.
+		if ( isset( $image_editor->temp_file ) && file_exists( $image_editor->temp_file ) ) {
+			unlink( $image_editor->temp_file );
+		}
+	}
 }

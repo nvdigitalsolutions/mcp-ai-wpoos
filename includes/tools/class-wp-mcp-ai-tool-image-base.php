@@ -52,7 +52,8 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$image_url     = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
 		$image_data    = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
 
-		$file_path = '';
+		$file_path     = '';
+		$is_local_file = false;
 
 		if ( $attachment_id > 0 ) {
 			// Load from WordPress attachment.
@@ -68,13 +69,15 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			}
 		} elseif ( '' !== $image_url ) {
 			// Try to use local file path first to avoid HTTP auth issues.
-			$file_path = null;
+			$file_path      = null;
+			$is_local_file  = false;
 			
 			if ( $this->is_local_wordpress_url( $image_url ) ) {
 				$local_file_path = $this->get_file_path_from_local_url( $image_url );
 				
 				if ( $local_file_path && file_exists( $local_file_path ) && is_readable( $local_file_path ) ) {
-					$file_path = $local_file_path;
+					$file_path     = $local_file_path;
+					$is_local_file = true;
 				}
 			}
 			
@@ -124,14 +127,16 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( is_wp_error( $image_editor ) ) {
 			// Clean up temp file if we created one.
-			if ( ! $attachment_id ) {
+			// Don't delete if it's an attachment or a local file from the uploads directory.
+			if ( ! $attachment_id && ! $is_local_file ) {
 				$this->delete_temp_file( $file_path );
 			}
 			return $image_editor;
 		}
 
 		// Store whether this is a temp file for cleanup later.
-		if ( ! $attachment_id ) {
+		// Don't mark local upload files as temp - only mark truly temporary files.
+		if ( ! $attachment_id && ! $is_local_file ) {
 			$image_editor->temp_file = $file_path;
 		}
 
