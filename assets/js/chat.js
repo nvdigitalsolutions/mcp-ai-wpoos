@@ -9563,9 +9563,10 @@
                                     }
                                 }
                                 
-                                // If no message content found, check for tool results text (agentic loop).
-                                // This ensures Gemini image generation and other tools show proper feedback.
-                                if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                                // Check for tool results and update status appropriately.
+                                // This runs REGARDLESS of whether finalText was extracted from message content,
+                                // ensuring the status is updated from "Tool is processing..." to completion.
+                                if (data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
                                     // Check if any tool results are async/pending (e.g., Veo video generation)
                                     let hasAsyncPending = false;
                                     
@@ -9599,26 +9600,30 @@
                                         });
                                     }
                                     
-                                    for (const toolResult of data.tool_results) {
-                                        if (!toolResult || !toolResult.content) {
-                                            continue;
-                                        }
-                                        
-                                        // Parse tool result content
-                                        const parsedContent = parseToolResultContent(toolResult.content);
-                                        
-                                        // Skip async pending results - they'll be handled by waitForAsyncToolResult
-                                        if (isAsyncPendingToolResult(parsedContent)) {
-                                            continue;
-                                        }
-                                        
-                                        // Use existing extractTextFromContent helper for consistent text extraction
-                                        const toolText = extractTextFromContent(parsedContent);
-                                        if (toolText) {
-                                            if (finalText) {
-                                                finalText += '\n\n';
+                                    // If no message content found, extract text from tool results (agentic loop).
+                                    // This ensures Gemini image generation and other tools show proper feedback.
+                                    if (!finalText) {
+                                        for (const toolResult of data.tool_results) {
+                                            if (!toolResult || !toolResult.content) {
+                                                continue;
                                             }
-                                            finalText += toolText;
+                                            
+                                            // Parse tool result content
+                                            const parsedContent = parseToolResultContent(toolResult.content);
+                                            
+                                            // Skip async pending results - they'll be handled by waitForAsyncToolResult
+                                            if (isAsyncPendingToolResult(parsedContent)) {
+                                                continue;
+                                            }
+                                            
+                                            // Use existing extractTextFromContent helper for consistent text extraction
+                                            const toolText = extractTextFromContent(parsedContent);
+                                            if (toolText) {
+                                                if (finalText) {
+                                                    finalText += '\n\n';
+                                                }
+                                                finalText += toolText;
+                                            }
                                         }
                                     }
                                 }
