@@ -193,7 +193,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			'missingAssistant'              => __( 'Configuration was not found.', 'wp-mcp-ai' ),
 			'notAuthorized'                 => __( 'You do not have permission to chat.', 'wp-mcp-ai' ),
 			'toolExecuting'                 => __( 'Running tool: %s', 'wp-mcp-ai' ),
-			'toolSuccess'                   => __( 'Tool response ready.', 'wp-mcp-ai' ),
+			'toolSuccess'                   => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
 			'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
 			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'wp-mcp-ai' ),
 			'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),

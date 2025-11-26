@@ -216,7 +216,7 @@ class WP_MCP_AI_Shortcode {
 					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ),
 					/* translators: %s: tool name being executed */
 																'toolExecuting' => __( 'Running tool: %s', 'wp-mcp-ai' ),
-					'toolSuccess'                   => __( 'Tool response ready.', 'wp-mcp-ai' ),
+					'toolSuccess'                   => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
 					'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
 					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'wp-mcp-ai' ),
 					'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),
