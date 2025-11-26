@@ -526,7 +526,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 	protected function sanitize_context( array $context ) {
 		$safe_context = array();
 
-		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id' );
+		// Allow tool_call_id to preserve original LLM tool call correlation.
+		// This enables proper async result correlation in the chat client.
+		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id', 'tool_call_id' );
 
 		foreach ( $allowed_keys as $key ) {
 			if ( isset( $context[ $key ] ) ) {
