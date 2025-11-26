@@ -7343,6 +7343,12 @@
                             // otherwise fall back to generic message
                             const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
                             updatePendingTaskEntry(pendingEntry, delegatedMessage);
+                            // Update status indicator with delegation message
+                            setStatus(state.container, {
+                                message: delegatedMessage,
+                                type: 'text-stream',
+                                showTime: false
+                            });
                             // Continue polling this same parent job - it will be updated when veo completes
                         } else {
                             // Still pending, polling or running - update status with progress message
@@ -7357,7 +7363,13 @@
                                 statusMessage = formatString(getString('toolProgress', 'Tool is processing… (%s%%)'), String(Math.round(payload.progress)));
                             }
                             
+                            // Update both the pending task entry AND the status indicator
                             updatePendingTaskEntry(pendingEntry, statusMessage);
+                            setStatus(state.container, {
+                                message: statusMessage,
+                                type: 'text-stream',
+                                showTime: false
+                            });
                         }
                     }
                 },
@@ -7457,6 +7469,11 @@
                     .then(function (payload) {
                         if (!payload) {
                             updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                            setStatus(state.container, {
+                                message: getString('toolPolling', 'Tool is processing…'),
+                                type: 'text-stream',
+                                showTime: false
+                            });
                             scheduleNext();
                             return;
                         }
@@ -7501,6 +7518,12 @@
                             // otherwise fall back to generic message
                             const delegatedMessage = payload.message || getString('toolDelegated', 'Video generation in progress…');
                             updatePendingTaskEntry(pendingEntry, delegatedMessage);
+                            // Update status indicator with delegation message
+                            setStatus(state.container, {
+                                message: delegatedMessage,
+                                type: 'text-stream',
+                                showTime: false
+                            });
                             // Continue polling this same parent job - it will be updated when veo completes
                             // Don't switch to the delegated job or return here
                         }
@@ -7517,6 +7540,12 @@
                         }
                         
                         updatePendingTaskEntry(pendingEntry, statusMessage);
+                        // Update status indicator with polling message
+                        setStatus(state.container, {
+                            message: statusMessage,
+                            type: 'text-stream',
+                            showTime: false
+                        });
                         scheduleNext();
                     })
                     .catch(function (error) {
@@ -7665,6 +7694,13 @@
         } else {
             resultText = toolName + ': ' + getString('completed', 'Completed successfully');
         }
+
+        // Update status indicator with tool completion
+        setStatus(state.container, {
+            message: '✓ ' + resultText,
+            type: 'text-stream',
+            showTime: false
+        });
 
         // Build display payload for UI rendering
         const displayPayload = {
@@ -9417,6 +9453,13 @@
                                     // If no message content found, check for tool results text (agentic loop).
                                     // This ensures Gemini image generation and other tools show proper feedback.
                                     if (!finalText && data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+                                        // Update status to show tool results are being processed
+                                        setStatus(state.container, {
+                                            message: getString('toolPolling', 'Tool is processing…'),
+                                            type: 'text-stream',
+                                            showTime: false
+                                        });
+                                        
                                         for (const toolResult of data.tool_results) {
                                             if (!toolResult || !toolResult.content) {
                                                 continue;
@@ -9570,7 +9613,7 @@
             );
             setStatus(state.container, {
                 message: message,
-                type: 'processing',
+                type: 'text-stream',
                 showTime: true,
                 startTime: Date.now()
             });
@@ -9581,12 +9624,13 @@
             });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
+            const message = formatString(
+                getString('executingTool', 'Executing %s…'),
+                toolName
+            );
             setStatus(state.container, {
-                message: formatString(
-                    getString('executingTool', 'Executing %s…'),
-                    toolName
-                ),
-                type: 'tool',
+                message: message,
+                type: 'text-stream',
                 showTime: true,
                 startTime: Date.now()
             });
@@ -9596,6 +9640,17 @@
             
             // Check if this is an async tool execution that's still pending
             if (result.async === true && result.status === 'pending' && result.job_id) {
+                // Update status indicator with async tool pending message
+                const asyncMessage = result.message || formatString(
+                    getString('executingTool', 'Executing %s…'),
+                    toolName
+                );
+                setStatus(state.container, {
+                    message: asyncMessage,
+                    type: 'text-stream',
+                    showTime: false
+                });
+                
                 // Display initial message with job ID if provided
                 if (result.message) {
                     const messageWithJobId = result.message + ' (Job ID: ' + result.job_id + ')';
@@ -9647,6 +9702,13 @@
             // Use different prefix for errors vs success
             const prefix = isError ? '⚠️ ' : '✓ ';
             const messageType = isError ? 'system' : 'tool';
+            
+            // Update status indicator with tool result
+            setStatus(state.container, {
+                message: prefix + resultText,
+                type: 'text-stream',
+                showTime: false
+            });
             
             // Display the tool result with attachments if available
             appendMessage(state.messagesEl, messageType, {
@@ -10068,6 +10130,13 @@
 
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+            // Update status to indicate tool results are being added (use existing string)
+            setStatus(state.container, {
+                message: getString('toolPolling', 'Tool is processing…'),
+                type: 'text-stream',
+                showTime: false
+            });
+            
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
                     state.conversation.push(toolResult);
@@ -10434,7 +10503,7 @@
         
         // Build time display
         let timeHTML = '';
-        if (showTime && (type === 'thinking' || type === 'processing' || type === 'tool')) {
+        if (showTime && (type === 'thinking' || type === 'processing' || type === 'tool' || type === 'text-stream')) {
             timeHTML = '<span class="wp-mcp-ai-chat__status-time" data-start-time="' + startTime + '">0s</span>';
         }
         
