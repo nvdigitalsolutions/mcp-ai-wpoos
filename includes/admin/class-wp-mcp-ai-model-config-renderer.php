@@ -428,7 +428,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 						} else {
 							// Show error.
 							$button.prop('disabled', false).text('<?php esc_html_e( 'Error', 'wp-mcp-ai' ); ?>');
-							alert(response.data || '<?php esc_html_e( 'Failed to save configuration', 'wp-mcp-ai' ); ?>');
+							alert(response.data || '<?php esc_html_e( 'Failed to save model configuration.', 'wp-mcp-ai' ); ?>');
 							
 							setTimeout(function() {
 								$button.text('<?php esc_html_e( 'Save', 'wp-mcp-ai' ); ?>');
