@@ -7565,10 +7565,9 @@
                     }
                 },
                 onError: function (error) {
-                    // SSE connection failures are expected in many environments
-                    // (proxies, CDNs, server config) - the REST polling fallback works fine
-                    if (window.console && console.debug) {
-                        console.debug('[WP oOS] SSE async job notification not available, using REST polling');
+                    // Log fallback at info level - not an error, just informational
+                    if (window.console && console.info) {
+                        console.info('[WP oOS] SSE async job notification not available, falling back to REST polling');
                     }
                     // Fall back to polling
                     cleanup();
