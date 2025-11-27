@@ -94,16 +94,53 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_user_not_found', __( 'The requested user could not be found.', 'wp-mcp-ai' ) );
 		}
 
+		$first_name = get_user_meta( $user_id, 'first_name', true );
+		$last_name  = get_user_meta( $user_id, 'last_name', true );
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_parts   = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: display name, 2: user ID */
+			__( 'User: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+			$user->display_name,
+			$user->ID
+		);
+
+		if ( '' !== $first_name || '' !== $last_name ) {
+			$full_name = trim( $first_name . ' ' . $last_name );
+			if ( '' !== $full_name ) {
+				$text_parts[] = sprintf(
+					/* translators: %s: user's full name */
+					__( 'Name: %s', 'wp-mcp-ai' ),
+					$full_name
+				);
+			}
+		}
+
+		$text_parts[] = sprintf(
+			/* translators: %s: user email */
+			__( 'Email: %s', 'wp-mcp-ai' ),
+			$user->user_email
+		);
+
+		if ( ! empty( $user->roles ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: comma-separated list of roles */
+				__( 'Roles: %s', 'wp-mcp-ai' ),
+				implode( ', ', $user->roles )
+			);
+		}
+
 		return array(
-			'summary'      => sprintf( __( 'User: %s', 'wp-mcp-ai' ), $user->display_name ),
 			'ID'           => $user->ID,
 			'display_name' => $user->display_name,
 			'user_login'   => $user->user_login,
 			'user_email'   => $user->user_email,
 			'roles'        => $user->roles,
 			'registered'   => $user->user_registered,
-			'first_name'   => get_user_meta( $user_id, 'first_name', true ),
-			'last_name'    => get_user_meta( $user_id, 'last_name', true ),
+			'first_name'   => $first_name,
+			'last_name'    => $last_name,
+			'text'         => implode( ' | ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
