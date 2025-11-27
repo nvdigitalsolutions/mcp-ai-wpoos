@@ -20,25 +20,80 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - /tools (GET - list tools, POST - execute tool)
  * - /files/{file_id}/download (GET - file download)
  * - /cron-status (GET - cron job status for admin dashboard)
+ *
+ * This controller follows industry standards by implementing self-contained
+ * endpoint handlers with proper fallback mechanisms. It can operate independently
+ * or delegate to the main REST controller for backward compatibility.
  */
 class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Reference to the main REST controller for shared functionality.
 	 *
-	 * @var WP_MCP_AI_REST
+	 * @var WP_MCP_AI_REST|null
 	 */
 	private $main_controller;
 
 	/**
+	 * Tool registry instance.
+	 *
+	 * @var WP_MCP_AI_Tool_Registry|null
+	 */
+	private $registry;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_REST                    $main_controller Main REST controller.
+	 * @param WP_MCP_AI_REST|null               $main_controller Main REST controller (optional).
 	 * @param WP_MCP_AI_REST_Authenticator|null $authenticator   Authentication handler (optional, for DI).
 	 * @param WP_MCP_AI_REST_Validator|null     $validator       Request validator (optional, for DI).
 	 */
 	public function __construct( $main_controller = null, $authenticator = null, $validator = null ) {
 		parent::__construct( $authenticator, $validator );
 		$this->main_controller = $main_controller;
+		$this->registry        = null;
+	}
+
+	/**
+	 * Get the tool registry instance.
+	 *
+	 * Uses lazy loading to get the registry from the container.
+	 * Validates the returned instance implements the expected interface.
+	 *
+	 * @return WP_MCP_AI_Tool_Registry|null Tool registry instance or null if unavailable.
+	 */
+	private function get_registry() {
+		if ( null === $this->registry ) {
+			if ( function_exists( 'wp_mcp_ai_container' ) ) {
+				$container = wp_mcp_ai_container();
+				if ( $container && method_exists( $container, 'get' ) ) {
+					try {
+						$registry = $container->get( 'tool.registry' );
+						// Validate the returned instance is the expected type.
+						if ( $registry instanceof WP_MCP_AI_Tool_Registry ) {
+							$this->registry = $registry;
+						}
+					} catch ( Exception $e ) {
+						// Registry not available, will be handled by callers.
+						$this->registry = null;
+					}
+				}
+			}
+		}
+		return $this->registry;
+	}
+
+	/**
+	 * Get the cron status service instance.
+	 *
+	 * Loads the service class if not already available.
+	 *
+	 * @return WP_MCP_AI_Cron_Status_Service Cron status service instance.
+	 */
+	private function get_cron_status_service() {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
+		}
+		return new WP_MCP_AI_Cron_Status_Service();
 	}
 
 	/**
@@ -230,43 +285,43 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * General permission check for authenticated endpoints.
 	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check' ) ) {
+			return $this->main_controller->permissions_check( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->permissions_check( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Permission check for file download endpoint.
 	 *
 	 * Handles nonce parameter extraction before delegating to main permission check.
+	 * Supports query string nonce for in-browser file previews.
 	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function download_file_permissions_check( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'download_file_permissions_check' ) ) {
+			return $this->main_controller->download_file_permissions_check( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->download_file_permissions_check( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
@@ -275,90 +330,327 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Supports mesh keys, bearer tokens, guest tokens, and WordPress nonces.
 	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check_cron_status( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_cron_status' ) ) {
+			return $this->main_controller->permissions_check_cron_status( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->permissions_check_cron_status( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Handle GET /tools request - List available tools.
 	 *
-	 * Delegates to main REST controller for now.
-	 * Will be extracted in implementation phase.
+	 * Returns a list of available tools, optionally filtered by assistant.
+	 * If no assistant_id is provided, returns all registered tools.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_tools_list( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_tools_list' ) ) {
 			return $this->main_controller->handle_tools_list( $request );
 		}
-		return $this->error( 'not_implemented', __( 'Tools list endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+
+		// Self-contained fallback implementation.
+		$registry = $this->get_registry();
+		if ( null === $registry ) {
+			return $this->error(
+				'wp_mcp_ai_registry_unavailable',
+				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+				503
+			);
+		}
+
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		if ( ! $assistant_id ) {
+			// Return all registered tools.
+			$tools = $registry->get_tools();
+		} else {
+			// Get tools allowed for this assistant.
+			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				return $this->error(
+					'wp_mcp_ai_assistant_cpt_unavailable',
+					__( 'Assistant configuration is not available.', 'wp-mcp-ai' ),
+					503
+				);
+			}
+
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+			$tools = array();
+			foreach ( $allowed_tools as $tool_slug ) {
+				$tool = $registry->get_tool( $tool_slug );
+				if ( $tool ) {
+					$tools[] = $tool;
+				}
+			}
+		}
+
+		// Convert tools to response format.
+		$tools_list = array();
+		foreach ( $tools as $tool ) {
+			try {
+				$schema = $tool->get_parameters_schema();
+
+				// Validate schema is a valid array.
+				if ( ! is_array( $schema ) ) {
+					continue;
+				}
+
+				$tools_list[] = array(
+					'name'        => $tool->get_slug(),
+					'description' => $tool->get_description(),
+					'inputSchema' => $schema,
+				);
+			} catch ( Exception $e ) {
+				// Skip tools with invalid schemas.
+				continue;
+			} catch ( Error $e ) {
+				// Skip tools with PHP errors.
+				continue;
+			}
+		}
+
+		return $this->success( array( 'tools' => $tools_list ) );
 	}
 
 	/**
 	 * Handle POST /tools request - Execute a tool.
 	 *
-	 * Delegates to main REST controller for now.
-	 * Will be extracted in implementation phase.
+	 * Executes a specific tool with the provided arguments.
+	 * Validates assistant access and tool permissions before execution.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_tool_request( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available (preferred for full functionality).
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_tool_request' ) ) {
 			return $this->main_controller->handle_tool_request( $request );
 		}
-		return $this->error( 'not_implemented', __( 'Tool execution endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+
+		// Self-contained fallback implementation.
+		$registry = $this->get_registry();
+		if ( null === $registry ) {
+			return $this->error(
+				'wp_mcp_ai_registry_unavailable',
+				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+				503
+			);
+		}
+
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$tool_slug    = sanitize_key( $request->get_param( 'tool' ) );
+		$arguments    = $request->get_param( 'arguments' );
+
+		if ( ! $assistant_id ) {
+			return $this->error(
+				'wp_mcp_ai_missing_assistant',
+				__( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ),
+				400
+			);
+		}
+
+		if ( empty( $tool_slug ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_tool',
+				__( 'Tool slug is required.', 'wp-mcp-ai' ),
+				400
+			);
+		}
+
+		// Get assistant configuration.
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $this->error(
+				'wp_mcp_ai_assistant_cpt_unavailable',
+				__( 'Assistant configuration is not available.', 'wp-mcp-ai' ),
+				503
+			);
+		}
+
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+		$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+		// Check if tool is allowed for this assistant.
+		if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+			return $this->error(
+				'wp_mcp_ai_tool_forbidden',
+				__( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ),
+				403
+			);
+		}
+
+		// Get the tool instance.
+		$tool = $registry->get_tool( $tool_slug );
+		if ( ! $tool ) {
+			return $this->error(
+				'wp_mcp_ai_tool_missing',
+				__( 'The requested tool is not registered.', 'wp-mcp-ai' ),
+				404
+			);
+		}
+
+		// Build execution context.
+		$user_id = $this->get_current_user_id();
+		$context = array(
+			'user_id'          => $user_id,
+			'assistant_id'     => $assistant_id,
+			'request'          => $request,
+			'assistant_config' => $assistant_config,
+		);
+
+		// Validate user is authenticated.
+		if ( empty( $user_id ) && ! $this->is_guest_request() ) {
+			return $this->error(
+				'wp_mcp_ai_anonymous_user',
+				__( 'You must be logged in to execute tools.', 'wp-mcp-ai' ),
+				rest_authorization_required_code()
+			);
+		}
+
+		// Execute the tool.
+		$prepared_arguments = is_array( $arguments ) ? $arguments : array();
+
+		try {
+			/**
+			 * Fires immediately before executing a registered tool.
+			 *
+			 * @param string $tool_slug          Tool identifier.
+			 * @param array  $prepared_arguments Arguments passed in the request.
+			 * @param array  $context            Execution context.
+			 */
+			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+
+			$result = $tool->execute( $prepared_arguments, $context );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			/**
+			 * Filter the tool output before returning.
+			 *
+			 * @param mixed  $result             Tool execution result.
+			 * @param string $tool_slug          Tool identifier.
+			 * @param array  $prepared_arguments Arguments passed in the request.
+			 * @param array  $context            Execution context.
+			 */
+			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
+
+			/**
+			 * Fires immediately after executing a registered tool.
+			 *
+			 * @param string $tool_slug          Tool identifier.
+			 * @param array  $prepared_arguments Arguments passed in the request.
+			 * @param array  $context            Execution context.
+			 * @param mixed  $result             Tool execution result.
+			 */
+			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+
+			return $this->success( array( 'result' => $result ) );
+		} catch ( Exception $e ) {
+			return $this->error(
+				'wp_mcp_ai_tool_execution_error',
+				$e->getMessage(),
+				500
+			);
+		}
 	}
 
 	/**
 	 * Handle GET /files/{file_id}/download request.
 	 *
 	 * Downloads a file from OpenAI and streams it to the client.
-	 * Delegates to main REST controller for now.
-	 * Will be extracted in implementation phase.
+	 * Supports both OpenAI file IDs and WordPress attachment IDs.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_file_download( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available (preferred for full functionality).
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_file_download' ) ) {
 			return $this->main_controller->handle_file_download( $request );
 		}
-		return $this->error( 'not_implemented', __( 'File download endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+
+		// Self-contained fallback - basic file download implementation.
+		$file_id       = sanitize_text_field( $request->get_param( 'file_id' ) );
+		$download_name = $request->get_param( 'download_name' );
+		$disposition   = $request->get_param( 'disposition' ) ?: 'attachment';
+
+		if ( empty( $file_id ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_file_id',
+				__( 'File ID is required.', 'wp-mcp-ai' ),
+				400
+			);
+		}
+
+		// Check if file_id is a WordPress attachment ID.
+		$attachment_id = absint( $file_id );
+		if ( $attachment_id > 0 ) {
+			$file_path = get_attached_file( $attachment_id );
+			if ( $file_path && file_exists( $file_path ) ) {
+				$file_url = wp_get_attachment_url( $attachment_id );
+				return $this->success(
+					array(
+						'url'       => $file_url,
+						'file_path' => $file_path,
+						'file_name' => wp_basename( $file_path ),
+					)
+				);
+			}
+		}
+
+		return $this->error(
+			'wp_mcp_ai_file_not_found',
+			__( 'The requested file was not found.', 'wp-mcp-ai' ),
+			404
+		);
 	}
 
 	/**
 	 * Handle GET /cron-status request.
 	 *
 	 * Returns lightweight cron job status information for the admin dashboard.
-	 * Delegates to main REST controller for now.
-	 * Will be extracted in implementation phase.
+	 * Includes job status summaries and counts by status.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_cron_status_request( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_cron_status_request' ) ) {
 			return $this->main_controller->handle_cron_status_request( $request );
 		}
-		return $this->error( 'not_implemented', __( 'Cron status endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+
+		// Self-contained fallback implementation.
+		$service = $this->get_cron_status_service();
+		$user_id = $this->get_current_user_id();
+
+		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ?: null );
+		$counts = $service->get_status_counts( $user_id, $assistant_id ?: null );
+
+		$response = array(
+			'jobs'   => $jobs,
+			'counts' => $counts,
+		);
+
+		if ( $assistant_id ) {
+			$response['assistant_id'] = $assistant_id;
+		}
+
+		return $this->success( $response );
 	}
 
 	/**
@@ -371,11 +663,23 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_cron_job_details_request( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available (preferred for full SSE support).
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_cron_job_details_request' ) ) {
 			return $this->main_controller->handle_cron_job_details_request( $request );
 		}
-		return $this->error( 'not_implemented', __( 'Cron job details endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+
+		// Self-contained fallback implementation.
+		$service = $this->get_cron_status_service();
+		$user_id = $this->get_current_user_id();
+		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
+
+		$job_details = $service->get_job_details( $job_id, $user_id );
+
+		if ( is_wp_error( $job_details ) ) {
+			return $job_details;
+		}
+
+		return $this->success( $job_details );
 	}
 
 	/**
