@@ -13288,6 +13288,7 @@
         const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
         const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
         const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
+        const guestToken = config.guestToken || '';
 
         // Don't start polling if endpoint is not available
         if (!cronStatusEndpoint) {
@@ -13334,7 +13335,7 @@
 
         // Start monitoring cron status with SSE-first approach (30s fallback to REST polling)
         const assistantId = config.assistantId || null;
-        window.wpMcpAiCronStatus.startMonitoring(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
+        window.wpMcpAiCronStatus.startMonitoring(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId, guestToken);
 
         // Stop monitoring when chat is destroyed or hidden
         const observer = new MutationObserver(function(mutations) {
