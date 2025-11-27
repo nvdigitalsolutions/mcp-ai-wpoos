@@ -320,9 +320,9 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	/**
 	 * Process templates and create pages.
 	 *
-	 * @param array $manifest      Parsed manifest data.
+	 * @param array  $manifest      Parsed manifest data.
 	 * @param string $templates_dir Directory containing templates.
-	 * @param array $options       Processing options.
+	 * @param array  $options       Processing options.
 	 * @return array Results of the import.
 	 */
 	protected function process_templates( $manifest, $templates_dir, $options ) {
@@ -360,9 +360,9 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 				continue;
 			}
 
-			if ( $template_result['action'] === 'created' ) {
+			if ( 'created' === $template_result['action'] ) {
 				$results['pages_created'][] = $template_result;
-			} elseif ( $template_result['action'] === 'updated' ) {
+			} elseif ( 'updated' === $template_result['action'] ) {
 				$results['pages_updated'][] = $template_result;
 			} else {
 				$results['pages_skipped'][] = $template_result;
@@ -417,16 +417,16 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		usort(
 			$page_templates,
 			function ( $a, $b ) use ( $priority_keywords ) {
-				$title_a   = strtolower( isset( $a['title'] ) ? $a['title'] : '' );
-				$title_b   = strtolower( isset( $b['title'] ) ? $b['title'] : '' );
+				$title_a    = strtolower( isset( $a['title'] ) ? $a['title'] : '' );
+				$title_b    = strtolower( isset( $b['title'] ) ? $b['title'] : '' );
 				$priority_a = count( $priority_keywords );
 				$priority_b = count( $priority_keywords );
 
 				foreach ( $priority_keywords as $index => $keyword ) {
-					if ( strpos( $title_a, $keyword ) !== false && $priority_a === count( $priority_keywords ) ) {
+					if ( false !== strpos( $title_a, $keyword ) && count( $priority_keywords ) === $priority_a ) {
 						$priority_a = $index;
 					}
-					if ( strpos( $title_b, $keyword ) !== false && $priority_b === count( $priority_keywords ) ) {
+					if ( false !== strpos( $title_b, $keyword ) && count( $priority_keywords ) === $priority_b ) {
 						$priority_b = $index;
 					}
 				}
@@ -449,7 +449,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	 * @return bool
 	 */
 	protected function is_home_template( $template ) {
-		$title = strtolower( isset( $template['title'] ) ? $template['title'] : '' );
+		$title         = strtolower( isset( $template['title'] ) ? $template['title'] : '' );
 		$home_keywords = array( 'home', 'index', 'front', 'homepage', 'frontpage' );
 
 		foreach ( $home_keywords as $keyword ) {
@@ -484,8 +484,19 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			return $template_content;
 		}
 
-		// Check for existing page.
-		$existing_page = get_page_by_title( $title, OBJECT, 'page' );
+		// Check for existing page using WP_Query.
+		$existing_query = new WP_Query(
+			array(
+				'post_type'              => 'page',
+				'title'                  => $title,
+				'post_status'            => 'any',
+				'posts_per_page'         => 1,
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+				'update_post_meta_cache' => false,
+			)
+		);
+		$existing_page  = $existing_query->have_posts() ? $existing_query->posts[0] : null;
 
 		if ( $existing_page && ! $options['overwrite_existing'] ) {
 			return array(
@@ -522,11 +533,11 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 
 		if ( $existing_page ) {
 			$page_data['ID'] = $existing_page->ID;
-			$page_id = wp_update_post( $page_data, true );
-			$action = 'updated';
+			$page_id         = wp_update_post( $page_data, true );
+			$action          = 'updated';
 		} else {
 			$page_id = wp_insert_post( $page_data, true );
-			$action = 'created';
+			$action  = 'created';
 		}
 
 		if ( is_wp_error( $page_id ) ) {
@@ -588,10 +599,10 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		foreach ( $possible_files as $file_path ) {
 			if ( file_exists( $file_path ) && is_readable( $file_path ) ) {
 				$content = $wp_filesystem->get_contents( $file_path );
-				if ( $content !== false ) {
+				if ( false !== $content ) {
 					// Validate JSON.
 					$decoded = json_decode( $content );
-					if ( json_last_error() === JSON_ERROR_NONE ) {
+					if ( JSON_ERROR_NONE === json_last_error() ) {
 						return $content;
 					}
 				}

@@ -208,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 			}
 
 			// Execute the import.
-			$tool = new WP_MCP_AI_Tool_Import_Elementor_Template_Kit();
+			$tool   = new WP_MCP_AI_Tool_Import_Elementor_Template_Kit();
 			$result = $tool->execute(
 				array(
 					'attachment_id'      => $attachment_id,
@@ -467,7 +467,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				return;
 			}
 
-			$data = isset( $result['data'] ) ? $result['data'] : array();
+			$data       = isset( $result['data'] ) ? $result['data'] : array();
 			$is_dry_run = ! empty( $data['dry_run'] );
 			?>
 			<div class="notice notice-success inline" style="margin: 0 0 15px;">
