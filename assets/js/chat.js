@@ -7916,12 +7916,18 @@
                     }
                     
                     // Start direct polling (SSE or REST)
+                    // Remove our pending entry since the fallback will create its own
+                    if (pendingEntry && pendingEntry.parentNode) {
+                        pendingEntry.parentNode.removeChild(pendingEntry);
+                    }
+                    
                     let pollPromise;
                     if (sseService && sseService.isSupported()) {
-                        // Use SSE polling but reuse the pending entry
+                        // Use SSE polling - it will create its own pending entry
                         pollPromise = waitForAsyncToolResultSSE(state, jobId, toolName);
                     } else {
-                        pollPromise = waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry);
+                        // REST polling reuses our pending entry via parameter
+                        pollPromise = waitForAsyncToolResultPolling(state, jobId, toolName);
                     }
                     
                     pollPromise.then(function(result) {
