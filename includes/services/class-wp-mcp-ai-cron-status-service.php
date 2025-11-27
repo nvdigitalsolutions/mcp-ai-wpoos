@@ -881,6 +881,85 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Merge Job Notifier status (completion/failure/progress).
 			$result = $this->merge_notifier_status( $result, $job_id );
 
+			// If the job is still showing as "delegated" after merging notifier status,
+			// check if the delegated veo job has completed and pull its result.
+			// This handles the case where the veo job completed but the parent job
+			// transient wasn't updated (e.g., due to timing issues or errors).
+			if ( 'delegated' === $result['status'] && isset( $result['delegated_to'] ) ) {
+				$delegated_job_id = $result['delegated_to'];
+
+				// Check if delegated job is a veo job and get its status.
+				if ( 0 === strpos( $delegated_job_id, 'veo_' ) ) {
+					$delegated_result = $this->get_job_details( $delegated_job_id, $user_id );
+
+					// If the delegated job completed, use its result for the parent job.
+					if ( ! is_wp_error( $delegated_result ) &&
+					     isset( $delegated_result['status'] ) &&
+					     'completed' === $delegated_result['status'] ) {
+
+						// Update parent job status to completed.
+						$result['status'] = 'completed';
+
+						// Copy result from delegated job if present.
+						if ( isset( $delegated_result['result'] ) && ! empty( $delegated_result['result'] ) ) {
+							$result['result'] = $delegated_result['result'];
+
+							// Re-apply sanitization on the delegated job's result.
+							if ( ! empty( $tool_slug ) ) {
+								$result = $this->sanitize_async_tool_result( $result, $tool_slug );
+							}
+
+							// Build tool_results array for chat client compatibility.
+							// This ensures the video is displayed properly in the chat UI.
+							if ( ! isset( $result['tool_results'] ) ) {
+								$tool_name = sanitize_text_field( $tool_slug );
+
+								// Use the original tool_call_id from context if available.
+								$tool_call_id = '';
+								if ( isset( $result['context']['tool_call_id'] ) && '' !== $result['context']['tool_call_id'] ) {
+									$tool_call_id = sanitize_text_field( $result['context']['tool_call_id'] );
+								} else {
+									// Fallback: Generate a unique tool_call_id.
+									$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
+									$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
+								}
+
+								// Serialize the result for the tool message content.
+								$result_content = wp_json_encode( $result['result'] );
+								if ( false === $result_content ) {
+									$result_content = wp_json_encode(
+										array(
+											'success' => true,
+											'message' => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
+										)
+									);
+								}
+
+								// Build tool message.
+								$tool_message = array(
+									'role'         => 'tool',
+									'content'      => $result_content,
+									'tool_call_id' => $tool_call_id,
+									'name'         => $tool_name,
+								);
+
+								// Include cost data if available.
+								if ( isset( $result['result']['cost'] ) && is_array( $result['result']['cost'] ) ) {
+									$tool_message['cost'] = $result['result']['cost'];
+									$result['cost']       = $result['result']['cost'];
+								}
+
+								$result['tool_results'] = array( $tool_message );
+							}
+						}
+
+						// Note: We don't update the parent transient here to avoid race conditions.
+						// The veo service's complete_parent_job() should handle that.
+						// This is a fallback to ensure the chat client gets the completed result.
+					}
+				}
+			}
+
 			// Add admin URL.
 			$result['admin_url'] = $this->get_admin_url( $job_id );
 
