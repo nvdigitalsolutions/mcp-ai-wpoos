@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 	/**
 	 * Default timeout for async tool execution in cron context (in seconds)
-	 * 
+	 *
 	 * Set to 180 seconds (3 minutes) to accommodate long-running tools
 	 * like video generation which typically takes 60-120 seconds.
 	 *
@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Record cron job in cron manager for visibility and management.
 		$cron_recorded = false;
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$user_id               = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 			$cron_recording_result = WP_MCP_AI_Cron_Manager::record_job(
 				self::CRON_HOOK,
 				array( $job_id ),
@@ -215,12 +215,12 @@ class WP_MCP_AI_Tool_Async_Executor {
 			'async_tool_queued',
 			sprintf( 'Tool %s queued for async execution', $tool_slug ),
 			array(
-				'job_id'         => $job_id,
-				'tool_slug'      => $tool_slug,
-				'scheduled_at'   => $timestamp,
-				'cron_recorded'  => $cron_recorded,
-				'assistant_id'   => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
-				'session_id'     => isset( $context['session_id'] ) ? $context['session_id'] : null,
+				'job_id'        => $job_id,
+				'tool_slug'     => $tool_slug,
+				'scheduled_at'  => $timestamp,
+				'cron_recorded' => $cron_recorded,
+				'assistant_id'  => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
+				'session_id'    => isset( $context['session_id'] ) ? $context['session_id'] : null,
 			)
 		);
 
@@ -302,10 +302,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// Video generation can take 60-120 seconds, so we need to allow sufficient time.
 			// This is safe in cron context as it won't affect the main HTTP request.
 			$tool_timeout = self::DEFAULT_TOOL_TIMEOUT;
-			
+
 			// Apply filter to allow customization per tool.
 			$tool_timeout = apply_filters( 'wp_mcp_ai_async_tool_timeout', $tool_timeout, $tool_slug, $job_id );
-			
+
 			// Set timeout if function exists. Some hosting environments disable set_time_limit
 			// for security reasons (safe mode, disable_functions in php.ini).
 			// Silencing errors because set_time_limit may trigger:
@@ -317,7 +317,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
-			
+
 			$start_time = microtime( true );
 			$result     = $tool->execute( $arguments, $context );
 			$duration   = microtime( true ) - $start_time;
@@ -331,12 +331,56 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// This happens when a tool (like veo video generation) falls back to its own async mode
 			// due to timeout or other reasons. In this case, the parent job should be marked as
 			// 'delegated' rather than 'completed', and the nested job will complete the parent later.
-			$is_nested_async = is_array( $result ) && 
-			                   isset( $result['async'] ) && 
-			                   $result['async'] === true && 
-			                   isset( $result['job_id'] );
+			//
+			// EXCEPTION: If the returned job_id matches the parent job_id, it means the tool
+			// (e.g., veo video generation) is reusing the parent job ID directly. In this case,
+			// the veo service will manage the job polling and update this transient directly.
+			// We should NOT mark it as delegated - just return and let veo handle it.
+			$is_nested_async = is_array( $result )
+				&& isset( $result['async'] )
+				&& true === $result['async']
+				&& isset( $result['job_id'] );
 
 			if ( $is_nested_async ) {
+				$nested_job_id = $result['job_id'];
+
+				// Check if the tool is reusing the parent job ID (unified job flow).
+				// When use_parent_job is true in veo service, it returns the same job_id we passed.
+				if ( $nested_job_id === $job_id ) {
+					// Veo is managing this job directly - don't mark as delegated.
+					// The veo polling cron will update this transient when complete.
+					$this->log_event(
+						'async_tool_unified_job',
+						sprintf( 'Tool %s is using unified job flow with same job ID', $tool_slug ),
+						array(
+							'job_id'    => $job_id,
+							'tool_slug' => $tool_slug,
+							'duration'  => $duration,
+						)
+					);
+
+					// Update status to 'polling' to indicate veo is now polling for this job.
+					$metadata['status']   = 'polling';
+					$metadata['duration'] = $duration;
+					$this->save_metadata( $job_id, $metadata );
+
+					// Fire job started hook with polling status.
+					do_action(
+						'wp_mcp_ai_job_started',
+						$job_id,
+						array(
+							'tool'    => $tool_slug,
+							'status'  => 'polling',
+							'message' => isset( $result['message'] ) ? $result['message'] : '',
+						)
+					);
+
+					// Return without marking as delegated or completed.
+					// Veo cron will update this job when video generation finishes.
+					return;
+				}
+
+				// Different job ID - this is a true delegation to a nested job.
 				// Tool returned a nested async response.
 				// Update parent job to 'delegated' status and store the nested job info.
 				$metadata['status']       = 'delegated';
@@ -367,10 +411,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 					'wp_mcp_ai_job_started',
 					$job_id,
 					array(
-						'tool'          => $tool_slug,
-						'delegated_to'  => $result['job_id'],
-						'status'        => isset( $result['status'] ) ? $result['status'] : 'pending',
-						'message'       => isset( $result['message'] ) ? $result['message'] : '',
+						'tool'         => $tool_slug,
+						'delegated_to' => $result['job_id'],
+						'status'       => isset( $result['status'] ) ? $result['status'] : 'pending',
+						'message'      => isset( $result['message'] ) ? $result['message'] : '',
 					)
 				);
 
@@ -491,7 +535,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Decompress result if needed.
 		if ( isset( $metadata['result'] ) && is_array( $metadata['result'] ) ) {
 			$decompressed = $this->decompress_result( $metadata['result'] );
-			
+
 			// If decompression failed but job was completed, return error.
 			if ( null === $decompressed && isset( $metadata['status'] ) && 'completed' === $metadata['status'] ) {
 				$this->log_error(
@@ -506,7 +550,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 					__( 'Failed to retrieve job result. The result may be corrupted.', 'wp-mcp-ai' )
 				);
 			}
-			
+
 			$metadata['result'] = $decompressed;
 		}
 
@@ -669,7 +713,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		}
 
 		$result = maybe_unserialize( $uncompressed );
-		
+
 		// Log successful decompression for debugging.
 		$this->log_event(
 			'async_result_decompressed',
