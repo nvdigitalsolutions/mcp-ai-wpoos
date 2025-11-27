@@ -894,8 +894,8 @@ class WP_MCP_AI_Cron_Status_Service {
 
 					// If the delegated job completed, use its result for the parent job.
 					if ( ! is_wp_error( $delegated_result ) &&
-					     isset( $delegated_result['status'] ) &&
-					     'completed' === $delegated_result['status'] ) {
+						isset( $delegated_result['status'] ) &&
+						'completed' === $delegated_result['status'] ) {
 
 						// Update parent job status to completed.
 						$result['status'] = 'completed';
@@ -1018,7 +1018,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	protected function normalize_data_recursive( $data ) {
 		// Handle WP_Error directly.
 		if ( is_wp_error( $data ) ) {
-			$error_data = $data->get_error_data();
+			$error_data  = $data->get_error_data();
 			$error_array = array(
 				'error'   => true,
 				'code'    => $data->get_error_code(),
