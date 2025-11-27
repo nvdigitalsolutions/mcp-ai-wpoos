@@ -156,6 +156,47 @@ class WP_MCP_AI_Get_User_Info_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the result includes a text field for chat UI display.
+	 *
+	 * The text field is used by the chat UI to display tool results
+	 * in localStorage and CCT (Custom Content Type) for persistence.
+	 */
+	public function test_result_includes_text_field_for_display() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool    = $registry->get_tool( 'get_user_info' );
+		$user_id = $this->factory->user->create(
+			array(
+				'role'         => 'administrator',
+				'display_name' => 'Test Admin',
+				'user_login'   => 'testadmin',
+				'user_email'   => 'admin@example.com',
+			)
+		);
+
+		// Add first and last name to test full name display.
+		update_user_meta( $user_id, 'first_name', 'Test' );
+		update_user_meta( $user_id, 'last_name', 'Admin' );
+
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertIsArray( $result, 'Result should be an array.' );
+		$this->assertArrayHasKey( 'text', $result, 'Result should include a text field for display.' );
+		$this->assertIsString( $result['text'], 'Text field should be a string.' );
+		$this->assertNotEmpty( $result['text'], 'Text field should not be empty.' );
+
+		// Verify the text contains expected information.
+		$this->assertStringContainsString( 'Test Admin', $result['text'], 'Text should contain display name.' );
+		$this->assertStringContainsString( (string) $user_id, $result['text'], 'Text should contain user ID.' );
+		$this->assertStringContainsString( 'admin@example.com', $result['text'], 'Text should contain email.' );
+		$this->assertStringContainsString( 'administrator', $result['text'], 'Text should contain role.' );
+	}
+
+	/**
 	 * Test permission checks - non-admin cannot view other users.
 	 */
 	public function test_permission_check_for_viewing_other_users() {
