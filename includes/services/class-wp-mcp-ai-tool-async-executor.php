@@ -267,6 +267,31 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$arguments = isset( $metadata['arguments'] ) ? $metadata['arguments'] : array();
 		$context   = isset( $metadata['context'] ) ? $metadata['context'] : array();
 
+		// Multisite support: Switch to the correct blog context if running in multisite.
+		// This ensures that file paths, attachment lookups, and other blog-specific operations
+		// work correctly when the async tool runs via WP-Cron.
+		$switched_blog = false;
+		if ( is_multisite() && isset( $context['blog_id'] ) ) {
+			$target_blog_id  = absint( $context['blog_id'] );
+			$current_blog_id = get_current_blog_id();
+
+			if ( $target_blog_id > 0 && $target_blog_id !== $current_blog_id ) {
+				switch_to_blog( $target_blog_id );
+				$switched_blog = true;
+
+				$this->log_event(
+					'async_tool_switched_blog',
+					sprintf( 'Switched to blog %d for async tool execution', $target_blog_id ),
+					array(
+						'job_id'          => $job_id,
+						'tool_slug'       => $tool_slug,
+						'from_blog_id'    => $current_blog_id,
+						'to_blog_id'      => $target_blog_id,
+					)
+				);
+			}
+		}
+
 		// Add flag to context indicating this tool is running in async executor.
 		// This prevents double-async execution (e.g., video generation tool
 		// queueing its own async job when already running in async context).
@@ -293,6 +318,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 		if ( ! $tool ) {
 			$error_message = sprintf( 'Tool %s not found', $tool_slug );
 			$this->handle_execution_error( $job_id, $metadata, $error_message );
+
+			// Restore blog context if switched.
+			if ( $switched_blog ) {
+				restore_current_blog();
+			}
 			return;
 		}
 
@@ -324,6 +354,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 			if ( is_wp_error( $result ) ) {
 				$this->handle_execution_error( $job_id, $metadata, $result->get_error_message(), $result );
+
+				// Restore blog context if switched.
+				if ( $switched_blog ) {
+					restore_current_blog();
+				}
 				return;
 			}
 
@@ -388,6 +423,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 					// Return without marking as delegated or completed.
 					// Veo cron will update this job when video generation finishes.
+
+					// Restore blog context if switched.
+					if ( $switched_blog ) {
+						restore_current_blog();
+					}
 					return;
 				}
 
@@ -431,6 +471,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 				// Don't fire job_completed or after_tool_execution here.
 				// The nested job will handle that when it completes.
+
+				// Restore blog context if switched.
+				if ( $switched_blog ) {
+					restore_current_blog();
+				}
 				return;
 			}
 
@@ -478,6 +523,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );
+		}
+
+		// Restore blog context if switched.
+		if ( $switched_blog ) {
+			restore_current_blog();
 		}
 	}
 
@@ -599,12 +649,19 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Allow tool_call_id to preserve original LLM tool call correlation.
 		// This enables proper async result correlation in the chat client.
-		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id', 'tool_call_id' );
+		// Allow blog_id to ensure multisite context is preserved when executing via cron.
+		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id', 'tool_call_id', 'blog_id' );
 
 		foreach ( $allowed_keys as $key ) {
 			if ( isset( $context[ $key ] ) ) {
 				$safe_context[ $key ] = $context[ $key ];
 			}
+		}
+
+		// Ensure blog_id is always set for multisite support.
+		// This allows async tool execution to switch to the correct blog context.
+		if ( ! isset( $safe_context['blog_id'] ) && is_multisite() ) {
+			$safe_context['blog_id'] = get_current_blog_id();
 		}
 
 		return $safe_context;

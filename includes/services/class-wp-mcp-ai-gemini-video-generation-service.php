@@ -1107,6 +1107,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$metadata['assistant_id'] = absint( $args['assistant_id'] );
 		}
 
+		// Store blog_id for multisite support during async polling.
+		// This ensures file operations work correctly when the cron job runs.
+		if ( is_multisite() ) {
+			$metadata['blog_id'] = get_current_blog_id();
+		}
+
 		// Save to transient (24 hour expiry).
 		set_transient( $transient_prefix . $job_id, $metadata, DAY_IN_SECONDS );
 
@@ -1191,8 +1197,36 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return;
 		}
 
+		// Multisite support: Switch to the correct blog context if running in multisite.
+		// This ensures that file paths, attachment lookups, and other blog-specific operations
+		// work correctly when the async polling runs via WP-Cron.
+		$switched_blog = false;
+		if ( is_multisite() && isset( $metadata['blog_id'] ) ) {
+			$target_blog_id  = absint( $metadata['blog_id'] );
+			$current_blog_id = get_current_blog_id();
+
+			if ( $target_blog_id > 0 && $target_blog_id !== $current_blog_id ) {
+				switch_to_blog( $target_blog_id );
+				$switched_blog = true;
+
+				WP_MCP_AI_Logger::log_event(
+					'veo_switched_blog',
+					sprintf( 'Switched to blog %d for veo polling', $target_blog_id ),
+					array(
+						'job_id'       => $job_id,
+						'from_blog_id' => $current_blog_id,
+						'to_blog_id'   => $target_blog_id,
+					)
+				);
+			}
+		}
+
 		// Store the transient prefix for later use when saving.
 		$metadata['_transient_prefix'] = $transient_prefix;
+
+		// Store switched_blog flag in metadata for use in helper methods.
+		// This allows cleanup to properly restore blog context.
+		$metadata['_switched_blog'] = $switched_blog;
 
 		// Increment poll attempt.
 		++$metadata['poll_attempt'];
@@ -1224,6 +1258,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 					// Fire completion hooks.
 					$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+					$this->maybe_restore_blog( $metadata );
 					return;
 				}
 			}
@@ -1251,6 +1286,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
 				)
 			);
+			$this->maybe_restore_blog( $metadata );
 			return;
 		}
 
@@ -1292,6 +1328,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 				// Fire completion hooks.
 				$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
+				$this->maybe_restore_blog( $metadata );
 				return;
 			}
 		}
@@ -1318,6 +1355,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( is_wp_error( $response ) ) {
 			// Schedule retry.
 			$this->schedule_next_poll( $job_id, $metadata );
+			$this->maybe_restore_blog( $metadata );
 			return;
 		}
 
@@ -1352,6 +1390,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
 					)
 				);
+				$this->maybe_restore_blog( $metadata );
 				return;
 			}
 
@@ -1374,6 +1413,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
 					)
 				);
+				$this->maybe_restore_blog( $metadata );
 				return;
 			} else {
 				// Check if we should save to media library.
@@ -1403,6 +1443,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 								'prompt' => isset( $metadata['args']['prompt'] ) ? $metadata['args']['prompt'] : '',
 							)
 						);
+						$this->maybe_restore_blog( $metadata );
 						return;
 					} else {
 						// Generate media library edit link.
@@ -1516,11 +1557,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// Fire completion hooks using the shared method.
 			$this->fire_job_completion_hooks( $job_id, $metadata, isset( $metadata['result'] ) ? $metadata['result'] : array() );
 
+			$this->maybe_restore_blog( $metadata );
 			return;
 		}
 
 		// Operation still in progress - schedule next poll.
 		$this->schedule_next_poll( $job_id, $metadata );
+		$this->maybe_restore_blog( $metadata );
 	}
 
 	/**
@@ -2315,6 +2358,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			sleep( 1 );
 
 			$this->complete_parent_job( $metadata['parent_job_id'], $result );
+		}
+	}
+
+	/**
+	 * Restore blog context if switched during polling.
+	 *
+	 * Helper method to ensure blog context is properly restored after async operations.
+	 * This should be called at all exit points in poll_video_async().
+	 *
+	 * @param array $metadata Job metadata containing _switched_blog flag.
+	 */
+	protected function maybe_restore_blog( $metadata ) {
+		if ( isset( $metadata['_switched_blog'] ) && $metadata['_switched_blog'] ) {
+			restore_current_blog();
 		}
 	}
 }

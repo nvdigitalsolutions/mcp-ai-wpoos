@@ -212,7 +212,7 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 	 * Test orchestrator decision for async tool.
 	 */
 	public function test_orchestrator_async_decision() {
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 		// Create mock tool with async flag.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -246,7 +246,7 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 	 * Test orchestrator decision for sync tool.
 	 */
 	public function test_orchestrator_sync_decision() {
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 		// Create mock tool without async flag.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
@@ -277,7 +277,7 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 	 * Test explicit async parameter overrides orchestrator.
 	 */
 	public function test_explicit_async_parameter() {
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			public function get_slug() {
@@ -317,7 +317,7 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 	 * when the agentic_loop context is set.
 	 */
 	public function test_agentic_loop_forces_sync_execution() {
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 		// Create a mock tool with 'async' capability flag (like generate_openai_image).
 		$mock_async_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
