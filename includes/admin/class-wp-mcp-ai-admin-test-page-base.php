@@ -160,10 +160,10 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 		// Safety check: Ensure REST constants exist.
 		$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
 
-		// Get async tool timeout from settings (default 300 seconds / 5 minutes).
-		$settings              = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
-		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : 300;
-		$async_timeout_ms      = max( 60, $async_timeout_seconds ) * 1000; // Convert to milliseconds
+		// Use the shortcode helper method for consistent async tool timeout calculation.
+		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
+			? WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
+			: 300000; // Default 5 minutes.
 
 		wp_localize_script(
 			'wp-mcp-ai-chat',
