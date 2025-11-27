@@ -882,87 +882,13 @@ class WP_MCP_AI_Cron_Status_Service {
 			$result = $this->merge_notifier_status( $result, $job_id );
 
 			// If the job is still showing as "delegated" after merging notifier status,
-			// check if the delegated veo job has completed and pull its result.
-			// This handles the case where the veo job completed but the parent job
+			// check if the delegated job has completed or failed and propagate its status.
+			// This handles the case where the delegated job finished but the parent job
 			// transient wasn't updated (e.g., due to timing issues or errors).
 			// Note: This only checks veo_ jobs (which don't delegate further),
 			// preventing infinite recursion.
 			if ( 'delegated' === $result['status'] && isset( $result['delegated_to'] ) ) {
-				$delegated_job_id = $result['delegated_to'];
-
-				// Only check veo jobs to prevent potential recursion.
-				// Veo jobs complete directly and don't delegate to other jobs.
-				if ( 0 === strpos( $delegated_job_id, 'veo_' ) ) {
-					$delegated_result = $this->get_job_details( $delegated_job_id, $user_id );
-
-					// If the delegated job completed, use its result for the parent job.
-					if ( ! is_wp_error( $delegated_result ) &&
-						isset( $delegated_result['status'] ) &&
-						'completed' === $delegated_result['status'] ) {
-
-						// Update parent job status to completed.
-						$result['status'] = 'completed';
-
-						// Copy result from delegated job if present.
-						if ( isset( $delegated_result['result'] ) && ! empty( $delegated_result['result'] ) ) {
-							$result['result'] = $delegated_result['result'];
-
-							// Re-apply sanitization on the delegated job's result.
-							if ( ! empty( $tool_slug ) ) {
-								$result = $this->sanitize_async_tool_result( $result, $tool_slug );
-							}
-
-							// Build tool_results array for chat client compatibility.
-							// This ensures the video is displayed properly in the chat UI.
-							if ( ! isset( $result['tool_results'] ) ) {
-								$tool_name = sanitize_text_field( $tool_slug );
-
-								// Use the original tool_call_id from context if available.
-								$tool_call_id = '';
-								if ( isset( $result['context']['tool_call_id'] ) && '' !== $result['context']['tool_call_id'] ) {
-									$tool_call_id = sanitize_text_field( $result['context']['tool_call_id'] );
-								} else {
-									// Fallback: Generate a unique tool_call_id.
-									$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
-									$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
-								}
-
-								// Serialize the result for the tool message content.
-								$result_content = wp_json_encode( $result['result'] );
-								if ( false === $result_content ) {
-									$result_content = wp_json_encode(
-										array(
-											'success' => true,
-											'message' => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
-										)
-									);
-								}
-
-								// Build tool message.
-								$tool_message = array(
-									'role'         => 'tool',
-									'content'      => $result_content,
-									'tool_call_id' => $tool_call_id,
-									'name'         => $tool_name,
-								);
-
-								// Include cost data if available.
-								if ( isset( $result['result']['cost'] ) && is_array( $result['result']['cost'] ) ) {
-									$tool_message['cost'] = $result['result']['cost'];
-									$result['cost']       = $result['result']['cost'];
-								}
-
-								$result['tool_results'] = array( $tool_message );
-							}
-						}
-
-						// Note: We don't update the parent transient here to avoid race conditions
-						// with the veo service's complete_parent_job(). This fallback runs on each
-						// poll until complete_parent_job() updates the parent transient. Once
-						// updated, the parent job will return 'completed' status directly without
-						// needing to check the delegated job.
-					}
-				}
+				$result = $this->handle_delegation_chain( $result, $job_id, $user_id, $tool_slug );
 			}
 
 			// Add admin URL.
@@ -1054,5 +980,182 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		// Scalars pass through unchanged.
 		return $data;
+	}
+
+	/**
+	 * Handle delegation chain for async jobs.
+	 *
+	 * When an async job delegates to another job (e.g., async_xxx -> veo_yyy),
+	 * this method checks if the delegated job has completed or failed and
+	 * propagates the status back to the parent job.
+	 *
+	 * This handles cases where:
+	 * - The delegated job completed but the parent job transient wasn't updated
+	 * - The delegated job failed and the parent should reflect the failure
+	 * - Timing issues or errors prevented the normal completion callback
+	 *
+	 * Note: This only checks veo_ jobs (which don't delegate further),
+	 * preventing infinite recursion.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $result    Parent job result from async executor.
+	 * @param string $job_id    Parent job ID.
+	 * @param int    $user_id   User ID for permission checks.
+	 * @param string $tool_slug Tool slug for sanitization.
+	 * @return array Modified result with delegated job status merged.
+	 */
+	protected function handle_delegation_chain( $result, $job_id, $user_id, $tool_slug ) {
+		$delegated_job_id = $result['delegated_to'];
+
+		// Only check veo_ jobs to prevent potential recursion.
+		// Veo jobs complete directly and don't delegate to other jobs.
+		if ( 0 !== strpos( $delegated_job_id, 'veo_' ) ) {
+			return $result;
+		}
+
+		$delegated_result = $this->get_job_details( $delegated_job_id, $user_id );
+
+		// If there was an error fetching the delegated job, return original result.
+		if ( is_wp_error( $delegated_result ) ) {
+			return $result;
+		}
+
+		// Check if the delegated job has a terminal status.
+		if ( ! isset( $delegated_result['status'] ) ) {
+			return $result;
+		}
+
+		$delegated_status = $delegated_result['status'];
+
+		// Handle completed delegated job.
+		if ( 'completed' === $delegated_status ) {
+			$result['status'] = 'completed';
+
+			// Copy result from delegated job if present.
+			if ( isset( $delegated_result['result'] ) && ! empty( $delegated_result['result'] ) ) {
+				$result['result'] = $delegated_result['result'];
+
+				// Re-apply sanitization on the delegated job's result.
+				if ( ! empty( $tool_slug ) ) {
+					$result = $this->sanitize_async_tool_result( $result, $tool_slug );
+				}
+
+				// Build tool_results array for chat client compatibility.
+				$result = $this->build_tool_results_for_delegated_job( $result, $job_id, $tool_slug );
+			}
+
+			// Copy other relevant fields from delegated result.
+			if ( isset( $delegated_result['completed_at'] ) ) {
+				$result['completed_at'] = $delegated_result['completed_at'];
+			}
+
+			// Note: We don't update the parent transient here to avoid race conditions
+			// with the veo service's complete_parent_job(). This fallback runs on each
+			// poll until complete_parent_job() updates the parent transient.
+			return $result;
+		}
+
+		// Handle failed delegated job.
+		if ( 'failed' === $delegated_status ) {
+			$result['status'] = 'failed';
+
+			// Copy error from delegated job if present.
+			if ( isset( $delegated_result['error'] ) ) {
+				$result['error'] = $delegated_result['error'];
+			}
+
+			if ( isset( $delegated_result['error_data'] ) ) {
+				$result['error_data'] = $delegated_result['error_data'];
+			}
+
+			// Copy failure timestamp if available.
+			if ( isset( $delegated_result['failed_at'] ) ) {
+				$result['failed_at'] = $delegated_result['failed_at'];
+			}
+
+			return $result;
+		}
+
+		// For other statuses (pending, polling, running), pass through progress data.
+		if ( isset( $delegated_result['progress'] ) ) {
+			$result['progress'] = $delegated_result['progress'];
+		}
+
+		if ( isset( $delegated_result['progress_message'] ) ) {
+			$result['progress_message'] = $delegated_result['progress_message'];
+		}
+
+		if ( isset( $delegated_result['poll_attempt'] ) ) {
+			$result['poll_attempt'] = $delegated_result['poll_attempt'];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build tool_results array for a delegated job's result.
+	 *
+	 * Formats the result from a delegated job into the tool_results structure
+	 * expected by the chat client for proper display of videos, images, etc.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $result    Job result containing the delegated job's data.
+	 * @param string $job_id    Parent job ID for fallback tool_call_id.
+	 * @param string $tool_slug Tool slug for the tool name.
+	 * @return array Modified result with tool_results array.
+	 */
+	protected function build_tool_results_for_delegated_job( $result, $job_id, $tool_slug ) {
+		// Skip if tool_results already exists.
+		if ( isset( $result['tool_results'] ) ) {
+			return $result;
+		}
+
+		// Skip if no result data.
+		if ( ! isset( $result['result'] ) ) {
+			return $result;
+		}
+
+		$tool_name = sanitize_text_field( $tool_slug );
+
+		// Use the original tool_call_id from context if available.
+		$tool_call_id = '';
+		if ( isset( $result['context']['tool_call_id'] ) && '' !== $result['context']['tool_call_id'] ) {
+			$tool_call_id = sanitize_text_field( $result['context']['tool_call_id'] );
+		} else {
+			// Fallback: Generate a unique tool_call_id.
+			$sanitized_tool_name = preg_replace( '/[^a-zA-Z0-9_]/', '_', $tool_name );
+			$tool_call_id        = 'async_' . $sanitized_tool_name . '_' . sanitize_key( $job_id );
+		}
+
+		// Serialize the result for the tool message content.
+		$result_content = wp_json_encode( $result['result'] );
+		if ( false === $result_content ) {
+			$result_content = wp_json_encode(
+				array(
+					'success' => true,
+					'message' => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
+		// Build tool message.
+		$tool_message = array(
+			'role'         => 'tool',
+			'content'      => $result_content,
+			'tool_call_id' => $tool_call_id,
+			'name'         => $tool_name,
+		);
+
+		// Include cost data if available.
+		if ( isset( $result['result']['cost'] ) && is_array( $result['result']['cost'] ) ) {
+			$tool_message['cost'] = $result['result']['cost'];
+			$result['cost']       = $result['result']['cost'];
+		}
+
+		$result['tool_results'] = array( $tool_message );
+
+		return $result;
 	}
 }
