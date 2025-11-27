@@ -1197,9 +1197,134 @@
     }
 
     /**
+     * Strip large file content from tool result content for API submission.
+     * Preserves essential fields like attachment_id and url while removing
+     * large data like base64-encoded content, data URLs, and raw binary data.
+     * 
+     * @param {string} content - Tool result content (typically JSON string)
+     * @return {string} Cleaned content with large file data stripped
+     */
+    function stripToolResultLargeContent(content) {
+        if (typeof content !== 'string' || !content.trim()) {
+            return content;
+        }
+
+        // Try to parse as JSON
+        let parsed;
+        try {
+            parsed = JSON.parse(content);
+        } catch (e) {
+            // Not JSON, return as-is
+            return content;
+        }
+
+        if (!parsed || typeof parsed !== 'object') {
+            return content;
+        }
+
+        // Recursively strip large content from the parsed object
+        const cleaned = stripLargeContentFromObject(parsed);
+
+        // Return re-serialized JSON
+        try {
+            return JSON.stringify(cleaned);
+        } catch (e) {
+            return content;
+        }
+    }
+
+    /**
+     * Recursively strip large content from an object.
+     * Removes base64 data, data URLs, and other large binary content while
+     * preserving essential fields like attachment_id, url, file_name, etc.
+     * 
+     * @param {*} obj - Object to clean
+     * @param {number} depth - Current recursion depth (to prevent infinite loops)
+     * @return {*} Cleaned object
+     */
+    function stripLargeContentFromObject(obj, depth) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        
+        // Prevent infinite recursion
+        if (depth > 10) {
+            return obj;
+        }
+
+        // Handle null/undefined
+        if (obj === null || obj === undefined) {
+            return obj;
+        }
+
+        // Handle arrays
+        if (Array.isArray(obj)) {
+            return obj.map(function(item) {
+                return stripLargeContentFromObject(item, depth + 1);
+            });
+        }
+
+        // Handle non-objects
+        if (typeof obj !== 'object') {
+            // Check if this is a large string (likely base64 or data URL)
+            if (typeof obj === 'string') {
+                // Strip data URLs (base64 encoded images/files)
+                if (obj.indexOf('data:') === 0 && obj.length > 1000) {
+                    return '[data URL stripped]';
+                }
+                // Strip large base64 strings (typically > 1KB when encoded)
+                if (obj.length > 5000 && /^[A-Za-z0-9+/=]+$/.test(obj)) {
+                    return '[base64 data stripped]';
+                }
+            }
+            return obj;
+        }
+
+        // Handle objects - create clean copy
+        const cleaned = {};
+        
+        for (var key in obj) {
+            if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+                continue;
+            }
+
+            var value = obj[key];
+
+            // Skip keys that typically contain large binary data
+            if (key === 'data' || key === 'base64' || key === 'data_url' || key === 'raw_data' || key === 'binary') {
+                // Check if this is actually large content
+                if (typeof value === 'string' && value.length > 1000) {
+                    cleaned[key] = '[' + key + ' stripped - ' + value.length + ' chars]';
+                    continue;
+                }
+            }
+
+            // Special handling for 'content' objects that might contain encoding info
+            if (key === 'content' && typeof value === 'object' && value !== null) {
+                if (value.encoding === 'base64' && value.data) {
+                    // This is a base64-encoded content block
+                    cleaned[key] = {
+                        encoding: value.encoding,
+                        mime_type: value.mime_type,
+                        stripped: true,
+                        original_size: typeof value.data === 'string' ? value.data.length : 0
+                    };
+                    continue;
+                }
+            }
+
+            // Recursively clean nested objects
+            cleaned[key] = stripLargeContentFromObject(value, depth + 1);
+        }
+
+        return cleaned;
+    }
+
+    /**
      * Strip UI-only metadata from a message for API submission.
      * Removes fields like 'display' that are used for UI rendering but not part of the API schema.
      * Also strips display-only data (blob:/data: URLs) from attachment segments.
+     * For tool messages, also strips large file content while preserving attachment_id and url.
      * 
      * @param {Object} message - Original message object
      * @return {Object} Cleaned message object with only API-compatible fields
@@ -1221,10 +1346,19 @@
             return null;
         }
 
+        // For tool messages, strip large file content from the result
+        // This keeps attachment_id and url but removes base64 data to keep payloads lean
+        let cleanedContent;
+        if (message.role === 'tool') {
+            cleanedContent = stripToolResultLargeContent(message.content);
+        } else {
+            cleanedContent = stripContentDisplayData(message.content);
+        }
+
         // Create a new object with only API-compatible fields
         const cleanMessage = {
             role: message.role,
-            content: stripContentDisplayData(message.content)
+            content: cleanedContent
         };
 
         // Preserve other API-required fields if present
@@ -1282,30 +1416,10 @@
         // Otherwise fall back to config.assistantId for backwards compatibility
         const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
 
-        // Filter out tool messages and intermediate agentic messages before saving to CCT
-        // Tool result messages (role: 'tool') are persisted locally for display but excluded
-        // from CCT to keep transcripts lean. The backend handles tool execution in its own
-        // agentic loop and doesn't need client-side tool results.
-        // Assistant messages with tool_calls are intermediate agentic loop messages that
-        // should also be excluded - they're preserved for UI display only.
-        const filteredForCCT = state.conversation.filter(function(message) {
-            if (!message) {
-                return false;
-            }
-            // Exclude system and tool messages
-            if (message.role === 'system' || message.role === 'tool') {
-                return false;
-            }
-            // Exclude assistant messages with tool_calls (intermediate agentic loop messages)
-            if (message.role === 'assistant' && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
-                return false;
-            }
-            return true;
-        });
-
         // Strip UI-only metadata (like 'display' field) from messages before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
-        const cleanMessages = filteredForCCT
+        // Also strips large file content from tool results (keeping attachment_id and url)
+        const cleanMessages = state.conversation
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
 
@@ -9351,31 +9465,16 @@
             startTime: Date.now()
         });
 
-        // Filter out system, tool, and intermediate agentic messages before sending to API
+        // Filter out system messages before sending to API
         // System messages are UI feedback only and should not be sent to the AI
         // This prevents breaking the agentic workflow with error messages and notices
-        // Tool result messages (role: 'tool') are persisted locally for display but excluded
-        // from API requests to keep the message payload lean. The backend handles tool
-        // execution in its own agentic loop and doesn't need client-side tool results.
-        // Assistant messages with tool_calls are intermediate agentic loop messages that
-        // should also be excluded - they're preserved for UI display only.
         const filteredMessages = state.conversation.filter(function(message) {
-            if (!message) {
-                return false;
-            }
-            // Exclude system and tool messages
-            if (message.role === 'system' || message.role === 'tool') {
-                return false;
-            }
-            // Exclude assistant messages with tool_calls (intermediate agentic loop messages)
-            if (message.role === 'assistant' && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
-                return false;
-            }
-            return true;
+            return message && message.role !== 'system';
         });
 
         // Strip display-only metadata (including blob:/data: URLs from attachments) before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
+        // Also strips large file content from tool results (keeping attachment_id and url)
         const cleanMessages = filteredMessages
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
