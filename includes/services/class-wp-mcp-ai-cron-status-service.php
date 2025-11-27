@@ -995,14 +995,15 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * - Timing issues or errors prevented the normal completion callback
 	 *
 	 * Note: This only checks veo_ jobs (which don't delegate further),
-	 * preventing infinite recursion.
+	 * preventing infinite recursion. Future changes should maintain this
+	 * constraint or add explicit recursion depth limits.
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param array  $result    Parent job result from async executor.
-	 * @param string $job_id    Parent job ID.
-	 * @param int    $user_id   User ID for permission checks.
-	 * @param string $tool_slug Tool slug for sanitization.
+	 * @param array       $result    Parent job result from async executor.
+	 * @param string      $job_id    Parent job ID.
+	 * @param int         $user_id   User ID for permission checks.
+	 * @param string|null $tool_slug Tool slug for sanitization. May be empty.
 	 * @return array Modified result with delegated job status merged.
 	 */
 	protected function handle_delegation_chain( $result, $job_id, $user_id, $tool_slug ) {
@@ -1010,6 +1011,8 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		// Only check veo_ jobs to prevent potential recursion.
 		// Veo jobs complete directly and don't delegate to other jobs.
+		// This is a critical safeguard - if delegation chains are extended
+		// in the future, explicit recursion depth limits should be added.
 		if ( 0 !== strpos( $delegated_job_id, 'veo_' ) ) {
 			return $result;
 		}

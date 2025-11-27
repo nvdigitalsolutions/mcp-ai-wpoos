@@ -59,6 +59,7 @@ class Test_Cron_Status_Delegation_Chain extends WP_UnitTestCase {
 		$veo_job_id    = 'veo_test_child_' . uniqid();
 
 		// Set up parent async job with 'delegated' status.
+		// The async executor stores metadata directly (not in compressed format).
 		$parent_metadata = array(
 			'job_id'       => $parent_job_id,
 			'tool_slug'    => 'generate_veo_video',
@@ -69,18 +70,6 @@ class Test_Cron_Status_Delegation_Chain extends WP_UnitTestCase {
 			),
 			'queued_at'    => time() - 60,
 		);
-		set_transient(
-			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $parent_job_id,
-			array(
-				'compressed'    => false,
-				'data'          => $parent_metadata,
-				'original_size' => strlen( serialize( $parent_metadata ) ),
-			),
-			DAY_IN_SECONDS
-		);
-
-		// The async executor stores metadata directly, not in compressed format.
-		// Let me fix this - we need to store it the same way as the executor does.
 		set_transient(
 			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $parent_job_id,
 			$parent_metadata,
