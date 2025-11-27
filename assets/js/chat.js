@@ -6688,7 +6688,7 @@
      * @param {Object} parsedContent Parsed tool result content with job_id
      * @param {string} toolName Tool name for display purposes
      */
-    function startAsyncToolPolling(state, parsedContent, toolName) {
+    function startAsyncToolPolling(state, parsedContent, toolName, toolCallId) {
         if (!parsedContent || !parsedContent.job_id) {
             if (window.console && console.warn) {
                 console.warn('[WP oOS] startAsyncToolPolling called without valid job_id:', {
@@ -6706,6 +6706,7 @@
             console.log('[WP oOS] Starting async tool polling:', {
                 jobId: parsedContent.job_id,
                 toolName: toolName,
+                toolCallId: toolCallId || '(not provided)',
                 status: parsedContent.status,
                 hasMessage: !!parsedContent.message
             });
@@ -6717,7 +6718,9 @@
         }
         
         // Start polling for the async result (SSE-first with REST fallback)
-        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
+        // toolCallId is required to ensure the completed result has the correct ID for API compatibility
+        // Without it, the conversation would have mismatched tool_call_ids causing API errors
+        waitForAsyncToolResult(state, parsedContent.job_id, toolName, toolCallId).catch(function (error) {
             if (window.console && console.error) {
                 console.error('[WP oOS] Async tool polling failed:', error);
             }
@@ -7396,9 +7399,10 @@
      * @param {Object} state Chat state object
      * @param {string} jobId Job ID for the async tool execution
      * @param {string} toolName Tool name for display purposes
+     * @param {string} toolCallId Original tool_call_id from LLM for API compatibility
      * @return {Promise} Promise that resolves with the tool result
      */
-    function waitForAsyncToolResultSSE(state, jobId, toolName) {
+    function waitForAsyncToolResultSSE(state, jobId, toolName, toolCallId) {
         if (!jobId || !state || !state.config || !state.config.restUrl) {
             return Promise.reject(new Error('Missing job ID, state, or REST URL'));
         }
@@ -7406,7 +7410,7 @@
         // Check if SSE service is available
         if (!sseService || !sseService.isSupported()) {
             // Fall back to polling
-            return waitForAsyncToolResultPolling(state, jobId, toolName);
+            return waitForAsyncToolResultPolling(state, jobId, toolName, null, toolCallId);
         }
 
         // Use configurable timeout from settings (default 5 minutes)
@@ -7446,7 +7450,7 @@
 
                 // Display the actual result
                 if (result) {
-                    displayAsyncToolResult(state, toolName, result);
+                    displayAsyncToolResult(state, toolName, result, toolCallId);
                     resolve(result);
                 } else {
                     updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
@@ -7546,7 +7550,7 @@
                     console.error('[WP oOS] SSE connection error:', error);
                     // Fall back to polling
                     cleanup();
-                    waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry).then(resolve).catch(reject);
+                    waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry, toolCallId).then(resolve).catch(reject);
                 }
             });
 
@@ -7556,13 +7560,14 @@
                 timeout: timeout,
                 start: startTime,
                 toolName: toolName,
+                toolCallId: toolCallId,
                 sseConnection: sseConnection,
             };
 
             // Handle case where connection failed to be created
             if (!sseConnection) {
                 cleanup();
-                waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry).then(resolve).catch(reject);
+                waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry, toolCallId).then(resolve).catch(reject);
             }
         });
     }
@@ -7574,9 +7579,10 @@
      * @param {string} jobId Job ID for the async tool execution
      * @param {string} toolName Tool name for display purposes
      * @param {Element} pendingEntry Optional existing pending entry element
+     * @param {string} toolCallId Original tool_call_id from LLM for API compatibility
      * @return {Promise} Promise that resolves with the tool result
      */
-    function waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry) {
+    function waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry, toolCallId) {
         if (!jobId || !state || !state.config) {
             return Promise.reject(new Error('Missing job ID or state'));
         }
@@ -7598,6 +7604,7 @@
             start: startTime,
             timer: null,
             toolName: toolName,
+            toolCallId: toolCallId,
         };
 
         return new Promise(function (resolve, reject) {
@@ -7667,7 +7674,7 @@
                             }
                             // Display the actual result
                             if (payload.result) {
-                                displayAsyncToolResult(state, record.toolName, payload.result);
+                                displayAsyncToolResult(state, record.toolName, payload.result, record.toolCallId);
                                 resolve(payload.result);
                             } else {
                                 updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
@@ -7739,9 +7746,10 @@
      * @param {Object} state Chat state object
      * @param {string} jobId Job ID for the async tool execution
      * @param {string} toolName Tool name for display purposes
+     * @param {string} toolCallId Original tool_call_id from LLM for API compatibility
      * @return {Promise} Promise that resolves with the tool result
      */
-    function waitForAsyncToolResult(state, jobId, toolName) {
+    function waitForAsyncToolResult(state, jobId, toolName, toolCallId) {
         if (!jobId || !state || !state.config) {
             return Promise.reject(new Error('Missing job ID or state'));
         }
@@ -7756,23 +7764,23 @@
                 const status = cached.data.status ? cached.data.status.toLowerCase() : '';
                 if (status === 'completed' && cached.data.result) {
                     // Job already completed - display result immediately
-                    displayAsyncToolResult(state, toolName, cached.data.result);
+                    displayAsyncToolResult(state, toolName, cached.data.result, toolCallId);
                     return Promise.resolve(cached.data.result);
                 }
             }
 
             // Use job event bus with fallback to direct polling
-            return waitForAsyncToolResultWithEventBus(state, jobId, toolName);
+            return waitForAsyncToolResultWithEventBus(state, jobId, toolName, toolCallId);
         }
 
         // Fall back to original behavior if job event bus not available
         // Check if SSE service is available and supported
         if (sseService && sseService.isSupported()) {
-            return waitForAsyncToolResultSSE(state, jobId, toolName);
+            return waitForAsyncToolResultSSE(state, jobId, toolName, toolCallId);
         }
 
         // Fall back to polling
-        return waitForAsyncToolResultPolling(state, jobId, toolName);
+        return waitForAsyncToolResultPolling(state, jobId, toolName, null, toolCallId);
     }
 
     /**
@@ -7785,9 +7793,10 @@
      * @param {Object} state Chat state object
      * @param {string} jobId Job ID for the async tool execution
      * @param {string} toolName Tool name for display purposes
+     * @param {string} toolCallId Original tool_call_id from LLM for API compatibility
      * @return {Promise} Promise that resolves with the tool result
      */
-    function waitForAsyncToolResultWithEventBus(state, jobId, toolName) {
+    function waitForAsyncToolResultWithEventBus(state, jobId, toolName, toolCallId) {
         const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
         
@@ -7795,6 +7804,7 @@
         state.pendingAsyncTools[jobId] = {
             entry: pendingEntry,
             toolName: toolName,
+            toolCallId: toolCallId,
             start: Date.now()
         };
 
@@ -7839,7 +7849,7 @@
 
                 // Display result
                 if (result) {
-                    displayAsyncToolResult(state, toolName, result);
+                    displayAsyncToolResult(state, toolName, result, toolCallId);
                     resolve(result);
                 } else {
                     updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
@@ -7924,10 +7934,10 @@
                     let pollPromise;
                     if (sseService && sseService.isSupported()) {
                         // Use SSE polling - it will create its own pending entry
-                        pollPromise = waitForAsyncToolResultSSE(state, jobId, toolName);
+                        pollPromise = waitForAsyncToolResultSSE(state, jobId, toolName, toolCallId);
                     } else {
                         // REST polling reuses our pending entry via parameter
-                        pollPromise = waitForAsyncToolResultPolling(state, jobId, toolName);
+                        pollPromise = waitForAsyncToolResultPolling(state, jobId, toolName, null, toolCallId);
                     }
                     
                     pollPromise.then(function(result) {
@@ -8032,8 +8042,9 @@
      * @param {Object} state Chat state object
      * @param {string} toolName Tool name
      * @param {Object} result Tool result data
+     * @param {string} toolCallId Original tool_call_id from LLM for API compatibility
      */
-    function displayAsyncToolResult(state, toolName, result) {
+    function displayAsyncToolResult(state, toolName, result, toolCallId) {
         if (!state || !state.messagesEl || !result) {
             return;
         }
@@ -8099,34 +8110,41 @@
             // Extract display metadata for proper UI restoration
             const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
 
-            // Extract tool_call_id from the result if available (backend preserves original LLM tool call ID)
+            // Determine the tool_call_id to use for this tool result.
             // Priority:
-            // 1. tool_results[0].tool_call_id (from backend's async completion response)
-            // 2. result.tool_call_id (direct field)
-            // 3. Generate new ID as fallback
-            let toolCallId = '';
+            // 1. toolCallId parameter (original LLM tool_call_id passed through polling chain)
+            // 2. tool_results[0].tool_call_id (from backend's async completion response)
+            // 3. result.tool_call_id (direct field)
+            // 4. Generate new ID as fallback (legacy behavior)
+            let finalToolCallId = '';
             
-            if (typeof result === 'object' && result !== null) {
+            // First, use the parameter if provided (this is the correct original ID)
+            if (toolCallId && typeof toolCallId === 'string' && toolCallId.trim()) {
+                finalToolCallId = toolCallId.trim();
+            }
+            
+            // If not provided, try to extract from result structure
+            if (!finalToolCallId && typeof result === 'object' && result !== null) {
                 // Check tool_results array first (OpenAI/backend format)
                 if (Array.isArray(result.tool_results) && result.tool_results.length > 0) {
                     const firstToolResult = result.tool_results[0];
                     if (typeof firstToolResult === 'object' && firstToolResult !== null && firstToolResult.tool_call_id) {
-                        toolCallId = String(firstToolResult.tool_call_id);
+                        finalToolCallId = String(firstToolResult.tool_call_id);
                     }
                 }
                 
                 // Fallback to direct tool_call_id field
-                if (!toolCallId && result.tool_call_id && typeof result.tool_call_id === 'string' && result.tool_call_id !== '') {
-                    toolCallId = String(result.tool_call_id);
+                if (!finalToolCallId && result.tool_call_id && typeof result.tool_call_id === 'string' && result.tool_call_id !== '') {
+                    finalToolCallId = String(result.tool_call_id);
                 }
             }
             
-            // Generate fallback tool_call_id if not found in result
-            if (!toolCallId) {
+            // Generate fallback tool_call_id if still not found
+            if (!finalToolCallId) {
                 // Use timestamp + random suffix to avoid collisions if multiple tools complete simultaneously
                 // Sanitize toolName to only allow alphanumeric and underscore characters
                 const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
-                toolCallId = 'async_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                finalToolCallId = 'async_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             }
 
             // Create tool message with display metadata for persistence
@@ -8136,7 +8154,7 @@
                 displayMetadata,
                 {
                     name: toolName,
-                    tool_call_id: toolCallId
+                    tool_call_id: finalToolCallId
                 }
             );
 
@@ -8146,7 +8164,8 @@
             if (window.console && console.log) {
                 console.log('[WP oOS] Added async tool result to conversation:', {
                     tool_name: toolName,
-                    tool_call_id: toolCallId,
+                    tool_call_id: finalToolCallId,
+                    passed_tool_call_id: toolCallId || '(not provided)',
                     conversation_length: state.conversation.length
                 });
             }
@@ -10449,7 +10468,7 @@
                 
                 // Check if this is an async tool result that's still pending
                 if (isAsyncPendingToolResult(parsedContent)) {
-                    startAsyncToolPolling(state, parsedContent, toolName);
+                    startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                     return;
                 }
                 
@@ -10941,6 +10960,28 @@
             
             data.tool_results.forEach(function (toolResult) {
                 if (toolResult && toolResult.role === 'tool') {
+                    // Skip pending async tool results - they will be added by displayAsyncToolResult
+                    // when the async job completes. This prevents duplicate tool messages with
+                    // mismatched tool_call_ids in the conversation, which would cause API errors
+                    // when sending subsequent messages.
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            parsedContent = null;
+                        }
+                    }
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        // Log for debugging
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Skipping pending async tool result in conversation (will be added on completion):', {
+                                tool_name: toolResult.name,
+                                job_id: parsedContent && parsedContent.job_id
+                            });
+                        }
+                        return; // Skip this tool result
+                    }
                     state.conversation.push(toolResult);
                 }
             });
@@ -11021,10 +11062,11 @@
                         if (window.console && console.log) {
                             console.log('[WP oOS] Starting async polling for background job:', {
                                 toolName: toolName,
-                                jobId: parsedContent.job_id
+                                jobId: parsedContent.job_id,
+                                toolCallId: toolCallId
                             });
                         }
-                        startAsyncToolPolling(state, parsedContent, toolName);
+                        startAsyncToolPolling(state, parsedContent, toolName, toolCallId);
                         return;
                     }
                     
@@ -11095,10 +11137,11 @@
                         if (window.console && console.log) {
                             console.log('[WP oOS] Starting async polling (agentic loop background-only tool):', {
                                 toolName: toolName,
-                                jobId: parsedContent.job_id
+                                jobId: parsedContent.job_id,
+                                toolCallId: toolResult.tool_call_id
                             });
                         }
-                        startAsyncToolPolling(state, parsedContent, toolName);
+                        startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                         return;
                     }
                     
