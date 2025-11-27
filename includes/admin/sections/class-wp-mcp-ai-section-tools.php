@@ -1685,6 +1685,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Handle Elementor template kit import form submission.
 		 */
 		public function handle_elementor_kit_import() {
+			// Check if this is a POST request.
+			if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+				return;
+			}
+
 			// Check if this is our form submission.
 			if ( ! isset( $_POST['wp_mcp_ai_elementor_kit_import'] ) ) {
 				return;
@@ -1805,8 +1810,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				);
 			}
 
-			// Redirect to avoid form resubmission.
-			wp_safe_redirect( add_query_arg( 'elementor_kit_imported', '1', wp_get_referer() ) );
+			// Redirect to the settings page to avoid form resubmission.
+			// Use a known safe URL instead of wp_get_referer() to avoid open redirect vulnerabilities.
+			$redirect_url = add_query_arg(
+				array(
+					'page'                   => 'wp-mcp-ai-dashboard',
+					'tab'                    => 'tools',
+					'subtab'                 => 'site_creator',
+					'elementor_kit_imported' => '1',
+				),
+				admin_url( 'admin.php' )
+			);
+			wp_safe_redirect( $redirect_url );
 			exit;
 		}
 	}

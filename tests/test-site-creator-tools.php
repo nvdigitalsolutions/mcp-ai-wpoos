@@ -310,6 +310,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 			'install_and_activate_plugin',
 			'install_and_activate_theme',
 			'site_creator',
+			'check_wp_cli',
 		);
 
 		foreach ( $tools as $tool_slug ) {
@@ -336,6 +337,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 			'install_and_activate_plugin',
 			'install_and_activate_theme',
 			'site_creator',
+			'check_wp_cli',
 		);
 
 		foreach ( $tools as $tool_slug ) {
@@ -347,5 +349,45 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'type', $schema, "Tool {$tool_slug} schema should have a type." );
 			$this->assertArrayHasKey( 'properties', $schema, "Tool {$tool_slug} schema should have properties." );
 		}
+	}
+
+	/**
+	 * Test check_wp_cli tool is registered.
+	 */
+	public function test_check_wp_cli_tool_is_registered() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'check_wp_cli' );
+
+		$this->assertNotNull( $tool, 'The check_wp_cli tool should be registered by default.' );
+		$this->assertInstanceOf( WP_MCP_AI_Tool_Interface::class, $tool );
+	}
+
+	/**
+	 * Test check_wp_cli requires site_creator_allow_wp_cli_tools setting.
+	 */
+	public function test_check_wp_cli_requires_wp_cli_tools_setting() {
+		// Ensure feature is disabled.
+		update_option( 'wp_mcp_ai_settings', array() );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'check_wp_cli' );
+
+		$admin_id = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
+
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return error when WP-CLI tools are disabled.' );
+		$this->assertSame( 'wp_mcp_ai_feature_disabled', $result->get_error_code() );
 	}
 }
