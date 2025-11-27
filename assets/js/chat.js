@@ -6707,6 +6707,7 @@
                 jobId: parsedContent.job_id,
                 toolName: toolName,
                 toolCallId: toolCallId || '(not provided)',
+                assistantId: state.originalAssistantId || (state.config && state.config.assistantId) || '(not set)',
                 status: parsedContent.status,
                 hasMessage: !!parsedContent.message
             });
@@ -7483,6 +7484,13 @@
             }
             url += 'cron-status/' + encodeURIComponent(jobId) + '?stream=true';
 
+            // Add assistant_id for multi-widget isolation and context.
+            // The cron-status service uses this to filter jobs by assistant.
+            const assistantId = state.originalAssistantId || (state.config && state.config.assistantId);
+            if (assistantId) {
+                url += '&assistant_id=' + encodeURIComponent(assistantId);
+            }
+
             // Add authentication query params for SSE (EventSource can't use headers)
             const guestToken = state && state.config ? state.config.guestToken : '';
             if (guestToken) {
@@ -8006,6 +8014,13 @@
             url += '/';
         }
         url += 'cron-status/' + encodeURIComponent(jobId);
+
+        // Add assistant_id for multi-widget isolation and context.
+        // The cron-status service uses this to filter jobs by assistant.
+        const assistantId = state.originalAssistantId || (state.config && state.config.assistantId);
+        if (assistantId) {
+            url += '?assistant_id=' + encodeURIComponent(assistantId);
+        }
 
         return fetch(url, {
             method: 'GET',
