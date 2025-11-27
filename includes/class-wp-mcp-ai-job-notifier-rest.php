@@ -525,8 +525,9 @@ class WP_MCP_AI_Job_Notifier_REST {
 		// Remove any characters that aren't alphanumeric, underscore, dot, hyphen, or asterisk (for wildcards).
 		$sanitized = preg_replace( '/[^a-zA-Z0-9_.*\-]/', '', $job_id );
 
-		// Remove path traversal attempts (consecutive dots).
-		$sanitized = preg_replace( '/\.\.+/', '', $sanitized );
+		// Remove path traversal attempts (2 or more consecutive dots).
+		// This runs after removing slashes because '../../../' becomes '......' after slash removal.
+		$sanitized = preg_replace( '/\.{2,}/', '', $sanitized );
 
 		return $sanitized;
 	}
