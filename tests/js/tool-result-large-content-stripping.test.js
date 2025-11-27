@@ -41,8 +41,13 @@ describe('Tool Result Large Content Stripping', () => {
 					if (obj.indexOf('data:') === 0 && obj.length > 1000) {
 						return '[data URL stripped]';
 					}
-					if (obj.length > 5000 && /^[A-Za-z0-9+/=]+$/.test(obj)) {
-						return '[base64 data stripped]';
+					// Check length first to avoid expensive regex on small strings
+					if (obj.length > 5000) {
+						// Sample first 100 chars to check if it looks like base64
+						var sample = obj.substring(0, 100);
+						if (/^[A-Za-z0-9+/=]+$/.test(sample)) {
+							return '[base64 data stripped]';
+						}
 					}
 				}
 				return obj;

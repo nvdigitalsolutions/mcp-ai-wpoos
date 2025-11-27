@@ -1242,6 +1242,9 @@
      * @param {number} depth - Current recursion depth (to prevent infinite loops)
      * @return {*} Cleaned object
      */
+    // Keys that typically contain large binary data to be stripped
+    var LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
+
     function stripLargeContentFromObject(obj, depth) {
         if (depth === undefined) {
             depth = 0;
@@ -1273,8 +1276,13 @@
                     return '[data URL stripped]';
                 }
                 // Strip large base64 strings (typically > 1KB when encoded)
-                if (obj.length > 5000 && /^[A-Za-z0-9+/=]+$/.test(obj)) {
-                    return '[base64 data stripped]';
+                // Check length first to avoid expensive regex on small strings
+                if (obj.length > 5000) {
+                    // Sample first 100 chars to check if it looks like base64
+                    var sample = obj.substring(0, 100);
+                    if (/^[A-Za-z0-9+/=]+$/.test(sample)) {
+                        return '[base64 data stripped]';
+                    }
                 }
             }
             return obj;
@@ -1291,7 +1299,7 @@
             var value = obj[key];
 
             // Skip keys that typically contain large binary data
-            if (key === 'data' || key === 'base64' || key === 'data_url' || key === 'raw_data' || key === 'binary') {
+            if (LARGE_CONTENT_KEYS.indexOf(key) !== -1) {
                 // Check if this is actually large content
                 if (typeof value === 'string' && value.length > 1000) {
                     cleaned[key] = '[' + key + ' stripped - ' + value.length + ' chars]';
