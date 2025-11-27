@@ -6656,6 +6656,12 @@
 
     /**
      * Check if a parsed tool result represents an async pending job.
+     * 
+     * The system supports both sync and async tool execution:
+     * - Sync tools: Execute immediately and return complete results
+     * - Async tools: Return {async: true, status: 'pending', job_id: '...'} for background execution
+     * - Background-only tools (e.g., Veo video): MUST run async even in agentic loops
+     * 
      * @param {Object} parsedContent - The parsed tool result content
      * @return {boolean} True if the tool is async and still pending/processing
      */
@@ -6670,13 +6676,39 @@
      * Start polling for an async tool result.
      * Displays the initial message if provided, then calls waitForAsyncToolResult.
      * 
+     * This function handles background-only tools (e.g., Veo video generation) that
+     * return immediately with a pending status. The actual result is retrieved via:
+     * 1. SSE (Server-Sent Events) - preferred, real-time updates
+     * 2. REST polling - fallback when SSE is not available
+     * 
+     * The job_id format is typically: async_{uuid} for orchestrated jobs
+     * or veo_{operation_name} for direct video generation jobs.
+     * 
      * @param {Object} state Chat state object
      * @param {Object} parsedContent Parsed tool result content with job_id
      * @param {string} toolName Tool name for display purposes
      */
     function startAsyncToolPolling(state, parsedContent, toolName) {
         if (!parsedContent || !parsedContent.job_id) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] startAsyncToolPolling called without valid job_id:', {
+                    hasContent: !!parsedContent,
+                    jobId: parsedContent ? parsedContent.job_id : undefined,
+                    toolName: toolName
+                });
+            }
             return;
+        }
+        
+        // Log async job initiation for observability
+        // This helps debug long-running operations like video generation (60-180 seconds)
+        if (window.console && console.log) {
+            console.log('[WP oOS] Starting async tool polling:', {
+                jobId: parsedContent.job_id,
+                toolName: toolName,
+                status: parsedContent.status,
+                hasMessage: !!parsedContent.message
+            });
         }
         
         // Display initial message if provided
@@ -6684,7 +6716,7 @@
             appendMessage(state.messagesEl, 'system', parsedContent.message);
         }
         
-        // Start polling for the async result
+        // Start polling for the async result (SSE-first with REST fallback)
         waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
             if (window.console && console.error) {
                 console.error('[WP oOS] Async tool polling failed:', error);
@@ -9492,13 +9524,25 @@
                             let contentChunk = null;
                             let thinkingChunk = null;
                             
-                            // ALWAYS log message events for debugging with FULL data structure
+                            // Log SSE message events for debugging both sync and async tool results
+                            // SSE message format differs between streaming chunks and final responses:
+                            // - Streaming chunks: data.choices[0].delta.content (top-level choices)
+                            // - Final response: data.data.choices[0].message (nested in data.data)
+                            // - Tool results: data.tool_results[] (sync completed or async pending)
                             if (window.console && console.log) {
+                                // For final responses, choices are in data.data.choices, not data.choices
+                                const isFinalMessage = !!(data.data);
+                                const hasStreamingChoices = !!(data.choices);
+                                const hasFinalChoices = !!(data.data && data.data.choices);
+                                const hasToolResults = !!(data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0);
+                                
                                 console.log('[WP oOS] SSE message event received:', {
-                                    hasChoices: !!(data.choices),
+                                    isFinalMessage: isFinalMessage,
+                                    hasChoices: isFinalMessage ? hasFinalChoices : hasStreamingChoices,
                                     hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
                                     hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content),
-                                    hasData: !!(data.data),
+                                    hasData: isFinalMessage,
+                                    hasToolResults: hasToolResults,
                                     dataKeys: Object.keys(data),
                                     fullData: data
                                 });
@@ -10717,18 +10761,35 @@
             // 2. Message has no tool_calls: Process all tool_results (agentic loop final response)
             if (hasToolCalls && message.tool_calls) {
                 // Case 1: Match tool results with tool calls in the current message
+                // Log tool call matching for debugging sync/async tool execution
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Processing tool_calls with matching tool_results:', {
+                        toolCallsCount: message.tool_calls.length,
+                        toolResultsCount: data.tool_results.length,
+                        toolCallIds: message.tool_calls.map(function(tc) { return tc.id; }),
+                        toolResultIds: data.tool_results.map(function(tr) { return tr.tool_call_id; })
+                    });
+                }
+                
                 message.tool_calls.forEach(function (toolCall) {
                     const toolCallId = toolCall.id || '';
                     if (!toolCallId) {
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] Tool call missing ID, skipping:', toolCall);
+                        }
                         return;
                     }
 
-                    // Find matching tool result
+                    // Find matching tool result by tool_call_id
+                    // This links the LLM's tool request with the backend's execution result
                     const matchingResult = data.tool_results.find(function (result) {
                         return result.tool_call_id === toolCallId;
                     });
 
                     if (!matchingResult || !matchingResult.content) {
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] No matching tool result found for tool_call_id:', toolCallId);
+                        }
                         return;
                     }
 
@@ -10745,12 +10806,37 @@
                         }
                     }
                     
-                    // Check if this is an async tool result that's still pending
-                    if (isAsyncPendingToolResult(parsedContent)) {
+                    // Check if this is an async pending result vs a sync completed result
+                    // Sync tools: Return complete result immediately (e.g., search, get_post)
+                    // Async tools: Return {async: true, status: 'pending', job_id: '...'} (e.g., video generation)
+                    const isAsync = isAsyncPendingToolResult(parsedContent);
+                    
+                    // Log tool result type for debugging both sync and async flows
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Tool result:', {
+                            toolName: toolName,
+                            toolCallId: toolCallId,
+                            executionType: isAsync ? 'async (pending)' : 'sync (completed)',
+                            asyncFlag: parsedContent && parsedContent.async,
+                            status: parsedContent && parsedContent.status,
+                            jobId: parsedContent && parsedContent.job_id
+                        });
+                    }
+                    
+                    if (isAsync) {
+                        // Async tool: Start polling for result (SSE-first with REST fallback)
+                        // The job will complete in the background via WP Cron
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Starting async polling for background job:', {
+                                toolName: toolName,
+                                jobId: parsedContent.job_id
+                            });
+                        }
                         startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
                     
+                    // Sync tool: Process completed result immediately
                     const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
                     if (normalized) {
@@ -10795,12 +10881,36 @@
                         }
                     }
                     
-                    // Check if this is an async tool result that's still pending
-                    if (isAsyncPendingToolResult(parsedContent)) {
+                    // Check for async pending status (background-only tools like Veo video)
+                    const isAsync = isAsyncPendingToolResult(parsedContent);
+                    
+                    // Log tool result type for agentic loop (final response without tool_calls)
+                    // This path is taken when the LLM's final message doesn't include tool_calls
+                    // but the backend has tool_results from earlier agentic iterations
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Agentic loop tool result:', {
+                            toolName: toolName,
+                            executionType: isAsync ? 'async (pending)' : 'sync (completed)',
+                            asyncFlag: parsedContent && parsedContent.async,
+                            status: parsedContent && parsedContent.status,
+                            jobId: parsedContent && parsedContent.job_id
+                        });
+                    }
+                    
+                    if (isAsync) {
+                        // Background-only tools (e.g., Veo video) must run async even in agentic loops
+                        // Start polling for result via SSE or REST
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Starting async polling (agentic loop background-only tool):', {
+                                toolName: toolName,
+                                jobId: parsedContent.job_id
+                            });
+                        }
                         startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
                     
+                    // Sync tool result from agentic loop - process immediately
                     const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
                     if (normalized) {
