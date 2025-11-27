@@ -6685,6 +6685,16 @@
     }
 
     function normaliseToolResultForDisplay(toolName, result) {
+        // Handle string results (e.g., truncated tool results from orchestration layer)
+        // When a tool result is too large, the orchestration layer converts it to a truncated
+        // JSON string with a marker. We need to display this string to the user.
+        if (typeof result === 'string' && result.trim()) {
+            return {
+                text: result,
+                attachments: []
+            };
+        }
+
         if (!result || typeof result !== 'object') {
             return null;
         }
