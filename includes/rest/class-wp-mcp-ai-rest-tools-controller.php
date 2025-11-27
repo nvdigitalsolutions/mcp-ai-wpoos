@@ -57,6 +57,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Get the tool registry instance.
 	 *
 	 * Uses lazy loading to get the registry from the container.
+	 * Validates the returned instance implements the expected interface.
 	 *
 	 * @return WP_MCP_AI_Tool_Registry|null Tool registry instance or null if unavailable.
 	 */
@@ -66,7 +67,11 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				$container = wp_mcp_ai_container();
 				if ( $container && method_exists( $container, 'get' ) ) {
 					try {
-						$this->registry = $container->get( 'tool.registry' );
+						$registry = $container->get( 'tool.registry' );
+						// Validate the returned instance is the expected type.
+						if ( $registry instanceof WP_MCP_AI_Tool_Registry ) {
+							$this->registry = $registry;
+						}
 					} catch ( Exception $e ) {
 						// Registry not available, will be handled by callers.
 						$this->registry = null;
@@ -75,6 +80,20 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			}
 		}
 		return $this->registry;
+	}
+
+	/**
+	 * Get the cron status service instance.
+	 *
+	 * Loads the service class if not already available.
+	 *
+	 * @return WP_MCP_AI_Cron_Status_Service Cron status service instance.
+	 */
+	private function get_cron_status_service() {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
+		}
+		return new WP_MCP_AI_Cron_Status_Service();
 	}
 
 	/**
@@ -613,11 +632,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Self-contained fallback implementation.
-		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
-		}
-
-		$service = new WP_MCP_AI_Cron_Status_Service();
+		$service = $this->get_cron_status_service();
 		$user_id = $this->get_current_user_id();
 
 		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
@@ -654,11 +669,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Self-contained fallback implementation.
-		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
-		}
-
-		$service = new WP_MCP_AI_Cron_Status_Service();
+		$service = $this->get_cron_status_service();
 		$user_id = $this->get_current_user_id();
 		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
 
