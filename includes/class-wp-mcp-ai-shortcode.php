@@ -41,6 +41,18 @@ class WP_MCP_AI_Shortcode {
 	const GUEST_TOKEN_TRANSIENT_PREFIX = 'wp_mcp_ai_guest_access_';
 
 	/**
+	 * Default async tool timeout in seconds (5 minutes).
+	 * Used when not configured in admin settings.
+	 */
+	const ASYNC_TOOL_TIMEOUT_DEFAULT = 300;
+
+	/**
+	 * Minimum async tool timeout in seconds (1 minute).
+	 * Must match the 'min' value in the admin settings field.
+	 */
+	const ASYNC_TOOL_TIMEOUT_MIN = 60;
+
+	/**
 	 * Bootstraps hooks.
 	 */
 	public function __construct() {
@@ -885,12 +897,12 @@ class WP_MCP_AI_Shortcode {
 	 * @return int Timeout in milliseconds (default 300000ms / 5 minutes).
 	 */
 	public static function get_async_tool_timeout_ms( $settings = null ) {
-		if ( null === $settings && class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+		if ( null === $settings ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		}
 
-		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : 300;
-		return max( 60, $async_timeout_seconds ) * 1000;
+		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : self::ASYNC_TOOL_TIMEOUT_DEFAULT;
+		return max( self::ASYNC_TOOL_TIMEOUT_MIN, $async_timeout_seconds ) * 1000;
 	}
 
 	/**

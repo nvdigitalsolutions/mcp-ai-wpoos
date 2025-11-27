@@ -161,9 +161,10 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 		$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
 
 		// Use the shortcode helper method for consistent async tool timeout calculation.
+		// Default to 5 minutes (300000ms) if shortcode class is not available.
 		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
 			? WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
-			: 300000; // Default 5 minutes.
+			: 300000;
 
 		wp_localize_script(
 			'wp-mcp-ai-chat',
