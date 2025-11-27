@@ -10,6 +10,7 @@ opcache-reset.php
 *.zip
 *.tar.gz
 *.rar
+composer.phar
 
 # Ignore all vendor by default
 /vendor/*

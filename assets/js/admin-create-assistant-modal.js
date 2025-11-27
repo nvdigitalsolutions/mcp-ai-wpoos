@@ -36,7 +36,7 @@
 		});
 
 		// Tab switching
-		$(document).on('click', '.wp-mcp-ai-modal-tab', function(e) {
+		$(document).on('click', '.wp-mcp-ai-modal-tabs .nav-tab', function(e) {
 			e.preventDefault();
 			var tabId = $(this).data('tab');
 			
@@ -45,8 +45,8 @@
 			}
 
 			// Update active tab button
-			$('.wp-mcp-ai-modal-tab').removeClass('active');
-			$(this).addClass('active');
+			$('.wp-mcp-ai-modal-tabs .nav-tab').removeClass('nav-tab-active');
+			$(this).addClass('nav-tab-active');
 
 			// Update active tab content
 			$('.wp-mcp-ai-modal-tab-content').removeClass('active');
