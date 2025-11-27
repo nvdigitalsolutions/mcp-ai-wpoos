@@ -1223,9 +1223,142 @@
     }
 
     /**
+     * Strip large file content from tool result content for API submission.
+     * Preserves essential fields like attachment_id and url while removing
+     * large data like base64-encoded content, data URLs, and raw binary data.
+     * 
+     * @param {string} content - Tool result content (typically JSON string)
+     * @return {string} Cleaned content with large file data stripped
+     */
+    function stripToolResultLargeContent(content) {
+        if (typeof content !== 'string' || !content.trim()) {
+            return content;
+        }
+
+        // Try to parse as JSON
+        let parsed;
+        try {
+            parsed = JSON.parse(content);
+        } catch (e) {
+            // Not JSON, return as-is
+            return content;
+        }
+
+        if (!parsed || typeof parsed !== 'object') {
+            return content;
+        }
+
+        // Recursively strip large content from the parsed object
+        const cleaned = stripLargeContentFromObject(parsed);
+
+        // Return re-serialized JSON
+        try {
+            return JSON.stringify(cleaned);
+        } catch (e) {
+            return content;
+        }
+    }
+
+    /**
+     * Recursively strip large content from an object.
+     * Removes base64 data, data URLs, and other large binary content while
+     * preserving essential fields like attachment_id, url, file_name, etc.
+     * 
+     * @param {*} obj - Object to clean
+     * @param {number} depth - Current recursion depth (to prevent infinite loops)
+     * @return {*} Cleaned object
+     */
+    // Keys that typically contain large binary data to be stripped
+    var LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
+
+    function stripLargeContentFromObject(obj, depth) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        
+        // Prevent infinite recursion
+        if (depth > 10) {
+            return obj;
+        }
+
+        // Handle null/undefined
+        if (obj === null || obj === undefined) {
+            return obj;
+        }
+
+        // Handle arrays
+        if (Array.isArray(obj)) {
+            return obj.map(function(item) {
+                return stripLargeContentFromObject(item, depth + 1);
+            });
+        }
+
+        // Handle non-objects
+        if (typeof obj !== 'object') {
+            // Check if this is a large string (likely base64 or data URL)
+            if (typeof obj === 'string') {
+                // Strip data URLs (base64 encoded images/files)
+                if (obj.indexOf('data:') === 0 && obj.length > 1000) {
+                    return '[data URL stripped]';
+                }
+                // Strip large base64 strings (typically > 1KB when encoded)
+                // Check length first to avoid expensive regex on small strings
+                if (obj.length > 5000) {
+                    // Sample first 100 chars to check if it looks like base64
+                    var sample = obj.substring(0, 100);
+                    if (/^[A-Za-z0-9+/=]+$/.test(sample)) {
+                        return '[base64 data stripped]';
+                    }
+                }
+            }
+            return obj;
+        }
+
+        // Handle objects - create clean copy
+        const cleaned = {};
+        
+        for (var key in obj) {
+            if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+                continue;
+            }
+
+            var value = obj[key];
+
+            // Skip keys that typically contain large binary data
+            if (LARGE_CONTENT_KEYS.indexOf(key) !== -1) {
+                // Check if this is actually large content
+                if (typeof value === 'string' && value.length > 1000) {
+                    cleaned[key] = '[' + key + ' stripped - ' + value.length + ' chars]';
+                    continue;
+                }
+            }
+
+            // Special handling for 'content' objects that might contain encoding info
+            if (key === 'content' && typeof value === 'object' && value !== null) {
+                if (value.encoding === 'base64' && value.data) {
+                    // This is a base64-encoded content block
+                    cleaned[key] = {
+                        encoding: value.encoding,
+                        mime_type: value.mime_type,
+                        stripped: true,
+                        original_size: typeof value.data === 'string' ? value.data.length : 0
+                    };
+                    continue;
+                }
+            }
+
+            // Recursively clean nested objects
+            cleaned[key] = stripLargeContentFromObject(value, depth + 1);
+        }
+
+        return cleaned;
+    }
+
+    /**
      * Strip UI-only metadata from a message for API submission.
      * Removes fields like 'display' that are used for UI rendering but not part of the API schema.
      * Also strips display-only data (blob:/data: URLs) from attachment segments.
+     * For tool messages, also strips large file content while preserving attachment_id and url.
      * 
      * @param {Object} message - Original message object
      * @return {Object} Cleaned message object with only API-compatible fields
@@ -1247,10 +1380,19 @@
             return null;
         }
 
+        // For tool messages, strip large file content from the result
+        // This keeps attachment_id and url but removes base64 data to keep payloads lean
+        let cleanedContent;
+        if (message.role === 'tool') {
+            cleanedContent = stripToolResultLargeContent(message.content);
+        } else {
+            cleanedContent = stripContentDisplayData(message.content);
+        }
+
         // Create a new object with only API-compatible fields
         const cleanMessage = {
             role: message.role,
-            content: stripContentDisplayData(message.content)
+            content: cleanedContent
         };
 
         // Preserve other API-required fields if present
@@ -1310,6 +1452,7 @@
 
         // Strip UI-only metadata (like 'display' field) from messages before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
+        // Also strips large file content from tool results (keeping attachment_id and url)
         const cleanMessages = state.conversation
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
@@ -9116,8 +9259,45 @@
 
             if (role === 'tool') {
                 // Render tool responses
-                // Use display metadata if available
-                const toolPayload = display || content;
+                // Use display metadata if available, otherwise build from content
+                let toolPayload;
+                if (display && typeof display === 'object') {
+                    // Use saved display metadata for consistency
+                    toolPayload = display;
+                } else if (typeof content === 'string' && content.trim()) {
+                    // Parse JSON content if it's a string (raw tool result)
+                    let parsedContent = content;
+                    try {
+                        parsedContent = JSON.parse(content);
+                    } catch (e) {
+                        // Not JSON, use as-is
+                    }
+                    
+                    // Build display payload from parsed content
+                    // Try to extract displayable text from various tool result formats
+                    let displayText = '';
+                    if (typeof parsedContent === 'object' && parsedContent !== null) {
+                        // Common patterns for tool result text
+                        displayText = parsedContent.text || 
+                                     parsedContent.message || 
+                                     parsedContent.result || 
+                                     parsedContent.summary ||
+                                     (typeof parsedContent.content === 'string' ? parsedContent.content : '');
+                        
+                        // If still no text, try to stringify key fields
+                        if (!displayText && Object.keys(parsedContent).length > 0) {
+                            displayText = JSON.stringify(parsedContent, null, 2);
+                        }
+                    } else {
+                        displayText = String(parsedContent);
+                    }
+                    
+                    toolPayload = { text: displayText };
+                } else {
+                    // Fallback for empty content
+                    toolPayload = { text: '[Tool result]' };
+                }
+                
                 appendMessage(state.messagesEl, 'tool', toolPayload);
                 return;
             }
@@ -9458,6 +9638,7 @@
 
         // Strip display-only metadata (including blob:/data: URLs from attachments) before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
+        // Also strips large file content from tool results (keeping attachment_id and url)
         const cleanMessages = filteredMessages
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
