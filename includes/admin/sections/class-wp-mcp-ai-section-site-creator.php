@@ -81,32 +81,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_site_creator'               => array(
+				'enable_site_creator'                     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_plugin_install' => array(
+				'site_creator_allow_plugin_install'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_theme_install'  => array(
+				'site_creator_allow_theme_install'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_option_updates' => array(
+				'site_creator_allow_option_updates'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'site_creator_allow_elementor_kit_import' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
+					'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 			);
