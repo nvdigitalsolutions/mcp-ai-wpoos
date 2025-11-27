@@ -11,9 +11,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Registers REST endpoints for SSE streaming and webhook management.
+ *
+ * Supports multiple authentication methods:
+ * - Mesh key authentication (X-WP-MCP-AI-Mesh-Key header)
+ * - Local token authentication (plugin-issued credential tokens)
+ * - Guest token authentication (X-WP-MCP-AI-Guest header)
+ * - Bearer token authentication (Auth0 JWT tokens)
+ * - WordPress nonce authentication (X-WP-Nonce header)
  */
 class WP_MCP_AI_Job_Notifier_REST {
 	const REST_NAMESPACE = 'mcp-ai/v1';
+
+	/**
+	 * Authenticator instance (lazy loaded).
+	 *
+	 * @var WP_MCP_AI_REST_Authenticator|null
+	 */
+	protected static $authenticator = null;
 
 	/**
 	 * Initialize REST routes.
@@ -128,52 +142,152 @@ class WP_MCP_AI_Job_Notifier_REST {
 	}
 
 	/**
-	 * Permission check for job stream endpoint.
+	 * Get or create the authenticator instance.
+	 *
+	 * @return WP_MCP_AI_REST_Authenticator
+	 */
+	protected static function get_authenticator() {
+		if ( null === self::$authenticator ) {
+			if ( class_exists( 'WP_MCP_AI_REST_Authenticator' ) ) {
+				self::$authenticator = new WP_MCP_AI_REST_Authenticator();
+			}
+		}
+		return self::$authenticator;
+	}
+
+	/**
+	 * Permission check for job stream and status endpoints.
+	 *
+	 * Supports multiple authentication methods:
+	 * - Mesh key authentication (X-WP-MCP-AI-Mesh-Key header)
+	 * - Local token authentication (plugin-issued credential tokens)
+	 * - Guest token authentication (X-WP-MCP-AI-Guest header)
+	 * - Bearer token authentication (Auth0 JWT tokens)
+	 * - WordPress nonce authentication (X-WP-Nonce header)
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
 	public static function permissions_check_job_stream( WP_REST_Request $request ) {
-		// Check for bearer token authentication first.
+		$authenticator = self::get_authenticator();
+
+		if ( $authenticator ) {
+			$authenticator->reset_auth_context();
+		}
+
+		// Check for mesh API key authentication.
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) && $authenticator ) {
+			$mesh_validated = $authenticator->validate_mesh_key( $mesh_key );
+
+			if ( true === $mesh_validated ) {
+				$authenticator->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+				return true;
+			} elseif ( is_wp_error( $mesh_validated ) ) {
+				return $mesh_validated;
+			}
+		}
+
+		// Check for bearer token authentication.
 		$bearer = $request->get_header( 'Authorization' );
 		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
-			// Token validation would go here.
-			// For now, allow any bearer token.
+			$token = trim( $matches[1] );
+
+			// Try local token validation first.
+			if ( $authenticator ) {
+				$local = $authenticator->validate_local_token( $token, $request, 0 );
+
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				// Try Auth0 bearer token validation.
+				$validated = $authenticator->validate_bearer_token( $token, $request );
+
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				return true;
+			}
+
+			// Fallback: allow bearer tokens if authenticator not available.
+			// This maintains backward compatibility but is less secure.
 			return true;
 		}
 
-		// Allow logged-in users with valid nonce.
-		if ( is_user_logged_in() ) {
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-
-			if ( empty( $nonce ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
-					array( 'status' => 401 )
-				);
+		// Check for guest token authentication.
+		$guest_token = '';
+		if ( $authenticator ) {
+			$guest_token = $authenticator->extract_guest_token( $request );
+		} else {
+			// Fallback extraction if authenticator not available.
+			$guest_token = $request->get_header( 'X-WP-MCP-AI-Guest' );
+			if ( ! $guest_token ) {
+				$guest_token = $request->get_param( 'guest_token' );
 			}
-
-			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-				return new WP_Error(
-					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
-					array( 'status' => 403 )
-				);
-			}
-
-			return true;
+			$guest_token = is_string( $guest_token ) ? trim( $guest_token ) : '';
 		}
 
-		return new WP_Error(
-			'rest_forbidden',
-			__( 'You do not have permission to stream job status.', 'wp-mcp-ai' ),
-			array( 'status' => 403 )
-		);
+		if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+
+			if ( $guest_assistant ) {
+				// Guest users can view their own cron jobs (user_id = 0).
+				if ( $authenticator ) {
+					$authenticator->set_authenticated_user_id( 0 );
+				}
+				return true;
+			}
+		}
+
+		// Check for WordPress nonce authentication.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		if ( empty( $nonce ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'Authentication is required to view job status.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+						'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
+						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'rest_invalid_nonce',
+				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				array(
+					'status'  => rest_authorization_required_code(),
+					'actions' => array(
+						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		// Any authenticated user can view their own cron jobs.
+		// The service layer will filter jobs by user ID.
+		// A valid nonce proves the user is authenticated.
+		if ( $authenticator ) {
+			$authenticator->set_authenticated_user_id( get_current_user_id() );
+		}
+
+		return true;
 	}
 
 	/**
 	 * Permission check for job status endpoint.
+	 *
+	 * Uses the same authentication methods as job stream.
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
@@ -185,29 +299,103 @@ class WP_MCP_AI_Job_Notifier_REST {
 	/**
 	 * Permission check for webhook registration.
 	 *
+	 * Requires admin capability (manage_options).
+	 * Supports mesh key, bearer tokens, and WordPress nonce authentication.
+	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
 	public static function permissions_check_webhook_register( WP_REST_Request $request ) {
-		// Verify nonce for logged-in users.
-		if ( is_user_logged_in() ) {
-			$nonce = $request->get_header( 'X-WP-Nonce' );
+		$authenticator = self::get_authenticator();
 
-			if ( empty( $nonce ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
-					array( 'status' => 401 )
-				);
+		if ( $authenticator ) {
+			$authenticator->reset_auth_context();
+		}
+
+		// Check for mesh API key authentication.
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) && $authenticator ) {
+			$mesh_validated = $authenticator->validate_mesh_key( $mesh_key );
+
+			if ( true === $mesh_validated ) {
+				$authenticator->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+				// Mesh authenticated requests are trusted for webhook registration.
+				return true;
+			} elseif ( is_wp_error( $mesh_validated ) ) {
+				return $mesh_validated;
 			}
+		}
 
-			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+		// Check for bearer token authentication.
+		$bearer = $request->get_header( 'Authorization' );
+		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+			$token = trim( $matches[1] );
+
+			if ( $authenticator ) {
+				// Try local token validation first.
+				$local = $authenticator->validate_local_token( $token, $request, 0 );
+
+				if ( true === $local ) {
+					// Local token authenticated - check capability.
+					if ( current_user_can( 'manage_options' ) ) {
+						return true;
+					}
+					return new WP_Error(
+						'rest_forbidden',
+						__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+						array( 'status' => 403 )
+					);
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				// Try Auth0 bearer token validation.
+				$validated = $authenticator->validate_bearer_token( $token, $request );
+
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				// Bearer token authenticated - check capability.
+				if ( current_user_can( 'manage_options' ) ) {
+					return true;
+				}
 				return new WP_Error(
-					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					'rest_forbidden',
+					__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
 					array( 'status' => 403 )
 				);
 			}
+		}
+
+		// Check for WordPress nonce authentication.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		if ( empty( $nonce ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'Authentication is required to register webhooks.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'rest_invalid_nonce',
+				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				array(
+					'status'  => rest_authorization_required_code(),
+					'actions' => array(
+						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+					),
+				)
+			);
 		}
 
 		// Only admin users can register webhooks.
@@ -217,6 +405,10 @@ class WP_MCP_AI_Job_Notifier_REST {
 				__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
 				array( 'status' => 403 )
 			);
+		}
+
+		if ( $authenticator ) {
+			$authenticator->set_authenticated_user_id( get_current_user_id() );
 		}
 
 		return true;
