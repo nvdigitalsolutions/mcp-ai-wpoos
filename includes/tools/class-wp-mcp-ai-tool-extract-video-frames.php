@@ -510,6 +510,12 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				continue;
 			}
 
+			// Include WordPress file functions for wp_upload_bits() if not already loaded.
+			// This is required in cron/async contexts where admin files aren't loaded.
+			if ( ! function_exists( 'wp_upload_bits' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
 			// Use WordPress file handling.
 			$upload = wp_upload_bits( $filename, null, $file_content );
 
