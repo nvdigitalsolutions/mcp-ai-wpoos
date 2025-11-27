@@ -448,11 +448,18 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
+		// Validate and sanitize post status.
+		$allowed_statuses = array( 'draft', 'publish', 'private' );
+		$status           = sanitize_key( $request->get_param( 'status' ) );
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
+			$status = 'draft';
+		}
+
 		// Create the assistant post.
 		$post_data = array(
 			'post_type'   => 'mcp_ai_assistant',
 			'post_title'  => $title,
-			'post_status' => $request->get_param( 'status' ) ?: 'draft',
+			'post_status' => $status,
 		);
 
 		$description = $request->get_param( 'description' );
@@ -469,13 +476,35 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// Save meta fields if provided.
-		$meta_fields = array( 'provider', 'model', 'temperature', 'system_prompt', 'tools' );
-		foreach ( $meta_fields as $field ) {
-			$value = $request->get_param( $field );
-			if ( null !== $value ) {
-				update_post_meta( $post_id, '_wp_mcp_ai_' . $field, $value );
-			}
+		// Save meta fields if provided with proper sanitization.
+		$provider = $request->get_param( 'provider' );
+		if ( null !== $provider ) {
+			update_post_meta( $post_id, '_wp_mcp_ai_provider', sanitize_key( $provider ) );
+		}
+
+		$model = $request->get_param( 'model' );
+		if ( null !== $model ) {
+			update_post_meta( $post_id, '_wp_mcp_ai_model', sanitize_text_field( $model ) );
+		}
+
+		$temperature = $request->get_param( 'temperature' );
+		if ( null !== $temperature ) {
+			$temperature = floatval( $temperature );
+			// Validate temperature is within acceptable range (0.0 to 2.0).
+			$temperature = max( 0.0, min( 2.0, $temperature ) );
+			update_post_meta( $post_id, '_wp_mcp_ai_temperature', $temperature );
+		}
+
+		$system_prompt = $request->get_param( 'system_prompt' );
+		if ( null !== $system_prompt ) {
+			update_post_meta( $post_id, '_wp_mcp_ai_system_prompt', wp_kses_post( $system_prompt ) );
+		}
+
+		$tools = $request->get_param( 'tools' );
+		if ( null !== $tools && is_array( $tools ) ) {
+			// Sanitize each tool slug.
+			$tools = array_map( 'sanitize_key', $tools );
+			update_post_meta( $post_id, '_wp_mcp_ai_tools', $tools );
 		}
 
 		return $this->success(
