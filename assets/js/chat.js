@@ -6670,13 +6670,32 @@
      * Start polling for an async tool result.
      * Displays the initial message if provided, then calls waitForAsyncToolResult.
      * 
+     * Industry Best Practice: Log async polling initiation for debugging long-running operations
+     * 
      * @param {Object} state Chat state object
      * @param {Object} parsedContent Parsed tool result content with job_id
      * @param {string} toolName Tool name for display purposes
      */
     function startAsyncToolPolling(state, parsedContent, toolName) {
         if (!parsedContent || !parsedContent.job_id) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] startAsyncToolPolling called without valid job_id:', {
+                    hasContent: !!parsedContent,
+                    jobId: parsedContent ? parsedContent.job_id : undefined,
+                    toolName: toolName
+                });
+            }
             return;
+        }
+        
+        // Industry Best Practice: Log async job initiation for observability
+        if (window.console && console.log) {
+            console.log('[WP oOS] Starting async tool polling:', {
+                jobId: parsedContent.job_id,
+                toolName: toolName,
+                status: parsedContent.status,
+                hasMessage: !!parsedContent.message
+            });
         }
         
         // Display initial message if provided
@@ -9493,12 +9512,21 @@
                             let thinkingChunk = null;
                             
                             // ALWAYS log message events for debugging with FULL data structure
+                            // Industry Best Practice: Log both streaming (top-level choices) and final (nested data.data.choices) formats
                             if (window.console && console.log) {
+                                // For final responses, choices are in data.data.choices, not data.choices
+                                const isFinalMessage = !!(data.data);
+                                const hasStreamingChoices = !!(data.choices);
+                                const hasFinalChoices = !!(data.data && data.data.choices);
+                                const hasToolResults = !!(data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0);
+                                
                                 console.log('[WP oOS] SSE message event received:', {
-                                    hasChoices: !!(data.choices),
+                                    isFinalMessage: isFinalMessage,
+                                    hasChoices: isFinalMessage ? hasFinalChoices : hasStreamingChoices,
                                     hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
                                     hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content),
-                                    hasData: !!(data.data),
+                                    hasData: isFinalMessage,
+                                    hasToolResults: hasToolResults,
                                     dataKeys: Object.keys(data),
                                     fullData: data
                                 });
@@ -10717,9 +10745,22 @@
             // 2. Message has no tool_calls: Process all tool_results (agentic loop final response)
             if (hasToolCalls && message.tool_calls) {
                 // Case 1: Match tool results with tool calls in the current message
+                // Industry Best Practice: Log tool call matching for debugging
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Processing tool_calls with matching tool_results:', {
+                        toolCallsCount: message.tool_calls.length,
+                        toolResultsCount: data.tool_results.length,
+                        toolCallIds: message.tool_calls.map(function(tc) { return tc.id; }),
+                        toolResultIds: data.tool_results.map(function(tr) { return tr.tool_call_id; })
+                    });
+                }
+                
                 message.tool_calls.forEach(function (toolCall) {
                     const toolCallId = toolCall.id || '';
                     if (!toolCallId) {
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] Tool call missing ID, skipping:', toolCall);
+                        }
                         return;
                     }
 
@@ -10729,6 +10770,9 @@
                     });
 
                     if (!matchingResult || !matchingResult.content) {
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] No matching tool result found for tool_call_id:', toolCallId);
+                        }
                         return;
                     }
 
@@ -10745,8 +10789,30 @@
                         }
                     }
                     
-                    // Check if this is an async tool result that's still pending
-                    if (isAsyncPendingToolResult(parsedContent)) {
+                    // Industry Best Practice: Check for async pending status and start polling
+                    // Agentic workflows require tracking pending tool executions with unique identifiers
+                    const isAsync = isAsyncPendingToolResult(parsedContent);
+                    
+                    // Observability: Log async detection for debugging long-running operations
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Tool result async check:', {
+                            toolName: toolName,
+                            toolCallId: toolCallId,
+                            isAsyncPending: isAsync,
+                            asyncFlag: parsedContent && parsedContent.async,
+                            status: parsedContent && parsedContent.status,
+                            jobId: parsedContent && parsedContent.job_id
+                        });
+                    }
+                    
+                    if (isAsync) {
+                        // Start polling for async result (SSE-first with REST fallback)
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Starting async polling for pending tool:', {
+                                toolName: toolName,
+                                jobId: parsedContent.job_id
+                            });
+                        }
                         startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
@@ -10795,8 +10861,28 @@
                         }
                     }
                     
-                    // Check if this is an async tool result that's still pending
-                    if (isAsyncPendingToolResult(parsedContent)) {
+                    // Industry Best Practice: Check for async pending status
+                    const isAsync = isAsyncPendingToolResult(parsedContent);
+                    
+                    // Observability: Log async detection for agentic loop
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Agentic loop tool result check:', {
+                            toolName: toolName,
+                            isAsyncPending: isAsync,
+                            asyncFlag: parsedContent && parsedContent.async,
+                            status: parsedContent && parsedContent.status,
+                            jobId: parsedContent && parsedContent.job_id
+                        });
+                    }
+                    
+                    if (isAsync) {
+                        // Start polling for async result
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Starting async polling from agentic loop:', {
+                                toolName: toolName,
+                                jobId: parsedContent.job_id
+                            });
+                        }
                         startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
