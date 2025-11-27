@@ -42,9 +42,15 @@ else
   COMPOSER_CMD=(php "$COMPOSER_PHAR")
 fi
 
-if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
-  echo "Installing Composer dependencies..."
+install_composer_deps() {
+  echo "$1"
   "${COMPOSER_CMD[@]}" install --no-interaction --prefer-dist --working-dir="$ROOT_DIR"
+}
+
+if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
+  install_composer_deps "Installing Composer dependencies..."
+elif [[ ! -d "$ROOT_DIR/vendor/phpunit" ]]; then
+  install_composer_deps "Dev dependencies missing (installed with --no-dev). Installing full dependencies..."
 fi
 
 if [[ -n "${WP_MCP_AI_STARTUP_EXIT_AFTER_COMPOSER:-}" ]]; then
