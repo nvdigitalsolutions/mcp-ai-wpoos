@@ -11650,7 +11650,7 @@
                         assistantMessage.display = displayMetadata;
                     }
                 } else {
-                    // No text content at all but we have attachments - show them
+                    // No text content from LLM but we have attachments or text from tool results - show them
                     const newMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                         speech: {
                             state: state,
@@ -11660,9 +11660,13 @@
                         cost: aggregatedCost,
                         capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
-                    // For OpenAI API compatibility, use null instead of empty string
-                    // when we have tool_calls but no content
-                    if (!assistantMessage.content) {
+                    // Update conversation content with text from tool results.
+                    // This ensures text from tools is persisted even when LLM returned no content.
+                    if (assistantDisplay.text) {
+                        assistantMessage.content = assistantDisplay.text;
+                    } else if (!assistantMessage.content) {
+                        // For OpenAI API compatibility, use null instead of empty string
+                        // when we have tool_calls but no content
                         assistantMessage.content = hasToolCalls ? null : '';
                     }
                     // Add to conversation if not already added
