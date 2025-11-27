@@ -215,11 +215,18 @@ class WP_MCP_AI_Job_Notifier_REST {
 				// Try Auth0 bearer token validation.
 				$validated = $authenticator->validate_bearer_token( $token, $request );
 
-				if ( is_wp_error( $validated ) ) {
+				if ( true === $validated ) {
+					return true;
+				} elseif ( is_wp_error( $validated ) ) {
 					return $validated;
 				}
 
-				return true;
+				// Validation returned something unexpected - deny access.
+				return new WP_Error(
+					'wp_mcp_ai_invalid_bearer_token',
+					__( 'The supplied bearer token could not be validated.', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
 			}
 
 			// Authenticator not available - cannot validate bearer tokens securely.
@@ -382,18 +389,25 @@ class WP_MCP_AI_Job_Notifier_REST {
 			// Try Auth0 bearer token validation.
 			$validated = $authenticator->validate_bearer_token( $token, $request );
 
-			if ( is_wp_error( $validated ) ) {
+			if ( true === $validated ) {
+				// Bearer token authenticated - check capability.
+				if ( current_user_can( 'manage_options' ) ) {
+					return true;
+				}
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			} elseif ( is_wp_error( $validated ) ) {
 				return $validated;
 			}
 
-			// Bearer token authenticated - check capability.
-			if ( current_user_can( 'manage_options' ) ) {
-				return true;
-			}
+			// Validation returned something unexpected - deny access.
 			return new WP_Error(
-				'rest_forbidden',
-				__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
-				array( 'status' => 403 )
+				'wp_mcp_ai_invalid_bearer_token',
+				__( 'The supplied bearer token could not be validated.', 'wp-mcp-ai' ),
+				array( 'status' => 401 )
 			);
 		}
 
