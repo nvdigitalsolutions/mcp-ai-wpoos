@@ -801,12 +801,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_settings_view() {
 			$fields = $this->get_fields();
 
-			// Settings fields: enable/disable toggles and cron retention.
+			// Settings fields: enable/disable toggles, cron retention, and async execution settings.
 			$settings_fields = array(
 				'enable_budget_management',
 				'enable_predictive_optimization',
 				'enable_capability_gating',
 				'enable_cron_orchestration',
+				'enable_auto_async_execution',
+				'async_tool_timeout',
 				'cron_job_retention_period',
 			);
 
@@ -958,6 +960,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_predictive_optimization',
 						'enable_capability_gating',
 						'enable_cron_orchestration',
+						'enable_auto_async_execution',
+						'async_tool_timeout',
 						'cron_job_retention_period',
 					),
 				),
