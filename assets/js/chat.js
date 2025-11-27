@@ -10260,6 +10260,8 @@
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
             const result = data.result || {};
+            // Extract tool_call_id from event data (sent as tool_id by PHP backend)
+            const toolCallId = data.tool_id || '';
             
             // Check if this is an async tool execution that's still pending
             if (result.async === true && result.status === 'pending' && result.job_id) {
@@ -10281,7 +10283,8 @@
                 }
                 
                 // Start polling for the async result
-                waitForAsyncToolResult(state, result.job_id, toolName).catch(function (error) {
+                // Pass toolCallId to ensure the completed result has the correct ID for API compatibility
+                waitForAsyncToolResult(state, result.job_id, toolName, toolCallId).catch(function (error) {
                     // Error is already displayed by waitForAsyncToolResult
                     if (window.console && console.error) {
                         console.error('[WP oOS] Async tool polling failed:', error);
