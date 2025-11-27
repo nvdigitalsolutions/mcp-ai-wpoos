@@ -885,10 +885,13 @@ class WP_MCP_AI_Cron_Status_Service {
 			// check if the delegated veo job has completed and pull its result.
 			// This handles the case where the veo job completed but the parent job
 			// transient wasn't updated (e.g., due to timing issues or errors).
+			// Note: This only checks veo_ jobs (which don't delegate further),
+			// preventing infinite recursion.
 			if ( 'delegated' === $result['status'] && isset( $result['delegated_to'] ) ) {
 				$delegated_job_id = $result['delegated_to'];
 
-				// Check if delegated job is a veo job and get its status.
+				// Only check veo jobs to prevent potential recursion.
+				// Veo jobs complete directly and don't delegate to other jobs.
 				if ( 0 === strpos( $delegated_job_id, 'veo_' ) ) {
 					$delegated_result = $this->get_job_details( $delegated_job_id, $user_id );
 
@@ -953,9 +956,11 @@ class WP_MCP_AI_Cron_Status_Service {
 							}
 						}
 
-						// Note: We don't update the parent transient here to avoid race conditions.
-						// The veo service's complete_parent_job() should handle that.
-						// This is a fallback to ensure the chat client gets the completed result.
+						// Note: We don't update the parent transient here to avoid race conditions
+						// with the veo service's complete_parent_job(). This fallback runs on each
+						// poll until complete_parent_job() updates the parent transient. Once
+						// updated, the parent job will return 'completed' status directly without
+						// needing to check the delegated job.
 					}
 				}
 			}
