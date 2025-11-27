@@ -177,4 +177,41 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 		// Verify binary data is stripped.
 		$this->assertArrayNotHasKey( 'video_data', $sanitized, 'video_data should be stripped' );
 	}
+
+	/**
+	 * Test that tool's save_video_to_media uses job_id in filename when provided.
+	 */
+	public function test_tool_save_video_uses_job_id_in_filename() {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$job_id  = 'async_test123abc';
+		
+		$result = array(
+			'video_data'   => 'fake-video-data',
+			'prompt'       => 'Test video with job ID',
+			'duration'     => 5,
+			'aspect_ratio' => '16:9',
+			'resolution'   => '720p',
+			'model'        => 'veo-3.1-generate-preview',
+			'provider'     => 'gemini',
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'save_video_to_media' );
+		$method->setAccessible( true );
+
+		$save_result = $method->invoke( $this->tool, $result, $user_id, $job_id );
+
+		// Verify it's not an error.
+		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
+		
+		// Verify file_name includes the job_id.
+		$this->assertArrayHasKey( 'file_name', $save_result, 'Result should have file_name' );
+		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		$this->assertEquals( $expected_filename, $save_result['file_name'], 'file_name should include job_id' );
+		
+		// Verify attachment has job_id in metadata.
+		$stored_job_id = get_post_meta( $save_result['attachment_id'], '_veo_job_id', true );
+		$this->assertEquals( $job_id, $stored_job_id, 'Attachment should have job_id in metadata' );
+	}
 }
