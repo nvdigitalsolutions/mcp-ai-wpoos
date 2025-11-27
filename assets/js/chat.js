@@ -10688,7 +10688,7 @@
                 // Build the tool message for conversation history
                 // Content should be the raw result for API compatibility
                 let contentForApi = '';
-                if (typeof result === 'object') {
+                if (typeof result === 'object' && result !== null) {
                     try {
                         contentForApi = JSON.stringify(result);
                     } catch (e) {
@@ -10708,10 +10708,17 @@
                 // Extract display metadata for proper UI restoration
                 const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
 
-                // Use the toolCallId from the event data, or generate a fallback
-                let finalToolCallId = toolCallId;
+                // Determine the tool_call_id to use for this tool result.
+                // Use the toolCallId from event data if provided and valid,
+                // otherwise generate a fallback ID for API compatibility.
+                let finalToolCallId = '';
+                if (toolCallId && typeof toolCallId === 'string' && toolCallId.trim()) {
+                    finalToolCallId = toolCallId.trim();
+                }
+                
+                // Generate fallback tool_call_id if not found
                 if (!finalToolCallId) {
-                    // Generate fallback tool_call_id if not provided
+                    // Use timestamp + random suffix to avoid collisions
                     const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
                     finalToolCallId = 'sse_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
                 }
