@@ -102,7 +102,7 @@
 /* Modal footer cancel button - use WordPress link button style */
 .wp-mcp-ai-modal-footer .button-link {
 	text-decoration: none;
-	padding: 0 10px;
+	padding: 6px 12px;
 }
 
 .wp-mcp-ai-modal-footer .button-link:hover {
