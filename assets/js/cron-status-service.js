@@ -67,7 +67,8 @@
 				'Content-Type': 'application/json',
 			};
 
-			// Add authentication header - guest token takes priority
+			// Add REST authentication header.
+			// Guest tokens take priority for public chat surfaces.
 			if (guestToken) {
 				headers['X-WP-MCP-AI-Guest'] = guestToken;
 			} else if (nonce) {
