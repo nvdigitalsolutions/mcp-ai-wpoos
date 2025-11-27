@@ -11635,9 +11635,12 @@
                         capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     
-                    // Update conversation content with text from tool results
-                    const hasTextFromTools = assistantDisplay.text && (!message.content || !normaliseContent(message.content));
-                    if (hasTextFromTools && !hasDisplayContent) {
+                    // Update conversation content with text from tool results.
+                    // The assistantMessage was already pushed to the conversation array above,
+                    // but since objects are passed by reference, we can update its content here
+                    // and the change will be reflected in the conversation array.
+                    // This ensures that any text added from tool results is properly persisted.
+                    if (assistantDisplay.text) {
                         assistantMessage.content = assistantDisplay.text;
                     }
                     
