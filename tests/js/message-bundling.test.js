@@ -8,6 +8,10 @@
  * @package WP_MCP_AI
  */
 
+// Test constants to avoid magic strings
+const TEST_VIDEO_CREATION_MESSAGE = 'Create a video of a cat';
+const MESSAGE_BUNDLE_DELAY_MS = 800;
+
 describe('Message Bundling', () => {
 	describe('queueMessageForBundling behavior', () => {
 		let state;
@@ -81,8 +85,6 @@ describe('Message Bundling', () => {
 
 		it('should set timer for bundled messages', () => {
 			// Simulate the full queueMessageForBundling behavior
-			const MESSAGE_BUNDLE_DELAY_MS = 800;
-			
 			state.messageBundleTimer = global.setTimeout(() => {
 				// This would call sendBundledMessages
 			}, MESSAGE_BUNDLE_DELAY_MS);
@@ -238,7 +240,7 @@ describe('Message Bundling', () => {
 	describe('Video creation scenario', () => {
 		it('should handle video creation request with proper form state', () => {
 			// This test simulates the video creation scenario where:
-			// 1. User sends "Create a video of a cat"
+			// 1. User sends a video creation request
 			// 2. Message is queued for bundling
 			// 3. Form is disabled to prevent re-submission
 			// 4. After 800ms, request is sent
@@ -251,13 +253,13 @@ describe('Message Bundling', () => {
 			};
 
 			// Step 1: User submits video creation request
-			const userMessage = { role: 'user', content: 'Create a video of a cat' };
+			const userMessage = { role: 'user', content: TEST_VIDEO_CREATION_MESSAGE };
 			state.conversation.push(userMessage);
 			
 			// Step 2: Message is queued for bundling
 			const submissionContext = {
 				previousConversationLength: 0,
-				inputValue: 'Create a video of a cat',
+				inputValue: TEST_VIDEO_CREATION_MESSAGE,
 			};
 			state.pendingMessageBundle.push(submissionContext);
 			
@@ -278,12 +280,12 @@ describe('Message Bundling', () => {
 			// Add video creation request to conversation
 			state.conversation.push({
 				role: 'user',
-				content: 'Create a video of a cat'
+				content: TEST_VIDEO_CREATION_MESSAGE
 			});
 			
 			// Queue for bundling
 			state.pendingMessageBundle.push({
-				inputValue: 'Create a video of a cat',
+				inputValue: TEST_VIDEO_CREATION_MESSAGE,
 				previousConversationLength: 0,
 			});
 
@@ -293,9 +295,9 @@ describe('Message Bundling', () => {
 
 			// Verify message is in conversation and was in bundle
 			expect(state.conversation.length).toBe(1);
-			expect(state.conversation[0].content).toBe('Create a video of a cat');
+			expect(state.conversation[0].content).toBe(TEST_VIDEO_CREATION_MESSAGE);
 			expect(bundledSubmissions.length).toBe(1);
-			expect(bundledSubmissions[0].inputValue).toBe('Create a video of a cat');
+			expect(bundledSubmissions[0].inputValue).toBe(TEST_VIDEO_CREATION_MESSAGE);
 		});
 	});
 });
