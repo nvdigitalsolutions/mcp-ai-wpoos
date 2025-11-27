@@ -9293,11 +9293,27 @@
             startTime: Date.now()
         });
 
-        // Filter out system messages before sending to API
+        // Filter out system, tool, and intermediate agentic messages before sending to API
         // System messages are UI feedback only and should not be sent to the AI
         // This prevents breaking the agentic workflow with error messages and notices
+        // Tool result messages (role: 'tool') are persisted locally for display but excluded
+        // from API requests to keep the message payload lean. The backend handles tool
+        // execution in its own agentic loop and doesn't need client-side tool results.
+        // Assistant messages with tool_calls are intermediate agentic loop messages that
+        // should also be excluded - they're preserved for UI display only.
         const filteredMessages = state.conversation.filter(function(message) {
-            return message && message.role !== 'system';
+            if (!message) {
+                return false;
+            }
+            // Exclude system and tool messages
+            if (message.role === 'system' || message.role === 'tool') {
+                return false;
+            }
+            // Exclude assistant messages with tool_calls (intermediate agentic loop messages)
+            if (message.role === 'assistant' && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+                return false;
+            }
+            return true;
         });
 
         // Strip display-only metadata (including blob:/data: URLs from attachments) before sending to API
