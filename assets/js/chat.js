@@ -10137,7 +10137,18 @@
                 
                 // Check if this is an async tool result that's still pending
                 if (parsedContent && parsedContent.async === true && parsedContent.status === 'pending' && parsedContent.job_id) {
-                    // This is handled by waitForAsyncToolResult, skip it here
+                    // Start polling for the async result
+                    // Display initial message if provided
+                    if (parsedContent.message) {
+                        appendMessage(state.messagesEl, 'system', parsedContent.message);
+                    }
+                    
+                    // Start polling for the async result
+                    waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
+                        if (window.console && console.error) {
+                            console.error('[WP oOS] Async tool polling failed:', error);
+                        }
+                    });
                     return;
                 }
                 
@@ -10669,8 +10680,18 @@
                         }
                     }
                     
-                    // Skip async pending tool results - handled by waitForAsyncToolResult
+                    // Check if this is an async tool result that's still pending
                     if (isAsyncPendingToolResult(parsedContent)) {
+                        // Start polling for the async result
+                        if (parsedContent.message) {
+                            appendMessage(state.messagesEl, 'system', parsedContent.message);
+                        }
+                        
+                        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
+                            if (window.console && console.error) {
+                                console.error('[WP oOS] Async tool polling failed:', error);
+                            }
+                        });
                         return;
                     }
                     
@@ -10718,8 +10739,18 @@
                         }
                     }
                     
-                    // Skip async pending tool results - handled by waitForAsyncToolResult
+                    // Check if this is an async tool result that's still pending
                     if (isAsyncPendingToolResult(parsedContent)) {
+                        // Start polling for the async result
+                        if (parsedContent.message) {
+                            appendMessage(state.messagesEl, 'system', parsedContent.message);
+                        }
+                        
+                        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
+                            if (window.console && console.error) {
+                                console.error('[WP oOS] Async tool polling failed:', error);
+                            }
+                        });
                         return;
                     }
                     
