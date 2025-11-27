@@ -252,6 +252,10 @@ class WP_MCP_AI_Shortcode {
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                          => __( 'Send', 'wp-mcp-ai' ),
+					'build'                         => __( 'Build', 'wp-mcp-ai' ),
+					'building'                      => __( 'Building assistant…', 'wp-mcp-ai' ),
+					'buildSuccess'                  => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
+					'buildError'                    => __( 'Failed to create assistant. Please try again.', 'wp-mcp-ai' ),
 					'bundlingMessages'              => __( 'Preparing to send…', 'wp-mcp-ai' ),
 					'sending'                       => __( 'Sending message…', 'wp-mcp-ai' ),
 					'waiting'                       => __( 'Waiting for the assistant…', 'wp-mcp-ai' ),
@@ -694,6 +698,9 @@ class WP_MCP_AI_Shortcode {
 					</button>
 					<button type="button" class="wp-mcp-ai-chat__attach">
 						<?php esc_html_e( 'Attach file', 'wp-mcp-ai' ); ?>
+					</button>
+					<button type="button" class="wp-mcp-ai-chat__build" hidden>
+						<?php esc_html_e( 'Build', 'wp-mcp-ai' ); ?>
 					</button>
 					<button type="submit" class="wp-mcp-ai-chat__submit">
 						<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>

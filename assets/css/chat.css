@@ -1160,6 +1160,58 @@
     background: var(--wp-mcp-ai-color-submit-disabled-background, #9aa5ff);
 }
 
+/* Build button - similar style to submit but different color */
+.wp-mcp-ai-chat__build {
+    background: linear-gradient(
+        120deg,
+        var(--wp-mcp-ai-color-build-gradient-start, #10b981),
+        var(--wp-mcp-ai-color-build-gradient-end, #059669)
+    );
+    border: none;
+    color: var(--wp-mcp-ai-color-build-text, #fff);
+    padding: 0.65rem 1.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease-in-out;
+    box-shadow: 0 12px 24px var(--wp-mcp-ai-color-build-shadow, rgba(16, 185, 129, 0.35));
+    margin-right: 0.5rem;
+}
+
+.wp-mcp-ai-chat__build:hover,
+.wp-mcp-ai-chat__build:focus {
+    background: linear-gradient(
+        120deg,
+        var(--wp-mcp-ai-color-build-hover-gradient-start, #059669),
+        var(--wp-mcp-ai-color-build-hover-gradient-end, #047857)
+    );
+    box-shadow: 0 16px 28px var(--wp-mcp-ai-color-build-hover-shadow, rgba(5, 150, 105, 0.4));
+    transform: translateY(-1px);
+}
+
+.wp-mcp-ai-chat__build:active {
+    background: linear-gradient(
+        120deg,
+        var(--wp-mcp-ai-color-build-active-gradient-start, #047857),
+        var(--wp-mcp-ai-color-build-active-gradient-end, #065f46)
+    );
+    box-shadow: 0 10px 24px var(--wp-mcp-ai-color-build-active-shadow, rgba(4, 120, 87, 0.38));
+    transform: translateY(0);
+}
+
+.wp-mcp-ai-chat__build:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    background: var(--wp-mcp-ai-color-build-disabled-background, #6ee7b7);
+}
+
+.wp-mcp-ai-chat__build[hidden] {
+    display: none;
+}
+
 .wp-mcp-ai-chat__attachments {
     margin-top: 0.75rem;
     border: 1px solid var(--wp-mcp-ai-color-attachments-border, #e2e4e7);
