@@ -589,7 +589,13 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 
 		foreach ( $title_patterns as $pattern ) {
 			if ( preg_match( $pattern, $full_text, $matches ) ) {
-				$config['title'] = trim( $matches[1] );
+				$extracted_title = trim( $matches[1] );
+				// Sanitize the extracted title to ensure it's suitable for a post title.
+				// Remove any remaining special characters, limit length, and sanitize.
+				$extracted_title     = sanitize_text_field( $extracted_title );
+				$extracted_title     = preg_replace( '/[^\w\s\-]/', '', $extracted_title );
+				$extracted_title     = trim( $extracted_title );
+				$config['title']     = mb_substr( $extracted_title, 0, 200 ); // Limit to 200 chars.
 				break;
 			}
 		}
@@ -598,7 +604,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		if ( empty( $config['title'] ) && ! empty( $config['description'] ) ) {
 			$description_words = explode( ' ', $config['description'] );
 			$title_words       = array_slice( $description_words, 0, 5 );
-			$config['title']   = ucwords( implode( ' ', $title_words ) ) . ' Assistant';
+			$config['title']   = sanitize_text_field( ucwords( implode( ' ', $title_words ) ) . ' Assistant' );
 		}
 
 		// If we have assistant responses, the last one might contain a system prompt suggestion.

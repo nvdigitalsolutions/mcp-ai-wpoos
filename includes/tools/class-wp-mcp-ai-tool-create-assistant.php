@@ -2086,6 +2086,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$instructions .= "PURPOSE:\n{$description}\n\n";
 
 		// Extract domain context from description.
+		// Note: Second parameter is empty as we don't have separate specialization info in prompt mode.
 		$domain_context = $this->extract_domain_context( $description, '' );
 
 		$instructions .= "YOUR ROLE:\n";
