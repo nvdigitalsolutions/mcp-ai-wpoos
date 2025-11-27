@@ -336,10 +336,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// (e.g., veo video generation) is reusing the parent job ID directly. In this case,
 			// the veo service will manage the job polling and update this transient directly.
 			// We should NOT mark it as delegated - just return and let veo handle it.
-			$is_nested_async = is_array( $result ) &&
-								isset( $result['async'] ) &&
-								true === $result['async'] &&
-								isset( $result['job_id'] );
+			$is_nested_async = is_array( $result )
+				&& isset( $result['async'] )
+				&& true === $result['async']
+				&& isset( $result['job_id'] );
 
 			if ( $is_nested_async ) {
 				$nested_job_id = $result['job_id'];
