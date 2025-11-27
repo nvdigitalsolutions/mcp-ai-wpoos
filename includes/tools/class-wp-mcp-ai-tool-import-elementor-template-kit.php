@@ -126,10 +126,10 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 
 		// Check site creator settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_site_creator'] ) ) {
+		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_elementor_kit_import'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The site_creator tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+				__( 'The Elementor Kit Import tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
 			);
 		}
 

@@ -255,7 +255,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'wp-mcp-ai' ),
 			'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'wp-mcp-ai' ),
 			'saveSkipped'                   => __( 'Save not available for this conversation.', 'wp-mcp-ai' ),
-			'confirmClearConversation'      => __( 'Clear current conversation and start new? Use the Save button first if you want to keep this conversation.', 'wp-mcp-ai' ),
+			'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'wp-mcp-ai' ),
 			'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'wp-mcp-ai' ),
 			'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'wp-mcp-ai' ),
 			'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'wp-mcp-ai' ),
