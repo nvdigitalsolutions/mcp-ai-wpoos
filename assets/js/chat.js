@@ -1,7 +1,33 @@
 (function () {
     'use strict';
 
-    const globalConfig = window.wpMcpAiChat || {};
+    const defaultGlobalConfig = {
+        restUrl: '',
+        uploadEndpoint: '',
+        filesEndpoint: '',
+        transcriptsEndpoint: '',
+        nonce: '',
+        historyPerPage: 20,
+        asyncToolTimeout: 300000,
+        strings: {},
+    };
+
+    const globalConfig = Object.assign({}, defaultGlobalConfig, window.wpMcpAiChat || {});
+
+    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'nonce'].filter(
+        function (key) {
+            return !globalConfig[key];
+        }
+    );
+
+    if (missingGlobalConfigKeys.length && window.console && console.warn) {
+        console.warn(
+            '[WP oOS] Chat configuration missing expected PHP-localized values. Check shortcode setup and plugin settings.',
+            missingGlobalConfigKeys
+        );
+    }
+
+    globalConfig.strings = globalConfig.strings || {};
     // Initialize instances object if it doesn't exist
     if (!window.wpMcpAiChatInstances) {
         window.wpMcpAiChatInstances = {};
