@@ -53,6 +53,15 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if site creator and WP-CLI tools are enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_wp_cli_tools'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_feature_disabled',
+				__( 'The check_wp_cli tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+			);
+		}
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {

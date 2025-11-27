@@ -109,6 +109,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'site_creator_allow_wp_cli_tools'   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 		}
 
