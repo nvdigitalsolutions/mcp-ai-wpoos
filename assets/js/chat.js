@@ -9142,8 +9142,8 @@
             if (timeoutId) {
                 clearTimeout(timeoutId);
             }
-            // Reset timeout with a shorter interval during active streaming
-            // This gives more time for initial response but less for gaps between chunks
+            // Reset timeout when streaming data is received
+            // This allows long-running streaming sessions while still detecting stalled connections
             timeoutId = setTimeout(function() {
                 controller.abort();
             }, timeoutMs);
@@ -9163,8 +9163,7 @@
             assistantId: payload.assistant_id,
             messageCount: payload.messages ? payload.messages.length : 0,
             streamEnabled: payload.stream,
-            hasSessionKey: !!payload.session_key,
-            timeoutMs: timeoutMs
+            hasSessionKey: !!payload.session_key
         });
 
         // Create a placeholder message element for streaming content
@@ -11018,13 +11017,18 @@
         }
         
         // Check for DOCTYPE/html at the start (indicates HTML, not JSON)
+        // Use case-insensitive comparison to handle variations like <!DOCTYPE> or <!doctype>
         const trimmed = responseText.trim();
-        if (!trimmed.startsWith('<!DOCTYPE') && !trimmed.startsWith('<html')) {
+        const lowerTrimmed = trimmed.toLowerCase();
+        if (!lowerTrimmed.startsWith('<!doctype') && !lowerTrimmed.startsWith('<html')) {
             return null;
         }
         
-        // Cloudflare error codes
-        if (responseText.indexOf('Error code 524') !== -1 || responseText.indexOf('524: A timeout occurred') !== -1) {
+        // Use lowercase for case-insensitive matching of error codes
+        const lowerText = responseText.toLowerCase();
+        
+        // Cloudflare error codes (case-insensitive matching)
+        if (lowerText.indexOf('error code 524') !== -1 || lowerText.indexOf('524:') !== -1) {
             return {
                 type: 'timeout',
                 provider: 'Cloudflare',
@@ -11033,7 +11037,7 @@
             };
         }
         
-        if (responseText.indexOf('Error code 522') !== -1 || responseText.indexOf('522: Connection timed out') !== -1) {
+        if (lowerText.indexOf('error code 522') !== -1 || lowerText.indexOf('522:') !== -1) {
             return {
                 type: 'timeout',
                 provider: 'Cloudflare',
@@ -11042,7 +11046,7 @@
             };
         }
         
-        if (responseText.indexOf('Error code 520') !== -1) {
+        if (lowerText.indexOf('error code 520') !== -1 || lowerText.indexOf('520:') !== -1) {
             return {
                 type: 'server_error',
                 provider: 'Cloudflare',
@@ -11051,7 +11055,7 @@
             };
         }
         
-        if (responseText.indexOf('Error code 503') !== -1 || responseText.indexOf('503 Service') !== -1) {
+        if (lowerText.indexOf('error code 503') !== -1 || lowerText.indexOf('503 service') !== -1) {
             return {
                 type: 'service_unavailable',
                 provider: 'proxy',
@@ -11060,7 +11064,7 @@
             };
         }
         
-        if (responseText.indexOf('Error code 502') !== -1 || responseText.indexOf('502 Bad Gateway') !== -1) {
+        if (lowerText.indexOf('error code 502') !== -1 || lowerText.indexOf('502 bad gateway') !== -1) {
             return {
                 type: 'bad_gateway',
                 provider: 'proxy',
@@ -11069,7 +11073,7 @@
             };
         }
         
-        if (responseText.indexOf('Error code 504') !== -1 || responseText.indexOf('504 Gateway') !== -1) {
+        if (lowerText.indexOf('error code 504') !== -1 || lowerText.indexOf('504 gateway') !== -1) {
             return {
                 type: 'timeout',
                 provider: 'proxy',
@@ -11078,8 +11082,8 @@
             };
         }
         
-        // Generic HTML error page detection
-        if (responseText.indexOf('timeout') !== -1 || responseText.indexOf('timed out') !== -1) {
+        // Generic HTML error page detection (case-insensitive)
+        if (lowerText.indexOf('timeout') !== -1 || lowerText.indexOf('timed out') !== -1) {
             return {
                 type: 'timeout',
                 provider: 'unknown',
