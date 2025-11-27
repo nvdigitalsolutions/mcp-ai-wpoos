@@ -6595,14 +6595,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 
+				// Filter out response messages that are already present in the conversation.
+				// This prevents duplicates when transcripts are manually saved via the chat client,
+				// where all messages (including assistant responses) are stored in request_payload,
+				// and assistant messages are also constructed into response_payload.
+				$filtered_response_messages = $this->filter_duplicate_messages( $messages, $response_messages );
+
 				$before_response = count( $messages );
-				$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+				$this->append_new_messages( $messages, $filtered_response_messages, $row['response_completed_at'], $row['cct_created'] );
 
 				WP_MCP_AI_Logger::log_event(
 					'debug',
 					'get_transcript_session: appended response messages',
 					array(
-						'new_message_count' => count( $messages ) - $before_response,
+						'new_message_count'              => count( $messages ) - $before_response,
+						'original_response_count'        => count( $response_messages ),
+						'filtered_response_count'        => count( $filtered_response_messages ),
+						'duplicates_removed'             => count( $response_messages ) - count( $filtered_response_messages ),
 					)
 				);
 
@@ -7725,6 +7734,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Filter out candidate messages that already exist in the conversation.
+		 *
+		 * This method performs an O(n*m) comparison to find and remove duplicate messages.
+		 * It's more thorough than append_new_messages prefix-based deduplication, which
+		 * only handles cases where messages appear at the same position. This handles the
+		 * case where manually saved transcripts have assistant messages in both request_payload
+		 * (as part of the full conversation) and response_payload (extracted from the conversation).
+		 *
+		 * @param array $conversation Current conversation array.
+		 * @param array $candidates   Candidate messages to filter.
+		 * @return array Filtered array with duplicates removed.
+		 */
+		protected function filter_duplicate_messages( array $conversation, array $candidates ) {
+			if ( empty( $candidates ) ) {
+				return array();
+			}
+
+			if ( empty( $conversation ) ) {
+				return $candidates;
+			}
+
+			$filtered = array();
+
+			foreach ( $candidates as $candidate ) {
+				if ( ! is_array( $candidate ) ) {
+					continue;
+				}
+
+				$is_duplicate = false;
+
+				foreach ( $conversation as $existing ) {
+					if ( $this->messages_match( $existing, $candidate ) ) {
+						$is_duplicate = true;
+						break;
+					}
+				}
+
+				if ( ! $is_duplicate ) {
+					$filtered[] = $candidate;
+				}
+			}
+
+			return $filtered;
 		}
 
 		/**

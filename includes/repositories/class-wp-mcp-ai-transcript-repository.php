@@ -524,6 +524,81 @@ class WP_MCP_AI_Transcript_Repository {
 	}
 
 	/**
+	 * Find an existing transcript record by session_key and user_id.
+	 *
+	 * This method is used to determine whether to create a new record or update
+	 * an existing one when saving transcripts. It returns the most recent record's
+	 * ID for the given session.
+	 *
+	 * @param string $session_key  Session key to look up.
+	 * @param int    $user_id      User identifier.
+	 * @param int    $assistant_id Optional assistant ID to filter by.
+	 * @return int|null Record ID if found, null otherwise.
+	 */
+	public function find_existing_session_id( $session_key, $user_id, $assistant_id = 0 ) {
+		global $wpdb;
+
+		if ( '' === $session_key ) {
+			return null;
+		}
+
+		if ( ! $this->table_exists() ) {
+			return null;
+		}
+
+		$table        = $this->get_table_name();
+		$user_id      = absint( $user_id );
+		$assistant_id = absint( $assistant_id );
+
+		// Query 1: Try with session_key + user_id + assistant_id.
+		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
+		$where_values  = array( $session_key, $user_id );
+
+		if ( $assistant_id > 0 ) {
+			$where_clauses[] = 'assistant_id = %s';
+			$where_values[]  = (string) $assistant_id;
+		}
+
+		$where_sql = implode( ' AND ', $where_clauses );
+
+		// Get the most recent record ID for this session.
+		$query = $wpdb->prepare(
+			"SELECT _ID FROM {$table} WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			$where_values
+		);
+
+		$record_id = $wpdb->get_var( $query );
+
+		if ( $record_id ) {
+			return absint( $record_id );
+		}
+
+		// Query 2: Fallback to cct_author_id if user_id didn't match.
+		$author_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
+		$author_where_values  = array( $session_key, $user_id );
+
+		if ( $assistant_id > 0 ) {
+			$author_where_clauses[] = 'assistant_id = %s';
+			$author_where_values[]  = (string) $assistant_id;
+		}
+
+		$author_where_sql = implode( ' AND ', $author_where_clauses );
+
+		$author_query = $wpdb->prepare(
+			"SELECT _ID FROM {$table} WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			$author_where_values
+		);
+
+		$record_id = $wpdb->get_var( $author_query );
+
+		if ( $record_id ) {
+			return absint( $record_id );
+		}
+
+		return null;
+	}
+
+	/**
 	 * Get the SELECT fields for transcript queries.
 	 *
 	 * Includes session_key and user identification fields for proper
