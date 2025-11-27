@@ -1,5 +1,5 @@
 /**
- * WP oOS Build Assistant Page JavaScript
+ * WP MCP AI Build Assistant Page JavaScript
  *
  * Handles the Build Assistant admin page functionality.
  *
