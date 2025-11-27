@@ -132,7 +132,6 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'text'         => implode( ' | ', $text_parts ), // Descriptive message for LLM and chat UI.
 			'ID'           => $user->ID,
 			'display_name' => $user->display_name,
 			'user_login'   => $user->user_login,
@@ -141,6 +140,7 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'registered'   => $user->user_registered,
 			'first_name'   => $first_name,
 			'last_name'    => $last_name,
+			'text'         => implode( ' | ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
