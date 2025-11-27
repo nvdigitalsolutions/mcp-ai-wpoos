@@ -62,6 +62,10 @@
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
     const STREAMING_STATUS_PREVIEW_LENGTH = 100; // Maximum characters to show in status preview during streaming
     
+    // Async tool timeout constants (must match PHP constants in WP_MCP_AI_Shortcode)
+    const ASYNC_TOOL_TIMEOUT_DEFAULT_MS = 300000; // 5 minutes default
+    const ASYNC_TOOL_TIMEOUT_MIN_MS = 60000; // 1 minute minimum
+    
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
@@ -7369,7 +7373,9 @@
             return waitForAsyncToolResultPolling(state, jobId, toolName);
         }
 
-        const timeout = 180000; // 3 minute timeout
+        // Use configurable timeout from settings (default 5 minutes)
+        // This allows admins to adjust for long-running tools like video generation
+        const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
         const startTime = Date.now();
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
 
@@ -7540,7 +7546,9 @@
         }
 
         const pollDelay = 3000; // Poll every 3 seconds
-        const timeout = 180000; // 3 minute timeout
+        // Use configurable timeout from settings (default 5 minutes)
+        // This allows admins to adjust for long-running tools like video generation
+        const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
         const startTime = Date.now();
         
         if (!pendingEntry) {
@@ -8327,6 +8335,11 @@
 
             if (!instanceConfig.crawl4aiDefaultPollMs || instanceConfig.crawl4aiDefaultPollMs < 1000) {
                 instanceConfig.crawl4aiDefaultPollMs = globalConfig.crawl4aiDefaultPollMs || 5000;
+            }
+
+            // Set async tool timeout from instance config or global config (default 5 minutes)
+            if (!instanceConfig.asyncToolTimeout || instanceConfig.asyncToolTimeout < ASYNC_TOOL_TIMEOUT_MIN_MS) {
+                instanceConfig.asyncToolTimeout = globalConfig.asyncToolTimeout || ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
             }
 
             if (!Object.prototype.hasOwnProperty.call(instanceConfig, 'canUploadAttachments')) {

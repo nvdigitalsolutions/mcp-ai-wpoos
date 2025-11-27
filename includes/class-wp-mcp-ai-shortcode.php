@@ -41,6 +41,18 @@ class WP_MCP_AI_Shortcode {
 	const GUEST_TOKEN_TRANSIENT_PREFIX = 'wp_mcp_ai_guest_access_';
 
 	/**
+	 * Default async tool timeout in seconds (5 minutes).
+	 * Used when not configured in admin settings.
+	 */
+	const ASYNC_TOOL_TIMEOUT_DEFAULT = 300;
+
+	/**
+	 * Minimum async tool timeout in seconds (1 minute).
+	 * Must match the 'min' value in the admin settings field.
+	 */
+	const ASYNC_TOOL_TIMEOUT_MIN = 60;
+
+	/**
 	 * Bootstraps hooks.
 	 */
 	public function __construct() {
@@ -205,6 +217,7 @@ class WP_MCP_AI_Shortcode {
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
+				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                          => __( 'Send', 'wp-mcp-ai' ),
@@ -431,8 +444,10 @@ class WP_MCP_AI_Shortcode {
 			$enable_streaming      = wp_validate_boolean( $atts['enable_streaming'] );
 			$allow_sensitive_tools = wp_validate_boolean( $atts['allow_sensitive_tools'] );
 
+			// Fetch settings once for use throughout this method.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
 			if ( ! $assistant_id ) {
-				$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 				$assistant_id = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 			}
 
@@ -539,6 +554,9 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'        => 20,
 				'restNonce'             => wp_create_nonce( 'wp_rest' ),
 			);
+
+			// Add async tool timeout using helper method (reuses $settings already fetched).
+			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
 			$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
 			if ( ! empty( $tool_shortcuts ) ) {
@@ -867,6 +885,24 @@ class WP_MCP_AI_Shortcode {
 	 */
 	protected static function build_guest_token_key( $token ) {
 		return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
+	}
+
+	/**
+	 * Get async tool timeout in milliseconds from settings.
+	 *
+	 * This helper ensures consistent timeout calculation across all contexts
+	 * (shortcode, admin test pages, etc.).
+	 *
+	 * @param array|null $settings Optional pre-fetched settings array.
+	 * @return int Timeout in milliseconds (default 300000ms / 5 minutes).
+	 */
+	public static function get_async_tool_timeout_ms( $settings = null ) {
+		if ( null === $settings ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		}
+
+		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : self::ASYNC_TOOL_TIMEOUT_DEFAULT;
+		return max( self::ASYNC_TOOL_TIMEOUT_MIN, $async_timeout_seconds ) * 1000;
 	}
 
 	/**

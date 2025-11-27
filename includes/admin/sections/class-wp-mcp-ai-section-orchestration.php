@@ -104,6 +104,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
+				'async_tool_timeout'              => array(
+					'type'        => 'number',
+					'label'       => __( 'Async Tool Timeout (seconds)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum time in seconds to wait for async tools (like video generation) to complete before timing out. Default is 300 seconds (5 minutes). Increase this for tools that may take longer, such as high-quality video generation.', 'wp-mcp-ai' ),
+					'default'     => 300,
+					'min'         => 60,
+					'max'         => 900,
+					'step'        => 30,
+				),
 				'cron_job_retention_period'       => array(
 					'type'        => 'select',
 					'label'       => __( 'Cron Job History Retention', 'wp-mcp-ai' ),
