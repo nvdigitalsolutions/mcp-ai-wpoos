@@ -872,9 +872,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// New structure (2025): response.generateVideoResponse.generatedSamples[0].video.uri
 		if ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
 			$video_uri = $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'];
-		}
-		// Old structure (legacy): response.predictions[0].videoUri
-		elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
+		} elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
+			// Old structure (legacy): response.predictions[0].videoUri
 			$video_uri = $result['response']['predictions'][0]['videoUri'];
 		}
 
@@ -1226,13 +1225,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'veo_file_based_completion_detected',
 					'Video file detected in uploads directory',
 					array(
-						'job_id'         => $job_id,
-						'filename'       => $metadata['expected_filename'],
-						'attempts'       => $metadata['poll_attempt'],
-						'attachment_id'  => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
-						'has_url'        => isset( $attachment['url'] ),
-						'has_video_url'  => isset( $attachment['video_url'] ),
-						'parent_job_id'  => isset( $metadata['parent_job_id'] ) ? $metadata['parent_job_id'] : 'not_set',
+						'job_id'        => $job_id,
+						'filename'      => $metadata['expected_filename'],
+						'attempts'      => $metadata['poll_attempt'],
+						'attachment_id' => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
+						'has_url'       => isset( $attachment['url'] ),
+						'has_video_url' => isset( $attachment['video_url'] ),
+						'parent_job_id' => isset( $metadata['parent_job_id'] ) ? $metadata['parent_job_id'] : 'not_set',
 					)
 				);
 
@@ -1628,16 +1627,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'veo_completion_detected_on_status_check',
 					'Video file found during status check - updating to completed',
 					array(
-						'job_id'        => $job_id,
+						'job_id'         => $job_id,
 						'current_status' => $metadata['status'],
-						'filename'      => $metadata['expected_filename'],
-						'attachment_id' => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
+						'filename'       => $metadata['expected_filename'],
+						'attachment_id'  => isset( $attachment['attachment_id'] ) ? $attachment['attachment_id'] : 'not_set',
 					)
 				);
 
 				// Update metadata to completed.
-				$metadata['status'] = 'completed';
-				$metadata['result'] = $attachment;
+				$metadata['status']       = 'completed';
+				$metadata['result']       = $attachment;
 				$metadata['completed_at'] = time();
 				set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
@@ -1757,7 +1756,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		// Build message with job ID for consistency with API polling path.
-		$job_info       = 'Job ID: ' . $job_id;
+		$job_info        = 'Job ID: ' . $job_id;
 		$message_with_id = sprintf(
 			/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: media library edit URL, 5: attachment ID, 6: job information string */
 			__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to <a href="%4$s" target="_blank">Media Library (ID %5$d)</a>. %6$s', 'wp-mcp-ai' ),
@@ -1922,8 +1921,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'veo_parent_job_not_found',
 				'Parent async job not found when completing veo job',
 				array(
-					'parent_job_id'   => $parent_job_id,
-					'transient_key'   => $parent_transient_key,
+					'parent_job_id' => $parent_job_id,
+					'transient_key' => $parent_transient_key,
 				)
 			);
 			return;
@@ -1933,9 +1932,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'veo_parent_job_found',
 			'Parent job metadata found, updating with result',
 			array(
-				'parent_job_id'    => $parent_job_id,
-				'current_status'   => isset( $parent_metadata['status'] ) ? $parent_metadata['status'] : 'not_set',
-				'tool_slug'        => isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'not_set',
+				'parent_job_id'  => $parent_job_id,
+				'current_status' => isset( $parent_metadata['status'] ) ? $parent_metadata['status'] : 'not_set',
+				'tool_slug'      => isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'not_set',
 			)
 		);
 
@@ -1960,8 +1959,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'veo_parent_job_completed',
 			'Completed parent async job with video result',
 			array(
-				'parent_job_id' => $parent_job_id,
-				'has_url'       => isset( $result['url'] ),
+				'parent_job_id'   => $parent_job_id,
+				'has_url'         => isset( $result['url'] ),
 				'transient_saved' => true,
 			)
 		);
@@ -2092,8 +2091,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 				// Check for exact match or match without veo_ prefix.
 				// Use strict pattern matching to avoid false positives.
-				if ( $basename === $expected_filename ||
-					 $basename === 'veo-video-' . $unique_id . '.mp4' ) {
+				if ( $expected_filename === $basename ||
+					'veo-video-' . $unique_id . '.mp4' === $basename ) {
 
 					WP_MCP_AI_Logger::log_event(
 						'veo_file_found_by_filename',
@@ -2163,7 +2162,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		// Build message with job ID for consistency with API polling path.
-		$job_info       = 'Job ID: ' . $job_id;
+		$job_info        = 'Job ID: ' . $job_id;
 		$message_with_id = sprintf(
 			/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio, 4: media library edit URL, 5: attachment ID, 6: job information string */
 			__( 'Video generated successfully (%1$ds, %2$s, %3$s) and saved to <a href="%4$s" target="_blank">Media Library (ID %5$d)</a>. %6$s', 'wp-mcp-ai' ),
