@@ -157,8 +157,10 @@
 							}
 						},
 						onError: function (error) {
-							if (window.console && console.warn) {
-								console.warn('[WP MCP AI] SSE cron status failed, falling back to REST polling:', error);
+							// Use debug level since SSE fallback to REST polling is expected behavior
+							// and the system continues to work correctly via REST.
+							if (window.console && console.debug) {
+								console.debug('[WP MCP AI] SSE cron status not available, using REST polling');
 							}
 							// Stop SSE connection before falling back
 							self.stopSSE(containerId);
@@ -166,8 +168,8 @@
 							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 						},
 						onOpen: function () {
-							if (window.console && console.log) {
-								console.log('[WP MCP AI] SSE cron status connection established for', containerId);
+							if (window.console && console.debug) {
+								console.debug('[WP MCP AI] SSE cron status connection established for', containerId);
 							}
 						}
 					});
@@ -179,8 +181,8 @@
 						setTimeout(function () {
 							// Only fall back if SSE connection still exists and no data received
 							if (self.sseConnections[containerId] && !sseReceived) {
-								if (window.console && console.warn) {
-									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
+								if (window.console && console.debug) {
+									console.debug('[WP MCP AI] SSE cron status timeout, using REST polling');
 								}
 								self.stopSSE(containerId);
 								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
@@ -191,8 +193,9 @@
 						this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 					}
 				} catch (error) {
-					if (window.console && console.error) {
-						console.error('[WP MCP AI] SSE cron status connection error:', error);
+					// Use debug level since SSE failure with REST fallback is expected behavior
+					if (window.console && console.debug) {
+						console.debug('[WP MCP AI] SSE cron status connection error, using REST polling:', error);
 					}
 					// Fall back to REST polling
 					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);

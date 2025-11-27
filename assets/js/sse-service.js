@@ -115,8 +115,14 @@
 
 				// Handle errors
 				eventSource.addEventListener('error', function (event) {
-					if (window.console && console.error) {
-						console.error('[WP oOS SSE] Connection error:', event);
+					// Only log if no error handler is provided
+					// SSE connection errors are expected in many scenarios
+					// (e.g., server doesn't support SSE, network issues) and
+					// callers typically fall back to REST polling gracefully.
+					if (!options.onError || typeof options.onError !== 'function') {
+						if (window.console && console.warn) {
+							console.warn('[WP oOS SSE] Connection error (no error handler):', event);
+						}
 					}
 
 					if (options.onError && typeof options.onError === 'function') {
@@ -141,8 +147,12 @@
 				};
 
 			} catch (error) {
-				if (window.console && console.error) {
-					console.error('[WP oOS SSE] Failed to create connection:', error);
+				// Only log if no error handler is provided
+				// SSE connection failures are expected in some environments.
+				if (!options.onError || typeof options.onError !== 'function') {
+					if (window.console && console.warn) {
+						console.warn('[WP oOS SSE] Failed to create connection (no error handler):', error);
+					}
 				}
 
 				if (options.onError && typeof options.onError === 'function') {
