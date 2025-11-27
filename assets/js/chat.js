@@ -2912,7 +2912,7 @@
                 setStatus: setStatus,
                 uploadAudioForTranscription: uploadAudioForTranscription,
                 requestTranscription: requestTranscription,
-                sendMessage: sendMessage,
+                sendMessage: sendChat,
             };
             return audioService.handleVoiceChatButtonClick(state, helpers);
         }
