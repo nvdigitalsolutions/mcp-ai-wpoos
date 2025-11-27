@@ -10761,7 +10761,7 @@
             // 2. Message has no tool_calls: Process all tool_results (agentic loop final response)
             if (hasToolCalls && message.tool_calls) {
                 // Case 1: Match tool results with tool calls in the current message
-                // Industry Best Practice: Log tool call matching for debugging
+                // Log tool call matching for debugging sync/async tool execution
                 if (window.console && console.log) {
                     console.log('[WP oOS] Processing tool_calls with matching tool_results:', {
                         toolCallsCount: message.tool_calls.length,
@@ -10881,7 +10881,7 @@
                         }
                     }
                     
-                    // Industry Best Practice: Check for async pending status
+                    // Check for async pending status (background-only tools like Veo video)
                     const isAsync = isAsyncPendingToolResult(parsedContent);
                     
                     // Log tool result type for agentic loop (final response without tool_calls)
