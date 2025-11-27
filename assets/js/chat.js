@@ -7469,10 +7469,27 @@
                 reject(new Error(errorMessage));
             }
 
-            // Set up timeout
+            // Set up timeout with recovery attempt
             timeoutTimer = setTimeout(function () {
                 if (!resolved) {
-                    handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                    // Before failing, attempt one final check for file-based completion
+                    // This handles cases where the video file was created but not yet detected
+                    attemptTimeoutRecovery(state, jobId).then(function (recoveredResult) {
+                        if (resolved) {
+                            return; // Already resolved during recovery attempt
+                        }
+                        if (recoveredResult) {
+                            // Recovery successful - job actually completed
+                            handleComplete(recoveredResult);
+                        } else {
+                            // Recovery failed - report timeout error
+                            handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                        }
+                    }).catch(function () {
+                        if (!resolved) {
+                            handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                        }
+                    });
                 }
             }, timeout);
 
@@ -7657,9 +7674,29 @@
                 }
 
                 if (Date.now() - record.start >= record.timeout) {
-                    cleanup();
-                    updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Tool timed out before completing.'));
-                    reject(new Error('timeout'));
+                    // Before failing, attempt one final check for file-based completion
+                    // This handles cases where the video file was created but not yet detected
+                    attemptTimeoutRecovery(state, jobId).then(function (recoveredResult) {
+                        if (recoveredResult) {
+                            // Recovery successful - job actually completed
+                            cleanup();
+                            // Remove the pending message
+                            if (pendingEntry && pendingEntry.parentNode) {
+                                pendingEntry.parentNode.removeChild(pendingEntry);
+                            }
+                            displayAsyncToolResult(state, record.toolName, recoveredResult, record.toolCallId);
+                            resolve(recoveredResult);
+                        } else {
+                            // Recovery failed - report timeout error
+                            cleanup();
+                            updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Tool timed out before completing.'));
+                            reject(new Error('timeout'));
+                        }
+                    }).catch(function () {
+                        cleanup();
+                        updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Tool timed out before completing.'));
+                        reject(new Error('timeout'));
+                    });
                     return;
                 }
 
@@ -7891,10 +7928,27 @@
                 reject(new Error(errorMessage));
             }
 
-            // Set up timeout
+            // Set up timeout with recovery attempt
             timeoutTimer = setTimeout(function () {
                 if (!resolved) {
-                    handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                    // Before failing, attempt one final check for file-based completion
+                    // This handles cases where the video file was created but not yet detected
+                    attemptTimeoutRecovery(state, jobId).then(function (recoveredResult) {
+                        if (resolved) {
+                            return; // Already resolved during recovery attempt
+                        }
+                        if (recoveredResult) {
+                            // Recovery successful - job actually completed
+                            handleComplete(recoveredResult);
+                        } else {
+                            // Recovery failed - report timeout error
+                            handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                        }
+                    }).catch(function () {
+                        if (!resolved) {
+                            handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                        }
+                    });
                 }
             }, timeout);
 
@@ -7995,6 +8049,82 @@
      */
     function waitForAsyncToolResultLegacy(state, jobId, toolName) {
         return waitForAsyncToolResult(state, jobId, toolName);
+    }
+
+    /**
+     * Attempt timeout recovery by making a final check for job completion.
+     * 
+     * When an async tool times out, the video/file may have actually been created
+     * but not yet detected by the polling loop. This function makes one final
+     * check to see if the job has completed, checking for file-based completion
+     * (e.g., a video file in the media library matching the job ID).
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @return {Promise<Object|null>} Promise resolving to result if completed, null if still pending/failed
+     */
+    function attemptTimeoutRecovery(state, jobId) {
+        if (!state || !state.config || !state.config.restUrl) {
+            return Promise.resolve(null);
+        }
+
+        let url = state.config.restUrl;
+        if (url.charAt(url.length - 1) !== '/') {
+            url += '/';
+        }
+        url += 'cron-status/' + encodeURIComponent(jobId);
+
+        // Add assistant_id for context
+        const assistantId = state.originalAssistantId || (state.config && state.config.assistantId);
+        const queryParams = [];
+        if (assistantId) {
+            queryParams.push('assistant_id=' + encodeURIComponent(assistantId));
+        }
+        // Add timeout_recovery flag to signal backend to do aggressive file-based detection
+        queryParams.push('timeout_recovery=1');
+        
+        if (queryParams.length > 0) {
+            url += '?' + queryParams.join('&');
+        }
+
+        if (window.console && console.log) {
+            console.log('[WP oOS] Attempting timeout recovery for job:', jobId);
+        }
+
+        return fetch(url, {
+            method: 'GET',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+        }).then(function (response) {
+            if (!response.ok) {
+                return null;
+            }
+            return response.json().catch(function () {
+                return null;
+            });
+        }).then(function (payload) {
+            if (!payload) {
+                return null;
+            }
+
+            const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+            
+            // If job is now completed, return the result
+            if (status === 'completed' && payload.result) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Timeout recovery successful - job completed:', jobId);
+                }
+                return payload.result;
+            }
+            
+            // Job still not completed or failed
+            return null;
+        }).catch(function (error) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Timeout recovery check failed:', error);
+            }
+            return null;
+        });
     }
 
     /**
