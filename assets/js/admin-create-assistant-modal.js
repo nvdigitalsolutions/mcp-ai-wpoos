@@ -23,25 +23,13 @@
 			modal.fadeOut(200);
 		});
 
-		// Prevent modal content clicks from closing
-		// Use a more specific handler that allows nav-tab clicks to propagate properly
-		$(document).on('click', '.wp-mcp-ai-modal-content', function(e) {
-			// Don't stop propagation for nav-tabs since they need their own click handler
-			if (!$(e.target).closest('.nav-tab').length) {
-				e.stopPropagation();
-			}
-		});
-
-		// Close on ESC key
-		$(document).on('keydown', function(e) {
-			if (e.key === 'Escape' && modal.is(':visible')) {
-				modal.fadeOut(200);
-			}
-		});
-
-		// Tab switching
-		$(document).on('click', '.wp-mcp-ai-modal-tabs .nav-tab', function(e) {
+		// Tab switching - bind directly to modal tabs for reliable click handling
+		// Use direct binding on the modal's nav-tabs (not document delegation)
+		// This ensures tab clicks work regardless of other event handlers
+		modal.on('click', '.wp-mcp-ai-modal-tabs .nav-tab', function(e) {
 			e.preventDefault();
+			e.stopPropagation();
+			
 			var tabId = $(this).data('tab');
 			
 			if (tabId === activeTab) {
@@ -49,12 +37,12 @@
 			}
 
 			// Update active tab button
-			$('.wp-mcp-ai-modal-tabs .nav-tab').removeClass('nav-tab-active');
+			modal.find('.wp-mcp-ai-modal-tabs .nav-tab').removeClass('nav-tab-active');
 			$(this).addClass('nav-tab-active');
 
 			// Update active tab content
-			$('.wp-mcp-ai-modal-tab-content').removeClass('active');
-			$('#wp-mcp-ai-tab-' + tabId).addClass('active');
+			modal.find('.wp-mcp-ai-modal-tab-content').removeClass('active');
+			modal.find('#wp-mcp-ai-tab-' + tabId).addClass('active');
 
 			activeTab = tabId;
 
@@ -64,6 +52,18 @@
 			// Initialize chat if switching to prompt tab
 			if (tabId === 'prompt') {
 				initPromptTabChat();
+			}
+		});
+
+		// Prevent modal content clicks from closing (except for close buttons)
+		modal.find('.wp-mcp-ai-modal-content').on('click', function(e) {
+			e.stopPropagation();
+		});
+
+		// Close on ESC key
+		$(document).on('keydown', function(e) {
+			if (e.key === 'Escape' && modal.is(':visible')) {
+				modal.fadeOut(200);
 			}
 		});
 
