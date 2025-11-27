@@ -7130,10 +7130,10 @@
 
         let text = '';
 
-        if (typeof result.text === 'string' && result.text.trim()) {
-            text = result.text.trim();
-        } else if (typeof result.message === 'string' && result.message.trim()) {
+        if (typeof result.message === 'string' && result.message.trim()) {
             text = result.message.trim();
+        } else if (typeof result.text === 'string' && result.text.trim()) {
+            text = result.text.trim();
         } else if (toolName === 'generate_openai_image') {
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
         } else if (toolName === 'generate_gemini_image') {

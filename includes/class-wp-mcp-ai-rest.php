@@ -6979,9 +6979,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
-				// Extract text field from tool result.
-				if ( is_array( $content ) && isset( $content['text'] ) && is_string( $content['text'] ) ) {
-					$text = trim( $content['text'] );
+				// Extract message or text field from tool result.
+				// Check both 'message' and 'text' to support different provider formats.
+				if ( is_array( $content ) ) {
+					$text = '';
+					if ( isset( $content['message'] ) && is_string( $content['message'] ) ) {
+						$text = trim( $content['message'] );
+					} elseif ( isset( $content['text'] ) && is_string( $content['text'] ) ) {
+						$text = trim( $content['text'] );
+					}
 					if ( '' !== $text ) {
 						$text_parts[] = $text;
 					}
