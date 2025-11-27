@@ -7475,12 +7475,30 @@
                 }
             }, timeout);
 
-            // Build SSE URL with stream=true parameter
+            // Build SSE URL with stream=true parameter and authentication
+            // EventSource cannot send custom headers, so we pass auth via query params
             let url = state.config.restUrl;
             if (url.charAt(url.length - 1) !== '/') {
                 url += '/';
             }
             url += 'cron-status/' + encodeURIComponent(jobId) + '?stream=true';
+
+            // Add authentication query params for SSE (EventSource can't use headers)
+            const guestToken = state && state.config ? state.config.guestToken : '';
+            if (guestToken) {
+                url += '&guest_token=' + encodeURIComponent(guestToken);
+            } else {
+                let nonce = '';
+                if (state && state.config && state.config.restNonce) {
+                    nonce = state.config.restNonce;
+                } else if (globalConfig.nonce) {
+                    nonce = globalConfig.nonce;
+                }
+
+                if (nonce) {
+                    url += '&_wpnonce=' + encodeURIComponent(nonce);
+                }
+            }
 
             // Create SSE connection using service
             sseConnection = sseService.connect(url, {
