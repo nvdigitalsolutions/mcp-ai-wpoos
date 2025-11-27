@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Newsletter_Send_Email implements WP_MCP_AI_Tool_Interface {
 	 * @return bool
 	 */
 	public static function is_available() {
-		return class_exists( 'NewsletterEmails' ) || function_exists( 'newsletter_email_send' );
+		return class_exists( 'Newsletter' );
 	}
 
 	/**

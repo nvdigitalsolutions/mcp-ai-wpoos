@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Stats implements WP_MCP_AI_Tool_Interface {
 	 * @return bool
 	 */
 	public static function is_available() {
-		return class_exists( 'Newsletter' ) || class_exists( 'NewsletterStatistics' );
+		return class_exists( 'Newsletter' );
 	}
 
 	/**
@@ -173,19 +173,25 @@ class WP_MCP_AI_Tool_Newsletter_Get_Stats implements WP_MCP_AI_Tool_Interface {
 				$stats['open_rate'] = round( ( $stats['open_count'] / $stats['sent'] ) * 100, 2 );
 			}
 
-			// Check for clicked table.
+			// Check for clicked table (newsletter_sent tracks click data).
 			$clicked_table = $wpdb->prefix . 'newsletter_sent';
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$clicked_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $clicked_table ) );
 
 			if ( $clicked_table_exists ) {
+				// Check if clicked column exists before querying.
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$click_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT user_id) FROM $clicked_table WHERE email_id = %d AND clicked > 0", $email_id ) );
+				$column_exists = $wpdb->get_var( "SHOW COLUMNS FROM $clicked_table LIKE 'clicked'" );
 
-				$stats['click_count'] = absint( $click_count );
+				if ( $column_exists ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$click_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT user_id) FROM $clicked_table WHERE email_id = %d AND clicked > 0", $email_id ) );
 
-				if ( $stats['sent'] > 0 ) {
-					$stats['click_rate'] = round( ( $stats['click_count'] / $stats['sent'] ) * 100, 2 );
+					$stats['click_count'] = absint( $click_count );
+
+					if ( $stats['sent'] > 0 ) {
+						$stats['click_rate'] = round( ( $stats['click_count'] / $stats['sent'] ) * 100, 2 );
+					}
 				}
 			}
 		}

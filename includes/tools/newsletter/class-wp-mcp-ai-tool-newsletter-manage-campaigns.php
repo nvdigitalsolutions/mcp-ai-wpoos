@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Newsletter_Manage_Campaigns implements WP_MCP_AI_Tool_Inter
 	 * @return bool
 	 */
 	public static function is_available() {
-		return class_exists( 'Newsletter' ) || class_exists( 'NewsletterEmails' );
+		return class_exists( 'Newsletter' );
 	}
 
 	/**

@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 * @return bool
 	 */
 	public static function is_available() {
-		return function_exists( 'newsletter_user_save' );
+		return class_exists( 'Newsletter' );
 	}
 
 	/**

@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	 * @return bool
 	 */
 	public static function is_available() {
-		return class_exists( 'Newsletter' ) || function_exists( 'newsletter_get_user' );
+		return class_exists( 'Newsletter' );
 	}
 
 	/**
@@ -145,7 +145,9 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 
 		if ( ! empty( $arguments['list'] ) ) {
 			$list_id = absint( $arguments['list'] );
-			if ( $list_id > 0 ) {
+			// Newsletter plugin supports lists 1-40, validate the list ID.
+			if ( $list_id > 0 && $list_id <= 40 ) {
+				// Build the column name safely - only digits allowed after validation.
 				$where[]  = 'list_' . $list_id . ' = %d';
 				$values[] = 1;
 			}
