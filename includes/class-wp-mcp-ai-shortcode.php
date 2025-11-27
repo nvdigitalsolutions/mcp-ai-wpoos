@@ -190,6 +190,10 @@ class WP_MCP_AI_Shortcode {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
+		// Get async tool timeout from settings (default 300 seconds / 5 minutes).
+		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : 300;
+		$async_timeout_ms      = max( 60, $async_timeout_seconds ) * 1000; // Convert to milliseconds
+
 		// Allow filtering of cost display setting.
 		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
 
@@ -205,6 +209,7 @@ class WP_MCP_AI_Shortcode {
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
+				'asyncToolTimeout'    => $async_timeout_ms,
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                          => __( 'Send', 'wp-mcp-ai' ),
@@ -539,6 +544,11 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'        => 20,
 				'restNonce'             => wp_create_nonce( 'wp_rest' ),
 			);
+
+			// Add async tool timeout from settings (default 300 seconds / 5 minutes).
+			$all_settings               = WP_MCP_AI_Admin_Settings::get_settings();
+			$async_timeout_seconds      = isset( $all_settings['async_tool_timeout'] ) ? absint( $all_settings['async_tool_timeout'] ) : 300;
+			$config['asyncToolTimeout'] = max( 60, $async_timeout_seconds ) * 1000; // Convert to milliseconds
 
 			$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
 			if ( ! empty( $tool_shortcuts ) ) {

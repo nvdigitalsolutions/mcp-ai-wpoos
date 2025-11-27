@@ -7369,7 +7369,9 @@
             return waitForAsyncToolResultPolling(state, jobId, toolName);
         }
 
-        const timeout = 180000; // 3 minute timeout
+        // Use configurable timeout from settings (default 5 minutes / 300000ms)
+        // This allows admins to adjust for long-running tools like video generation
+        const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : 300000;
         const startTime = Date.now();
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
 
@@ -7540,7 +7542,9 @@
         }
 
         const pollDelay = 3000; // Poll every 3 seconds
-        const timeout = 180000; // 3 minute timeout
+        // Use configurable timeout from settings (default 5 minutes / 300000ms)
+        // This allows admins to adjust for long-running tools like video generation
+        const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : 300000;
         const startTime = Date.now();
         
         if (!pendingEntry) {
@@ -8327,6 +8331,11 @@
 
             if (!instanceConfig.crawl4aiDefaultPollMs || instanceConfig.crawl4aiDefaultPollMs < 1000) {
                 instanceConfig.crawl4aiDefaultPollMs = globalConfig.crawl4aiDefaultPollMs || 5000;
+            }
+
+            // Set async tool timeout from instance config or global config (default 5 minutes / 300000ms)
+            if (!instanceConfig.asyncToolTimeout || instanceConfig.asyncToolTimeout < 60000) {
+                instanceConfig.asyncToolTimeout = globalConfig.asyncToolTimeout || 300000;
             }
 
             if (!Object.prototype.hasOwnProperty.call(instanceConfig, 'canUploadAttachments')) {
