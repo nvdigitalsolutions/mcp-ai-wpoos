@@ -115,16 +115,16 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
 					<h2><?php esc_html_e( 'Build AI Assistant', 'wp-mcp-ai' ); ?></h2>
-					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
+					<button type="button" class="button button-secondary wp-mcp-ai-modal-close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">&times;</button>
 				</div>
-				<div class="wp-mcp-ai-modal-tabs">
-					<button type="button" class="wp-mcp-ai-modal-tab active" data-tab="manual">
+				<nav class="nav-tab-wrapper wp-mcp-ai-modal-tabs">
+					<a href="#" class="nav-tab nav-tab-active" data-tab="manual">
 						<?php esc_html_e( 'Manual', 'wp-mcp-ai' ); ?>
-					</button>
-					<button type="button" class="wp-mcp-ai-modal-tab" data-tab="prompt">
+					</a>
+					<a href="#" class="nav-tab" data-tab="prompt">
 						<?php esc_html_e( 'Prompt', 'wp-mcp-ai' ); ?>
-					</button>
-				</div>
+					</a>
+				</nav>
 				<div class="wp-mcp-ai-modal-body">
 					<!-- Manual Tab Content -->
 					<div id="wp-mcp-ai-tab-manual" class="wp-mcp-ai-modal-tab-content active">
@@ -288,7 +288,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 					</div>
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
-					<button type="button" class="button button-secondary wp-mcp-ai-modal-close">
+					<button type="button" class="button button-link wp-mcp-ai-modal-close">
 						<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
 					</button>
 					<button type="submit" form="wp-mcp-ai-create-assistant-form" class="button button-primary" id="wp-mcp-ai-submit-create">

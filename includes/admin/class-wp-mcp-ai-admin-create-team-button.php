@@ -108,7 +108,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
 					<h2><?php esc_html_e( 'Create AI Team', 'wp-mcp-ai' ); ?></h2>
-					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
+					<button type="button" class="button button-secondary wp-mcp-ai-modal-close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">
 					<form id="wp-mcp-ai-create-team-form">
@@ -208,7 +208,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 					</form>
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
-					<button type="button" class="button button-secondary wp-mcp-ai-modal-close">
+					<button type="button" class="button button-link wp-mcp-ai-modal-close">
 						<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
 					</button>
 					<button type="submit" form="wp-mcp-ai-create-team-form" class="button button-primary" id="wp-mcp-ai-submit-create-team">
