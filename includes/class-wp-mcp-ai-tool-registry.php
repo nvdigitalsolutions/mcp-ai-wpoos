@@ -178,26 +178,32 @@ class WP_MCP_AI_Tool_Registry {
 	 */
 	protected function load_default_tools() {
 		$default_tools = array(
-			'WP_MCP_AI_Tool_Get_Recent_Posts'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
-			'WP_MCP_AI_Tool_Get_User_Info'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
-			'WP_MCP_AI_Tool_Get_Site_Summary'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
-			'WP_MCP_AI_Tool_Get_Woo_Orders'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
-			'WP_MCP_AI_Tool_Get_JetEngine_Items'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
-			'WP_MCP_AI_Tool_List_JetEngine_Routes'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php',
-			'WP_MCP_AI_Tool_Invoke_JetEngine_Route'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
-			'WP_MCP_AI_Tool_Run_OpenAI_External_Action' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php',
-			'WP_MCP_AI_Tool_Run_Crawl4AI_Job'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
+			'WP_MCP_AI_Tool_Get_Recent_Posts'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
+			'WP_MCP_AI_Tool_Get_User_Info'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
+			'WP_MCP_AI_Tool_Get_Site_Summary'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
+			'WP_MCP_AI_Tool_Get_Woo_Orders'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
+			'WP_MCP_AI_Tool_Get_JetEngine_Items'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
+			'WP_MCP_AI_Tool_List_JetEngine_Routes'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php',
+			'WP_MCP_AI_Tool_Invoke_JetEngine_Route'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
+			'WP_MCP_AI_Tool_Run_OpenAI_External_Action'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php',
+			'WP_MCP_AI_Tool_Run_Crawl4AI_Job'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
 			// Construction & Interior Design Tools.
-			'WP_MCP_AI_Tool_CAD_Drawing_Generator'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cad-drawing-generator.php',
-			'WP_MCP_AI_Tool_AI_Rendering_Assistant'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ai-rendering-assistant.php',
+			'WP_MCP_AI_Tool_CAD_Drawing_Generator'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cad-drawing-generator.php',
+			'WP_MCP_AI_Tool_AI_Rendering_Assistant'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ai-rendering-assistant.php',
 			'WP_MCP_AI_Tool_Material_Color_Recommendations' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-material-color-recommendations.php',
-			'WP_MCP_AI_Tool_3D_Model_Generator'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-3d-model-generator.php',
-			'WP_MCP_AI_Tool_Cost_Estimation'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cost-estimation.php',
+			'WP_MCP_AI_Tool_3D_Model_Generator'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-3d-model-generator.php',
+			'WP_MCP_AI_Tool_Cost_Estimation'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cost-estimation.php',
 			// Logo & Vector Design Tools.
-			'WP_MCP_AI_Tool_Logo_Generator'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-logo-generator.php',
-			'WP_MCP_AI_Tool_Vector_Design_Assistant'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vector-design-assistant.php',
-			'WP_MCP_AI_Tool_Brand_Identity'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-brand-identity.php',
-			'WP_MCP_AI_Tool_Icon_Set_Generator'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-icon-set-generator.php',
+			'WP_MCP_AI_Tool_Logo_Generator'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-logo-generator.php',
+			'WP_MCP_AI_Tool_Vector_Design_Assistant'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vector-design-assistant.php',
+			'WP_MCP_AI_Tool_Brand_Identity'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-brand-identity.php',
+			'WP_MCP_AI_Tool_Icon_Set_Generator'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-icon-set-generator.php',
+			// Newsletter Tools.
+			'WP_MCP_AI_Tool_Newsletter_Add_Subscriber'   => WP_MCP_AI_PATH . 'includes/tools/newsletter/class-wp-mcp-ai-tool-newsletter-add-subscriber.php',
+			'WP_MCP_AI_Tool_Newsletter_Get_Subscribers'  => WP_MCP_AI_PATH . 'includes/tools/newsletter/class-wp-mcp-ai-tool-newsletter-get-subscribers.php',
+			'WP_MCP_AI_Tool_Newsletter_Send_Email'       => WP_MCP_AI_PATH . 'includes/tools/newsletter/class-wp-mcp-ai-tool-newsletter-send-email.php',
+			'WP_MCP_AI_Tool_Newsletter_Get_Stats'        => WP_MCP_AI_PATH . 'includes/tools/newsletter/class-wp-mcp-ai-tool-newsletter-get-stats.php',
+			'WP_MCP_AI_Tool_Newsletter_Manage_Campaigns' => WP_MCP_AI_PATH . 'includes/tools/newsletter/class-wp-mcp-ai-tool-newsletter-manage-campaigns.php',
 		);
 
 		foreach ( $default_tools as $class => $file ) {
