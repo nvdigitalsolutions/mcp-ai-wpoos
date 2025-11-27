@@ -1897,6 +1897,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$filename = 'veo-video-' . self::generate_clean_unique_id() . '.mp4';
 		}
 
+		// Include WordPress file functions for wp_upload_bits() if not already loaded.
+		// This is required in cron/async contexts where admin files aren't loaded.
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
 		// Upload video.
 		$upload = wp_upload_bits( $filename, null, $result['video_data'] );
 
