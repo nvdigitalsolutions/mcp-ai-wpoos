@@ -243,7 +243,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
 		if ( $save_to_media ) {
-			$save_result = $this->save_video_to_media( $result, $user_id );
+			// Pass parent_job_id if available to ensure filename matches job ID.
+			$job_id      = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
+			$save_result = $this->save_video_to_media( $result, $user_id, $job_id );
 
 			if ( is_wp_error( $save_result ) ) {
 				return $save_result;
@@ -471,15 +473,22 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Save generated video to Media Library
 	 *
-	 * @param array $result Video generation result.
-	 * @param int   $user_id User ID for ownership.
-	 * @return int|WP_Error Attachment ID or error.
+	 * @param array  $result  Video generation result.
+	 * @param int    $user_id User ID for ownership.
+	 * @param string $job_id  Optional. Job ID for tracking and filename consistency.
+	 *                        When provided, the filename will be based on the job_id
+	 *                        to enable proper correlation between job IDs and files.
+	 * @return array|WP_Error Attachment result array or error.
 	 */
-	protected function save_video_to_media( $result, $user_id ) {
-		// Generate unique filename using centralized helper method for consistency.
-		// This ensures the same clean ID format (underscores, not dots) across the codebase.
+	protected function save_video_to_media( $result, $user_id, $job_id = '' ) {
+		// Generate filename based on job_id if provided, otherwise use unique ID.
+		// This ensures filename matches the job ID for proper correlation.
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
-		$filename = 'veo-video-' . WP_MCP_AI_Gemini_Video_Generation_Service::generate_clean_unique_id() . '.mp4';
+		if ( ! empty( $job_id ) ) {
+			$filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
+		} else {
+			$filename = 'veo-video-' . WP_MCP_AI_Gemini_Video_Generation_Service::generate_clean_unique_id() . '.mp4';
+		}
 
 		// Include WordPress file functions for wp_upload_bits() if not already loaded.
 		// This is required in cron/async contexts where admin files aren't loaded.
@@ -527,6 +536,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'veo_provider'     => $result['provider'],
 		);
 
+		// Store job_id if provided - allows recovery of completion status when transient expires.
+		if ( ! empty( $job_id ) ) {
+			$metadata['veo_job_id'] = sanitize_key( $job_id );
+		}
+
 		foreach ( $metadata as $key => $value ) {
 			update_post_meta( $attachment_id, '_' . $key, $value );
 		}
@@ -543,6 +557,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'attachment_id' => $attachment_id,
 				'filename'      => $filename,
 				'duration'      => $result['duration'],
+				'job_id'        => $job_id,
 			)
 		);
 
