@@ -10673,11 +10673,84 @@
                 showTime: false
             });
             
-            // Display the tool result with attachments if available
-            appendMessage(state.messagesEl, messageType, {
+            // Build display payload for UI rendering
+            const displayPayload = {
                 text: prefix + resultText,
                 attachments: attachments
-            });
+            };
+            
+            // Display the tool result with attachments if available
+            const messageElement = appendMessage(state.messagesEl, messageType, displayPayload);
+            
+            // Add tool result to conversation state for persistence
+            // This ensures tool results are saved to localStorage and CCT
+            if (messageType === 'tool' && state.conversation && Array.isArray(state.conversation)) {
+                // Build the tool message for conversation history
+                // Content should be the raw result for API compatibility
+                let contentForApi = '';
+                if (typeof result === 'object' && result !== null) {
+                    try {
+                        contentForApi = JSON.stringify(result);
+                    } catch (e) {
+                        // Log serialization error for debugging
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS] Failed to serialize tool result:', {
+                                tool_name: toolName,
+                                error: e.message || 'Unknown serialization error'
+                            });
+                        }
+                        contentForApi = resultText;
+                    }
+                } else {
+                    contentForApi = String(result);
+                }
+
+                // Extract display metadata for proper UI restoration
+                const displayMetadata = extractDisplayMetadata(messageElement, displayPayload);
+
+                // Determine the tool_call_id to use for this tool result.
+                // Use the toolCallId from event data if provided and valid,
+                // otherwise generate a fallback ID for API compatibility.
+                let finalToolCallId = '';
+                if (toolCallId && typeof toolCallId === 'string' && toolCallId.trim()) {
+                    finalToolCallId = toolCallId.trim();
+                }
+                
+                // Generate fallback tool_call_id if not found
+                if (!finalToolCallId) {
+                    // Use timestamp + random suffix to avoid collisions
+                    const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
+                    finalToolCallId = 'sse_' + sanitizedToolName + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                }
+
+                // Create tool message with display metadata for persistence
+                const toolMessage = createConversationMessage(
+                    'tool',
+                    contentForApi,
+                    displayMetadata,
+                    {
+                        name: toolName,
+                        tool_call_id: finalToolCallId
+                    }
+                );
+
+                state.conversation.push(toolMessage);
+
+                // Log for debugging
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Added SSE tool result to conversation:', {
+                        tool_name: toolName,
+                        tool_call_id: finalToolCallId,
+                        conversation_length: state.conversation.length
+                    });
+                }
+
+                // Save conversation to storage for persistence
+                saveConversationToStorage(state);
+
+                // Also save to CCT if available (silent, non-blocking)
+                saveConversationToCCT(state, { silent: true });
+            }
         }
     }
 
