@@ -3676,10 +3676,12 @@
         renderPendingAttachments(state);
         updateAttachButtonState(state);
 
-        // Clear message bundling state
+        // Clear message bundling state and re-enable form if bundling was in progress
         if (state.messageBundleTimer) {
             clearTimeout(state.messageBundleTimer);
             state.messageBundleTimer = null;
+            // Re-enable form since bundling was cancelled
+            disableForm(state, false);
         }
         state.pendingMessageBundle = [];
 
@@ -4563,10 +4565,12 @@
         state.pendingAttachments = [];
         state.validationNotice = '';
 
-        // Clear message bundling state when loading history
+        // Clear message bundling state when loading history and re-enable form if needed
         if (state.messageBundleTimer) {
             clearTimeout(state.messageBundleTimer);
             state.messageBundleTimer = null;
+            // Re-enable form since bundling was cancelled
+            disableForm(state, false);
         }
         state.pendingMessageBundle = [];
 
@@ -8940,8 +8944,15 @@
     /**
      * Queue a message for bundling with other rapid inputs.
      * If another message arrives within MESSAGE_BUNDLE_DELAY_MS, they will be sent together.
+     * 
+     * Note: The form is disabled on the first queued message to provide consistent UI feedback.
+     * This prevents user confusion during the bundling delay and ensures the form state
+     * matches what the user expects (message has been submitted and is being processed).
      */
     function queueMessageForBundling(state, submissionContext) {
+        // Track if this is the first message in the bundle
+        const isFirstMessage = state.pendingMessageBundle.length === 0;
+
         // Clear any existing timer
         if (state.messageBundleTimer) {
             clearTimeout(state.messageBundleTimer);
@@ -8950,6 +8961,14 @@
 
         // Add this submission to the bundle queue
         state.pendingMessageBundle.push(submissionContext);
+
+        // On first message, disable form to provide consistent UI feedback
+        // This prevents user confusion during the bundling delay
+        // Note: We don't set state.busy here because the actual sending hasn't started yet
+        // The form is disabled to match user expectations (message submitted, awaiting response)
+        if (isFirstMessage) {
+            disableForm(state, true);
+        }
 
         // Set visual indicator that messages are being bundled
         setStatus(state.container, getString('bundlingMessages', 'Preparing to send…'));
