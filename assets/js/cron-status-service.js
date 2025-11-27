@@ -49,9 +49,10 @@
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {number} limit - Maximum number of jobs to fetch
 		 * @param {number} assistantId - Optional assistant ID for filtering
+		 * @param {string} guestToken - Optional guest token for public chat surfaces
 		 * @return {Promise} Promise resolving to status data
 		 */
-		fetchStatusREST: function (endpoint, nonce, limit, assistantId) {
+		fetchStatusREST: function (endpoint, nonce, limit, assistantId, guestToken) {
 			limit = limit || 10;
 
 			// Build URL with parameters
@@ -66,7 +67,10 @@
 				'Content-Type': 'application/json',
 			};
 
-			if (nonce) {
+			// Add authentication header - guest token takes priority
+			if (guestToken) {
+				headers['X-WP-MCP-AI-Guest'] = guestToken;
+			} else if (nonce) {
 				headers['X-WP-Nonce'] = nonce;
 			}
 
@@ -98,8 +102,9 @@
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {Function} callback - Callback function to handle status updates
 		 * @param {number} assistantId - Optional assistant ID for filtering
+		 * @param {string} guestToken - Optional guest token for public chat surfaces
 		 */
-		startMonitoring: function (containerId, endpoint, nonce, callback, assistantId) {
+		startMonitoring: function (containerId, endpoint, nonce, callback, assistantId, guestToken) {
 			// Stop existing monitoring if any
 			this.stopMonitoring(containerId);
 
@@ -113,8 +118,14 @@
 					sseUrl += '&assistant_id=' + encodeURIComponent(assistantId);
 				}
 
-				// Note: EventSource doesn't support custom headers
-				// WordPress will use session cookie authentication automatically
+				// EventSource doesn't support custom headers, so we must pass
+				// authentication via query parameters.
+				// Guest tokens take priority over nonces for public chat surfaces.
+				if (guestToken) {
+					sseUrl += '&guest_token=' + encodeURIComponent(guestToken);
+				} else if (nonce) {
+					sseUrl += '&_wpnonce=' + encodeURIComponent(nonce);
+				}
 
 				let sseReceived = false; // Track if we received any SSE data
 
@@ -151,7 +162,7 @@
 							// Stop SSE connection before falling back
 							self.stopSSE(containerId);
 							// Fall back to REST polling
-							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+							self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 						},
 						onOpen: function () {
 							if (window.console && console.log) {
@@ -171,23 +182,23 @@
 									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
 								}
 								self.stopSSE(containerId);
-								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 							}
 						}, 30000);
 					} else {
 						// SSE connection failed, use REST polling
-						this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+						this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 					}
 				} catch (error) {
 					if (window.console && console.error) {
 						console.error('[WP MCP AI] SSE cron status connection error:', error);
 					}
 					// Fall back to REST polling
-					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 				}
 			} else {
 				// SSE not supported, use REST polling
-				this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId);
+				this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 			}
 		},
 
@@ -199,12 +210,13 @@
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {Function} callback - Callback function to handle status updates
 		 * @param {number} assistantId - Optional assistant ID for filtering
+		 * @param {string} guestToken - Optional guest token for public chat surfaces
 		 */
-		startFallbackPolling: function (containerId, endpoint, nonce, callback, assistantId) {
+		startFallbackPolling: function (containerId, endpoint, nonce, callback, assistantId, guestToken) {
 			const self = this;
 
 			// Fetch immediately
-			this.fetchStatusREST(endpoint, nonce, 10, assistantId).then(function (data) {
+			this.fetchStatusREST(endpoint, nonce, 10, assistantId, guestToken).then(function (data) {
 				if (data) {
 					self.cache[containerId] = data;
 					if (callback && typeof callback === 'function') {
@@ -215,7 +227,7 @@
 
 			// Set up polling interval
 			this.fallbackPollers[containerId] = setInterval(function () {
-				self.fetchStatusREST(endpoint, nonce, 10, assistantId).then(function (data) {
+				self.fetchStatusREST(endpoint, nonce, 10, assistantId, guestToken).then(function (data) {
 					if (data) {
 						self.cache[containerId] = data;
 						if (callback && typeof callback === 'function') {
