@@ -6658,6 +6658,32 @@
                parsedContent.job_id;
     }
 
+    /**
+     * Start polling for an async tool result.
+     * Displays the initial message if provided, then calls waitForAsyncToolResult.
+     * 
+     * @param {Object} state Chat state object
+     * @param {Object} parsedContent Parsed tool result content with job_id
+     * @param {string} toolName Tool name for display purposes
+     */
+    function startAsyncToolPolling(state, parsedContent, toolName) {
+        if (!parsedContent || !parsedContent.job_id) {
+            return;
+        }
+        
+        // Display initial message if provided
+        if (parsedContent.message) {
+            appendMessage(state.messagesEl, 'system', parsedContent.message);
+        }
+        
+        // Start polling for the async result
+        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Async tool polling failed:', error);
+            }
+        });
+    }
+
     function normaliseToolResultForDisplay(toolName, result) {
         if (!result || typeof result !== 'object') {
             return null;
@@ -10136,19 +10162,8 @@
                 }
                 
                 // Check if this is an async tool result that's still pending
-                if (parsedContent && parsedContent.async === true && parsedContent.status === 'pending' && parsedContent.job_id) {
-                    // Start polling for the async result
-                    // Display initial message if provided
-                    if (parsedContent.message) {
-                        appendMessage(state.messagesEl, 'system', parsedContent.message);
-                    }
-                    
-                    // Start polling for the async result
-                    waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
-                        if (window.console && console.error) {
-                            console.error('[WP oOS] Async tool polling failed:', error);
-                        }
-                    });
+                if (isAsyncPendingToolResult(parsedContent)) {
+                    startAsyncToolPolling(state, parsedContent, toolName);
                     return;
                 }
                 
@@ -10682,16 +10697,7 @@
                     
                     // Check if this is an async tool result that's still pending
                     if (isAsyncPendingToolResult(parsedContent)) {
-                        // Start polling for the async result
-                        if (parsedContent.message) {
-                            appendMessage(state.messagesEl, 'system', parsedContent.message);
-                        }
-                        
-                        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
-                            if (window.console && console.error) {
-                                console.error('[WP oOS] Async tool polling failed:', error);
-                            }
-                        });
+                        startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
                     
@@ -10741,16 +10747,7 @@
                     
                     // Check if this is an async tool result that's still pending
                     if (isAsyncPendingToolResult(parsedContent)) {
-                        // Start polling for the async result
-                        if (parsedContent.message) {
-                            appendMessage(state.messagesEl, 'system', parsedContent.message);
-                        }
-                        
-                        waitForAsyncToolResult(state, parsedContent.job_id, toolName).catch(function (error) {
-                            if (window.console && console.error) {
-                                console.error('[WP oOS] Async tool polling failed:', error);
-                            }
-                        });
+                        startAsyncToolPolling(state, parsedContent, toolName);
                         return;
                     }
                     
