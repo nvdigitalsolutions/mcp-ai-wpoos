@@ -347,58 +347,84 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Permission check for chat transcripts endpoints.
 	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
 	public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
-		// Delegate to main controller's permission check.
-		if ( $this->main_controller ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'chat_transcripts_permissions_check' ) ) {
 			return $this->main_controller->chat_transcripts_permissions_check( $request );
 		}
+
+		// Fallback: Use base class authentication.
 		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Permission check for chat endpoints.
 	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
 	public function permissions_check( WP_REST_Request $request ) {
-		// Delegate to main controller's permission check.
-		if ( $this->main_controller ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check' ) ) {
 			return $this->main_controller->permissions_check( $request );
 		}
+
+		// Fallback: Use base class authentication.
 		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Handle /chat request (MCP remote clients).
 	 *
-	 * Delegates to main REST controller for now.
-	 * Will be extracted in implementation phase.
+	 * Delegates to main REST controller for AI chat functionality.
+	 * Returns 503 Service Unavailable when main controller is not available,
+	 * as chat requires AI model integration that cannot be self-contained.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_request( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		if ( $this->main_controller ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_chat_request' ) ) {
 			return $this->main_controller->handle_chat_request( $request );
 		}
 
-		// Log error if main controller is missing.
-		WP_MCP_AI_Logger::log_event(
-			'error',
-			'Chat Controller: main_controller is null',
-			array(
-				'route'   => $request->get_route(),
-				'method'  => $request->get_method(),
-				'context' => 'handle_chat_request',
-			)
-		);
+		// Self-contained fallback: Chat requires AI model integration.
+		// Return 503 to indicate service is temporarily unavailable.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null',
+				array(
+					'route'   => $request->get_route(),
+					'method'  => $request->get_method(),
+					'context' => 'handle_chat_request',
+				)
+			);
+		}
 
-		return $this->error( 'not_implemented', __( 'Chat endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+		return $this->error(
+			'wp_mcp_ai_chat_unavailable',
+			__( 'Chat service is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+			503
+		);
 	}
 
 	/**
