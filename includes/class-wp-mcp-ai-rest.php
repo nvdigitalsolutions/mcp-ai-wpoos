@@ -7745,6 +7745,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * case where manually saved transcripts have assistant messages in both request_payload
 		 * (as part of the full conversation) and response_payload (extracted from the conversation).
 		 *
+		 * Performance note: While O(n*m) complexity could be improved with hashing, typical
+		 * chat conversations have <100 messages and response_payload has <10 assistant messages,
+		 * making the practical impact negligible. A hash-based approach would require
+		 * custom serialization of message objects and add complexity without measurable benefit.
+		 *
 		 * @param array $conversation Current conversation array.
 		 * @param array $candidates   Candidate messages to filter.
 		 * @return array Filtered array with duplicates removed.
