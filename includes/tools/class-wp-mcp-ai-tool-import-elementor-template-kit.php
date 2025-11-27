@@ -227,11 +227,9 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			);
 		}
 
-		// Create temp directory.
-		$temp_dir = wp_tempnam( 'elementor_kit_' );
-		if ( file_exists( $temp_dir ) ) {
-			wp_delete_file( $temp_dir );
-		}
+		// Create temp directory using WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$temp_dir   = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp/' . wp_generate_uuid4();
 		wp_mkdir_p( $temp_dir );
 
 		// Extract ZIP.
@@ -484,19 +482,9 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			return $template_content;
 		}
 
-		// Check for existing page using WP_Query.
-		$existing_query = new WP_Query(
-			array(
-				'post_type'              => 'page',
-				'title'                  => $title,
-				'post_status'            => 'any',
-				'posts_per_page'         => 1,
-				'no_found_rows'          => true,
-				'update_post_term_cache' => false,
-				'update_post_meta_cache' => false,
-			)
-		);
-		$existing_page  = $existing_query->have_posts() ? $existing_query->posts[0] : null;
+		// Check for existing page by exact title match.
+		// WP_Query doesn't support 'title' parameter directly, so we use 's' with exact match filter.
+		$existing_page = $this->get_page_by_exact_title( $title );
 
 		if ( $existing_page && ! $options['overwrite_existing'] ) {
 			return array(
@@ -644,6 +632,47 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( $wp_filesystem ) {
 			$wp_filesystem->rmdir( $temp_dir, true );
 		}
+	}
+
+	/**
+	 * Get a page by exact title match.
+	 *
+	 * @param string $title Page title to search for.
+	 * @return WP_Post|null The page post object or null if not found.
+	 */
+	protected function get_page_by_exact_title( $title ) {
+		global $wpdb;
+
+		// Generate cache key for this title lookup.
+		$cache_key   = 'wp_mcp_ai_page_by_title_' . md5( $title );
+		$cache_group = 'wp_mcp_ai';
+
+		// Check cache first.
+		$cached_id = wp_cache_get( $cache_key, $cache_group );
+		if ( false !== $cached_id ) {
+			if ( 0 === $cached_id ) {
+				return null; // Cached negative result.
+			}
+			return get_post( $cached_id );
+		}
+
+		// Use direct database query for exact title match.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cache is handled above.
+		$page_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type = 'page' AND post_status IN ('publish', 'draft', 'pending', 'private') LIMIT 1",
+				$title
+			)
+		);
+
+		// Cache the result (including negative results as 0).
+		wp_cache_set( $cache_key, $page_id ? (int) $page_id : 0, $cache_group, 60 );
+
+		if ( $page_id ) {
+			return get_post( $page_id );
+		}
+
+		return null;
 	}
 
 	/**
