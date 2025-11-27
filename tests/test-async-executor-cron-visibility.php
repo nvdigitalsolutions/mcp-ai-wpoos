@@ -21,7 +21,7 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		// Load required files.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 	}
 
 	/**

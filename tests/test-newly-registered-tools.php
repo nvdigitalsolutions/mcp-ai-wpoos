@@ -219,8 +219,7 @@ class Test_Newly_Registered_Tools extends WP_UnitTestCase {
 			// Skip interface/base/trait files.
 			if ( strpos( $filename, 'interface' ) !== false ||
 				 strpos( $filename, 'trait' ) !== false ||
-				 strpos( $filename, 'base' ) !== false ||
-				 $filename === 'class-wp-mcp-ai-tool-llm-sanitizer-interface.php' ) {
+				 strpos( $filename, 'base' ) !== false ) {
 				continue;
 			}
 

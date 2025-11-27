@@ -14,7 +14,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	return;
 }
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 /**
  * Creates draft WooCommerce products using a reference identifier.
