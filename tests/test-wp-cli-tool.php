@@ -27,13 +27,62 @@ class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 
 		wp_set_current_user( 0 );
 
+		// Reset settings.
+		delete_option( 'wp_mcp_ai_settings' );
+
 		parent::tearDown();
+	}
+
+	/**
+	 * Test that the tool returns an error when the feature is disabled.
+	 */
+	public function test_execute_returns_error_when_feature_disabled() {
+		// Ensure feature is disabled.
+		update_option( 'wp_mcp_ai_settings', array() );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$tool   = new WP_MCP_AI_Tool_Check_WP_CLI();
+		$result = $tool->execute( array(), array( 'user_id' => $admin_id ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_feature_disabled', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that the tool returns an error when site creator is enabled but WP-CLI tools are not.
+	 */
+	public function test_execute_returns_error_when_wp_cli_tools_disabled() {
+		// Enable site creator but not WP-CLI tools.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator' => true,
+			)
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$tool   = new WP_MCP_AI_Tool_Check_WP_CLI();
+		$result = $tool->execute( array(), array( 'user_id' => $admin_id ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_feature_disabled', $result->get_error_code() );
 	}
 
 	/**
 	 * Ensure the tool enforces the manage_options capability.
 	 */
 	public function test_execute_requires_manage_options() {
+		// Enable the feature first.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'             => true,
+				'site_creator_allow_wp_cli_tools' => true,
+			)
+		);
+
 		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 
 		$tool   = new WP_MCP_AI_Tool_Check_WP_CLI();
@@ -47,6 +96,15 @@ class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 	 * The tool should report when the binary cannot be located.
 	 */
 	public function test_execute_reports_missing_binary() {
+		// Enable the feature first.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'             => true,
+				'site_creator_allow_wp_cli_tools' => true,
+			)
+		);
+
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 
 		$filter = static function () {
@@ -75,6 +133,15 @@ class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 		if ( ! $this->can_execute_processes() ) {
 			$this->markTestSkipped( 'proc_open is not available in this test environment.' );
 		}
+
+		// Enable the feature first.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'             => true,
+				'site_creator_allow_wp_cli_tools' => true,
+			)
+		);
 
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		$binary   = $this->create_fake_wp_cli_binary( "#!/usr/bin/env php\n<?php echo \"WP-CLI 9.9.9\\n\";" );
