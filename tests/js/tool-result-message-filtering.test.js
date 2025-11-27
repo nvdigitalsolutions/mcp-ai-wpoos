@@ -4,6 +4,7 @@
  * These tests verify that tool result messages (role: 'tool') are:
  * 1. Persisted in the conversation for localStorage storage
  * 2. Filtered out when sending messages to the API to keep payloads lean
+ * 3. Filtered out when saving to CCT (transcripts)
  *
  * @package WP_MCP_AI
  */
@@ -13,10 +14,10 @@ describe('Tool Result Message Filtering', () => {
 
 	beforeEach(() => {
 		/**
-		 * Mock of the filter logic used in chat.js for sending messages to API.
+		 * Mock of the filter logic used in chat.js for sending messages to API and CCT.
 		 * This filters out:
 		 * - System messages (UI feedback only)
-		 * - Tool messages (persisted locally but not sent to API)
+		 * - Tool messages (persisted locally but not sent to API/CCT)
 		 * - Assistant messages with tool_calls (intermediate agentic loop messages)
 		 */
 		filterMessagesForApi = function(conversation) {
@@ -282,6 +283,154 @@ describe('Tool Result Message Filtering', () => {
 			conversation.forEach((msg, idx) => {
 				expect(msg).toEqual(originalMessages[idx]);
 			});
+		});
+	});
+
+	describe('Tool result restoration from localStorage', () => {
+		let buildToolPayloadFromMessage;
+
+		beforeEach(() => {
+			/**
+			 * Mock of the tool result restoration logic from restoreConversationFromStorage.
+			 * This handles tool messages that may have:
+			 * - display metadata (preferred for UI)
+			 * - JSON content string (needs parsing)
+			 */
+			buildToolPayloadFromMessage = function(message) {
+				const display = message.display || null;
+				const content = message.content;
+
+				if (display && typeof display === 'object') {
+					return display;
+				}
+				
+				if (typeof content === 'string' && content.trim()) {
+					let parsedContent = content;
+					try {
+						parsedContent = JSON.parse(content);
+					} catch (e) {
+						// Not JSON, use as-is
+					}
+					
+					let displayText = '';
+					if (typeof parsedContent === 'object' && parsedContent !== null) {
+						displayText = parsedContent.text || 
+									 parsedContent.message || 
+									 parsedContent.result || 
+									 parsedContent.summary ||
+									 (typeof parsedContent.content === 'string' ? parsedContent.content : '');
+						
+						if (!displayText && Object.keys(parsedContent).length > 0) {
+							displayText = JSON.stringify(parsedContent, null, 2);
+						}
+					} else {
+						displayText = String(parsedContent);
+					}
+					
+					return { text: displayText };
+				}
+				
+				return { text: '[Tool result]' };
+			};
+		});
+
+		it('should use display metadata when available', () => {
+			const message = {
+				role: 'tool',
+				content: '{"user_id": 1, "name": "John"}',
+				display: { text: '✓ User info retrieved: John (ID: 1)' }
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('✓ User info retrieved: John (ID: 1)');
+		});
+
+		it('should parse JSON content when display is not available', () => {
+			const message = {
+				role: 'tool',
+				content: '{"text": "Successfully retrieved user info"}',
+				name: 'get_user_info'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('Successfully retrieved user info');
+		});
+
+		it('should handle message field in JSON content', () => {
+			const message = {
+				role: 'tool',
+				content: '{"message": "Operation completed successfully"}',
+				name: 'get_user_info'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('Operation completed successfully');
+		});
+
+		it('should handle result field in JSON content', () => {
+			const message = {
+				role: 'tool',
+				content: '{"result": "User found"}',
+				name: 'get_user_info'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('User found');
+		});
+
+		it('should stringify complex objects without text fields', () => {
+			const message = {
+				role: 'tool',
+				content: '{"user_id": 1, "email": "john@example.com"}',
+				name: 'get_user_info'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			// Should contain stringified JSON
+			expect(payload.text).toContain('user_id');
+			expect(payload.text).toContain('john@example.com');
+		});
+
+		it('should handle plain string content', () => {
+			const message = {
+				role: 'tool',
+				content: 'Simple string result',
+				name: 'test_tool'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('Simple string result');
+		});
+
+		it('should provide fallback for empty content', () => {
+			const message = {
+				role: 'tool',
+				content: '',
+				name: 'test_tool'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('[Tool result]');
+		});
+
+		it('should handle get_user_info style results', () => {
+			const message = {
+				role: 'tool',
+				content: JSON.stringify({
+					success: true,
+					user: {
+						id: 42,
+						name: 'Test User',
+						email: 'test@example.com'
+					},
+					text: 'Retrieved user: Test User (test@example.com)'
+				}),
+				name: 'get_user_info',
+				tool_call_id: 'call_123'
+			};
+
+			const payload = buildToolPayloadFromMessage(message);
+			expect(payload.text).toBe('Retrieved user: Test User (test@example.com)');
 		});
 	});
 });

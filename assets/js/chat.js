@@ -1282,9 +1282,30 @@
         // Otherwise fall back to config.assistantId for backwards compatibility
         const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
 
+        // Filter out tool messages and intermediate agentic messages before saving to CCT
+        // Tool result messages (role: 'tool') are persisted locally for display but excluded
+        // from CCT to keep transcripts lean. The backend handles tool execution in its own
+        // agentic loop and doesn't need client-side tool results.
+        // Assistant messages with tool_calls are intermediate agentic loop messages that
+        // should also be excluded - they're preserved for UI display only.
+        const filteredForCCT = state.conversation.filter(function(message) {
+            if (!message) {
+                return false;
+            }
+            // Exclude system and tool messages
+            if (message.role === 'system' || message.role === 'tool') {
+                return false;
+            }
+            // Exclude assistant messages with tool_calls (intermediate agentic loop messages)
+            if (message.role === 'assistant' && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+                return false;
+            }
+            return true;
+        });
+
         // Strip UI-only metadata (like 'display' field) from messages before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
-        const cleanMessages = state.conversation
+        const cleanMessages = filteredForCCT
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
 
@@ -8960,8 +8981,45 @@
 
             if (role === 'tool') {
                 // Render tool responses
-                // Use display metadata if available
-                const toolPayload = display || content;
+                // Use display metadata if available, otherwise build from content
+                let toolPayload;
+                if (display && typeof display === 'object') {
+                    // Use saved display metadata for consistency
+                    toolPayload = display;
+                } else if (typeof content === 'string' && content.trim()) {
+                    // Parse JSON content if it's a string (raw tool result)
+                    let parsedContent = content;
+                    try {
+                        parsedContent = JSON.parse(content);
+                    } catch (e) {
+                        // Not JSON, use as-is
+                    }
+                    
+                    // Build display payload from parsed content
+                    // Try to extract displayable text from various tool result formats
+                    let displayText = '';
+                    if (typeof parsedContent === 'object' && parsedContent !== null) {
+                        // Common patterns for tool result text
+                        displayText = parsedContent.text || 
+                                     parsedContent.message || 
+                                     parsedContent.result || 
+                                     parsedContent.summary ||
+                                     (typeof parsedContent.content === 'string' ? parsedContent.content : '');
+                        
+                        // If still no text, try to stringify key fields
+                        if (!displayText && Object.keys(parsedContent).length > 0) {
+                            displayText = JSON.stringify(parsedContent, null, 2);
+                        }
+                    } else {
+                        displayText = String(parsedContent);
+                    }
+                    
+                    toolPayload = { text: displayText };
+                } else {
+                    // Fallback for empty content
+                    toolPayload = { text: '[Tool result]' };
+                }
+                
                 appendMessage(state.messagesEl, 'tool', toolPayload);
                 return;
             }
