@@ -128,6 +128,19 @@
 									if (callback && typeof callback === 'function') {
 										callback(data);
 									}
+									// Emit job updates through the event bus for integration
+									// with chat.js async tool polling
+									self.emitJobUpdates(data);
+								}
+							},
+							// Handle individual job status events from SSE stream
+							'cron_job_status': function (data) {
+								sseReceived = true;
+								if (data && data.job_id) {
+									// Emit through job event bus for chat integration
+									if (window.wpMcpAiJobBus) {
+										window.wpMcpAiJobBus.handleJobUpdate(data.job_id, data);
+									}
 								}
 							}
 						},
@@ -305,6 +318,27 @@
 						// Open in new window/tab
 						window.open(url, '_blank');
 					});
+				}
+			});
+		},
+
+		/**
+		 * Emit job updates through the job event bus
+		 * 
+		 * Extracts individual job statuses from cron_status data and emits
+		 * them through wpMcpAiJobBus for integration with chat.js
+		 * 
+		 * @param {Object} data Cron status data with jobs array
+		 */
+		emitJobUpdates: function (data) {
+			if (!window.wpMcpAiJobBus || !data || !data.jobs) {
+				return;
+			}
+
+			// Emit update for each job
+			data.jobs.forEach(function (job) {
+				if (job && job.job_id) {
+					window.wpMcpAiJobBus.handleJobUpdate(job.job_id, job);
 				}
 			});
 		},

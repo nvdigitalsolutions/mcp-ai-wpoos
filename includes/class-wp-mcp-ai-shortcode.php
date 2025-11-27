@@ -76,6 +76,10 @@ class WP_MCP_AI_Shortcode {
 		$cron_status_script_relative = 'assets/js/cron-status-service.js';
 		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
+		// Core service files (event bus and SSE must load before cron-status and chat)
+		$sse_service_relative       = 'assets/js/sse-service.js';
+		$job_event_bus_relative     = 'assets/js/job-event-bus.js';
+
 		// Chat service files (Phase 1-4 modularization)
 		$storage_service_relative   = 'assets/js/chat-storage-service.js';
 		$clipboard_service_relative = 'assets/js/chat-clipboard-service.js';
@@ -88,6 +92,9 @@ class WP_MCP_AI_Shortcode {
 		$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
 		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
 
+		$sse_service_path       = WP_MCP_AI_URL . $sse_service_relative;
+		$job_event_bus_path     = WP_MCP_AI_URL . $job_event_bus_relative;
+
 		$storage_service_path   = WP_MCP_AI_URL . $storage_service_relative;
 		$clipboard_service_path = WP_MCP_AI_URL . $clipboard_service_relative;
 		$markdown_service_path  = WP_MCP_AI_URL . $markdown_service_relative;
@@ -99,17 +106,39 @@ class WP_MCP_AI_Shortcode {
 		$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
 		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
 
+		$sse_service_version       = $this->get_asset_version( $sse_service_relative );
+		$job_event_bus_version     = $this->get_asset_version( $job_event_bus_relative );
+
 		$storage_service_version   = $this->get_asset_version( $storage_service_relative );
 		$clipboard_service_version = $this->get_asset_version( $clipboard_service_relative );
 		$markdown_service_version  = $this->get_asset_version( $markdown_service_relative );
 		$ui_utils_service_version  = $this->get_asset_version( $ui_utils_service_relative );
 		$audio_service_version     = $this->get_asset_version( $audio_service_relative );
 
+		// Register SSE service (must load before cron-status and chat.js)
+		wp_register_script(
+			'wp-mcp-ai-sse-service',
+			$sse_service_path,
+			array(),
+			$sse_service_version,
+			true
+		);
+
+		// Register Job Event Bus (mitt-compatible API for job status coordination)
+		// Must load after SSE service, before cron-status and chat.js
+		wp_register_script(
+			'wp-mcp-ai-job-event-bus',
+			$job_event_bus_path,
+			array( 'wp-mcp-ai-sse-service' ),
+			$job_event_bus_version,
+			true
+		);
+
 		// Register cron status assets (loaded before chat.js).
 		wp_register_script(
 			'wp-mcp-ai-cron-status',
 			$cron_status_script_path,
-			array(),
+			array( 'wp-mcp-ai-sse-service', 'wp-mcp-ai-job-event-bus' ),
 			$cron_status_script_version,
 			true
 		);
@@ -182,6 +211,8 @@ class WP_MCP_AI_Shortcode {
 			self::SCRIPT_HANDLE,
 			$script_path,
 			array(
+				'wp-mcp-ai-sse-service',
+				'wp-mcp-ai-job-event-bus',
 				'wp-mcp-ai-cron-status',
 				'wp-mcp-ai-chat-storage',
 				'wp-mcp-ai-chat-clipboard',
