@@ -541,6 +541,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'Veo generated video saved to Media Library',
 			array(
 				'attachment_id' => $attachment_id,
+				'filename'      => $filename,
 				'duration'      => $result['duration'],
 			)
 		);

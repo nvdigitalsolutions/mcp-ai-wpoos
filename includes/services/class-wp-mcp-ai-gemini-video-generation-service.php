@@ -1143,8 +1143,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'veo_async_queued',
 			'Veo video generation queued for async polling',
 			array(
-				'job_id'    => $job_id,
-				'operation' => $operation['operation_name'],
+				'job_id'            => $job_id,
+				'expected_filename' => $expected_filename,
+				'operation'         => $operation['operation_name'],
 			)
 		);
 
@@ -1760,6 +1761,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'Returning completed status with result',
 				array(
 					'job_id'        => $job_id,
+					'filename'      => isset( $metadata['expected_filename'] ) ? $metadata['expected_filename'] : '',
 					'has_url'       => isset( $metadata['result']['url'] ),
 					'has_video_url' => isset( $metadata['result']['video_url'] ),
 				)
@@ -1962,6 +1964,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'Veo generated video saved to Media Library',
 			array(
 				'attachment_id' => $attachment_id,
+				'filename'      => $filename,
 				'duration'      => $result['duration'],
 				'job_id'        => $job_id,
 			)
@@ -2294,11 +2297,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @param array  $result    Job result data.
 	 */
 	protected function fire_job_completion_hooks( $job_id, $metadata, $result ) {
+		// Get filename from metadata for logging.
+		$filename = isset( $metadata['expected_filename'] ) ? $metadata['expected_filename'] : '';
+
 		WP_MCP_AI_Logger::log_event(
 			'veo_async_completed',
 			'Veo async video generation completed',
 			array(
 				'job_id'        => $job_id,
+				'filename'      => $filename,
 				'attempts'      => $metadata['poll_attempt'],
 				'has_video_url' => isset( $result['video_url'] ),
 				'has_url'       => isset( $result['url'] ),
@@ -2329,6 +2336,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'Firing veo job completion hook with result',
 				array(
 					'job_id'        => $job_id,
+					'filename'      => $filename,
 					'has_video_url' => isset( $result['video_url'] ),
 					'has_url'       => isset( $result['url'] ),
 					'url_value'     => isset( $result['url'] ) ? substr( $result['url'], 0, 100 ) : 'none',
