@@ -195,10 +195,14 @@
 
 				// Handle errors
 				eventSource.addEventListener('error', function (event) {
-					// Extract detailed error information
+					// Extract detailed error information for the onError callback
 					const errorDetails = self.extractErrorDetails(event, eventSource, url);
 					
-					if (window.console && console.error) {
+					// Only log detailed errors in debug mode or when explicitly enabled.
+					// SSE connection failures during handshake are often expected (e.g., auth expired)
+					// and handled gracefully by falling back to REST polling.
+					// Set window.wpMcpAiDebug = true to enable verbose SSE error logging.
+					if (window.wpMcpAiDebug && window.console && console.error) {
 						console.error('[WP oOS SSE] Connection error:', errorDetails.likelyCause);
 						console.error('[WP oOS SSE] Error details:', {
 							readyState: errorDetails.readyStateName + ' (' + errorDetails.readyState + ')',
