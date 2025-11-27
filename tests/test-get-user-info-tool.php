@@ -156,12 +156,12 @@ class WP_MCP_AI_Get_User_Info_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the result includes a text field for chat UI display.
+	 * Test that the result includes a message field for chat UI display.
 	 *
-	 * The text field is used by the chat UI to display tool results
+	 * The message field is used by the chat UI to display tool results
 	 * in localStorage and CCT (Custom Content Type) for persistence.
 	 */
-	public function test_result_includes_text_field_for_display() {
+	public function test_result_includes_message_field_for_display() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -185,15 +185,15 @@ class WP_MCP_AI_Get_User_Info_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result, 'Result should be an array.' );
-		$this->assertArrayHasKey( 'text', $result, 'Result should include a text field for display.' );
-		$this->assertIsString( $result['text'], 'Text field should be a string.' );
-		$this->assertNotEmpty( $result['text'], 'Text field should not be empty.' );
+		$this->assertArrayHasKey( 'message', $result, 'Result should include a message field for display.' );
+		$this->assertIsString( $result['message'], 'Message field should be a string.' );
+		$this->assertNotEmpty( $result['message'], 'Message field should not be empty.' );
 
-		// Verify the text contains expected information.
-		$this->assertStringContainsString( 'Test Admin', $result['text'], 'Text should contain display name.' );
-		$this->assertStringContainsString( (string) $user_id, $result['text'], 'Text should contain user ID.' );
-		$this->assertStringContainsString( 'admin@example.com', $result['text'], 'Text should contain email.' );
-		$this->assertStringContainsString( 'administrator', $result['text'], 'Text should contain role.' );
+		// Verify the message contains expected information.
+		$this->assertStringContainsString( 'Test Admin', $result['message'], 'Message should contain display name.' );
+		$this->assertStringContainsString( (string) $user_id, $result['message'], 'Message should contain user ID.' );
+		$this->assertStringContainsString( 'admin@example.com', $result['message'], 'Message should contain email.' );
+		$this->assertStringContainsString( 'administrator', $result['message'], 'Message should contain role.' );
 	}
 
 	/**
