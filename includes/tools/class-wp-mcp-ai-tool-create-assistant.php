@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new AI assistant by selecting from predefined professions and regions. Choose up to 3 professions and up to 2 countries/regions. The tool will create appropriate instructions and knowledge base documents. The assistant will be saved as a draft.', 'wp-mcp-ai' );
+		return __( 'Creates a new AI assistant. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -81,9 +81,19 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
+				'description'    => array(
+					'type'        => 'string',
+					'description' => __( 'Free-form description of what the assistant should do, its purpose, expertise, and target audience. Used in Prompt mode when professions/regions are not specified.', 'wp-mcp-ai' ),
+					'maxLength'   => 5000,
+				),
+				'system_prompt'  => array(
+					'type'        => 'string',
+					'description' => __( 'Custom system prompt/instructions for the assistant. If not provided, will be auto-generated based on professions/regions or description.', 'wp-mcp-ai' ),
+					'maxLength'   => 32000,
+				),
 				'professions'    => array(
 					'type'        => 'array',
-					'description' => __( 'Select up to 3 professions/specializations for this assistant.', 'wp-mcp-ai' ),
+					'description' => __( 'Select up to 3 professions/specializations for this assistant. Optional if description is provided.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array(
@@ -104,13 +114,13 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 							'restaurant_consultant',
 						),
 					),
-					'minItems'    => 1,
+					'minItems'    => 0,
 					'maxItems'    => 3,
 					'uniqueItems' => true,
 				),
 				'regions'        => array(
 					'type'        => 'array',
-					'description' => __( 'Select up to 2 countries/regions where this assistant will operate.', 'wp-mcp-ai' ),
+					'description' => __( 'Select up to 2 countries/regions where this assistant will operate. Optional if description is provided.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array(
@@ -138,7 +148,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 							'global',
 						),
 					),
-					'minItems'    => 1,
+					'minItems'    => 0,
 					'maxItems'    => 2,
 					'uniqueItems' => true,
 				),
@@ -146,6 +156,14 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'string',
 					'description' => __( 'Optional specific industry or product focus (e.g., "perfumes", "technology", "restaurants", "retail").', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
+				),
+				'attachment_ids' => array(
+					'type'        => 'array',
+					'description' => __( 'Array of WordPress media attachment IDs to include in the assistant\'s knowledge base.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'type' => 'integer',
+					),
+					'maxItems'    => self::MAX_DOCUMENTS,
 				),
 				'provider'       => array(
 					'type'        => 'string',
@@ -184,7 +202,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'format'      => 'email',
 				),
 			),
-			'required'             => array( 'title', 'professions', 'regions' ),
+			'required'             => array( 'title' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -310,42 +328,80 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Create the assistant post.
 	 *
+	 * Supports two modes:
+	 * 1. Manual mode: Uses explicitly provided professions/regions
+	 * 2. Prompt mode: Tries to infer professions/regions from description, skips if not confident
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param int   $user_id   User ID.
 	 * @return array|WP_Error Result or error.
 	 */
 	protected function create_assistant( $arguments, $user_id ) {
-		$title          = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$professions    = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
-		$regions        = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
-		$industry_focus = isset( $arguments['industry_focus'] ) ? sanitize_text_field( $arguments['industry_focus'] ) : '';
+		$title           = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$professions     = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
+		$regions         = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
+		$industry_focus  = isset( $arguments['industry_focus'] ) ? sanitize_text_field( $arguments['industry_focus'] ) : '';
+		$description     = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
+		$system_prompt   = isset( $arguments['system_prompt'] ) ? sanitize_textarea_field( $arguments['system_prompt'] ) : '';
+		$attachment_ids  = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
 
 		if ( '' === $title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Title is required.', 'wp-mcp-ai' ) );
 		}
 
-		if ( empty( $professions ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_professions', __( 'At least one profession is required.', 'wp-mcp-ai' ) );
+		// Try to infer professions/regions if not explicitly provided.
+		// Always attempt inference, but only use results if confident.
+		$inferred_professions = array();
+		$inferred_regions     = array();
+
+		if ( empty( $professions ) || empty( $regions ) ) {
+			// Try to infer from description and title.
+			$inference_context = trim( $title . ' ' . $description . ' ' . $industry_focus );
+
+			if ( '' !== $inference_context ) {
+				if ( empty( $professions ) ) {
+					$inferred_professions = $this->infer_professions_from_context( $inference_context );
+				}
+				if ( empty( $regions ) ) {
+					$inferred_regions = $this->infer_regions_from_context( $inference_context );
+				}
+			}
 		}
 
-		if ( count( $professions ) > 3 ) {
-			return new WP_Error( 'wp_mcp_ai_too_many_professions', __( 'Maximum 3 professions allowed.', 'wp-mcp-ai' ) );
+		// Use explicitly provided values, fall back to inferred values.
+		$final_professions = ! empty( $professions ) ? $professions : $inferred_professions;
+		$final_regions     = ! empty( $regions ) ? $regions : $inferred_regions;
+
+		// Validate counts if we have any professions/regions.
+		if ( count( $final_professions ) > 3 ) {
+			$final_professions = array_slice( $final_professions, 0, 3 );
 		}
 
-		if ( empty( $regions ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_regions', __( 'At least one region is required.', 'wp-mcp-ai' ) );
-		}
-
-		if ( count( $regions ) > 2 ) {
-			return new WP_Error( 'wp_mcp_ai_too_many_regions', __( 'Maximum 2 regions allowed.', 'wp-mcp-ai' ) );
+		if ( count( $final_regions ) > 2 ) {
+			$final_regions = array_slice( $final_regions, 0, 2 );
 		}
 
 		// Sanitize selections.
-		$professions = array_map( 'sanitize_key', $professions );
-		$regions     = array_map( 'sanitize_key', $regions );
+		$final_professions = array_map( 'sanitize_key', $final_professions );
+		$final_regions     = array_map( 'sanitize_key', $final_regions );
 
-		// Generate instructions based on selections.
-		$instructions = $this->generate_instructions_from_selections( $professions, $regions, $industry_focus, $title );
+		// Determine if we have enough info for profession/region-based generation.
+		$has_profession_region_info = ! empty( $final_professions ) && ! empty( $final_regions );
+
+		// Generate or use instructions.
+		if ( '' !== $system_prompt ) {
+			// Use provided system prompt directly.
+			$instructions = $system_prompt;
+		} elseif ( $has_profession_region_info ) {
+			// Generate instructions from professions/regions.
+			$instructions = $this->generate_instructions_from_selections( $final_professions, $final_regions, $industry_focus, $title );
+		} elseif ( '' !== $description ) {
+			// Generate instructions from free-form description.
+			$instructions = $this->generate_instructions_from_description( $description, $title );
+		} else {
+			// Fallback: Generate generic instructions.
+			$instructions = $this->generate_generic_instructions( $title );
+		}
 
 		// Validate instructions length for OpenAI limits.
 		if ( strlen( $instructions ) > 32000 ) {
@@ -355,25 +411,38 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		// Generate knowledge base documents.
-		$documents_data = $this->generate_knowledge_documents_from_selections( $professions, $regions, $industry_focus, $title );
+		// Generate knowledge base documents (only if we have profession/region info).
+		$documents_data = array();
+		if ( $has_profession_region_info ) {
+			$documents_data = $this->generate_knowledge_documents_from_selections( $final_professions, $final_regions, $industry_focus, $title );
+		}
 
-		// Create description from selections.
-		$profession_names = array_map( array( $this, 'get_profession_name' ), $professions );
-		$region_names     = array_map( array( $this, 'get_region_name' ), $regions );
+		// Build post content/description.
+		if ( $has_profession_region_info ) {
+			$profession_names = array_map( array( $this, 'get_profession_name' ), $final_professions );
+			$region_names     = array_map( array( $this, 'get_region_name' ), $final_regions );
 
-		$description = sprintf(
-			/* translators: 1: profession list, 2: region list */
-			__( 'AI Assistant for: %1$s in %2$s', 'wp-mcp-ai' ),
-			implode( ', ', $profession_names ),
-			implode( ' and ', $region_names )
-		);
+			$post_content = sprintf(
+				/* translators: 1: profession list, 2: region list */
+				__( 'AI Assistant for: %1$s in %2$s', 'wp-mcp-ai' ),
+				implode( ', ', $profession_names ),
+				implode( ' and ', $region_names )
+			);
 
-		if ( '' !== $industry_focus ) {
-			$description .= "\n\n" . sprintf(
-				/* translators: 1: industry focus */
-				__( 'Industry Focus: %s', 'wp-mcp-ai' ),
-				$industry_focus
+			if ( '' !== $industry_focus ) {
+				$post_content .= "\n\n" . sprintf(
+					/* translators: 1: industry focus */
+					__( 'Industry Focus: %s', 'wp-mcp-ai' ),
+					$industry_focus
+				);
+			}
+		} elseif ( '' !== $description ) {
+			$post_content = $description;
+		} else {
+			$post_content = sprintf(
+				/* translators: %s: assistant title */
+				__( 'AI Assistant: %s', 'wp-mcp-ai' ),
+				$title
 			);
 		}
 
@@ -381,7 +450,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$post_data = array(
 			'post_type'    => 'mcp_ai_assistant',
 			'post_title'   => $title,
-			'post_content' => $description,
+			'post_content' => $post_content,
 			'post_status'  => 'draft',
 			'post_author'  => $user_id,
 		);
@@ -413,40 +482,68 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			update_post_meta( $assistant_id, '_wp_mcp_ai_temperature', $temperature );
 		}
 
-		// Select appropriate tools based on professions or use specified tools.
-		$tools = isset( $arguments['tools'] ) && is_array( $arguments['tools'] )
-			? $this->validate_tools( $arguments['tools'] )
-			: $this->select_tools_for_professions( $professions );
+		// Select appropriate tools.
+		if ( isset( $arguments['tools'] ) && is_array( $arguments['tools'] ) ) {
+			$tools = $this->validate_tools( $arguments['tools'] );
+		} elseif ( ! empty( $final_professions ) ) {
+			$tools = $this->select_tools_for_professions( $final_professions );
+		} elseif ( '' !== $description ) {
+			$tools = $this->select_tools_for_goal( $description );
+		} else {
+			$tools = $this->get_default_tools();
+		}
 
 		if ( ! empty( $tools ) ) {
 			update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $tools );
 		}
 
-		// Create and attach knowledge documents to base knowledge.
-		$doc_result = $this->create_knowledge_documents( $documents_data, $assistant_id, $user_id );
+		// Collect all document IDs (from generated docs and user-provided attachments).
+		$all_document_ids = array();
 
-		if ( is_wp_error( $doc_result ) ) {
-			// Clean up created assistant on document error.
-			wp_delete_post( $assistant_id, true );
-			return $doc_result;
+		// Create generated knowledge documents.
+		if ( ! empty( $documents_data ) ) {
+			$doc_result = $this->create_knowledge_documents( $documents_data, $assistant_id, $user_id );
+
+			if ( is_wp_error( $doc_result ) ) {
+				// Clean up created assistant on document error.
+				wp_delete_post( $assistant_id, true );
+				return $doc_result;
+			}
+
+			$all_document_ids = array_merge( $all_document_ids, $doc_result );
 		}
 
-		$document_ids = $doc_result;
+		// Add user-provided attachment IDs to knowledge base.
+		if ( ! empty( $attachment_ids ) ) {
+			$validated_attachments = $this->validate_attachment_ids( $attachment_ids, $user_id );
+			$all_document_ids      = array_merge( $all_document_ids, $validated_attachments );
+		}
 
 		// Save document IDs to memory_files meta.
-		if ( ! empty( $document_ids ) ) {
-			update_post_meta( $assistant_id, '_wp_mcp_ai_memory_files', $document_ids );
+		if ( ! empty( $all_document_ids ) ) {
+			update_post_meta( $assistant_id, '_wp_mcp_ai_memory_files', array_unique( $all_document_ids ) );
 		}
 
 		$assistant = get_post( $assistant_id );
 
+		// Build mode indicator for response.
+		$mode = 'prompt';
+		if ( ! empty( $arguments['professions'] ) && ! empty( $arguments['regions'] ) ) {
+			$mode = 'manual';
+		} elseif ( ! empty( $inferred_professions ) || ! empty( $inferred_regions ) ) {
+			$mode = 'inferred';
+		}
+
 		return array(
-			'assistant_id' => $assistant_id,
-			'title'        => $title,
-			'status'       => 'draft',
-			'edit_link'    => get_edit_post_link( $assistant_id, '' ),
-			'documents'    => count( $document_ids ),
-			'message'      => sprintf(
+			'assistant_id'          => $assistant_id,
+			'title'                 => $title,
+			'status'                => 'draft',
+			'edit_link'             => get_edit_post_link( $assistant_id, '' ),
+			'documents'             => count( $all_document_ids ),
+			'mode'                  => $mode,
+			'inferred_professions'  => $inferred_professions,
+			'inferred_regions'      => $inferred_regions,
+			'message'               => sprintf(
 				/* translators: %s: assistant title */
 				__( 'AI assistant "%s" created successfully as draft.', 'wp-mcp-ai' ),
 				$title
@@ -1800,5 +1897,309 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			'async-capable',        // Supports async execution via cron.
 			'may-timeout',          // Document creation may take time.
 		);
+	}
+
+	/**
+	 * Infer professions from context (title, description, industry focus).
+	 *
+	 * Returns empty array if confidence is low (won't guess).
+	 *
+	 * @param string $context Combined context string.
+	 * @return array Inferred profession keys (empty if not confident).
+	 */
+	protected function infer_professions_from_context( $context ) {
+		if ( '' === $context ) {
+			return array();
+		}
+
+		$context_lower = strtolower( $context );
+		$professions   = array();
+
+		// Define keyword patterns with confidence weight.
+		// Only return professions if we have strong matches.
+		$profession_patterns = array(
+			'tax_advisor'              => array(
+				'keywords' => array( 'tax', 'taxation', 'tax advisor', 'tax consultant', 'irs', 'cpa' ),
+				'weight'   => 0,
+			),
+			'accountant'               => array(
+				'keywords' => array( 'accountant', 'accounting', 'bookkeeping', 'cpa', 'financial statements' ),
+				'weight'   => 0,
+			),
+			'bookkeeper'               => array(
+				'keywords' => array( 'bookkeeper', 'bookkeeping', 'ledger', 'financial records' ),
+				'weight'   => 0,
+			),
+			'lawyer'                   => array(
+				'keywords' => array( 'lawyer', 'attorney', 'legal counsel', 'law firm', 'litigation' ),
+				'weight'   => 0,
+			),
+			'legal_advisor'            => array(
+				'keywords' => array( 'legal advisor', 'legal consultant', 'legal advice', 'compliance' ),
+				'weight'   => 0,
+			),
+			'customs_broker'           => array(
+				'keywords' => array( 'customs', 'customs broker', 'customs clearance', 'duty', 'tariff' ),
+				'weight'   => 0,
+			),
+			'import_export_specialist' => array(
+				'keywords' => array( 'import', 'export', 'international trade', 'freight', 'shipping' ),
+				'weight'   => 0,
+			),
+			'financial_advisor'        => array(
+				'keywords' => array( 'financial advisor', 'wealth management', 'investment', 'portfolio', 'retirement' ),
+				'weight'   => 0,
+			),
+			'business_consultant'      => array(
+				'keywords' => array( 'business consultant', 'business strategy', 'management consultant', 'operations' ),
+				'weight'   => 0,
+			),
+			'real_estate_agent'        => array(
+				'keywords' => array( 'real estate', 'realtor', 'property', 'mortgage', 'housing' ),
+				'weight'   => 0,
+			),
+			'healthcare_advisor'       => array(
+				'keywords' => array( 'healthcare', 'health advisor', 'medical', 'wellness', 'clinical' ),
+				'weight'   => 0,
+			),
+			'marketing_consultant'     => array(
+				'keywords' => array( 'marketing', 'advertising', 'brand', 'digital marketing', 'seo' ),
+				'weight'   => 0,
+			),
+			'hr_consultant'            => array(
+				'keywords' => array( 'hr', 'human resources', 'recruitment', 'hiring', 'employee' ),
+				'weight'   => 0,
+			),
+			'it_consultant'            => array(
+				'keywords' => array( 'it consultant', 'technology', 'software', 'systems', 'tech support' ),
+				'weight'   => 0,
+			),
+			'restaurant_consultant'    => array(
+				'keywords' => array( 'restaurant', 'food service', 'hospitality', 'cafe', 'catering' ),
+				'weight'   => 0,
+			),
+		);
+
+		// Calculate weights for each profession.
+		foreach ( $profession_patterns as $profession => &$pattern ) {
+			foreach ( $pattern['keywords'] as $keyword ) {
+				// Check for exact phrase match (stronger signal).
+				if ( false !== strpos( $context_lower, $keyword ) ) {
+					// Longer keywords are stronger signals.
+					$pattern['weight'] += ( strlen( $keyword ) > 10 ) ? 2 : 1;
+				}
+			}
+		}
+		unset( $pattern );
+
+		// Only include professions with strong matches (weight >= 2).
+		foreach ( $profession_patterns as $profession => $pattern ) {
+			if ( $pattern['weight'] >= 2 ) {
+				$professions[] = $profession;
+			}
+		}
+
+		// Sort by weight (highest first) and limit to 3.
+		if ( count( $professions ) > 3 ) {
+			// Re-sort by weight.
+			usort(
+				$professions,
+				function ( $a, $b ) use ( $profession_patterns ) {
+					return $profession_patterns[ $b ]['weight'] - $profession_patterns[ $a ]['weight'];
+				}
+			);
+			$professions = array_slice( $professions, 0, 3 );
+		}
+
+		return $professions;
+	}
+
+	/**
+	 * Infer regions from context (title, description, industry focus).
+	 *
+	 * Returns empty array if confidence is low (won't guess).
+	 *
+	 * @param string $context Combined context string.
+	 * @return array Inferred region keys (empty if not confident).
+	 */
+	protected function infer_regions_from_context( $context ) {
+		if ( '' === $context ) {
+			return array();
+		}
+
+		$context_lower = strtolower( $context );
+		$regions       = array();
+
+		// Define region patterns - only match if explicitly mentioned.
+		$region_patterns = array(
+			'united_states'        => array( 'united states', 'usa', 'u.s.', 'america', 'american' ),
+			'canada'               => array( 'canada', 'canadian' ),
+			'united_kingdom'       => array( 'united kingdom', 'uk', 'britain', 'british', 'england' ),
+			'australia'            => array( 'australia', 'australian' ),
+			'jamaica'              => array( 'jamaica', 'jamaican' ),
+			'sri_lanka'            => array( 'sri lanka', 'sri lankan', 'ceylon' ),
+			'india'                => array( 'india', 'indian' ),
+			'singapore'            => array( 'singapore', 'singaporean' ),
+			'united_arab_emirates' => array( 'uae', 'dubai', 'abu dhabi', 'emirates' ),
+			'germany'              => array( 'germany', 'german', 'deutschland' ),
+			'france'               => array( 'france', 'french' ),
+			'spain'                => array( 'spain', 'spanish' ),
+			'italy'                => array( 'italy', 'italian' ),
+			'netherlands'          => array( 'netherlands', 'dutch', 'holland' ),
+			'brazil'               => array( 'brazil', 'brazilian' ),
+			'mexico'               => array( 'mexico', 'mexican' ),
+			'south_africa'         => array( 'south africa', 'south african' ),
+			'new_zealand'          => array( 'new zealand', 'kiwi' ),
+			'ireland'              => array( 'ireland', 'irish' ),
+			'japan'                => array( 'japan', 'japanese' ),
+			'china'                => array( 'china', 'chinese' ),
+			'global'               => array( 'global', 'worldwide', 'international', 'all countries' ),
+		);
+
+		// Check for explicit region mentions.
+		foreach ( $region_patterns as $region => $keywords ) {
+			foreach ( $keywords as $keyword ) {
+				if ( false !== strpos( $context_lower, $keyword ) ) {
+					$regions[] = $region;
+					break; // Only add each region once.
+				}
+			}
+		}
+
+		// Limit to 2 regions.
+		if ( count( $regions ) > 2 ) {
+			$regions = array_slice( $regions, 0, 2 );
+		}
+
+		return array_values( array_unique( $regions ) );
+	}
+
+	/**
+	 * Generate instructions from a free-form description.
+	 *
+	 * @param string $description User's description of the assistant.
+	 * @param string $title       Assistant title.
+	 * @return string Generated instructions.
+	 */
+	protected function generate_instructions_from_description( $description, $title ) {
+		$instructions  = "You are {$title}, an AI assistant.\n\n";
+		$instructions .= "PURPOSE:\n{$description}\n\n";
+
+		// Extract domain context from description.
+		$domain_context = $this->extract_domain_context( $description, '' );
+
+		$instructions .= "YOUR ROLE:\n";
+		$instructions .= $domain_context['role'];
+		$instructions .= "\n\n";
+
+		if ( ! empty( $domain_context['expertise'] ) ) {
+			$instructions .= "EXPERTISE AREAS:\n";
+			foreach ( $domain_context['expertise'] as $area ) {
+				$instructions .= "- {$area}\n";
+			}
+			$instructions .= "\n";
+		}
+
+		$instructions .= "GUIDELINES:\n";
+		$instructions .= "- Provide accurate, professional, and helpful information\n";
+		$instructions .= "- Ask clarifying questions when needed to better assist the user\n";
+		$instructions .= "- Stay focused on your defined purpose\n";
+		$instructions .= "- Cite specific regulations, laws, or standards when applicable\n";
+		$instructions .= "- Recommend consulting with licensed professionals for complex matters\n";
+		$instructions .= "- Maintain a professional, courteous, and helpful tone\n";
+
+		if ( ! empty( $domain_context['warnings'] ) ) {
+			$instructions .= "\nIMPORTANT DISCLAIMERS:\n";
+			foreach ( $domain_context['warnings'] as $warning ) {
+				$instructions .= "- {$warning}\n";
+			}
+		}
+
+		return $instructions;
+	}
+
+	/**
+	 * Generate generic instructions when no specific context is available.
+	 *
+	 * @param string $title Assistant title.
+	 * @return string Generated instructions.
+	 */
+	protected function generate_generic_instructions( $title ) {
+		$instructions  = "You are {$title}, a helpful AI assistant.\n\n";
+		$instructions .= "YOUR ROLE:\n";
+		$instructions .= "You are a knowledgeable assistant who helps users by providing accurate information, ";
+		$instructions .= "practical guidance, and professional support.\n\n";
+		$instructions .= "GUIDELINES:\n";
+		$instructions .= "- Provide accurate, helpful, and professional responses\n";
+		$instructions .= "- Ask clarifying questions when needed\n";
+		$instructions .= "- Be transparent about limitations\n";
+		$instructions .= "- Recommend consulting with experts for complex matters\n";
+		$instructions .= "- Maintain a professional and courteous tone\n";
+
+		return $instructions;
+	}
+
+	/**
+	 * Get default tools for assistants without specific profession context.
+	 *
+	 * @return array Default tool slugs.
+	 */
+	protected function get_default_tools() {
+		return array(
+			'web_search',
+			'search_content',
+			'save_post',
+			'search_attachments',
+		);
+	}
+
+	/**
+	 * Validate attachment IDs and ensure user has access.
+	 *
+	 * @param array $attachment_ids Array of attachment IDs.
+	 * @param int   $user_id        User ID.
+	 * @return array Valid attachment IDs.
+	 */
+	protected function validate_attachment_ids( $attachment_ids, $user_id ) {
+		$valid_ids = array();
+
+		foreach ( $attachment_ids as $attachment_id ) {
+			$attachment_id = absint( $attachment_id );
+
+			if ( 0 === $attachment_id ) {
+				continue;
+			}
+
+			$attachment = get_post( $attachment_id );
+
+			if ( ! $attachment ) {
+				continue;
+			}
+
+			// Verify it's an attachment.
+			if ( 'attachment' !== $attachment->post_type ) {
+				continue;
+			}
+
+			// Check user has access (is author or has edit_others_posts capability).
+			if ( (int) $attachment->post_author !== $user_id ) {
+				if ( ! user_can( $user_id, 'edit_others_posts' ) ) {
+					continue;
+				}
+			}
+
+			// Verify file size is within limits.
+			$file_path = get_attached_file( $attachment_id );
+			if ( $file_path && file_exists( $file_path ) ) {
+				$file_size = filesize( $file_path );
+				if ( $file_size > self::MAX_DOCUMENT_SIZE ) {
+					continue; // Skip files that are too large.
+				}
+			}
+
+			$valid_ids[] = $attachment_id;
+		}
+
+		return array_values( array_unique( $valid_ids ) );
 	}
 }
