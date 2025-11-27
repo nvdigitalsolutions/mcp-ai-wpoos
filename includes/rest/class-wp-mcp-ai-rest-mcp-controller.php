@@ -280,101 +280,98 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * General permission check for authenticated endpoints.
 	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check' ) ) {
+			return $this->main_controller->permissions_check( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->permissions_check( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Permission check for listing assistants.
 	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check_assistant_list( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_assistant_list' ) ) {
+			return $this->main_controller->permissions_check_assistant_list( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->permissions_check_assistant_list( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Permission check for MCP protocol endpoint.
 	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check_mcp( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_mcp' ) ) {
+			return $this->main_controller->permissions_check_mcp( $request );
 		}
 
-		// Delegate to main controller for now.
-		return $this->main_controller->permissions_check_mcp( $request );
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**
 	 * Permission check for assistant creation.
 	 *
+	 * Requires admin capabilities (manage_options). Falls back to base class
+	 * admin permission check if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check_assistant_create( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_assistant_create' ) ) {
+			return $this->main_controller->permissions_check_assistant_create( $request );
 		}
 
-		// Delegate to main controller for now.
-		return $this->main_controller->permissions_check_assistant_create( $request );
+		// Fallback: Require admin capabilities.
+		return $this->permissions_check_admin( $request );
 	}
 
 	/**
 	 * Permission check for assistant deletion.
 	 *
+	 * Requires admin capabilities (manage_options). Falls back to base class
+	 * admin permission check if main controller is unavailable.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return bool|WP_Error
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public function permissions_check_assistant_delete( WP_REST_Request $request ) {
-		// Validate main controller is available.
-		if ( null === $this->main_controller ) {
-			return new WP_Error(
-				'wp_mcp_ai_controller_not_initialized',
-				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
-			);
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_assistant_delete' ) ) {
+			return $this->main_controller->permissions_check_assistant_delete( $request );
 		}
 
-		// Delegate to main controller.
-		return $this->main_controller->permissions_check_assistant_delete( $request );
+		// Fallback: Require admin capabilities.
+		return $this->permissions_check_admin( $request );
 	}
 
 	/**
@@ -384,8 +381,48 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_assistant_delete( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		return $this->main_controller->handle_assistant_delete( $request );
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_assistant_delete' ) ) {
+			return $this->main_controller->handle_assistant_delete( $request );
+		}
+
+		// Self-contained fallback implementation.
+		$assistant_id = absint( $request->get_param( 'id' ) );
+
+		if ( ! $assistant_id ) {
+			return $this->error(
+				'wp_mcp_ai_missing_assistant_id',
+				__( 'Assistant ID is required.', 'wp-mcp-ai' ),
+				400
+			);
+		}
+
+		// Check if assistant exists.
+		$assistant = get_post( $assistant_id );
+		if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
+			return $this->error(
+				'wp_mcp_ai_assistant_not_found',
+				__( 'Assistant not found.', 'wp-mcp-ai' ),
+				404
+			);
+		}
+
+		// Delete the assistant.
+		$result = wp_delete_post( $assistant_id, true );
+		if ( ! $result ) {
+			return $this->error(
+				'wp_mcp_ai_delete_failed',
+				__( 'Failed to delete assistant.', 'wp-mcp-ai' ),
+				500
+			);
+		}
+
+		return $this->success(
+			array(
+				'deleted' => true,
+				'id'      => $assistant_id,
+			)
+		);
 	}
 
 	/**
@@ -395,8 +432,60 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_assistant_create( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		return $this->main_controller->handle_assistant_create( $request );
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_assistant_create' ) ) {
+			return $this->main_controller->handle_assistant_create( $request );
+		}
+
+		// Self-contained fallback implementation.
+		$title = sanitize_text_field( $request->get_param( 'title' ) );
+
+		if ( empty( $title ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_title',
+				__( 'Assistant title is required.', 'wp-mcp-ai' ),
+				400
+			);
+		}
+
+		// Create the assistant post.
+		$post_data = array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => $title,
+			'post_status' => $request->get_param( 'status' ) ?: 'draft',
+		);
+
+		$description = $request->get_param( 'description' );
+		if ( ! empty( $description ) ) {
+			$post_data['post_content'] = wp_kses_post( $description );
+		}
+
+		$post_id = wp_insert_post( $post_data, true );
+		if ( is_wp_error( $post_id ) ) {
+			return $this->error(
+				'wp_mcp_ai_create_failed',
+				$post_id->get_error_message(),
+				500
+			);
+		}
+
+		// Save meta fields if provided.
+		$meta_fields = array( 'provider', 'model', 'temperature', 'system_prompt', 'tools' );
+		foreach ( $meta_fields as $field ) {
+			$value = $request->get_param( $field );
+			if ( null !== $value ) {
+				update_post_meta( $post_id, '_wp_mcp_ai_' . $field, $value );
+			}
+		}
+
+		return $this->success(
+			array(
+				'id'     => $post_id,
+				'title'  => $title,
+				'status' => get_post_status( $post_id ),
+			),
+			201
+		);
 	}
 
 	/**
@@ -406,8 +495,17 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_mcp_request( WP_REST_Request $request ) {
-		// Delegate to main controller's trait method.
-		return $this->main_controller->handle_mcp_request( $request );
+		// Delegate to main controller's trait method if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_mcp_request' ) ) {
+			return $this->main_controller->handle_mcp_request( $request );
+		}
+
+		// Self-contained fallback: Return error indicating MCP not fully configured.
+		return $this->error(
+			'wp_mcp_ai_mcp_unavailable',
+			__( 'MCP protocol handler is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+			503
+		);
 	}
 
 	/**
@@ -417,8 +515,21 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response
 	 */
 	public function handle_mcp_options( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		return $this->main_controller->handle_mcp_options( $request );
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_mcp_options' ) ) {
+			return $this->main_controller->handle_mcp_options( $request );
+		}
+
+		// Self-contained fallback: Provide basic CORS headers.
+		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+
+		$response = new WP_REST_Response( null, 204 );
+		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
+		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );
+		$response->header( 'Access-Control-Max-Age', '3600' );
+
+		return $response;
 	}
 
 	/**
@@ -442,8 +553,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_sse_handshake( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		return $this->main_controller->handle_sse_handshake( $request );
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_sse_handshake' ) ) {
+			return $this->main_controller->handle_sse_handshake( $request );
+		}
+
+		// Self-contained fallback: Return discovery info instead of SSE.
+		return $this->return_discovery_info( $request );
 	}
 
 	/**
@@ -453,8 +569,48 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_assistants_index( WP_REST_Request $request ) {
-		// Delegate to main controller.
-		return $this->main_controller->handle_assistants_index( $request );
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_assistants_index' ) ) {
+			return $this->main_controller->handle_assistants_index( $request );
+		}
+
+		// Self-contained fallback implementation.
+		$assistants = array();
+
+		// Query for published assistants.
+		$query_args = array(
+			'post_type'      => 'mcp_ai_assistant',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		);
+
+		$search = $request->get_param( 'search' );
+		if ( is_string( $search ) && '' !== $search ) {
+			$query_args['s'] = sanitize_text_field( $search );
+		}
+
+		$query = new WP_Query( $query_args );
+
+		foreach ( $query->posts as $post ) {
+			$assistants[] = array(
+				'id'          => $post->ID,
+				'title'       => $post->post_title,
+				'description' => wp_strip_all_tags( $post->post_content ),
+			);
+		}
+
+		return $this->success(
+			array(
+				'assistants'        => $assistants,
+				'default_assistant' => ! empty( $assistants ) ? $assistants[0]['id'] : 0,
+				'rest'              => array(
+					'namespace' => self::REST_NAMESPACE,
+					'base'      => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
+				),
+			)
+		);
 	}
 
 	/**
