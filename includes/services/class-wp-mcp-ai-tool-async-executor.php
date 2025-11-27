@@ -359,6 +359,17 @@ class WP_MCP_AI_Tool_Async_Executor {
 						)
 					);
 
+					// IMPORTANT: Refresh metadata from transient before updating.
+					// The veo service has already merged its fields (operation_name, model, etc.)
+					// into the transient. If we use our stale $metadata copy and save it,
+					// we would overwrite those veo-specific fields, causing the veo polling
+					// to fail with "metadata not found" error.
+					$fresh_metadata = $this->get_metadata( $job_id );
+					if ( $fresh_metadata && is_array( $fresh_metadata ) ) {
+						// Use fresh metadata from transient (includes veo's merged fields).
+						$metadata = $fresh_metadata;
+					}
+
 					// Update status to 'polling' to indicate veo is now polling for this job.
 					$metadata['status']   = 'polling';
 					$metadata['duration'] = $duration;
