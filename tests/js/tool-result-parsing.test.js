@@ -112,6 +112,94 @@ describe( 'Tool Result Parsing for Chat Display', () => {
 		} );
 	} );
 
+	describe( 'Truncated string tool result handling', () => {
+		// Mock implementation of normaliseToolResultForDisplay for string handling
+		function normaliseToolResultForDisplay( toolName, result ) {
+			// Handle string results (e.g., truncated tool results from orchestration layer)
+			// When a tool result is too large, the orchestration layer converts it to a truncated
+			// JSON string with a marker. We need to display this string to the user.
+			if ( typeof result === 'string' && result.trim() ) {
+				return {
+					text: result,
+					attachments: [],
+				};
+			}
+
+			if ( ! result || typeof result !== 'object' ) {
+				return null;
+			}
+
+			// For objects, extract text if available
+			if ( result.text ) {
+				return {
+					text: result.text,
+					attachments: [],
+				};
+			}
+
+			return null;
+		}
+
+		it( 'should handle truncated string results from orchestration layer', () => {
+			const truncatedResult = '{"summary": "System logs retrieved", "entries": [{"timestamp": "2025-01-01", "message": "Test"}]}\n\n[... Result truncated by orchestration layer to fit within budget constraints ...]';
+
+			const normalized = normaliseToolResultForDisplay( 'get_system_logs', truncatedResult );
+
+			expect( normalized ).not.toBe( null );
+			expect( normalized.text ).toBe( truncatedResult );
+			expect( normalized.attachments ).toEqual( [] );
+		} );
+
+		it( 'should handle plain string tool results', () => {
+			const plainResult = 'Operation completed successfully.';
+
+			const normalized = normaliseToolResultForDisplay( 'some_tool', plainResult );
+
+			expect( normalized ).not.toBe( null );
+			expect( normalized.text ).toBe( plainResult );
+			expect( normalized.attachments ).toEqual( [] );
+		} );
+
+		it( 'should return null for empty strings', () => {
+			const emptyResult = '   ';
+
+			const normalized = normaliseToolResultForDisplay( 'some_tool', emptyResult );
+
+			expect( normalized ).toBe( null );
+		} );
+
+		it( 'should return null for null input', () => {
+			const normalized = normaliseToolResultForDisplay( 'some_tool', null );
+
+			expect( normalized ).toBe( null );
+		} );
+
+		it( 'should return null for undefined input', () => {
+			const normalized = normaliseToolResultForDisplay( 'some_tool', undefined );
+
+			expect( normalized ).toBe( null );
+		} );
+
+		it( 'should still handle object results with text field', () => {
+			const objectResult = {
+				text: 'This is the result text.',
+			};
+
+			const normalized = normaliseToolResultForDisplay( 'some_tool', objectResult );
+
+			expect( normalized ).not.toBe( null );
+			expect( normalized.text ).toBe( 'This is the result text.' );
+		} );
+
+		it( 'should preserve the truncation marker in the output', () => {
+			const truncatedJson = '{"data": "partial"}\n\n[... Result truncated by orchestration layer to fit within budget constraints ...]';
+
+			const normalized = normaliseToolResultForDisplay( 'get_system_logs', truncatedJson );
+
+			expect( normalized.text ).toContain( '[... Result truncated by orchestration layer to fit within budget constraints ...]' );
+		} );
+	} );
+
 	describe( 'Tool result text extraction', () => {
 		it( 'should extract text field from parsed tool result', () => {
 			const parsedResult = {
