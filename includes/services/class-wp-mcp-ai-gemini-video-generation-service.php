@@ -1043,6 +1043,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$transient_prefix = $use_parent_job ? 'wp_mcp_ai_async_meta_' : self::ASYNC_OP_PREFIX;
 
 		// Prepare veo-specific metadata fields.
+		// Note: status is set to 'polling' intentionally - this indicates veo is now actively
+		// polling the Gemini API for the video generation result. The parent job should still
+		// be in 'running' state at this point since this method is called during tool execution.
 		$veo_metadata = array(
 			'job_id'            => $job_id,
 			'operation_name'    => $operation['operation_name'],
