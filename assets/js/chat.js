@@ -66,10 +66,28 @@
     const ASYNC_TOOL_TIMEOUT_DEFAULT_MS = 300000; // 5 minutes default
     const ASYNC_TOOL_TIMEOUT_MIN_MS = 60000; // 1 minute minimum
     
+    // Chat request timeout - use configured value from settings, fallback to 60 seconds
+    // The timeout value is passed from PHP via wpMcpAiChat.requestTimeout
+    const CHAT_REQUEST_TIMEOUT_DEFAULT_MS = 60000; // 60 seconds default if not configured
+    
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
+    
+    /**
+     * Get the configured request timeout in milliseconds.
+     * Uses the value from PHP settings, with sensible fallbacks.
+     * 
+     * @return {number} Timeout in milliseconds
+     */
+    function getRequestTimeoutMs() {
+        // Check for configured timeout from PHP settings
+        if (globalConfig && globalConfig.requestTimeout && typeof globalConfig.requestTimeout === 'number') {
+            return globalConfig.requestTimeout;
+        }
+        return CHAT_REQUEST_TIMEOUT_DEFAULT_MS;
+    }
 
     /**
      * Get localStorage key for a specific assistant.
@@ -9060,14 +9078,23 @@
             return sendChatStreaming(state, payload, submissionContext, finalize);
         }
 
+        // Set up timeout for non-streaming request
+        const timeoutMs = getRequestTimeoutMs();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() {
+            controller.abort();
+        }, timeoutMs);
+
         // Non-streaming request (original implementation)
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
             body: JSON.stringify(payload),
+            signal: controller.signal,
         })
             .then(function (response) {
+                clearTimeout(timeoutId);
                 return response
                     .json()
                     .catch(function () {
@@ -9088,6 +9115,7 @@
                 finalize();
                 return result;
             }, function (error) {
+                clearTimeout(timeoutId);
                 handleError(state, error);
                 restoreSubmissionState(state, submissionContext);
                 finalize();
@@ -9100,6 +9128,34 @@
 
         let streamingMessageElement = null;
         let streamCompleted = false;
+        
+        // Set up timeout for streaming request
+        // For streaming, we use a longer timeout since we expect data to arrive incrementally
+        const timeoutMs = getRequestTimeoutMs();
+        const controller = new AbortController();
+        let timeoutId = setTimeout(function() {
+            controller.abort();
+        }, timeoutMs);
+        
+        // Function to reset the timeout (called when we receive data)
+        function resetTimeout() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            // Reset timeout with a shorter interval during active streaming
+            // This gives more time for initial response but less for gaps between chunks
+            timeoutId = setTimeout(function() {
+                controller.abort();
+            }, timeoutMs);
+        }
+        
+        // Function to clear timeout (called on success or handled error)
+        function clearTimeoutHandler() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+        }
 
         // Diagnostic logging (Separation of Concerns - delegated to logger utility)
         streamingLogger.logRequestStart({
@@ -9107,7 +9163,8 @@
             assistantId: payload.assistant_id,
             messageCount: payload.messages ? payload.messages.length : 0,
             streamEnabled: payload.stream,
-            hasSessionKey: !!payload.session_key
+            hasSessionKey: !!payload.session_key,
+            timeoutMs: timeoutMs
         });
 
         // Create a placeholder message element for streaming content
@@ -9207,6 +9264,9 @@
             // This is intentionally OUTSIDE the streamingMessageElement check
             // because the status preview should work independently of the message bubble
             updateStreamingStatus(safeContent);
+            
+            // Reset timeout when we receive streaming data
+            resetTimeout();
         }
 
         return fetch(state.config.messagesEndpoint, {
@@ -9214,8 +9274,12 @@
             headers: headers,
             credentials: 'same-origin',
             body: JSON.stringify(payload),
+            signal: controller.signal,
         })
             .then(function (response) {
+                // Response received - reset timeout for streaming phase
+                resetTimeout();
+                
                 // Diagnostic logging (Separation of Concerns)
                 streamingLogger.logResponseReceived(response);
                 
@@ -9235,6 +9299,7 @@
                         streamingMessageElement = null;
                     }
                     
+                    clearTimeoutHandler();
                     return response.json().then(function (data) {
                         return handleChatResponse(state, data);
                     });
@@ -9252,6 +9317,7 @@
             })
             .then(function (streamResult) {
                 streamCompleted = true;
+                clearTimeoutHandler();
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
@@ -9370,6 +9436,8 @@
                 return streamResult;
             })
             .catch(function (error) {
+                clearTimeoutHandler();
+                
                 if (!streamCompleted) {
                     // Diagnostic logging (Separation of Concerns)
                     streamingLogger.logFetchFailure(error, {
@@ -10937,6 +11005,98 @@
         return Promise.resolve();
     }
 
+    /**
+     * Check if a response text appears to be an HTML error page from a CDN/proxy.
+     * Detects Cloudflare, nginx, and other common proxy error pages.
+     * 
+     * @param {string} responseText - Response text to check
+     * @return {Object|null} Detected error info or null if not a proxy error
+     */
+    function detectProxyErrorPage(responseText) {
+        if (!responseText || typeof responseText !== 'string') {
+            return null;
+        }
+        
+        // Check for DOCTYPE/html at the start (indicates HTML, not JSON)
+        const trimmed = responseText.trim();
+        if (!trimmed.startsWith('<!DOCTYPE') && !trimmed.startsWith('<html')) {
+            return null;
+        }
+        
+        // Cloudflare error codes
+        if (responseText.indexOf('Error code 524') !== -1 || responseText.indexOf('524: A timeout occurred') !== -1) {
+            return {
+                type: 'timeout',
+                provider: 'Cloudflare',
+                code: 524,
+                message: getString('errorTimeout', 'The request timed out. The server took too long to respond. Please try again.')
+            };
+        }
+        
+        if (responseText.indexOf('Error code 522') !== -1 || responseText.indexOf('522: Connection timed out') !== -1) {
+            return {
+                type: 'timeout',
+                provider: 'Cloudflare',
+                code: 522,
+                message: getString('errorConnectionTimeout', 'Connection timed out. Please check your connection and try again.')
+            };
+        }
+        
+        if (responseText.indexOf('Error code 520') !== -1) {
+            return {
+                type: 'server_error',
+                provider: 'Cloudflare',
+                code: 520,
+                message: getString('errorServerUnknown', 'The server returned an unexpected response. Please try again.')
+            };
+        }
+        
+        if (responseText.indexOf('Error code 503') !== -1 || responseText.indexOf('503 Service') !== -1) {
+            return {
+                type: 'service_unavailable',
+                provider: 'proxy',
+                code: 503,
+                message: getString('errorServiceUnavailable', 'The service is temporarily unavailable. Please try again in a few moments.')
+            };
+        }
+        
+        if (responseText.indexOf('Error code 502') !== -1 || responseText.indexOf('502 Bad Gateway') !== -1) {
+            return {
+                type: 'bad_gateway',
+                provider: 'proxy',
+                code: 502,
+                message: getString('errorBadGateway', 'The server gateway returned an error. Please try again.')
+            };
+        }
+        
+        if (responseText.indexOf('Error code 504') !== -1 || responseText.indexOf('504 Gateway') !== -1) {
+            return {
+                type: 'timeout',
+                provider: 'proxy',
+                code: 504,
+                message: getString('errorGatewayTimeout', 'The gateway timed out. Please try again.')
+            };
+        }
+        
+        // Generic HTML error page detection
+        if (responseText.indexOf('timeout') !== -1 || responseText.indexOf('timed out') !== -1) {
+            return {
+                type: 'timeout',
+                provider: 'unknown',
+                code: 0,
+                message: getString('errorTimeout', 'The request timed out. The server took too long to respond. Please try again.')
+            };
+        }
+        
+        // If it's HTML but we don't recognize the specific error
+        return {
+            type: 'html_error',
+            provider: 'unknown',
+            code: 0,
+            message: getString('errorServerError', 'The server returned an error. Please try again.')
+        };
+    }
+
     function handleError(state, error) {
         const fallbackMessage = getString('error', 'Something went wrong.');
 
@@ -10991,16 +11151,69 @@
             appendMessage(state.messagesEl, 'system', { text: message });
             setStatus(state.container, message);
         }
+        
+        // Check for client-side timeout (AbortError from AbortController)
+        if (error && error.name === 'AbortError') {
+            const timeoutMessage = getString('errorClientTimeout', 'The request timed out. Please try again.');
+            handleResolvedMessage(timeoutMessage);
+            return;
+        }
+        
+        // Check for network errors
+        if (error && error.name === 'TypeError' && error.message && error.message.indexOf('fetch') !== -1) {
+            const networkMessage = getString('errorNetwork', 'Network error. Please check your connection and try again.');
+            handleResolvedMessage(networkMessage);
+            return;
+        }
 
         if (error && typeof error.json === 'function') {
+            // Clone the response so we can try both json() and text()
+            const errorClone = error.clone ? error.clone() : null;
+            
             error
                 .json()
                 .then(function (body) {
                     handleResolvedMessage(extractMessage(body));
                 })
                 .catch(function () {
-                    handleResolvedMessage('');
+                    // JSON parsing failed - might be an HTML error page
+                    // Try to get the text response to detect proxy errors
+                    if (errorClone && typeof errorClone.text === 'function') {
+                        errorClone.text().then(function(responseText) {
+                            const proxyError = detectProxyErrorPage(responseText);
+                            if (proxyError) {
+                                if (window.console && console.warn) {
+                                    console.warn('[WP oOS] Detected proxy error page:', proxyError);
+                                }
+                                handleResolvedMessage(proxyError.message);
+                            } else {
+                                handleResolvedMessage('');
+                            }
+                        }).catch(function() {
+                            handleResolvedMessage('');
+                        });
+                    } else if (error && typeof error.text === 'function') {
+                        // Fallback: try to get text from original error
+                        error.text().then(function(responseText) {
+                            const proxyError = detectProxyErrorPage(responseText);
+                            if (proxyError) {
+                                if (window.console && console.warn) {
+                                    console.warn('[WP oOS] Detected proxy error page:', proxyError);
+                                }
+                                handleResolvedMessage(proxyError.message);
+                            } else {
+                                handleResolvedMessage('');
+                            }
+                        }).catch(function() {
+                            handleResolvedMessage('');
+                        });
+                    } else {
+                        handleResolvedMessage('');
+                    }
                 });
+        } else if (error && error.message) {
+            // Error object with a message property
+            handleResolvedMessage(error.message);
         } else {
             handleResolvedMessage('');
         }

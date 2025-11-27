@@ -218,6 +218,7 @@ class WP_MCP_AI_Shortcode {
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'requestTimeout'      => self::get_request_timeout_ms( $settings ),
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                          => __( 'Send', 'wp-mcp-ai' ),
@@ -225,6 +226,15 @@ class WP_MCP_AI_Shortcode {
 					'sending'                       => __( 'Sending message…', 'wp-mcp-ai' ),
 					'waiting'                       => __( 'Waiting for the assistant…', 'wp-mcp-ai' ),
 					'error'                         => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
+					'errorTimeout'                  => __( 'The request timed out. The server took too long to respond. Please try again.', 'wp-mcp-ai' ),
+					'errorClientTimeout'            => __( 'The request timed out. Please try again.', 'wp-mcp-ai' ),
+					'errorConnectionTimeout'        => __( 'Connection timed out. Please check your connection and try again.', 'wp-mcp-ai' ),
+					'errorGatewayTimeout'           => __( 'The gateway timed out. Please try again.', 'wp-mcp-ai' ),
+					'errorServerError'              => __( 'The server returned an error. Please try again.', 'wp-mcp-ai' ),
+					'errorServerUnknown'            => __( 'The server returned an unexpected response. Please try again.', 'wp-mcp-ai' ),
+					'errorServiceUnavailable'       => __( 'The service is temporarily unavailable. Please try again in a few moments.', 'wp-mcp-ai' ),
+					'errorBadGateway'               => __( 'The server gateway returned an error. Please try again.', 'wp-mcp-ai' ),
+					'errorNetwork'                  => __( 'Network error. Please check your connection and try again.', 'wp-mcp-ai' ),
 					'missingAssistant'              => __( 'Assistant configuration was not found.', 'wp-mcp-ai' ),
 					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ),
 					/* translators: %s: tool name being executed */
@@ -903,6 +913,27 @@ class WP_MCP_AI_Shortcode {
 
 		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : self::ASYNC_TOOL_TIMEOUT_DEFAULT;
 		return max( self::ASYNC_TOOL_TIMEOUT_MIN, $async_timeout_seconds ) * 1000;
+	}
+
+	/**
+	 * Get request timeout in milliseconds from settings.
+	 *
+	 * This helper provides the timeout value for client-side JavaScript fetch requests.
+	 * It uses the request_timeout setting which is also used for server-side API calls.
+	 *
+	 * @param array|null $settings Optional pre-fetched settings array.
+	 * @return int Timeout in milliseconds (default 60000ms / 60 seconds).
+	 */
+	public static function get_request_timeout_ms( $settings = null ) {
+		if ( null === $settings ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		}
+
+		// Default is 60 seconds, minimum is 10 seconds, maximum is 600 seconds (10 minutes).
+		$timeout_seconds = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 60;
+		$timeout_seconds = max( 10, min( 600, $timeout_seconds ) );
+
+		return $timeout_seconds * 1000;
 	}
 
 	/**
