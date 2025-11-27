@@ -415,17 +415,24 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		usort(
 			$page_templates,
 			function ( $a, $b ) use ( $priority_keywords ) {
-				$title_a    = strtolower( isset( $a['title'] ) ? $a['title'] : '' );
-				$title_b    = strtolower( isset( $b['title'] ) ? $b['title'] : '' );
-				$priority_a = count( $priority_keywords );
-				$priority_b = count( $priority_keywords );
+				$title_a        = strtolower( isset( $a['title'] ) ? $a['title'] : '' );
+				$title_b        = strtolower( isset( $b['title'] ) ? $b['title'] : '' );
+				$keywords_count = count( $priority_keywords );
+				$priority_a     = $keywords_count; // Default to lowest priority (after all keywords).
+				$priority_b     = $keywords_count;
 
+				// Find the first (lowest index) keyword match for each title.
 				foreach ( $priority_keywords as $index => $keyword ) {
-					if ( false !== strpos( $title_a, $keyword ) && count( $priority_keywords ) === $priority_a ) {
+					// Only update priority if we haven't found a match yet (still at default).
+					if ( $keywords_count === $priority_a && false !== strpos( $title_a, $keyword ) ) {
 						$priority_a = $index;
 					}
-					if ( false !== strpos( $title_b, $keyword ) && count( $priority_keywords ) === $priority_b ) {
+					if ( $keywords_count === $priority_b && false !== strpos( $title_b, $keyword ) ) {
 						$priority_b = $index;
+					}
+					// Early exit if both priorities are found.
+					if ( $priority_a < $keywords_count && $priority_b < $keywords_count ) {
+						break;
 					}
 				}
 

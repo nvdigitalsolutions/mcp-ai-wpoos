@@ -130,7 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				return;
 			}
 
-			// Verify nonce.
+			// Verify nonce first before any other processing.
 			if ( ! isset( $_POST['wp_mcp_ai_elementor_kit_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_elementor_kit_nonce'] ) ), 'wp_mcp_ai_elementor_kit_import' ) ) {
 				set_transient(
 					self::IMPORT_RESULT_TRANSIENT,
@@ -169,13 +169,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				return;
 			}
 
-			// Get form values.
+			// Get and sanitize form values.
 			$attachment_id      = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
 			$max_pages          = isset( $_POST['max_pages'] ) ? min( 5, max( 1, absint( $_POST['max_pages'] ) ) ) : 5;
-			$page_status        = isset( $_POST['page_status'] ) && in_array( $_POST['page_status'], array( 'draft', 'publish' ), true ) ? sanitize_text_field( wp_unslash( $_POST['page_status'] ) ) : 'draft';
+			$page_status_raw    = isset( $_POST['page_status'] ) ? sanitize_text_field( wp_unslash( $_POST['page_status'] ) ) : 'draft';
+			$page_status        = in_array( $page_status_raw, array( 'draft', 'publish' ), true ) ? $page_status_raw : 'draft';
 			$set_front_page     = ! empty( $_POST['set_front_page'] );
 			$overwrite_existing = ! empty( $_POST['overwrite_existing'] );
-			$dry_run            = isset( $_POST['action_type'] ) && 'test' === $_POST['action_type'];
+			$action_type        = isset( $_POST['action_type'] ) ? sanitize_text_field( wp_unslash( $_POST['action_type'] ) ) : '';
+			$dry_run            = 'test' === $action_type;
 
 			if ( ! $attachment_id ) {
 				set_transient(
