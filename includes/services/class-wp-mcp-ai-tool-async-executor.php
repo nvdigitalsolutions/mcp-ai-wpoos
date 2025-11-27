@@ -331,12 +331,56 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// This happens when a tool (like veo video generation) falls back to its own async mode
 			// due to timeout or other reasons. In this case, the parent job should be marked as
 			// 'delegated' rather than 'completed', and the nested job will complete the parent later.
+			//
+			// EXCEPTION: If the returned job_id matches the parent job_id, it means the tool
+			// (e.g., veo video generation) is reusing the parent job ID directly. In this case,
+			// the veo service will manage the job polling and update this transient directly.
+			// We should NOT mark it as delegated - just return and let veo handle it.
 			$is_nested_async = is_array( $result ) && 
 			                   isset( $result['async'] ) && 
 			                   $result['async'] === true && 
 			                   isset( $result['job_id'] );
 
 			if ( $is_nested_async ) {
+				$nested_job_id = $result['job_id'];
+				
+				// Check if the tool is reusing the parent job ID (unified job flow).
+				// When use_parent_job is true in veo service, it returns the same job_id we passed.
+				if ( $nested_job_id === $job_id ) {
+					// Veo is managing this job directly - don't mark as delegated.
+					// The veo polling cron will update this transient when complete.
+					$this->log_event(
+						'async_tool_unified_job',
+						sprintf( 'Tool %s is using unified job flow with same job ID', $tool_slug ),
+						array(
+							'job_id'    => $job_id,
+							'tool_slug' => $tool_slug,
+							'duration'  => $duration,
+						)
+					);
+
+					// Update status to 'polling' to indicate veo is now polling for this job.
+					$metadata['status']   = 'polling';
+					$metadata['duration'] = $duration;
+					$this->save_metadata( $job_id, $metadata );
+
+					// Fire job started hook with polling status.
+					do_action(
+						'wp_mcp_ai_job_started',
+						$job_id,
+						array(
+							'tool'    => $tool_slug,
+							'status'  => 'polling',
+							'message' => isset( $result['message'] ) ? $result['message'] : '',
+						)
+					);
+
+					// Return without marking as delegated or completed.
+					// Veo cron will update this job when video generation finishes.
+					return;
+				}
+
+				// Different job ID - this is a true delegation to a nested job.
 				// Tool returned a nested async response.
 				// Update parent job to 'delegated' status and store the nested job info.
 				$metadata['status']       = 'delegated';

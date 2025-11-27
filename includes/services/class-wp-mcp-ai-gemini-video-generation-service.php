@@ -158,6 +158,36 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
+	 * Get the transient prefix for a job based on metadata.
+	 *
+	 * Jobs that reuse the parent async executor job ID use the async executor's prefix.
+	 * Jobs with veo_ prefix use the veo-specific prefix.
+	 *
+	 * @param array  $metadata Job metadata array.
+	 * @param string $job_id   Job identifier.
+	 * @return string Transient prefix to use.
+	 */
+	protected function get_job_transient_prefix( $metadata, $job_id ) {
+		// Check if metadata has stored prefix from initial lookup.
+		if ( isset( $metadata['_transient_prefix'] ) && ! empty( $metadata['_transient_prefix'] ) ) {
+			return $metadata['_transient_prefix'];
+		}
+
+		// Check if job uses parent job (starts with async_).
+		if ( isset( $metadata['use_parent_job'] ) && $metadata['use_parent_job'] ) {
+			return 'wp_mcp_ai_async_meta_';
+		}
+
+		// Check job ID prefix.
+		if ( 0 === strpos( $job_id, 'async_' ) ) {
+			return 'wp_mcp_ai_async_meta_';
+		}
+
+		// Default to veo prefix.
+		return self::ASYNC_OP_PREFIX;
+	}
+
+	/**
 	 * Static wrapper for cron callback
 	 *
 	 * @param string $job_id Job identifier.
@@ -976,8 +1006,29 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array Async job information.
 	 */
 	protected function queue_async_polling( $operation, $args ) {
-		// Generate unique job ID using helper method for consistency.
-		$job_id = 'veo_' . self::generate_clean_unique_id();
+		// Check if running in async executor context with a parent job ID.
+		// If so, reuse the parent job ID instead of creating a nested veo_ job.
+		// This simplifies the job chain and allows the client to poll a single job ID.
+		$in_async_executor = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
+		$parent_job_id     = isset( $args['parent_job_id'] ) ? sanitize_key( $args['parent_job_id'] ) : '';
+		$use_parent_job    = $in_async_executor && ! empty( $parent_job_id );
+
+		if ( $use_parent_job ) {
+			// Reuse the parent job ID from async executor.
+			$job_id = $parent_job_id;
+
+			WP_MCP_AI_Logger::log_event(
+				'veo_reusing_parent_job_id',
+				'Reusing parent async executor job ID for veo polling',
+				array(
+					'parent_job_id' => $parent_job_id,
+					'operation'     => $operation['operation_name'],
+				)
+			);
+		} else {
+			// Generate unique job ID using helper method for consistency.
+			$job_id = 'veo_' . self::generate_clean_unique_id();
+		}
 
 		// Get model from operation (set by generate_video_with_model).
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
@@ -998,12 +1049,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'poll_attempt'      => 0,
 			'max_attempts'      => self::MAX_POLLING_ATTEMPTS,
 			'expected_filename' => $expected_filename,
+			'use_parent_job'    => $use_parent_job, // Track that we're using parent job ID.
 		);
 
-		// Store parent_job_id if provided (from async executor).
-		// This allows us to complete the parent job when video generation finishes.
-		if ( isset( $args['parent_job_id'] ) ) {
-			$metadata['parent_job_id'] = sanitize_key( $args['parent_job_id'] );
+		// Store parent_job_id if provided (from async executor) and NOT reusing it.
+		// When reusing parent job, we don't need to store parent_job_id since job_id IS the parent.
+		if ( ! $use_parent_job && ! empty( $parent_job_id ) ) {
+			$metadata['parent_job_id'] = $parent_job_id;
 		}
 
 		// Store assistant_id if provided for proper completion hook routing.
@@ -1011,8 +1063,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$metadata['assistant_id'] = absint( $args['assistant_id'] );
 		}
 
+		// Determine transient prefix based on whether we're using parent job.
+		// When reusing parent job ID (async_xxx), use the async executor's prefix.
+		// Otherwise, use the veo-specific prefix.
+		$transient_prefix = $use_parent_job ? 'wp_mcp_ai_async_meta_' : self::ASYNC_OP_PREFIX;
+
 		// Save to transient (24 hour expiry).
-		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+		set_transient( $transient_prefix . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Schedule first poll with a 1-second delay to ensure transient is saved.
 		// This prevents race condition where cron executes before database commit.
@@ -1076,7 +1133,16 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	public function poll_video_async( $job_id ) {
 		// Retrieve operation metadata.
-		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
+		// Check both veo-specific prefix and async executor prefix.
+		// Jobs may be stored under either prefix depending on whether they reuse parent job ID.
+		$metadata         = get_transient( self::ASYNC_OP_PREFIX . $job_id );
+		$transient_prefix = self::ASYNC_OP_PREFIX;
+
+		if ( ! $metadata || ! isset( $metadata['operation_name'] ) ) {
+			// Try async executor prefix (for jobs reusing parent job ID).
+			$metadata         = get_transient( 'wp_mcp_ai_async_meta_' . $job_id );
+			$transient_prefix = 'wp_mcp_ai_async_meta_';
+		}
 
 		if ( ! $metadata || ! isset( $metadata['operation_name'] ) ) {
 			WP_MCP_AI_Logger::log_error(
@@ -1085,6 +1151,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 			return;
 		}
+
+		// Store the transient prefix for later use when saving.
+		$metadata['_transient_prefix'] = $transient_prefix;
 
 		// Increment poll attempt.
 		++$metadata['poll_attempt'];
@@ -1112,7 +1181,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					// Mark as completed and store result.
 					$metadata['status'] = 'completed';
 					$metadata['result'] = $attachment;
-					set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+					set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 					// Fire completion hooks.
 					$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
@@ -1123,7 +1192,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// File not found - mark as failed.
 			$metadata['status'] = 'failed';
 			$metadata['error']  = __( 'Video generation timed out after maximum polling attempts.', 'wp-mcp-ai' );
-			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+			set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 			WP_MCP_AI_Logger::log_error(
 				'Veo async generation timeout',
@@ -1170,14 +1239,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				// Mark as completed and store result.
 				$metadata['status'] = 'completed';
 				$metadata['result'] = $attachment;
-				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+				$transient_prefix   = $this->get_job_transient_prefix( $metadata, $job_id );
+				set_transient( $transient_prefix . $job_id, $metadata, DAY_IN_SECONDS );
 
 				WP_MCP_AI_Logger::log_event(
 					'veo_transient_updated_completed',
 					'Updated veo transient with completed status',
 					array(
 						'job_id'        => $job_id,
-						'transient_key' => self::ASYNC_OP_PREFIX . $job_id,
+						'transient_key' => $transient_prefix . $job_id,
 					)
 				);
 
@@ -1223,7 +1293,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$metadata['error']  = isset( $data['error']['message'] )
 					? $data['error']['message']
 					: __( 'Video generation failed.', 'wp-mcp-ai' );
-				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+				set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 				WP_MCP_AI_Logger::log_error(
 					'Veo async generation failed',
@@ -1253,7 +1323,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			if ( is_wp_error( $result ) ) {
 				$metadata['status'] = 'failed';
 				$metadata['error']  = $result->get_error_message();
-				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+				set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 				// Fire job failed hook for notification system.
 				do_action(
@@ -1282,7 +1352,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					if ( is_wp_error( $save_result ) ) {
 						$metadata['status'] = 'failed';
 						$metadata['error']  = $save_result->get_error_message();
-						set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+						set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 						// Fire job failed hook for notification system.
 						do_action(
@@ -1402,7 +1472,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				}
 			}
 
-			set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+			set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 			// Fire completion hooks using the shared method.
 			$this->fire_job_completion_hooks( $job_id, $metadata, isset( $metadata['result'] ) ? $metadata['result'] : array() );
@@ -1423,7 +1493,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	protected function schedule_next_poll( $job_id, $metadata ) {
 		// Update metadata.
 		$metadata['status'] = 'polling';
-		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+		set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Calculate progress percentage based on poll attempts.
 		// Veo video generation typically completes within 30-60 polls.
@@ -1485,7 +1555,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * @return array|WP_Error Job status or error.
 	 */
 	public function get_async_status( $job_id ) {
+		// Check veo-specific prefix first.
 		$metadata = get_transient( self::ASYNC_OP_PREFIX . $job_id );
+
+		// If not found, try async executor prefix (for jobs reusing parent job ID).
+		if ( ! $metadata && 0 === strpos( $job_id, 'async_' ) ) {
+			$metadata = get_transient( 'wp_mcp_ai_async_meta_' . $job_id );
+		}
 
 		if ( ! $metadata ) {
 			// Transient not found - check if media file was created with this job_id.
@@ -1563,13 +1639,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$metadata['status'] = 'completed';
 				$metadata['result'] = $attachment;
 				$metadata['completed_at'] = time();
-				set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+				set_transient( $this->get_job_transient_prefix( $metadata, $job_id ) . $job_id, $metadata, DAY_IN_SECONDS );
 
 				// Fire completion hooks.
 				$this->fire_job_completion_hooks( $job_id, $metadata, $attachment );
 
-				// Complete parent job if present.
-				if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
+				// Complete parent job if present (only when NOT using parent job ID directly).
+				// When use_parent_job is true, the job_id IS the parent job, so no need to call complete_parent_job.
+				$use_parent_job = isset( $metadata['use_parent_job'] ) && $metadata['use_parent_job'];
+				if ( ! $use_parent_job && isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 					$this->complete_parent_job( $metadata['parent_job_id'], $attachment );
 				}
 			}
