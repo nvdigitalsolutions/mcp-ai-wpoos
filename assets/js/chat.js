@@ -6718,7 +6718,8 @@
         }
         
         // Start polling for the async result (SSE-first with REST fallback)
-        // Pass toolCallId so the completed result uses the correct ID for API compatibility
+        // toolCallId is required to ensure the completed result has the correct ID for API compatibility
+        // Without it, the conversation would have mismatched tool_call_ids causing API errors
         waitForAsyncToolResult(state, parsedContent.job_id, toolName, toolCallId).catch(function (error) {
             if (window.console && console.error) {
                 console.error('[WP oOS] Async tool polling failed:', error);
@@ -8164,7 +8165,7 @@
                 console.log('[WP oOS] Added async tool result to conversation:', {
                     tool_name: toolName,
                     tool_call_id: finalToolCallId,
-                    original_tool_call_id: toolCallId || '(not provided)',
+                    passed_tool_call_id: toolCallId || '(not provided)',
                     conversation_length: state.conversation.length
                 });
             }
