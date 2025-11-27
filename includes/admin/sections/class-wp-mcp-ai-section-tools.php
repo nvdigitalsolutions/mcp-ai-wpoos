@@ -1222,6 +1222,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'check'  => 'class_exists',
 					'value'  => '\Elementor\Plugin',
 				),
+				'import_elementor_template_kit'  => array(
+					'plugin' => 'Elementor',
+					'check'  => 'class_exists',
+					'value'  => '\Elementor\Plugin',
+				),
 				'get_woo_recent_orders'          => array(
 					'plugin' => 'WooCommerce',
 					'check'  => 'class_exists',
