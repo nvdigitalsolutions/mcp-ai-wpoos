@@ -53,8 +53,8 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 		$this->user_id  = $this->factory->user->create();
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
-		// Create a test job.
-		$this->job_id = 'test_job_' . uniqid( '', true );
+		// Create a test job with a simple unique identifier (no dots to avoid routing issues).
+		$this->job_id = 'test_job_' . wp_generate_uuid4();
 		$status       = array(
 			'job_id'     => $this->job_id,
 			'status'     => 'running',
@@ -131,7 +131,11 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 		$response = rest_do_request( $request );
 
 		// Should return 401 or 403 for invalid nonce.
-		$this->assertContains( $response->get_status(), array( 401, 403 ) );
+		$status = $response->get_status();
+		$this->assertTrue(
+			in_array( $status, array( 401, 403 ), true ),
+			'Expected status 401 or 403, got ' . $status
+		);
 	}
 
 	/**

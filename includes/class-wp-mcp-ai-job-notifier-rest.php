@@ -144,7 +144,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 	/**
 	 * Get or create the authenticator instance.
 	 *
-	 * @return WP_MCP_AI_REST_Authenticator
+	 * @return WP_MCP_AI_REST_Authenticator|null The authenticator instance or null if unavailable.
 	 */
 	protected static function get_authenticator() {
 		if ( null === self::$authenticator ) {
@@ -177,7 +177,16 @@ class WP_MCP_AI_Job_Notifier_REST {
 
 		// Check for mesh API key authentication.
 		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
-		if ( ! empty( $mesh_key ) && $authenticator ) {
+		if ( ! empty( $mesh_key ) ) {
+			if ( ! $authenticator ) {
+				// Authenticator not available - cannot validate mesh key securely.
+				return new WP_Error(
+					'wp_mcp_ai_auth_unavailable',
+					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					array( 'status' => 503 )
+				);
+			}
+
 			$mesh_validated = $authenticator->validate_mesh_key( $mesh_key );
 
 			if ( true === $mesh_validated ) {
@@ -193,7 +202,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 			$token = trim( $matches[1] );
 
-			// Try local token validation first.
+			// Try local token validation first (requires authenticator).
 			if ( $authenticator ) {
 				$local = $authenticator->validate_local_token( $token, $request, 0 );
 
@@ -213,9 +222,13 @@ class WP_MCP_AI_Job_Notifier_REST {
 				return true;
 			}
 
-			// Fallback: allow bearer tokens if authenticator not available.
-			// This maintains backward compatibility but is less secure.
-			return true;
+			// Authenticator not available - cannot validate bearer tokens securely.
+			// Return an error instead of allowing unvalidated access.
+			return new WP_Error(
+				'wp_mcp_ai_auth_unavailable',
+				__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 503 )
+			);
 		}
 
 		// Check for guest token authentication.
@@ -314,7 +327,16 @@ class WP_MCP_AI_Job_Notifier_REST {
 
 		// Check for mesh API key authentication.
 		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
-		if ( ! empty( $mesh_key ) && $authenticator ) {
+		if ( ! empty( $mesh_key ) ) {
+			if ( ! $authenticator ) {
+				// Authenticator not available - cannot validate mesh key securely.
+				return new WP_Error(
+					'wp_mcp_ai_auth_unavailable',
+					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					array( 'status' => 503 )
+				);
+			}
+
 			$mesh_validated = $authenticator->validate_mesh_key( $mesh_key );
 
 			if ( true === $mesh_validated ) {
@@ -331,32 +353,20 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 			$token = trim( $matches[1] );
 
-			if ( $authenticator ) {
-				// Try local token validation first.
-				$local = $authenticator->validate_local_token( $token, $request, 0 );
+			if ( ! $authenticator ) {
+				// Authenticator not available - cannot validate bearer token securely.
+				return new WP_Error(
+					'wp_mcp_ai_auth_unavailable',
+					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					array( 'status' => 503 )
+				);
+			}
 
-				if ( true === $local ) {
-					// Local token authenticated - check capability.
-					if ( current_user_can( 'manage_options' ) ) {
-						return true;
-					}
-					return new WP_Error(
-						'rest_forbidden',
-						__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
-						array( 'status' => 403 )
-					);
-				} elseif ( $local instanceof WP_Error ) {
-					return $local;
-				}
+			// Try local token validation first.
+			$local = $authenticator->validate_local_token( $token, $request, 0 );
 
-				// Try Auth0 bearer token validation.
-				$validated = $authenticator->validate_bearer_token( $token, $request );
-
-				if ( is_wp_error( $validated ) ) {
-					return $validated;
-				}
-
-				// Bearer token authenticated - check capability.
+			if ( true === $local ) {
+				// Local token authenticated - check capability.
 				if ( current_user_can( 'manage_options' ) ) {
 					return true;
 				}
@@ -365,7 +375,26 @@ class WP_MCP_AI_Job_Notifier_REST {
 					__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
 					array( 'status' => 403 )
 				);
+			} elseif ( $local instanceof WP_Error ) {
+				return $local;
 			}
+
+			// Try Auth0 bearer token validation.
+			$validated = $authenticator->validate_bearer_token( $token, $request );
+
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+
+			// Bearer token authenticated - check capability.
+			if ( current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// Check for WordPress nonce authentication.
