@@ -9504,8 +9504,16 @@
                                 });
                             }
                             
+                            // INDUSTRY BEST PRACTICE: Check for final complete response FIRST
+                            // If data.data exists, this is the final message (not a streaming chunk).
+                            // Skip streaming chunk extraction to prevent "choices" from overwriting content.
+                            // The final response has choices[0].message.content nested in data.data,
+                            // NOT choices[0].delta.content at the top level.
+                            const isFinalResponse = !!(data.data);
+                            
+                            // Only extract streaming chunks if this is NOT the final response
                             // OpenAI format: choices[0].delta.content
-                            if (data.choices && data.choices[0]) {
+                            if (!isFinalResponse && data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
                                 if (delta) {
                                     // Main content
@@ -9526,7 +9534,7 @@
                                 }
                             }
                             // Gemini format: candidates[0].content.parts[0].text
-                            else if (data.candidates && data.candidates[0]) {
+                            else if (!isFinalResponse && data.candidates && data.candidates[0]) {
                                 const candidate = data.candidates[0];
                                 if (candidate.content && candidate.content.parts) {
                                     // Check for thinking/thought parts
@@ -9542,7 +9550,7 @@
                                 }
                             }
                             // Anthropic format: May have thinking in content blocks
-                            else if (data.type === 'content_block_delta' && data.delta) {
+                            else if (!isFinalResponse && data.type === 'content_block_delta' && data.delta) {
                                 if (data.delta.type === 'text_delta' && data.delta.text) {
                                     contentChunk = data.delta.text;
                                 }
@@ -9552,27 +9560,27 @@
                                 }
                             }
                             // Ollama/LM Studio format: message.content or response
-                            else if (data.message && data.message.content) {
+                            else if (!isFinalResponse && data.message && data.message.content) {
                                 contentChunk = data.message.content;
                                 // Check if message has thinking field (some models may support this)
                                 if (data.message.thinking && typeof data.message.thinking === 'string') {
                                     thinkingChunk = data.message.thinking;
                                 }
                             }
-                            else if (data.response) {
+                            else if (!isFinalResponse && data.response) {
                                 contentChunk = data.response;
                             }
-                            // Direct content field
-                            else if (data.content && typeof data.content === 'string') {
+                            // Direct content field (only for streaming, not final)
+                            else if (!isFinalResponse && data.content && typeof data.content === 'string') {
                                 contentChunk = data.content;
                             }
-                            // Direct text field
-                            else if (data.text && typeof data.text === 'string') {
+                            // Direct text field (only for streaming, not final)
+                            else if (!isFinalResponse && data.text && typeof data.text === 'string') {
                                 contentChunk = data.text;
                             }
                             
-                            // Check for thinking/reasoning in common fields across providers
-                            if (!thinkingChunk) {
+                            // Check for thinking/reasoning in common fields across providers (only for streaming)
+                            if (!isFinalResponse && !thinkingChunk) {
                                 // Generic thinking field
                                 if (data.thinking && typeof data.thinking === 'string') {
                                     thinkingChunk = data.thinking;
