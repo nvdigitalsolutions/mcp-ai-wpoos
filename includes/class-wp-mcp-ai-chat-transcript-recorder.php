@@ -77,6 +77,23 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		// Extract session key before saving
 		$session_key = isset( $record['session_key'] ) ? $record['session_key'] : null;
 
+		// Check if an existing record exists for this session.
+		// If so, we'll update it instead of creating a new one to prevent duplicates.
+		// The repository must be an instance of WP_MCP_AI_Transcript_Repository and
+		// support the find_existing_session_id method (added in the same version as this fix).
+		$existing_id  = null;
+		$is_update    = false;
+		$repository   = wp_mcp_ai_get_transcript_repository();
+
+		if ( $repository instanceof WP_MCP_AI_Transcript_Repository && $session_key ) {
+			$existing_id = $repository->find_existing_session_id( $session_key, $user_id, $assistant_id );
+
+			if ( $existing_id ) {
+				$record['_ID'] = $existing_id;
+				$is_update     = true;
+			}
+		}
+
 		// Log the record being saved for debugging.
 		WP_MCP_AI_Logger::log_event(
 			'debug',
@@ -87,6 +104,8 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 				'assistant_id'  => $assistant_id,
 				'cct_author_id' => isset( $record['cct_author_id'] ) ? $record['cct_author_id'] : 'not set',
 				'message_count' => count( $messages ),
+				'is_update'     => $is_update,
+				'existing_id'   => $existing_id,
 			)
 		);
 
