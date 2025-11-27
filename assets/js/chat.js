@@ -7746,6 +7746,26 @@
             return Promise.reject(new Error('Missing job ID or state'));
         }
 
+        // Try to use the job event bus first - this allows the cron-status SSE stream
+        // to deliver job completions without needing a separate SSE connection per job.
+        // This prevents connection conflicts and improves efficiency.
+        if (window.wpMcpAiJobBus) {
+            // Check if job is already completed in cache
+            const cached = window.wpMcpAiJobBus.getCached(jobId);
+            if (cached && cached.data) {
+                const status = cached.data.status ? cached.data.status.toLowerCase() : '';
+                if (status === 'completed' && cached.data.result) {
+                    // Job already completed - display result immediately
+                    displayAsyncToolResult(state, toolName, cached.data.result);
+                    return Promise.resolve(cached.data.result);
+                }
+            }
+
+            // Use job event bus with fallback to direct polling
+            return waitForAsyncToolResultWithEventBus(state, jobId, toolName);
+        }
+
+        // Fall back to original behavior if job event bus not available
         // Check if SSE service is available and supported
         if (sseService && sseService.isSupported()) {
             return waitForAsyncToolResultSSE(state, jobId, toolName);
@@ -7753,6 +7773,172 @@
 
         // Fall back to polling
         return waitForAsyncToolResultPolling(state, jobId, toolName);
+    }
+
+    /**
+     * Wait for async tool result using job event bus
+     * 
+     * Listens to the job event bus for completion events from the cron-status
+     * SSE stream. Falls back to direct polling if event bus doesn't deliver
+     * within a reasonable time.
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @param {string} toolName Tool name for display purposes
+     * @return {Promise} Promise that resolves with the tool result
+     */
+    function waitForAsyncToolResultWithEventBus(state, jobId, toolName) {
+        const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        
+        // Track in pending async tools
+        state.pendingAsyncTools[jobId] = {
+            entry: pendingEntry,
+            toolName: toolName,
+            start: Date.now()
+        };
+
+        return new Promise(function (resolve, reject) {
+            let resolved = false;
+            let completedHandler = null;
+            let failedHandler = null;
+            let progressHandler = null;
+            let timeoutTimer = null;
+            let fallbackTimer = null;
+
+            function cleanup() {
+                if (timeoutTimer) {
+                    clearTimeout(timeoutTimer);
+                    timeoutTimer = null;
+                }
+                if (fallbackTimer) {
+                    clearTimeout(fallbackTimer);
+                    fallbackTimer = null;
+                }
+                if (completedHandler && window.wpMcpAiJobBus) {
+                    window.wpMcpAiJobBus.off('job:completed', completedHandler);
+                }
+                if (failedHandler && window.wpMcpAiJobBus) {
+                    window.wpMcpAiJobBus.off('job:failed', failedHandler);
+                }
+                if (progressHandler && window.wpMcpAiJobBus) {
+                    window.wpMcpAiJobBus.off('job:progress', progressHandler);
+                }
+                delete state.pendingAsyncTools[jobId];
+            }
+
+            function handleComplete(result) {
+                if (resolved) return;
+                resolved = true;
+                cleanup();
+
+                // Remove pending message
+                if (pendingEntry && pendingEntry.parentNode) {
+                    pendingEntry.parentNode.removeChild(pendingEntry);
+                }
+
+                // Display result
+                if (result) {
+                    displayAsyncToolResult(state, toolName, result);
+                    resolve(result);
+                } else {
+                    updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
+                    resolve({});
+                }
+            }
+
+            function handleError(errorMessage) {
+                if (resolved) return;
+                resolved = true;
+                cleanup();
+                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                reject(new Error(errorMessage));
+            }
+
+            // Set up timeout
+            timeoutTimer = setTimeout(function () {
+                if (!resolved) {
+                    handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                }
+            }, timeout);
+
+            // Listen for completion via event bus
+            completedHandler = function (evt) {
+                if (evt.jobId === jobId) {
+                    const result = evt.data && evt.data.result ? evt.data.result : evt.data;
+                    handleComplete(result);
+                }
+            };
+            window.wpMcpAiJobBus.on('job:completed', completedHandler);
+
+            // Listen for failure via event bus
+            failedHandler = function (evt) {
+                if (evt.jobId === jobId) {
+                    const errorMsg = evt.data && evt.data.error ? evt.data.error : getString('toolError', 'The tool request failed.');
+                    handleError(errorMsg);
+                }
+            };
+            window.wpMcpAiJobBus.on('job:failed', failedHandler);
+
+            // Listen for progress updates
+            progressHandler = function (evt) {
+                if (evt.jobId === jobId && evt.data) {
+                    const statusMessage = evt.data.progress_message || evt.data.message || getString('toolPolling', 'Tool is processing…');
+                    updatePendingTaskEntry(pendingEntry, statusMessage);
+                    setStatus(state.container, {
+                        message: statusMessage,
+                        type: 'text-stream',
+                        showTime: false
+                    });
+                }
+            };
+            window.wpMcpAiJobBus.on('job:progress', progressHandler);
+
+            // Set up fallback to direct polling if event bus doesn't deliver
+            // within 10 seconds (cron-status SSE might not be active)
+            fallbackTimer = setTimeout(function () {
+                if (!resolved) {
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Event bus fallback: switching to direct polling for job', jobId);
+                    }
+                    // Clean up event bus listeners but keep timeout
+                    if (completedHandler) {
+                        window.wpMcpAiJobBus.off('job:completed', completedHandler);
+                        completedHandler = null;
+                    }
+                    if (failedHandler) {
+                        window.wpMcpAiJobBus.off('job:failed', failedHandler);
+                        failedHandler = null;
+                    }
+                    if (progressHandler) {
+                        window.wpMcpAiJobBus.off('job:progress', progressHandler);
+                        progressHandler = null;
+                    }
+                    
+                    // Start direct polling (SSE or REST)
+                    let pollPromise;
+                    if (sseService && sseService.isSupported()) {
+                        // Use SSE polling but reuse the pending entry
+                        pollPromise = waitForAsyncToolResultSSE(state, jobId, toolName);
+                    } else {
+                        pollPromise = waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry);
+                    }
+                    
+                    pollPromise.then(function(result) {
+                        if (!resolved) {
+                            resolved = true;
+                            cleanup();
+                            // Result already displayed by the polling function
+                            resolve(result);
+                        }
+                    }).catch(function(error) {
+                        if (!resolved) {
+                            handleError(error.message || 'Polling failed');
+                        }
+                    });
+                }
+            }, 10000); // 10 second fallback delay
+        });
     }
 
     /**
