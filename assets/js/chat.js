@@ -7565,7 +7565,11 @@
                     }
                 },
                 onError: function (error) {
-                    console.error('[WP oOS] SSE connection error:', error);
+                    // SSE connection failures are expected in many environments
+                    // (proxies, CDNs, server config) - the REST polling fallback works fine
+                    if (window.console && console.debug) {
+                        console.debug('[WP oOS] SSE async job notification not available, using REST polling');
+                    }
                     // Fall back to polling
                     cleanup();
                     waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry, toolCallId).then(resolve).catch(reject);
