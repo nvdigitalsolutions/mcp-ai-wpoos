@@ -69,15 +69,6 @@ class WP_MCP_AI_Build_Assistant_Page {
 			WP_MCP_AI_VERSION,
 			true
 		);
-
-		wp_localize_script(
-			'wp-mcp-ai-build-assistant',
-			'wpMcpAiBuildAssistant',
-			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'wp_mcp_ai_build_assistant' ),
-			)
-		);
 	}
 
 	/**

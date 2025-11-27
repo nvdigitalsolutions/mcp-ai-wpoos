@@ -290,7 +290,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 		$default_model_val    = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-4';
 		$default_temp_val     = isset( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) ? floatval( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) : 0.7;
 
-		// Override provider with user choice if provided. Model uses template default.
+		// Override provider with user's choice if provided. Model uses template default.
 		$final_provider    = ! empty( $provider ) ? $provider : $default_provider_val;
 		$final_model       = $default_model_val;
 		$final_temperature = $default_temp_val;

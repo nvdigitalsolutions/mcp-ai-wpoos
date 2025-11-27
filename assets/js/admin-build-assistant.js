@@ -6,7 +6,7 @@
  * @package WP_MCP_AI
  */
 
-/* global jQuery, wpMcpAiBuildAssistant */
+/* global jQuery */
 
 ( function( $ ) {
 	'use strict';
@@ -19,19 +19,7 @@
 		 * Initialize the page.
 		 */
 		init: function() {
-			this.bindEvents();
-		},
-
-		/**
-		 * Bind event handlers.
-		 */
-		bindEvents: function() {
-			// Add hover effects to cards.
-			$( '.wp-mcp-ai-config-card' ).on( 'mouseenter', function() {
-				$( this ).addClass( 'hover' );
-			} ).on( 'mouseleave', function() {
-				$( this ).removeClass( 'hover' );
-			} );
+			// Page is ready for future enhancements.
 		}
 	};
 
