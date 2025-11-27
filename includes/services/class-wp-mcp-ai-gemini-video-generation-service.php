@@ -1037,19 +1037,64 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// in addition to polling the Gemini API operation endpoint.
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 
-		// Store operation metadata in transient.
-		$metadata = array(
+		// Determine transient prefix based on whether we're using parent job.
+		// When reusing parent job ID (async_xxx), use the async executor's prefix.
+		// Otherwise, use the veo-specific prefix.
+		$transient_prefix = $use_parent_job ? 'wp_mcp_ai_async_meta_' : self::ASYNC_OP_PREFIX;
+
+		// Prepare veo-specific metadata fields.
+		// Note: status is set to 'polling' intentionally - this indicates veo is now actively
+		// polling the Gemini API for the video generation result. The parent job should still
+		// be in 'running' state at this point since this method is called during tool execution.
+		$veo_metadata = array(
 			'job_id'            => $job_id,
 			'operation_name'    => $operation['operation_name'],
 			'model'             => $model,
 			'args'              => $args,
-			'status'            => 'pending',
+			'status'            => 'polling', // Use 'polling' to indicate veo is actively polling.
 			'queued_at'         => time(),
 			'poll_attempt'      => 0,
 			'max_attempts'      => self::MAX_POLLING_ATTEMPTS,
 			'expected_filename' => $expected_filename,
 			'use_parent_job'    => $use_parent_job, // Track that we're using parent job ID.
 		);
+
+		// When reusing parent job ID, merge with existing async executor metadata.
+		// This preserves critical fields like 'tool_slug', 'context', and 'arguments'
+		// that the cron-status service needs for permission checks and result sanitization.
+		if ( $use_parent_job ) {
+			$existing_metadata = get_transient( $transient_prefix . $job_id );
+			if ( $existing_metadata && is_array( $existing_metadata ) ) {
+				// Merge: keep existing fields, add/override with veo-specific fields.
+				// The existing 'tool_slug', 'context', 'arguments' are preserved.
+				$metadata = array_merge( $existing_metadata, $veo_metadata );
+
+				WP_MCP_AI_Logger::log_event(
+					'veo_merged_parent_job_metadata',
+					'Merged veo metadata with existing async executor metadata',
+					array(
+						'job_id'             => $job_id,
+						'preserved_tool_slug' => isset( $existing_metadata['tool_slug'] ) ? $existing_metadata['tool_slug'] : 'not_set',
+						'has_context'        => isset( $existing_metadata['context'] ),
+					)
+				);
+			} else {
+				// Fallback: no existing metadata found, use veo metadata only.
+				$metadata = $veo_metadata;
+
+				WP_MCP_AI_Logger::log_warning(
+					'veo_parent_job_metadata_missing',
+					'Expected parent job metadata not found when use_parent_job is true',
+					array(
+						'job_id'          => $job_id,
+						'transient_key'   => $transient_prefix . $job_id,
+					)
+				);
+			}
+		} else {
+			// Not reusing parent job - use veo metadata directly.
+			$metadata = $veo_metadata;
+		}
 
 		// Store parent_job_id if provided (from async executor) and NOT reusing it.
 		// When reusing parent job, we don't need to store parent_job_id since job_id IS the parent.
@@ -1061,11 +1106,6 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $args['assistant_id'] ) ) {
 			$metadata['assistant_id'] = absint( $args['assistant_id'] );
 		}
-
-		// Determine transient prefix based on whether we're using parent job.
-		// When reusing parent job ID (async_xxx), use the async executor's prefix.
-		// Otherwise, use the veo-specific prefix.
-		$transient_prefix = $use_parent_job ? 'wp_mcp_ai_async_meta_' : self::ASYNC_OP_PREFIX;
 
 		// Save to transient (24 hour expiry).
 		set_transient( $transient_prefix . $job_id, $metadata, DAY_IN_SECONDS );
