@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Store music as WordPress attachment.
 		$file_name = isset( $arguments['file_name'] ) ? $arguments['file_name'] : '';
-		$storage   = $this->store_music_attachment( $result, $file_name, $prompt, $user_id );
+		$storage   = $this->store_music_attachment( $result, $file_name, $prompt, $user_id, $context );
 
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
@@ -263,9 +263,10 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @param string $file_name  Optional preferred file name.
 	 * @param string $prompt     Original prompt.
 	 * @param int    $user_id    Acting user ID.
+	 * @param array  $context    Optional. Execution context containing parent_job_id.
 	 * @return array|WP_Error
 	 */
-	protected function store_music_attachment( array $music_data, $file_name, $prompt, $user_id ) {
+	protected function store_music_attachment( array $music_data, $file_name, $prompt, $user_id, array $context = array() ) {
 		$audio  = isset( $music_data['audio'] ) ? $music_data['audio'] : '';
 		$format = isset( $music_data['format'] ) ? $music_data['format'] : 'wav';
 
@@ -287,9 +288,14 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$mime_type = isset( $mime_types[ $format ] ) ? $mime_types[ $format ] : 'audio/wav';
 		$extension = $format;
 
-		// Normalize file name.
-		$file_stem = $this->normalize_file_stem( $file_name );
-		$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $extension );
+		// Use job_id for filename if available, otherwise use file_name or default.
+		$job_id = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
+		if ( ! empty( $job_id ) ) {
+			$file_name = sprintf( 'gemini-music-%s.%s', $job_id, $extension );
+		} else {
+			$file_stem = $this->normalize_file_stem( $file_name );
+			$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $extension );
+		}
 
 		// Decode base64 audio if needed.
 		$binary_audio = base64_decode( $audio, true );
@@ -365,6 +371,11 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			wp_update_attachment_metadata( $attachment_id, $metadata );
 		} else {
 			$metadata = array();
+		}
+
+		// Store job_id if available - allows correlation between job IDs and files.
+		if ( ! empty( $job_id ) ) {
+			update_post_meta( $attachment_id, '_gemini_music_job_id', $job_id );
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;

@@ -280,7 +280,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$file_name = isset( $arguments['file_name'] ) ? $arguments['file_name'] : '';
-		$storage   = $this->store_image_attachment( $image, $file_name, $prompt, $user_id );
+		$storage   = $this->store_image_attachment( $image, $file_name, $prompt, $user_id, $context );
 
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
@@ -544,9 +544,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 * @param string $file_name Optional preferred file name.
 	 * @param string $prompt    Original text prompt.
 	 * @param int    $user_id   Acting user ID.
+	 * @param array  $context   Optional. Execution context containing parent_job_id.
 	 * @return array|WP_Error
 	 */
-	protected function store_image_attachment( array $image, $file_name, $prompt, $user_id ) {
+	protected function store_image_attachment( array $image, $file_name, $prompt, $user_id, array $context = array() ) {
 		$data    = isset( $image['image'] ) ? $image['image'] : '';
 		$format  = isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT;
 		$formats = self::get_allowed_formats();
@@ -555,8 +556,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Unable to determine the image format for storage.', 'wp-mcp-ai' ) );
 		}
 
-		$file_stem = $this->normalise_file_stem( $file_name );
-		$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $formats[ $format ]['extension'] );
+		// Use job_id for filename if available, otherwise use file_name or default.
+		$job_id = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
+		if ( ! empty( $job_id ) ) {
+			$file_name = sprintf( 'openai-image-%s.%s', $job_id, $formats[ $format ]['extension'] );
+		} else {
+			$file_stem = $this->normalise_file_stem( $file_name );
+			$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $formats[ $format ]['extension'] );
+		}
 
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -628,6 +635,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		if ( ! empty( $format ) ) {
 			$openai_meta['format'] = sanitize_key( $format );
+		}
+
+		// Store job_id if available - allows correlation between job IDs and files.
+		if ( ! empty( $job_id ) ) {
+			$openai_meta['job_id'] = $job_id;
 		}
 
 		update_post_meta( $attachment_id, '_wp_mcp_ai_openai_image_meta', $openai_meta );

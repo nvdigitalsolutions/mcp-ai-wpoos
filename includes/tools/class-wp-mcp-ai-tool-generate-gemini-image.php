@@ -183,7 +183,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
 		}
 
-		$storage = $this->store_image_attachment( $image, $file_name, $prompt, $user_id );
+		$storage = $this->store_image_attachment( $image, $file_name, $prompt, $user_id, $context );
 
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
@@ -317,9 +317,10 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 * @param string $file_name Optional preferred file name.
 	 * @param string $prompt    Original text prompt.
 	 * @param int    $user_id   Acting user ID.
+	 * @param array  $context   Optional. Execution context containing parent_job_id.
 	 * @return array|WP_Error
 	 */
-	protected function store_image_attachment( array $image, $file_name, $prompt, $user_id ) {
+	protected function store_image_attachment( array $image, $file_name, $prompt, $user_id, array $context = array() ) {
 		$data      = isset( $image['image'] ) ? $image['image'] : '';
 		$mime_type = isset( $image['mime_type'] ) ? $this->normalise_mime_type( $image['mime_type'] ) : self::DEFAULT_MIME_TYPE;
 		$mimes     = $this->get_allowed_mime_types();
@@ -328,8 +329,14 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Unable to determine the image format for storage.', 'wp-mcp-ai' ) );
 		}
 
-		$file_stem = $this->normalise_file_stem( $file_name );
-		$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $mimes[ $mime_type ]['extension'] );
+		// Use job_id for filename if available, otherwise use file_name or default.
+		$job_id = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
+		if ( ! empty( $job_id ) ) {
+			$file_name = sprintf( 'gemini-image-%s.%s', $job_id, $mimes[ $mime_type ]['extension'] );
+		} else {
+			$file_stem = $this->normalise_file_stem( $file_name );
+			$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $mimes[ $mime_type ]['extension'] );
+		}
 
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -377,6 +384,11 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
 		if ( is_array( $metadata ) && ! empty( $metadata ) ) {
 			wp_update_attachment_metadata( $attachment_id, $metadata );
+		}
+
+		// Store job_id if available - allows correlation between job IDs and files.
+		if ( ! empty( $job_id ) ) {
+			update_post_meta( $attachment_id, '_gemini_image_job_id', $job_id );
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
