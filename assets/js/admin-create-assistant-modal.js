@@ -24,7 +24,7 @@
 		});
 
 		// Prevent modal content clicks from closing
-		// Use a more specific handler that only stops propagation when not clicking interactive elements
+		// Use a more specific handler that allows nav-tab clicks to propagate properly
 		$(document).on('click', '.wp-mcp-ai-modal-content', function(e) {
 			// Don't stop propagation for nav-tabs since they need their own click handler
 			if (!$(e.target).closest('.nav-tab').length) {
