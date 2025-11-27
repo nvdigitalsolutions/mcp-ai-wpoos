@@ -3,6 +3,111 @@
 ## [Unreleased]
 
 ### Fixed
+
+#### Async Tool Execution & VEO Video Generation (November 26-27, 2025)
+- **Async Tool Result Display Fix (PR #1739, #1755)**: Fixed async tool results (VEO video generation) not appearing in chat interface
+  - Dynamically create assistant message when `tool_results` present but no LLM message exists
+  - Fixed `handleChatResponse()` to process tool results even when no `choices` array is returned
+  - Added `startAsyncToolPolling` helper function to reduce code duplication
+  - See `docs/archive/fixes/ASYNC_TOOL_RESULT_FIX.md` for technical details
+
+- **Async Tool ID Mismatch Fix (PR #1772)**: Fixed subsequent API failures after async video generation
+  - Skip pending async tool results when adding to conversation (will be added on completion)
+  - Pass original `tool_call_id` through entire async polling chain
+  - Update `displayAsyncToolResult` to use provided `tool_call_id`
+  - Prevents duplicate tool messages with mismatched IDs causing API errors
+
+- **Unified Job ID Handling (PR #1758, #1760)**: Fixed metadata overwrites in unified async job flow
+  - VEO service now merges metadata with existing async executor metadata instead of overwriting
+  - Preserves critical fields (tool_slug, context, arguments) needed for permission checks
+  - Async executor refreshes metadata from transient before updating to preserve veo-specific fields
+
+- **Delegation Chain Propagation (PR #1759)**: Fixed delegated async job failures not propagating
+  - Added `handle_delegation_chain()` method for proper delegation chain handling
+  - Failed delegated jobs now propagate failure to parent job
+  - Completed delegated jobs propagate result to parent
+  - Added comprehensive tests for delegation chain scenarios
+
+- **Async Tool Timeout Configuration (PR #1761, #1763)**: Added configurable async tool timeout
+  - New settings under Orchestration → Async Tool Timeout
+  - Constants for default (120s) and maximum (600s) timeout values
+  - Extracted timeout logic to helper method for DRY compliance
+
+#### SSE Streaming Improvements (November 26-27, 2025)
+- **SSE Message Handling Fix (PR #1768)**: Fixed choices structure overwriting content in final messages
+  - Check for final response (`data.data`) FIRST before extracting streaming chunks
+  - Only extract streaming chunks if NOT a final response
+  - Follows OpenAI SSE streaming best practices
+
+- **SSE Stream Completion Fix (PR #1746)**: Fixed network errors when final data already captured
+  - Handle network errors gracefully during stream completion
+  - Fixed `ob_flush/flush` order in SSE handler for proper buffer flushing
+  - Added `ob_flush` to `send_sse_done` for consistent behavior
+
+- **SSE Cron-Status Authentication (PR #1774)**: Fixed 401 Unauthorized error in SSE cron-status endpoint
+  - Added authentication query parameters for EventSource connections
+  - Fixed guest token and nonce passing for SSE endpoints
+
+- **WP_Error Normalization (PR #1736, #1737)**: Fixed SSE streaming failures with tool errors
+  - Added recursive `normalize_data_recursive()` method for WP_Error objects
+  - Applied normalization across SSE streams, job status, and cron status service
+  - Prevents JSON encoding failures when tool results contain WP_Error objects
+
+#### Chat UI & Status Updates (November 26-27, 2025)
+- **Tool Completion Status Fix (PR #1750, #1752, #1753)**: Fixed chat status stuck on "Tool is processing"
+  - Updated PHP localized strings from "Tool response ready" to "Tool completed successfully"
+  - Added 'success' type to UI utilities with checkmark icon
+  - Status now correctly shows completion for finished tools, processing for async pending
+
+- **Duplicate Assistant Messages Fix (PR #1738)**: Fixed duplicate messages in chat streaming
+  - Move streaming message removal BEFORE `handleChatResponse` to prevent duplicates
+  - Added missing delete button to fallback path
+
+- **Truncated Tool Results Fix (PR #1756)**: Fixed truncated results not showing in chat
+  - Handle string results in `normaliseToolResultForDisplay()`
+  - Properly filter async pending results from display
+
+#### Job Notification System (November 26-27, 2025)
+- **Job Event Bus Integration (PR #1771)**: Unified cron-status and chat async tool coordination
+  - Added `job-event-bus.js` with mitt-compatible API (on, off, emit, all)
+  - Update cron-status-service to emit job updates through event bus
+  - Chat.js now listens for job completions via event bus
+  - Prevents SSE connection conflicts between job bar and chat interface
+
+- **Cron Job Status Bar Filtering (PR #1744)**: Fixed multi-widget isolation
+  - Filter job status by assistant ID for proper multi-widget support
+
+#### Security & Authentication (November 27, 2025)
+- **Job Notifier Auth Support (PR #1762)**: Comprehensive authentication for job notifier REST endpoints
+  - Added mesh key, local token, guest token, bearer token, and nonce authentication
+  - Return 503 when authenticator unavailable instead of allowing unvalidated tokens
+  - Explicit success check for bearer token validation
+
+- **Path Traversal Prevention**: Fixed regex for `sanitize_job_id`
+  - Changed `/\\.\\.+/` to `/\\.{2,}/` to correctly match path traversal patterns
+  - Applied fix to both job notifier REST and tools controller
+
+#### Message Bundling (November 27, 2025)
+- **Form State During Bundling (PR #1765)**: Fixed form remaining enabled during message bundling delay
+  - Disable form when first message queued, re-enable on cancel
+  - Provides consistent UI feedback during 800ms bundling window
+  - Added comprehensive tests for message bundling behavior
+
+#### Development Environment (November 27, 2025)
+- **Codex Startup Script (PR #1773)**: Fixed dev dependency installation
+  - Ensure dev dependencies installed when vendor was installed with `--no-dev`
+
+- **Multisite Context Fix (PR #1767)**: Fixed async tool execution in multisite
+  - Interface files moved to proper location
+  - Fixed multisite context preservation for async tools
+
+#### Async Tool Logging & Observability (November 27, 2025)
+- **Improved Sync/Async Logging (PR #1769)**: Enhanced tool execution observability
+  - Fixed misleading `hasChoices` logging for final SSE messages
+  - Added observability logging for async tool detection and polling initiation
+  - Improved tool_call matching debug output
+  - Added JSDoc documentation for sync vs async tool execution flow
+
 - **WP_LANG_DIR Constant Warning (November 24, 2025)**
   - Fixed PHP warning: "Constant WP_LANG_DIR already defined" during plugin activation and performance tests
   - Applied Composer patch to wp-phpunit package to add guard check before defining WP_LANG_DIR
@@ -21,7 +126,12 @@
   - See `docs/archive/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
 
 ### Documentation
-- **Documentation Organization (November 24, 2025)**: Completed documentation cleanup
+- **Documentation Organization (November 27, 2025)**: Continued documentation cleanup
+  - Moved 13 additional fix documentation files from root to `docs/archive/fixes/`
+  - Files moved: ASYNC_TOOL_RESULT_FIX.md, FILE_BASED_POLLING_IMPLEMENTATION.md, FIX_SUMMARY.md, IMAGE_ATTACHMENT_URL_FIX.md, IMAGE_EDIT_403_FIX.md, ISSUE_RESOLUTION_SUMMARY.md, PULL_REQUEST_SUMMARY.md, ROTATE_IMAGE_FIX.md, ROTATE_IMAGE_FIX_SUMMARY.md, VEO_FILENAME_FIX.md, VEO_NOTIFICATION_FLOW.md, VEO_TOOL_CALL_ID_AND_COST_FIX.md, VIDEO_EXTRACTION_FIX_SUMMARY.md
+  - Root directory now contains only 5 essential files (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, BUILD.md)
+
+- **Documentation Organization (November 24, 2025)**: Completed initial documentation cleanup
   - Moved 62 non-essential markdown files from root to `docs/archive/` subdirectories
   - Root directory now contains only 5 essential files (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, BUILD.md)
   - Organized files into logical categories:
