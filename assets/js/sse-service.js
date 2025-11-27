@@ -144,6 +144,8 @@
 			try {
 				const eventSource = new EventSource(url);
 				const connectionKey = this.generateConnectionKey(url);
+				// Store reference to SSEService for use in event handlers and return object
+				const self = this;
 
 				// Handle open event
 				eventSource.addEventListener('open', function () {
@@ -192,8 +194,6 @@
 				}
 
 				// Handle errors
-				// Store reference to SSEService for error handling
-				const self = this;
 				eventSource.addEventListener('error', function (event) {
 					// Extract detailed error information
 					const errorDetails = self.extractErrorDetails(event, eventSource, url);
