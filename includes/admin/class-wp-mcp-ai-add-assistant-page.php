@@ -38,8 +38,8 @@ class WP_MCP_AI_Add_Assistant_Page {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'edit.php?post_type=mcp_ai_assistant',
-			__( 'Build Assistant', 'wp-mcp-ai' ),
-			__( 'Build Assistant', 'wp-mcp-ai' ),
+			__( 'Create Assistant', 'wp-mcp-ai' ),
+			__( 'Create Assistant', 'wp-mcp-ai' ),
 			'edit_posts',
 			'wp-mcp-ai-add-assistant',
 			array( $this, 'render_page' )
@@ -240,14 +240,6 @@ class WP_MCP_AI_Add_Assistant_Page {
 							</select>
 							<span class="description"><?php esc_html_e( 'Override the template default if needed', 'wp-mcp-ai' ); ?></span>
 						</p>
-
-						<p>
-							<label for="assistant-model">
-								<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
-							</label>
-							<input type="text" id="assistant-model" name="model" class="regular-text widefat" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
-							<span class="description"><?php esc_html_e( 'Override the template default if needed', 'wp-mcp-ai' ); ?></span>
-						</p>
 					</form>
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
@@ -277,7 +269,6 @@ class WP_MCP_AI_Add_Assistant_Page {
 		$profession_id = isset( $_POST['profession_id'] ) ? absint( $_POST['profession_id'] ) : 0;
 		$title         = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
 		$provider      = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
-		$model         = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
 
 		// Validate profession ID.
 		if ( ! $profession_id || 'mcp_ai_profession' !== get_post_type( $profession_id ) ) {
@@ -299,9 +290,9 @@ class WP_MCP_AI_Add_Assistant_Page {
 		$default_model_val    = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-4';
 		$default_temp_val     = isset( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) ? floatval( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) : 0.7;
 
-		// Override with user choices if provided.
+		// Override with user choices if provided (model now uses template default).
 		$final_provider    = ! empty( $provider ) ? $provider : $default_provider_val;
-		$final_model       = ! empty( $model ) ? $model : $default_model_val;
+		$final_model       = $default_model_val;
 		$final_temperature = $default_temp_val;
 
 		// Set the profession as a primary role for programmatic prompt construction.
