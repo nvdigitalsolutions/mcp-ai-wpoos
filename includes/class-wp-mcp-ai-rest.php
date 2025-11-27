@@ -1992,6 +1992,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Check for guest token authentication.
+			// extract_guest_token already supports both header and query parameter.
 			$guest_token = $this->extract_guest_token( $request );
 			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
@@ -2004,7 +2005,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Check for WordPress nonce authentication.
+			// Support both header and query parameter for SSE connections.
+			// EventSource (SSE) cannot send custom headers, so we accept _wpnonce as a query param.
 			$nonce = $request->get_header( 'X-WP-Nonce' );
+
+			if ( empty( $nonce ) ) {
+				// Fall back to query parameter for SSE connections.
+				$nonce_param = $request->get_param( '_wpnonce' );
+
+				if ( is_string( $nonce_param ) && '' !== $nonce_param ) {
+					$nonce = $nonce_param;
+				}
+			}
 
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
@@ -2014,8 +2026,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'status'  => 401,
 						'actions' => array(
 							'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
-							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header or guest_token query parameter for public chat surfaces.', 'wp-mcp-ai' ),
+							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header or _wpnonce query parameter from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
 						),
 					)
 				);
