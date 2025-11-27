@@ -111,8 +111,15 @@
 
 			const self = this;
 
-			// Try SSE first if supported
-			if (window.wpMcpAiSSE && window.wpMcpAiSSE.isSupported()) {
+			// Check if authentication is available for SSE.
+			// SSE requires either a valid nonce or guest token passed via query params.
+			// Without authentication, the endpoint will reject the connection with 401,
+			// causing console errors. Skip SSE and use REST polling which can handle
+			// auth failures more gracefully.
+			const hasAuth = !!(nonce || guestToken);
+
+			// Try SSE first if supported AND we have authentication
+			if (hasAuth && window.wpMcpAiSSE && window.wpMcpAiSSE.isSupported()) {
 				// Build SSE URL with stream parameter
 				let sseUrl = endpoint + '?stream=true&limit=10';
 				if (assistantId) {
@@ -156,10 +163,9 @@
 								}
 							}
 						},
-						onError: function (error) {
-							if (window.console && console.warn) {
-								console.warn('[WP MCP AI] SSE cron status failed, falling back to REST polling:', error);
-							}
+						onError: function () {
+							// SSE connection failed - silently fall back to REST polling.
+							// Don't log warnings for expected auth failures (e.g., expired nonce).
 							// Stop SSE connection before falling back
 							self.stopSSE(containerId);
 							// Fall back to REST polling
@@ -175,13 +181,12 @@
 					if (sseConnection) {
 						this.sseConnections[containerId] = sseConnection;
 						
-						// Set timeout to fall back to polling after 30 seconds if no SSE data received
+						// Set timeout to fall back to polling after 30 seconds if no SSE data received.
+						// This handles cases where connection succeeds but no data is sent.
 						setTimeout(function () {
 							// Only fall back if SSE connection still exists and no data received
 							if (self.sseConnections[containerId] && !sseReceived) {
-								if (window.console && console.warn) {
-									console.warn('[WP MCP AI] SSE cron status timeout (no data received), falling back to REST polling');
-								}
+								// Silently fall back - no warning needed for expected timeout behavior
 								self.stopSSE(containerId);
 								self.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 							}
@@ -191,14 +196,11 @@
 						this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 					}
 				} catch (error) {
-					if (window.console && console.error) {
-						console.error('[WP MCP AI] SSE cron status connection error:', error);
-					}
-					// Fall back to REST polling
+					// SSE connection threw an error - silently fall back to REST polling
 					this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 				}
 			} else {
-				// SSE not supported, use REST polling
+				// SSE not supported or no authentication available, use REST polling
 				this.startFallbackPolling(containerId, endpoint, nonce, callback, assistantId, guestToken);
 			}
 		},
