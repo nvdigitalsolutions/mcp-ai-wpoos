@@ -118,7 +118,7 @@
 				type: 'POST',
 				data: formData,
 				success: function( response ) {
-					submitButton.prop( 'disabled', false ).text( 'Create Assistant' );
+					submitButton.prop( 'disabled', false ).text( wpMcpAiCreateAssistant.strings.createAssistant );
 
 					if ( response.success ) {
 						self.showMessage( 'success', response.data.message || wpMcpAiCreateAssistant.strings.success );
@@ -140,7 +140,7 @@
 					}
 				},
 				error: function( xhr, status, error ) {
-					submitButton.prop( 'disabled', false ).text( 'Create Assistant' );
+					submitButton.prop( 'disabled', false ).text( wpMcpAiCreateAssistant.strings.createAssistant );
 					self.showMessage( 'error', wpMcpAiCreateAssistant.strings.error + ' (' + error + ')' );
 				}
 			} );
@@ -275,7 +275,7 @@
 			var conversationData = self.collectConversationData( $chat );
 
 			if ( ! conversationData || ! conversationData.messages || conversationData.messages.length === 0 ) {
-				alert( 'Please describe what kind of assistant you want to create before clicking Build.' );
+				self.showMessage( 'error', wpMcpAiCreateAssistant.strings.emptyConversation );
 				$button.prop( 'disabled', false ).text( originalText );
 				return;
 			}
@@ -363,7 +363,7 @@
 
 			return {
 				messages: messages,
-				assistantId: $chat.attr( 'id' ) ? $chat.attr( 'id' ).replace( 'wp-mcp-ai-chat-', '' ) : null
+				assistantId: $chat.data( 'assistant-id' ) || ( $chat.attr( 'id' ) ? $chat.attr( 'id' ).replace( 'wp-mcp-ai-chat-', '' ) : null )
 			};
 		},
 
