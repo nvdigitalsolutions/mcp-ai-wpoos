@@ -1096,6 +1096,12 @@
             hasMetadata = true;
         }
 
+        // Extract display message if provided
+        if (displayPayload && displayPayload.message) {
+            metadata.message = displayPayload.message;
+            hasMetadata = true;
+        }
+
         // Extract display text if provided
         if (displayPayload && displayPayload.text) {
             metadata.text = displayPayload.text;
@@ -6627,10 +6633,22 @@
         let text = '';
         const links = [];
 
-        // Extract primary message/text
-        if (typeof result.message === 'string' && result.message.trim()) {
+        // Extract both message and text fields when available
+        const hasMessage = typeof result.message === 'string' && result.message.trim();
+        const hasText = typeof result.text === 'string' && result.text.trim();
+        
+        if (hasMessage && hasText) {
+            // Both fields exist - combine them if different
+            const messageStr = result.message.trim();
+            const textStr = result.text.trim();
+            if (messageStr !== textStr) {
+                text = messageStr + '\n\n' + textStr;
+            } else {
+                text = messageStr;
+            }
+        } else if (hasMessage) {
             text = result.message.trim();
-        } else if (typeof result.text === 'string' && result.text.trim()) {
+        } else if (hasText) {
             text = result.text.trim();
         } else if (typeof result.summary === 'string' && result.summary.trim()) {
             text = result.summary.trim();
@@ -9309,10 +9327,20 @@
                 
                 if (display) {
                     // Use saved display metadata for consistency
+                    // Include both message and text fields if available
                     displayPayload = {
-                        text: display.text || '',
                         attachments: display.attachments || []
                     };
+                    
+                    // Preserve message field if present
+                    if (display.message) {
+                        displayPayload.message = display.message;
+                    }
+                    
+                    // Preserve text field if present
+                    if (display.text) {
+                        displayPayload.text = display.text;
+                    }
                     
                     // Preserve bubbleType if present
                     if (display.bubbleType) {
@@ -9381,10 +9409,20 @@
                 
                 if (display) {
                     // Use saved display metadata for consistency
+                    // Include both message and text fields if available
                     assistantPayload = {
-                        text: display.text || '',
                         attachments: display.attachments || []
                     };
+                    
+                    // Preserve message field if present
+                    if (display.message) {
+                        assistantPayload.message = display.message;
+                    }
+                    
+                    // Preserve text field if present
+                    if (display.text) {
+                        assistantPayload.text = display.text;
+                    }
                     
                     // Preserve bubbleType if present
                     if (display.bubbleType) {
@@ -9399,9 +9437,20 @@
                         : { text: content || '' };
                 }
                 
-                const textForSpeech = display && display.text 
-                    ? display.text 
-                    : (Array.isArray(content) ? normaliseContent(content) : (content || ''));
+                // For speech, combine message and text if both present
+                let textForSpeech = '';
+                if (display) {
+                    const messageStr = display.message || '';
+                    const textStr = display.text || '';
+                    if (messageStr && textStr && messageStr !== textStr) {
+                        textForSpeech = messageStr + '\n\n' + textStr;
+                    } else {
+                        textForSpeech = messageStr || textStr;
+                    }
+                }
+                if (!textForSpeech) {
+                    textForSpeech = Array.isArray(content) ? normaliseContent(content) : (content || '');
+                }
                 
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                     speech: {
@@ -12266,7 +12315,25 @@
                     });
             }
 
-            if (Object.prototype.hasOwnProperty.call(payload, 'text')) {
+            // Handle both 'message' and 'text' fields when available
+            // Priority: combine message + text if both exist, then fallback to content/raw
+            const hasMessageField = Object.prototype.hasOwnProperty.call(payload, 'message');
+            const hasTextField = Object.prototype.hasOwnProperty.call(payload, 'text');
+            
+            if (hasMessageField && hasTextField) {
+                // Both fields exist - combine them with a separator
+                const messageStr = String(payload.message || '').trim();
+                const textStr = String(payload.text || '').trim();
+                if (messageStr && textStr && messageStr !== textStr) {
+                    text = messageStr + '\n\n' + textStr;
+                } else if (messageStr) {
+                    text = messageStr;
+                } else {
+                    text = textStr;
+                }
+            } else if (hasMessageField) {
+                text = String(payload.message || '');
+            } else if (hasTextField) {
                 text = String(payload.text || '');
             } else if (payload.content) {
                 text = normaliseContent(payload.content);
