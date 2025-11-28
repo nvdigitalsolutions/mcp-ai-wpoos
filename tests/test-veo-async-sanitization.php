@@ -217,6 +217,74 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that expected_url is used for video_url when url is not available.
+	 *
+	 * When video generation is pending, the result has expected_url (where
+	 * the video WILL be) but no url yet (the video doesn't exist).
+	 * The sanitization should use expected_url to create the video_url
+	 * structure, allowing the chat client to display a placeholder video.
+	 */
+	public function test_sanitize_for_llm_uses_expected_url_when_url_not_available() {
+		// Mock pending async result with expected_url but no url
+		$pending_result = array(
+			'async'             => true,
+			'status'            => 'pending',
+			'job_id'            => 'veo_test_12345',
+			'expected_filename' => 'veo-video-veo_test_12345.mp4',
+			'expected_url'      => 'https://example.com/wp-content/uploads/2024/01/veo-video-veo_test_12345.mp4',
+			'message'           => 'Video generation started.',
+		);
+
+		$sanitized = $this->tool->sanitize_for_llm( $pending_result );
+
+		// video_url structure should be created from expected_url
+		$this->assertArrayHasKey( 'video_url', $sanitized, 'video_url should be created from expected_url' );
+		$this->assertIsArray( $sanitized['video_url'], 'video_url should be an array structure' );
+		$this->assertArrayHasKey( 'url', $sanitized['video_url'], 'video_url should have url key' );
+		$this->assertSame(
+			'https://example.com/wp-content/uploads/2024/01/veo-video-veo_test_12345.mp4',
+			$sanitized['video_url']['url'],
+			'video_url should use expected_url value'
+		);
+
+		// Other async fields should be preserved
+		$this->assertTrue( $sanitized['async'] );
+		$this->assertSame( 'pending', $sanitized['status'] );
+		$this->assertSame( 'veo_test_12345', $sanitized['job_id'] );
+		$this->assertSame( 'veo-video-veo_test_12345.mp4', $sanitized['expected_filename'] );
+		$this->assertSame( 'https://example.com/wp-content/uploads/2024/01/veo-video-veo_test_12345.mp4', $sanitized['expected_url'] );
+	}
+
+	/**
+	 * Test that url takes precedence over expected_url for video_url.
+	 *
+	 * When the video is completed, it has a real url. This should be
+	 * used for video_url, even if expected_url is also present.
+	 */
+	public function test_sanitize_for_llm_prefers_url_over_expected_url() {
+		// Mock completed result with both url and expected_url
+		$completed_result = array(
+			'success'           => true,
+			'attachment_id'     => 123,
+			'url'               => 'https://example.com/wp-content/uploads/2024/01/video.mp4',
+			'expected_url'      => 'https://example.com/wp-content/uploads/2024/01/expected.mp4',
+			'expected_filename' => 'expected.mp4',
+			'prompt'            => 'Test video',
+			'duration'          => 5,
+		);
+
+		$sanitized = $this->tool->sanitize_for_llm( $completed_result );
+
+		// video_url should use the real url, not expected_url
+		$this->assertArrayHasKey( 'video_url', $sanitized );
+		$this->assertSame(
+			'https://example.com/wp-content/uploads/2024/01/video.mp4',
+			$sanitized['video_url']['url'],
+			'video_url should use url (not expected_url) when available'
+		);
+	}
+
+	/**
 	 * Test that non-array results pass through unchanged.
 	 *
 	 * If the result is a string or other non-array type, it should
