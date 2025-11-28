@@ -1,0 +1,77 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wp-mcp-ai/assistant-builder",
+	"version": "1.0.0",
+	"title": "AI Assistant Builder",
+	"category": "wp-mcp-ai",
+	"icon": "hammer",
+	"description": "A complete interface for building new AI assistants with chat, tools configuration, knowledge base, and build functionality.",
+	"keywords": [ "ai", "assistant", "builder", "create", "tools", "chat", "mcp" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"showAssistantSelector": {
+			"type": "boolean",
+			"default": true
+		},
+		"showToolsGrid": {
+			"type": "boolean",
+			"default": true
+		},
+		"showKnowledgeBase": {
+			"type": "boolean",
+			"default": true
+		},
+		"showBuildButton": {
+			"type": "boolean",
+			"default": true
+		},
+		"defaultAssistantId": {
+			"type": "number",
+			"default": 0
+		},
+		"layout": {
+			"type": "string",
+			"default": "stacked",
+			"enum": [ "stacked", "side-by-side" ]
+		},
+		"toolsCollapsed": {
+			"type": "boolean",
+			"default": true
+		},
+		"showToolDescriptions": {
+			"type": "boolean",
+			"default": true
+		},
+		"enableStreaming": {
+			"type": "boolean",
+			"default": true
+		},
+		"chatPlaceholder": {
+			"type": "string",
+			"default": ""
+		},
+		"allowedFileTypes": {
+			"type": "string",
+			"default": ".pdf,.txt,.md,.doc,.docx,.csv,.json"
+		},
+		"maxFiles": {
+			"type": "number",
+			"default": 10
+		},
+		"maxFileSizeMB": {
+			"type": "number",
+			"default": 10
+		}
+	},
+	"supports": {
+		"align": [ "wide", "full" ],
+		"anchor": true,
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
