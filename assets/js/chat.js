@@ -1080,7 +1080,10 @@
      * 
      * @param {HTMLElement} messageElement - The rendered message element
      * @param {Object} displayPayload - The original display payload used to render
-     * @param {Object} options - Optional additional data to persist (usage, cost, etc.)
+     * @param {Object} options - Optional additional data to persist
+     * @param {Object} options.usage - Token usage data (prompt_tokens, completion_tokens, total_tokens)
+     * @param {Object} options.cost - Cost data (total, currency)
+     * @param {Array<string>} options.capabilityFlags - Capability flags (e.g., 'vision', 'code_interpreter')
      * @return {Object|null} Display metadata object or null if no metadata to preserve
      */
     function extractDisplayMetadata(messageElement, displayPayload, options) {
@@ -11364,7 +11367,7 @@
                 },
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
-                capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
@@ -11380,7 +11383,7 @@
             const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
-                capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
+                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
             });
             if (displayMetadata) {
                 assistantMessage.display = displayMetadata;
@@ -11755,7 +11758,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
-                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     
                     // Update conversation content with text from tool results.
@@ -11771,7 +11774,7 @@
                     const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay, {
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
-                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
                     });
                     if (displayMetadata) {
                         assistantMessage.display = displayMetadata;
@@ -11786,7 +11789,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
-                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     // Update conversation content with text from tool results.
                     // This ensures text from tools is persisted even when LLM returned no content.
@@ -11805,7 +11808,7 @@
                         const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay, {
                             usage: aggregatedUsage,
                             cost: aggregatedCost,
-                            capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
+                            capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
                         });
                         if (displayMetadata) {
                             assistantMessage.display = displayMetadata;
