@@ -405,6 +405,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'gmail':
 					$this->render_gmail_footer();
 					break;
+				case 'brave_search':
+					$this->render_brave_search_footer();
+					break;
 				case 'meta':
 					$this->render_meta_footer();
 					break;
@@ -434,6 +437,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application)', 'wp-mcp-ai' ); ?></li>
 						<li><?php esc_html_e( 'Add authorized redirect URI pointing to your WordPress site', 'wp-mcp-ai' ); ?></li>
 					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Brave Search footer content.
+		 */
+		private function render_brave_search_footer() {
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$brave_api_key = isset( $settings['brave_search_api_key'] ) ? $settings['brave_search_api_key'] : '';
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Brave Search Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( ! empty( $brave_api_key ) ) : ?>
+						<p>
+							<button type="button" id="wp-mcp-ai-test-brave-search-connection" class="button button-secondary">
+								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
+							</button>
+							<span id="wp-mcp-ai-brave-search-test-result" style="margin-left: 10px;"></span>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'Click the button above to verify your Brave Search API key is working correctly.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f0f0f1; border: 1px solid #dcdcde; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #50575e;">
+								<span class="dashicons dashicons-info" style="color: #50575e;"></span>
+								<?php esc_html_e( 'Enter your Brave Search API key in the field above and save settings to enable the connection test.', 'wp-mcp-ai' ); ?>
+							</p>
+						</div>
+					<?php endif; ?>
 				</td>
 			</tr>
 			<?php
