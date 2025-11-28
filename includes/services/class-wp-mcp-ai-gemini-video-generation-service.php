@@ -1037,6 +1037,18 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// in addition to polling the Gemini API operation endpoint.
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 
+		// Generate expected URL for the video file.
+		// This allows the chat client to display a placeholder video element
+		// that will become active when the video generation completes.
+		$upload_dir   = wp_upload_dir();
+		$expected_url = '';
+
+		// wp_upload_dir() can return an error state when uploads are disabled.
+		// Only generate expected_url if the upload directory is valid.
+		if ( ! empty( $upload_dir['url'] ) && empty( $upload_dir['error'] ) ) {
+			$expected_url = trailingslashit( $upload_dir['url'] ) . $expected_filename;
+		}
+
 		// Determine transient prefix based on whether we're using parent job.
 		// When reusing parent job ID (async_xxx), use the async executor's prefix.
 		// Otherwise, use the veo-specific prefix.
@@ -1161,12 +1173,15 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		return array(
-			'async'   => true,
-			'job_id'  => $job_id,
-			'status'  => 'pending',
-			'message' => sprintf(
-				/* translators: %s: job ID */
-				__( 'Video generation started (Job ID: %s). Your video is being created in the background and will appear here when ready.', 'wp-mcp-ai' ),
+			'async'             => true,
+			'job_id'            => $job_id,
+			'status'            => 'pending',
+			'expected_filename' => $expected_filename,
+			'expected_url'      => $expected_url,
+			'message'           => sprintf(
+				/* translators: 1: filename, 2: job ID */
+				__( 'Video generation started. Your video (%1$s) is being created and will be available within approximately 5 minutes. Job ID: %2$s', 'wp-mcp-ai' ),
+				$expected_filename,
 				$job_id
 			),
 		);

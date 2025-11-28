@@ -683,6 +683,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'status',              // Job status (pending/completed/failed) - CRITICAL for UI.
 			'job_id',              // Async job identifier (veo_*).
 			'parent_job_id',       // Parent async job identifier (async_*).
+			'expected_filename',   // Pre-generated filename for pending videos.
+			'expected_url',        // Expected URL where video will be available.
 			'prompt',
 			'duration',
 			'aspect_ratio',
