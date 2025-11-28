@@ -36,18 +36,32 @@ $type_names = array_map(
 	explode( ',', $allowed_types )
 );
 
-// Get wrapper attributes.
-$wrapper_attributes = get_block_wrapper_attributes(
-	array(
-		'class'              => 'wp-block-wp-mcp-ai-knowledge-base',
-		'data-block-id'      => $unique_id,
-		'data-allowed-types' => $allowed_types,
-		'data-max-files'     => $max_files,
-		'data-max-size'      => $max_upload_size,
-		'data-nonce'         => wp_create_nonce( 'wp_rest' ),
-		'data-upload-url'    => rest_url( 'wp/v2/media' ),
-	)
-);
+// Get wrapper attributes - handle both block and non-block contexts.
+if ( function_exists( 'get_block_wrapper_attributes' ) ) {
+	$wrapper_attributes = get_block_wrapper_attributes(
+		array(
+			'class'              => 'wp-block-wp-mcp-ai-knowledge-base',
+			'data-block-id'      => $unique_id,
+			'data-allowed-types' => $allowed_types,
+			'data-max-files'     => $max_files,
+			'data-max-size'      => $max_upload_size,
+			'data-nonce'         => wp_create_nonce( 'wp_rest' ),
+			'data-upload-url'    => rest_url( 'wp/v2/media' ),
+		)
+	);
+} else {
+	// Non-block context fallback.
+	$wrapper_attributes = sprintf(
+		'class="%s" data-block-id="%s" data-allowed-types="%s" data-max-files="%s" data-max-size="%s" data-nonce="%s" data-upload-url="%s"',
+		esc_attr( 'wp-block-wp-mcp-ai-knowledge-base' ),
+		esc_attr( $unique_id ),
+		esc_attr( $allowed_types ),
+		esc_attr( $max_files ),
+		esc_attr( $max_upload_size ),
+		esc_attr( wp_create_nonce( 'wp_rest' ) ),
+		esc_attr( rest_url( 'wp/v2/media' ) )
+	);
+}
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 

@@ -70,6 +70,22 @@ class WP_MCP_AI_Build_Assistant_Page {
 			true
 		);
 
+		// Enqueue blocks assets for the Prompt tab's enhanced components.
+		wp_enqueue_style(
+			'wp-mcp-ai-assistant-builder-blocks',
+			WP_MCP_AI_URL . 'assets/css/blocks/assistant-builder-blocks.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-assistant-builder-frontend',
+			WP_MCP_AI_URL . 'assets/js/blocks/assistant-builder-blocks-frontend.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
 		// Enqueue scripts for Manual and Prompt tabs (from the former modal).
 		wp_localize_script(
 			'wp-mcp-ai-build-assistant',
@@ -348,13 +364,24 @@ class WP_MCP_AI_Build_Assistant_Page {
 	private function render_prompt_tab() {
 		$builder_assistant_id = $this->get_builder_assistant_id();
 		?>
-		<div class="wp-mcp-ai-tab-content wp-mcp-ai-prompt-tab">
+		<div class="wp-mcp-ai-tab-content wp-mcp-ai-prompt-tab wp-mcp-ai-admin-blocks">
 			<div class="wp-mcp-ai-section">
 				<h2><?php esc_html_e( 'Build with AI Prompt', 'wp-mcp-ai' ); ?></h2>
 				<div class="wp-mcp-ai-prompt-intro">
 					<strong><?php esc_html_e( 'Describe your assistant', 'wp-mcp-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Tell the AI what kind of assistant you want to create. Describe its purpose, expertise, target audience, and any specific capabilities. You can also upload files to include in its knowledge base. When ready, click the "Build" button to create your assistant.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Tell the AI what kind of assistant you want to create. Describe its purpose, expertise, target audience, and any specific capabilities. You can also upload files to include in its knowledge base and select tools for the assistant to use. When ready, click the "Build" button to create your assistant.', 'wp-mcp-ai' ); ?></p>
 				</div>
+
+				<?php
+				// Render the Tools Grid component.
+				$this->render_tools_grid_component();
+				?>
+
+				<?php
+				// Render the Knowledge Base component.
+				$this->render_knowledge_base_component();
+				?>
+
 				<div class="wp-mcp-ai-chat-container">
 					<?php
 					if ( $builder_assistant_id ) {
@@ -372,6 +399,53 @@ class WP_MCP_AI_Build_Assistant_Page {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render the Tools Grid component for the Prompt tab.
+	 *
+	 * This includes the tools-grid block render template for use in the admin context.
+	 */
+	private function render_tools_grid_component() {
+		// Set up attributes for the tools grid render.
+		$attributes = array(
+			'title'            => __( 'Tools Configuration', 'wp-mcp-ai' ),
+			'description'      => __( 'Select the tools you want your assistant to be able to use.', 'wp-mcp-ai' ),
+			'showDescriptions' => true,
+			'startCollapsed'   => true,
+			'showActions'      => true,
+			'selectedTools'    => array(),
+		);
+
+		echo '<div class="wp-mcp-ai-prompt-tools-section">';
+		include WP_MCP_AI_PATH . 'includes/blocks/tools-grid/render.php';
+		echo '</div>';
+	}
+
+	/**
+	 * Render the Knowledge Base component for the Prompt tab.
+	 *
+	 * This includes the knowledge-base block render template for use in the admin context.
+	 */
+	private function render_knowledge_base_component() {
+		// Check if user can upload files.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return;
+		}
+
+		// Set up attributes for the knowledge base render.
+		$attributes = array(
+			'title'         => __( 'Knowledge Base', 'wp-mcp-ai' ),
+			'description'   => __( 'Upload files to include in the assistant\'s knowledge base. These files will be used to provide context to the AI.', 'wp-mcp-ai' ),
+			'allowedTypes'  => '.pdf,.txt,.md,.doc,.docx,.csv,.json',
+			'maxFiles'      => 10,
+			'maxFileSizeMB' => 10,
+			'showPreview'   => true,
+		);
+
+		echo '<div class="wp-mcp-ai-prompt-knowledge-section">';
+		include WP_MCP_AI_PATH . 'includes/blocks/knowledge-base/render.php';
+		echo '</div>';
 	}
 
 	/**
