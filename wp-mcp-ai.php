@@ -541,6 +541,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-team-button.php';
 	WP_MCP_AI_Admin_Create_Team_Button::init();
 
+	// Load media library columns for AI usage display.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-media-library-columns.php';
+	WP_MCP_AI_Admin_Media_Library_Columns::init();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
