@@ -9308,8 +9308,8 @@
             return message && message.role !== 'system';
         });
 
-        // Render each message in the UI
-        saved.conversation.forEach(function (message) {
+        // Render each message in the UI (using filtered state.conversation, not saved.conversation)
+        state.conversation.forEach(function (message) {
             if (!message || !message.role) {
                 return;
             }
@@ -9317,20 +9317,6 @@
             const role = message.role;
             const content = message.content;
             const display = message.display || null;
-
-            if (role === 'system') {
-                // Render system messages
-                // Use display metadata if available, otherwise use content directly
-                const systemPayload = display || { text: content || '' };
-                
-                // Preserve bubbleType if present in display metadata
-                if (display && display.bubbleType) {
-                    systemPayload.bubbleType = display.bubbleType;
-                }
-                
-                appendMessage(state.messagesEl, 'system', systemPayload, false, { state: state });
-                return;
-            }
 
             if (role === 'tool') {
                 // Render tool responses
