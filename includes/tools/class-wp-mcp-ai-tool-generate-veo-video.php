@@ -578,10 +578,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	protected function calculate_video_cost( $result ) {
 		// Get duration in seconds.
 		$duration = isset( $result['duration'] ) ? absint( $result['duration'] ) : 0;
-		
+
 		// Get model identifier.
 		$model = isset( $result['model'] ) ? $result['model'] : 'unknown';
-		
+
 		// Default cost structure.
 		$cost = array(
 			'cost_usd'     => 0.0,
@@ -605,7 +605,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check if model supports per_second pricing (Veo models).
 		if ( isset( $pricing['per_second'] ) ) {
-			$cost_per_second = (float) $pricing['per_second'];
+			$cost_per_second  = (float) $pricing['per_second'];
 			$cost['cost_usd'] = round( $cost_per_second * $duration, 6 );
 		} else {
 			// Model doesn't have per_second pricing - mark as estimated with $0.
@@ -708,7 +708,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Add video_url structure for the chat client to display the video inline.
 		// This mirrors how generate_gemini_image adds image_url for the agentic loop.
 		// The chat client uses isVideoAttachment() to detect video URLs and render a video player.
-		$video_url = isset( $result['url'] ) && '' !== $result['url'] ? $result['url'] : '';
+		// For pending async results, use expected_url if url is not yet available.
+		// This allows the chat client to display a placeholder video element.
+		$video_url = '';
+		if ( isset( $result['url'] ) && '' !== $result['url'] ) {
+			$video_url = $result['url'];
+		} elseif ( isset( $result['expected_url'] ) && '' !== $result['expected_url'] ) {
+			$video_url = $result['expected_url'];
+		}
 
 		if ( '' !== $video_url ) {
 			$sanitized['video_url'] = array(
