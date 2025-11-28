@@ -10832,10 +10832,10 @@
                           lowerResult.indexOf('failed') !== -1 ||
                           lowerResult.indexOf('forbidden') !== -1 ||
                           lowerResult.indexOf('missing') !== -1;
-            } else if (normalized && normalized.attachments && normalized.attachments.length > 0) {
-                // Tool result has attachments (images, files) - use normalized text and attachments
+            } else if (normalized && (normalized.attachments && normalized.attachments.length > 0 || normalized.chartHtml)) {
+                // Tool result has attachments (images, files) or chart HTML - use normalized text and attachments
                 resultText = normalized.text || (toolName + ': ' + getString('completed', 'Completed'));
-                attachments = normalized.attachments;
+                attachments = normalized.attachments || [];
             } else if (result.summary) {
                 resultText = toolName + ': ' + result.summary;
             } else if (result.text) {
@@ -10860,6 +10860,13 @@
                 text: prefix + resultText,
                 attachments: attachments
             };
+            
+            // Include chart data if available (from Chart.js visualization tools)
+            if (normalized && normalized.chartHtml) {
+                displayPayload.chartHtml = normalized.chartHtml;
+                displayPayload.chartWidth = normalized.chartWidth || 800;
+                displayPayload.chartHeight = normalized.chartHeight || 400;
+            }
             
             // Display the tool result with attachments if available
             const messageElement = appendMessage(state.messagesEl, messageType, displayPayload, false, { state: state });
@@ -11113,6 +11120,9 @@
                         }
                     }
                     
+                    // Add chart HTML to assistant display if available (Chart.js visualizations)
+                    mergeChartDataToDisplay(assistantDisplay, normalized);
+                    
                     // Add attachments to the assistant display (videos, images, files)
                     if (normalized.attachments && normalized.attachments.length > 0) {
                         assistantDisplay.attachments = assistantDisplay.attachments.concat(normalized.attachments);
@@ -11126,7 +11136,7 @@
             });
 
             // Display the assistant message with attachments if we have any content
-            if (assistantDisplay.text || (assistantDisplay.attachments && assistantDisplay.attachments.length > 0)) {
+            if (assistantDisplay.text || (assistantDisplay.attachments && assistantDisplay.attachments.length > 0) || assistantDisplay.chartHtml) {
                 // Extract usage and cost from data (similar to normal flow)
                 const usage = chatData && chatData.usage ? chatData.usage : null;
                 const cost = data && data.cost ? data.cost : null;
