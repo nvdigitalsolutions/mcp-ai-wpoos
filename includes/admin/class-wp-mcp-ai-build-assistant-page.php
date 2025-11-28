@@ -55,17 +55,20 @@ class WP_MCP_AI_Build_Assistant_Page {
 			return;
 		}
 
+		// Enqueue chat assets for the Prompt tab modal.
+		$this->enqueue_chat_assets();
+
 		wp_enqueue_style(
 			'wp-mcp-ai-build-assistant',
 			WP_MCP_AI_URL . 'assets/css/admin-build-assistant.css',
-			array(),
+			array( 'wp-mcp-ai-chat' ),
 			WP_MCP_AI_VERSION
 		);
 
 		wp_enqueue_script(
 			'wp-mcp-ai-build-assistant',
 			WP_MCP_AI_URL . 'assets/js/admin-build-assistant.js',
-			array( 'jquery' ),
+			array( 'jquery', 'wp-mcp-ai-chat' ),
 			WP_MCP_AI_VERSION,
 			true
 		);
@@ -106,6 +109,194 @@ class WP_MCP_AI_Build_Assistant_Page {
 				'professions' => $this->get_professions(),
 				'regions'     => $this->get_regions(),
 			)
+		);
+	}
+
+	/**
+	 * Enqueue chat interface assets.
+	 * Provides chat functionality for the Build with AI modal.
+	 */
+	private function enqueue_chat_assets() {
+		// Enqueue cron status service first.
+		wp_enqueue_script(
+			'wp-mcp-ai-cron-status',
+			WP_MCP_AI_URL . 'assets/js/cron-status-service.js',
+			array(),
+			$this->get_asset_version( 'assets/js/cron-status-service.js' ),
+			true
+		);
+
+		wp_enqueue_style(
+			'wp-mcp-ai-cron-status',
+			WP_MCP_AI_URL . 'assets/css/cron-status.css',
+			array(),
+			$this->get_asset_version( 'assets/css/cron-status.css' )
+		);
+
+		wp_enqueue_style(
+			'wp-mcp-ai-chat',
+			WP_MCP_AI_URL . 'assets/css/chat.css',
+			array( 'wp-mcp-ai-cron-status' ),
+			$this->get_asset_version( 'assets/css/chat.css' )
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-chat',
+			WP_MCP_AI_URL . 'assets/js/chat.js',
+			array( 'wp-mcp-ai-cron-status' ),
+			$this->get_asset_version( 'assets/js/chat.js' ),
+			true
+		);
+
+		// Safety check: Ensure REST constants exist.
+		$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
+
+		// Use the shortcode helper method for consistent async tool timeout calculation.
+		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
+			? WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
+			: 300000;
+
+		wp_localize_script(
+			'wp-mcp-ai-chat',
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
+				'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
+				'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'asyncToolTimeout'    => $async_timeout_ms,
+				'strings'             => $this->get_chat_strings(),
+			)
+		);
+	}
+
+	/**
+	 * Normalize REST URL.
+	 *
+	 * @param string $url REST URL to normalize.
+	 * @return string Normalized URL.
+	 */
+	private function normalise_rest_url( $url ) {
+		if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'normalise_rest_url' ) ) {
+			return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
+		}
+		return $url;
+	}
+
+	/**
+	 * Get asset version based on file modification time.
+	 *
+	 * @param string $relative_path Asset path relative to plugin root.
+	 * @return string
+	 */
+	private function get_asset_version( $relative_path ) {
+		$relative_path = ltrim( $relative_path, '/' );
+		$absolute_path = WP_MCP_AI_PATH . $relative_path;
+
+		if ( file_exists( $absolute_path ) ) {
+			$modified = filemtime( $absolute_path );
+
+			if ( $modified ) {
+				return WP_MCP_AI_VERSION . '.' . $modified;
+			}
+		}
+
+		return WP_MCP_AI_VERSION;
+	}
+
+	/**
+	 * Get chat interface strings for localization.
+	 *
+	 * @return array
+	 */
+	private function get_chat_strings() {
+		return array(
+			'placeholder'                   => __( 'Describe the assistant you want to create…', 'wp-mcp-ai' ),
+			'send'                          => __( 'Send', 'wp-mcp-ai' ),
+			'bundlingMessages'              => __( 'Preparing to send…', 'wp-mcp-ai' ),
+			'sending'                       => __( 'Sending message…', 'wp-mcp-ai' ),
+			'waiting'                       => __( 'Waiting for the AI builder…', 'wp-mcp-ai' ),
+			'error'                         => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
+			'missingAssistant'              => __( 'Builder assistant configuration was not found.', 'wp-mcp-ai' ),
+			'notAuthorized'                 => __( 'You do not have permission to use the builder.', 'wp-mcp-ai' ),
+			'toolExecuting'                 => __( 'Running tool: %s', 'wp-mcp-ai' ),
+			'toolSuccess'                   => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
+			'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
+			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'wp-mcp-ai' ),
+			'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),
+			'toolTimeout'                   => __( 'Tool timed out before completing.', 'wp-mcp-ai' ),
+			'toolFailed'                    => __( 'Tool failed: %s', 'wp-mcp-ai' ),
+			'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
+			'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
+			'toolShortcutLabel'             => __( 'Insert task: %s', 'wp-mcp-ai' ),
+			'emptyMessage'                  => __( 'Enter a description before sending.', 'wp-mcp-ai' ),
+			'attachFile'                    => __( 'Attach file', 'wp-mcp-ai' ),
+			'transcribe'                    => __( 'Transcribe', 'wp-mcp-ai' ),
+			'transcribeAudio'               => __( 'Transcribe audio', 'wp-mcp-ai' ),
+			'transcribing'                  => __( 'Transcribing audio…', 'wp-mcp-ai' ),
+			'recording'                     => __( 'Recording… tap to stop.', 'wp-mcp-ai' ),
+			'stopRecording'                 => __( 'Stop recording', 'wp-mcp-ai' ),
+			'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'wp-mcp-ai' ),
+			'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'wp-mcp-ai' ),
+			'transcriptionSuccess'          => __( 'Inserted transcription from "%s".', 'wp-mcp-ai' ),
+			'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'wp-mcp-ai' ),
+			'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'wp-mcp-ai' ),
+			'attachmentsLabel'              => __( 'Attachments', 'wp-mcp-ai' ),
+			'removeAttachment'              => __( 'Remove', 'wp-mcp-ai' ),
+			'uploadingFile'                 => __( 'Uploading "%s"…', 'wp-mcp-ai' ),
+			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'wp-mcp-ai' ),
+			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'wp-mcp-ai' ),
+			'downloadAttachment'            => __( 'Download attachment', 'wp-mcp-ai' ),
+			'unsupportedFileType'           => __( '"%s" is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
+			'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
+			'unsupportedFileLabel'          => __( 'This file', 'wp-mcp-ai' ),
+			'expandTranscript'              => __( 'Expand conversation', 'wp-mcp-ai' ),
+			'collapseTranscript'            => __( 'Collapse conversation', 'wp-mcp-ai' ),
+			'newConversation'               => __( 'Start new conversation', 'wp-mcp-ai' ),
+			'loadConversation'              => __( 'Load conversation', 'wp-mcp-ai' ),
+			'jsonResponse'                  => __( 'JSON response', 'wp-mcp-ai' ),
+			'historyToggleShow'             => __( 'Show previous conversations', 'wp-mcp-ai' ),
+			'historyToggleHide'             => __( 'Hide previous conversations', 'wp-mcp-ai' ),
+			'historyLoading'                => __( 'Loading conversations…', 'wp-mcp-ai' ),
+			'historyEmpty'                  => __( 'No previous conversations yet.', 'wp-mcp-ai' ),
+			'historyError'                  => __( 'Unable to load conversation history.', 'wp-mcp-ai' ),
+			'historyMessageCount'           => __( '%d messages', 'wp-mcp-ai' ),
+			'historySingleMessage'          => __( '1 message', 'wp-mcp-ai' ),
+			'historyPreviewFallback'        => __( 'Conversation %s', 'wp-mcp-ai' ),
+			'historySessionLoading'         => __( 'Loading conversation…', 'wp-mcp-ai' ),
+			'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
+			'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),
+			'saveConversation'              => __( 'Save conversation', 'wp-mcp-ai' ),
+			'savingConversation'            => __( 'Saving current conversation...', 'wp-mcp-ai' ),
+			'conversationSaved'             => __( 'Conversation saved successfully.', 'wp-mcp-ai' ),
+			'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'wp-mcp-ai' ),
+			'saveFailedProceed'             => __( 'Failed to save conversation: ', 'wp-mcp-ai' ),
+			'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'wp-mcp-ai' ),
+			'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'wp-mcp-ai' ),
+			'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'wp-mcp-ai' ),
+			'saveSkipped'                   => __( 'Save not available for this conversation.', 'wp-mcp-ai' ),
+			'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'wp-mcp-ai' ),
+			'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'wp-mcp-ai' ),
+			'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'wp-mcp-ai' ),
+			'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'wp-mcp-ai' ),
+			'exportFailed'                  => __( 'Export failed: ', 'wp-mcp-ai' ),
+			'exportSuccess'                 => __( 'Conversation exported successfully as ', 'wp-mcp-ai' ),
+			'deleteConversation'            => __( 'Delete this conversation', 'wp-mcp-ai' ),
+			'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'wp-mcp-ai' ),
+			'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'wp-mcp-ai' ),
+			'videoNotSupported'             => __( 'Your browser does not support video playback.', 'wp-mcp-ai' ),
+			'downloadVideo'                 => __( 'Download video', 'wp-mcp-ai' ),
+			'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'wp-mcp-ai' ),
+			'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'wp-mcp-ai' ),
+			'roleLabels'                    => array(
+				'assistant' => __( 'AI Builder', 'wp-mcp-ai' ),
+				'user'      => __( 'You', 'wp-mcp-ai' ),
+				'system'    => __( 'System', 'wp-mcp-ai' ),
+				'tool'      => __( 'Tool', 'wp-mcp-ai' ),
+			),
 		);
 	}
 
@@ -382,19 +573,40 @@ class WP_MCP_AI_Build_Assistant_Page {
 				$this->render_knowledge_base_component();
 				?>
 
-				<div class="wp-mcp-ai-chat-container">
-					<?php
-					if ( $builder_assistant_id ) {
-						// Render the chat shortcode for the builder assistant.
-						echo do_shortcode( '[mcp_ai_chat assistant="' . esc_attr( $builder_assistant_id ) . '" save_transcript="false" allow_sensitive_tools="true"]' );
-					} else {
-						?>
+				<div class="wp-mcp-ai-prompt-action">
+					<?php if ( $builder_assistant_id ) : ?>
+						<button
+							type="button"
+							class="button button-primary button-hero wp-mcp-ai-build-with-ai-btn"
+							data-assistant-id="<?php echo esc_attr( $builder_assistant_id ); ?>"
+							data-assistant-title="<?php esc_attr_e( 'AI Assistant Builder', 'wp-mcp-ai' ); ?>"
+						>
+							<span class="dashicons dashicons-format-chat"></span>
+							<?php esc_html_e( 'Build with AI', 'wp-mcp-ai' ); ?>
+						</button>
+						<p class="description"><?php esc_html_e( 'Click to open the AI chat interface and describe your assistant.', 'wp-mcp-ai' ); ?></p>
+					<?php else : ?>
 						<div class="wp-mcp-ai-no-builder">
 							<p><?php esc_html_e( 'The Assistant Builder is not configured. Please create an assistant with the slug "assistant-builder" or set one in the plugin settings.', 'wp-mcp-ai' ); ?></p>
 						</div>
-						<?php
-					}
-					?>
+					<?php endif; ?>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal container for Build with AI chat interface -->
+		<div id="wp-mcp-ai-build-assistant-modal" class="wp-mcp-ai-test-modal" style="display: none;">
+			<div class="wp-mcp-ai-test-modal__backdrop"></div>
+			<div class="wp-mcp-ai-test-modal__panel">
+				<div class="wp-mcp-ai-test-modal__header">
+					<h2 id="wp-mcp-ai-build-assistant-modal__title"><?php esc_html_e( 'Build with AI', 'wp-mcp-ai' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+						<span class="dashicons dashicons-no-alt"></span>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-test-modal__body">
+					<!-- Chat interface will be initialized here -->
+					<div id="wp-mcp-ai-build-assistant-chat-container"></div>
 				</div>
 			</div>
 		</div>
