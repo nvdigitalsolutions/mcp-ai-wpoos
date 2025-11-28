@@ -11591,6 +11591,24 @@
             return { usage: aggregatedUsage, cost: aggregatedCost };
         }
 
+        /**
+         * Merge chart data from normalized tool result into assistantDisplay.
+         * Extracted as a helper function to reduce duplication.
+         * 
+         * @param {Object} assistantDisplay - The display object to merge chart data into
+         * @param {Object} normalized - Normalized tool result with potential chart data
+         */
+        function mergeChartDataToDisplay(assistantDisplay, normalized) {
+            if (!normalized || !normalized.chartHtml || typeof normalized.chartHtml !== 'string') {
+                return;
+            }
+            assistantDisplay.chartHtml = normalized.chartHtml;
+            assistantDisplay.chartWidth = normalized.chartWidth || 800;
+            assistantDisplay.chartHeight = normalized.chartHeight || 400;
+            assistantDisplay.chartType = normalized.chartType || 'chart';
+            assistantDisplay.chartTitle = normalized.chartTitle || '';
+        }
+
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             // Note: We don't update status here because the SSE stream processing
@@ -11725,13 +11743,7 @@
                         }
                         
                         // Add chart HTML to assistant display if available (Chart.js visualizations)
-                        if (normalized.chartHtml && typeof normalized.chartHtml === 'string') {
-                            assistantDisplay.chartHtml = normalized.chartHtml;
-                            assistantDisplay.chartWidth = normalized.chartWidth || 800;
-                            assistantDisplay.chartHeight = normalized.chartHeight || 400;
-                            assistantDisplay.chartType = normalized.chartType || 'chart';
-                            assistantDisplay.chartTitle = normalized.chartTitle || '';
-                        }
+                        mergeChartDataToDisplay(assistantDisplay, normalized);
                         
                         // Add attachments to the assistant display.
                         if (normalized.attachments && normalized.attachments.length > 0) {
@@ -11809,13 +11821,7 @@
                         }
                         
                         // Add chart HTML to assistant display if available (Chart.js visualizations)
-                        if (normalized.chartHtml && typeof normalized.chartHtml === 'string') {
-                            assistantDisplay.chartHtml = normalized.chartHtml;
-                            assistantDisplay.chartWidth = normalized.chartWidth || 800;
-                            assistantDisplay.chartHeight = normalized.chartHeight || 400;
-                            assistantDisplay.chartType = normalized.chartType || 'chart';
-                            assistantDisplay.chartTitle = normalized.chartTitle || '';
-                        }
+                        mergeChartDataToDisplay(assistantDisplay, normalized);
                         
                         // Add attachments to the assistant display.
                         if (normalized.attachments && normalized.attachments.length > 0) {
@@ -12863,18 +12869,12 @@
         iframe.setAttribute('loading', 'lazy');
         iframe.setAttribute('title', getString('chartVisualization', 'Chart Visualization'));
         
-        // Set responsive dimensions with aspect ratio preservation
-        const aspectRatio = height / width;
-        iframe.style.width = '100%';
-        iframe.style.height = '0';
-        iframe.style.paddingBottom = (aspectRatio * 100) + '%';
-        iframe.style.border = 'none';
-        iframe.style.borderRadius = '8px';
-        iframe.style.position = 'absolute';
-        iframe.style.top = '0';
-        iframe.style.left = '0';
+        // Calculate aspect ratio with guard against division by zero
+        const safeWidth = width > 0 ? width : 800;
+        const safeHeight = height > 0 ? height : 400;
+        const aspectRatio = safeHeight / safeWidth;
         
-        // Create wrapper for aspect ratio sizing
+        // Create wrapper for responsive aspect ratio sizing
         const wrapper = document.createElement('div');
         wrapper.className = 'wp-mcp-ai-chat__chart-wrapper';
         wrapper.style.position = 'relative';
@@ -12882,14 +12882,18 @@
         wrapper.style.paddingBottom = (aspectRatio * 100) + '%';
         wrapper.style.overflow = 'hidden';
         
+        // Set iframe styles for absolute positioning inside wrapper
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        
         // Use srcdoc to inject the HTML content directly
         // This is more secure than blob URLs and works well with the sandbox
         iframe.setAttribute('srcdoc', html);
-        
-        // Reset iframe style for proper sizing inside wrapper
-        iframe.style.paddingBottom = '0';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
         
         wrapper.appendChild(iframe);
         container.appendChild(wrapper);
