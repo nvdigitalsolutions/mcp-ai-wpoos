@@ -105,13 +105,22 @@ if ( empty( $groups ) ) {
 	return;
 }
 
-// Get wrapper attributes.
-$wrapper_attributes = get_block_wrapper_attributes(
-	array(
-		'class'         => 'wp-block-wp-mcp-ai-tools-grid',
-		'data-block-id' => $unique_id,
-	)
-);
+// Get wrapper attributes - handle both block and non-block contexts.
+if ( function_exists( 'get_block_wrapper_attributes' ) ) {
+	$wrapper_attributes = get_block_wrapper_attributes(
+		array(
+			'class'         => 'wp-block-wp-mcp-ai-tools-grid',
+			'data-block-id' => $unique_id,
+		)
+	);
+} else {
+	// Non-block context fallback.
+	$wrapper_attributes = sprintf(
+		'class="%s" data-block-id="%s"',
+		esc_attr( 'wp-block-wp-mcp-ai-tools-grid' ),
+		esc_attr( $unique_id )
+	);
+}
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<?php if ( $title ) : ?>
