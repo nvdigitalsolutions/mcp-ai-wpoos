@@ -474,6 +474,11 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
 }
 
+// Load assistant builder blocks for all versions (base and full).
+// These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,
+// Tools Grid, Knowledge Base, and full Assistant Builder components.
+require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-assistant-builder-blocks.php';
+
 // Clean any output that may have been generated during includes.
 // Only clean the buffer if we started it (i.e., not during Elementor AJAX requests or editor page loads).
 if ( ! $skip_buffering ) {
@@ -800,6 +805,11 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				if ( $widgets_enabled ) {
 					WP_MCP_AI_Elementor_Integration::maybe_init();
 				}
+			}
+
+			// Initialize Gutenberg blocks for AI Assistant Builder.
+			if ( class_exists( 'WP_MCP_AI_Assistant_Builder_Blocks' ) ) {
+				WP_MCP_AI_Assistant_Builder_Blocks::init();
 			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.

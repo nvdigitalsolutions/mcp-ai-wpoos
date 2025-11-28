@@ -1,0 +1,39 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wp-mcp-ai/assistant-selector",
+	"version": "1.0.0",
+	"title": "Assistant Selector",
+	"category": "wp-mcp-ai",
+	"icon": "admin-users",
+	"description": "A dropdown to select from available AI assistants.",
+	"keywords": [ "ai", "assistant", "selector", "dropdown" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"defaultAssistantId": {
+			"type": "number",
+			"default": 0
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"showStartButton": {
+			"type": "boolean",
+			"default": true
+		},
+		"startButtonText": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
