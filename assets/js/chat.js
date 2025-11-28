@@ -6958,7 +6958,12 @@
         // Display initial message and video placeholder for video generation
         // For video generation jobs, show a placeholder video element that will become active
         // when the video file is created (typically within 5 minutes).
-        if (toolName === 'generate_veo_video' && parsedContent.expected_url) {
+        // Use a generic property-based check (expected_url + .mp4 filename) to avoid tight coupling.
+        var isVideoPending = parsedContent.expected_url && 
+                             parsedContent.expected_filename && 
+                             parsedContent.expected_filename.indexOf('.mp4') !== -1;
+        
+        if (isVideoPending) {
             // Create a message payload with the video placeholder as an attachment
             // This uses the standard attachment rendering which includes video player support
             var videoPlaceholderPayload = {

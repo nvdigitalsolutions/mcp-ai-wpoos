@@ -1041,7 +1041,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// This allows the chat client to display a placeholder video element
 		// that will become active when the video generation completes.
 		$upload_dir   = wp_upload_dir();
-		$expected_url = trailingslashit( $upload_dir['url'] ) . $expected_filename;
+		$expected_url = '';
+
+		// wp_upload_dir() can return an error state when uploads are disabled.
+		// Only generate expected_url if the upload directory is valid.
+		if ( ! empty( $upload_dir['url'] ) && empty( $upload_dir['error'] ) ) {
+			$expected_url = trailingslashit( $upload_dir['url'] ) . $expected_filename;
+		}
 
 		// Determine transient prefix based on whether we're using parent job.
 		// When reusing parent job ID (async_xxx), use the async executor's prefix.
