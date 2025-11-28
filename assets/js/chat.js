@@ -1073,6 +1073,9 @@
      * Extract display metadata from a rendered message element.
      * This captures bubble type, attachments, and display text for persistence.
      * 
+     * Industry standard: Always persist display metadata for all messages to ensure
+     * consistent restoration. This follows the pattern used for JSON bubbles.
+     * 
      * @param {HTMLElement} messageElement - The rendered message element
      * @param {Object} displayPayload - The original display payload used to render
      * @return {Object|null} Display metadata object or null if no metadata to preserve
@@ -1090,10 +1093,28 @@
         const metadata = {};
         let hasMetadata = false;
 
-        // Extract bubble type
+        // Extract bubble type from data attribute if set (json, truncated, etc.)
+        // For standard assistant/user messages, we set a default bubble type
+        // to ensure consistent persistence and restoration
         if (messageElement.dataset.bubbleType) {
             metadata.bubbleType = messageElement.dataset.bubbleType;
             hasMetadata = true;
+        } else {
+            // Determine default bubble type from CSS classes for standard messages
+            // This ensures assistant bubbles persist the same way as JSON bubbles
+            if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--assistant')) {
+                metadata.bubbleType = 'assistant';
+                hasMetadata = true;
+            } else if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--user')) {
+                metadata.bubbleType = 'user';
+                hasMetadata = true;
+            } else if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--tool')) {
+                metadata.bubbleType = 'tool';
+                hasMetadata = true;
+            } else if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--system')) {
+                metadata.bubbleType = 'system';
+                hasMetadata = true;
+            }
         }
 
         // Extract display message if provided

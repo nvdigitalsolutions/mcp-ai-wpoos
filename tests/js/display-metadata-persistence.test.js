@@ -184,6 +184,7 @@ describe('Display Metadata Persistence', () => {
 					content: 'Can you analyze this data?',
 					display: {
 						text: 'Can you analyze this data?',
+						bubbleType: 'user',
 						attachments: [
 							{
 								url: 'https://example.com/data.csv',
@@ -196,6 +197,10 @@ describe('Display Metadata Persistence', () => {
 				{
 					role: 'assistant',
 					content: 'Let me analyze the data.',
+					display: {
+						text: 'Let me analyze the data.',
+						bubbleType: 'assistant'
+					}
 				},
 				{
 					role: 'assistant',
@@ -220,8 +225,40 @@ describe('Display Metadata Persistence', () => {
 
 			expect(retrieved.conversation).toHaveLength(3);
 			expect(retrieved.conversation[0].display.attachments).toHaveLength(1);
-			expect(retrieved.conversation[1].display).toBeUndefined();
+			expect(retrieved.conversation[0].display.bubbleType).toBe('user');
+			expect(retrieved.conversation[1].display).toBeDefined();
+			expect(retrieved.conversation[1].display.bubbleType).toBe('assistant');
 			expect(retrieved.conversation[2].display.bubbleType).toBe('json');
+		});
+
+		it('should preserve standard assistant message with display metadata (industry standard)', () => {
+			// Industry standard: All message types should have display metadata
+			// for consistent persistence and restoration, similar to JSON bubbles
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Hello! How can I help you today?',
+				display: {
+					text: 'Hello! How can I help you today?',
+					bubbleType: 'assistant'
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_standard',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0]).toEqual(assistantMessage);
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.text).toBe('Hello! How can I help you today?');
+			expect(retrieved.conversation[0].display.bubbleType).toBe('assistant');
 		});
 	});
 
