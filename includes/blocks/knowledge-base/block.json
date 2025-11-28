@@ -1,0 +1,51 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wp-mcp-ai/knowledge-base",
+	"version": "1.0.0",
+	"title": "Knowledge Base Upload",
+	"category": "widgets",
+	"icon": "media-document",
+	"description": "Upload files to include in an AI assistant's knowledge base.",
+	"keywords": [ "ai", "knowledge", "upload", "files", "documents" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"title": {
+			"type": "string",
+			"default": ""
+		},
+		"description": {
+			"type": "string",
+			"default": ""
+		},
+		"allowedTypes": {
+			"type": "string",
+			"default": ".pdf,.txt,.md,.doc,.docx,.csv,.json"
+		},
+		"maxFiles": {
+			"type": "number",
+			"default": 10
+		},
+		"maxFileSizeMB": {
+			"type": "number",
+			"default": 10
+		},
+		"showPreview": {
+			"type": "boolean",
+			"default": true
+		},
+		"uploadedFileIds": {
+			"type": "array",
+			"default": []
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
