@@ -11609,7 +11609,7 @@
          * @param {Object} normalized - Normalized tool result with potential chart data
          */
         function mergeChartDataToDisplay(assistantDisplay, normalized) {
-            if (!normalized || !normalized.chartHtml || typeof normalized.chartHtml !== 'string') {
+            if (!assistantDisplay || !normalized || !normalized.chartHtml || typeof normalized.chartHtml !== 'string') {
                 return;
             }
             assistantDisplay.chartHtml = normalized.chartHtml;
