@@ -26,9 +26,9 @@
 	 */
 	function initAssistantSelectors() {
 		$( '.wp-block-wp-mcp-ai-assistant-selector' ).each( function () {
-			var $block = $( this );
-			var $select = $block.find( '.wp-mcp-ai-assistant-selector__select' );
-			var $startBtn = $block.find( '.wp-mcp-ai-assistant-selector__start' );
+			const $block = $( this );
+			const $select = $block.find( '.wp-mcp-ai-assistant-selector__select' );
+			const $startBtn = $block.find( '.wp-mcp-ai-assistant-selector__start' );
 
 			// Enable/disable start button based on selection.
 			$select.on( 'change', function () {
@@ -44,7 +44,7 @@
 
 			// Handle start button click.
 			$startBtn.on( 'click', function () {
-				var assistantId = $select.val();
+				const assistantId = $select.val();
 				if ( assistantId ) {
 					$block.trigger( 'startChat', { assistantId: assistantId } );
 				}
@@ -57,36 +57,36 @@
 	 */
 	function initToolsGrids() {
 		$( '.wp-block-wp-mcp-ai-tools-grid' ).each( function () {
-			var $block = $( this );
-			var $selectAll = $block.find( '.wp-mcp-ai-tools-grid__select-all' );
-			var $deselectAll = $block.find( '.wp-mcp-ai-tools-grid__deselect-all' );
-			var $selectedCount = $block.find( '.wp-mcp-ai-tools-grid__selected-count' );
-			var $checkboxes = $block.find( '.wp-mcp-ai-tools-grid__checkbox' );
+			const $block = $( this );
+			const $selectAll = $block.find( '.wp-mcp-ai-tools-grid__select-all' );
+			const $deselectAll = $block.find( '.wp-mcp-ai-tools-grid__deselect-all' );
+			const $selectedCount = $block.find( '.wp-mcp-ai-tools-grid__selected-count' );
+			const $checkboxes = $block.find( '.wp-mcp-ai-tools-grid__checkbox' );
 
 			/**
 			 * Update counts and selected state.
 			 */
 			function updateCounts() {
-				var totalSelected = $checkboxes.filter( ':checked' ).length;
+				const totalSelected = $checkboxes.filter( ':checked' ).length;
 				$selectedCount.text( totalSelected );
 
 				// Update group counts.
 				$block.find( '.wp-block-wp-mcp-ai-tools-grid__group' ).each( function () {
-					var $group = $( this );
-					var $groupCheckboxes = $group.find( '.wp-mcp-ai-tools-grid__checkbox' );
-					var groupSelected = $groupCheckboxes.filter( ':checked' ).length;
+					const $group = $( this );
+					const $groupCheckboxes = $group.find( '.wp-mcp-ai-tools-grid__checkbox' );
+					const groupSelected = $groupCheckboxes.filter( ':checked' ).length;
 					$group.find( '.wp-mcp-ai-tools-grid__group-selected' ).text( groupSelected );
 				} );
 
 				// Update item classes.
 				$checkboxes.each( function () {
-					var $checkbox = $( this );
+					const $checkbox = $( this );
 					$checkbox.closest( '.wp-block-wp-mcp-ai-tools-grid__item' )
 						.toggleClass( 'wp-block-wp-mcp-ai-tools-grid__item--selected', $checkbox.is( ':checked' ) );
 				} );
 
 				// Trigger custom event.
-				var selectedTools = $checkboxes.filter( ':checked' ).map( function () {
+				const selectedTools = $checkboxes.filter( ':checked' ).map( function () {
 					return $( this ).val();
 				} ).get();
 				$block.trigger( 'toolsChanged', { tools: selectedTools } );
@@ -117,25 +117,25 @@
 	 */
 	function initKnowledgeBases() {
 		$( '.wp-block-wp-mcp-ai-knowledge-base' ).each( function () {
-			var $block = $( this );
-			var $dropzone = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__dropzone' );
-			var $fileInput = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-input' );
-			var $fileList = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-list' );
-			var $fileIds = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-ids' );
-			var $count = $block.find( '.wp-mcp-ai-knowledge-base__count' );
-			var $clearAll = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__clear-all' );
-			var $progress = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress' );
-			var $progressFill = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-fill' );
-			var $progressText = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-text' );
+			const $block = $( this );
+			const $dropzone = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__dropzone' );
+			const $fileInput = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-input' );
+			const $fileList = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-list' );
+			const $fileIds = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-ids' );
+			const $count = $block.find( '.wp-mcp-ai-knowledge-base__count' );
+			const $clearAll = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__clear-all' );
+			const $progress = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress' );
+			const $progressFill = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-fill' );
+			const $progressText = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-text' );
 
-			var allowedTypes = ( $block.data( 'allowed-types' ) || '' ).split( ',' );
-			var maxFiles = $block.data( 'max-files' ) || 10;
-			var maxSize = $block.data( 'max-size' ) || 10485760; // 10MB default.
-			var uploadUrl = $block.data( 'upload-url' ) || '';
-			var nonce = $block.data( 'nonce' ) || '';
+			const allowedTypes = ( $block.data( 'allowed-types' ) || '' ).split( ',' );
+			const maxFiles = $block.data( 'max-files' ) || 10;
+			const maxSize = $block.data( 'max-size' ) || 10485760; // 10MB default.
+			const uploadUrl = $block.data( 'upload-url' ) || '';
+			const nonce = $block.data( 'nonce' ) || '';
 
-			var files = [];
-			var uploading = false;
+			let files = [];
+			let uploading = false;
 
 			/**
 			 * Update the file count and clear button visibility.
@@ -184,7 +184,7 @@
 					return 'Maximum number of files reached';
 				}
 
-				var ext = getExtension( file.name );
+				const ext = getExtension( file.name );
 				if ( allowedTypes.length > 0 && allowedTypes.indexOf( ext ) === -1 ) {
 					return 'Invalid file type: ' + ext;
 				}
@@ -204,7 +204,7 @@
 			 * @return {Object} File data object.
 			 */
 			function addFileToList( file, error ) {
-				var fileData = {
+				const fileData = {
 					file: file,
 					name: file.name,
 					size: file.size,
@@ -215,17 +215,17 @@
 
 				files.push( fileData );
 
-				var itemClass = 'wp-block-wp-mcp-ai-knowledge-base__file-item';
+				let itemClass = 'wp-block-wp-mcp-ai-knowledge-base__file-item';
 				if ( error ) {
 					itemClass += ' wp-block-wp-mcp-ai-knowledge-base__file-item--error';
 				}
 
-				var $item = $( '<li>', { class: itemClass, 'data-index': files.length - 1 } );
+				const $item = $( '<li>', { class: itemClass, 'data-index': files.length - 1 } );
 
-				var ext = getExtension( file.name ).replace( '.', '' ).toUpperCase();
+				const ext = getExtension( file.name ).replace( '.', '' ).toUpperCase();
 				$item.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-icon', text: ext } ) );
 
-				var $info = $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-info' } );
+				const $info = $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-info' } );
 				$info.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-name', text: file.name } ) );
 
 				if ( error ) {
@@ -255,7 +255,7 @@
 					return;
 				}
 
-				var pendingFiles = files.filter( function ( f ) { return f.status === 'pending'; } );
+				const pendingFiles = files.filter( function ( f ) { return f.status === 'pending'; } );
 				if ( pendingFiles.length === 0 ) {
 					return;
 				}
@@ -264,8 +264,8 @@
 				$progress.show();
 				$progressFill.css( 'width', '0%' );
 
-				var total = pendingFiles.length;
-				var completed = 0;
+				const total = pendingFiles.length;
+				let completed = 0;
 
 				function uploadNext() {
 					if ( completed >= total ) {
@@ -275,11 +275,11 @@
 						return;
 					}
 
-					var fileData = pendingFiles[ completed ];
-					var $item = $fileList.find( '[data-index="' + files.indexOf( fileData ) + '"]' );
+					const fileData = pendingFiles[ completed ];
+					const $item = $fileList.find( '[data-index="' + files.indexOf( fileData ) + '"]' );
 					$item.addClass( 'wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' );
 
-					var formData = new FormData();
+					const formData = new FormData();
 					formData.append( 'file', fileData.file );
 
 					$.ajax( {
@@ -295,9 +295,9 @@
 							$item.removeClass( 'wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' );
 						},
 						error: function ( xhr ) {
-							var errorMsg = 'Upload failed';
+							let errorMsg = 'Upload failed';
 							try {
-								var resp = JSON.parse( xhr.responseText );
+								const resp = JSON.parse( xhr.responseText );
 								if ( resp.message ) {
 									errorMsg = resp.message;
 								}
@@ -314,7 +314,7 @@
 						},
 						complete: function () {
 							completed++;
-							var percent = Math.round( ( completed / total ) * 100 );
+							const percent = Math.round( ( completed / total ) * 100 );
 							$progressFill.css( 'width', percent + '%' );
 							$progressText.text( 'Uploading... ' + completed + '/' + total );
 							uploadNext();
@@ -331,9 +331,9 @@
 			 * @param {FileList} fileList Files to add.
 			 */
 			function handleFiles( fileList ) {
-				for ( var i = 0; i < fileList.length; i++ ) {
-					var file = fileList[ i ];
-					var error = validateFile( file );
+				for ( let i = 0; i < fileList.length; i++ ) {
+					const file = fileList[ i ];
+					const error = validateFile( file );
 					addFileToList( file, error );
 				}
 				uploadFiles();
@@ -365,7 +365,7 @@
 
 			$dropzone.on( 'drop', function ( e ) {
 				e.preventDefault();
-				var dt = e.originalEvent.dataTransfer;
+				const dt = e.originalEvent.dataTransfer;
 				if ( dt && dt.files ) {
 					handleFiles( dt.files );
 				}
@@ -373,8 +373,8 @@
 
 			// Handle remove button.
 			$fileList.on( 'click', '.wp-block-wp-mcp-ai-knowledge-base__file-remove', function () {
-				var $item = $( this ).closest( '.wp-block-wp-mcp-ai-knowledge-base__file-item' );
-				var index = parseInt( $item.data( 'index' ), 10 );
+				const $item = $( this ).closest( '.wp-block-wp-mcp-ai-knowledge-base__file-item' );
+				const index = parseInt( $item.data( 'index' ), 10 );
 				files.splice( index, 1 );
 				$item.remove();
 
@@ -408,9 +408,9 @@
 	 */
 	function initAssistantBuilders() {
 		$( '.wp-block-wp-mcp-ai-assistant-builder' ).each( function () {
-			var $block = $( this );
-			var $config = $block.find( '.wp-mcp-ai-assistant-builder-config' );
-			var config = {};
+			const $block = $( this );
+			const $config = $block.find( '.wp-mcp-ai-assistant-builder-config' );
+			let config = {};
 
 			try {
 				config = JSON.parse( $config.text() || '{}' );
@@ -418,10 +418,10 @@
 				// Keep empty config.
 			}
 
-			var $selector = $block.find( '.wp-block-wp-mcp-ai-assistant-selector' );
-			var $tools = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__tools' );
-			var $knowledgeBase = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__knowledge-base' );
-			var $chat = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__chat' );
+			const $selector = $block.find( '.wp-block-wp-mcp-ai-assistant-selector' );
+			const $tools = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__tools' );
+			const $knowledgeBase = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__knowledge-base' );
+			const $chat = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__chat' );
 
 			// Listen for assistant selection to show other components.
 			$selector.on( 'startChat', function ( e, data ) {

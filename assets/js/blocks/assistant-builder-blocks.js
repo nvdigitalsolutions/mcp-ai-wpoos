@@ -6,25 +6,23 @@
  * @package WP_MCP_AI
  */
 
-/* global wp, wpMcpAiBlocks */
-
 ( function ( blocks, element, blockEditor, components, i18n ) {
 	'use strict';
 
-	var el = element.createElement;
-	var __ = i18n.__;
-	var InspectorControls = blockEditor.InspectorControls;
-	var PanelBody = components.PanelBody;
-	var SelectControl = components.SelectControl;
-	var ToggleControl = components.ToggleControl;
-	var TextControl = components.TextControl;
-	var RangeControl = components.RangeControl;
+	const el = element.createElement;
+	const __ = i18n.__;
+	const InspectorControls = blockEditor.InspectorControls;
+	const PanelBody = components.PanelBody;
+	const SelectControl = components.SelectControl;
+	const ToggleControl = components.ToggleControl;
+	const TextControl = components.TextControl;
+	const RangeControl = components.RangeControl;
 
 	// Get localized data.
-	var data = window.wpMcpAiBlocks || {};
-	var assistants = data.assistants || [];
-	var toolGroups = data.toolGroups || [];
-	var translations = data.i18n || {};
+	const data = window.wpMcpAiBlocks || {};
+	const assistants = data.assistants || [];
+	const toolGroups = data.toolGroups || [];
+	const translations = data.i18n || {};
 
 	/**
 	 * Build assistant options for SelectControl.
@@ -32,7 +30,7 @@
 	 * @return {Array} Options array.
 	 */
 	function getAssistantOptions() {
-		var options = [ { value: 0, label: translations.selectAssistant || '— Select an assistant —' } ];
+		const options = [ { value: 0, label: translations.selectAssistant || '— Select an assistant —' } ];
 		assistants.forEach( function ( assistant ) {
 			options.push( { value: assistant.id, label: assistant.title } );
 		} );
@@ -74,10 +72,10 @@
 			html: false
 		},
 		edit: function ( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
-			var selectedAssistant = assistants.find( function ( a ) {
+			const selectedAssistant = assistants.find( function ( a ) {
 				return a.id === attributes.assistantId;
 			} );
 
@@ -172,8 +170,8 @@
 		},
 		supports: { anchor: true, html: false },
 		edit: function ( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return el( element.Fragment, {},
 				el( InspectorControls, {},
@@ -251,11 +249,11 @@
 		},
 		supports: { anchor: true, html: false },
 		edit: function ( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			// Count total tools.
-			var totalTools = toolGroups.reduce( function ( sum, group ) {
+			const totalTools = toolGroups.reduce( function ( sum, group ) {
 				return sum + group.tools.length;
 			}, 0 );
 
@@ -335,8 +333,8 @@
 		},
 		supports: { anchor: true, html: false },
 		edit: function ( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return el( element.Fragment, {},
 				el( InspectorControls, {},
@@ -441,8 +439,8 @@
 			html: false
 		},
 		edit: function ( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return el( element.Fragment, {},
 				el( InspectorControls, {},
