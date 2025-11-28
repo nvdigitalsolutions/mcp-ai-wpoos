@@ -56,6 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
 				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
+				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
@@ -569,6 +570,94 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message'   => __( 'Successfully connected to Cloudflare!', 'wp-mcp-ai' ),
 					'zone_info' => $zone_info,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Brave Search API connection.
+		 */
+		public function handle_test_brave_search_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Brave Search API key.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Test the connection by making a simple search request.
+			// Brave Search API endpoint for web search.
+			$api_url = add_query_arg(
+				array(
+					'q'     => 'test',
+					'count' => 1,
+				),
+				'https://api.search.brave.com/res/v1/web/search'
+			);
+
+			$response = wp_remote_get(
+				$api_url,
+				array(
+					'headers' => array(
+						'Accept'              => 'application/json',
+						'X-Subscription-Token' => $api_key,
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 401 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Brave Search API key.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			if ( 429 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your API key is valid but you have exceeded your rate limit.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Invalid API key or connection failed.', 'wp-mcp-ai' );
+				if ( isset( $data['message'] ) ) {
+					$error_message = sanitize_text_field( $data['message'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Successfully connected to Brave Search API!', 'wp-mcp-ai' ),
 				)
 			);
 		}
