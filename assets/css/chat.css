@@ -455,6 +455,100 @@
     position: relative;
 }
 
+/* Save button styles */
+.wp-mcp-ai-save-button {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--wp-mcp-ai-color-save-button-background, rgba(59, 130, 246, 0.82));
+    color: var(--wp-mcp-ai-color-save-button-text, #fff);
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    padding: 0;
+    /* Save button is always visible (unlike other action buttons) */
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+}
+
+.wp-mcp-ai-save-button:hover {
+    background: var(--wp-mcp-ai-color-save-button-hover-background, rgba(59, 130, 246, 0.94));
+}
+
+.wp-mcp-ai-save-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-save-button-focus-ring, rgba(59, 130, 246, 0.45));
+}
+
+.wp-mcp-ai-save-button:disabled {
+    opacity: 0.65;
+    cursor: default;
+}
+
+.wp-mcp-ai-save-button .wp-mcp-ai-save-icon {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
+}
+
+/* Save button saving state (blue spinner) */
+.wp-mcp-ai-save-button--saving {
+    background: var(--wp-mcp-ai-color-save-button-saving-background, rgba(59, 130, 246, 0.82));
+    cursor: wait;
+}
+
+/* Save button saved state (green checkmark) */
+.wp-mcp-ai-save-button--saved {
+    background: var(--wp-mcp-ai-color-save-button-saved-background, rgba(34, 197, 94, 0.88));
+    cursor: default;
+}
+
+.wp-mcp-ai-save-button--saved:hover {
+    background: var(--wp-mcp-ai-color-save-button-saved-background, rgba(34, 197, 94, 0.88));
+}
+
+/* Save button error state (red) */
+.wp-mcp-ai-save-button--error {
+    background: var(--wp-mcp-ai-color-save-button-error-background, rgba(220, 38, 38, 0.88));
+}
+
+.wp-mcp-ai-save-button--error:hover {
+    background: var(--wp-mcp-ai-color-save-button-error-hover-background, rgba(220, 38, 38, 0.94));
+}
+
+/* Save spinner animation */
+.wp-mcp-ai-save-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    animation: wp-mcp-ai-save-spin 0.75s linear infinite;
+}
+
+@keyframes wp-mcp-ai-save-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Save enabled class for bubbles - adds padding for save button space */
+.wp-mcp-ai-chat__bubble.wp-mcp-ai-save-enabled {
+    position: relative;
+    padding-left: var(--wp-mcp-ai-save-button-space, 3rem);
+}
+
 @keyframes wp-mcp-ai-speech-spin {
     from {
         transform: rotate(0deg);
