@@ -6152,6 +6152,60 @@
         return parts.join(' • ');
     }
 
+    /**
+     * Normalize chart output for display in chat.
+     * Chart results include HTML content (from Chart.js visualization tools)
+     * that should be rendered in a sandboxed iframe for security.
+     * 
+     * @param {Object} result - Chart result with output_format: 'chart' and html property
+     * @return {Object} Normalized result with chartHtml property for iframe rendering
+     */
+    function normaliseChartResult(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        const html = result.html || '';
+        if (!html.trim()) {
+            return null;
+        }
+
+        // Extract chart metadata for display
+        const chartType = result.chart_type || 'chart';
+        const chartTitle = result.chart_title || '';
+        const width = result.width || 800;
+        const height = result.height || 400;
+
+        // Build text description
+        let text = '';
+        if (chartTitle) {
+            text = chartTitle;
+        } else {
+            // Generate default title based on chart type
+            const typeLabels = {
+                'line': 'Line Chart',
+                'bar': 'Bar Chart',
+                'pie': 'Pie Chart',
+                'doughnut': 'Doughnut Chart',
+                'radar': 'Radar Chart',
+                'polarArea': 'Polar Area Chart',
+                'scatter': 'Scatter Chart',
+                'bubble': 'Bubble Chart'
+            };
+            text = typeLabels[chartType] || 'Chart Visualization';
+        }
+
+        return {
+            text: text,
+            attachments: [],
+            chartHtml: html,
+            chartWidth: width,
+            chartHeight: height,
+            chartType: chartType,
+            chartTitle: chartTitle
+        };
+    }
+
     function normaliseCrawl4aiResult(result) {
         if (!result) {
             return null;
@@ -7012,6 +7066,12 @@
         // shown after the video generation has already completed.
         if (isAsyncPendingToolResult(result)) {
             return null;
+        }
+
+        // Special handling for chart output format (e.g., get_open_meteo_forecast with output_format: 'chart')
+        // Chart responses include HTML content that should be rendered in an iframe
+        if (result.output_format === 'chart' && typeof result.html === 'string' && result.html.trim()) {
+            return normaliseChartResult(result);
         }
 
         // Special handling for run_crawl4ai_job tool
@@ -11664,6 +11724,15 @@
                             }
                         }
                         
+                        // Add chart HTML to assistant display if available (Chart.js visualizations)
+                        if (normalized.chartHtml && typeof normalized.chartHtml === 'string') {
+                            assistantDisplay.chartHtml = normalized.chartHtml;
+                            assistantDisplay.chartWidth = normalized.chartWidth || 800;
+                            assistantDisplay.chartHeight = normalized.chartHeight || 400;
+                            assistantDisplay.chartType = normalized.chartType || 'chart';
+                            assistantDisplay.chartTitle = normalized.chartTitle || '';
+                        }
+                        
                         // Add attachments to the assistant display.
                         if (normalized.attachments && normalized.attachments.length > 0) {
                             assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
@@ -11739,6 +11808,15 @@
                             }
                         }
                         
+                        // Add chart HTML to assistant display if available (Chart.js visualizations)
+                        if (normalized.chartHtml && typeof normalized.chartHtml === 'string') {
+                            assistantDisplay.chartHtml = normalized.chartHtml;
+                            assistantDisplay.chartWidth = normalized.chartWidth || 800;
+                            assistantDisplay.chartHeight = normalized.chartHeight || 400;
+                            assistantDisplay.chartType = normalized.chartType || 'chart';
+                            assistantDisplay.chartTitle = normalized.chartTitle || '';
+                        }
+                        
                         // Add attachments to the assistant display.
                         if (normalized.attachments && normalized.attachments.length > 0) {
                             assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
@@ -11753,7 +11831,7 @@
             }
 
             // Re-render the assistant message if we added attachments or text from tool results.
-            if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
+            if (assistantDisplay.attachments.length > 0 || assistantDisplay.text || assistantDisplay.chartHtml) {
                 if (hasDisplayContent) {
                     // Update existing assistant message with attachments
                     const lastMessage = state.messagesEl.lastElementChild;
@@ -12451,6 +12529,12 @@
         const hasText = text.trim() !== '';
         const hasAttachments = attachments.length > 0;
         
+        // Check for chart HTML content (from Chart.js visualization tools)
+        const chartHtml = payload && typeof payload.chartHtml === 'string' ? payload.chartHtml : '';
+        const hasChartHtml = chartHtml.trim() !== '';
+        const chartWidth = payload && payload.chartWidth ? payload.chartWidth : 800;
+        const chartHeight = payload && payload.chartHeight ? payload.chartHeight : 400;
+        
         // Check for bubble type hints from payload
         const bubbleType = payload && payload.bubbleType ? payload.bubbleType : null;
         
@@ -12469,7 +12553,7 @@
             isTruncatedByOrchestration(text)
         );
 
-        if (!hasText && !hasAttachments) {
+        if (!hasText && !hasAttachments && !hasChartHtml) {
             return null;
         }
 
@@ -12495,6 +12579,13 @@
                 const normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
                 entry.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
             }
+        }
+        
+        // Render chart HTML in a sandboxed iframe (Chart.js visualizations)
+        if (hasChartHtml) {
+            entry.classList.add('wp-mcp-ai-chat__bubble--chart');
+            activeBubbleType = 'chart';
+            entry.appendChild(createChartBlockElement(chartHtml, chartWidth, chartHeight));
         }
         
         // Store bubble type on element for retrieval
@@ -12749,6 +12840,61 @@
         details.appendChild(pre);
 
         return details;
+    }
+
+    /**
+     * Create a chart block element for rendering Chart.js visualizations.
+     * Uses a sandboxed iframe for security, following WordPress standards.
+     * 
+     * @param {string} html - Complete HTML document with Chart.js code
+     * @param {number} width - Chart width in pixels
+     * @param {number} height - Chart height in pixels
+     * @return {HTMLElement} Chart block container element
+     */
+    function createChartBlockElement(html, width, height) {
+        const container = document.createElement('div');
+        container.className = 'wp-mcp-ai-chat__chart-block';
+        
+        // Create sandboxed iframe for secure chart rendering
+        // The sandbox attribute restricts the iframe's capabilities for security
+        const iframe = document.createElement('iframe');
+        iframe.className = 'wp-mcp-ai-chat__chart-iframe';
+        iframe.setAttribute('sandbox', 'allow-scripts');
+        iframe.setAttribute('loading', 'lazy');
+        iframe.setAttribute('title', getString('chartVisualization', 'Chart Visualization'));
+        
+        // Set responsive dimensions with aspect ratio preservation
+        const aspectRatio = height / width;
+        iframe.style.width = '100%';
+        iframe.style.height = '0';
+        iframe.style.paddingBottom = (aspectRatio * 100) + '%';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        
+        // Create wrapper for aspect ratio sizing
+        const wrapper = document.createElement('div');
+        wrapper.className = 'wp-mcp-ai-chat__chart-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.paddingBottom = (aspectRatio * 100) + '%';
+        wrapper.style.overflow = 'hidden';
+        
+        // Use srcdoc to inject the HTML content directly
+        // This is more secure than blob URLs and works well with the sandbox
+        iframe.setAttribute('srcdoc', html);
+        
+        // Reset iframe style for proper sizing inside wrapper
+        iframe.style.paddingBottom = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        
+        wrapper.appendChild(iframe);
+        container.appendChild(wrapper);
+        
+        return container;
     }
 
     /**
