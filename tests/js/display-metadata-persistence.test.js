@@ -303,4 +303,139 @@ describe('Display Metadata Persistence', () => {
 			expect(payload.bubbleType).toBeUndefined();
 		});
 	});
+
+	describe('Badge persistence', () => {
+		it('should preserve usage data in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					usage: {
+						prompt_tokens: 100,
+						completion_tokens: 50,
+						total_tokens: 150
+					}
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_usage',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.usage).toBeDefined();
+			expect(retrieved.conversation[0].display.usage.prompt_tokens).toBe(100);
+			expect(retrieved.conversation[0].display.usage.completion_tokens).toBe(50);
+			expect(retrieved.conversation[0].display.usage.total_tokens).toBe(150);
+		});
+
+		it('should preserve cost data in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					cost: {
+						total: 0.0025,
+						currency: 'USD'
+					}
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_cost',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.cost).toBeDefined();
+			expect(retrieved.conversation[0].display.cost.total).toBe(0.0025);
+			expect(retrieved.conversation[0].display.cost.currency).toBe('USD');
+		});
+
+		it('should preserve capability flags in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					capabilityFlags: ['vision', 'code_interpreter']
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_flags',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.capabilityFlags).toBeDefined();
+			expect(retrieved.conversation[0].display.capabilityFlags).toHaveLength(2);
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('vision');
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('code_interpreter');
+		});
+
+		it('should preserve all badge data together', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Complete response with all badges.',
+				display: {
+					text: 'Complete response with all badges.',
+					bubbleType: 'assistant',
+					usage: {
+						prompt_tokens: 200,
+						completion_tokens: 100,
+						total_tokens: 300
+					},
+					cost: {
+						total: 0.005,
+						currency: 'USD'
+					},
+					capabilityFlags: ['vision']
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_all_badges',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display.usage.total_tokens).toBe(300);
+			expect(retrieved.conversation[0].display.cost.total).toBe(0.005);
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('vision');
+		});
+	});
 });
