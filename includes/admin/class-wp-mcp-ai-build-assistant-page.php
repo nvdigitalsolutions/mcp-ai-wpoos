@@ -407,6 +407,13 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * This includes the tools-grid block render template for use in the admin context.
 	 */
 	private function render_tools_grid_component() {
+		$render_file = WP_MCP_AI_PATH . 'includes/blocks/tools-grid/render.php';
+
+		// Verify the render file exists before including.
+		if ( ! file_exists( $render_file ) ) {
+			return;
+		}
+
 		// Set up attributes for the tools grid render.
 		$attributes = array(
 			'title'            => __( 'Tools Configuration', 'wp-mcp-ai' ),
@@ -418,7 +425,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 		);
 
 		echo '<div class="wp-mcp-ai-prompt-tools-section">';
-		include WP_MCP_AI_PATH . 'includes/blocks/tools-grid/render.php';
+		include $render_file;
 		echo '</div>';
 	}
 
@@ -433,6 +440,13 @@ class WP_MCP_AI_Build_Assistant_Page {
 			return;
 		}
 
+		$render_file = WP_MCP_AI_PATH . 'includes/blocks/knowledge-base/render.php';
+
+		// Verify the render file exists before including.
+		if ( ! file_exists( $render_file ) ) {
+			return;
+		}
+
 		// Set up attributes for the knowledge base render.
 		$attributes = array(
 			'title'         => __( 'Knowledge Base', 'wp-mcp-ai' ),
@@ -444,7 +458,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 		);
 
 		echo '<div class="wp-mcp-ai-prompt-knowledge-section">';
-		include WP_MCP_AI_PATH . 'includes/blocks/knowledge-base/render.php';
+		include $render_file;
 		echo '</div>';
 	}
 
