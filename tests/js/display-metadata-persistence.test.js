@@ -438,4 +438,159 @@ describe('Display Metadata Persistence', () => {
 			expect(retrieved.conversation[0].display.capabilityFlags).toContain('vision');
 		});
 	});
+
+	describe('Assistant response after tool results persistence', () => {
+		it('should persist assistant response that follows tool results', () => {
+			// This test validates the fix for assistant bubbles not persisting
+			// after tool results (e.g., image generation followed by assistant summary)
+			const conversation = [
+				{
+					role: 'user',
+					content: 'create an image of a marlin',
+					display: {
+						text: 'create an image of a marlin',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_generate_image_123',
+							function: {
+								name: 'generate_openai_image',
+								arguments: '{"prompt": "A marlin jumping out of the water"}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"success": true, "attachment_id": 2112, "url": "https://example.com/image.png"}',
+					name: 'generate_openai_image',
+					tool_call_id: 'call_generate_image_123',
+					display: {
+						text: '✓ Successfully generated image (ID: 2112)',
+						bubbleType: 'tool',
+						attachments: [
+							{
+								url: 'https://example.com/image.png',
+								label: 'Generated Image',
+								meta: 'ID: 2112'
+							}
+						]
+					}
+				},
+				{
+					role: 'assistant',
+					content: "Here's a stunning image of a marlin jumping out of the water!",
+					display: {
+						text: "Here's a stunning image of a marlin jumping out of the water!",
+						bubbleType: 'assistant',
+						usage: {
+							prompt_tokens: 10000,
+							completion_tokens: 2000,
+							total_tokens: 12000
+						},
+						cost: {
+							total: 0.05,
+							currency: 'USD'
+						}
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_tool_response',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// Verify all 4 messages are persisted
+			expect(retrieved.conversation).toHaveLength(4);
+
+			// Verify the final assistant response (after tool results) is persisted
+			const finalAssistant = retrieved.conversation[3];
+			expect(finalAssistant.role).toBe('assistant');
+			expect(finalAssistant.content).toBe("Here's a stunning image of a marlin jumping out of the water!");
+			expect(finalAssistant.display).toBeDefined();
+			expect(finalAssistant.display.bubbleType).toBe('assistant');
+			expect(finalAssistant.display.text).toBe("Here's a stunning image of a marlin jumping out of the water!");
+
+			// Verify the tool result is also persisted with attachments
+			const toolResult = retrieved.conversation[2];
+			expect(toolResult.role).toBe('tool');
+			expect(toolResult.display.attachments).toHaveLength(1);
+		});
+
+		it('should persist assistant response with tool results even when empty content initially', () => {
+			// This tests the scenario where assistant message has tool_calls but no content,
+			// then a follow-up assistant message with the summary
+			const conversation = [
+				{
+					role: 'user',
+					content: 'create',
+					display: {
+						text: 'create',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_abc',
+							function: {
+								name: 'generate_openai_image',
+								arguments: '{}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"success": true}',
+					name: 'generate_openai_image',
+					tool_call_id: 'call_abc',
+					display: {
+						text: 'Image generated successfully',
+						bubbleType: 'tool'
+					}
+				},
+				{
+					role: 'assistant',
+					content: 'Here is your generated image!',
+					display: {
+						text: 'Here is your generated image!',
+						bubbleType: 'assistant'
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_empty_content',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// The final assistant message after tool results should persist
+			expect(retrieved.conversation).toHaveLength(4);
+			expect(retrieved.conversation[3].role).toBe('assistant');
+			expect(retrieved.conversation[3].content).toBe('Here is your generated image!');
+			expect(retrieved.conversation[3].display).toBeDefined();
+			expect(retrieved.conversation[3].display.bubbleType).toBe('assistant');
+		});
+	});
 });

@@ -11866,6 +11866,10 @@
             // No tool results - clear status as before
             setStatus(state.container, '');
         }
+
+        // Save conversation to localStorage after all messages have been added.
+        // This ensures that assistant responses to tool results persist on page reload.
+        saveConversationToStorage(state);
         
         return Promise.resolve();
     }
