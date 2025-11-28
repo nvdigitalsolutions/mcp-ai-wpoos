@@ -4761,7 +4761,7 @@
         if (!messages.length) {
             appendMessage(state.messagesEl, 'system', {
                 text: getString('historyNoMessages', 'No messages were saved for this conversation.'),
-            });
+            }, false, { state: state });
             setTranscriptExpanded(state, true);
             setStatus(state.container, '');
             return;
@@ -4801,7 +4801,14 @@
             
             const allowMarkdown = role === 'assistant';
 
-            appendMessage(state.messagesEl, role, payload, allowMarkdown);
+            // Pass state in options to ensure delete buttons are attached
+            // For assistant messages, also pass speech info for TTS button
+            const appendOptions = { state: state };
+            if (role === 'assistant') {
+                appendOptions.speech = { state: state, text: trimmedContent };
+            }
+
+            appendMessage(state.messagesEl, role, payload, allowMarkdown, appendOptions);
             if (hasContent || role === 'tool') {
                 // Preserve the original message structure including display metadata
                 state.conversation.push(message);
@@ -4862,7 +4869,7 @@
                     });
                 }
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
-                appendMessage(state.messagesEl, 'system', { text: message });
+                appendMessage(state.messagesEl, 'system', { text: message }, false, { state: state });
                 // Clear status after showing error message in chat
                 clearStatus(state.container);
             });
@@ -6902,7 +6909,7 @@
         
         // Display initial message if provided
         if (parsedContent.message) {
-            appendMessage(state.messagesEl, 'system', parsedContent.message);
+            appendMessage(state.messagesEl, 'system', parsedContent.message, false, { state: state });
         }
         
         // Start polling for the async result (SSE-first with REST fallback)
@@ -7488,7 +7495,7 @@
         const pollDelay = getCrawl4aiPollDelay(metadata, state);
         const timeout = getCrawl4aiTimeout(metadata);
         const startTime = Date.now();
-        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Crawl queued. Results will appear shortly.'));
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Crawl queued. Results will appear shortly.'), false, { state: state });
 
         state.pendingCrawlTasks[taskId] = {
             entry: pendingEntry,
@@ -7605,7 +7612,7 @@
         // This allows admins to adjust for long-running tools like video generation
         const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
         const startTime = Date.now();
-        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
 
         return new Promise(function (resolve, reject) {
             let sseConnection = null;
@@ -7824,7 +7831,7 @@
         const startTime = Date.now();
         
         if (!pendingEntry) {
-            pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+            pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
         }
 
         state.pendingAsyncTools[jobId] = {
@@ -8048,7 +8055,7 @@
      */
     function waitForAsyncToolResultWithEventBus(state, jobId, toolName, toolCallId) {
         const timeout = (state.config && state.config.asyncToolTimeout) ? state.config.asyncToolTimeout : ASYNC_TOOL_TIMEOUT_DEFAULT_MS;
-        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
         
         // Track in pending async tools
         state.pendingAsyncTools[jobId] = {
@@ -8432,7 +8439,7 @@
         };
 
         // Display the tool result with attachments
-        const messageElement = appendMessage(state.messagesEl, 'tool', displayPayload);
+        const messageElement = appendMessage(state.messagesEl, 'tool', displayPayload, false, { state: state });
 
         // Add tool result to conversation state for agentic flow continuity
         // This ensures the tool result is available for subsequent AI messages
@@ -9271,7 +9278,7 @@
                     systemPayload.bubbleType = display.bubbleType;
                 }
                 
-                appendMessage(state.messagesEl, 'system', systemPayload);
+                appendMessage(state.messagesEl, 'system', systemPayload, false, { state: state });
                 return;
             }
 
@@ -9316,7 +9323,7 @@
                     toolPayload = { text: '[Tool result]' };
                 }
                 
-                appendMessage(state.messagesEl, 'tool', toolPayload);
+                appendMessage(state.messagesEl, 'tool', toolPayload, false, { state: state });
                 return;
             }
 
@@ -9453,6 +9460,7 @@
                 }
                 
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
+                    state: state,
                     speech: {
                         state: state,
                         text: textForSpeech,
@@ -10630,7 +10638,7 @@
             // Optionally show tool execution in chat
             appendMessage(state.messagesEl, 'system', {
                 text: '⚙️ ' + message
-            });
+            }, false, { state: state });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
             const message = formatString(
@@ -10665,7 +10673,7 @@
                 // Display initial message if provided
                 // Note: The backend already includes Job ID in the message, so we don't add it again
                 if (result.message) {
-                    appendMessage(state.messagesEl, 'system', result.message);
+                    appendMessage(state.messagesEl, 'system', result.message, false, { state: state });
                 }
                 
                 // Start polling for the async result
@@ -10729,7 +10737,7 @@
             };
             
             // Display the tool result with attachments if available
-            const messageElement = appendMessage(state.messagesEl, messageType, displayPayload);
+            const messageElement = appendMessage(state.messagesEl, messageType, displayPayload, false, { state: state });
             
             // Add tool result to conversation state for persistence
             // This ensures tool results are saved to localStorage and CCT
@@ -10812,7 +10820,7 @@
         setStatus(state.container, message);
         appendMessage(state.messagesEl, 'system', {
             text: message
-        });
+        }, false, { state: state });
     }
 
     function restoreSubmissionState(state, submissionContext) {
@@ -10999,6 +11007,11 @@
                 const cost = data && data.cost ? data.cost : null;
                 
                 const messageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                    state: state,
+                    speech: {
+                        state: state,
+                        text: assistantDisplay.text || '',
+                    },
                     usage: usage,
                     cost: cost
                 });
@@ -11289,6 +11302,7 @@
             }
 
             const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                state: state,
                 speech: {
                     state: state,
                     text: assistantDisplay.text || '',
@@ -11320,7 +11334,7 @@
                 notice = getString('responseMissing', 'The assistant response could not be displayed.');
             }
 
-            appendMessage(state.messagesEl, 'system', { text: notice });
+            appendMessage(state.messagesEl, 'system', { text: notice }, false, { state: state });
             setStatus(state.container, notice);
 
             return Promise.resolve();
@@ -11675,6 +11689,7 @@
                         lastMessage.parentNode.removeChild(lastMessage);
                     }
                     const updatedMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        state: state,
                         speech: {
                             state: state,
                             text: assistantDisplay.text || '',
@@ -11701,6 +11716,7 @@
                 } else {
                     // No text content from LLM but we have attachments or text from tool results - show them
                     const newMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        state: state,
                         speech: {
                             state: state,
                             text: assistantDisplay.text || '',
@@ -11835,7 +11851,7 @@
 
             message = message.trim() || fallbackMessage;
 
-            appendMessage(state.messagesEl, 'system', { text: message });
+            appendMessage(state.messagesEl, 'system', { text: message }, false, { state: state });
             setStatus(state.container, message);
         }
 
@@ -12533,6 +12549,16 @@
         
         // Attach delete button for user messages
         if (role === 'user' && chatState) {
+            attachDeleteButton(entry, chatState, role);
+        }
+        
+        // Attach delete button for tool messages
+        if (role === 'tool' && chatState) {
+            attachDeleteButton(entry, chatState, role);
+        }
+        
+        // Attach delete button for system messages
+        if (role === 'system' && chatState) {
             attachDeleteButton(entry, chatState, role);
         }
 
@@ -13722,7 +13748,7 @@
                     appendMessage(state.messagesEl, 'system', {
                         text: message,
                         attachments: [],
-                    }, false);
+                    }, false, { state: state });
                 }
                 
                 return result;
@@ -13736,7 +13762,7 @@
                     appendMessage(state.messagesEl, 'system', {
                         text: 'Error: ' + escapeHtml(errorMessage),
                         attachments: [],
-                    }, false);
+                    }, false, { state: state });
                 }
                 
                 throw error;
