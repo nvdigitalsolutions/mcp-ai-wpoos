@@ -214,4 +214,89 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 		$stored_job_id = get_post_meta( $save_result['attachment_id'], '_veo_job_id', true );
 		$this->assertEquals( $job_id, $stored_job_id, 'Attachment should have job_id in metadata' );
 	}
+
+	/**
+	 * Test that find_attachment_by_job_id includes file_name in result.
+	 *
+	 * This ensures the chat client receives the file name when recovering
+	 * video completion status from the media library.
+	 */
+	public function test_find_attachment_by_job_id_includes_file_name() {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$job_id  = 'veo_test_file_name_recovery';
+
+		// Create a video attachment with the required metadata.
+		$attachment_id = $this->factory->attachment->create( array(
+			'post_mime_type' => 'video/mp4',
+			'post_author'    => $user_id,
+			'post_title'     => 'Test Veo Video',
+		) );
+
+		// Set the veo metadata.
+		update_post_meta( $attachment_id, '_veo_job_id', $job_id );
+		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
+		update_post_meta( $attachment_id, '_veo_duration', 5 );
+		update_post_meta( $attachment_id, '_veo_aspect_ratio', '16:9' );
+		update_post_meta( $attachment_id, '_veo_resolution', '720p' );
+		update_post_meta( $attachment_id, '_veo_model', 'veo-3.1-generate-preview' );
+		update_post_meta( $attachment_id, '_veo_provider', 'gemini' );
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->service );
+		$method     = $reflection->getMethod( 'find_attachment_by_job_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->service, $job_id );
+
+		// Verify it found the attachment.
+		$this->assertIsArray( $result, 'find_attachment_by_job_id should return array' );
+		$this->assertEquals( $attachment_id, $result['attachment_id'], 'Should find correct attachment' );
+
+		// Verify file_name is included in the result.
+		$this->assertArrayHasKey( 'file_name', $result, 'Result should have file_name' );
+		// The file_name may be empty if attachment doesn't have a file, but the key should exist.
+	}
+
+	/**
+	 * Test that check_for_created_video_file includes file_name in result.
+	 *
+	 * This ensures the chat client receives the file name when video completion
+	 * is detected via file-based polling.
+	 */
+	public function test_check_for_created_video_file_includes_file_name() {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$job_id  = 'veo_file_based_polling_test';
+		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+
+		// Create a video attachment with the required metadata.
+		$attachment_id = $this->factory->attachment->create( array(
+			'post_mime_type' => 'video/mp4',
+			'post_author'    => $user_id,
+			'post_title'     => 'Test Veo Video File Polling',
+		) );
+
+		// Set the veo metadata (job_id specifically for file-based detection).
+		update_post_meta( $attachment_id, '_veo_job_id', $job_id );
+		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
+		update_post_meta( $attachment_id, '_veo_duration', 5 );
+		update_post_meta( $attachment_id, '_veo_aspect_ratio', '16:9' );
+		update_post_meta( $attachment_id, '_veo_resolution', '720p' );
+		update_post_meta( $attachment_id, '_veo_model', 'veo-3.1-generate-preview' );
+		update_post_meta( $attachment_id, '_veo_provider', 'gemini' );
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->service );
+		$method     = $reflection->getMethod( 'check_for_created_video_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->service, $expected_filename, $job_id );
+
+		// Verify it found the attachment.
+		$this->assertIsArray( $result, 'check_for_created_video_file should return array' );
+		$this->assertEquals( $attachment_id, $result['attachment_id'], 'Should find correct attachment' );
+
+		// Verify file_name is included in the result.
+		$this->assertArrayHasKey( 'file_name', $result, 'Result should have file_name' );
+		// The file_name may be empty if attachment doesn't have a file, but the key should exist.
+	}
 }

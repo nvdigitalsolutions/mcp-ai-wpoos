@@ -1842,8 +1842,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Build result matching the exact format from poll_video_async API-based completion.
 		// This ensures the agentic loop receives a properly formatted response with all necessary fields.
-		$url      = wp_get_attachment_url( $attachment_id );
-		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+		$url       = wp_get_attachment_url( $attachment_id );
+		$edit_url  = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+		$file_path = get_attached_file( $attachment_id );
+		$file_name = $file_path ? basename( $file_path ) : '';
 
 		// Build descriptive text message for the LLM and chat UI.
 		$text_message = sprintf(
@@ -1873,6 +1875,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'job_id'        => $job_id,
 			'attachment_id' => $attachment_id,
 			'url'           => $url,
+			'file_name'     => $file_name,
 			'edit_url'      => $edit_url,
 			'prompt'        => $prompt,
 			'duration'      => absint( $duration ),
@@ -2255,8 +2258,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		// Build result matching the exact format from poll_video_async API-based completion.
 		// This ensures the agentic loop receives a properly formatted response with all necessary fields.
-		$url      = wp_get_attachment_url( $attachment_id );
-		$edit_url = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+		$url       = wp_get_attachment_url( $attachment_id );
+		$edit_url  = admin_url( 'post.php?post=' . $attachment_id . '&action=edit' );
+		$file_path = get_attached_file( $attachment_id );
+		$file_name = $file_path ? basename( $file_path ) : '';
 
 		// Build descriptive text message for the LLM and chat UI.
 		$text_message = sprintf(
@@ -2286,6 +2291,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'job_id'        => $job_id,
 			'attachment_id' => $attachment_id,
 			'url'           => $url,
+			'file_name'     => $file_name,
 			'edit_url'      => $edit_url,
 			'prompt'        => $prompt,
 			'duration'      => absint( $duration ),
