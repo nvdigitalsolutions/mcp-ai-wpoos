@@ -520,49 +520,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			foreach ( $active_group['fields'] as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$this->render_field( $key, $fields[ $key ] );
-
-					// Add test button after the Brave Search API Key field.
-					if ( 'brave_search_api_key' === $key ) {
-						$this->render_brave_search_test_button();
-					}
 				}
 			}
 
 			// Render additional content based on active sub-tab.
 			$this->render_subtab_footer( $active_subtab );
-		}
-
-		/**
-		 * Render Brave Search test button after the API key field.
-		 */
-		private function render_brave_search_test_button() {
-			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
-			$brave_api_key = isset( $settings['brave_search_api_key'] ) ? $settings['brave_search_api_key'] : '';
-			?>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Brave Search Connection', 'wp-mcp-ai' ); ?></th>
-				<td>
-					<?php if ( ! empty( $brave_api_key ) ) : ?>
-						<p>
-							<button type="button" id="wp-mcp-ai-test-brave-search-connection" class="button button-secondary">
-								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
-							</button>
-							<span id="wp-mcp-ai-brave-search-test-result" style="margin-left: 10px;"></span>
-						</p>
-						<p class="description">
-							<?php esc_html_e( 'Click the button above to verify your Brave Search API key is working correctly.', 'wp-mcp-ai' ); ?>
-						</p>
-					<?php else : ?>
-						<div style="padding: 10px; background: #f0f0f1; border: 1px solid #dcdcde; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #50575e;">
-								<span class="dashicons dashicons-info" style="color: #50575e;"></span>
-								<?php esc_html_e( 'Enter your Brave Search API key in the field above and save settings to enable the connection test.', 'wp-mcp-ai' ); ?>
-							</p>
-						</div>
-					<?php endif; ?>
-				</td>
-			</tr>
-			<?php
 		}
 
 		/**
