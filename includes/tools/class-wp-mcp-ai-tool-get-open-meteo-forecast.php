@@ -490,14 +490,14 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 			$full_label = $unit ? sprintf( '%s (%s)', $label, $unit ) : $label;
 
 			$dataset = array(
-				'label'           => $full_label,
-				'data'            => array_map( 'floatval', $values ),
-				'borderColor'     => $color,
-				'backgroundColor' => $this->hex_to_rgba( $color, 0.2 ),
-				'borderWidth'     => 2,
-				'tension'         => 0.3,
-				'fill'            => false,
-				'pointRadius'     => 0,
+				'label'            => $full_label,
+				'data'             => array_map( 'floatval', $values ),
+				'borderColor'      => $color,
+				'backgroundColor'  => $this->hex_to_rgba( $color, 0.2 ),
+				'borderWidth'      => 2,
+				'tension'          => 0.3,
+				'fill'             => false,
+				'pointRadius'      => 0,
 				'pointHoverRadius' => 5,
 			);
 
@@ -693,13 +693,13 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 							'text'    => __( 'Time', 'wp-mcp-ai' ),
 						),
 						'ticks'   => array(
-							'maxRotation' => 45,
-							'autoSkip'    => true,
+							'maxRotation'   => 45,
+							'autoSkip'      => true,
 							'maxTicksLimit' => 24,
 						),
 					),
 					'y' => array(
-						'display'   => true,
+						'display'     => true,
 						'beginAtZero' => false,
 					),
 				),
@@ -723,6 +723,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
 
+		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Standalone HTML file for chart export.
 		$html = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -802,6 +803,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 </body>
 </html>
 HTML;
+		// phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 
 		return $html;
 	}
