@@ -385,6 +385,9 @@ class Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'html', $result );
 		$this->assertStringContainsString( 'Chart', $result['html'] );
 		$this->assertStringContainsString( 'canvas', $result['html'] );
+		// Verify SRI (Subresource Integrity) is included for security.
+		$this->assertStringContainsString( 'integrity=', $result['html'] );
+		$this->assertStringContainsString( 'crossorigin="anonymous"', $result['html'] );
 		$this->assertArrayHasKey( 'chart_config', $result );
 		$this->assertIsArray( $result['chart_config'] );
 		$this->assertArrayHasKey( 'data', $result );
