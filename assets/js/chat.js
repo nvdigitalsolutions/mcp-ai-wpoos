@@ -2444,10 +2444,13 @@
             return;
         }
 
-        // Generate a unique key for this message
+        // Generate a unique key for this message using message content hash
         const assistantId = state.config && state.config.assistantId ? state.config.assistantId : 'unknown';
-        const sessionKey = state.config && state.config.sessionKey ? state.config.sessionKey : '';
-        const messageKey = assistantId + '_' + sessionKey + '_' + messageIndex;
+        const sessionKey = state.config && state.config.sessionKey ? state.config.sessionKey : 'nosession';
+        const bubbleText = bubble.textContent || bubble.innerText || '';
+        // Create a simple content hash for uniqueness
+        const contentHash = bubbleText.length > 0 ? bubbleText.substring(0, 50).replace(/\s/g, '') : messageIndex;
+        const messageKey = assistantId + '_' + sessionKey + '_' + messageIndex + '_' + contentHash;
 
         // Add save-enabled class
         if (bubble.classList) {
@@ -2486,9 +2489,6 @@
             // Show saving state
             button.disabled = true;
             updateSaveButtonState(button, 'saving');
-
-            // Get message content from the bubble
-            const bubbleText = bubble.textContent || bubble.innerText || '';
 
             // Attempt to save to CCT if endpoint is available
             const savePromise = state.config && state.config.transcriptsEndpoint
@@ -3586,13 +3586,43 @@
         const selector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant';
         const bubbles = state.messagesEl.querySelectorAll(selector);
 
-        Array.prototype.forEach.call(bubbles, function (bubble, index) {
+        // Track the assistant message index in the conversation
+        let assistantMsgIndex = 0;
+        Array.prototype.forEach.call(bubbles, function (bubble, domIndex) {
             const storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
             attachSpeechButton(bubble, state, storedText);
             attachCopyButton(bubble, storedText);
             // Attach save button for assistant messages
-            attachSaveButton(bubble, state, index);
+            // Use the actual position in conversation if available, otherwise use DOM index
+            const conversationIndex = (state.conversation && Array.isArray(state.conversation))
+                ? findAssistantMessageIndex(state.conversation, assistantMsgIndex)
+                : domIndex;
+            attachSaveButton(bubble, state, conversationIndex);
+            assistantMsgIndex++;
         });
+    }
+
+    /**
+     * Find the index of the nth assistant message in the conversation array.
+     * 
+     * @param {Array} conversation - The conversation array
+     * @param {number} nthAssistant - Which assistant message to find (0-based)
+     * @return {number} The index in the conversation array, or -1 if not found
+     */
+    function findAssistantMessageIndex(conversation, nthAssistant) {
+        if (!Array.isArray(conversation)) {
+            return -1;
+        }
+        let assistantCount = 0;
+        for (let i = 0; i < conversation.length; i++) {
+            if (conversation[i] && conversation[i].role === 'assistant') {
+                if (assistantCount === nthAssistant) {
+                    return i;
+                }
+                assistantCount++;
+            }
+        }
+        return -1;
     }
 
     function normaliseList(value) {
