@@ -1071,13 +1071,22 @@
 
     /**
      * Extract display metadata from a rendered message element.
-     * This captures bubble type, attachments, and display text for persistence.
+     * This captures bubble type, attachments, display text, and usage/cost badges for persistence.
+     * 
+     * Industry standard: Always persist display metadata for all messages to ensure
+     * consistent restoration. This follows the pattern used for JSON bubbles.
+     * 
+     * Note: System messages are NOT persisted (they are transient UI feedback).
      * 
      * @param {HTMLElement} messageElement - The rendered message element
      * @param {Object} displayPayload - The original display payload used to render
+     * @param {Object} options - Optional additional data to persist
+     * @param {Object} options.usage - Token usage data (prompt_tokens, completion_tokens, total_tokens)
+     * @param {Object} options.cost - Cost data (total, currency)
+     * @param {Array<string>} options.capabilityFlags - Capability flags (e.g., 'vision', 'code_interpreter')
      * @return {Object|null} Display metadata object or null if no metadata to preserve
      */
-    function extractDisplayMetadata(messageElement, displayPayload) {
+    function extractDisplayMetadata(messageElement, displayPayload, options) {
         if (!messageElement) {
             return null;
         }
@@ -1087,13 +1096,33 @@
             return null;
         }
 
+        // System messages should NOT be persisted - they are transient UI feedback
+        if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--system')) {
+            return null;
+        }
+
         const metadata = {};
         let hasMetadata = false;
 
-        // Extract bubble type
+        // Extract bubble type from data attribute if set (json, truncated, etc.)
+        // For standard assistant/user messages, we set a default bubble type
+        // to ensure consistent persistence and restoration
         if (messageElement.dataset.bubbleType) {
             metadata.bubbleType = messageElement.dataset.bubbleType;
             hasMetadata = true;
+        } else {
+            // Determine default bubble type from CSS classes for standard messages
+            // This ensures assistant bubbles persist the same way as JSON bubbles
+            if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--assistant')) {
+                metadata.bubbleType = 'assistant';
+                hasMetadata = true;
+            } else if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--user')) {
+                metadata.bubbleType = 'user';
+                hasMetadata = true;
+            } else if (messageElement.classList.contains('wp-mcp-ai-chat__bubble--tool')) {
+                metadata.bubbleType = 'tool';
+                hasMetadata = true;
+            }
         }
 
         // Extract display message if provided
@@ -1111,6 +1140,24 @@
         // Extract attachments if provided
         if (displayPayload && Array.isArray(displayPayload.attachments) && displayPayload.attachments.length > 0) {
             metadata.attachments = displayPayload.attachments;
+            hasMetadata = true;
+        }
+
+        // Extract usage data (token counts) for badge persistence
+        if (options && options.usage) {
+            metadata.usage = options.usage;
+            hasMetadata = true;
+        }
+
+        // Extract cost data for badge persistence
+        if (options && options.cost) {
+            metadata.cost = options.cost;
+            hasMetadata = true;
+        }
+
+        // Extract capability flags for badge persistence
+        if (options && options.capabilityFlags) {
+            metadata.capabilityFlags = options.capabilityFlags;
             hasMetadata = true;
         }
 
@@ -9459,12 +9506,20 @@
                     textForSpeech = Array.isArray(content) ? normaliseContent(content) : (content || '');
                 }
                 
+                // Extract persisted badge data (usage, cost, capability flags)
+                const usage = display && display.usage ? display.usage : null;
+                const cost = display && display.cost ? display.cost : null;
+                const capabilityFlags = display && display.capabilityFlags ? display.capabilityFlags : null;
+                
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                     state: state,
                     speech: {
                         state: state,
                         text: textForSpeech,
                     },
+                    usage: usage,
+                    cost: cost,
+                    capabilityFlags: capabilityFlags
                 });
                 return;
             }
@@ -11021,7 +11076,10 @@
                     const assistantMessage = createConversationMessage(
                         'assistant',
                         assistantDisplay.text || '',
-                        extractDisplayMetadata(messageElement, assistantDisplay)
+                        extractDisplayMetadata(messageElement, assistantDisplay, {
+                            usage: usage,
+                            cost: cost
+                        })
                     );
                     state.conversation.push(assistantMessage);
                 }
@@ -11309,7 +11367,7 @@
                 },
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
-                capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
@@ -11321,8 +11379,12 @@
                 assistantMessage.content = assistantDisplay.text || '';
             }
             
-            // Extract and preserve display metadata for persistence
-            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay);
+            // Extract and preserve display metadata for persistence (including badges)
+            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
+                usage: aggregatedUsage,
+                cost: aggregatedCost,
+                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
+            });
             if (displayMetadata) {
                 assistantMessage.display = displayMetadata;
             }
@@ -11696,7 +11758,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
-                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     
                     // Update conversation content with text from tool results.
@@ -11708,8 +11770,12 @@
                         assistantMessage.content = assistantDisplay.text;
                     }
                     
-                    // Update display metadata in already-saved message
-                    const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay);
+                    // Update display metadata in already-saved message (including badges)
+                    const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay, {
+                        usage: aggregatedUsage,
+                        cost: aggregatedCost,
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
+                    });
                     if (displayMetadata) {
                         assistantMessage.display = displayMetadata;
                     }
@@ -11723,7 +11789,7 @@
                         },
                         usage: aggregatedUsage,
                         cost: aggregatedCost,
-                        capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null,
+                        capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
                     });
                     // Update conversation content with text from tool results.
                     // This ensures text from tools is persisted even when LLM returned no content.
@@ -11738,8 +11804,12 @@
                     // Use indexOf to check entire array, not just last element,
                     // since tool results may have been pushed after the assistant message
                     if (state.conversation.indexOf(assistantMessage) === -1) {
-                        // Extract and preserve display metadata
-                        const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay);
+                        // Extract and preserve display metadata (including badges)
+                        const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay, {
+                            usage: aggregatedUsage,
+                            cost: aggregatedCost,
+                            capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
+                        });
                         if (displayMetadata) {
                             assistantMessage.display = displayMetadata;
                         }

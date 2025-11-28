@@ -184,6 +184,7 @@ describe('Display Metadata Persistence', () => {
 					content: 'Can you analyze this data?',
 					display: {
 						text: 'Can you analyze this data?',
+						bubbleType: 'user',
 						attachments: [
 							{
 								url: 'https://example.com/data.csv',
@@ -196,6 +197,10 @@ describe('Display Metadata Persistence', () => {
 				{
 					role: 'assistant',
 					content: 'Let me analyze the data.',
+					display: {
+						text: 'Let me analyze the data.',
+						bubbleType: 'assistant'
+					}
 				},
 				{
 					role: 'assistant',
@@ -220,8 +225,40 @@ describe('Display Metadata Persistence', () => {
 
 			expect(retrieved.conversation).toHaveLength(3);
 			expect(retrieved.conversation[0].display.attachments).toHaveLength(1);
-			expect(retrieved.conversation[1].display).toBeUndefined();
+			expect(retrieved.conversation[0].display.bubbleType).toBe('user');
+			expect(retrieved.conversation[1].display).toBeDefined();
+			expect(retrieved.conversation[1].display.bubbleType).toBe('assistant');
 			expect(retrieved.conversation[2].display.bubbleType).toBe('json');
+		});
+
+		it('should preserve standard assistant message with display metadata (industry standard)', () => {
+			// Industry standard: All message types should have display metadata
+			// for consistent persistence and restoration, similar to JSON bubbles
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Hello! How can I help you today?',
+				display: {
+					text: 'Hello! How can I help you today?',
+					bubbleType: 'assistant'
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_standard',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0]).toEqual(assistantMessage);
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.text).toBe('Hello! How can I help you today?');
+			expect(retrieved.conversation[0].display.bubbleType).toBe('assistant');
 		});
 	});
 
@@ -264,6 +301,141 @@ describe('Display Metadata Persistence', () => {
 
 			expect(payload.text).toBe('Hello world');
 			expect(payload.bubbleType).toBeUndefined();
+		});
+	});
+
+	describe('Badge persistence', () => {
+		it('should preserve usage data in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					usage: {
+						prompt_tokens: 100,
+						completion_tokens: 50,
+						total_tokens: 150
+					}
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_usage',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.usage).toBeDefined();
+			expect(retrieved.conversation[0].display.usage.prompt_tokens).toBe(100);
+			expect(retrieved.conversation[0].display.usage.completion_tokens).toBe(50);
+			expect(retrieved.conversation[0].display.usage.total_tokens).toBe(150);
+		});
+
+		it('should preserve cost data in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					cost: {
+						total: 0.0025,
+						currency: 'USD'
+					}
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_cost',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.cost).toBeDefined();
+			expect(retrieved.conversation[0].display.cost.total).toBe(0.0025);
+			expect(retrieved.conversation[0].display.cost.currency).toBe('USD');
+		});
+
+		it('should preserve capability flags in display metadata', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Here is the analysis.',
+				display: {
+					text: 'Here is the analysis.',
+					bubbleType: 'assistant',
+					capabilityFlags: ['vision', 'code_interpreter']
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_flags',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display).toBeDefined();
+			expect(retrieved.conversation[0].display.capabilityFlags).toBeDefined();
+			expect(retrieved.conversation[0].display.capabilityFlags).toHaveLength(2);
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('vision');
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('code_interpreter');
+		});
+
+		it('should preserve all badge data together', () => {
+			const assistantMessage = {
+				role: 'assistant',
+				content: 'Complete response with all badges.',
+				display: {
+					text: 'Complete response with all badges.',
+					bubbleType: 'assistant',
+					usage: {
+						prompt_tokens: 200,
+						completion_tokens: 100,
+						total_tokens: 300
+					},
+					cost: {
+						total: 0.005,
+						currency: 'USD'
+					},
+					capabilityFlags: ['vision']
+				}
+			};
+
+			const conversation = [assistantMessage];
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_all_badges',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			expect(retrieved.conversation[0].display.usage.total_tokens).toBe(300);
+			expect(retrieved.conversation[0].display.cost.total).toBe(0.005);
+			expect(retrieved.conversation[0].display.capabilityFlags).toContain('vision');
 		});
 	});
 });
