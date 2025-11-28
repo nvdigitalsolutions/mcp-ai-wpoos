@@ -12,16 +12,16 @@
 ( function() {
 	'use strict';
 
-	var registerBlockType = wp.blocks.registerBlockType;
-	var createElement = wp.element.createElement;
-	var Fragment = wp.element.Fragment;
-	var InspectorControls = wp.blockEditor.InspectorControls;
-	var PanelBody = wp.components.PanelBody;
-	var SelectControl = wp.components.SelectControl;
-	var ToggleControl = wp.components.ToggleControl;
-	var TextControl = wp.components.TextControl;
-	var Placeholder = wp.components.Placeholder;
-	var __ = wp.i18n.__;
+	const registerBlockType = wp.blocks.registerBlockType;
+	const createElement = wp.element.createElement;
+	const Fragment = wp.element.Fragment;
+	const InspectorControls = wp.blockEditor.InspectorControls;
+	const PanelBody = wp.components.PanelBody;
+	const SelectControl = wp.components.SelectControl;
+	const ToggleControl = wp.components.ToggleControl;
+	const TextControl = wp.components.TextControl;
+	const Placeholder = wp.components.Placeholder;
+	const __ = wp.i18n.__;
 
 	/**
 	 * Get assistant options for select control.
@@ -29,7 +29,7 @@
 	 * @return {Array} Options array.
 	 */
 	function getAssistantOptions() {
-		var options = [ { label: wpMcpAiBlocks.i18n.selectAssistant, value: '' } ];
+		const options = [ { label: wpMcpAiBlocks.i18n.selectAssistant, value: '' } ];
 
 		if ( wpMcpAiBlocks.assistants && wpMcpAiBlocks.assistants.length > 0 ) {
 			wpMcpAiBlocks.assistants.forEach( function( assistant ) {
@@ -58,8 +58,8 @@
 		},
 
 		edit: function( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return createElement(
 				Fragment,
@@ -151,8 +151,8 @@
 		keywords: [ 'ai', 'assistant', 'selector', 'dropdown' ],
 
 		edit: function( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return createElement(
 				Fragment,
@@ -230,10 +230,10 @@
 		keywords: [ 'ai', 'tools', 'grid', 'capabilities' ],
 
 		edit: function( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
-			var toolGroups = wpMcpAiBlocks.toolGroups || [];
-			var totalTools = 0;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
+			const toolGroups = wpMcpAiBlocks.toolGroups || [];
+			let totalTools = 0;
 
 			toolGroups.forEach( function( group ) {
 				totalTools += group.tools ? group.tools.length : 0;
@@ -325,8 +325,8 @@
 		},
 
 		edit: function( props ) {
-			var attributes = props.attributes;
-			var setAttributes = props.setAttributes;
+			const attributes = props.attributes;
+			const setAttributes = props.setAttributes;
 
 			return createElement(
 				Fragment,

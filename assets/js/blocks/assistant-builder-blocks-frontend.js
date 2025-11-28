@@ -7,7 +7,7 @@
  * @package WP_MCP_AI
  */
 
-/* global jQuery, wpMcpAiChat */
+/* global jQuery */
 
 ( function( $ ) {
 	'use strict';
@@ -15,7 +15,7 @@
 	/**
 	 * Assistant Builder Block Controller
 	 */
-	var AssistantBuilderBlock = {
+	const AssistantBuilderBlock = {
 		/**
 		 * Instances by block ID.
 		 */
@@ -25,11 +25,11 @@
 		 * Initialize all assistant builder blocks on the page.
 		 */
 		init: function() {
-			var self = this;
+			const self = this;
 
 			$( '.wp-block-wp-mcp-ai-assistant-builder' ).each( function() {
-				var $block = $( this );
-				var blockId = $block.data( 'block-id' );
+				const $block = $( this );
+				const blockId = $block.data( 'block-id' );
 
 				if ( blockId && ! self.instances[ blockId ] ) {
 					self.instances[ blockId ] = new AssistantBuilderInstance( $block );
@@ -46,7 +46,7 @@
 		 */
 		initAssistantSelectors: function() {
 			$( '.wp-block-wp-mcp-ai-assistant-selector' ).each( function() {
-				var $block = $( this );
+				const $block = $( this );
 
 				// Skip if inside an assistant builder block.
 				if ( $block.closest( '.wp-block-wp-mcp-ai-assistant-builder' ).length > 0 ) {
@@ -62,7 +62,7 @@
 		 */
 		initToolsGrids: function() {
 			$( '.wp-block-wp-mcp-ai-tools-grid' ).each( function() {
-				var $block = $( this );
+				const $block = $( this );
 
 				// Skip if inside an assistant builder block.
 				if ( $block.closest( '.wp-block-wp-mcp-ai-assistant-builder' ).length > 0 ) {
@@ -106,13 +106,14 @@
 		 * @return {Object} Configuration object.
 		 */
 		parseConfig: function() {
-			var $configScript = this.$block.find( '.wp-mcp-ai-assistant-builder-config' );
-			var config = {};
+			const $configScript = this.$block.find( '.wp-mcp-ai-assistant-builder-config' );
+			let config = {};
 
 			if ( $configScript.length > 0 ) {
 				try {
 					config = JSON.parse( $configScript.text() );
 				} catch ( e ) {
+					// eslint-disable-next-line no-console
 					console.error( 'Failed to parse assistant builder config:', e );
 				}
 			}
@@ -124,7 +125,7 @@
 		 * Initialize the instance.
 		 */
 		init: function() {
-			var self = this;
+			const self = this;
 
 			// Initialize selector.
 			if ( this.$selector.length > 0 ) {
@@ -140,7 +141,7 @@
 
 			// Initialize tools grid.
 			if ( this.$tools.length > 0 ) {
-				var $toolsGrid = this.$tools.find( '.wp-block-wp-mcp-ai-tools-grid' );
+				const $toolsGrid = this.$tools.find( '.wp-block-wp-mcp-ai-tools-grid' );
 				if ( $toolsGrid.length > 0 ) {
 					this.toolsController = new ToolsGridController( $toolsGrid, {
 						onChange: function( selectedTools ) {
@@ -183,8 +184,6 @@
 		 * @param {Object} assistantData Assistant data from option.
 		 */
 		onStartChat: function( assistantId, assistantData ) {
-			var self = this;
-
 			// Show chat container.
 			this.$chat.show();
 
@@ -199,8 +198,7 @@
 		 * @param {Object} assistantData Assistant data from option.
 		 */
 		initializeChatWidget: function( assistantId, assistantData ) {
-			var self = this;
-			var $container = this.$chat.find( '.wp-block-wp-mcp-ai-assistant-builder__chat, .wp-mcp-ai-assistant-builder__chat' );
+			let $container = this.$chat.find( '.wp-block-wp-mcp-ai-assistant-builder__chat, .wp-mcp-ai-assistant-builder__chat' );
 
 			if ( $container.length === 0 ) {
 				$container = this.$chat;
@@ -210,10 +208,10 @@
 			$container.empty();
 
 			// Create instance ID.
-			var instanceId = 'wp-mcp-ai-builder-chat-' + assistantId + '-' + Date.now();
+			const instanceId = 'wp-mcp-ai-builder-chat-' + assistantId + '-' + Date.now();
 
 			// Build chat HTML.
-			var chatHTML = this.buildChatHTML( instanceId, assistantData.title || 'Assistant' );
+			const chatHTML = this.buildChatHTML( instanceId, assistantData.title || 'Assistant' );
 			$container.html( chatHTML );
 
 			// Configure chat instance.
@@ -221,7 +219,7 @@
 				window.wpMcpAiChatInstances = {};
 			}
 
-			var baseRestUrl = this.config.restUrl || ( window.wpMcpAiChat && window.wpMcpAiChat.restUrl ) || '/wp-json/mcp-ai/v1';
+			const baseRestUrl = this.config.restUrl || ( window.wpMcpAiChat && window.wpMcpAiChat.restUrl ) || '/wp-json/mcp-ai/v1';
 
 			window.wpMcpAiChatInstances[ instanceId ] = {
 				id: instanceId,
@@ -257,8 +255,8 @@
 		 * @return {string} HTML string.
 		 */
 		buildChatHTML: function( instanceId, assistantTitle ) {
-			var placeholder = this.config.chatPlaceholder || 'Describe the assistant you want to create...';
-			var showBuild = this.config.showBuildButton !== false;
+			const placeholder = this.config.chatPlaceholder || 'Describe the assistant you want to create...';
+			const showBuild = this.config.showBuildButton !== false;
 
 			return '<div class="wp-mcp-ai-chat" id="' + this.escapeHtml( instanceId ) + '" data-wp-mcp-ai-chat>' +
 				'<div class="wp-mcp-ai-chat__assistant">' +
@@ -307,19 +305,19 @@
 		 */
 		triggerChatInit: function( instanceId ) {
 			setTimeout( function() {
-				var container = document.getElementById( instanceId );
+				const container = document.getElementById( instanceId );
 				if ( ! container ) {
 					return;
 				}
 
 				// Re-trigger DOMContentLoaded for chat.js.
-				var event = document.createEvent( 'Event' );
+				const event = document.createEvent( 'Event' );
 				event.initEvent( 'DOMContentLoaded', true, true );
 				document.dispatchEvent( event );
 
 				// Focus textarea.
 				setTimeout( function() {
-					var textarea = container.querySelector( '.wp-mcp-ai-chat__input' );
+					const textarea = container.querySelector( '.wp-mcp-ai-chat__input' );
 					if ( textarea ) {
 						textarea.focus();
 					}
@@ -343,7 +341,7 @@
 		 * @return {string} Escaped text.
 		 */
 		escapeHtml: function( text ) {
-			var div = document.createElement( 'div' );
+			const div = document.createElement( 'div' );
 			div.textContent = text;
 			return div.innerHTML;
 		}
@@ -369,12 +367,12 @@
 		 * Initialize the controller.
 		 */
 		init: function() {
-			var self = this;
+			const self = this;
 
 			// Handle selection change.
 			this.$select.on( 'change', function() {
-				var value = $( this ).val();
-				var assistantData = self.getAssistantData( $( this ).find( 'option:selected' ) );
+				const value = $( this ).val();
+				const assistantData = self.getAssistantData( $( this ).find( 'option:selected' ) );
 
 				if ( self.$startBtn.length > 0 ) {
 					self.$startBtn.prop( 'disabled', ! value );
@@ -387,8 +385,8 @@
 
 			// Handle start button click.
 			this.$startBtn.on( 'click', function() {
-				var value = self.$select.val();
-				var assistantData = self.getAssistantData( self.$select.find( 'option:selected' ) );
+				const value = self.$select.val();
+				const assistantData = self.getAssistantData( self.$select.find( 'option:selected' ) );
 
 				if ( value && self.options.onStart ) {
 					self.options.onStart( parseInt( value, 10 ), assistantData );
@@ -403,10 +401,10 @@
 		 * @return {Object} Assistant data.
 		 */
 		getAssistantData: function( $option ) {
-			var toolsJson = $option.data( 'tools' );
-			var shortcutsJson = $option.data( 'shortcuts' );
-			var tools = [];
-			var shortcuts = [];
+			const toolsJson = $option.data( 'tools' );
+			const shortcutsJson = $option.data( 'shortcuts' );
+			let tools = [];
+			let shortcuts = [];
 
 			if ( toolsJson ) {
 				try {
@@ -460,7 +458,7 @@
 		 * Initialize the controller.
 		 */
 		init: function() {
-			var self = this;
+			const self = this;
 
 			// Handle checkbox changes.
 			this.$block.on( 'change', '.wp-mcp-ai-tools-grid__checkbox', function() {
@@ -487,12 +485,12 @@
 		 * Update the selection state.
 		 */
 		updateSelection: function() {
-			var self = this;
+			const self = this;
 			this.selectedTools = [];
 
 			// Collect selected tools.
 			this.$block.find( '.wp-mcp-ai-tools-grid__checkbox:checked' ).each( function() {
-				var slug = $( this ).val();
+				const slug = $( this ).val();
 				if ( slug ) {
 					self.selectedTools.push( slug );
 				}
@@ -500,16 +498,16 @@
 
 			// Update item states.
 			this.$block.find( '.wp-block-wp-mcp-ai-tools-grid__item' ).each( function() {
-				var $item = $( this );
-				var $checkbox = $item.find( '.wp-mcp-ai-tools-grid__checkbox' );
+				const $item = $( this );
+				const $checkbox = $item.find( '.wp-mcp-ai-tools-grid__checkbox' );
 				$item.toggleClass( 'wp-block-wp-mcp-ai-tools-grid__item--selected', $checkbox.is( ':checked' ) );
 			} );
 
 			// Update group counts.
 			this.$block.find( '.wp-block-wp-mcp-ai-tools-grid__group' ).each( function() {
-				var $group = $( this );
-				var $checkboxes = $group.find( '.wp-mcp-ai-tools-grid__checkbox' );
-				var checkedCount = $checkboxes.filter( ':checked' ).length;
+				const $group = $( this );
+				const $checkboxes = $group.find( '.wp-mcp-ai-tools-grid__checkbox' );
+				const checkedCount = $checkboxes.filter( ':checked' ).length;
 				$group.find( '.wp-mcp-ai-tools-grid__group-selected' ).text( checkedCount );
 			} );
 
@@ -528,7 +526,7 @@
 		 * @param {Array} tools Array of tool slugs.
 		 */
 		setSelectedTools: function( tools ) {
-			var self = this;
+			const self = this;
 
 			// Uncheck all first.
 			this.$block.find( '.wp-mcp-ai-tools-grid__checkbox' ).prop( 'checked', false );
@@ -589,7 +587,7 @@
 		 * Initialize the controller.
 		 */
 		init: function() {
-			var self = this;
+			const self = this;
 
 			// Click to upload.
 			this.$dropzone.on( 'click', function() {
@@ -606,7 +604,7 @@
 
 			// File input change.
 			this.$fileInput.on( 'change', function() {
-				var files = this.files;
+				const files = this.files;
 				if ( files && files.length > 0 ) {
 					self.handleFiles( files );
 				}
@@ -628,7 +626,7 @@
 			} );
 
 			this.$dropzone.on( 'drop', function( e ) {
-				var files = e.originalEvent.dataTransfer.files;
+				const files = e.originalEvent.dataTransfer.files;
 				if ( files && files.length > 0 ) {
 					self.handleFiles( files );
 				}
@@ -641,8 +639,8 @@
 
 			// Remove individual file.
 			this.$fileList.on( 'click', '.wp-block-wp-mcp-ai-knowledge-base__file-remove', function() {
-				var $item = $( this ).closest( '.wp-block-wp-mcp-ai-knowledge-base__file-item' );
-				var fileId = $item.data( 'file-id' );
+				const $item = $( this ).closest( '.wp-block-wp-mcp-ai-knowledge-base__file-item' );
+				const fileId = $item.data( 'file-id' );
 				self.removeFile( fileId );
 			} );
 		},
@@ -653,12 +651,11 @@
 		 * @param {FileList} files Files to process.
 		 */
 		handleFiles: function( files ) {
-			var self = this;
-			var filesToUpload = [];
+			const filesToUpload = [];
 
-			for ( var i = 0; i < files.length; i++ ) {
-				var file = files[ i ];
-				var validation = this.validateFile( file );
+			for ( let i = 0; i < files.length; i++ ) {
+				const file = files[ i ];
+				const validation = this.validateFile( file );
 
 				if ( validation.valid ) {
 					filesToUpload.push( file );
@@ -690,7 +687,7 @@
 			}
 
 			// Check file type.
-			var ext = '.' + file.name.split( '.' ).pop().toLowerCase();
+			const ext = '.' + file.name.split( '.' ).pop().toLowerCase();
 			if ( this.allowedTypes.length > 0 && this.allowedTypes.indexOf( ext ) === -1 ) {
 				return { valid: false, error: 'Invalid file type' };
 			}
@@ -704,16 +701,16 @@
 		 * @param {Array} files Files to upload.
 		 */
 		uploadFiles: function( files ) {
-			var self = this;
-			var uploaded = 0;
-			var total = files.length;
+			const self = this;
+			let uploaded = 0;
+			const total = files.length;
 
 			this.isUploading = true;
 			this.showProgress( 0, total );
 
 			files.forEach( function( file, index ) {
 				// Add temporary item.
-				var tempId = 'temp-' + Date.now() + '-' + index;
+				const tempId = 'temp-' + Date.now() + '-' + index;
 				self.addFileItem( {
 					id: tempId,
 					name: file.name,
@@ -750,8 +747,8 @@
 		 * @param {Function} callback Callback function.
 		 */
 		uploadFile: function( file, tempId, callback ) {
-			var self = this;
-			var formData = new FormData();
+			const self = this;
+			const formData = new FormData();
 			formData.append( 'file', file );
 
 			$.ajax( {
@@ -776,7 +773,7 @@
 					} );
 				},
 				error: function( xhr ) {
-					var errorMessage = 'Upload failed';
+					let errorMessage = 'Upload failed';
 					if ( xhr.responseJSON && xhr.responseJSON.message ) {
 						errorMessage = xhr.responseJSON.message;
 					}
@@ -791,10 +788,10 @@
 		 * @param {Object} file File data.
 		 */
 		addFileItem: function( file ) {
-			var ext = file.name.split( '.' ).pop().toUpperCase();
-			var uploadingClass = file.uploading ? ' wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' : '';
+			const ext = file.name.split( '.' ).pop().toUpperCase();
+			const uploadingClass = file.uploading ? ' wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' : '';
 
-			var html = '<li class="wp-block-wp-mcp-ai-knowledge-base__file-item' + uploadingClass + '" data-file-id="' + file.id + '">' +
+			const html = '<li class="wp-block-wp-mcp-ai-knowledge-base__file-item' + uploadingClass + '" data-file-id="' + file.id + '">' +
 				'<span class="wp-block-wp-mcp-ai-knowledge-base__file-icon">' + this.escapeHtml( ext ) + '</span>' +
 				'<div class="wp-block-wp-mcp-ai-knowledge-base__file-info">' +
 				'<span class="wp-block-wp-mcp-ai-knowledge-base__file-name">' + this.escapeHtml( file.name ) + '</span>' +
@@ -816,7 +813,7 @@
 		 * @param {Object} data    Real file data.
 		 */
 		updateFileItem: function( tempId, data ) {
-			var $item = this.$fileList.find( '[data-file-id="' + tempId + '"]' );
+			const $item = this.$fileList.find( '[data-file-id="' + tempId + '"]' );
 			if ( $item.length === 0 ) {
 				return;
 			}
@@ -839,7 +836,7 @@
 		 * @param {string} error  Error message.
 		 */
 		updateFileItemError: function( tempId, error ) {
-			var $item = this.$fileList.find( '[data-file-id="' + tempId + '"]' );
+			const $item = this.$fileList.find( '[data-file-id="' + tempId + '"]' );
 			if ( $item.length === 0 ) {
 				return;
 			}
@@ -859,8 +856,8 @@
 		 * @param {string} error    Error message.
 		 */
 		showFileError: function( fileName, error ) {
-			var ext = fileName.split( '.' ).pop().toUpperCase();
-			var html = '<li class="wp-block-wp-mcp-ai-knowledge-base__file-item wp-block-wp-mcp-ai-knowledge-base__file-item--error" data-file-id="error-' + Date.now() + '">' +
+			const ext = fileName.split( '.' ).pop().toUpperCase();
+			const html = '<li class="wp-block-wp-mcp-ai-knowledge-base__file-item wp-block-wp-mcp-ai-knowledge-base__file-item--error" data-file-id="error-' + Date.now() + '">' +
 				'<span class="wp-block-wp-mcp-ai-knowledge-base__file-icon">' + this.escapeHtml( ext ) + '</span>' +
 				'<div class="wp-block-wp-mcp-ai-knowledge-base__file-info">' +
 				'<span class="wp-block-wp-mcp-ai-knowledge-base__file-name">' + this.escapeHtml( fileName ) + '</span>' +
@@ -906,7 +903,7 @@
 		 * Update the file count display.
 		 */
 		updateCount: function() {
-			var count = this.uploadedFiles.length;
+			const count = this.uploadedFiles.length;
 			this.$count.text( count );
 			this.$clearAll.toggle( count > 0 );
 		},
@@ -915,7 +912,7 @@
 		 * Update the hidden file IDs input.
 		 */
 		updateFileIds: function() {
-			var ids = this.uploadedFiles.map( function( f ) {
+			const ids = this.uploadedFiles.map( function( f ) {
 				return f.id;
 			} );
 			this.$fileIdsInput.val( ids.join( ',' ) );
@@ -928,7 +925,7 @@
 		 * @param {number} total   Total count.
 		 */
 		showProgress: function( current, total ) {
-			var percent = total > 0 ? Math.round( ( current / total ) * 100 ) : 0;
+			const percent = total > 0 ? Math.round( ( current / total ) * 100 ) : 0;
 			this.$progressFill.css( 'width', percent + '%' );
 			this.$progressText.text( 'Uploading ' + current + ' of ' + total + '...' );
 			this.$progress.show();
@@ -941,7 +938,7 @@
 		 * @param {number} total   Total count.
 		 */
 		updateProgress: function( current, total ) {
-			var percent = total > 0 ? Math.round( ( current / total ) * 100 ) : 0;
+			const percent = total > 0 ? Math.round( ( current / total ) * 100 ) : 0;
 			this.$progressFill.css( 'width', percent + '%' );
 			this.$progressText.text( 'Uploading ' + current + ' of ' + total + '...' );
 		},
@@ -950,7 +947,7 @@
 		 * Hide progress.
 		 */
 		hideProgress: function() {
-			var self = this;
+			const self = this;
 			setTimeout( function() {
 				self.$progress.hide();
 				self.$progressFill.css( 'width', '0%' );
@@ -967,9 +964,9 @@
 			if ( bytes === 0 ) {
 				return '0 B';
 			}
-			var k = 1024;
-			var sizes = [ 'B', 'KB', 'MB', 'GB' ];
-			var i = Math.floor( Math.log( bytes ) / Math.log( k ) );
+			const k = 1024;
+			const sizes = [ 'B', 'KB', 'MB', 'GB' ];
+			const i = Math.floor( Math.log( bytes ) / Math.log( k ) );
 			return parseFloat( ( bytes / Math.pow( k, i ) ).toFixed( 1 ) ) + ' ' + sizes[ i ];
 		},
 
@@ -980,7 +977,7 @@
 		 * @return {string} Escaped text.
 		 */
 		escapeHtml: function( text ) {
-			var div = document.createElement( 'div' );
+			const div = document.createElement( 'div' );
 			div.textContent = text;
 			return div.innerHTML;
 		},
@@ -1021,7 +1018,7 @@
 
 		// Initialize standalone knowledge base blocks.
 		$( '.wp-block-wp-mcp-ai-knowledge-base' ).each( function() {
-			var $block = $( this );
+			const $block = $( this );
 
 			// Skip if inside an assistant builder block.
 			if ( $block.closest( '.wp-block-wp-mcp-ai-assistant-builder' ).length > 0 ) {
