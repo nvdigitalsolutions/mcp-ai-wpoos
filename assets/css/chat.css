@@ -526,7 +526,7 @@
 /* Save enabled class for bubbles - ensures relative positioning */
 .wp-mcp-ai-chat__bubble.wp-mcp-ai-save-enabled {
     position: relative;
-    padding-left: 3rem;
+    padding-left: var(--wp-mcp-ai-save-button-space, 3rem);
 }
 
 @keyframes wp-mcp-ai-speech-spin {
