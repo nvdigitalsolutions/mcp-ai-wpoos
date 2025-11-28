@@ -3586,20 +3586,49 @@
         const selector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant';
         const bubbles = state.messagesEl.querySelectorAll(selector);
 
-        // Track the assistant message index in the conversation
-        let assistantMsgIndex = 0;
-        Array.prototype.forEach.call(bubbles, function (bubble, domIndex) {
+        // Attach speech and copy buttons for assistant messages
+        Array.prototype.forEach.call(bubbles, function (bubble) {
             const storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
             attachSpeechButton(bubble, state, storedText);
             attachCopyButton(bubble, storedText);
-            // Attach save button for assistant messages
+        });
+
+        // Attach save buttons for system messages only
+        const systemSelector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--system';
+        const systemBubbles = state.messagesEl.querySelectorAll(systemSelector);
+        
+        let systemMsgIndex = 0;
+        Array.prototype.forEach.call(systemBubbles, function (bubble, domIndex) {
             // Use the actual position in conversation if available, otherwise use DOM index
             const conversationIndex = (state.conversation && Array.isArray(state.conversation))
-                ? findAssistantMessageIndex(state.conversation, assistantMsgIndex)
+                ? findSystemMessageIndex(state.conversation, systemMsgIndex)
                 : domIndex;
             attachSaveButton(bubble, state, conversationIndex);
-            assistantMsgIndex++;
+            systemMsgIndex++;
         });
+    }
+
+    /**
+     * Find the index of the nth system message in the conversation array.
+     * 
+     * @param {Array} conversation - The conversation array
+     * @param {number} nthSystem - Which system message to find (0-based)
+     * @return {number} The index in the conversation array, or -1 if not found
+     */
+    function findSystemMessageIndex(conversation, nthSystem) {
+        if (!Array.isArray(conversation)) {
+            return -1;
+        }
+        let systemCount = 0;
+        for (let i = 0; i < conversation.length; i++) {
+            if (conversation[i] && conversation[i].role === 'system') {
+                if (systemCount === nthSystem) {
+                    return i;
+                }
+                systemCount++;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -10360,11 +10389,6 @@
                         attachCopyButton(streamingMessageElement, streamResult.content);
                         attachDeleteButton(streamingMessageElement, state, 'assistant');
 
-                        // Attach save button for assistant messages
-                        // Use current conversation length as index (message will be added next)
-                        const streamMessageIndex = state.conversation ? state.conversation.length : 0;
-                        attachSaveButton(streamingMessageElement, state, streamMessageIndex);
-
                         // Auto-play speech if voice chat mode is active
                         if (state.voiceChatModeActive && streamingMessageElement) {
                             setTimeout(function() {
@@ -12939,18 +12963,6 @@
                 attachDeleteButton(entry, chatState, role);
             }
 
-            // Attach save button for assistant messages
-            // Allows users to save individual AI responses to localStorage and CCT
-            if (chatState) {
-                // Get message index - from options if provided, or calculate from conversation length
-                const messageIndex = (options && typeof options.messageIndex === 'number')
-                    ? options.messageIndex
-                    : (chatState.conversation && Array.isArray(chatState.conversation))
-                        ? chatState.conversation.length - 1
-                        : 0;
-                attachSaveButton(entry, chatState, messageIndex);
-            }
-
             // Attach usage and cost badges if data is available
             // Phase 7 Week 5-6: Enhanced Token Tracking
             const usage = options && options.usage ? options.usage : null;
@@ -12988,6 +13000,15 @@
         // Attach delete button for system messages
         if (role === 'system' && chatState) {
             attachDeleteButton(entry, chatState, role);
+            
+            // Attach save button for system messages
+            // Allows users to save individual system responses to localStorage and CCT
+            const messageIndex = (options && typeof options.messageIndex === 'number')
+                ? options.messageIndex
+                : (chatState.conversation && Array.isArray(chatState.conversation))
+                    ? chatState.conversation.length - 1
+                    : 0;
+            attachSaveButton(entry, chatState, messageIndex);
         }
 
         listEl.appendChild(entry);
