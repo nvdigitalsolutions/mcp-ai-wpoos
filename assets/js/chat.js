@@ -11619,6 +11619,42 @@
             assistantDisplay.chartTitle = normalized.chartTitle || '';
         }
 
+        /**
+         * Add video placeholder attachment to assistant display for pending video generation.
+         * This ensures the video player appears in both system and assistant bubbles.
+         * Extracted as a helper function to reduce duplication.
+         * 
+         * @param {Object} assistantDisplay - The display object to add video attachment to
+         * @param {Object} parsedContent - Parsed tool result with expected_url and expected_filename
+         */
+        function addVideoPendingAttachment(assistantDisplay, parsedContent) {
+            // Check if this is a pending video generation
+            var isVideoPending = parsedContent.expected_url && 
+                                 parsedContent.expected_filename && 
+                                 parsedContent.expected_filename.indexOf('.mp4') !== -1;
+            
+            if (!isVideoPending) {
+                return;
+            }
+            
+            // Add text to assistant display if not already present
+            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+            if (!assistantDisplay.text) {
+                assistantDisplay.text = videoText;
+            } else if (assistantDisplay.text.indexOf(videoText) === -1) {
+                assistantDisplay.text += '\n\n' + videoText;
+            }
+            
+            // Add video placeholder attachment to assistant display
+            var videoAttachment = {
+                url: parsedContent.expected_url,
+                label: parsedContent.expected_filename || 'Video (generating...)',
+                downloadName: parsedContent.expected_filename || 'video.mp4',
+                meta: getString('videoPending', 'Pending • ~5 min')
+            };
+            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat([videoAttachment]);
+        }
+
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
             // Note: We don't update status here because the SSE stream processing
@@ -11735,6 +11771,10 @@
                                 toolCallId: toolCallId
                             });
                         }
+                        
+                        // For video generation, add placeholder attachment to assistant display
+                        addVideoPendingAttachment(assistantDisplay, parsedContent);
+                        
                         startAsyncToolPolling(state, parsedContent, toolName, toolCallId);
                         return;
                     }
@@ -11813,6 +11853,10 @@
                                 toolCallId: toolResult.tool_call_id
                             });
                         }
+                        
+                        // For video generation, add placeholder attachment to assistant display
+                        addVideoPendingAttachment(assistantDisplay, parsedContent);
+                        
                         startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                         return;
                     }
