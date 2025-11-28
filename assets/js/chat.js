@@ -4856,7 +4856,8 @@
             }
 
             appendMessage(state.messagesEl, role, payload, allowMarkdown, appendOptions);
-            if (hasContent || role === 'tool') {
+            // Only persist non-system messages (system bubbles are transient UI feedback)
+            if ((hasContent || role === 'tool') && role !== 'system') {
                 // Preserve the original message structure including display metadata
                 state.conversation.push(message);
             }
@@ -9302,8 +9303,10 @@
         // fixed to its original configuration (state.originalAssistantId).
         // The saved assistantId is only used for reference/validation.
 
-        // Restore conversation state
-        state.conversation = saved.conversation;
+        // Restore conversation state (excluding system messages which are transient UI feedback)
+        state.conversation = saved.conversation.filter(function(message) {
+            return message && message.role !== 'system';
+        });
 
         // Render each message in the UI
         saved.conversation.forEach(function (message) {
