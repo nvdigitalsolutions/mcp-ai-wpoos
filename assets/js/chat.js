@@ -11869,7 +11869,6 @@
 
         // Save conversation to localStorage after all messages have been added.
         // This ensures that assistant responses to tool results persist on page reload.
-        // Industry standard: Always persist after conversation state changes.
         saveConversationToStorage(state);
         
         return Promise.resolve();
