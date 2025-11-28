@@ -55,6 +55,14 @@ class WP_MCP_AI_Build_Assistant_Page {
 			return;
 		}
 
+		// Check if we're on the prompt tab.
+		$active_tab = $this->get_active_tab();
+
+		// Enqueue chat assets for the prompt tab.
+		if ( 'prompt' === $active_tab ) {
+			$this->enqueue_chat_assets();
+		}
+
 		wp_enqueue_style(
 			'wp-mcp-ai-build-assistant',
 			WP_MCP_AI_URL . 'assets/css/admin-build-assistant.css',
@@ -78,19 +86,36 @@ class WP_MCP_AI_Build_Assistant_Page {
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'wp_mcp_ai_create_assistant' ),
 				'strings'     => array(
-					'creating'           => __( 'Creating assistant...', 'wp-mcp-ai' ),
-					'createAssistant'    => __( 'Create Assistant', 'wp-mcp-ai' ),
-					'success'            => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
-					'error'              => __( 'Error creating assistant. Please try again.', 'wp-mcp-ai' ),
-					'required'           => __( 'This field is required.', 'wp-mcp-ai' ),
-					'maxProfessions'     => __( 'You can select up to 3 professions.', 'wp-mcp-ai' ),
-					'maxRegions'         => __( 'You can select up to 2 regions.', 'wp-mcp-ai' ),
-					'emptyConversation'  => __( 'Please describe what kind of assistant you want to create before clicking Build.', 'wp-mcp-ai' ),
+					'creating'          => __( 'Creating assistant...', 'wp-mcp-ai' ),
+					'createAssistant'   => __( 'Create Assistant', 'wp-mcp-ai' ),
+					'success'           => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
+					'error'             => __( 'Error creating assistant. Please try again.', 'wp-mcp-ai' ),
+					'required'          => __( 'This field is required.', 'wp-mcp-ai' ),
+					'maxProfessions'    => __( 'You can select up to 3 professions.', 'wp-mcp-ai' ),
+					'maxRegions'        => __( 'You can select up to 2 regions.', 'wp-mcp-ai' ),
+					'emptyConversation' => __( 'Please describe what kind of assistant you want to create before clicking Build.', 'wp-mcp-ai' ),
 				),
 				'professions' => $this->get_professions(),
 				'regions'     => $this->get_regions(),
 			)
 		);
+	}
+
+	/**
+	 * Enqueue chat interface assets for the prompt tab.
+	 *
+	 * Uses the shortcode class to ensure all dependencies are properly registered and enqueued.
+	 */
+	private function enqueue_chat_assets() {
+		// Ensure the shortcode assets are registered.
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) && ! wp_script_is( 'wp-mcp-ai-chat', 'registered' ) ) {
+			$shortcode = new WP_MCP_AI_Shortcode();
+			$shortcode->register_assets();
+		}
+
+		// Enqueue the chat script and style.
+		wp_enqueue_script( 'wp-mcp-ai-chat' );
+		wp_enqueue_style( 'wp-mcp-ai-chat' );
 	}
 
 	/**
@@ -346,30 +371,368 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * Render the Prompt tab content.
 	 */
 	private function render_prompt_tab() {
-		$builder_assistant_id = $this->get_builder_assistant_id();
+		// Get all published assistants for the dropdown.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		// Get all available tools.
+		$tools        = array();
+		$group_map    = array();
+		$group_labels = array();
+
+		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$tools    = $registry->get_tools();
+
+			if ( method_exists( $registry, 'get_tool_group_map' ) ) {
+				$group_map = $registry->get_tool_group_map();
+			}
+			if ( method_exists( $registry, 'get_tool_group_labels' ) ) {
+				$group_labels = $registry->get_tool_group_labels();
+			}
+		}
+
+		if ( ! is_array( $group_map ) ) {
+			$group_map = array();
+		}
+		if ( ! is_array( $group_labels ) ) {
+			$group_labels = array();
+		}
+		if ( ! isset( $group_labels['other'] ) ) {
+			$group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
+		}
+
 		?>
 		<div class="wp-mcp-ai-tab-content wp-mcp-ai-prompt-tab">
 			<div class="wp-mcp-ai-section">
 				<h2><?php esc_html_e( 'Build with AI Prompt', 'wp-mcp-ai' ); ?></h2>
-				<div class="wp-mcp-ai-prompt-intro">
-					<strong><?php esc_html_e( 'Describe your assistant', 'wp-mcp-ai' ); ?></strong>
-					<p><?php esc_html_e( 'Tell the AI what kind of assistant you want to create. Describe its purpose, expertise, target audience, and any specific capabilities. You can also upload files to include in its knowledge base. When ready, click the "Build" button to create your assistant.', 'wp-mcp-ai' ); ?></p>
+				
+				<!-- Step-by-step instructions -->
+				<div class="wp-mcp-ai-build-steps">
+					<div class="wp-mcp-ai-build-step wp-mcp-ai-build-step--active" data-step="1">
+						<span class="wp-mcp-ai-build-step__number">1</span>
+						<span class="wp-mcp-ai-build-step__label"><?php esc_html_e( 'Select Assistant', 'wp-mcp-ai' ); ?></span>
+					</div>
+					<div class="wp-mcp-ai-build-step" data-step="2">
+						<span class="wp-mcp-ai-build-step__number">2</span>
+						<span class="wp-mcp-ai-build-step__label"><?php esc_html_e( 'Configure Tools', 'wp-mcp-ai' ); ?></span>
+					</div>
+					<div class="wp-mcp-ai-build-step" data-step="3">
+						<span class="wp-mcp-ai-build-step__number">3</span>
+						<span class="wp-mcp-ai-build-step__label"><?php esc_html_e( 'Describe & Build', 'wp-mcp-ai' ); ?></span>
+					</div>
 				</div>
-				<div class="wp-mcp-ai-chat-container">
-					<?php
-					if ( $builder_assistant_id ) {
-						// Render the chat shortcode for the builder assistant.
-						echo do_shortcode( '[mcp_ai_chat assistant="' . esc_attr( $builder_assistant_id ) . '" save_transcript="false" allow_sensitive_tools="true"]' );
-					} else {
-						?>
-						<div class="wp-mcp-ai-no-builder">
-							<p><?php esc_html_e( 'The Assistant Builder is not configured. Please create an assistant with the slug "assistant-builder" or set one in the plugin settings.', 'wp-mcp-ai' ); ?></p>
+
+				<?php if ( empty( $assistants ) ) : ?>
+					<div class="notice notice-warning">
+						<p>
+							<?php
+							printf(
+								/* translators: %s: URL to create new assistant */
+								esc_html__( 'No assistants found. %s to get started.', 'wp-mcp-ai' ),
+								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'Create your first assistant', 'wp-mcp-ai' ) . '</a>'
+							);
+							?>
+						</p>
+					</div>
+				<?php else : ?>
+					<!-- Step 1: Select Assistant -->
+					<div class="wp-mcp-ai-build-section" id="wp-mcp-ai-build-step-1">
+						<h3><?php esc_html_e( 'Step 1: Select an Assistant', 'wp-mcp-ai' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Choose an existing assistant to use as the foundation for your conversation. This assistant will help you create a new, customized assistant.', 'wp-mcp-ai' ); ?></p>
+						
+						<div class="wp-mcp-ai-assistant-selector">
+							<select id="wp-mcp-ai-prompt-assistant-select" class="regular-text">
+								<option value=""><?php esc_html_e( '— Select an assistant —', 'wp-mcp-ai' ); ?></option>
+								<?php foreach ( $assistants as $assistant ) : ?>
+									<?php
+									$tool_shortcuts = array();
+									if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+										$tool_shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant->ID );
+									}
+
+									// Get selected tools for this assistant.
+									$selected_tools = array();
+									if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+										$selected_tools = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
+										if ( ! is_array( $selected_tools ) ) {
+											$selected_tools = array();
+										}
+									}
+
+									// Get assistant configuration.
+									$config   = array();
+									$provider = '';
+									$model    = '';
+									if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'get_assistant_configuration' ) ) {
+										$config   = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant->ID );
+										$provider = ! empty( $config['provider'] ) ? $config['provider'] : '';
+										$model    = ! empty( $config['model'] ) ? $config['model'] : '';
+									}
+									?>
+									<option 
+										value="<?php echo esc_attr( $assistant->ID ); ?>"
+										data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"
+										data-assistant-description="<?php echo esc_attr( wp_strip_all_tags( $assistant->post_content ) ); ?>"
+										data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $tool_shortcuts ) ); ?>"
+										data-selected-tools="<?php echo esc_attr( wp_json_encode( $selected_tools ) ); ?>"
+										data-provider="<?php echo esc_attr( $provider ); ?>"
+										data-model="<?php echo esc_attr( $model ); ?>"
+									>
+										<?php echo esc_html( $assistant->post_title ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
 						</div>
-						<?php
-					}
-					?>
-				</div>
+
+						<!-- Assistant Preview Card -->
+						<div class="wp-mcp-ai-assistant-preview" id="wp-mcp-ai-assistant-preview" style="display: none;">
+							<div class="wp-mcp-ai-assistant-preview__header">
+								<span class="dashicons dashicons-admin-users"></span>
+								<h4 id="wp-mcp-ai-assistant-preview-title"></h4>
+							</div>
+							<div class="wp-mcp-ai-assistant-preview__meta">
+								<span class="wp-mcp-ai-assistant-preview__provider" id="wp-mcp-ai-assistant-preview-provider"></span>
+								<span class="wp-mcp-ai-assistant-preview__model" id="wp-mcp-ai-assistant-preview-model"></span>
+								<span class="wp-mcp-ai-assistant-preview__tools" id="wp-mcp-ai-assistant-preview-tools"></span>
+							</div>
+							<p class="wp-mcp-ai-assistant-preview__description" id="wp-mcp-ai-assistant-preview-description"></p>
+						</div>
+					</div>
+
+					<!-- Step 2: Configure Tools -->
+					<div class="wp-mcp-ai-build-section" id="wp-mcp-ai-build-step-2" style="display: none;">
+						<h3><?php esc_html_e( 'Step 2: Configure Tools', 'wp-mcp-ai' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Select or deselect tools to customize what capabilities the assistant can use during this conversation. Changes apply immediately.', 'wp-mcp-ai' ); ?></p>
+						
+						<!-- Tool Actions -->
+						<div class="wp-mcp-ai-prompt-tools-actions">
+							<button type="button" class="button" id="wp-mcp-ai-tools-select-all">
+								<?php esc_html_e( 'Select All', 'wp-mcp-ai' ); ?>
+							</button>
+							<button type="button" class="button" id="wp-mcp-ai-tools-deselect-all">
+								<?php esc_html_e( 'Deselect All', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="wp-mcp-ai-tools-summary" id="wp-mcp-ai-tools-summary">
+								<strong id="wp-mcp-ai-tools-selected-total">0</strong> <?php esc_html_e( 'tools selected', 'wp-mcp-ai' ); ?>
+							</span>
+						</div>
+						
+						<?php $this->render_prompt_tools_grid( $tools, $group_map, $group_labels ); ?>
+					</div>
+
+					<!-- Step 3: Describe & Build -->
+					<div class="wp-mcp-ai-build-section" id="wp-mcp-ai-build-step-3" style="display: none;">
+						<h3><?php esc_html_e( 'Step 3: Describe & Build', 'wp-mcp-ai' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Describe the assistant you want to create. Be specific about its purpose, expertise, target audience, and any specific capabilities. When ready, click the "Build" button.', 'wp-mcp-ai' ); ?></p>
+						
+						<!-- Configuration Summary -->
+						<div class="wp-mcp-ai-config-summary" id="wp-mcp-ai-config-summary">
+							<h4><?php esc_html_e( 'Configuration Summary', 'wp-mcp-ai' ); ?></h4>
+							<div class="wp-mcp-ai-config-summary__grid">
+								<div class="wp-mcp-ai-config-summary__item">
+									<span class="wp-mcp-ai-config-summary__label"><?php esc_html_e( 'Base Assistant:', 'wp-mcp-ai' ); ?></span>
+									<span class="wp-mcp-ai-config-summary__value" id="wp-mcp-ai-summary-assistant">—</span>
+								</div>
+								<div class="wp-mcp-ai-config-summary__item">
+									<span class="wp-mcp-ai-config-summary__label"><?php esc_html_e( 'Provider:', 'wp-mcp-ai' ); ?></span>
+									<span class="wp-mcp-ai-config-summary__value" id="wp-mcp-ai-summary-provider">—</span>
+								</div>
+								<div class="wp-mcp-ai-config-summary__item">
+									<span class="wp-mcp-ai-config-summary__label"><?php esc_html_e( 'Model:', 'wp-mcp-ai' ); ?></span>
+									<span class="wp-mcp-ai-config-summary__value" id="wp-mcp-ai-summary-model">—</span>
+								</div>
+								<div class="wp-mcp-ai-config-summary__item">
+									<span class="wp-mcp-ai-config-summary__label"><?php esc_html_e( 'Tools:', 'wp-mcp-ai' ); ?></span>
+									<span class="wp-mcp-ai-config-summary__value" id="wp-mcp-ai-summary-tools">—</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Navigation Buttons -->
+					<div class="wp-mcp-ai-build-navigation" id="wp-mcp-ai-build-navigation">
+						<button type="button" class="button" id="wp-mcp-ai-build-prev" style="display: none;">
+							<?php esc_html_e( '← Previous', 'wp-mcp-ai' ); ?>
+						</button>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-build-next" disabled>
+							<?php esc_html_e( 'Next →', 'wp-mcp-ai' ); ?>
+						</button>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-start-chat-btn" style="display: none;">
+							<?php esc_html_e( 'Start Building', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+
+					<!-- Chat Container -->
+					<div class="wp-mcp-ai-chat-container" id="wp-mcp-ai-prompt-chat-container">
+						<!-- Chat interface will be initialized here when assistant is selected -->
+					</div>
+				<?php endif; ?>
 			</div>
+		</div>
+		<?php
+	}
+								<?php
+								$tool_shortcuts = array();
+								if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+									$tool_shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant->ID );
+								}
+
+								// Get selected tools for this assistant.
+								$selected_tools = array();
+								if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+									$selected_tools = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
+									if ( ! is_array( $selected_tools ) ) {
+										$selected_tools = array();
+									}
+								}
+								?>
+								<option 
+									value="<?php echo esc_attr( $assistant->ID ); ?>"
+									data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"
+									data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $tool_shortcuts ) ); ?>"
+									data-selected-tools="<?php echo esc_attr( wp_json_encode( $selected_tools ) ); ?>"
+								>
+									<?php echo esc_html( $assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<button type="button" id="wp-mcp-ai-start-chat-btn" class="button button-primary" disabled>
+							<?php esc_html_e( 'Start Chat', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+
+					<!-- Tools Grid Section -->
+					<div class="wp-mcp-ai-prompt-tools-section" id="wp-mcp-ai-prompt-tools-section" style="display: none;">
+						<h3><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Select or deselect tools to customize what capabilities the assistant can use during this conversation. Changes apply immediately.', 'wp-mcp-ai' ); ?></p>
+						
+						<?php $this->render_prompt_tools_grid( $tools, $group_map, $group_labels ); ?>
+					</div>
+
+					<div class="wp-mcp-ai-chat-container" id="wp-mcp-ai-prompt-chat-container">
+						<!-- Chat interface will be initialized here when assistant is selected -->
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the tools grid for the prompt tab.
+	 *
+	 * @param array $tools        Array of tool objects.
+	 * @param array $group_map    Map of tool slugs to group IDs.
+	 * @param array $group_labels Map of group IDs to labels.
+	 */
+	private function render_prompt_tools_grid( $tools, $group_map, $group_labels ) {
+		if ( empty( $tools ) ) {
+			echo '<p>' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
+			return;
+		}
+
+		// Group tools by category.
+		$grouped_tools = array();
+
+		foreach ( $tools as $tool ) {
+			if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				continue;
+			}
+
+			$slug = $tool->get_slug();
+
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			$group_id = isset( $group_map[ $slug ] ) ? (string) $group_map[ $slug ] : 'other';
+
+			if ( '' === $group_id ) {
+				$group_id = 'other';
+			}
+
+			if ( ! isset( $grouped_tools[ $group_id ] ) ) {
+				$grouped_tools[ $group_id ] = array();
+			}
+
+			$grouped_tools[ $group_id ][] = $tool;
+		}
+
+		if ( empty( $grouped_tools ) ) {
+			echo '<p>' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
+			return;
+		}
+
+		// Order groups by labels.
+		$ordered_group_ids = array();
+
+		foreach ( $group_labels as $group_id => $label ) {
+			if ( isset( $grouped_tools[ $group_id ] ) ) {
+				$ordered_group_ids[] = (string) $group_id;
+			}
+		}
+
+		foreach ( $grouped_tools as $group_id => $unused ) {
+			if ( ! in_array( $group_id, $ordered_group_ids, true ) ) {
+				$ordered_group_ids[] = (string) $group_id;
+			}
+		}
+
+		?>
+		<div class="wp-mcp-ai-prompt-tools" id="wp-mcp-ai-prompt-tools-grid">
+			<?php foreach ( $ordered_group_ids as $group_id ) : ?>
+				<?php
+				if ( ! isset( $grouped_tools[ $group_id ] ) ) {
+					continue;
+				}
+
+				$group_tools = $grouped_tools[ $group_id ];
+				$group_label = isset( $group_labels[ $group_id ] ) ? $group_labels[ $group_id ] : ucfirst( $group_id );
+				$tool_count  = count( $group_tools );
+				?>
+				<details class="wp-mcp-ai-prompt-tools__group">
+					<summary>
+						<span class="wp-mcp-ai-prompt-tools__summary-title"><?php echo esc_html( $group_label ); ?></span>
+						<span class="wp-mcp-ai-prompt-tools__summary-count">
+							<span class="wp-mcp-ai-prompt-tools__selected-count">0</span> / <?php echo esc_html( $tool_count ); ?>
+						</span>
+					</summary>
+					<ul class="wp-mcp-ai-prompt-tools__list">
+						<?php foreach ( $group_tools as $tool ) : ?>
+							<?php
+							$slug        = $tool->get_slug();
+							$definition  = $tool->get_definition();
+							$name        = isset( $definition['name'] ) ? $definition['name'] : $slug;
+							$description = isset( $definition['description'] ) ? $definition['description'] : '';
+							?>
+							<li class="wp-mcp-ai-prompt-tools__item" data-tool-slug="<?php echo esc_attr( $slug ); ?>">
+								<div class="wp-mcp-ai-prompt-tools__header">
+									<input 
+										type="checkbox" 
+										class="wp-mcp-ai-prompt-tools__checkbox" 
+										id="wp-mcp-ai-prompt-tool-<?php echo esc_attr( $slug ); ?>" 
+										value="<?php echo esc_attr( $slug ); ?>"
+									/>
+									<label for="wp-mcp-ai-prompt-tool-<?php echo esc_attr( $slug ); ?>">
+										<span class="wp-mcp-ai-prompt-tools__name"><?php echo esc_html( $name ); ?></span>
+									</label>
+								</div>
+								<?php if ( $description ) : ?>
+									<p class="wp-mcp-ai-prompt-tools__description"><?php echo esc_html( $description ); ?></p>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</details>
+			<?php endforeach; ?>
 		</div>
 		<?php
 	}
