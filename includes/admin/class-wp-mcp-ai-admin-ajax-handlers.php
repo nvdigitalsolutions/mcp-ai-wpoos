@@ -655,16 +655,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Extract subscription info if available.
-			$plan_info = '';
-			if ( isset( $data['query'] ) ) {
-				$plan_info = __( 'API key is valid and working.', 'wp-mcp-ai' );
-			}
-
 			wp_send_json_success(
 				array(
-					'message'   => __( 'Successfully connected to Brave Search API!', 'wp-mcp-ai' ),
-					'plan_info' => $plan_info,
+					'message' => __( 'Successfully connected to Brave Search API!', 'wp-mcp-ai' ),
 				)
 			);
 		}
