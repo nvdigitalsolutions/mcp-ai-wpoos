@@ -338,6 +338,8 @@ class WP_MCP_AI_Shortcode {
 					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'wp-mcp-ai' ),
 					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'wp-mcp-ai' ),
 					'downloadVideo'                 => __( 'Download video', 'wp-mcp-ai' ),
+					'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'wp-mcp-ai' ),
+					'videoPending'                  => __( 'Pending • ~5 min', 'wp-mcp-ai' ),
 					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'wp-mcp-ai' ),
 					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'wp-mcp-ai' ),
 					'tokensLabel'                   => __( 'Tokens', 'wp-mcp-ai' ),

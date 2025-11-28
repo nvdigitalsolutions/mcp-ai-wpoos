@@ -6955,8 +6955,24 @@
             });
         }
         
-        // Display initial message if provided
-        if (parsedContent.message) {
+        // Display initial message and video placeholder for video generation
+        // For video generation jobs, show a placeholder video element that will become active
+        // when the video file is created (typically within 5 minutes).
+        if (toolName === 'generate_veo_video' && parsedContent.expected_url) {
+            // Create a message payload with the video placeholder as an attachment
+            // This uses the standard attachment rendering which includes video player support
+            var videoPlaceholderPayload = {
+                text: parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.'),
+                attachments: [{
+                    url: parsedContent.expected_url,
+                    label: parsedContent.expected_filename || 'Video (generating...)',
+                    downloadName: parsedContent.expected_filename || 'video.mp4',
+                    meta: getString('videoPending', 'Pending • ~5 min')
+                }]
+            };
+            appendMessage(state.messagesEl, 'system', videoPlaceholderPayload, false, { state: state });
+        } else if (parsedContent.message) {
+            // Display initial message if provided (non-video tools)
             appendMessage(state.messagesEl, 'system', parsedContent.message, false, { state: state });
         }
         
