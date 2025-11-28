@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
@@ -8180,13 +8181,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						);
 					}
 
-					return array(
+					// Build the base pending response.
+					$pending_response = array(
 						'status'    => 'pending',
 						'job_id'    => $job_id,
 						'message'   => $message,
 						'async'     => true,
 						'tool_slug' => $tool_slug,
 					);
+
+					// Check if tool provides pre-execution metadata for async responses.
+					// This allows tools like video generation to provide expected_url and expected_filename
+					// so the UI can display a placeholder before the actual result is ready.
+					if ( $tool instanceof WP_MCP_AI_Tool_Async_Metadata_Interface ) {
+						$async_metadata = $tool->get_async_pending_metadata( $job_id, $arguments, $context );
+						if ( is_array( $async_metadata ) && ! empty( $async_metadata ) ) {
+							// Merge metadata into response (tool metadata takes precedence for message if provided).
+							$pending_response = array_merge( $pending_response, $async_metadata );
+
+							WP_MCP_AI_Logger::log_event(
+								'async_tool_metadata_added',
+								sprintf( 'Added pre-execution metadata for async tool %s', $tool_slug ),
+								array(
+									'tool_slug'     => $tool_slug,
+									'job_id'        => $job_id,
+									'metadata_keys' => array_keys( $async_metadata ),
+								)
+							);
+						}
+					}
+
+					return $pending_response;
 				}
 			}
 

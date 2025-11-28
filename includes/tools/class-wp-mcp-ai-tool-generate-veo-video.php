@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
@@ -21,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Quota limits are reached
  * - Rate limits are exceeded
  */
-class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -724,5 +725,56 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * Get pre-execution metadata for async pending response.
+	 *
+	 * When the orchestrator queues this tool for async execution, this method provides
+	 * the expected_url and expected_filename so the chat UI can display a placeholder
+	 * video element immediately, before the video is actually generated.
+	 *
+	 * @param string $job_id    The async job identifier (e.g., 'async_abc123').
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
+	 * @return array Metadata including expected_url and expected_filename.
+	 */
+	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
+		// Generate the expected filename based on the job ID.
+		// This matches the pattern used in save_video_to_media() and the video generation service.
+		// Using sanitize_file_name() for consistency with save_video_to_media().
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
+
+		// Generate expected URL based on WordPress upload directory.
+		$expected_url = '';
+		$upload_dir   = wp_upload_dir();
+		if ( ! empty( $upload_dir['url'] ) && empty( $upload_dir['error'] ) ) {
+			$expected_url = trailingslashit( $upload_dir['url'] ) . $expected_filename;
+		} else {
+			// Log when upload directory is not available.
+			// This can happen when uploads are disabled or there's a permissions issue.
+			WP_MCP_AI_Logger::log_warning(
+				'veo_upload_dir_unavailable',
+				'Cannot generate expected_url: upload directory not available',
+				array(
+					'job_id' => $job_id,
+					'error'  => isset( $upload_dir['error'] ) ? $upload_dir['error'] : 'Unknown error',
+				)
+			);
+		}
+
+		// Build a descriptive message for the pending state.
+		$message = sprintf(
+			/* translators: 1: expected filename, 2: job ID */
+			__( 'Video generation started. Your video (%1$s) is being created and will be available within approximately 5 minutes. Job ID: %2$s', 'wp-mcp-ai' ),
+			$expected_filename,
+			$job_id
+		);
+
+		return array(
+			'expected_url'      => $expected_url,
+			'expected_filename' => $expected_filename,
+			'message'           => $message,
+		);
 	}
 }
