@@ -1,0 +1,52 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wp-mcp-ai/chat",
+	"version": "1.0.0",
+	"title": "AI Chat",
+	"category": "widgets",
+	"icon": "format-chat",
+	"description": "Display an AI chat interface powered by WP oOS.",
+	"keywords": [ "ai", "chat", "assistant", "conversation", "mcp" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"assistantId": {
+			"type": "number",
+			"default": 0
+		},
+		"allowGuests": {
+			"type": "boolean",
+			"default": false
+		},
+		"saveTranscript": {
+			"type": "boolean",
+			"default": true
+		},
+		"enableStreaming": {
+			"type": "boolean",
+			"default": true
+		},
+		"allowSensitiveTools": {
+			"type": "boolean",
+			"default": false
+		},
+		"showBuildButton": {
+			"type": "boolean",
+			"default": false
+		},
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"align": [ "wide", "full" ],
+		"anchor": true,
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
