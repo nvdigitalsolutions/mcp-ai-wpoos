@@ -144,9 +144,12 @@ $config = array(
 				'showActions'      => true,
 			);
 
-			// Include the tools grid render.
-			$attributes = $tools_attributes;
+			// Set attributes for the nested tools-grid block.
+			// The included render.php expects $attributes as its input.
+			$parent_attributes = $attributes;
+			$attributes        = $tools_attributes;
 			include WP_MCP_AI_PATH . 'includes/blocks/tools-grid/render.php';
+			$attributes = $parent_attributes;
 			?>
 		</div>
 	<?php endif; ?>
@@ -162,8 +165,12 @@ $config = array(
 				'showPreview'   => true,
 			);
 
-			$attributes = $kb_attributes;
+			// Set attributes for the nested knowledge-base block.
+			// The included render.php expects $attributes as its input.
+			$parent_attributes = $attributes;
+			$attributes        = $kb_attributes;
 			include WP_MCP_AI_PATH . 'includes/blocks/knowledge-base/render.php';
+			$attributes = $parent_attributes;
 			?>
 		</div>
 	<?php endif; ?>
