@@ -11725,6 +11725,32 @@
                                 toolCallId: toolCallId
                             });
                         }
+                        
+                        // For video generation, add placeholder attachment to assistant display
+                        // This ensures the video player appears in both system and assistant bubbles
+                        var isVideoPending = parsedContent.expected_url && 
+                                             parsedContent.expected_filename && 
+                                             parsedContent.expected_filename.indexOf('.mp4') !== -1;
+                        
+                        if (isVideoPending) {
+                            // Add text to assistant display if not already present
+                            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+                            if (!assistantDisplay.text) {
+                                assistantDisplay.text = videoText;
+                            } else if (assistantDisplay.text.indexOf(videoText) === -1) {
+                                assistantDisplay.text += '\n\n' + videoText;
+                            }
+                            
+                            // Add video placeholder attachment to assistant display
+                            var videoAttachment = {
+                                url: parsedContent.expected_url,
+                                label: parsedContent.expected_filename || 'Video (generating...)',
+                                downloadName: parsedContent.expected_filename || 'video.mp4',
+                                meta: getString('videoPending', 'Pending • ~5 min')
+                            };
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat([videoAttachment]);
+                        }
+                        
                         startAsyncToolPolling(state, parsedContent, toolName, toolCallId);
                         return;
                     }
@@ -11803,6 +11829,32 @@
                                 toolCallId: toolResult.tool_call_id
                             });
                         }
+                        
+                        // For video generation, add placeholder attachment to assistant display
+                        // This ensures the video player appears in both system and assistant bubbles
+                        var isVideoPending = parsedContent.expected_url && 
+                                             parsedContent.expected_filename && 
+                                             parsedContent.expected_filename.indexOf('.mp4') !== -1;
+                        
+                        if (isVideoPending) {
+                            // Add text to assistant display if not already present
+                            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+                            if (!assistantDisplay.text) {
+                                assistantDisplay.text = videoText;
+                            } else if (assistantDisplay.text.indexOf(videoText) === -1) {
+                                assistantDisplay.text += '\n\n' + videoText;
+                            }
+                            
+                            // Add video placeholder attachment to assistant display
+                            var videoAttachment = {
+                                url: parsedContent.expected_url,
+                                label: parsedContent.expected_filename || 'Video (generating...)',
+                                downloadName: parsedContent.expected_filename || 'video.mp4',
+                                meta: getString('videoPending', 'Pending • ~5 min')
+                            };
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat([videoAttachment]);
+                        }
+                        
                         startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                         return;
                     }
