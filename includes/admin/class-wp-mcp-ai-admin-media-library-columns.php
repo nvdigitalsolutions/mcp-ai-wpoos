@@ -120,7 +120,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 				'<span class="wp-mcp-ai-badge wp-mcp-ai-badge-tokens" title="%s">%s</span>',
 				esc_attr(
 					sprintf(
-						/* translators: %d: number of tokens */
+						/* translators: %s: formatted number of tokens */
 						__( '%s tokens used', 'wp-mcp-ai' ),
 						number_format_i18n( $total_tokens )
 					)
@@ -274,10 +274,11 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 			$output_tokens = isset( $token_usage['completion_tokens'] ) ? absint( $token_usage['completion_tokens'] ) : 0;
 
 			// Handle total_tokens if prompt/completion not available.
+			// Split 50/50 as fallback when we don't have separate input/output counts.
 			if ( 0 === $input_tokens && 0 === $output_tokens && isset( $token_usage['total_tokens'] ) ) {
 				$total         = absint( $token_usage['total_tokens'] );
-				$input_tokens  = intval( $total * 0.5 );
-				$output_tokens = intval( $total * 0.5 );
+				$input_tokens  = intval( $total / 2 );
+				$output_tokens = $total - $input_tokens;
 			}
 
 			$cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
@@ -380,6 +381,10 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 			return;
 		}
 
+		// Register a minimal stylesheet to attach inline styles to.
+		wp_register_style( 'wp-mcp-ai-media-columns', false, array(), WP_MCP_AI_VERSION );
+		wp_enqueue_style( 'wp-mcp-ai-media-columns' );
+
 		$css = '
 			.wp-mcp-ai-usage-badges {
 				display: flex;
@@ -420,7 +425,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 			}
 		';
 
-		wp_add_inline_style( 'wp-admin', $css );
+		wp_add_inline_style( 'wp-mcp-ai-media-columns', $css );
 	}
 
 	/**
