@@ -742,6 +742,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
 		// Generate the expected filename based on the job ID.
 		// This matches the pattern used in save_video_to_media() and the video generation service.
+		// Using sanitize_file_name() for consistency with save_video_to_media().
 		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		// Generate expected URL based on WordPress upload directory.
@@ -749,6 +750,17 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$upload_dir   = wp_upload_dir();
 		if ( ! empty( $upload_dir['url'] ) && empty( $upload_dir['error'] ) ) {
 			$expected_url = trailingslashit( $upload_dir['url'] ) . $expected_filename;
+		} else {
+			// Log when upload directory is not available.
+			// This can happen when uploads are disabled or there's a permissions issue.
+			WP_MCP_AI_Logger::log_warning(
+				'veo_upload_dir_unavailable',
+				'Cannot generate expected_url: upload directory not available',
+				array(
+					'job_id' => $job_id,
+					'error'  => isset( $upload_dir['error'] ) ? $upload_dir['error'] : 'Unknown error',
+				)
+			);
 		}
 
 		// Build a descriptive message for the pending state.
