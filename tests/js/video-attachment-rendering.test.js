@@ -319,7 +319,11 @@ describe( 'Video Attachment Rendering', () => {
 	describe( 'appendVideoAttachmentToBubble', () => {
 		/**
 		 * Mock implementation of appendVideoAttachmentToBubble for testing.
-		 * This mirrors the implementation in chat.js
+		 * This mirrors the implementation in chat.js but uses hardcoded values
+		 * instead of getVideoMimeType() and getString() for simplicity.
+		 *
+		 * Note: In production, MIME type is determined by getVideoMimeType()
+		 * and strings use getString() for internationalization.
 		 *
 		 * @param {HTMLElement} bubbleElement - The bubble element to update
 		 * @param {Object}      attachment    - The video attachment object
@@ -352,10 +356,12 @@ describe( 'Video Attachment Rendering', () => {
 
 			const source = document.createElement( 'source' );
 			source.src = attachment.url;
+			// Hardcoded for test simplicity; production uses getVideoMimeType()
 			source.type = 'video/mp4';
 
 			video.appendChild( source );
 
+			// Hardcoded fallback text; production uses getString() for i18n
 			const fallbackText = document.createTextNode(
 				'Your browser does not support video playback.'
 			);
@@ -368,6 +374,7 @@ describe( 'Video Attachment Rendering', () => {
 			downloadLink.href = attachment.url;
 			downloadLink.download = attachment.downloadName || 'video.mp4';
 			downloadLink.className = 'wp-mcp-ai-chat__video-download';
+			// Hardcoded text; production uses getString() for i18n
 			downloadLink.textContent = 'Download video';
 			videoContainer.appendChild( downloadLink );
 
