@@ -549,6 +549,20 @@
     padding-left: var(--wp-mcp-ai-save-button-space, 3rem);
 }
 
+/* Save button position for system bubbles (right-middle to avoid overlapping with delete button) */
+.wp-mcp-ai-chat__bubble--system .wp-mcp-ai-save-button {
+    left: auto;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* System bubble with save enabled - add padding on right instead of left */
+.wp-mcp-ai-chat__bubble--system.wp-mcp-ai-save-enabled {
+    padding-left: 1rem; /* Reset to default left padding */
+    padding-right: var(--wp-mcp-ai-save-button-space, 3rem);
+}
+
 @keyframes wp-mcp-ai-speech-spin {
     from {
         transform: rotate(0deg);
