@@ -68,18 +68,32 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
 			}
 		} elseif ( '' !== $image_url ) {
+			// Try to resolve URL to attachment ID first.
+			// This handles cases where the URL is a WordPress media URL that might have
+			// different scheme (http vs https) or other variations that prevent direct
+			// filesystem access but still refers to a valid local attachment.
+			$file_path              = null;
+			$resolved_attachment_id = attachment_url_to_postid( $image_url );
+
+			if ( $resolved_attachment_id > 0 ) {
+				$resolved_file_path = get_attached_file( $resolved_attachment_id );
+
+				if ( $resolved_file_path && file_exists( $resolved_file_path ) && is_readable( $resolved_file_path ) ) {
+					$file_path     = $resolved_file_path;
+					$is_local_file = true;
+				}
+			}
+
 			// Try to use local file path first to avoid HTTP auth issues.
-			$file_path = null;
-			
-			if ( $this->is_local_wordpress_url( $image_url ) ) {
+			if ( null === $file_path && $this->is_local_wordpress_url( $image_url ) ) {
 				$local_file_path = $this->get_file_path_from_local_url( $image_url );
-				
+
 				if ( $local_file_path && file_exists( $local_file_path ) && is_readable( $local_file_path ) ) {
 					$file_path     = $local_file_path;
 					$is_local_file = true;
 				}
 			}
-			
+
 			// If no local file path, download via HTTP.
 			if ( null === $file_path ) {
 				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );

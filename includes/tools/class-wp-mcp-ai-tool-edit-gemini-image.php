@@ -331,20 +331,66 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'source'    => 'attachment',
 			);
 		} elseif ( '' !== $image_url ) {
+			// Try to resolve URL to attachment ID first.
+			// This handles cases where the URL is a WordPress media URL that might have
+			// different scheme (http vs https) or other variations that prevent direct
+			// filesystem access but still refers to a valid local attachment.
+			$resolved_attachment_id = attachment_url_to_postid( $image_url );
+
+			if ( $resolved_attachment_id > 0 ) {
+				$file_path = get_attached_file( $resolved_attachment_id );
+
+				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
+					$image_data = file_get_contents( $file_path );
+
+					if ( false !== $image_data && '' !== $image_data ) {
+						$mime_type = get_post_mime_type( $resolved_attachment_id );
+
+						// Validate MIME type is supported for image editing.
+						$supported_mime_types = array(
+							'image/jpeg',
+							'image/png',
+							'image/gif',
+							'image/webp',
+							'image/bmp',
+						);
+
+						if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
+							return new WP_Error(
+								'wp_mcp_ai_unsupported_image_type',
+								sprintf(
+									/* translators: %s: MIME type */
+									__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
+									$mime_type
+								),
+								array( 'status' => 400 )
+							);
+						}
+
+						return array(
+							'data'      => $image_data,
+							'mime_type' => $mime_type,
+							'source'    => 'attachment_url',
+						);
+					}
+				}
+				// If attachment file reading failed, fall through to other methods.
+			}
+
 			// Check if this is a local WordPress URL first.
 			// If it is, we can read it directly from the filesystem to avoid HTTP auth issues.
 			if ( $this->is_local_wordpress_url( $image_url ) ) {
 				$file_path = $this->get_file_path_from_local_url( $image_url );
-				
+
 				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
 					// Read the file directly from the filesystem.
 					$image_data = file_get_contents( $file_path );
-					
+
 					if ( false !== $image_data && '' !== $image_data ) {
 						// Determine MIME type from file.
 						$file_info = wp_check_filetype( $file_path );
 						$mime_type = ! empty( $file_info['type'] ) ? $file_info['type'] : 'image/png';
-						
+
 						return array(
 							'data'      => $image_data,
 							'mime_type' => $mime_type,
@@ -354,7 +400,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				}
 				// If local file reading failed, fall through to HTTP download.
 			}
-			
+
 			// Download image from URL (for external URLs or if local file reading failed).
 			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
