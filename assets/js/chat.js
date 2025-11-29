@@ -1214,25 +1214,30 @@
     /**
      * Check if a URL is a real attachment URL (HTTP/HTTPS) vs display-only (blob:/data:).
      * Real attachment URLs should be preserved for the API, while display-only URLs should be stripped.
+     * Uses URL constructor for robust validation.
      * 
      * @param {string} url - URL to check
-     * @return {boolean} True if URL is a real HTTP/HTTPS URL, false for blob:/data: URLs
+     * @return {boolean} True if URL is a valid HTTP/HTTPS URL, false for blob:/data: or invalid URLs
      */
     function isRealAttachmentUrl(url) {
         if (!url || typeof url !== 'string') {
             return false;
         }
         
-        var lowerUrl = url.toLowerCase().trim();
+        const trimmedUrl = url.trim();
         
-        // Check for HTTP/HTTPS URLs (real attachment URLs from WordPress)
-        if (lowerUrl.indexOf('http://') === 0 || lowerUrl.indexOf('https://') === 0) {
-            return true;
+        // Use URL constructor for robust validation
+        try {
+            const parsedUrl = new URL(trimmedUrl);
+            const protocol = parsedUrl.protocol.toLowerCase();
+            
+            // Only accept HTTP and HTTPS protocols (real attachment URLs from WordPress)
+            // Reject other protocols like javascript:, data:, blob:, etc.
+            return protocol === 'http:' || protocol === 'https:';
+        } catch (e) {
+            // Invalid URL format - treat as display-only
+            return false;
         }
-        
-        // Blob and data URLs are display-only and should be stripped
-        // These include: blob:, data:, javascript:, etc.
-        return false;
     }
 
     /**
