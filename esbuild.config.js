@@ -1,25 +1,50 @@
 /**
  * esbuild configuration for WP MCP AI JavaScript files
- * 
+ *
  * This provides:
  * - Fast bundling (10-100x faster than webpack)
  * - Minification
  * - Source maps for debugging
  * - ES6+ to ES2015 transpilation
  * - Tree shaking for smaller bundles
+ *
+ * Chat Bundle Optimization:
+ * The chat-bundle.js entry point bundles all chat-related services into a single
+ * optimized file, reducing HTTP requests from 11+ files to just 1 file.
+ *
+ * Bundled modules include:
+ * - sse-service.js (Server-Sent Events)
+ * - job-event-bus.js (event coordination)
+ * - cron-status-service.js (async job status)
+ * - chat-storage-service.js (localStorage)
+ * - chat-clipboard-service.js (copy functionality)
+ * - chat-markdown-service.js (markdown rendering)
+ * - chat-ui-utilities-service.js (DOM helpers)
+ * - chat-audio-service.js (TTS/transcription)
+ * - chat.js (main chat application)
  */
 
 const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 
-// Common build options
+// Common build options for unbundled files (minify only)
 const commonOptions = {
-	bundle: false, // Set to true when we modularize the code
+	bundle: false,
 	minify: true,
 	sourcemap: true,
 	target: ['es2015'], // Compatible with WordPress requirements
 	format: 'iife', // Immediately Invoked Function Expression for browser
+	logLevel: 'info',
+};
+
+// Bundled build options (for chat-bundle)
+const bundledOptions = {
+	bundle: true,
+	minify: true,
+	sourcemap: true,
+	target: ['es2015'],
+	format: 'iife',
 	logLevel: 'info',
 };
 
@@ -30,6 +55,13 @@ const builds = [
 		outfile: 'assets/js/admin-settings.min.js',
 		...commonOptions,
 	},
+	// Bundled chat build (combines all chat services into single file)
+	{
+		entryPoints: ['assets/js/chat-bundle.js'],
+		outfile: 'assets/js/chat-bundle.min.js',
+		...bundledOptions,
+	},
+	// Keep individual chat.min.js for backward compatibility (unbundled)
 	{
 		entryPoints: ['assets/js/chat.js'],
 		outfile: 'assets/js/chat.min.js',
@@ -65,30 +97,63 @@ const builds = [
 // Build all files
 async function buildAll() {
 	console.log('🚀 Building JavaScript files with esbuild...\n');
-	
+
 	const startTime = Date.now();
 	const results = [];
-	
+
+	// List of all files bundled together in chat-bundle.js
+	const bundledFiles = [
+		'assets/js/sse-service.js',
+		'assets/js/job-event-bus.js',
+		'assets/js/cron-status-service.js',
+		'assets/js/chat-storage-service.js',
+		'assets/js/chat-clipboard-service.js',
+		'assets/js/chat-markdown-service.js',
+		'assets/js/chat-ui-utilities-service.js',
+		'assets/js/chat-audio-service.js',
+		'assets/js/chat.js',
+	];
+
 	for (const config of builds) {
 		try {
-			const result = await esbuild.build(config);
+			await esbuild.build(config);
 			const inputFile = config.entryPoints[0];
 			const outputFile = config.outfile;
-			
-			// Get file sizes
-			const inputSize = fs.statSync(inputFile).size;
+
+			// For bundled builds, calculate combined input size
+			let inputSize;
+			const isBundled = config.bundle === true;
+
+			if (isBundled && inputFile.includes('chat-bundle')) {
+				// Sum up all bundled file sizes
+				inputSize = bundledFiles.reduce((total, file) => {
+					try {
+						return total + fs.statSync(file).size;
+					} catch {
+						return total;
+					}
+				}, 0);
+			} else {
+				inputSize = fs.statSync(inputFile).size;
+			}
+
 			const outputSize = fs.statSync(outputFile).size;
-			const reduction = ((1 - outputSize / inputSize) * 100).toFixed(1);
-			
+			const reduction = inputSize > 0 ? ((1 - outputSize / inputSize) * 100).toFixed(1) : '0.0';
+
 			results.push({
 				input: path.basename(inputFile),
 				output: path.basename(outputFile),
 				inputSize: (inputSize / 1024).toFixed(1) + ' KB',
 				outputSize: (outputSize / 1024).toFixed(1) + ' KB',
 				reduction: reduction + '%',
+				bundled: isBundled,
 			});
-			
-			console.log(`✅ ${path.basename(inputFile)} → ${path.basename(outputFile)}`);
+
+			if (isBundled) {
+				console.log(`✅ ${path.basename(inputFile)} → ${path.basename(outputFile)} (bundled: ${bundledFiles.length} files)`);
+			} else {
+				console.log(`✅ ${path.basename(inputFile)} → ${path.basename(outputFile)}`);
+			}
 		} catch (error) {
 			console.error(`❌ Error building ${config.entryPoints[0]}:`, error);
 			process.exit(1);
