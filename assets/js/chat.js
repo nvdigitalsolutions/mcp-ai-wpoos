@@ -1212,12 +1212,41 @@
      * @returns {Promise<{success: boolean, error?: string}>} Promise that resolves with save status
      */
     /**
+     * Check if a URL is a real attachment URL (HTTP/HTTPS) vs display-only (blob:/data:).
+     * Real attachment URLs should be preserved for the API, while display-only URLs should be stripped.
+     * Uses URL constructor for robust validation.
+     * 
+     * @param {string} url - URL to check
+     * @return {boolean} True if URL is a valid HTTP/HTTPS URL, false for blob:/data: or invalid URLs
+     */
+    function isRealAttachmentUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return false;
+        }
+        
+        const trimmedUrl = url.trim();
+        
+        // Use URL constructor for robust validation
+        try {
+            const parsedUrl = new URL(trimmedUrl);
+            const protocol = parsedUrl.protocol.toLowerCase();
+            
+            // Only accept HTTP and HTTPS protocols (real attachment URLs from WordPress)
+            // Reject other protocols like javascript:, data:, blob:, etc.
+            return protocol === 'http:' || protocol === 'https:';
+        } catch (e) {
+            // Invalid URL format - treat as display-only
+            return false;
+        }
+    }
+
+    /**
      * Strip display-only data from attachment segments.
-     * Removes url and name fields that contain blob:/data: URLs used only for display.
-     * Preserves attachment_id and API-required fields (display_name, caption, detail).
+     * Removes blob:/data: URLs used only for display.
+     * Preserves attachment_id, real HTTP/HTTPS URLs, and API-required fields (display_name, caption, detail).
      * 
      * @param {Object} segment - Attachment segment object
-     * @return {Object} Cleaned segment object with only API-compatible fields
+     * @return {Object} Cleaned segment object with API-compatible fields
      */
     function stripSegmentDisplayData(segment) {
         if (!segment || typeof segment !== 'object') {
@@ -1235,7 +1264,14 @@
             attachment_id: segment.attachment_id
         };
 
-        // Preserve API-required fields (but not display-only url/name)
+        // Preserve real attachment URLs (HTTP/HTTPS) for the agentic workflow.
+        // These URLs are used by the API to access the file directly without needing
+        // to resolve the attachment_id. Strip blob:/data: URLs which are display-only.
+        if (segment.url && isRealAttachmentUrl(segment.url)) {
+            cleanSegment.url = segment.url;
+        }
+
+        // Preserve API-required fields
         if (segment.display_name !== undefined) {
             cleanSegment.display_name = segment.display_name;
         }
