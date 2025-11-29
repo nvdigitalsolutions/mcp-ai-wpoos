@@ -9797,6 +9797,9 @@
                 // Use display metadata if available, otherwise build from content
                 let assistantPayload;
                 
+                // Check if this message has tool_calls (either in message or display metadata)
+                const hasToolCalls = message.tool_calls || (display && display.tool_calls);
+                
                 if (display) {
                     // Use saved display metadata for consistency
                     // Include both message and text fields if available
@@ -9817,6 +9820,11 @@
                     // Preserve bubbleType if present
                     if (display.bubbleType) {
                         assistantPayload.bubbleType = display.bubbleType;
+                    }
+                    
+                    // Preserve tool_calls in display for rendering context
+                    if (display.tool_calls) {
+                        assistantPayload.tool_calls = display.tool_calls;
                     }
                 } else {
                     // Fallback: build from content
@@ -9847,16 +9855,28 @@
                 const cost = display && display.cost ? display.cost : null;
                 const capabilityFlags = display && display.capabilityFlags ? display.capabilityFlags : null;
                 
-                appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
-                    state: state,
-                    speech: {
+                // Determine if we have content to render
+                // Assistant messages with tool_calls but no text/attachments are still valid
+                // but we skip rendering an empty bubble (the tool result will show content)
+                const hasTextContent = (assistantPayload.text && assistantPayload.text.trim()) || 
+                                      (assistantPayload.message && assistantPayload.message.trim());
+                const hasAttachments = assistantPayload.attachments && assistantPayload.attachments.length > 0;
+                
+                // Only render if there's content to display
+                // Messages with only tool_calls (no text/attachments) are kept in conversation
+                // for API continuity but don't need a visible bubble
+                if (hasTextContent || hasAttachments) {
+                    appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                         state: state,
-                        text: textForSpeech,
-                    },
-                    usage: usage,
-                    cost: cost,
-                    capabilityFlags: capabilityFlags
-                });
+                        speech: {
+                            state: state,
+                            text: textForSpeech,
+                        },
+                        usage: usage,
+                        cost: cost,
+                        capabilityFlags: capabilityFlags
+                    });
+                }
                 return;
             }
         });
@@ -11754,6 +11774,36 @@
 
         if (hasToolCalls) {
             assistantMessage.tool_calls = message.tool_calls;
+            
+            // BUG FIX: When assistant has tool_calls but no display content (e.g., the AI
+            // calls a tool without providing text), we still need to preserve display metadata
+            // for proper restoration from localStorage/CCT. Previously, display metadata was
+            // only extracted when hasDisplayContent was true, causing tool_calls-only messages
+            // to lose their display info on reload.
+            if (!hasDisplayContent) {
+                // Set content from the original message for API compatibility
+                if (Array.isArray(message.content)) {
+                    assistantMessage.content = message.content;
+                } else if (message.content && typeof message.content === 'string' && message.content.trim()) {
+                    assistantMessage.content = message.content;
+                }
+                
+                // Extract display metadata for persistence even without visible content.
+                // This ensures the tool_calls information can be restored properly.
+                // Note: We create a minimal display payload since there's no element to extract from.
+                const toolCallsDisplay = {
+                    bubbleType: 'assistant',
+                    text: assistantDisplay.text || '',
+                    attachments: assistantDisplay.attachments || []
+                };
+                
+                // Add tool_calls to display metadata for restoration
+                if (message.tool_calls && Array.isArray(message.tool_calls)) {
+                    toolCallsDisplay.tool_calls = message.tool_calls;
+                }
+                
+                assistantMessage.display = toolCallsDisplay;
+            }
         }
 
         // OpenAI requires assistant messages with tool_calls to have valid content.
@@ -11788,6 +11838,22 @@
                     if (agenticMessage.tool_calls && Array.isArray(agenticMessage.tool_calls)) {
                         formattedMessage.tool_calls = agenticMessage.tool_calls;
                     }
+                    
+                    // BUG FIX: Add display metadata for agentic messages to enable proper restoration.
+                    // Previously, agentic messages lacked display metadata, causing them to not
+                    // render correctly when restored from localStorage/CCT.
+                    const agenticDisplay = {
+                        bubbleType: 'assistant',
+                        text: agenticMessage.content || '',
+                        attachments: []
+                    };
+                    
+                    // Preserve tool_calls in display for restoration context
+                    if (agenticMessage.tool_calls && Array.isArray(agenticMessage.tool_calls)) {
+                        agenticDisplay.tool_calls = agenticMessage.tool_calls;
+                    }
+                    
+                    formattedMessage.display = agenticDisplay;
                     
                     state.conversation.push(formattedMessage);
                     
