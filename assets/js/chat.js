@@ -1517,9 +1517,9 @@
         // Otherwise fall back to config.assistantId for backwards compatibility
         const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
 
-        // Strip UI-only metadata (like 'display' field) from messages before sending to API
-        // The REST API schema only accepts specific fields and will reject extra properties
-        // Also strips large file content from tool results (keeping attachment_id and url)
+        // Clean messages for API submission while preserving display metadata for CCT persistence.
+        // Strips blob:/data: URLs from attachments, large file content from tool results,
+        // but keeps the display field (video attachments, bubble types, usage/cost badges).
         const cleanMessages = state.conversation
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });
