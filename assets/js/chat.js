@@ -1416,12 +1416,12 @@
 
     /**
      * Strip UI-only metadata from a message for API submission.
-     * Removes fields like 'display' that are used for UI rendering but not part of the API schema.
+     * Preserves 'display' field for CCT persistence to ensure proper UI restoration.
      * Also strips display-only data (blob:/data: URLs) from attachment segments.
      * For tool messages, also strips large file content while preserving attachment_id and url.
      * 
      * @param {Object} message - Original message object
-     * @return {Object} Cleaned message object with only API-compatible fields
+     * @return {Object} Cleaned message object with API-compatible fields
      */
     function stripMessageDisplayMetadata(message) {
         // Handle invalid input
@@ -1449,7 +1449,7 @@
             cleanedContent = stripContentDisplayData(message.content);
         }
 
-        // Create a new object with only API-compatible fields
+        // Create a new object with API-compatible fields
         const cleanMessage = {
             role: message.role,
             content: cleanedContent
@@ -1464,6 +1464,13 @@
         }
         if (message.name !== undefined) {
             cleanMessage.name = message.name;
+        }
+
+        // Preserve display metadata for UI restoration from CCT
+        // This includes video attachments, text, bubble type, usage/cost badges
+        // Critical for async video generation results to persist across sessions
+        if (message.display && typeof message.display === 'object') {
+            cleanMessage.display = message.display;
         }
 
         return cleanMessage;
@@ -1510,9 +1517,9 @@
         // Otherwise fall back to config.assistantId for backwards compatibility
         const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
 
-        // Strip UI-only metadata (like 'display' field) from messages before sending to API
-        // The REST API schema only accepts specific fields and will reject extra properties
-        // Also strips large file content from tool results (keeping attachment_id and url)
+        // Clean messages for API submission while preserving display metadata for CCT persistence.
+        // Strips blob:/data: URLs from attachments, large file content from tool results,
+        // but keeps the display field (video attachments, bubble types, usage/cost badges).
         const cleanMessages = state.conversation
             .map(stripMessageDisplayMetadata)
             .filter(function(msg) { return msg !== null; });

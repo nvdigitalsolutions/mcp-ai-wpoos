@@ -191,6 +191,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 											),
 										),
 									),
+									'display' => array(
+										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'wp-mcp-ai' ),
+										'type'        => 'object',
+										'required'    => false,
+									),
 								),
 							),
 						),
