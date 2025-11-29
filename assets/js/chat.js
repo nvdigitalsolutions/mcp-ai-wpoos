@@ -73,6 +73,13 @@
     const DELETE_ENABLED_CLASS = 'wp-mcp-ai-delete-enabled';
     const DELETE_ICON = '<svg class="wp-mcp-ai-delete-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.5 4h3a1.5 1.5 0 00-3 0zm-1 0a2.5 2.5 0 015 0h4a.5.5 0 010 1h-.441l-1.285 10.28A2 2 0 0112.788 17H7.212a2 2 0 01-1.986-1.72L3.941 5H3.5a.5.5 0 010-1h4zm.5 3a.5.5 0 00-1 0v6a.5.5 0 001 0V7zm3.5-.5a.5.5 0 00-.5.5v6a.5.5 0 001 0V7a.5.5 0 00-.5-.5z"></path></svg>';
 
+    // Save button constants (for saving individual messages)
+    const SAVE_BUTTON_CLASS = 'wp-mcp-ai-save-button';
+    const SAVE_ENABLED_CLASS = 'wp-mcp-ai-save-enabled';
+    const SAVE_STORAGE_KEY = 'wp_mcp_ai_chat_saved_messages';
+    const SAVE_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M15.5 3H4.5A1.5 1.5 0 003 4.5v11A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0015.5 3zm-7 1h3v4h-3V4zm7.5 11.5a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5v-11a.5.5 0 01.5-.5h2v4.5a.5.5 0 00.5.5h4a.5.5 0 00.5-.5V4h4a.5.5 0 01.5.5v11z"/><path d="M6 11h8v1H6zm0 2h8v1H6z"/></svg>';
+    const SAVE_SUCCESS_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
+
     // Transcription constants
     const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
     const TRANSCRIBE_RECORDING_CLASS = audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
@@ -2324,6 +2331,197 @@
         bubble.appendChild(button);
     }
 
+    /**
+     * Get the list of saved message keys from localStorage.
+     * 
+     * @return {Object} Object with message keys as keys, timestamps as values
+     */
+    function getSavedMessages() {
+        if (!window.localStorage) {
+            return {};
+        }
+
+        try {
+            const stored = window.localStorage.getItem(SAVE_STORAGE_KEY);
+            if (!stored) {
+                return {};
+            }
+            return JSON.parse(stored) || {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    /**
+     * Save a message key to localStorage.
+     * 
+     * @param {string} messageKey - Unique key for the message
+     */
+    function markMessageAsSaved(messageKey) {
+        if (!window.localStorage || !messageKey) {
+            return;
+        }
+
+        try {
+            const saved = getSavedMessages();
+            saved[messageKey] = Date.now();
+            window.localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(saved));
+        } catch (error) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Failed to save message marker:', error);
+            }
+        }
+    }
+
+    /**
+     * Check if a message is already saved.
+     * 
+     * @param {string} messageKey - Unique key for the message
+     * @return {boolean} True if already saved
+     */
+    function isMessageSaved(messageKey) {
+        if (!messageKey) {
+            return false;
+        }
+        const saved = getSavedMessages();
+        return !!saved[messageKey];
+    }
+
+    /**
+     * Update save button visual state.
+     * 
+     * @param {HTMLElement} button - The save button element
+     * @param {string} newState - 'idle', 'saving', 'saved', or 'error'
+     */
+    function updateSaveButtonState(button, newState) {
+        if (!button) {
+            return;
+        }
+
+        button.classList.remove(
+            SAVE_BUTTON_CLASS + '--saving',
+            SAVE_BUTTON_CLASS + '--saved',
+            SAVE_BUTTON_CLASS + '--error'
+        );
+
+        switch (newState) {
+            case 'saving':
+                button.classList.add(SAVE_BUTTON_CLASS + '--saving');
+                button.innerHTML = '<span class="wp-mcp-ai-save-spinner" aria-hidden="true"></span>';
+                button.setAttribute('aria-label', 'Saving...');
+                button.setAttribute('title', 'Saving...');
+                break;
+            case 'saved':
+                button.classList.add(SAVE_BUTTON_CLASS + '--saved');
+                button.innerHTML = SAVE_SUCCESS_ICON;
+                button.setAttribute('aria-label', 'Saved');
+                button.setAttribute('title', 'Saved');
+                break;
+            case 'error':
+                button.classList.add(SAVE_BUTTON_CLASS + '--error');
+                button.innerHTML = SAVE_ICON;
+                button.setAttribute('aria-label', 'Save failed, click to retry');
+                button.setAttribute('title', 'Save failed, click to retry');
+                break;
+            default:
+                button.innerHTML = SAVE_ICON;
+                button.setAttribute('aria-label', 'Save this response');
+                button.setAttribute('title', 'Save this response');
+        }
+    }
+
+    /**
+     * Attach save button to an assistant bubble.
+     * The save button is always visible (not hover-reveal) and positioned at top-left.
+     * It allows users to save individual AI responses to localStorage and CCT.
+     * 
+     * @param {HTMLElement} bubble - The bubble element
+     * @param {Object} state - Chat state object
+     * @param {number} messageIndex - Index of the message in the conversation
+     */
+    function attachSaveButton(bubble, state, messageIndex) {
+        if (!bubble || !state) {
+            return;
+        }
+
+        // Generate a unique key for this message using message content hash
+        const assistantId = state.config && state.config.assistantId ? state.config.assistantId : 'unknown';
+        const sessionKey = state.config && state.config.sessionKey ? state.config.sessionKey : 'nosession';
+        const bubbleText = bubble.textContent || bubble.innerText || '';
+        // Create a simple content hash for uniqueness
+        const contentHash = bubbleText.length > 0 ? bubbleText.substring(0, 50).replace(/\s/g, '') : messageIndex;
+        const messageKey = assistantId + '_' + sessionKey + '_' + messageIndex + '_' + contentHash;
+
+        // Add save-enabled class
+        if (bubble.classList) {
+            bubble.classList.add(SAVE_ENABLED_CLASS);
+        }
+
+        // Check if button already exists
+        const existing = bubble.querySelector('.' + SAVE_BUTTON_CLASS);
+        if (existing) {
+            return;
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = SAVE_BUTTON_CLASS;
+        button.dataset.messageKey = messageKey;
+        button.dataset.messageIndex = messageIndex;
+
+        // Check if already saved and set initial state
+        const alreadySaved = isMessageSaved(messageKey);
+        if (alreadySaved) {
+            updateSaveButtonState(button, 'saved');
+        } else {
+            updateSaveButtonState(button, 'idle');
+        }
+
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // If already saved, don't do anything
+            if (button.classList.contains(SAVE_BUTTON_CLASS + '--saved')) {
+                return;
+            }
+
+            // Show saving state
+            button.disabled = true;
+            updateSaveButtonState(button, 'saving');
+
+            // Attempt to save to CCT if endpoint is available
+            const savePromise = state.config && state.config.transcriptsEndpoint
+                ? saveConversationToCCT(state, { silent: true })
+                : Promise.resolve({ success: true });
+
+            savePromise
+                .then(function (result) {
+                    // Mark as saved in localStorage
+                    markMessageAsSaved(messageKey);
+                    updateSaveButtonState(button, 'saved');
+
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Message saved:', {
+                            messageKey: messageKey,
+                            messageIndex: messageIndex
+                        });
+                    }
+                })
+                .catch(function (error) {
+                    updateSaveButtonState(button, 'error');
+                    button.disabled = false;
+
+                    if (window.console && console.warn) {
+                        console.warn('[WP oOS] Failed to save message:', error);
+                    }
+                });
+        });
+
+        // Insert at the beginning of the bubble (top-left positioning via CSS)
+        bubble.insertBefore(button, bubble.firstChild);
+    }
+
     function supportsAudioRecording() {
         if (audioService && audioService.supportsAudioRecording) {
             return audioService.supportsAudioRecording();
@@ -3388,11 +3586,72 @@
         const selector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant';
         const bubbles = state.messagesEl.querySelectorAll(selector);
 
+        // Attach speech and copy buttons for assistant messages
         Array.prototype.forEach.call(bubbles, function (bubble) {
             const storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
             attachSpeechButton(bubble, state, storedText);
             attachCopyButton(bubble, storedText);
         });
+
+        // Attach save buttons for system messages only
+        const systemSelector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--system';
+        const systemBubbles = state.messagesEl.querySelectorAll(systemSelector);
+        
+        let systemMsgIndex = 0;
+        Array.prototype.forEach.call(systemBubbles, function (bubble, domIndex) {
+            // Use the actual position in conversation if available, otherwise use DOM index
+            const conversationIndex = (state.conversation && Array.isArray(state.conversation))
+                ? findSystemMessageIndex(state.conversation, systemMsgIndex)
+                : domIndex;
+            attachSaveButton(bubble, state, conversationIndex);
+            systemMsgIndex++;
+        });
+    }
+
+    /**
+     * Find the index of the nth system message in the conversation array.
+     * 
+     * @param {Array} conversation - The conversation array
+     * @param {number} nthSystem - Which system message to find (0-based)
+     * @return {number} The index in the conversation array, or -1 if not found
+     */
+    function findSystemMessageIndex(conversation, nthSystem) {
+        if (!Array.isArray(conversation)) {
+            return -1;
+        }
+        let systemCount = 0;
+        for (let i = 0; i < conversation.length; i++) {
+            if (conversation[i] && conversation[i].role === 'system') {
+                if (systemCount === nthSystem) {
+                    return i;
+                }
+                systemCount++;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Find the index of the nth assistant message in the conversation array.
+     * 
+     * @param {Array} conversation - The conversation array
+     * @param {number} nthAssistant - Which assistant message to find (0-based)
+     * @return {number} The index in the conversation array, or -1 if not found
+     */
+    function findAssistantMessageIndex(conversation, nthAssistant) {
+        if (!Array.isArray(conversation)) {
+            return -1;
+        }
+        let assistantCount = 0;
+        for (let i = 0; i < conversation.length; i++) {
+            if (conversation[i] && conversation[i].role === 'assistant') {
+                if (assistantCount === nthAssistant) {
+                    return i;
+                }
+                assistantCount++;
+            }
+        }
+        return -1;
     }
 
     function normaliseList(value) {
@@ -12795,6 +13054,15 @@
         // Attach delete button for system messages
         if (role === 'system' && chatState) {
             attachDeleteButton(entry, chatState, role);
+            
+            // Attach save button for system messages
+            // Allows users to save individual system responses to localStorage and CCT
+            const messageIndex = (options && typeof options.messageIndex === 'number')
+                ? options.messageIndex
+                : (chatState.conversation && Array.isArray(chatState.conversation))
+                    ? chatState.conversation.length - 1
+                    : 0;
+            attachSaveButton(entry, chatState, messageIndex);
         }
 
         listEl.appendChild(entry);
