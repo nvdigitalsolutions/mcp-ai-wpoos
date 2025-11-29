@@ -7379,6 +7379,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$message_entry['tool_calls'] = $message['tool_calls'];
 				}
 
+				// Preserve display metadata for UI restoration (video attachments, bubble type, usage/cost badges).
+				// This is critical for async video generation results to persist across sessions.
+				if ( isset( $message['display'] ) && is_array( $message['display'] ) ) {
+					$message_entry['display'] = $message['display'];
+				}
+
 				$messages[] = $message_entry;
 			}
 
