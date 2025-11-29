@@ -315,4 +315,216 @@ describe( 'Video Attachment Rendering', () => {
 			expect( metaParts[ 0 ] ).toBe( 'Veo 2.0' );
 		} );
 	} );
+
+	describe( 'appendVideoAttachmentToBubble', () => {
+		/**
+		 * Mock implementation of appendVideoAttachmentToBubble for testing.
+		 * This mirrors the implementation in chat.js but uses hardcoded values
+		 * instead of getVideoMimeType() and getString() for simplicity.
+		 *
+		 * Note: In production, MIME type is determined by getVideoMimeType()
+		 * and strings use getString() for internationalization.
+		 *
+		 * @param {HTMLElement} bubbleElement - The bubble element to update
+		 * @param {Object}      attachment    - The video attachment object
+		 */
+		function appendVideoAttachmentToBubble( bubbleElement, attachment ) {
+			if ( ! bubbleElement || ! attachment || ! attachment.url ) {
+				return;
+			}
+
+			// Find or create the attachments list
+			let list = bubbleElement.querySelector( '.wp-mcp-ai-chat__bubble-attachments' );
+			if ( ! list ) {
+				list = document.createElement( 'ul' );
+				list.className = 'wp-mcp-ai-chat__bubble-attachments';
+				bubbleElement.appendChild( list );
+			}
+
+			// Create the video attachment item
+			const item = document.createElement( 'li' );
+			item.className = 'wp-mcp-ai-chat__bubble-attachment';
+
+			// Render video player
+			const videoContainer = document.createElement( 'div' );
+			videoContainer.className = 'wp-mcp-ai-chat__video-container';
+
+			const video = document.createElement( 'video' );
+			video.controls = true;
+			video.preload = 'metadata';
+			video.className = 'wp-mcp-ai-chat__video-player';
+
+			const source = document.createElement( 'source' );
+			source.src = attachment.url;
+			// Hardcoded for test simplicity; production uses getVideoMimeType()
+			source.type = 'video/mp4';
+
+			video.appendChild( source );
+
+			// Hardcoded fallback text; production uses getString() for i18n
+			const fallbackText = document.createTextNode(
+				'Your browser does not support video playback.'
+			);
+			video.appendChild( fallbackText );
+
+			videoContainer.appendChild( video );
+
+			// Add download link below video
+			const downloadLink = document.createElement( 'a' );
+			downloadLink.href = attachment.url;
+			downloadLink.download = attachment.downloadName || 'video.mp4';
+			downloadLink.className = 'wp-mcp-ai-chat__video-download';
+			// Hardcoded text; production uses getString() for i18n
+			downloadLink.textContent = 'Download video';
+			videoContainer.appendChild( downloadLink );
+
+			item.appendChild( videoContainer );
+
+			// Add metadata if present
+			if ( attachment.meta ) {
+				const meta = document.createElement( 'div' );
+				meta.className = 'wp-mcp-ai-chat__attachments-meta';
+				meta.textContent = attachment.meta;
+				item.appendChild( meta );
+			}
+
+			list.appendChild( item );
+		}
+
+		it( 'should add video attachment to existing bubble without attachments list', () => {
+			const bubble = document.createElement( 'div' );
+			bubble.className = 'wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+			bubble.innerHTML = '<p>Video generation started.</p>';
+
+			const attachment = {
+				url: 'https://example.com/veo-video-async_123.mp4',
+				label: 'veo-video-async_123.mp4',
+				downloadName: 'veo-video-async_123.mp4',
+				meta: 'Pending • ~5 min',
+			};
+
+			appendVideoAttachmentToBubble( bubble, attachment );
+
+			// Check that attachments list was created
+			const list = bubble.querySelector( '.wp-mcp-ai-chat__bubble-attachments' );
+			expect( list ).toBeTruthy();
+
+			// Check that video element was created
+			const video = bubble.querySelector( 'video' );
+			expect( video ).toBeTruthy();
+			expect( video.controls ).toBe( true );
+
+			// Check that source has correct URL
+			const source = bubble.querySelector( 'source' );
+			expect( source ).toBeTruthy();
+			expect( source.src ).toContain( 'veo-video-async_123.mp4' );
+
+			// Check that download link was created
+			const downloadLink = bubble.querySelector( '.wp-mcp-ai-chat__video-download' );
+			expect( downloadLink ).toBeTruthy();
+			expect( downloadLink.href ).toContain( 'veo-video-async_123.mp4' );
+
+			// Check that metadata was added
+			const meta = bubble.querySelector( '.wp-mcp-ai-chat__attachments-meta' );
+			expect( meta ).toBeTruthy();
+			expect( meta.textContent ).toBe( 'Pending • ~5 min' );
+		} );
+
+		it( 'should append to existing attachments list', () => {
+			const bubble = document.createElement( 'div' );
+			bubble.className = 'wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+
+			// Create existing attachments list
+			const existingList = document.createElement( 'ul' );
+			existingList.className = 'wp-mcp-ai-chat__bubble-attachments';
+			const existingItem = document.createElement( 'li' );
+			existingItem.className = 'wp-mcp-ai-chat__bubble-attachment';
+			existingItem.textContent = 'Existing attachment';
+			existingList.appendChild( existingItem );
+			bubble.appendChild( existingList );
+
+			const attachment = {
+				url: 'https://example.com/video.mp4',
+				label: 'New video',
+				downloadName: 'video.mp4',
+			};
+
+			appendVideoAttachmentToBubble( bubble, attachment );
+
+			// Check that we still have only one list
+			const lists = bubble.querySelectorAll( '.wp-mcp-ai-chat__bubble-attachments' );
+			expect( lists.length ).toBe( 1 );
+
+			// Check that we now have two items
+			const items = bubble.querySelectorAll( '.wp-mcp-ai-chat__bubble-attachment' );
+			expect( items.length ).toBe( 2 );
+
+			// Check that the new video was added
+			const video = bubble.querySelector( 'video' );
+			expect( video ).toBeTruthy();
+		} );
+
+		it( 'should handle null bubble element gracefully', () => {
+			const attachment = {
+				url: 'https://example.com/video.mp4',
+				label: 'Video',
+			};
+
+			// Should not throw
+			expect( () => {
+				appendVideoAttachmentToBubble( null, attachment );
+			} ).not.toThrow();
+		} );
+
+		it( 'should handle null attachment gracefully', () => {
+			const bubble = document.createElement( 'div' );
+
+			// Should not throw
+			expect( () => {
+				appendVideoAttachmentToBubble( bubble, null );
+			} ).not.toThrow();
+
+			// Should not add any attachments
+			const list = bubble.querySelector( '.wp-mcp-ai-chat__bubble-attachments' );
+			expect( list ).toBeFalsy();
+		} );
+
+		it( 'should handle attachment without URL gracefully', () => {
+			const bubble = document.createElement( 'div' );
+			const attachment = {
+				label: 'No URL',
+				meta: 'Pending',
+			};
+
+			// Should not throw
+			expect( () => {
+				appendVideoAttachmentToBubble( bubble, attachment );
+			} ).not.toThrow();
+
+			// Should not add any attachments
+			const list = bubble.querySelector( '.wp-mcp-ai-chat__bubble-attachments' );
+			expect( list ).toBeFalsy();
+		} );
+
+		it( 'should work without metadata', () => {
+			const bubble = document.createElement( 'div' );
+			bubble.className = 'wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+
+			const attachment = {
+				url: 'https://example.com/video.mp4',
+				label: 'Video file',
+				downloadName: 'video.mp4',
+			};
+
+			appendVideoAttachmentToBubble( bubble, attachment );
+
+			// Check video was added
+			const video = bubble.querySelector( 'video' );
+			expect( video ).toBeTruthy();
+
+			// Check that no metadata element was added
+			const meta = bubble.querySelector( '.wp-mcp-ai-chat__attachments-meta' );
+			expect( meta ).toBeFalsy();
+		} );
+	} );
 } );
