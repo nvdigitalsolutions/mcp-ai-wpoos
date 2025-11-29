@@ -305,24 +305,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$mime_type = get_post_mime_type( $attachment_id );
 
 			// Validate MIME type is supported for image editing.
-			$supported_mime_types = array(
-				'image/jpeg',
-				'image/png',
-				'image/gif',
-				'image/webp',
-				'image/bmp',
-			);
-
-			if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_unsupported_image_type',
-					sprintf(
-						/* translators: %s: MIME type */
-						__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
-						$mime_type
-					),
-					array( 'status' => 400 )
-				);
+			$mime_validation = $this->validate_source_mime_type( $mime_type );
+			if ( is_wp_error( $mime_validation ) ) {
+				return $mime_validation;
 			}
 
 			return array(
@@ -347,24 +332,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 						$mime_type = get_post_mime_type( $resolved_attachment_id );
 
 						// Validate MIME type is supported for image editing.
-						$supported_mime_types = array(
-							'image/jpeg',
-							'image/png',
-							'image/gif',
-							'image/webp',
-							'image/bmp',
-						);
-
-						if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
-							return new WP_Error(
-								'wp_mcp_ai_unsupported_image_type',
-								sprintf(
-									/* translators: %s: MIME type */
-									__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
-									$mime_type
-								),
-								array( 'status' => 400 )
-							);
+						$mime_validation = $this->validate_source_mime_type( $mime_type );
+						if ( is_wp_error( $mime_validation ) ) {
+							return $mime_validation;
 						}
 
 						return array(
@@ -540,6 +510,45 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get the supported MIME types for image editing.
+	 *
+	 * @return array List of supported MIME types.
+	 */
+	protected function get_supported_source_mime_types() {
+		return array(
+			'image/jpeg',
+			'image/png',
+			'image/gif',
+			'image/webp',
+			'image/bmp',
+		);
+	}
+
+	/**
+	 * Validate that a MIME type is supported for image editing.
+	 *
+	 * @param string $mime_type MIME type to validate.
+	 * @return true|WP_Error True if valid, WP_Error if not supported.
+	 */
+	protected function validate_source_mime_type( $mime_type ) {
+		$supported_mime_types = $this->get_supported_source_mime_types();
+
+		if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_unsupported_image_type',
+				sprintf(
+					/* translators: %s: MIME type */
+					__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
+					$mime_type
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		return true;
 	}
 
 	/**
