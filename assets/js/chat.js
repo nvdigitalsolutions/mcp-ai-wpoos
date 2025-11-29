@@ -12001,6 +12001,31 @@
             
             list.appendChild(item);
         }
+        
+        /**
+         * Persist video attachment display metadata to assistant message and save conversation.
+         * This ensures video placeholders are saved immediately and can be restored on page reload.
+         * 
+         * @param {Object} state - Chat state object
+         * @param {Object} assistantMessage - The assistant message object to update
+         * @param {Object} assistantDisplay - The display payload containing attachments and text
+         * @param {HTMLElement} assistantMessageElement - The DOM element for extracting display metadata
+         * @param {Object} options - Options for display metadata extraction (usage, cost, capabilityFlags)
+         */
+        function persistVideoAttachmentMetadata(state, assistantMessage, assistantDisplay, assistantMessageElement, options) {
+            if (!assistantMessageElement || !assistantDisplay.attachments || assistantDisplay.attachments.length === 0) {
+                return;
+            }
+            
+            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, options || {});
+            if (displayMetadata) {
+                assistantMessage.display = displayMetadata;
+            }
+            
+            // Save conversation to persist the video attachment immediately
+            saveConversationToStorage(state);
+            saveConversationToCCT(state, { silent: true });
+        }
 
         // Add tool result messages to conversation if included in response.
         if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
@@ -12123,21 +12148,12 @@
                         // Pass the bubble element to update the DOM immediately
                         addVideoPendingAttachment(assistantDisplay, parsedContent, assistantMessageElement);
                         
-                        // Update assistantMessage.display to persist video attachment in CCT/localStorage
-                        // This ensures the video placeholder is saved and can be restored on page reload
-                        if (assistantMessageElement && assistantDisplay.attachments && assistantDisplay.attachments.length > 0) {
-                            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
-                                usage: aggregatedUsage,
-                                cost: aggregatedCost,
-                                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
-                            });
-                            if (displayMetadata) {
-                                assistantMessage.display = displayMetadata;
-                            }
-                            // Save conversation to persist the video attachment immediately
-                            saveConversationToStorage(state);
-                            saveConversationToCCT(state, { silent: true });
-                        }
+                        // Persist video attachment to assistant message for CCT/localStorage restoration
+                        persistVideoAttachmentMetadata(state, assistantMessage, assistantDisplay, assistantMessageElement, {
+                            usage: aggregatedUsage,
+                            cost: aggregatedCost,
+                            capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
+                        });
                         
                         startAsyncToolPolling(state, parsedContent, toolName, toolCallId);
                         return;
@@ -12222,21 +12238,12 @@
                         // Pass the bubble element to update the DOM immediately
                         addVideoPendingAttachment(assistantDisplay, parsedContent, assistantMessageElement);
                         
-                        // Update assistantMessage.display to persist video attachment in CCT/localStorage
-                        // This ensures the video placeholder is saved and can be restored on page reload
-                        if (assistantMessageElement && assistantDisplay.attachments && assistantDisplay.attachments.length > 0) {
-                            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
-                                usage: aggregatedUsage,
-                                cost: aggregatedCost,
-                                capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
-                            });
-                            if (displayMetadata) {
-                                assistantMessage.display = displayMetadata;
-                            }
-                            // Save conversation to persist the video attachment immediately
-                            saveConversationToStorage(state);
-                            saveConversationToCCT(state, { silent: true });
-                        }
+                        // Persist video attachment to assistant message for CCT/localStorage restoration
+                        persistVideoAttachmentMetadata(state, assistantMessage, assistantDisplay, assistantMessageElement, {
+                            usage: aggregatedUsage,
+                            cost: aggregatedCost,
+                            capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
+                        });
                         
                         startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                         return;
