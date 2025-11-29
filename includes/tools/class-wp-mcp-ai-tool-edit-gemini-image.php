@@ -56,19 +56,19 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'prompt'        => array(
+				'prompt'           => array(
 					'type'        => 'string',
 					'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'wp-mcp-ai' ),
 				),
-				'attachment_id' => array(
+				'attachment_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
 				),
-				'image_url'     => array(
+				'image_url'        => array(
 					'type'        => 'string',
 					'description' => __( 'URL of the image to edit (alternative to attachment_id).', 'wp-mcp-ai' ),
 				),
-				'image_data'    => array(
+				'image_data'       => array(
 					'type'        => 'string',
 					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id or image_url). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
 				),
@@ -76,28 +76,28 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'string',
 					'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
 				),
-				'model'         => array(
+				'model'            => array(
 					'type'        => 'string',
 					'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
 					'default'     => $defaults['model'],
 				),
-				'aspect_ratio'  => array(
+				'aspect_ratio'     => array(
 					'type'        => 'string',
 					'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
 					'enum'        => $aspect_choices,
 					'default'     => $defaults['aspect_ratio'],
 				),
-				'mime_type'     => array(
+				'mime_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
 					'enum'        => $mime_choices,
 					'default'     => $defaults['mime_type'],
 				),
-				'file_name'     => array(
+				'file_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
 				),
-				'timeout'       => array(
+				'timeout'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Override the Gemini request timeout in seconds.', 'wp-mcp-ai' ),
 					'minimum'     => 5,
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$storage['attachment_id'],
 			$prompt
 		);
-		
+
 		$result = array(
 			'attachment_id'     => $storage['attachment_id'],
 			'url'               => $storage['url'],
@@ -303,26 +303,11 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			$mime_type = get_post_mime_type( $attachment_id );
-			
+
 			// Validate MIME type is supported for image editing.
-			$supported_mime_types = array(
-				'image/jpeg',
-				'image/png',
-				'image/gif',
-				'image/webp',
-				'image/bmp',
-			);
-			
-			if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_unsupported_image_type',
-					sprintf(
-						/* translators: %s: MIME type */
-						__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
-						$mime_type
-					),
-					array( 'status' => 400 )
-				);
+			$mime_validation = $this->validate_source_mime_type( $mime_type );
+			if ( is_wp_error( $mime_validation ) ) {
+				return $mime_validation;
 			}
 
 			return array(
@@ -331,20 +316,51 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'source'    => 'attachment',
 			);
 		} elseif ( '' !== $image_url ) {
+			// Try to resolve URL to attachment ID first.
+			// This handles cases where the URL is a WordPress media URL that might have
+			// different scheme (http vs https) or other variations that prevent direct
+			// filesystem access but still refers to a valid local attachment.
+			$resolved_attachment_id = attachment_url_to_postid( $image_url );
+
+			if ( $resolved_attachment_id > 0 ) {
+				$file_path = get_attached_file( $resolved_attachment_id );
+
+				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
+					$image_data = file_get_contents( $file_path );
+
+					if ( false !== $image_data && '' !== $image_data ) {
+						$mime_type = get_post_mime_type( $resolved_attachment_id );
+
+						// Validate MIME type is supported for image editing.
+						$mime_validation = $this->validate_source_mime_type( $mime_type );
+						if ( is_wp_error( $mime_validation ) ) {
+							return $mime_validation;
+						}
+
+						return array(
+							'data'      => $image_data,
+							'mime_type' => $mime_type,
+							'source'    => 'attachment_url',
+						);
+					}
+				}
+				// If attachment file reading failed, fall through to other methods.
+			}
+
 			// Check if this is a local WordPress URL first.
 			// If it is, we can read it directly from the filesystem to avoid HTTP auth issues.
 			if ( $this->is_local_wordpress_url( $image_url ) ) {
 				$file_path = $this->get_file_path_from_local_url( $image_url );
-				
+
 				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
 					// Read the file directly from the filesystem.
 					$image_data = file_get_contents( $file_path );
-					
+
 					if ( false !== $image_data && '' !== $image_data ) {
 						// Determine MIME type from file.
 						$file_info = wp_check_filetype( $file_path );
 						$mime_type = ! empty( $file_info['type'] ) ? $file_info['type'] : 'image/png';
-						
+
 						return array(
 							'data'      => $image_data,
 							'mime_type' => $mime_type,
@@ -354,7 +370,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				}
 				// If local file reading failed, fall through to HTTP download.
 			}
-			
+
 			// Download image from URL (for external URLs or if local file reading failed).
 			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
@@ -479,10 +495,10 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( 0 === strpos( $url, $base_url ) ) {
 			// Replace the base URL with the base directory path.
 			$file_path = str_replace( $base_url, $base_dir, $url );
-			
+
 			// Normalize path separators.
 			$file_path = wp_normalize_path( $file_path );
-			
+
 			return $file_path;
 		}
 
@@ -494,6 +510,45 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get the supported MIME types for image editing.
+	 *
+	 * @return array List of supported MIME types.
+	 */
+	protected function get_supported_source_mime_types() {
+		return array(
+			'image/jpeg',
+			'image/png',
+			'image/gif',
+			'image/webp',
+			'image/bmp',
+		);
+	}
+
+	/**
+	 * Validate that a MIME type is supported for image editing.
+	 *
+	 * @param string $mime_type MIME type to validate.
+	 * @return true|WP_Error True if valid, WP_Error if not supported.
+	 */
+	protected function validate_source_mime_type( $mime_type ) {
+		$supported_mime_types = $this->get_supported_source_mime_types();
+
+		if ( ! in_array( $mime_type, $supported_mime_types, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_unsupported_image_type',
+				sprintf(
+					/* translators: %s: MIME type */
+					__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
+					$mime_type
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		return true;
 	}
 
 	/**

@@ -221,8 +221,12 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 			// Assert result is not an error.
 			$this->assertNotInstanceOf( 'WP_Error', $result, 'Should successfully read attachment via local URL' );
 
-			// Assert source is local_url.
-			$this->assertEquals( 'local_url', $result['source'], 'Should use local file reading for attachment URL' );
+			// Assert source is attachment_url or local_url (the fix prioritizes attachment_url_to_postid resolution).
+			$this->assertContains(
+				$result['source'],
+				array( 'attachment_url', 'local_url' ),
+				'Should use attachment resolution or local file reading for attachment URL'
+			);
 
 			// Assert data is correct.
 			$this->assertEquals( $png_data, $result['data'], 'Data should match original image data' );
@@ -370,6 +374,159 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		// Clean up the temp file.
 		if ( isset( $image_editor->temp_file ) && file_exists( $image_editor->temp_file ) ) {
 			unlink( $image_editor->temp_file );
+		}
+	}
+
+	/**
+	 * Test that attachment_url_to_postid resolution works even with scheme variations.
+	 *
+	 * This is the key fix for the issue where images attached via the chat client's
+	 * attach file button fail with HTTP 404 when tools try to use them.
+	 */
+	public function test_get_source_image_resolves_attachment_url_first() {
+		// Create a test image file as a WordPress attachment.
+		$upload_dir = wp_upload_dir();
+		$test_file  = $upload_dir['basedir'] . '/test-url-resolution-' . time() . '.png';
+
+		// Create a simple 1x1 PNG image (red pixel).
+		$png_data = $this->get_test_png_data();
+
+		// Write test file.
+		file_put_contents( $test_file, $png_data );
+
+		// Create attachment.
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => 'image/png',
+				'post_title'     => 'Test URL Resolution Image',
+				'post_status'    => 'inherit',
+			),
+			$test_file
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $attachment_id );
+		$this->assertGreaterThan( 0, $attachment_id );
+
+		try {
+			// Create tool instance.
+			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
+			$tool = new WP_MCP_AI_Tool_Edit_Gemini_Image();
+
+			// Use reflection to access protected method.
+			$reflection = new ReflectionClass( $tool );
+			$method     = $reflection->getMethod( 'get_source_image' );
+			$method->setAccessible( true );
+
+			// Get the attachment URL.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$this->assertNotEmpty( $attachment_url );
+
+			$arguments = array(
+				'image_url' => $attachment_url,
+			);
+
+			$result = $method->invoke( $tool, $arguments, 0 );
+
+			// Assert result is not an error.
+			$this->assertNotInstanceOf( 'WP_Error', $result, 'Should successfully read attachment via URL resolution' );
+
+			// Assert source is attachment_url (new source type from the fix).
+			// The fix prioritizes attachment_url_to_postid() resolution.
+			$this->assertContains(
+				$result['source'],
+				array( 'attachment_url', 'local_url' ),
+				'Should use attachment resolution or local file reading'
+			);
+
+			// Assert data is correct.
+			$this->assertEquals( $png_data, $result['data'], 'Data should match original image data' );
+
+			// Assert MIME type is correct.
+			$this->assertEquals( 'image/png', $result['mime_type'], 'MIME type should be image/png' );
+
+		} finally {
+			// Clean up attachment and file.
+			if ( $attachment_id > 0 ) {
+				wp_delete_attachment( $attachment_id, true );
+			}
+			if ( file_exists( $test_file ) ) {
+				unlink( $test_file );
+			}
+		}
+	}
+
+	/**
+	 * Test that WP_MCP_AI_Tool_Image_Base also resolves attachment URLs first.
+	 */
+	public function test_image_base_resolves_attachment_url_first() {
+		// Create a test image file as a WordPress attachment.
+		$upload_dir = wp_upload_dir();
+		$test_file  = $upload_dir['basedir'] . '/test-base-url-resolution-' . time() . '.png';
+
+		// Create a simple 1x1 PNG image (red pixel).
+		$png_data = $this->get_test_png_data();
+
+		// Write test file.
+		file_put_contents( $test_file, $png_data );
+
+		// Create attachment.
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => 'image/png',
+				'post_title'     => 'Test Base URL Resolution Image',
+				'post_status'    => 'inherit',
+			),
+			$test_file
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $attachment_id );
+		$this->assertGreaterThan( 0, $attachment_id );
+
+		try {
+			// Load using image base class.
+			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+
+			// Create a test subclass to access protected method.
+			$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
+				public function get_slug() { return 'test'; }
+				public function get_name() { return 'Test'; }
+				public function get_description() { return 'Test'; }
+				public function get_parameters_schema() { return array(); }
+				public function execute( array $arguments = array(), array $context = array() ) { return array(); }
+
+				public function test_load_source_image( array $arguments, $user_id = 0 ) {
+					return $this->load_source_image( $arguments, $user_id );
+				}
+			};
+
+			// Get the attachment URL.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$this->assertNotEmpty( $attachment_url );
+
+			$arguments = array(
+				'image_url' => $attachment_url,
+			);
+
+			$image_editor = $test_class->test_load_source_image( $arguments, 0 );
+
+			// Verify image editor was loaded successfully.
+			$this->assertInstanceOf( 'WP_Image_Editor', $image_editor, 'Should return WP_Image_Editor instance' );
+
+			// CRITICAL: Verify the file is NOT marked as temporary.
+			// This means the attachment was resolved successfully.
+			$this->assertObjectNotHasProperty( 'temp_file', $image_editor, 'Attachment file should NOT be marked as temp' );
+
+			// Verify the original file still exists.
+			$this->assertTrue( file_exists( $test_file ), 'Original file should still exist' );
+
+		} finally {
+			// Clean up attachment and file.
+			if ( $attachment_id > 0 ) {
+				wp_delete_attachment( $attachment_id, true );
+			}
+			if ( file_exists( $test_file ) ) {
+				unlink( $test_file );
+			}
 		}
 	}
 }
