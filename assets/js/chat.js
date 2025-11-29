@@ -11284,6 +11284,10 @@
             }
         }
 
+        // Declare assistantMessageElement at this scope so it's accessible
+        // when processing async tool results later (for updating DOM with video attachments)
+        let assistantMessageElement = null;
+
         if (hasDisplayContent) {
             // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
             const usage = chatData && chatData.usage ? chatData.usage : null;
@@ -11439,7 +11443,7 @@
                 });
             }
 
-            const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+            assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 state: state,
                 speech: {
                     state: state,
@@ -11626,8 +11630,9 @@
          * 
          * @param {Object} assistantDisplay - The display object to add video attachment to
          * @param {Object} parsedContent - Parsed tool result with expected_url and expected_filename
+         * @param {HTMLElement|null} bubbleElement - Optional DOM element to update with the attachment
          */
-        function addVideoPendingAttachment(assistantDisplay, parsedContent) {
+        function addVideoPendingAttachment(assistantDisplay, parsedContent, bubbleElement) {
             // Check if this is a pending video generation
             var isVideoPending = parsedContent.expected_url && 
                                  parsedContent.expected_filename && 
@@ -11653,6 +11658,82 @@
                 meta: getString('videoPending', 'Pending • ~5 min')
             };
             assistantDisplay.attachments = (assistantDisplay.attachments || []).concat([videoAttachment]);
+            
+            // If a bubble element was provided, also update the DOM to show the video attachment
+            if (bubbleElement && bubbleElement.nodeType === Node.ELEMENT_NODE) {
+                appendVideoAttachmentToBubble(bubbleElement, videoAttachment);
+            }
+        }
+        
+        /**
+         * Append a video attachment to an existing bubble element's DOM.
+         * Creates or appends to the attachments list as needed.
+         * 
+         * @param {HTMLElement} bubbleElement - The bubble element to update
+         * @param {Object} attachment - The video attachment object with url, label, downloadName, meta
+         */
+        function appendVideoAttachmentToBubble(bubbleElement, attachment) {
+            if (!bubbleElement || !attachment || !attachment.url) {
+                return;
+            }
+            
+            // Find or create the attachments list
+            var list = bubbleElement.querySelector('.wp-mcp-ai-chat__bubble-attachments');
+            if (!list) {
+                list = document.createElement('ul');
+                list.className = 'wp-mcp-ai-chat__bubble-attachments';
+                bubbleElement.appendChild(list);
+            }
+            
+            // Create the video attachment item
+            var item = document.createElement('li');
+            item.className = 'wp-mcp-ai-chat__bubble-attachment';
+            
+            // Render video player
+            var videoContainer = document.createElement('div');
+            videoContainer.className = 'wp-mcp-ai-chat__video-container';
+            
+            var video = document.createElement('video');
+            video.controls = true;
+            video.preload = 'metadata';
+            video.className = 'wp-mcp-ai-chat__video-player';
+            
+            var source = document.createElement('source');
+            source.src = attachment.url;
+            
+            // Determine MIME type based on URL
+            var mimeType = getVideoMimeType(attachment.url);
+            source.type = mimeType;
+            
+            video.appendChild(source);
+            
+            // Add fallback text
+            var fallbackText = document.createTextNode(
+                getString('videoNotSupported', 'Your browser does not support video playback.')
+            );
+            video.appendChild(fallbackText);
+            
+            videoContainer.appendChild(video);
+            
+            // Add download link below video
+            var downloadLink = document.createElement('a');
+            downloadLink.href = attachment.url;
+            downloadLink.download = attachment.downloadName || 'video.mp4';
+            downloadLink.className = 'wp-mcp-ai-chat__video-download';
+            downloadLink.textContent = getString('downloadVideo', 'Download video');
+            videoContainer.appendChild(downloadLink);
+            
+            item.appendChild(videoContainer);
+            
+            // Add metadata if present
+            if (attachment.meta) {
+                var meta = document.createElement('div');
+                meta.className = 'wp-mcp-ai-chat__attachments-meta';
+                meta.textContent = attachment.meta;
+                item.appendChild(meta);
+            }
+            
+            list.appendChild(item);
         }
 
         // Add tool result messages to conversation if included in response.
@@ -11773,7 +11854,8 @@
                         }
                         
                         // For video generation, add placeholder attachment to assistant display
-                        addVideoPendingAttachment(assistantDisplay, parsedContent);
+                        // Pass the bubble element to update the DOM immediately
+                        addVideoPendingAttachment(assistantDisplay, parsedContent, assistantMessageElement);
                         
                         startAsyncToolPolling(state, parsedContent, toolName, toolCallId);
                         return;
@@ -11855,7 +11937,8 @@
                         }
                         
                         // For video generation, add placeholder attachment to assistant display
-                        addVideoPendingAttachment(assistantDisplay, parsedContent);
+                        // Pass the bubble element to update the DOM immediately
+                        addVideoPendingAttachment(assistantDisplay, parsedContent, assistantMessageElement);
                         
                         startAsyncToolPolling(state, parsedContent, toolName, toolResult.tool_call_id);
                         return;
