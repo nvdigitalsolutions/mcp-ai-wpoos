@@ -247,10 +247,10 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		if ( 0 === strpos( $url, $base_url ) ) {
 			// Replace the base URL with the base directory path.
 			$file_path = str_replace( $base_url, $base_dir, $url );
-			
+
 			// Normalize path separators.
 			$file_path = wp_normalize_path( $file_path );
-			
+
 			return $file_path;
 		}
 
