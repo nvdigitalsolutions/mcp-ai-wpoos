@@ -115,17 +115,12 @@ class WP_MCP_AI_Build_Assistant_Page {
 	/**
 	 * Enqueue chat interface assets.
 	 * Provides chat functionality for the Build with AI modal.
+	 *
+	 * Uses the bundled chat-bundle.js which combines all chat-related services
+	 * into a single optimized file, reducing HTTP requests from 9 files to 1 file.
 	 */
 	private function enqueue_chat_assets() {
-		// Enqueue cron status service first.
-		wp_enqueue_script(
-			'wp-mcp-ai-cron-status',
-			WP_MCP_AI_URL . 'assets/js/cron-status-service.js',
-			array(),
-			$this->get_asset_version( 'assets/js/cron-status-service.js' ),
-			true
-		);
-
+		// Enqueue cron status styles (CSS only - JS is bundled)
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			WP_MCP_AI_URL . 'assets/css/cron-status.css',
@@ -140,11 +135,12 @@ class WP_MCP_AI_Build_Assistant_Page {
 			$this->get_asset_version( 'assets/css/chat.css' )
 		);
 
+		// Register bundled chat script (includes all services in a single file)
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
-			WP_MCP_AI_URL . 'assets/js/chat.js',
-			array( 'wp-mcp-ai-cron-status' ),
-			$this->get_asset_version( 'assets/js/chat.js' ),
+			WP_MCP_AI_URL . 'assets/js/chat-bundle.js',
+			array(), // No dependencies - all services are bundled together
+			$this->get_asset_version( 'assets/js/chat-bundle.js' ),
 			true
 		);
 

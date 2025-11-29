@@ -67,7 +67,7 @@ class WP_MCP_AI_Shortcode {
 	 * Register assets used by the shortcode.
 	 *
 	 * Uses a bundled JavaScript file (chat-bundle.js) that combines all chat-related
-	 * services into a single optimized file. This reduces HTTP requests from 11+ files
+	 * services into a single optimized file. This reduces HTTP requests from 9 files
 	 * to just 1 file, improving page load performance.
 	 *
 	 * The bundle includes:

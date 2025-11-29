@@ -10,7 +10,7 @@
  *
  * Chat Bundle Optimization:
  * The chat-bundle.js entry point bundles all chat-related services into a single
- * optimized file, reducing HTTP requests from 11+ files to just 1 file.
+ * optimized file, reducing HTTP requests from 9 files to just 1 file.
  *
  * Bundled modules include:
  * - sse-service.js (Server-Sent Events)

@@ -109,32 +109,25 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	/**
 	 * Enqueue chat interface assets.
 	 * Shared across all test pages.
+	 *
+	 * Uses the bundled chat-bundle.js which combines all chat-related services
+	 * into a single optimized file, reducing HTTP requests from 9 files to 1 file.
 	 */
 	protected function enqueue_chat_assets() {
-		$script_relative             = 'assets/js/chat.js';
+		// Use bundled JavaScript file that combines all chat services
+		$script_relative             = 'assets/js/chat-bundle.js';
 		$style_relative              = 'assets/css/chat.css';
-		$cron_status_script_relative = 'assets/js/cron-status-service.js';
 		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
 		$script_path             = WP_MCP_AI_URL . $script_relative;
 		$style_path              = WP_MCP_AI_URL . $style_relative;
-		$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
 		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
 
 		$script_version             = $this->get_asset_version( $script_relative );
 		$style_version              = $this->get_asset_version( $style_relative );
-		$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
 		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
 
-		// Enqueue cron status service first.
-		wp_enqueue_script(
-			'wp-mcp-ai-cron-status',
-			$cron_status_script_path,
-			array(),
-			$cron_status_script_version,
-			true
-		);
-
+		// Enqueue cron status styles (CSS only - JS is bundled)
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			$cron_status_style_path,
@@ -149,10 +142,11 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			$style_version
 		);
 
+		// Register bundled chat script (includes all services in a single file)
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
 			$script_path,
-			array( 'wp-mcp-ai-cron-status' ),
+			array(), // No dependencies - all services are bundled together
 			$script_version,
 			true
 		);
