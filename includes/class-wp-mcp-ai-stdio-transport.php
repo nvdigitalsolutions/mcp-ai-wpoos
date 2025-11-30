@@ -545,7 +545,11 @@ class WP_MCP_AI_STDIO_Transport {
 		}
 
 		if ( is_scalar( $value ) || is_null( $value ) ) {
-			return (string) wp_json_encode( $value );
+			$encoded = wp_json_encode( $value );
+			if ( false === $encoded ) {
+				return '[Unable to serialize scalar value]';
+			}
+			return $encoded;
 		}
 
 		$json = wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
