@@ -712,6 +712,12 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'default'  => false,
 					'note'     => 'Optional SSE streaming - use /sse endpoint or /mcp?stream=true',
 				),
+				'stdio'           => array(
+					'command' => 'wp mcp-ai stdio',
+					'args'    => array( '--path=/path/to/wordpress', '--assistant-id=<id>' ),
+					'default' => false,
+					'note'    => 'STDIO transport for local agent integration (Claude Desktop, etc.)',
+				),
 			),
 			'endpoints'       => array(
 				'mcp'        => rest_url( self::REST_NAMESPACE . '/mcp' ),
@@ -725,6 +731,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'jsonrpc'       => 'POST /mcp (JSON-RPC 2.0 protocol for tool execution)',
 				'sse_dedicated' => 'GET /sse (dedicated SSE endpoint)',
 				'sse_opt_in'    => 'GET /mcp?stream=true (opt-in SSE on /mcp endpoint)',
+				'stdio'         => 'wp mcp-ai stdio (local STDIO transport for Claude Desktop)',
 			),
 		);
 

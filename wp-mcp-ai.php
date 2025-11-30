@@ -580,6 +580,7 @@ if ( is_admin() ) {
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-command.php';
 }
 

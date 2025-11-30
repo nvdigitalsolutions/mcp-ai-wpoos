@@ -1114,9 +1114,122 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 	}
 
+	if ( ! class_exists( 'WP_MCP_AI_CLI_STDIO_Command' ) ) {
+		/**
+		 * WP-CLI commands for STDIO transport.
+		 *
+		 * Provides MCP server functionality over STDIO transport for local agent
+		 * integration with clients like Claude Desktop.
+		 */
+		class WP_MCP_AI_CLI_STDIO_Command extends WP_CLI_Command {
+
+			/**
+			 * Start the MCP server with STDIO transport.
+			 *
+			 * Runs an MCP server that reads JSON-RPC 2.0 requests from stdin
+			 * and writes responses to stdout. This enables local MCP clients
+			 * (like Claude Desktop) to communicate with WordPress.
+			 *
+			 * ## OPTIONS
+			 *
+			 * [--assistant-id=<id>]
+			 * : Scope the server to a specific assistant ID.
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     # Start STDIO transport server
+			 *     wp mcp-ai stdio
+			 *
+			 *     # Start STDIO transport scoped to assistant ID 123
+			 *     wp mcp-ai stdio --assistant-id=123
+			 *
+			 *     # Use with Claude Desktop (in claude_desktop_config.json):
+			 *     # {
+			 *     #   "mcpServers": {
+			 *     #     "wordpress": {
+			 *     #       "command": "wp",
+			 *     #       "args": ["mcp-ai", "stdio", "--path=/path/to/wordpress"]
+			 *     #     }
+			 *     #   }
+			 *     # }
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 */
+			public function __invoke( $args, $assoc_args ) {
+				$assistant_id = \WP_CLI\Utils\get_flag_value( $assoc_args, 'assistant-id', 0 );
+				$assistant_id = absint( $assistant_id );
+
+				// Validate assistant exists if specified.
+				if ( $assistant_id > 0 ) {
+					$assistant = get_post( $assistant_id );
+
+					if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
+						WP_CLI::error(
+							sprintf(
+								/* translators: %d: assistant ID */
+								__( 'Assistant not found: %d', 'wp-mcp-ai' ),
+								$assistant_id
+							)
+						);
+						return;
+					}
+
+					if ( 'publish' !== $assistant->post_status ) {
+						WP_CLI::error(
+							sprintf(
+								/* translators: %d: assistant ID */
+								__( 'Assistant %d is not published.', 'wp-mcp-ai' ),
+								$assistant_id
+							)
+						);
+						return;
+					}
+				}
+
+				// Ensure the STDIO transport class is loaded.
+				if ( ! class_exists( 'WP_MCP_AI_STDIO_Transport' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';
+				}
+
+				// Write startup message to stderr (not stdout, which is for JSON-RPC).
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				fwrite( STDERR, "[WP oOS] STDIO transport starting...\n" );
+
+				if ( $assistant_id > 0 ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					fwrite( STDERR, "[WP oOS] Scoped to assistant ID: {$assistant_id}\n" );
+				}
+
+				// Create and run the transport.
+				$transport = new WP_MCP_AI_STDIO_Transport( $assistant_id );
+
+				// Handle SIGTERM and SIGINT for graceful shutdown.
+				if ( function_exists( 'pcntl_signal' ) ) {
+					$shutdown_handler = function () use ( $transport ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						fwrite( STDERR, "\n[WP oOS] Shutting down...\n" );
+						$transport->stop();
+					};
+
+					pcntl_signal( SIGTERM, $shutdown_handler );
+					pcntl_signal( SIGINT, $shutdown_handler );
+				}
+
+				$transport->run();
+
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				fwrite( STDERR, "[WP oOS] STDIO transport stopped.\n" );
+			}
+		}
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
 	WP_CLI::add_command( 'mcp-ai token', 'WP_MCP_AI_CLI_Token_Command' );
 	WP_CLI::add_command( 'mcp-ai rabbitmq', 'WP_MCP_AI_CLI_RabbitMQ_Command' );
+	WP_CLI::add_command( 'mcp-ai stdio', 'WP_MCP_AI_CLI_STDIO_Command' );
 }
