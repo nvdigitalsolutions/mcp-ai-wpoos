@@ -556,6 +556,10 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * This is particularly important for the agentic workflow where the LLM may
 	 * receive URLs with a different scheme than WordPress is configured with.
 	 *
+	 * Note: This method is duplicated in both WP_MCP_AI_Tool_Image_Base and this class
+	 * because this tool does not extend the base class. The edit_gemini_image tool
+	 * interfaces directly with the Gemini API and has different requirements.
+	 *
 	 * @param string $url URL to resolve.
 	 * @return int Attachment ID on success, 0 if not found.
 	 */
