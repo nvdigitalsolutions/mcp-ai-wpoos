@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 									),
 									'backgroundColor' => array(
 										'description' => __( 'Background color(s) for the dataset.', 'wp-mcp-ai' ),
-										'oneOf'       => array(
+										'anyOf'       => array(
 											array(
 												'type' => 'string',
 											),
@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 									),
 									'borderColor'     => array(
 										'description' => __( 'Border color(s) for the dataset.', 'wp-mcp-ai' ),
-										'oneOf'       => array(
+										'anyOf'       => array(
 											array(
 												'type' => 'string',
 											),
