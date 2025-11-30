@@ -529,4 +529,96 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	/**
+	 * Test that resolve_attachment_id_from_url tries alternate schemes.
+	 *
+	 * This ensures that if the URL has a different scheme (http vs https)
+	 * than what WordPress is configured with, the attachment can still be resolved.
+	 */
+	public function test_resolve_attachment_id_from_url_tries_alternate_scheme() {
+		// Create a test image file as a WordPress attachment.
+		$upload_dir = wp_upload_dir();
+		$test_file  = $upload_dir['basedir'] . '/test-scheme-resolution-' . time() . '.png';
+
+		// Create a simple 1x1 PNG image (red pixel).
+		$png_data = $this->get_test_png_data();
+
+		// Write test file.
+		file_put_contents( $test_file, $png_data );
+
+		// Create attachment.
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => 'image/png',
+				'post_title'     => 'Test Scheme Resolution Image',
+				'post_status'    => 'inherit',
+			),
+			$test_file
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $attachment_id );
+		$this->assertGreaterThan( 0, $attachment_id );
+
+		try {
+			// Create tool instance.
+			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
+			$tool = new WP_MCP_AI_Tool_Edit_Gemini_Image();
+
+			// Use reflection to access protected method.
+			$reflection = new ReflectionClass( $tool );
+			$method     = $reflection->getMethod( 'resolve_attachment_id_from_url' );
+			$method->setAccessible( true );
+
+			// Get the attachment URL.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$this->assertNotEmpty( $attachment_url );
+
+			// Test with the original URL - should work.
+			$result = $method->invoke( $tool, $attachment_url );
+			$this->assertEquals( $attachment_id, $result, 'Should resolve attachment ID from original URL' );
+
+			// Create an alternate-scheme URL.
+			$alternate_url = '';
+			if ( 0 === strpos( $attachment_url, 'https://' ) ) {
+				$alternate_url = 'http://' . substr( $attachment_url, 8 );
+			} else {
+				$alternate_url = 'https://' . substr( $attachment_url, 7 );
+			}
+
+			// Test with alternate scheme URL - should still work due to the fallback.
+			$result = $method->invoke( $tool, $alternate_url );
+			$this->assertEquals( $attachment_id, $result, 'Should resolve attachment ID from alternate-scheme URL' );
+
+		} finally {
+			// Clean up attachment and file.
+			if ( $attachment_id > 0 ) {
+				wp_delete_attachment( $attachment_id, true );
+			}
+			if ( file_exists( $test_file ) ) {
+				unlink( $test_file );
+			}
+		}
+	}
+
+	/**
+	 * Test that resolve_attachment_id_from_url returns 0 for non-existent URLs.
+	 */
+	public function test_resolve_attachment_id_from_url_returns_zero_for_missing() {
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
+		$tool = new WP_MCP_AI_Tool_Edit_Gemini_Image();
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'resolve_attachment_id_from_url' );
+		$method->setAccessible( true );
+
+		// Test with non-existent URL.
+		$result = $method->invoke( $tool, 'https://example.com/non-existent-image.png' );
+		$this->assertEquals( 0, $result, 'Should return 0 for non-existent URL' );
+
+		// Test with empty URL.
+		$result = $method->invoke( $tool, '' );
+		$this->assertEquals( 0, $result, 'Should return 0 for empty URL' );
+	}
 }

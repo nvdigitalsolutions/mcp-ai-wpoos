@@ -320,7 +320,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			// This handles cases where the URL is a WordPress media URL that might have
 			// different scheme (http vs https) or other variations that prevent direct
 			// filesystem access but still refers to a valid local attachment.
-			$resolved_attachment_id = attachment_url_to_postid( $image_url );
+			$resolved_attachment_id = $this->resolve_attachment_id_from_url( $image_url );
 
 			if ( $resolved_attachment_id > 0 ) {
 				$file_path = get_attached_file( $resolved_attachment_id );
@@ -544,6 +544,57 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return false;
+	}
+
+	/**
+	 * Resolve an attachment ID from a URL with scheme-agnostic matching.
+	 *
+	 * WordPress's attachment_url_to_postid() function is scheme-sensitive and will
+	 * fail if the URL scheme (http vs https) doesn't match what's stored in the
+	 * database. This method provides a fallback that tries both schemes.
+	 *
+	 * This is particularly important for the agentic workflow where the LLM may
+	 * receive URLs with a different scheme than WordPress is configured with.
+	 *
+	 * Note: This method is duplicated in both WP_MCP_AI_Tool_Image_Base and this class
+	 * because this tool does not extend the base class. The edit_gemini_image tool
+	 * interfaces directly with the Gemini API and has different requirements.
+	 *
+	 * @param string $url URL to resolve.
+	 * @return int Attachment ID on success, 0 if not found.
+	 */
+	protected function resolve_attachment_id_from_url( $url ) {
+		if ( '' === $url ) {
+			return 0;
+		}
+
+		// First, try the URL as-is.
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id > 0 ) {
+			return $attachment_id;
+		}
+
+		// If that failed, try with the opposite scheme.
+		// This handles cases where the LLM passes a URL with http but WordPress
+		// is configured with https (or vice versa).
+		$alternate_url = '';
+
+		if ( 0 === strpos( $url, 'https://' ) ) {
+			// Try http instead.
+			$alternate_url = 'http://' . substr( $url, 8 );
+		} elseif ( 0 === strpos( $url, 'http://' ) ) {
+			// Try https instead.
+			$alternate_url = 'https://' . substr( $url, 7 );
+		}
+
+		if ( '' !== $alternate_url ) {
+			$attachment_id = attachment_url_to_postid( $alternate_url );
+			if ( $attachment_id > 0 ) {
+				return $attachment_id;
+			}
+		}
+
+		return 0;
 	}
 
 	/**
