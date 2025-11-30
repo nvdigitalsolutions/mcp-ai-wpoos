@@ -67,6 +67,8 @@ class WP_MCP_AI_Core_Server {
 
 	/**
 	 * Prevent unserialization.
+	 *
+	 * @throws \Exception Always throws exception to prevent unserialization.
 	 */
 	public function __wakeup() {
 		throw new \Exception( 'Cannot unserialize singleton' );
@@ -160,10 +162,10 @@ class WP_MCP_AI_Core_Server {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WP_REST_Request $request REST request.
+	 * @param WP_REST_Request $request REST request (unused but required by WP REST API).
 	 * @return WP_REST_Response
 	 */
-	public function handle_list_tools( $request ) {
+	public function handle_list_tools( $request ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$tools = array();
 
 		foreach ( $this->tools as $slug => $tool ) {

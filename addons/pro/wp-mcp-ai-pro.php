@@ -184,10 +184,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_permission_filter' ) ) {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param bool                           $can_run   Whether tool can run.
-	 * @param WP_MCP_AI_Core_Tool_Interface  $tool      Tool instance.
-	 * @param array                          $arguments Tool arguments.
-	 * @param WP_User|null                   $user      Current user.
+	 * @param bool                          $can_run   Whether tool can run.
+	 * @param WP_MCP_AI_Core_Tool_Interface $tool      Tool instance.
+	 * @param array                         $arguments Tool arguments.
+	 * @param WP_User|null                  $user      Current user.
 	 * @return bool Whether tool can run.
 	 */
 	function wp_mcp_ai_pro_permission_filter( $can_run, $tool, $arguments, $user ) {

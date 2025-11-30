@@ -57,7 +57,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'    => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: get, list, upload, search.', 'wp-mcp-ai-core' ),
 					'enum'        => array( 'get', 'list', 'upload', 'search' ),
@@ -67,34 +67,34 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 					'type'        => 'integer',
 					'description' => __( 'Attachment ID for get action.', 'wp-mcp-ai-core' ),
 				),
-				'mime_type' => array(
+				'mime_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by MIME type (e.g., image, video, application/pdf).', 'wp-mcp-ai-core' ),
 				),
-				'per_page'  => array(
+				'per_page'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of items to return. Default: 10. Max: 100.', 'wp-mcp-ai-core' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
-				'page'      => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
 					'default'     => 1,
 				),
-				'search'    => array(
+				'search'        => array(
 					'type'        => 'string',
 					'description' => __( 'Search term to filter media.', 'wp-mcp-ai-core' ),
 				),
-				'url'       => array(
+				'url'           => array(
 					'type'        => 'string',
 					'description' => __( 'URL of media file to upload (for upload action).', 'wp-mcp-ai-core' ),
 				),
-				'title'     => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Title for the uploaded media.', 'wp-mcp-ai-core' ),
 				),
-				'alt_text'  => array(
+				'alt_text'      => array(
 					'type'        => 'string',
 					'description' => __( 'Alt text for the uploaded media.', 'wp-mcp-ai-core' ),
 				),

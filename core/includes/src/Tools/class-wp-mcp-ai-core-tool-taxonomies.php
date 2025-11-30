@@ -57,36 +57,36 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'    => array(
+				'action'     => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: list_taxonomies, list_terms, get_term, search_terms.', 'wp-mcp-ai-core' ),
 					'enum'        => array( 'list_taxonomies', 'list_terms', 'get_term', 'search_terms' ),
 					'default'     => 'list_taxonomies',
 				),
-				'taxonomy'  => array(
+				'taxonomy'   => array(
 					'type'        => 'string',
 					'description' => __( 'Taxonomy name (e.g., category, post_tag).', 'wp-mcp-ai-core' ),
 				),
-				'term_id'   => array(
+				'term_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Term ID for get_term action.', 'wp-mcp-ai-core' ),
 				),
-				'per_page'  => array(
+				'per_page'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of terms to return. Default: 20. Max: 100.', 'wp-mcp-ai-core' ),
 					'default'     => 20,
 					'maximum'     => 100,
 				),
-				'page'      => array(
+				'page'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
 					'default'     => 1,
 				),
-				'search'    => array(
+				'search'     => array(
 					'type'        => 'string',
 					'description' => __( 'Search term to filter results.', 'wp-mcp-ai-core' ),
 				),
-				'parent'    => array(
+				'parent'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter terms by parent ID.', 'wp-mcp-ai-core' ),
 				),
@@ -95,13 +95,13 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 					'description' => __( 'Whether to hide terms with no posts. Default: false.', 'wp-mcp-ai-core' ),
 					'default'     => false,
 				),
-				'orderby'   => array(
+				'orderby'    => array(
 					'type'        => 'string',
 					'description' => __( 'Field to order by. Default: name.', 'wp-mcp-ai-core' ),
 					'enum'        => array( 'name', 'slug', 'term_id', 'count', 'parent' ),
 					'default'     => 'name',
 				),
-				'order'     => array(
+				'order'      => array(
 					'type'        => 'string',
 					'description' => __( 'Order direction. Default: ASC.', 'wp-mcp-ai-core' ),
 					'enum'        => array( 'ASC', 'DESC' ),

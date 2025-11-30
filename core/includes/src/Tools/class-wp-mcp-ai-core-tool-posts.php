@@ -427,19 +427,19 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 */
 	protected function format_post( $post ) {
 		return array(
-			'id'            => $post->ID,
-			'title'         => get_the_title( $post ),
-			'content'       => $post->post_content,
-			'excerpt'       => $post->post_excerpt,
-			'status'        => $post->post_status,
-			'type'          => $post->post_type,
-			'author'        => absint( $post->post_author ),
-			'date'          => $post->post_date,
-			'date_gmt'      => $post->post_date_gmt,
-			'modified'      => $post->post_modified,
-			'modified_gmt'  => $post->post_modified_gmt,
-			'slug'          => $post->post_name,
-			'permalink'     => get_permalink( $post ),
+			'id'             => $post->ID,
+			'title'          => get_the_title( $post ),
+			'content'        => $post->post_content,
+			'excerpt'        => $post->post_excerpt,
+			'status'         => $post->post_status,
+			'type'           => $post->post_type,
+			'author'         => absint( $post->post_author ),
+			'date'           => $post->post_date,
+			'date_gmt'       => $post->post_date_gmt,
+			'modified'       => $post->post_modified,
+			'modified_gmt'   => $post->post_modified_gmt,
+			'slug'           => $post->post_name,
+			'permalink'      => get_permalink( $post ),
 			'featured_image' => get_post_thumbnail_id( $post ),
 		);
 	}

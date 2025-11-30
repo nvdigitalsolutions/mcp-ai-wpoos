@@ -1,6 +1,6 @@
 <?php
 /**
- * Shared utilities for WP MCP AI Core and Add-ons.
+ * Shared utility functions for WP MCP AI Core and Add-ons.
  *
  * This file contains common utility functions that are used by both
  * the Core plugin and Pro add-ons. It is licensed under GPL-3.0-or-later.
@@ -10,64 +10,6 @@
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
-}
-
-/**
- * ============================================================================
- * LOGGING UTILITIES
- * ============================================================================
- */
-
-if ( ! class_exists( 'WP_MCP_AI_Shared_Logger' ) ) {
-	/**
-	 * Simple logging utility for debugging.
-	 *
-	 * @since 1.0.0
-	 */
-	class WP_MCP_AI_Shared_Logger {
-
-		/**
-		 * Log a message if debug mode is enabled.
-		 *
-		 * @param string $message Log message.
-		 * @param mixed  $data    Optional data to include.
-		 */
-		public static function log( $message, $data = null ) {
-			if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-				return;
-			}
-
-			$entry = '[WP MCP AI] ' . $message;
-
-			if ( null !== $data ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				$entry .= ' | Data: ' . print_r( $data, true );
-			}
-
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( $entry );
-		}
-
-		/**
-		 * Log an error message.
-		 *
-		 * @param string $message Error message.
-		 * @param mixed  $data    Optional error data.
-		 */
-		public static function error( $message, $data = null ) {
-			self::log( 'ERROR: ' . $message, $data );
-		}
-
-		/**
-		 * Log a warning message.
-		 *
-		 * @param string $message Warning message.
-		 * @param mixed  $data    Optional warning data.
-		 */
-		public static function warning( $message, $data = null ) {
-			self::log( 'WARNING: ' . $message, $data );
-		}
-	}
 }
 
 /**
@@ -119,21 +61,21 @@ if ( ! function_exists( 'wp_mcp_ai_get_option' ) ) {
 	/**
 	 * Get a plugin option with a default fallback.
 	 *
-	 * @param string $option_name Option name.
-	 * @param mixed  $default     Default value if option doesn't exist.
+	 * @param string $option_name   Option name.
+	 * @param mixed  $default_value Default value if option doesn't exist.
 	 * @return mixed Option value or default.
 	 */
-	function wp_mcp_ai_get_option( $option_name, $default = null ) {
-		$value = get_option( $option_name, $default );
+	function wp_mcp_ai_get_option( $option_name, $default_value = null ) {
+		$value = get_option( $option_name, $default_value );
 
 		/**
 		 * Filter a plugin option value.
 		 *
-		 * @param mixed  $value       Option value.
-		 * @param string $option_name Option name.
-		 * @param mixed  $default     Default value.
+		 * @param mixed  $value         Option value.
+		 * @param string $option_name   Option name.
+		 * @param mixed  $default_value Default value.
 		 */
-		return apply_filters( 'wp_mcp_ai_option', $value, $option_name, $default );
+		return apply_filters( 'wp_mcp_ai_option', $value, $option_name, $default_value );
 	}
 }
 
@@ -210,29 +152,29 @@ if ( ! function_exists( 'wp_mcp_ai_array_get' ) ) {
 	/**
 	 * Get a value from an array using dot notation.
 	 *
-	 * @param array  $array   Array to search.
-	 * @param string $key     Key in dot notation (e.g., 'parent.child.value').
-	 * @param mixed  $default Default value if key doesn't exist.
+	 * @param array  $arr           Array to search.
+	 * @param string $key           Key in dot notation (e.g., 'parent.child.value').
+	 * @param mixed  $default_value Default value if key doesn't exist.
 	 * @return mixed Value or default.
 	 */
-	function wp_mcp_ai_array_get( $array, $key, $default = null ) {
-		if ( ! is_array( $array ) ) {
-			return $default;
+	function wp_mcp_ai_array_get( $arr, $key, $default_value = null ) {
+		if ( ! is_array( $arr ) ) {
+			return $default_value;
 		}
 
-		if ( isset( $array[ $key ] ) ) {
-			return $array[ $key ];
+		if ( isset( $arr[ $key ] ) ) {
+			return $arr[ $key ];
 		}
 
 		foreach ( explode( '.', $key ) as $segment ) {
-			if ( ! is_array( $array ) || ! array_key_exists( $segment, $array ) ) {
-				return $default;
+			if ( ! is_array( $arr ) || ! array_key_exists( $segment, $arr ) ) {
+				return $default_value;
 			}
 
-			$array = $array[ $segment ];
+			$arr = $arr[ $segment ];
 		}
 
-		return $array;
+		return $arr;
 	}
 }
 
@@ -240,27 +182,29 @@ if ( ! function_exists( 'wp_mcp_ai_array_set' ) ) {
 	/**
 	 * Set a value in an array using dot notation.
 	 *
-	 * @param array  $array Array to modify.
+	 * @param array  $arr   Array to modify (passed by reference).
 	 * @param string $key   Key in dot notation.
 	 * @param mixed  $value Value to set.
 	 * @return array Modified array.
 	 */
-	function wp_mcp_ai_array_set( &$array, $key, $value ) {
-		$keys = explode( '.', $key );
+	function wp_mcp_ai_array_set( &$arr, $key, $value ) {
+		$keys      = explode( '.', $key );
+		$keys_left = count( $keys );
 
-		while ( count( $keys ) > 1 ) {
-			$key = array_shift( $keys );
+		while ( $keys_left > 1 ) {
+			$key       = array_shift( $keys );
+			$keys_left = count( $keys );
 
-			if ( ! isset( $array[ $key ] ) || ! is_array( $array[ $key ] ) ) {
-				$array[ $key ] = array();
+			if ( ! isset( $arr[ $key ] ) || ! is_array( $arr[ $key ] ) ) {
+				$arr[ $key ] = array();
 			}
 
-			$array = &$array[ $key ];
+			$arr = &$arr[ $key ];
 		}
 
-		$array[ array_shift( $keys ) ] = $value;
+		$arr[ array_shift( $keys ) ] = $value;
 
-		return $array;
+		return $arr;
 	}
 }
 
@@ -294,15 +238,15 @@ if ( ! function_exists( 'wp_mcp_ai_is_json' ) ) {
 	/**
 	 * Check if a string is valid JSON.
 	 *
-	 * @param string $string String to check.
+	 * @param string $str String to check.
 	 * @return bool Whether the string is valid JSON.
 	 */
-	function wp_mcp_ai_is_json( $string ) {
-		if ( ! is_string( $string ) ) {
+	function wp_mcp_ai_is_json( $str ) {
+		if ( ! is_string( $str ) ) {
 			return false;
 		}
 
-		json_decode( $string );
+		json_decode( $str );
 		return json_last_error() === JSON_ERROR_NONE;
 	}
 }

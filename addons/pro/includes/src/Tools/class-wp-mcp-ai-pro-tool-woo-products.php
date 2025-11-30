@@ -82,63 +82,63 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Core_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'     => array(
+				'action'            => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: get, list, create, update, search.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'get', 'list', 'create', 'update', 'search' ),
 					'default'     => 'list',
 				),
-				'product_id' => array(
+				'product_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID for get or update actions.', 'wp-mcp-ai-pro' ),
 				),
-				'per_page'   => array(
+				'per_page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of products to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
-				'page'       => array(
+				'page'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
 					'default'     => 1,
 				),
-				'search'     => array(
+				'search'            => array(
 					'type'        => 'string',
 					'description' => __( 'Search term to filter products.', 'wp-mcp-ai-pro' ),
 				),
-				'category'   => array(
+				'category'          => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by product category slug.', 'wp-mcp-ai-pro' ),
 				),
-				'status'     => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by product status. Default: publish.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 					'default'     => 'publish',
 				),
-				'type'       => array(
+				'type'              => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by product type.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'simple', 'variable', 'grouped', 'external' ),
 				),
-				'name'       => array(
+				'name'              => array(
 					'type'        => 'string',
 					'description' => __( 'Product name for create/update.', 'wp-mcp-ai-pro' ),
 				),
-				'sku'        => array(
+				'sku'               => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU.', 'wp-mcp-ai-pro' ),
 				),
-				'price'      => array(
+				'price'             => array(
 					'type'        => 'string',
 					'description' => __( 'Product regular price.', 'wp-mcp-ai-pro' ),
 				),
-				'sale_price' => array(
+				'sale_price'        => array(
 					'type'        => 'string',
 					'description' => __( 'Product sale price.', 'wp-mcp-ai-pro' ),
 				),
-				'description' => array(
+				'description'       => array(
 					'type'        => 'string',
 					'description' => __( 'Product description.', 'wp-mcp-ai-pro' ),
 				),
@@ -146,11 +146,11 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Core_Tool_Interface, 
 					'type'        => 'string',
 					'description' => __( 'Product short description.', 'wp-mcp-ai-pro' ),
 				),
-				'stock_quantity' => array(
+				'stock_quantity'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity.', 'wp-mcp-ai-pro' ),
 				),
-				'stock_status' => array(
+				'stock_status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Stock status.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),

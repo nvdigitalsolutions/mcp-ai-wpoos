@@ -259,28 +259,28 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Core_Tool_Interface, WP
 	 */
 	protected function format_order( $order, $include_items = true ) {
 		$data = array(
-			'id'              => $order->get_id(),
-			'status'          => $order->get_status(),
-			'currency'        => $order->get_currency(),
-			'total'           => $order->get_total(),
-			'subtotal'        => $order->get_subtotal(),
-			'total_tax'       => $order->get_total_tax(),
-			'shipping_total'  => $order->get_shipping_total(),
-			'discount_total'  => $order->get_discount_total(),
-			'customer_id'     => $order->get_customer_id(),
-			'billing_email'   => $order->get_billing_email(),
-			'billing_name'    => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-			'payment_method'  => $order->get_payment_method_title(),
-			'date_created'    => $order->get_date_created() ? $order->get_date_created()->format( 'c' ) : null,
-			'date_modified'   => $order->get_date_modified() ? $order->get_date_modified()->format( 'c' ) : null,
-			'date_completed'  => $order->get_date_completed() ? $order->get_date_completed()->format( 'c' ) : null,
-			'item_count'      => $order->get_item_count(),
+			'id'             => $order->get_id(),
+			'status'         => $order->get_status(),
+			'currency'       => $order->get_currency(),
+			'total'          => $order->get_total(),
+			'subtotal'       => $order->get_subtotal(),
+			'total_tax'      => $order->get_total_tax(),
+			'shipping_total' => $order->get_shipping_total(),
+			'discount_total' => $order->get_discount_total(),
+			'customer_id'    => $order->get_customer_id(),
+			'billing_email'  => $order->get_billing_email(),
+			'billing_name'   => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+			'payment_method' => $order->get_payment_method_title(),
+			'date_created'   => $order->get_date_created() ? $order->get_date_created()->format( 'c' ) : null,
+			'date_modified'  => $order->get_date_modified() ? $order->get_date_modified()->format( 'c' ) : null,
+			'date_completed' => $order->get_date_completed() ? $order->get_date_completed()->format( 'c' ) : null,
+			'item_count'     => $order->get_item_count(),
 		);
 
 		if ( $include_items ) {
 			$data['items'] = array();
 			foreach ( $order->get_items() as $item ) {
-				$product = $item->get_product();
+				$product         = $item->get_product();
 				$data['items'][] = array(
 					'id'       => $item->get_id(),
 					'name'     => $item->get_name(),

@@ -157,6 +157,8 @@ if ( ! function_exists( 'wp_mcp_ai_execute_tool' ) ) {
 
 // Load interfaces.
 require_once WP_MCP_AI_CORE_PATH . 'includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
+require_once WP_MCP_AI_CORE_PATH . 'includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
+require_once WP_MCP_AI_CORE_PATH . 'includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
 
 /**
  * ============================================================================
