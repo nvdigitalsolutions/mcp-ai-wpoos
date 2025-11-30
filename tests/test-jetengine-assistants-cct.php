@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for JetEngine assistants Custom Content Type registration.
+ *
+ * @package WP_MCP_AI
  */
 
 /**

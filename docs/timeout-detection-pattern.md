@@ -274,11 +274,17 @@ When orchestrator routes to async:
 ## Tools That Should Implement This Pattern
 
 Current tools with `may-timeout` or `long-running` flags:
-- [DONE] `generate_veo_video` - Implemented
-- [TODO] `generate_video_caption` - Should implement
-- [TODO] `analyze_video` - Should implement
-- [TODO] `extract_video_frames` - Should implement
-- [TODO] Other video/image generation tools
+- [DONE] `generate_veo_video` - Implemented with timeout detection in the Gemini Video Generation Service
+
+Tools evaluated for this pattern:
+- [N/A] `generate_video_caption` - Uses single API call, no polling loop - pattern not required
+- [N/A] `analyze_video` - Uses single API call, no polling loop - pattern not required  
+- [N/A] `extract_video_frames` - Uses FFmpeg locally, no long polling - pattern not required
+
+Note: The above video tools have the `async` capability flag for client-side awareness but do not
+require the server-side timeout detection pattern since they don't perform long polling operations.
+Tools that make repeated polling API calls (like Veo video generation) are the primary candidates
+for this pattern.
 
 ## Related Documentation
 
