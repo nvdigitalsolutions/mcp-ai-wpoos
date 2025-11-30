@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+
 /**
  * Provides a generic REST API client tool for AI assistants.
  */
@@ -238,30 +240,26 @@ class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$request_args = apply_filters( 'wp_mcp_ai_generic_rest_request_args', $request_args, $validated_url, $arguments, $context );
 
 		// Log the request (without sensitive data).
-		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'generic_rest_request',
-				'Making generic REST API request.',
-				array(
-					'url'    => $validated_url,
-					'method' => $method,
-				)
-			);
-		}
+		WP_MCP_AI_Logger::log_event(
+			'generic_rest_request',
+			'Making generic REST API request.',
+			array(
+				'url'    => $validated_url,
+				'method' => $method,
+			)
+		);
 
 		// Execute the request.
 		$response = wp_remote_request( $validated_url, $request_args );
 
 		if ( is_wp_error( $response ) ) {
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_error(
-					'Generic REST API request failed.',
-					array(
-						'error' => $response->get_error_message(),
-						'url'   => $validated_url,
-					)
-				);
-			}
+			WP_MCP_AI_Logger::log_error(
+				'Generic REST API request failed.',
+				array(
+					'error' => $response->get_error_message(),
+					'url'   => $validated_url,
+				)
+			);
 
 			return new WP_Error(
 				'wp_mcp_ai_request_failed',
@@ -531,7 +529,7 @@ class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Extract relevant headers for response.
 		$response_headers = array();
 
-		if ( $headers instanceof ArrayAccess || $headers instanceof Traversable ) {
+		if ( is_array( $headers ) || $headers instanceof Traversable ) {
 			foreach ( $headers as $name => $value ) {
 				$response_headers[ $name ] = is_array( $value ) ? implode( ', ', $value ) : (string) $value;
 			}
@@ -562,27 +560,25 @@ class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Log success/failure.
-		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			if ( $is_success ) {
-				WP_MCP_AI_Logger::log_event(
-					'generic_rest_response',
-					'Generic REST API request completed successfully.',
-					array(
-						'url'         => $url,
-						'method'      => $method,
-						'status_code' => $status_code,
-					)
-				);
-			} else {
-				WP_MCP_AI_Logger::log_error(
-					'Generic REST API request returned error status.',
-					array(
-						'url'         => $url,
-						'method'      => $method,
-						'status_code' => $status_code,
-					)
-				);
-			}
+		if ( $is_success ) {
+			WP_MCP_AI_Logger::log_event(
+				'generic_rest_response',
+				'Generic REST API request completed successfully.',
+				array(
+					'url'         => $url,
+					'method'      => $method,
+					'status_code' => $status_code,
+				)
+			);
+		} else {
+			WP_MCP_AI_Logger::log_error(
+				'Generic REST API request returned error status.',
+				array(
+					'url'         => $url,
+					'method'      => $method,
+					'status_code' => $status_code,
+				)
+			);
 		}
 
 		return $result;
