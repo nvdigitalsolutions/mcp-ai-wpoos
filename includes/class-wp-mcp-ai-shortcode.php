@@ -86,8 +86,10 @@ class WP_MCP_AI_Shortcode {
 		// Styles and script registration will proceed, but localization (which can cause conflicts) is skipped.
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
-		// Use bundled JavaScript file that combines all chat services
-		$script_relative             = 'assets/js/chat-bundle.js';
+		// Use bundled JavaScript file that combines all chat services.
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
+		$script_relative             = 'assets/js/chat-bundle.min.js';
 		$style_relative              = 'assets/css/chat.css';
 		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
