@@ -1,0 +1,360 @@
+<?php
+/**
+ * Plugin Name: WP MCP AI Pro
+ * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
+ * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more.
+ * Version: 1.0.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Author: NV Digital Solutions
+ * Author URI: https://nvdigitalsolutions.com
+ * License: Proprietary
+ * Text Domain: wp-mcp-ai-pro
+ * Domain Path: /languages
+ * Network: true
+ *
+ * Requires Plugins: wp-mcp-ai-core
+ *
+ * @package WP_MCP_AI_Pro
+ *
+ * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * All rights reserved. This is proprietary software.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Pro plugin constants.
+if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+	define( 'WP_MCP_AI_PRO_VERSION', '1.0.0' );
+}
+if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
+	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
+}
+if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	define( 'WP_MCP_AI_PRO_PATH', plugin_dir_path( WP_MCP_AI_PRO_FILE ) );
+}
+if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
+	define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
+}
+
+/**
+ * ============================================================================
+ * DEPENDENCY CHECK
+ *
+ * Verify that WP MCP AI Core is active before loading Pro features.
+ * ============================================================================
+ */
+
+if ( ! function_exists( 'wp_mcp_ai_pro_check_dependencies' ) ) {
+	/**
+	 * Check if required dependencies are available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True if all dependencies are met.
+	 */
+	function wp_mcp_ai_pro_check_dependencies() {
+		// Check if Core is loaded.
+		if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
+			return false;
+		}
+
+		return wp_mcp_ai_core_loaded();
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
+	/**
+	 * Display admin notice when Core is not active.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_pro_missing_core_notice() {
+		$message = sprintf(
+			'<strong>WP MCP AI Pro</strong> requires <strong>WP MCP AI Core</strong> to be installed and activated. Please <a href="%s">install and activate WP MCP AI Core</a> first.',
+			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) )
+		);
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
+		);
+	}
+}
+
+/**
+ * ============================================================================
+ * BOOTSTRAP
+ * ============================================================================
+ */
+
+if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
+	/**
+	 * Initialize WP MCP AI Pro.
+	 *
+	 * Called after Core has initialized. Registers Pro tools and features.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_pro_init() {
+		// Check dependencies.
+		if ( ! wp_mcp_ai_pro_check_dependencies() ) {
+			// Show admin notice and bail.
+			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
+			return;
+		}
+
+		// Load Pro tool interfaces (extend Core interfaces).
+		// Pro tools can implement additional interfaces for advanced features.
+
+		// Register Pro tools when Core fires its registration action.
+		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
+
+		// Register Pro filters for advanced permissions.
+		add_filter( 'wp_mcp_ai_can_run_tool', 'wp_mcp_ai_pro_permission_filter', 20, 4 );
+
+		// Register Pro rate limiting.
+		add_filter( 'wp_mcp_ai_rate_limit_allow', 'wp_mcp_ai_pro_rate_limit_filter', 20, 4 );
+
+		/**
+		 * Fires after WP MCP AI Pro has completed initialization.
+		 *
+		 * @since 1.0.0
+		 */
+		do_action( 'wp_mcp_ai_pro_init' );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
+	/**
+	 * Register Pro tools with the MCP server.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_MCP_AI_Core_Server $server MCP server instance.
+	 */
+	function wp_mcp_ai_pro_register_tools( $server ) {
+		// Load Pro tool files.
+		$pro_tools = array(
+			// WooCommerce tools.
+			'WP_MCP_AI_Pro_Tool_Woo_Products' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Orders'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
+			// JetEngine tools.
+			'WP_MCP_AI_Pro_Tool_JetEngine'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
+			// Elementor tools.
+			'WP_MCP_AI_Pro_Tool_Elementor'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
+		);
+
+		/**
+		 * Filter the list of Pro tools to register.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $pro_tools Array of tool class names and file paths.
+		 */
+		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
+
+		foreach ( $pro_tools as $class => $file ) {
+			if ( file_exists( $file ) ) {
+				require_once $file;
+
+				if ( class_exists( $class ) ) {
+					$should_register = true;
+
+					// Check if tool declares an availability check.
+					if ( method_exists( $class, 'is_available' ) ) {
+						$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+					}
+
+					if ( $should_register ) {
+						$server->register_tool( new $class() );
+					}
+				}
+			}
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_permission_filter' ) ) {
+	/**
+	 * Pro permission filter for advanced access control.
+	 *
+	 * Implements field-level and record-level access policies.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool                          $can_run   Whether tool can run.
+	 * @param WP_MCP_AI_Core_Tool_Interface $tool      Tool instance.
+	 * @param array                         $arguments Tool arguments.
+	 * @param WP_User|null                  $user      Current user.
+	 * @return bool Whether tool can run.
+	 */
+	function wp_mcp_ai_pro_permission_filter( $can_run, $tool, $arguments, $user ) {
+		// Skip if already denied.
+		if ( ! $can_run ) {
+			return false;
+		}
+
+		// Get Pro permission settings.
+		$settings = get_option( 'wp_mcp_ai_pro_permissions', array() );
+
+		if ( empty( $settings ) ) {
+			return $can_run;
+		}
+
+		$tool_slug = $tool->get_slug();
+
+		// Check tool-specific permissions.
+		if ( isset( $settings['tools'][ $tool_slug ] ) ) {
+			$tool_perms = $settings['tools'][ $tool_slug ];
+
+			// Check allowed roles.
+			if ( ! empty( $tool_perms['allowed_roles'] ) && $user ) {
+				$user_roles = $user->roles;
+				$allowed    = array_intersect( $user_roles, $tool_perms['allowed_roles'] );
+
+				if ( empty( $allowed ) ) {
+					return false;
+				}
+			}
+
+			// Check denied roles.
+			if ( ! empty( $tool_perms['denied_roles'] ) && $user ) {
+				$user_roles = $user->roles;
+				$denied     = array_intersect( $user_roles, $tool_perms['denied_roles'] );
+
+				if ( ! empty( $denied ) ) {
+					return false;
+				}
+			}
+		}
+
+		return $can_run;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_rate_limit_filter' ) ) {
+	/**
+	 * Pro rate limiting filter.
+	 *
+	 * Implements per-user, per-tool quotas and burst control.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool         $allow   Whether to allow execution.
+	 * @param string       $slug    Tool slug.
+	 * @param WP_User|null $user    Current user.
+	 * @param array        $context Execution context.
+	 * @return bool Whether to allow execution.
+	 */
+	function wp_mcp_ai_pro_rate_limit_filter( $allow, $slug, $user, $context ) {
+		// Skip if already rate limited.
+		if ( ! $allow ) {
+			return false;
+		}
+
+		// Get Pro rate limit settings.
+		$settings = get_option( 'wp_mcp_ai_pro_rate_limits', array() );
+
+		if ( empty( $settings ) ) {
+			return $allow;
+		}
+
+		// Check global rate limits.
+		if ( ! empty( $settings['global_requests_per_minute'] ) ) {
+			$limit = absint( $settings['global_requests_per_minute'] );
+			$key   = 'wp_mcp_ai_pro_rate_global_' . floor( time() / 60 );
+			$count = (int) get_transient( $key );
+
+			if ( $count >= $limit ) {
+				return false;
+			}
+
+			set_transient( $key, $count + 1, 60 );
+		}
+
+		// Check per-user rate limits.
+		if ( ! empty( $settings['user_requests_per_minute'] ) && $user ) {
+			$limit = absint( $settings['user_requests_per_minute'] );
+			$key   = 'wp_mcp_ai_pro_rate_user_' . $user->ID . '_' . floor( time() / 60 );
+			$count = (int) get_transient( $key );
+
+			if ( $count >= $limit ) {
+				return false;
+			}
+
+			set_transient( $key, $count + 1, 60 );
+		}
+
+		// Check per-tool rate limits.
+		if ( ! empty( $settings['tool_limits'][ $slug ]['requests_per_minute'] ) ) {
+			$limit = absint( $settings['tool_limits'][ $slug ]['requests_per_minute'] );
+			$key   = 'wp_mcp_ai_pro_rate_tool_' . $slug . '_' . floor( time() / 60 );
+			$count = (int) get_transient( $key );
+
+			if ( $count >= $limit ) {
+				return false;
+			}
+
+			set_transient( $key, $count + 1, 60 );
+		}
+
+		return $allow;
+	}
+}
+
+// Initialize Pro on plugins_loaded, after Core.
+add_action( 'plugins_loaded', 'wp_mcp_ai_pro_init', 15 );
+
+/**
+ * ============================================================================
+ * ACTIVATION / DEACTIVATION
+ * ============================================================================
+ */
+
+/**
+ * Plugin activation handler.
+ *
+ * @param bool $network_wide Whether activated network-wide.
+ */
+function wp_mcp_ai_pro_activate( $network_wide = false ) {
+	// Check if Core is active.
+	if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
+		// Deactivate self and show error.
+		deactivate_plugins( plugin_basename( WP_MCP_AI_PRO_FILE ) );
+		wp_die(
+			esc_html__( 'WP MCP AI Pro requires WP MCP AI Core to be installed and activated first.', 'wp-mcp-ai-pro' ),
+			esc_html__( 'Plugin Activation Error', 'wp-mcp-ai-pro' ),
+			array( 'back_link' => true )
+		);
+	}
+
+	// Initialize default settings.
+	if ( false === get_option( 'wp_mcp_ai_pro_permissions' ) ) {
+		add_option( 'wp_mcp_ai_pro_permissions', array() );
+	}
+
+	if ( false === get_option( 'wp_mcp_ai_pro_rate_limits' ) ) {
+		add_option(
+			'wp_mcp_ai_pro_rate_limits',
+			array(
+				'global_requests_per_minute' => 100,
+				'user_requests_per_minute'   => 20,
+			)
+		);
+	}
+
+	flush_rewrite_rules();
+}
+register_activation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_activate' );
+
+/**
+ * Plugin deactivation handler.
+ *
+ * @param bool $network_wide Whether deactivated network-wide.
+ */
+function wp_mcp_ai_pro_deactivate( $network_wide = false ) {
+	flush_rewrite_rules();
+}
+register_deactivation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_deactivate' );
