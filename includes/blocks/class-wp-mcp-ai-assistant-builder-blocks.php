@@ -322,12 +322,10 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 				);
 			}
 
-			$definition = $tool->get_definition();
-
 			$grouped[ $group_id ]['tools'][] = array(
 				'slug'        => $slug,
-				'name'        => isset( $definition['name'] ) ? $definition['name'] : $slug,
-				'description' => isset( $definition['description'] ) ? $definition['description'] : '',
+				'name'        => $tool->get_name() ?: $slug,
+				'description' => $tool->get_description() ?: '',
 			);
 		}
 

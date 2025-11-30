@@ -77,12 +77,10 @@ if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			);
 		}
 
-		$definition = $tool->get_definition();
-
 		$grouped[ $group_id ]['tools'][] = array(
 			'slug'        => $slug,
-			'name'        => isset( $definition['name'] ) ? $definition['name'] : $slug,
-			'description' => isset( $definition['description'] ) ? $definition['description'] : '',
+			'name'        => $tool->get_name() ?: $slug,
+			'description' => $tool->get_description() ?: '',
 		);
 	}
 
