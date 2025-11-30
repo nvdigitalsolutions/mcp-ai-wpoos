@@ -148,9 +148,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				'filter_default_lm_studio_endpoint_url' => array(
 					'type'        => 'url',
 					'label'       => __( 'Default LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234/v1', 'wp-mcp-ai' ),
+					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234', 'wp-mcp-ai' ),
 					'default'     => '',
-					'placeholder' => 'http://localhost:1234/v1',
+					'placeholder' => 'http://localhost:1234',
 				),
 				'filter_lm_studio_fallback_model'       => array(
 					'type'        => 'text',

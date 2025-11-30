@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default OpenAI Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'wp-mcp-ai' ),
 					'options'     => $model_choices,
-					'default'     => 'gpt-4o',
+					'default'     => 'gpt-4o-mini',
 				),
 				'openai_embedding_model'      => array(
 					'type'        => 'select',

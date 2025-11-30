@@ -149,7 +149,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Default Model', 'wp-mcp-ai' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-1.5-flash' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash' ); ?></code></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'High Token Fallback Model', 'wp-mcp-ai' ); ?></th>
@@ -661,7 +661,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'message' => __( 'Gemini connection successful!', 'wp-mcp-ai' ),
 						'details' => array(
 							__( 'Models Available', 'wp-mcp-ai' ) => $model_count,
-							__( 'Default Model', 'wp-mcp-ai' ) => isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-1.5-flash',
+							__( 'Default Model', 'wp-mcp-ai' ) => isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash',
 						),
 					)
 				);
