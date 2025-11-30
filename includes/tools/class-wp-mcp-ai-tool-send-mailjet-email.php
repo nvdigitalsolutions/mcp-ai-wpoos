@@ -63,7 +63,7 @@ class WP_MCP_AI_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'array',
 					'description' => __( 'List of primary recipients. Each entry may be an email string or an object with email and name fields.', 'wp-mcp-ai' ),
 					'items'       => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array(
 								'type' => 'string',
 							),
@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'array',
 					'description' => __( 'Optional CC recipients formatted like the "to" field.', 'wp-mcp-ai' ),
 					'items'       => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array(
 								'type' => 'string',
 							),
@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'array',
 					'description' => __( 'Optional BCC recipients formatted like the "to" field.', 'wp-mcp-ai' ),
 					'items'       => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array(
 								'type' => 'string',
 							),

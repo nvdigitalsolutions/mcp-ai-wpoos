@@ -63,10 +63,17 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 					'description' => __( 'The location resource name, e.g. accounts/123/locations/456.', 'wp-mcp-ai' ),
 				),
 				'metrics'      => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'One or more metric identifiers such as BUSINESS_IMPRESSIONS_SEARCH.', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'start_time'   => array(

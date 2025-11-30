@@ -68,10 +68,17 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 					'description' => __( 'Facebook Page ID or Instagram business account ID.', 'wp-mcp-ai' ),
 				),
 				'metrics'      => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'One or more insight metric names. Comma separated strings are accepted.', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'period'       => array(

@@ -55,17 +55,31 @@ class WP_MCP_AI_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_Inter
 					'description' => __( 'Override the Google Analytics property ID. Falls back to the default configured in settings.', 'wp-mcp-ai' ),
 				),
 				'metrics'             => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'One or more metric names (for example, activeUsers). Comma separated strings are accepted.', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'dimensions'          => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'Optional list of dimensions (for example, country or pagePath).', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'start_date'          => array(
@@ -88,10 +102,17 @@ class WP_MCP_AI_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_Inter
 					'description' => __( 'Row offset to apply when paginating through a large report.', 'wp-mcp-ai' ),
 				),
 				'metric_aggregations' => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'Optional metric aggregations such as TOTAL or MAXIMUM.', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'dimension_filter'    => array(

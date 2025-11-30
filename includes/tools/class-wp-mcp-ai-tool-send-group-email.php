@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'array',
 					'description' => __( 'List of email recipients. Can be provided here or in attachment file. Each entry may be a string email address or object containing an email field.', 'wp-mcp-ai' ),
 					'items'       => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array( 'type' => 'string' ),
 							array(
 								'type'                 => 'object',
