@@ -204,23 +204,50 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			return false;
 		}
 
+		// Normalize URL to remove scheme differences (http vs https).
+		$normalized_url = $this->normalize_url_for_comparison( $url );
+
 		// Get the WordPress upload directory URL.
 		$upload_dir = wp_upload_dir();
 		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
 
-		if ( '' !== $base_url && 0 === strpos( $url, $base_url ) ) {
-			return true;
+		if ( '' !== $base_url ) {
+			$normalized_base = $this->normalize_url_for_comparison( $base_url );
+			if ( 0 === strpos( $normalized_url, $normalized_base ) ) {
+				return true;
+			}
 		}
 
 		// Also check against home_url and site_url as fallback.
-		$home_url = home_url();
-		$site_url = site_url();
+		$home_url            = home_url();
+		$site_url            = site_url();
+		$normalized_home_url = $this->normalize_url_for_comparison( $home_url );
+		$normalized_site_url = $this->normalize_url_for_comparison( $site_url );
 
-		if ( 0 === strpos( $url, $home_url ) || 0 === strpos( $url, $site_url ) ) {
+		if ( 0 === strpos( $normalized_url, $normalized_home_url ) || 0 === strpos( $normalized_url, $normalized_site_url ) ) {
 			return true;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Normalize a URL for comparison by removing the scheme.
+	 *
+	 * This helps match URLs that differ only in http vs https.
+	 *
+	 * @param string $url URL to normalize.
+	 * @return string Normalized URL without scheme.
+	 */
+	protected function normalize_url_for_comparison( $url ) {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		// Remove http:// or https:// prefix for comparison.
+		$url = preg_replace( '#^https?://#i', '', $url );
+
+		return $url;
 	}
 
 	/**
@@ -243,10 +270,17 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			return false;
 		}
 
-		// Check if URL starts with the upload base URL.
-		if ( 0 === strpos( $url, $base_url ) ) {
-			// Replace the base URL with the base directory path.
-			$file_path = str_replace( $base_url, $base_dir, $url );
+		// Normalize URLs to handle scheme differences (http vs https).
+		$normalized_url      = $this->normalize_url_for_comparison( $url );
+		$normalized_base_url = $this->normalize_url_for_comparison( $base_url );
+
+		// Check if URL starts with the upload base URL (using normalized comparison).
+		if ( 0 === strpos( $normalized_url, $normalized_base_url ) ) {
+			// Extract the relative path after the base URL.
+			$relative_path = substr( $normalized_url, strlen( $normalized_base_url ) );
+
+			// Build the file path.
+			$file_path = $base_dir . $relative_path;
 
 			// Normalize path separators.
 			$file_path = wp_normalize_path( $file_path );
