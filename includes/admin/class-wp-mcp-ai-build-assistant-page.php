@@ -135,12 +135,14 @@ class WP_MCP_AI_Build_Assistant_Page {
 			$this->get_asset_version( 'assets/css/chat.css' )
 		);
 
-		// Register bundled chat script (includes all services in a single file)
+		// Register bundled chat script (includes all services in a single file).
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
-			WP_MCP_AI_URL . 'assets/js/chat-bundle.js',
+			WP_MCP_AI_URL . 'assets/js/chat-bundle.min.js',
 			array(), // No dependencies - all services are bundled together
-			$this->get_asset_version( 'assets/js/chat-bundle.js' ),
+			$this->get_asset_version( 'assets/js/chat-bundle.min.js' ),
 			true
 		);
 

@@ -35,6 +35,11 @@ composer.phar
 *.min.js
 *.min.css.map
 *.min.js.map
+
+# But keep chat-bundle.min.js which is required for the plugin to work.
+# The chat-bundle.js source file uses ES6 imports that browsers cannot execute directly.
+!assets/js/chat-bundle.min.js
+!assets/js/chat-bundle.min.js.map
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html

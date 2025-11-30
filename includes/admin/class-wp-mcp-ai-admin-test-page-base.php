@@ -114,8 +114,10 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 * into a single optimized file, reducing HTTP requests from 9 files to 1 file.
 	 */
 	protected function enqueue_chat_assets() {
-		// Use bundled JavaScript file that combines all chat services
-		$script_relative             = 'assets/js/chat-bundle.js';
+		// Use bundled JavaScript file that combines all chat services.
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
+		$script_relative             = 'assets/js/chat-bundle.min.js';
 		$style_relative              = 'assets/css/chat.css';
 		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
