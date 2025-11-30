@@ -12,11 +12,11 @@ If you're seeing `SSE error: Non-200 status code (404)` or similar errors, see t
 - Security plugin issues
 - LM Studio-specific fixes
 
-## Two Connection Methods
+## Three Connection Methods
 
-WordPress WP oOS supports **two distinct methods** for MCP connectivity:
+WordPress WP oOS supports **three distinct methods** for MCP connectivity:
 
-### Method 1: JSON-RPC 2.0 (Recommended)
+### Method 1: JSON-RPC 2.0 over HTTP (Recommended for Remote)
 
 **Endpoint:** `/wp-json/mcp-ai/v1/mcp`
 
@@ -28,7 +28,7 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 - Better compatibility and reliability
 
 **When to use:**
-- Default choice for most clients
+- Default choice for most remote clients
 - When experiencing SSE content-type errors
 - For maximum compatibility
 - For LM Studio, Cursor, Cline, Continue.dev
@@ -46,7 +46,23 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 **When to use:**
 - When you need real-time streaming updates
 - When client explicitly supports and requests SSE
-- For Claude Desktop (when configured)
+
+### Method 3: STDIO Transport (Local Agents)
+
+**Command:** `wp mcp-ai stdio`
+
+**Characteristics:**
+- JSON-RPC 2.0 over stdin/stdout
+- No network required (local only)
+- Ideal for local MCP clients
+- Native support in Claude Desktop
+
+**When to use:**
+- For Claude Desktop
+- For local AI agents
+- When WordPress is on the same machine as the MCP client
+
+See [STDIO Transport Documentation](STDIO-TRANSPORT.md) for complete details.
 
 ## Client-Specific Configurations
 
@@ -105,7 +121,34 @@ See [LM Studio SSE Fix Documentation](LM_STUDIO_SSE_FIX.md) for complete details
 
 ### Claude Desktop
 
-**Configuration (with SSE):**
+Claude Desktop supports both STDIO and HTTP transports. **STDIO is recommended for local WordPress installations.**
+
+#### Option 1: STDIO Transport (Recommended for Local)
+
+For WordPress installations on the same machine as Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "wordpress": {
+      "command": "wp",
+      "args": ["mcp-ai", "stdio", "--path=/path/to/wordpress"]
+    }
+  }
+}
+```
+
+**Benefits:**
+- No authentication tokens needed
+- No network configuration required
+- Better performance (no HTTP overhead)
+- Works offline
+
+See [STDIO Transport Documentation](STDIO-TRANSPORT.md) for complete setup instructions.
+
+#### Option 2: HTTP Transport (For Remote Sites)
+
+For remote WordPress sites or when STDIO isn't available:
 
 ```json
 {
