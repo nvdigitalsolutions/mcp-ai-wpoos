@@ -468,6 +468,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'list_github_repositories'        => 'external-tools',
 				'github_repository_operations'    => 'external-tools',
 				'manage_github_codespace'         => 'external-tools',
+				'generic_rest'                    => 'external-tools',
 			);
 
 			/**
@@ -826,6 +827,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_List_Github_Repositories' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-github-repositories.php',
 				'WP_MCP_AI_Tool_Github_Repository_Operations' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-github-repository-operations.php',
 				'WP_MCP_AI_Tool_Manage_Github_Codespace' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-github-codespace.php',
+				// Generic REST API tool for plugins not explicitly integrated.
+				'WP_MCP_AI_Tool_Generic_REST'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generic-rest.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
