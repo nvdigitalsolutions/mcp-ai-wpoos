@@ -71,8 +71,18 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 					'default'     => 10,
 				),
 				'status'        => array(
-					'type'        => array( 'string', 'array' ),
 					'description' => __( 'Optional post status or array of statuses to filter by (e.g. publish, draft).', 'wp-mcp-ai' ),
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
+					),
 				),
 				'template_type' => array(
 					'type'        => 'string',

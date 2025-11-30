@@ -63,10 +63,17 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'The TikTok Open ID representing the target account.', 'wp-mcp-ai' ),
 				),
 				'metrics'      => array(
-					'type'        => array( 'array', 'string' ),
 					'description' => __( 'One or more metric names to request. Comma separated strings are accepted.', 'wp-mcp-ai' ),
-					'items'       => array(
-						'type' => 'string',
+					'anyOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'start_time'   => array(

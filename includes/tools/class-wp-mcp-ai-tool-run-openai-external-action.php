@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 					'type'                 => 'object',
 					'description'          => __( 'Optional key/value inputs forwarded to the workflow or assistant.', 'wp-mcp-ai' ),
 					'additionalProperties' => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array(
 								'type' => array( 'string', 'number', 'integer', 'boolean', 'null' ),
 							),
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 							array(
 								'type'  => 'array',
 								'items' => array(
-									'oneOf' => array(
+									'anyOf' => array(
 										array(
 											'type' => array( 'string', 'number', 'integer', 'boolean', 'null' ),
 										),

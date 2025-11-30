@@ -85,7 +85,7 @@ class WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Inte
 					'type'        => 'array',
 					'description' => __( 'Optional attendee list. Provide email strings or objects with email, name, and optional status.', 'wp-mcp-ai' ),
 					'items'       => array(
-						'oneOf' => array(
+						'anyOf' => array(
 							array(
 								'type' => 'string',
 							),
