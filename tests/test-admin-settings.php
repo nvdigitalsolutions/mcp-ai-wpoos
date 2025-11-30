@@ -23,7 +23,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_model', $defaults );
 		$this->assertSame( 'gpt-4o-mini', $defaults['default_model'] );
 		$this->assertArrayHasKey( 'default_gemini_model', $defaults );
-		$this->assertSame( 'gemini-1.5-flash', $defaults['default_gemini_model'] );
+		$this->assertSame( 'gemini-2.5-flash', $defaults['default_gemini_model'] );
 		$this->assertArrayHasKey( 'default_provider', $defaults );
 		$this->assertSame( 'openai', $defaults['default_provider'] );
 		$this->assertArrayHasKey( 'openai_image_model', $defaults );
@@ -31,7 +31,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'openai_image_size', $defaults );
 		$this->assertSame( '1024x1024', $defaults['openai_image_size'] );
 		$this->assertArrayHasKey( 'openai_image_quality', $defaults );
-		$this->assertSame( 'standard', $defaults['openai_image_quality'] );
+		$this->assertSame( 'medium', $defaults['openai_image_quality'] );
 		$this->assertArrayHasKey( 'openai_image_response_format', $defaults );
 		$this->assertSame( 'b64_json', $defaults['openai_image_response_format'] );
 	}
