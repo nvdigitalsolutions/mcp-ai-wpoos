@@ -87,17 +87,31 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 										),
 									),
 									'backgroundColor' => array(
-										'type'        => array( 'string', 'array' ),
 										'description' => __( 'Background color(s) for the dataset.', 'wp-mcp-ai' ),
-										'items'       => array(
-											'type' => 'string',
+										'oneOf'       => array(
+											array(
+												'type' => 'string',
+											),
+											array(
+												'type'  => 'array',
+												'items' => array(
+													'type' => 'string',
+												),
+											),
 										),
 									),
 									'borderColor'     => array(
-										'type'        => array( 'string', 'array' ),
 										'description' => __( 'Border color(s) for the dataset.', 'wp-mcp-ai' ),
-										'items'       => array(
-											'type' => 'string',
+										'oneOf'       => array(
+											array(
+												'type' => 'string',
+											),
+											array(
+												'type'  => 'array',
+												'items' => array(
+													'type' => 'string',
+												),
+											),
 										),
 									),
 									'borderWidth'     => array(
