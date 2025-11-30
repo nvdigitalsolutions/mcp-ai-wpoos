@@ -322,6 +322,9 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	protected function format_attachment( $attachment ) {
 		$metadata = wp_get_attachment_metadata( $attachment->ID );
 
+		$file_path = get_attached_file( $attachment->ID );
+		$file_size = $file_path && file_exists( $file_path ) ? filesize( $file_path ) : null;
+
 		return array(
 			'id'          => $attachment->ID,
 			'title'       => get_the_title( $attachment ),
@@ -333,7 +336,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			'date'        => $attachment->post_date,
 			'width'       => isset( $metadata['width'] ) ? $metadata['width'] : null,
 			'height'      => isset( $metadata['height'] ) ? $metadata['height'] : null,
-			'file_size'   => filesize( get_attached_file( $attachment->ID ) ),
+			'file_size'   => $file_size,
 			'sizes'       => isset( $metadata['sizes'] ) ? array_keys( $metadata['sizes'] ) : array(),
 		);
 	}

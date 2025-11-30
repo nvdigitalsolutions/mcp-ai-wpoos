@@ -11,15 +11,26 @@
 class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 
 	/**
-	 * Test that the Core server singleton works.
+	 * Set up test fixtures.
+	 *
+	 * Loads the Core plugin files before each test.
 	 */
-	public function test_server_singleton() {
-		// Require the core plugin files.
+	public function setUp(): void {
+		parent::setUp();
+
+		// Load Core interfaces and classes.
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
+		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
+		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-media.php';
+	}
 
+	/**
+	 * Test that the Core server singleton works.
+	 */
+	public function test_server_singleton() {
 		$server1 = WP_MCP_AI_Core_Server::get_instance();
 		$server2 = WP_MCP_AI_Core_Server::get_instance();
 
@@ -30,13 +41,6 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 	 * Test tool registration.
 	 */
 	public function test_tool_registration() {
-		// Require the core plugin files.
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$server = WP_MCP_AI_Core_Server::get_instance();
 
 		// Register a tool.
@@ -50,12 +54,6 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 	 * Test getting a registered tool.
 	 */
 	public function test_get_tool() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$server = WP_MCP_AI_Core_Server::get_instance();
 		$server->register_tool( new WP_MCP_AI_Core_Tool_Posts() );
 
@@ -70,11 +68,6 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 	 * Test that getting non-existent tool returns null.
 	 */
 	public function test_get_nonexistent_tool() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
-
 		$server = WP_MCP_AI_Core_Server::get_instance();
 		$tool   = $server->get_tool( 'nonexistent_tool' );
 
@@ -85,12 +78,6 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 	 * Test tool definition output.
 	 */
 	public function test_get_tool_definition() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$server = WP_MCP_AI_Core_Server::get_instance();
 		$server->register_tool( new WP_MCP_AI_Core_Tool_Posts() );
 
@@ -107,12 +94,6 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 	 * Test unregistering a tool.
 	 */
 	public function test_unregister_tool() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-media.php';
-
 		$server = WP_MCP_AI_Core_Server::get_instance();
 		$server->register_tool( new WP_MCP_AI_Core_Tool_Media() );
 
@@ -130,13 +111,23 @@ class Test_WP_MCP_AI_Core_Server extends WP_UnitTestCase {
 class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 
 	/**
-	 * Test posts tool has correct interface implementation.
+	 * Set up test fixtures.
+	 *
+	 * Loads the Core plugin files before each test.
 	 */
-	public function test_posts_tool_interface() {
+	public function setUp(): void {
+		parent::setUp();
+
+		// Load Core interfaces and classes.
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
 		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
+	}
 
+	/**
+	 * Test posts tool has correct interface implementation.
+	 */
+	public function test_posts_tool_interface() {
 		$tool = new WP_MCP_AI_Core_Tool_Posts();
 
 		$this->assertInstanceOf( WP_MCP_AI_Core_Tool_Interface::class, $tool );
@@ -147,10 +138,6 @@ class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 	 * Test posts tool slug.
 	 */
 	public function test_posts_tool_slug() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$tool = new WP_MCP_AI_Core_Tool_Posts();
 
 		$this->assertEquals( 'posts', $tool->get_slug() );
@@ -160,10 +147,6 @@ class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 	 * Test posts tool has parameters schema.
 	 */
 	public function test_posts_tool_parameters_schema() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$tool   = new WP_MCP_AI_Core_Tool_Posts();
 		$schema = $tool->get_parameters_schema();
 
@@ -178,10 +161,6 @@ class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 	 * Test posts tool capability flags.
 	 */
 	public function test_posts_tool_capability_flags() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		$tool  = new WP_MCP_AI_Core_Tool_Posts();
 		$flags = $tool->get_capability_flags();
 
@@ -195,10 +174,6 @@ class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 	 * Test posts tool list action.
 	 */
 	public function test_posts_tool_list_action() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		// Create a test post.
 		$post_id = $this->factory->post->create(
 			array(
@@ -220,10 +195,6 @@ class Test_WP_MCP_AI_Core_Tool_Posts extends WP_UnitTestCase {
 	 * Test posts tool get action.
 	 */
 	public function test_posts_tool_get_action() {
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		require_once WP_MCP_AI_PATH . 'core/includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-
 		// Create a test post.
 		$post_id = $this->factory->post->create(
 			array(

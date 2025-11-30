@@ -110,10 +110,13 @@ if ( ! function_exists( 'wp_mcp_ai_sanitize_tool_slug' ) ) {
 	/**
 	 * Sanitize a tool slug.
 	 *
-	 * @param string $slug Tool slug.
+	 * @param mixed $slug Tool slug to sanitize.
 	 * @return string Sanitized slug.
 	 */
 	function wp_mcp_ai_sanitize_tool_slug( $slug ) {
+		if ( ! is_string( $slug ) || empty( $slug ) ) {
+			return '';
+		}
 		$slug = strtolower( $slug );
 		$slug = preg_replace( '/[^a-z0-9_-]/', '', $slug );
 		return $slug;

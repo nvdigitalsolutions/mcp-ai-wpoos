@@ -68,10 +68,13 @@ class WP_MCP_AI_Core_Server {
 	/**
 	 * Prevent unserialization.
 	 *
-	 * @throws \Exception Always throws exception to prevent unserialization.
+	 * The singleton pattern requires preventing deserialization.
+	 * This is a standard PHP pattern and using a generic Exception is acceptable.
+	 *
+	 * @throws \RuntimeException Always throws exception to prevent unserialization.
 	 */
 	public function __wakeup() {
-		throw new \Exception( 'Cannot unserialize singleton' );
+		throw new \RuntimeException( 'Cannot unserialize singleton' );
 	}
 
 	/**
