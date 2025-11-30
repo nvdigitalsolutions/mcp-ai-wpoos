@@ -131,7 +131,7 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
-| [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
+| [tool-reference.md](tool-reference.md) | All 105 built-in tools catalog (24KB) | Users/Devs |
 | [tool-grouping.md](tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
 | [tools-manager.md](tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |

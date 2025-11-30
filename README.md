@@ -471,7 +471,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ 35+ base tools (70+ in Full Version with other plugins)
+- ✅ 74 base tools (105 in Full Version with other plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Ollama integrations
@@ -501,7 +501,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, 35+ base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, 74 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -531,8 +531,9 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 - ❌ **Template management** - Cannot list or reference Elementor templates via AI
 - ❌ **Elementor widgets** - Cannot use pre-built chat/dashboard widgets (shortcodes still work)
 
-**Lost Tools (1 tool):**
+**Lost Tools (2 tools):**
 - `get_elementor_templates` - List Elementor library templates with status, type, and edit links
+- `import_elementor_template_kit` - Import Elementor template kits
 
 **Lost UI Components:**
 - Elementor Chat Widget
@@ -575,41 +576,61 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 
 ---
 
+### Without Simple JWT Login (Free Plugin)
+
+**Lost Features:**
+- ❌ **JWT token generation** - Cannot generate JWT bearer tokens for headless WordPress integrations
+
+**Lost Tools (1 tool):**
+- `generate_simple_jwt_token` - Generate JWT bearer tokens for authenticated API access
+
+**Use Cases Lost:** Headless WordPress authentication, mobile app integration, SPA authentication
+
+[Get Simple JWT Login →](https://wordpress.org/plugins/simple-jwt-login/)
+
+---
+
 ### Summary: Third-Party Plugin Dependencies
 
 | Plugin | Type | Tools Lost | Key Feature Lost |
 |--------|------|------------|------------------|
 | **JetEngine** | Paid (Crocoblock) | 5 | Server-side chat transcript storage |
 | **WooCommerce** | Free | 3 | E-commerce automation |
-| **Elementor** | Freemium | 1 + Widgets | Elementor template integration |
+| **Elementor** | Freemium | 2 + Widgets | Elementor template integration |
 | **Rank Math** | Freemium | 1 | SEO analysis |
 | **WPCode** | Freemium | 1 | Code snippet management |
+| **Simple JWT Login** | Free | 1 | JWT token generation |
 
-**Total Impact:** Without these plugins, you lose **11 tools** but retain **35+ core tools** and all essential AI assistant functionality.
+**Total Impact:** Without these plugins, you lose **13 tools** but retain **74 core tools** and all essential AI assistant functionality.
 
 ---
 
 ### Base Version (Default)
 
-**WP oOS runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**WP oOS runs in Base Version mode by default**, providing 74 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
-**Base Version includes 35 essential tools that work with vanilla WordPress:**
+**Base Version includes 74 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
-- AI media generation (images via OpenAI/Gemini, speech, transcription)
+- AI media generation (images via OpenAI/Gemini, speech, transcription, video)
 - Research tools (web search, weather, disaster alerts)
 - Site operations (health checks, logs, cron jobs, cache management)
 - WordPress-native email (via wp_mail)
+- Image manipulation (resize, crop, rotate, convert)
+- Profession and assistant management
+- GitHub integration tools
+- Google Maps Platform tools
 
-**Base Version excludes 30 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (11 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
+**Base Version excludes 31 tools requiring third-party plugins or external APIs:**
+- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
-  - Elementor/RankMath/WPCode tools (3)
-- **External API services** (19 tools) - Require API credentials
+  - Elementor tools (2)
+  - RankMath/WPCode/Simple JWT Login tools (3)
+- **External API services** (18 tools) - Require API credentials
   - Google services (5)
   - Social media integrations (8)
   - External messaging services (4)
-  - QuickBooks and other business APIs (2)
+  - QuickBooks (1)
 
 ### Full Version Installation (Opt-in)
 
@@ -646,7 +667,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
-- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 70+ built-in tools
+- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 105 built-in tools
 - **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
 
