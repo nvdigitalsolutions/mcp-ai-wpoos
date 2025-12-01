@@ -51,17 +51,26 @@ if ( ! function_exists( 'wp_mcp_ai_pro_check_dependencies' ) ) {
 	/**
 	 * Check if required dependencies are available.
 	 *
+	 * Pro addon requires either:
+	 * - WP MCP AI Core (separated plugin architecture), OR
+	 * - WP MCP AI combined plugin with tool registry
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return bool True if all dependencies are met.
 	 */
 	function wp_mcp_ai_pro_check_dependencies() {
-		// Check if Core is loaded.
-		if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
-			return false;
+		// Check if Core is loaded (separated architecture).
+		if ( function_exists( 'wp_mcp_ai_core_loaded' ) && wp_mcp_ai_core_loaded() ) {
+			return true;
 		}
 
-		return wp_mcp_ai_core_loaded();
+		// Check if combined plugin is loaded (tool registry exists).
+		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
 
@@ -136,9 +145,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	/**
 	 * Register Pro tools with the tool registry.
 	 *
+	 * Works with both Core server (separated architecture) and
+	 * combined plugin's tool registry.
+	 *
 	 * @since 1.0.0
 	 *
-	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
+	 * @param WP_MCP_AI_Core_Server|WP_MCP_AI_Tool_Registry $registry Tool registry or server instance.
 	 */
 	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Load Pro tool files.

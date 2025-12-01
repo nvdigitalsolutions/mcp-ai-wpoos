@@ -993,11 +993,45 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 		 * @since 1.0.0
 		 */
 		do_action( 'wp_mcp_ai_bootstrapped' );
+
+		// Auto-load pro addon if present in addons directory and not loaded as separate plugin.
+		wp_mcp_ai_maybe_load_pro_addon();
 	}
 }
 
 if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_maybe_load_pro_addon' ) ) {
+	/**
+	 * Auto-load pro addon if present and not already loaded as separate plugin.
+	 *
+	 * This allows the combined plugin to include pro addon functionality
+	 * when the pro addon is bundled in the addons/pro directory.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_maybe_load_pro_addon() {
+		// Check if pro addon is already loaded as a separate plugin.
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return;
+		}
+
+		// Check if pro addon exists in the addons directory.
+		$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+		if ( ! file_exists( $pro_addon_file ) ) {
+			return;
+		}
+
+		// Load the pro addon.
+		require_once $pro_addon_file;
+
+		// Initialize pro addon if it has an init function.
+		if ( function_exists( 'wp_mcp_ai_pro_init' ) ) {
+			wp_mcp_ai_pro_init();
+		}
+	}
 }
 
 /**
