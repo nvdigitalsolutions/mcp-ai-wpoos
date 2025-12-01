@@ -596,7 +596,7 @@ describe('Display Metadata Persistence', () => {
 
 	describe('Tool result display metadata persistence', () => {
 		it('should preserve get_user_info tool result with display metadata', () => {
-			// This test validates the fix for get_user_info tool not preserving display metadata
+			// This test validates the fix for get_user_info tool result not preserving display metadata
 			const conversation = [
 				{
 					role: 'user',
@@ -661,7 +661,7 @@ describe('Display Metadata Persistence', () => {
 		});
 
 		it('should preserve generate_gemini_image tool result in agentic flow', () => {
-			// This test validates the fix for generate_gemini_image not preserving display metadata in agentic flows
+			// This test validates the fix for generate_gemini_image tool result not preserving display metadata in agentic flows
 			const conversation = [
 				{
 					role: 'user',
@@ -736,7 +736,7 @@ describe('Display Metadata Persistence', () => {
 		});
 
 		it('should preserve edit_gemini_image tool result', () => {
-			// This test validates the fix for edit_gemini_image not preserving display metadata
+			// This test validates the fix for edit_gemini_image tool result not preserving display metadata
 			const conversation = [
 				{
 					role: 'user',

@@ -11490,20 +11490,8 @@
                 // Preserve display metadata for proper UI restoration after page reload
                 if (state.conversation && Array.isArray(state.conversation)) {
                     // Add display metadata to tool result for persistence
-                    if (normalized) {
-                        const toolDisplay = {
-                            bubbleType: 'tool',
-                            text: normalized.text || '',
-                            attachments: normalized.attachments || []
-                        };
-                        
-                        // Preserve chart data if present
-                        if (normalized.chartHtml) {
-                            toolDisplay.chartHtml = normalized.chartHtml;
-                            toolDisplay.chartWidth = normalized.chartWidth || 800;
-                            toolDisplay.chartHeight = normalized.chartHeight || 400;
-                        }
-                        
+                    const toolDisplay = createToolDisplayMetadata(normalized);
+                    if (toolDisplay) {
                         toolResult.display = toolDisplay;
                     }
                     state.conversation.push(toolResult);
@@ -12045,6 +12033,34 @@
         }
 
         /**
+         * Create display metadata object for tool results.
+         * This ensures consistent metadata preservation across all tool result code paths.
+         * 
+         * @param {Object} normalized - Normalized tool result from normaliseToolResultForDisplay
+         * @return {Object} Display metadata object with bubbleType, text, attachments, and optional chartHtml
+         */
+        function createToolDisplayMetadata(normalized) {
+            if (!normalized) {
+                return null;
+            }
+            
+            const toolDisplay = {
+                bubbleType: 'tool',
+                text: normalized.text || '',
+                attachments: normalized.attachments || []
+            };
+            
+            // Preserve chart data if present
+            if (normalized.chartHtml) {
+                toolDisplay.chartHtml = normalized.chartHtml;
+                toolDisplay.chartWidth = normalized.chartWidth || 800;
+                toolDisplay.chartHeight = normalized.chartHeight || 400;
+            }
+            
+            return toolDisplay;
+        }
+
+        /**
          * Add video placeholder attachment to assistant display for pending video generation.
          * This ensures the video player appears in both system and assistant bubbles.
          * Extracted as a helper function to reduce duplication.
@@ -12227,20 +12243,8 @@
                     }
                     
                     const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedForDisplay);
-                    if (normalizedForDisplay) {
-                        const toolDisplay = {
-                            bubbleType: 'tool',
-                            text: normalizedForDisplay.text || '',
-                            attachments: normalizedForDisplay.attachments || []
-                        };
-                        
-                        // Preserve chart data if present
-                        if (normalizedForDisplay.chartHtml) {
-                            toolDisplay.chartHtml = normalizedForDisplay.chartHtml;
-                            toolDisplay.chartWidth = normalizedForDisplay.chartWidth || 800;
-                            toolDisplay.chartHeight = normalizedForDisplay.chartHeight || 400;
-                        }
-                        
+                    const toolDisplay = createToolDisplayMetadata(normalizedForDisplay);
+                    if (toolDisplay) {
                         toolResult.display = toolDisplay;
                     }
                     
