@@ -273,16 +273,35 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * Get the source image data from attachment_id, image_url, or image_data.
+	 * Get the source image data from attachment_id, file_id, url, image_url, or image_data.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param int   $user_id   Current user ID.
 	 * @return array|WP_Error Array with image data or WP_Error on failure.
 	 */
 	protected function get_source_image( array $arguments, $user_id ) {
-		$attachment_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
-		$image_url     = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
+		$attachment_id = 0;
+		$image_url     = '';
 		$image_data    = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
+
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				$image_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+
+		// Fallback to legacy image_url parameter.
+		if ( 0 === $attachment_id && '' === $image_url && ! empty( $arguments['image_url'] ) ) {
+			$image_url = esc_url_raw( $arguments['image_url'] );
+		}
 
 		if ( $attachment_id > 0 ) {
 			// Get image from WordPress attachment.
@@ -425,7 +444,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'source'    => 'blob',
 			);
 		} else {
-			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'You must provide attachment_id, file_id, url, image_url, or image_data.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 		}
 	}
 

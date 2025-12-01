@@ -12,11 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Provides a tool for transcribing or translating audio attachments via OpenAI.
  */
 class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	const DEFAULT_MODEL   = 'gpt-4o-mini-transcribe';
 	const DEFAULT_FORMAT  = 'verbose_json';
 	const MAX_AUDIO_BYTES = 26214400; // 25MB default limit.
@@ -53,6 +55,8 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'WordPress attachment ID that contains the audio file.', 'wp-mcp-ai' ),
 				),
+				'file_id'         => $this->get_file_id_parameter_schema(),
+				'url'             => $this->get_url_parameter_schema( 'audio' ),
 				'translate'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true the audio will be translated into English instead of a raw transcription.', 'wp-mcp-ai' ),
@@ -86,7 +90,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Optional ISO language code hint for the transcription.', 'wp-mcp-ai' ),
 				),
 			),
-			'required'             => array( 'attachment_id' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -99,10 +103,30 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$attachment_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+		// Resolve attachment ID from attachment_id, file_id, or url.
+		$resolved = $this->resolve_attachment_id( $arguments );
+
+		// Handle remote URL case.
+		if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_remote_url_not_supported',
+				__( 'Remote URLs are not supported for audio transcription. Please upload the audio file to WordPress Media Library first.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
+		}
+
+		$attachment_id = $resolved;
 
 		if ( ! $attachment_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_audio_attachment', __( 'You must supply an audio attachment ID.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error(
+				'wp_mcp_ai_missing_audio_source',
+				__( 'You must supply an audio attachment ID, file ID, or URL.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
 		}
 
 		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

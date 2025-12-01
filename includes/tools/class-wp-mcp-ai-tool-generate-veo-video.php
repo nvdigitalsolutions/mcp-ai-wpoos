@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Generates videos from text prompts using Google's Veo models.
@@ -23,6 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Rate limits are exceeded
  */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -89,6 +91,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'WordPress attachment ID of a reference image to guide video generation (optional).', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
+				'reference_image_file_id' => $this->get_file_id_parameter_schema(),
+				'reference_image_url'     => $this->get_url_parameter_schema( 'image', __( 'URL of a reference image to guide video generation (optional).', 'wp-mcp-ai' ) ),
 				'seed'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Random seed for reproducible results. Use the same seed and prompt to generate similar videos.', 'wp-mcp-ai' ),
@@ -211,8 +215,44 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Handle reference image if provided.
-		if ( ! empty( $arguments['reference_image_id'] ) ) {
-			$image_data = $this->get_reference_image_data( $arguments['reference_image_id'] );
+		$reference_image_id = 0;
+		
+		// Try to resolve from reference_image_id, reference_image_file_id, or reference_image_url.
+		if ( ! empty( $arguments['reference_image_id'] ) || ! empty( $arguments['reference_image_file_id'] ) || ! empty( $arguments['reference_image_url'] ) ) {
+			// Temporarily map to standard parameter names for the resolver.
+			$temp_args = array();
+			if ( ! empty( $arguments['reference_image_id'] ) ) {
+				$temp_args['attachment_id'] = $arguments['reference_image_id'];
+			}
+			if ( ! empty( $arguments['reference_image_file_id'] ) ) {
+				$temp_args['file_id'] = $arguments['reference_image_file_id'];
+			}
+			if ( ! empty( $arguments['reference_image_url'] ) ) {
+				$temp_args['url'] = $arguments['reference_image_url'];
+			}
+			
+			$resolved = $this->resolve_attachment_id( $temp_args );
+			
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_remote_url_not_supported',
+					__( 'Remote URLs are not yet supported for reference images. Please upload to Media Library first.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+			
+			if ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			}
+			
+			if ( $resolved > 0 ) {
+				$reference_image_id = $resolved;
+			}
+		}
+		
+		if ( $reference_image_id > 0 ) {
+			$image_data = $this->get_reference_image_data( $reference_image_id );
 			if ( is_wp_error( $image_data ) ) {
 				return $image_data;
 			}

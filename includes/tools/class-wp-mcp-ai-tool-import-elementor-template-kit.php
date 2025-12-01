@@ -8,11 +8,13 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Imports Elementor template kits from ZIP files in the Media Library.
  */
 class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
 	 * Determine whether Elementor is available.
@@ -66,6 +68,8 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 					'type'        => 'integer',
 					'description' => __( 'Media Library attachment ID of the template kit ZIP file.', 'wp-mcp-ai' ),
 				),
+				'file_id'            => $this->get_file_id_parameter_schema(),
+				'url'                => $this->get_url_parameter_schema( 'file', __( 'URL to template kit ZIP file.', 'wp-mcp-ai' ) ),
 				'max_pages'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of pages to create (1-5).', 'wp-mcp-ai' ),
@@ -133,15 +137,31 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			);
 		}
 
-		// Validate attachment_id.
-		if ( empty( $arguments['attachment_id'] ) ) {
+		// Validate attachment_id, file_id, or url.
+		$resolved = $this->resolve_attachment_id( $arguments );
+
+		// Handle remote URL case.
+		if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_missing_attachment',
-				__( 'attachment_id is required.', 'wp-mcp-ai' )
+				'wp_mcp_ai_remote_url_not_supported',
+				__( 'Remote URLs are not yet supported for template kits. Please upload to Media Library first.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
 			);
 		}
 
-		$attachment_id = absint( $arguments['attachment_id'] );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
+		}
+
+		if ( ! $resolved ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_attachment',
+				__( 'You must provide attachment_id, file_id, or url.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$attachment_id = $resolved;
 		$attachment    = get_post( $attachment_id );
 
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {

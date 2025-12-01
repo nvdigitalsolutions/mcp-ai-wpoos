@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Provides a tool for sending a group email based on an uploaded file.
  */
 class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	const DEFAULT_MAX_RECIPIENTS = 100;
 
 	/**
@@ -76,6 +78,8 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Optional WordPress attachment ID containing email definition (JSON or plain text format).', 'wp-mcp-ai' ),
 				),
+				'file_id'        => $this->get_file_id_parameter_schema(),
+				'url'            => $this->get_url_parameter_schema( 'file', __( 'URL to email definition file (JSON or plain text format).', 'wp-mcp-ai' ) ),
 				'attachment_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Optional list of WordPress attachment IDs to combine into one email.', 'wp-mcp-ai' ),
@@ -246,8 +250,24 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function gather_attachment_ids( array $arguments ) {
 		$ids = array();
 
-		if ( isset( $arguments['attachment_id'] ) ) {
-			$ids[] = absint( $arguments['attachment_id'] );
+		// Resolve attachment_id, file_id, or url.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case - would need to download file first.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				// For email files from URLs, we'd need to fetch and parse them.
+				// For now, return error as this is complex.
+				return new WP_Error(
+					'wp_mcp_ai_remote_url_not_supported',
+					__( 'Remote URLs are not yet supported for email definition files. Please upload to Media Library first.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$ids[] = $resolved;
+			}
 		}
 
 		if ( ! empty( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ) {
