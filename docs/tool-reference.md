@@ -85,6 +85,32 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Generate Gemini Image** (`generate_gemini_image`) renders images with Google’s Gemini multimodal endpoint, supporting aspect-ratio and MIME controls plus optional timeout overrides before saving the attachment to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】
 - **Generate OpenAI Speech** (`generate_openai_speech`) converts supplied text into audio, honouring the default speech model, voice, and format configured in the settings screen while allowing overrides and enforcing authenticated access.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L983-L1110】
 - **Transcribe OpenAI Audio** (`transcribe_openai_audio`) accepts uploaded audio attachments up to 25 MB, forwards them to OpenAI for transcription or translation, and returns structured responses with language, duration, and segment data.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】
+- **Edit Gemini Image** (`edit_gemini_image`) edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library, enabling AI-powered image modifications.【F:includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php†L17-L200】
+- **Generate Veo Video** (`generate_veo_video`) generates realistic videos from text descriptions using Google's Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached. Supports async mode for long-running video generation tasks.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php†L17-L300】
+- **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
+- **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
+
+
+## Image manipulation (Graphic Editor Suite)
+
+- **Resize Image** (`resize_image`) resizes an image to specific dimensions or scales proportionally while maintaining aspect ratio. Supports width, height, and percentage-based scaling.【F:includes/tools/class-wp-mcp-ai-tool-resize-image.php†L17-L150】
+- **Crop Image** (`crop_image`) crops an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.【F:includes/tools/class-wp-mcp-ai-tool-crop-image.php†L17-L150】
+- **Rotate Image** (`rotate_image`) rotates an image by degrees or flips it horizontally/vertically.【F:includes/tools/class-wp-mcp-ai-tool-rotate-image.php†L17-L150】
+- **Convert Image Format** (`convert_image_format`) converts an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.【F:includes/tools/class-wp-mcp-ai-tool-convert-image-format.php†L17-L150】
+
+## AI-powered media analysis
+
+- **Generate Image Alt Text** (`generate_image_alt_text`) generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities.【F:includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text.php†L17-L150】
+- **Generate Image Caption** (`generate_image_caption`) generates detailed captions for images to provide context and enhance content using AI vision capabilities.【F:includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php†L17-L150】
+- **Analyze Video** (`analyze_video`) analyzes video content to extract information, describe scenes, identify objects, and provide insights using AI vision models with video understanding capabilities.【F:includes/tools/class-wp-mcp-ai-tool-analyze-video.php†L17-L200】
+- **Generate Video Caption** (`generate_video_caption`) generates concise, descriptive captions for videos to provide context and enhance accessibility using AI vision models.【F:includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php†L17-L150】
+- **Extract Video Frames** (`extract_video_frames`) extracts specific frames from a video file at given timestamps or intervals. Useful for detailed analysis of specific moments or creating thumbnails.【F:includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php†L17-L150】
+- **Get Video Metadata** (`get_video_metadata`) retrieves detailed technical metadata about a video file including duration, dimensions, format, codecs, bitrate, and frame rate.【F:includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php†L17-L150】
+- **Analyze Comment Content** (`analyze_comment_content`) analyzes comment content for spam, toxicity, and moderation concerns using AI to assist with comment moderation.【F:includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php†L17-L150】
+
+## Data visualization
+
+- **Create Chart** (`create_chart`) creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.【F:includes/tools/class-wp-mcp-ai-tool-create-chart.php†L17-L300】
 
 ## External data and automations
 
@@ -159,5 +185,48 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Create WPCode Snippet** (`create_wpcode_snippet`) provisions or updates WPCode-managed snippets, validating code types, auto-insert locations, and capabilities before calling the WPCode API. The response returns activation status, the resolved location label, and the shortcode that operators can embed in content.【F:includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php†L15-L224】
 - **Generate Simple JWT Token** (`generate_simple_jwt_token`) generates a Simple JWT Login bearer token for the current user, enabling authenticated API access across sessions. Requires the Simple JWT Login plugin to be active with authentication enabled and valid JWT keys configured. The tool validates JWT configuration before token generation and returns a time-limited bearer token that can be used for headless WordPress integrations. Agents can help users obtain authentication tokens for mobile apps, SPAs, or third-party integrations without exposing credentials.【F:includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php†L15-L200】
 - **Generate Auth0 Token** (`generate_auth0_token`) generates an Auth0 bearer token using OAuth 2.0 client credentials flow. Requires Auth0 Management API client ID and client secret. The tool supports custom audience parameters or defaults to the Auth0 Management API audience (https://DOMAIN/api/v2/). Returns an access token with expiration metadata and scope information. Requires `manage_options` capability for security. Agents can help administrators obtain Auth0 bearer tokens for 1-click setup workflows, API testing, or programmatic access to Auth0 resources without manually going through the OAuth flow.【F:includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php†L15-L248】
+
+
+## Assistant and profession management
+
+- **Create Assistant** (`create_assistant`) creates a new AI assistant. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.【F:includes/tools/class-wp-mcp-ai-tool-create-assistant.php†L17-L200】
+- **List Professions** (`list_professions`) lists all available professions that can be used when creating AI assistants. Professions include advisory services, creative roles, STEM fields, healthcare, emergency management, and more.【F:includes/tools/class-wp-mcp-ai-tool-list-professions.php†L17-L150】
+- **Get Profession** (`get_profession`) retrieves detailed information about a specific profession including expertise areas, role description, warnings, knowledge base content, and default tools.【F:includes/tools/class-wp-mcp-ai-tool-get-profession.php†L17-L150】
+- **Save Profession** (`save_profession`) creates a new profession or updates an existing one. Professions define roles that can be used when creating AI assistants, including their expertise areas, default tools, and knowledge base.【F:includes/tools/class-wp-mcp-ai-tool-save-profession.php†L17-L200】
+- **Get Profession Stats** (`get_profession_stats`) retrieves statistics about profession usage and availability, helping administrators understand how professions are being used across the site.【F:includes/tools/class-wp-mcp-ai-tool-profession-stats.php†L17-L150】
+
+## Site management and configuration
+
+- **Update Option** (`update_option`) updates a WordPress option value. Can also be used to create a new option. Requires `manage_options` capability for security.【F:includes/tools/class-wp-mcp-ai-tool-update-option.php†L17-L100】
+- **Install and Activate Plugin** (`install_and_activate_plugin`) installs a plugin from the WordPress.org repository and activates it. Requires the plugin slug and `install_plugins` capability.【F:includes/tools/class-wp-mcp-ai-tool-install-and-activate-plugin.php†L17-L200】
+- **Install and Activate Theme** (`install_and_activate_theme`) installs a theme from the WordPress.org repository and activates it. Requires the theme slug and `install_themes` capability.【F:includes/tools/class-wp-mcp-ai-tool-install-and-activate-theme.php†L17-L200】
+- **Site Creator** (`site_creator`) creates a complete WordPress site from a plan. The plan can include site options, plugins to install, themes to activate, and content to create (pages, posts). Designed for automated site provisioning workflows.【F:includes/tools/class-wp-mcp-ai-tool-site-creator.php†L17-L300】
+- **Import Elementor Template Kit** (`import_elementor_template_kit`) imports an Elementor template kit ZIP file from the Media Library and creates pages. Requires Elementor to be active.【F:includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php†L17-L200】
+
+## Google Maps Platform tools
+
+- **Geocode Address** (`geocode_address`) converts addresses to geographic coordinates (latitude/longitude) or coordinates to addresses using Google Maps Geocoding API. Requires a Google Maps API key.【F:includes/tools/class-wp-mcp-ai-tool-geocode-address.php†L17-L150】
+- **Search Places** (`search_places`) searches for businesses, landmarks, and points of interest using Google Maps Places API. Supports nearby search and text search with AI-powered contextual results. Requires a Google Maps API key.【F:includes/tools/class-wp-mcp-ai-tool-search-places.php†L17-L200】
+
+## GitHub integration tools
+
+- **List GitHub Repositories** (`list_github_repositories`) lists GitHub repositories for the authenticated user. Requires a GitHub personal access token to be configured.【F:includes/tools/class-wp-mcp-ai-tool-list-github-repositories.php†L17-L150】
+- **GitHub Repository Operations** (`github_repository_operations`) performs GitHub repository operations such as creating branches and managing files in the custom-tools directory. Supports CRUD operations on repository content.【F:includes/tools/class-wp-mcp-ai-tool-github-repository-operations.php†L17-L300】
+- **Manage GitHub Codespace** (`manage_github_codespace`) creates, starts, stops, or lists GitHub Codespaces for repository development. Enables AI-assisted development environment management.【F:includes/tools/class-wp-mcp-ai-tool-manage-github-codespace.php†L17-L200】
+
+## Mesh networking tools
+
+- **Query Remote Site** (`query_remote_site`) sends a prompt to a peer site in the mesh network and receives the response from its AI assistant. Requires `manage_options` capability and mesh networking to be enabled.【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L17-L250】
+- **Query Mesh Intelligent** (`query_mesh_intelligent`) sends a prompt to the mesh network with AI-powered peer selection and automatic failover. The system intelligently routes your request to the optimal peer site based on current load, response times, and task complexity.【F:includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php†L17-L300】
+
+## Vision AI tools
+
+- **Vision Product Search** (`vision_product_search`) searches for similar products using Google Cloud Vision API Product Search feature. Requires proper Google Cloud authentication credentials to succeed.【F:includes/tools/class-wp-mcp-ai-tool-vision-product-search.php†L17-L200】
+- **Vision Object Localization** (`vision_object_localization`) detects and localizes multiple objects in an image using Google Cloud Vision API. Returns bounding boxes and labels for identified objects. Requires proper Google Cloud authentication credentials.【F:includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php†L17-L200】
+
+## Product data extraction
+
+- **Scrape Product** (`scrape_product`) scrapes product information (title, subtitle, description, images) from a product URL or saved HTML file and downloads highest resolution images to WordPress media library. Useful for e-commerce content migration.【F:includes/tools/class-wp-mcp-ai-tool-scrape-product.php†L17-L200】
+
 
 Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
