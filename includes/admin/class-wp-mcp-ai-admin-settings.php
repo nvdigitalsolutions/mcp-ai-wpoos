@@ -5120,8 +5120,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		protected function get_openai_image_size_choices() {
 			$sizes = array(
 				'1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-				'1024x1792' => __( '1024 × 1792 (portrait)', 'wp-mcp-ai' ),
-				'1792x1024' => __( '1792 × 1024 (landscape)', 'wp-mcp-ai' ),
+				'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'wp-mcp-ai' ),
+				'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'wp-mcp-ai' ),
 				'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
 			);
 
@@ -5130,8 +5130,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			if ( ! is_array( $sizes ) || empty( $sizes ) ) {
 				$sizes = array(
 					'1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-					'1024x1792' => __( '1024 × 1792 (portrait)', 'wp-mcp-ai' ),
-					'1792x1024' => __( '1792 × 1024 (landscape)', 'wp-mcp-ai' ),
+					'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'wp-mcp-ai' ),
+					'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'wp-mcp-ai' ),
 					'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
 				);
 			}

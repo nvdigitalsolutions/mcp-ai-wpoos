@@ -64,13 +64,13 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
-					'description' => __( 'Video aspect ratio. Use "16:9" for landscape (default) or "9:16" for vertical/portrait videos.', 'wp-mcp-ai' ),
-					'enum'        => array( '16:9', '9:16' ),
-					'default'     => '16:9',
+					'description' => __( 'Video aspect ratio. Supported values: "3:2" for landscape (default), "2:3" for portrait, "1:1" for square, or "auto" to let the model decide.', 'wp-mcp-ai' ),
+					'enum'        => array( '1:1', '2:3', '3:2', 'auto' ),
+					'default'     => '3:2',
 				),
 				'resolution'         => array(
 					'type'        => 'string',
-					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p only available for 16:9 aspect ratio and requires 8 seconds duration. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
+					'description' => __( 'Video resolution. "720p" (default, supported by all models) or "1080p" (Veo 3.1 only). Note: 1080p requires 8 seconds duration and is only available with Veo 3.1. Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
@@ -331,7 +331,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$defaults = array(
 			'model'        => 'veo-2.0-generate-001', // Conservative default.
 			'resolution'   => '720p',
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'duration'     => 5,
 		);
 
