@@ -10,9 +10,35 @@ The Remove Background tool provides two methods for removing image backgrounds:
 
 ### Installation
 
+#### Option A: Using pipx (Recommended for managed hosting)
 ```bash
-pip3 install rembg pillow
+# Install pipx if not available
+apt install pipx  # or: pip3 install --user pipx
+
+# Install rembg using pipx
+pipx install rembg
 ```
+
+#### Option B: Using virtual environment (Alternative)
+```bash
+# Create virtual environment
+python3 -m venv /path/to/your-site/rembg-env
+
+# Install packages in venv
+/path/to/your-site/rembg-env/bin/pip install rembg pillow
+```
+
+Then update the tool to use the venv Python:
+- For pipx: The `rembg` command will be available globally
+- For venv: Use `/path/to/your-site/rembg-env/bin/python3`
+
+#### Option C: System-wide (Requires root/sudo)
+```bash
+# Only if you have root access
+sudo pip3 install rembg pillow --break-system-packages
+```
+
+**Note**: If you encounter "externally-managed-environment" error, use Option A (pipx) or Option B (venv). Modern Debian/Ubuntu systems (PEP 668) prevent direct pip installation to protect the system Python.
 
 ### Usage
 Once installed, the tool will automatically use the free rembg method when:
@@ -113,7 +139,44 @@ $result = $registry->execute_tool(
 
 ## Troubleshooting
 
-### "rembg library is not installed"
+### "externally-managed-environment" error
+If you see this error when trying to install rembg:
+```
+error: externally-managed-environment
+× This environment is externally managed
+```
+
+**Solution**: Modern Python installations (Debian 12+, Ubuntu 23.04+) protect the system Python. Use one of these methods:
+
+**Method 1: pipx (Easiest)**
+```bash
+# Install pipx
+sudo apt install pipx
+# or if no sudo: pip3 install --user pipx
+
+# Install rembg
+pipx install rembg
+```
+
+**Method 2: Virtual Environment**
+```bash
+# Create venv in your WordPress directory
+cd /path/to/wordpress
+python3 -m venv rembg-venv
+
+# Install packages
+rembg-venv/bin/pip install rembg pillow
+```
+
+**Method 3: Override (Not recommended)**
+```bash
+# Only if you understand the risks
+pip3 install --break-system-packages rembg pillow
+```
+
+After using pipx or venv, the tool will automatically detect the rembg installation.
+
+### "rembg not installed"
 Install rembg with: `pip3 install rembg pillow`
 
 ### "Python is not available on this system"

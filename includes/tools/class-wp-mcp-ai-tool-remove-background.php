@@ -229,7 +229,7 @@ try:
     
 except ImportError as e:
     print(f"rembg not installed: {e}", file=sys.stderr)
-    print("Install with: pip3 install rembg pillow", file=sys.stderr)
+    print("Install with: pipx install rembg (recommended) or use venv", file=sys.stderr)
     sys.exit(2)
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)
@@ -276,7 +276,7 @@ PYTHON;
 			if ( 2 === $return_code ) {
 				return new WP_Error(
 					'wp_mcp_ai_rembg_not_installed',
-					__( 'The rembg library is not installed. Install it with: pip3 install rembg pillow', 'wp-mcp-ai' )
+					__( 'The rembg library is not installed. On modern systems (Debian 12+, Ubuntu 23.04+), use: pipx install rembg OR create a virtual environment. See documentation for details.', 'wp-mcp-ai' )
 				);
 			}
 
