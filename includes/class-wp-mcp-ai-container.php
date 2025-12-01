@@ -402,6 +402,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.token_manager',
+			function () {
+				return new WP_MCP_AI_Admin_Token_Manager();
+			}
+		);
+
+		$this->singleton(
 			'admin.test_assistant',
 			function () {
 				return new WP_MCP_AI_Admin_Test_Assistant();
