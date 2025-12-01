@@ -1,0 +1,430 @@
+# WP Open Operator System - Release Workflow
+#
+# This workflow handles:
+# 1. Building production-ready plugin ZIP files
+# 2. Creating GitHub releases with proper changelogs
+# 3. Deploying to WordPress.org Plugin Directory via SVN
+#
+# Follows WordPress.org Plugin Directory guidelines:
+# https://developer.wordpress.org/plugins/wordpress-org/
+#
+# To deploy to WordPress.org, add these secrets to your repository:
+# - SVN_USERNAME: Your wordpress.org username
+# - SVN_PASSWORD: Your wordpress.org password
+#
+# Author: NV Digital Solutions (https://nvdigitalsolutions.com/)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      deploy_to_wporg:
+        description: 'Deploy to WordPress.org'
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Dry run (skip actual deployment)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  PLUGIN_SLUG: wp-mcp-ai
+  PLUGIN_NAME: "WP Open Operator System"
+
+jobs:
+  # =============================================================================
+  # Job 1: Build Production Plugin
+  # =============================================================================
+  build:
+    name: Build Plugin
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+
+      - name: Get version from tag or input
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Building version: ${VERSION}"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected: X.Y.Z or X.Y.Z-suffix (e.g., 1.0.0 or 1.0.0-beta.1)"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: |
+          npm run build
+          echo "✅ Frontend assets built"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, mysqli, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-prod-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-prod-
+
+      - name: Install production Composer dependencies
+        run: |
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+          echo "✅ Production dependencies installed"
+
+      - name: Update version numbers
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Update version in main plugin file header
+          sed -i "s/Version: .*/Version: ${VERSION}/" wp-mcp-ai.php
+          
+          # Update version constant
+          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" wp-mcp-ai.php
+          
+          # Update version in readme.txt
+          sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
+          
+          echo "✅ Version updated to ${VERSION}"
+          
+          # Verify updates
+          grep "Version:" wp-mcp-ai.php
+          grep "WP_MCP_AI_VERSION" wp-mcp-ai.php
+          grep "Stable tag:" readme.txt
+
+      - name: Create plugin directory structure
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Create build directory
+          mkdir -p build/${PLUGIN_SLUG}
+          
+          # Copy plugin files (excluding dev files)
+          rsync -av --progress . build/${PLUGIN_SLUG}/ \
+            --exclude '.git' \
+            --exclude '.git-branch-info' \
+            --exclude '.github' \
+            --exclude '.wordpress-org' \
+            --exclude '.codex' \
+            --exclude '.devcontainer' \
+            --exclude 'node_modules' \
+            --exclude 'tests' \
+            --exclude 'bin' \
+            --exclude 'coverage' \
+            --exclude 'build' \
+            --exclude 'svn-*' \
+            --exclude '.eslintrc.json' \
+            --exclude '.eslintignore' \
+            --exclude '.gitignore' \
+            --exclude 'phpunit.xml.dist' \
+            --exclude 'composer.json' \
+            --exclude 'composer.lock' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'babel.config.js' \
+            --exclude 'jest.config.js' \
+            --exclude 'esbuild.config.js' \
+            --exclude 'docker-compose.yml' \
+            --exclude 'patches' \
+            --exclude 'RELEASE_CHECKLIST.md' \
+            --exclude 'CONTRIBUTING.md' \
+            --exclude 'SECURITY.md' \
+            --exclude 'BUILD.md' \
+            --exclude 'test-*.php' \
+            --exclude 'verify-*.sh' \
+            --exclude '*.zip' \
+            --exclude '*.tar.gz'
+          
+          # Ensure essential files are included
+          cp README.md build/${PLUGIN_SLUG}/ 2>/dev/null || true
+          cp CHANGELOG.md build/${PLUGIN_SLUG}/ 2>/dev/null || true
+          cp LICENSE build/${PLUGIN_SLUG}/
+          
+          echo "✅ Plugin directory structure created"
+
+      - name: Verify plugin structure
+        run: |
+          echo "📁 Plugin structure:"
+          ls -la build/${PLUGIN_SLUG}/
+          
+          echo ""
+          echo "📁 Includes directory:"
+          ls -la build/${PLUGIN_SLUG}/includes/ | head -20
+          
+          echo ""
+          echo "📁 Assets directory:"
+          ls -la build/${PLUGIN_SLUG}/assets/
+
+      - name: Create ZIP archive
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          cd build
+          zip -r ../${PLUGIN_SLUG}-${VERSION}.zip ${PLUGIN_SLUG}/ -x "*.DS_Store" -x "*__MACOSX*"
+          cd ..
+          
+          # Show ZIP info
+          echo "✅ Created: ${PLUGIN_SLUG}-${VERSION}.zip"
+          ls -lh ${PLUGIN_SLUG}-${VERSION}.zip
+          
+          # Verify ZIP contents
+          echo ""
+          echo "📦 ZIP contents (first 30 files):"
+          unzip -l ${PLUGIN_SLUG}-${VERSION}.zip | head -35
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}
+          path: ${{ env.PLUGIN_SLUG }}-*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  # =============================================================================
+  # Job 2: Create GitHub Release
+  # =============================================================================
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          
+          # Extract changelog section for this version from CHANGELOG.md
+          # Handle both "= 1.0.0 =" and "## [1.0.0]" formats
+          NOTES=$(awk "/^(=|##) .*${VERSION}/,/^(=|##) .*[0-9]+\.[0-9]+\.[0-9]+/" CHANGELOG.md | head -n -1 | tail -n +2)
+          
+          if [ -z "$NOTES" ]; then
+            NOTES="Release version ${VERSION}. See CHANGELOG.md for details."
+          fi
+          
+          # Output for GitHub Actions
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ env.PLUGIN_NAME }} v${{ needs.build.outputs.version }}"
+          body: |
+            ## ${{ env.PLUGIN_NAME }} v${{ needs.build.outputs.version }}
+            
+            ${{ steps.release_notes.outputs.notes }}
+            
+            ---
+            
+            ### 📥 Installation
+            
+            **Option 1: Upload ZIP**
+            1. Download `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` below
+            2. Go to WordPress Admin → Plugins → Add New → Upload Plugin
+            3. Upload the ZIP file and click "Install Now"
+            4. Activate the plugin
+            
+            **Option 2: WordPress.org** (when available)
+            1. Go to WordPress Admin → Plugins → Add New
+            2. Search for "WP Open Operator System"
+            3. Click "Install Now" and "Activate"
+            
+            ### 📚 Documentation
+            
+            - [Quick Start Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/QUICK_REFERENCE.md)
+            - [Full Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/tree/main/docs)
+            - [REST API Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/rest-api.md)
+            
+            ### 🔗 Links
+            
+            - [NV Digital Solutions](https://nvdigitalsolutions.com/)
+            - [Report Issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
+            - [Contributing Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CONTRIBUTING.md)
+            
+          files: |
+            ${{ env.PLUGIN_SLUG }}-*.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # =============================================================================
+  # Job 3: Deploy to WordPress.org SVN
+  # =============================================================================
+  deploy-wporg:
+    name: WordPress.org Deploy
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/') && 
+      !contains(github.ref, '-alpha') && 
+      !contains(github.ref, '-beta') && 
+      !contains(github.ref, '-rc')
+    
+    steps:
+      - name: Check SVN credentials
+        id: check_creds
+        run: |
+          if [ -z "${{ secrets.SVN_USERNAME }}" ] || [ -z "${{ secrets.SVN_PASSWORD }}" ]; then
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+            echo "⚠️ SVN credentials not configured. Skipping WordPress.org deployment."
+            echo ""
+            echo "To enable WordPress.org deployment:"
+            echo "1. Go to Repository Settings → Secrets and variables → Actions"
+            echo "2. Add SVN_USERNAME (your wordpress.org username)"
+            echo "3. Add SVN_PASSWORD (your wordpress.org password)"
+          else
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+            echo "✅ SVN credentials found"
+          fi
+
+      - name: Checkout code
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install and build frontend
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup PHP
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer:v2
+
+      - name: Install production dependencies
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: Update version numbers
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          sed -i "s/Version: .*/Version: ${VERSION}/" wp-mcp-ai.php
+          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" wp-mcp-ai.php
+          sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
+
+      - name: Deploy to WordPress.org
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: ${{ env.PLUGIN_SLUG }}
+          VERSION: ${{ needs.build.outputs.version }}
+        with:
+          generate-zip: false
+          dry-run: ${{ github.event.inputs.dry_run == 'true' }}
+
+      - name: Deploy assets to WordPress.org
+        if: steps.check_creds.outputs.has_creds == 'true'
+        uses: 10up/action-wordpress-plugin-asset-update@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: ${{ env.PLUGIN_SLUG }}
+        with:
+          dry-run: ${{ github.event.inputs.dry_run == 'true' }}
+
+      - name: Deployment summary
+        if: steps.check_creds.outputs.has_creds == 'true'
+        run: |
+          echo "🎉 WordPress.org deployment complete!"
+          echo ""
+          echo "Plugin page: https://wordpress.org/plugins/${{ env.PLUGIN_SLUG }}/"
+          echo "SVN trunk: https://plugins.svn.wordpress.org/${{ env.PLUGIN_SLUG }}/trunk/"
+          echo "SVN tag: https://plugins.svn.wordpress.org/${{ env.PLUGIN_SLUG }}/tags/${{ needs.build.outputs.version }}/"
+
+  # =============================================================================
+  # Job 4: Post-Release Notifications
+  # =============================================================================
+  notify:
+    name: Notify
+    needs: [build, release, deploy-wporg]
+    runs-on: ubuntu-latest
+    if: always() && needs.build.result == 'success'
+    
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## 📦 Release Summary"
+          echo ""
+          echo "**Version:** ${{ needs.build.outputs.version }}"
+          echo "**GitHub Release:** ${{ needs.release.result }}"
+          echo "**WordPress.org:** ${{ needs.deploy-wporg.result }}"
+          echo ""
+          echo "### Links"
+          echo "- GitHub: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"
+          echo "- WordPress.org: https://wordpress.org/plugins/${{ env.PLUGIN_SLUG }}/"
+          echo "- Documentation: https://github.com/${{ github.repository }}/tree/main/docs"

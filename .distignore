@@ -1,0 +1,105 @@
+# Files to exclude from WordPress.org SVN deployment
+# This file is used by 10up/action-wordpress-plugin-deploy
+# https://github.com/10up/action-wordpress-plugin-deploy
+
+# Git
+.git
+.gitignore
+.git-branch-info
+.gitattributes
+
+# GitHub
+.github
+
+# WordPress.org assets (deployed separately)
+.wordpress-org
+
+# Development configuration
+.codex
+.devcontainer
+.eslintrc.json
+.eslintignore
+.editorconfig
+.browserslistrc
+
+# Build tools and dependencies
+node_modules
+vendor-dev
+composer.json
+composer.lock
+package.json
+package-lock.json
+babel.config.js
+jest.config.js
+esbuild.config.js
+
+# Development scripts
+bin
+patches
+
+# Testing
+tests
+phpunit.xml
+phpunit.xml.dist
+coverage
+.phpunit.result.cache
+.nyc_output
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Documentation (keep only readme.txt)
+*.md
+!readme.txt
+
+# Other development files
+Makefile
+Gruntfile.js
+Gulpfile.js
+webpack.config.js
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Temporary files
+*.log
+*.bak
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+
+# Test and verification scripts
+test-*.php
+verify-*.php
+verify-*.sh
+
+# Build output (not needed in SVN)
+build
+svn-*
+
+# Specific exclusions for this plugin
+test-capability-flags-integration.php
+mcp-diagnostic-debug.php
+test-storage-service.html
+
+# Keep these files (negation - they will be included)
+!readme.txt
+!LICENSE
+!CHANGELOG.md
+!README.md
