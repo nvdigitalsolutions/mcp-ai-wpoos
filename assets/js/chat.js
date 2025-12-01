@@ -1150,6 +1150,14 @@
             hasMetadata = true;
         }
 
+        // Extract chart HTML for visualization persistence (Chart.js tools)
+        if (displayPayload && displayPayload.chartHtml) {
+            metadata.chartHtml = displayPayload.chartHtml;
+            metadata.chartWidth = displayPayload.chartWidth || 800;
+            metadata.chartHeight = displayPayload.chartHeight || 400;
+            hasMetadata = true;
+        }
+
         // Extract usage data (token counts) for badge persistence
         if (options && options.usage) {
             metadata.usage = options.usage;
@@ -1165,6 +1173,13 @@
         // Extract capability flags for badge persistence
         if (options && options.capabilityFlags) {
             metadata.capabilityFlags = options.capabilityFlags;
+            hasMetadata = true;
+        }
+
+        // Extract tool_calls for agentic workflow persistence
+        // tool_calls are passed via displayPayload for messages that invoke tools
+        if (displayPayload && displayPayload.tool_calls && Array.isArray(displayPayload.tool_calls)) {
+            metadata.tool_calls = displayPayload.tool_calls;
             hasMetadata = true;
         }
 
