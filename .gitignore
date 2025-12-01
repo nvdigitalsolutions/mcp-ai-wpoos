@@ -12,8 +12,17 @@ opcache-reset.php
 *.rar
 composer.phar
 
-# Build output
-/build/
+# Build output - keep only ZIP files, ignore extracted directories
+!/build/
+/build/wp-mcp-ai/
+/build/wp-mcp-ai-base/
+/build/wp-mcp-ai-pro/
+
+# Allow release ZIP files in build directory
+!build/*.zip
+
+# Allow release ZIP files in build directory
+!build/*.zip
 
 # Ignore all vendor by default
 /vendor/*

@@ -341,6 +341,116 @@ npm run build
 git add assets/css/*.min.css assets/js/*.min.js
 ```
 
+## Plugin ZIP Files
+
+### Plugin Versions
+
+WP oOS is available in three distribution formats:
+
+| Version | File | Description |
+|---------|------|-------------|
+| **Base** | `wp-mcp-ai-base-X.Y.Z.zip` | Standalone fully functional plugin (works without Pro) |
+| **Pro** | `wp-mcp-ai-pro-X.Y.Z.zip` | Commercial add-on with advanced features (requires Base) |
+| **Base + Pro** | `wp-mcp-ai-X.Y.Z.zip` | Combined package with both Base and Pro included |
+
+**Usage Options:**
+1. Install **Base** alone for core functionality
+2. Install **Base** + **Pro** for all features
+3. Install **Combined** for convenience (includes everything)
+
+See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature comparison.
+
+### Where to Find ZIP Files
+
+Plugin ZIP files are created in several ways:
+
+#### 1. GitHub Releases (Recommended for Production)
+
+When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workflow automatically:
+1. Builds production assets
+2. Creates all three plugin ZIP files
+3. Uploads them to the GitHub Release page
+
+**To find released ZIP files:**
+1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
+2. Find the version you need
+3. Download the appropriate ZIP file:
+   - `wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
+   - `wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
+   - `wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
+
+#### 2. GitHub Actions Artifacts (For Testing/Development)
+
+During any release workflow run, ZIP files are also uploaded as artifacts:
+1. Go to the repository's **Actions** tab
+2. Click on a workflow run
+3. Scroll down to **Artifacts** section
+4. Download the artifacts
+
+Artifacts are retained for 30 days after the workflow run.
+
+#### 3. Local Development (Build ZIP Locally)
+
+To create plugin ZIP files locally for testing:
+
+```bash
+# Build all three versions (default)
+./bin/build-plugin-zip.sh
+
+# Build only the base version
+./bin/build-plugin-zip.sh --base
+
+# Build only the pro add-on
+./bin/build-plugin-zip.sh --pro
+
+# Build the base + pro combined version
+./bin/build-plugin-zip.sh --combined
+
+# Specify a version number
+./bin/build-plugin-zip.sh --version 1.0.0
+
+# Show help
+./bin/build-plugin-zip.sh --help
+```
+
+Or use npm scripts:
+
+```bash
+npm run build:zip           # All three versions
+npm run build:zip:base      # Base version only
+npm run build:zip:pro       # Pro add-on only
+npm run build:zip:combined  # Base + Pro combined
+```
+
+ZIP files will be created in the `build/` directory:
+- `build/wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
+- `build/wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
+- `build/wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
+
+**Note:** Local builds require:
+- Node.js and npm (for asset building)
+- Composer (for PHP dependencies)
+- zip command
+
+### Creating a Release
+
+To create a new release with ZIP files:
+
+```bash
+# 1. Ensure all changes are committed
+git add .
+git commit -m "Prepare release v1.0.0"
+git push origin main
+
+# 2. Create and push version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow will automatically build and publish the ZIP files to the release.
+
+See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for complete release instructions.
+
 ## Troubleshooting
 
 ### Build Fails
