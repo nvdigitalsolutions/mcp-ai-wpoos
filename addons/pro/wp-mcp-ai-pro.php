@@ -371,7 +371,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 	 */
 	function wp_mcp_ai_pro_tool_categories( $categories ) {
 		// Add pro tools to existing categories only.
-		
+
 		// WooCommerce, JetEngine, and Elementor tools - medium resource.
 		if ( isset( $categories['medium_resource'] ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_products';
