@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_Interface, WP_MCP_AI_Core_Tool_Capability_Flags_Interface, WP_MCP_AI_Core_Tool_Model_Requirements_Interface, WP_MCP_AI_Core_Tool_Rules_Interface {
+class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	/**
 	 * Check if this tool is available.
