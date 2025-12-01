@@ -185,6 +185,22 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
+	/**
+	 * Check if WP MCP AI Core is loaded.
+	 *
+	 * This function serves as a marker for add-ons (like WP MCP AI Pro) to verify that
+	 * the core plugin is active and ready before registering their features.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always returns true when plugin is loaded.
+	 */
+	function wp_mcp_ai_core_loaded() {
+		return true;
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 	/**
 	 * Retrieve the capability required to access the chat interface.

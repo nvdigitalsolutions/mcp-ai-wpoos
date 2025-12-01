@@ -14,5 +14,5 @@ add_action(
 	function () {
 		WP_MCP_AI_Tool_Registry::get_instance()->init();
 	},
-	5
+	20
 );
