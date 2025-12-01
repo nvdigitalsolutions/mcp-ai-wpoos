@@ -114,7 +114,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 			'url'           => 'http://example.com/video.mp4',
 			'prompt'        => 'Test video',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
 			'provider'      => 'gemini',

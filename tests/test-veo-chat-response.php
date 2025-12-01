@@ -201,7 +201,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 			'url'           => 'https://example.com/video.mp4',
 			'prompt'        => 'Test prompt',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => 'veo-2.0-generate-001',
 			'provider'      => 'gemini',
@@ -222,7 +222,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 			'video_url'    => 'data:video/mp4;base64,AAABBBCCC...', // Large base64 string.
 			'prompt'       => 'Test prompt',
 			'duration'     => 5,
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'resolution'   => '720p',
 			'model'        => 'veo-2.0-generate-001',
 			'provider'     => 'gemini',
@@ -335,7 +335,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		// Verify message format includes metadata.
 		$this->assertStringContainsString( '5s', $completed_metadata['result']['message'], 'Message should include duration' );
 		$this->assertStringContainsString( '720p', $completed_metadata['result']['message'], 'Message should include resolution' );
-		$this->assertStringContainsString( '16:9', $completed_metadata['result']['message'], 'Message should include aspect ratio' );
+		$this->assertStringContainsString( '3:2', $completed_metadata['result']['message'], 'Message should include aspect ratio' );
 
 		// Clean up.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );

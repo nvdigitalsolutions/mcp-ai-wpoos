@@ -193,7 +193,7 @@ class Test_Veo_Media_Lookup extends WP_UnitTestCase {
 			'video_data'   => 'fake video content for testing',
 			'prompt'       => 'Test save video prompt',
 			'duration'     => 6,
-			'aspect_ratio' => '9:16',
+			'aspect_ratio' => '2:3',
 			'resolution'   => '720p',
 			'model'        => 'veo-2.0-generate-001',
 			'provider'     => 'gemini',

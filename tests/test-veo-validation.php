@@ -27,13 +27,13 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that 1080p with 9:16 aspect ratio returns validation error.
+	 * Test that 1080p with 2:3 aspect ratio returns validation error.
 	 */
-	public function test_1080p_rejects_9_16_aspect_ratio() {
+	public function test_1080p_rejects_2_3_aspect_ratio() {
 		$args = array(
 			'prompt'       => 'Test video',
 			'resolution'   => '1080p',
-			'aspect_ratio' => '9:16',
+			'aspect_ratio' => '2:3',
 		);
 
 		$result = $this->service->generate_video( $args );
@@ -41,7 +41,7 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertEquals( 'wp_mcp_ai_invalid_arguments', $result->get_error_code() );
 		$this->assertStringContainsString( '1080p', $result->get_error_message() );
-		$this->assertStringContainsString( '16:9', $result->get_error_message() );
+		$this->assertStringContainsString( '3:2', $result->get_error_message() );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 		$args = array(
 			'prompt'       => 'Test video',
 			'resolution'   => '1080p',
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'duration'     => 5, // Should be 8 for 1080p.
 		);
 
@@ -69,7 +69,7 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 	public function test_missing_prompt_returns_error() {
 		$args = array(
 			'resolution'   => '720p',
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 		);
 
 		$result = $this->service->generate_video( $args );
@@ -90,13 +90,13 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 			array(
 				'prompt'       => 'Test',
 				'resolution'   => '720p',
-				'aspect_ratio' => '16:9',
+				'aspect_ratio' => '3:2',
 				'duration'     => 5,
 			),
 			array(
 				'prompt'       => 'Test',
 				'resolution'   => '720p',
-				'aspect_ratio' => '9:16',
+				'aspect_ratio' => '2:3',
 				'duration'     => 6,
 			),
 		);

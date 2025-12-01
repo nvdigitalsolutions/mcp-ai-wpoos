@@ -86,7 +86,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 			'video_data'   => 'fake video data',
 			'prompt'       => 'Test prompt',
 			'duration'     => 5,
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'resolution'   => '720p',
 			'model'        => 'veo-3.1-generate-preview',
 			'provider'     => 'gemini',
@@ -141,7 +141,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		// Add metadata.
 		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
 		update_post_meta( $attachment_id, '_veo_duration', 5 );
-		update_post_meta( $attachment_id, '_veo_aspect_ratio', '16:9' );
+		update_post_meta( $attachment_id, '_veo_aspect_ratio', '3:2' );
 		update_post_meta( $attachment_id, '_veo_resolution', '720p' );
 		update_post_meta( $attachment_id, '_veo_model', 'veo-3.1-generate-preview' );
 		update_post_meta( $attachment_id, '_veo_provider', 'gemini' );
@@ -236,7 +236,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		// Add metadata.
 		update_post_meta( $attachment_id, '_veo_prompt', 'Test prompt' );
 		update_post_meta( $attachment_id, '_veo_duration', 5 );
-		update_post_meta( $attachment_id, '_veo_aspect_ratio', '16:9' );
+		update_post_meta( $attachment_id, '_veo_aspect_ratio', '3:2' );
 		update_post_meta( $attachment_id, '_veo_resolution', '720p' );
 		update_post_meta( $attachment_id, '_veo_model', 'veo-3.1-generate-preview' );
 		update_post_meta( $attachment_id, '_veo_provider', 'gemini' );

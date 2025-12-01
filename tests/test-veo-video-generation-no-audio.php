@@ -206,7 +206,7 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			array(
 				'prompt'       => 'A cat playing piano',
 				'duration'     => 5,
-				'aspect_ratio' => '16:9',
+				'aspect_ratio' => '3:2',
 				'resolution'   => '720p',
 			)
 		);
@@ -413,7 +413,7 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 				array(
 					'prompt'       => 'Test 1080p video',
 					'duration'     => $requested_duration,
-					'aspect_ratio' => '16:9',
+					'aspect_ratio' => '3:2',
 					'resolution'   => '1080p',
 				)
 			);
@@ -445,7 +445,7 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			array(
 				'prompt'       => 'Test 1080p video',
 				'duration'     => 8,
-				'aspect_ratio' => '16:9',
+				'aspect_ratio' => '3:2',
 				'resolution'   => '1080p',
 			)
 		);

@@ -60,7 +60,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 		$args = array(
 			'prompt'       => 'Test video prompt',
 			'duration'     => 5,
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'resolution'   => '720p',
 		);
 
@@ -93,7 +93,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 		$this->assertEquals( 'https://example.com/video-new-structure.mp4', $processed['video_uri'] );
 		$this->assertEquals( 'Test video prompt', $processed['prompt'] );
 		$this->assertEquals( 5, $processed['duration'] );
-		$this->assertEquals( '16:9', $processed['aspect_ratio'] );
+		$this->assertEquals( '3:2', $processed['aspect_ratio'] );
 		$this->assertEquals( '720p', $processed['resolution'] );
 	}
 
@@ -119,7 +119,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 		$args = array(
 			'prompt'       => 'Test video prompt old structure',
 			'duration'     => 4,
-			'aspect_ratio' => '9:16',
+			'aspect_ratio' => '2:3',
 			'resolution'   => '720p',
 		);
 
@@ -152,7 +152,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 		$this->assertEquals( 'https://example.com/video-old-structure.mp4', $processed['video_uri'] );
 		$this->assertEquals( 'Test video prompt old structure', $processed['prompt'] );
 		$this->assertEquals( 4, $processed['duration'] );
-		$this->assertEquals( '9:16', $processed['aspect_ratio'] );
+		$this->assertEquals( '2:3', $processed['aspect_ratio'] );
 		$this->assertEquals( '720p', $processed['resolution'] );
 	}
 
