@@ -1150,6 +1150,14 @@
             hasMetadata = true;
         }
 
+        // Extract chart HTML for visualization persistence (Chart.js tools)
+        if (displayPayload && displayPayload.chartHtml) {
+            metadata.chartHtml = displayPayload.chartHtml;
+            metadata.chartWidth = displayPayload.chartWidth || 800;
+            metadata.chartHeight = displayPayload.chartHeight || 400;
+            hasMetadata = true;
+        }
+
         // Extract usage data (token counts) for badge persistence
         if (options && options.usage) {
             metadata.usage = options.usage;
@@ -1165,6 +1173,13 @@
         // Extract capability flags for badge persistence
         if (options && options.capabilityFlags) {
             metadata.capabilityFlags = options.capabilityFlags;
+            hasMetadata = true;
+        }
+
+        // Extract tool_calls for agentic workflow persistence
+        // tool_calls are passed via displayPayload for messages that invoke tools
+        if (displayPayload && displayPayload.tool_calls && Array.isArray(displayPayload.tool_calls)) {
+            metadata.tool_calls = displayPayload.tool_calls;
             hasMetadata = true;
         }
 
@@ -10426,26 +10441,38 @@
 
                 // Fallback: Add accumulated content to conversation if no final data
                 if (streamResult && streamResult.content) {
+                    // Detect truncated responses once (avoid duplicate detection)
+                    const isTruncated = isTruncatedByOrchestration(streamResult.content);
+                    
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
                         // streamingMessageElement is now the bubble itself (merged structure)
                         
-                        // Preserve original content before rendering in case of failure
-                        // Note: We use streamResult.content (the accumulated content) rather than
-                        // streamingMessageElement.textContent to ensure we have the full content
-                        const renderedHtml = renderMarkdown(streamResult.content);
-                        
-                        // Only update innerHTML if rendering produced content
-                        // This prevents the bubble from becoming empty if rendering fails
-                        if (renderedHtml && renderedHtml.trim()) {
-                            streamingMessageElement.innerHTML = renderedHtml;
+                        // Render content with proper structure based on type
+                        if (isTruncated) {
+                            // Clear existing content and render as truncated response with collapsible details
+                            streamingMessageElement.innerHTML = '';
+                            streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--truncated');
+                            streamingMessageElement.appendChild(createTruncatedResponseElement(streamResult.content));
                         } else {
-                            // Fallback: keep original content as escaped text if rendering fails
-                            if (window.console && console.warn) {
-                                console.warn('[WP MCP AI] Markdown rendering returned empty, preserving original content');
+                            // Standard markdown rendering for regular messages
+                            // Preserve original content before rendering in case of failure
+                            // Note: We use streamResult.content (the accumulated content) rather than
+                            // streamingMessageElement.textContent to ensure we have the full content
+                            const renderedHtml = renderMarkdown(streamResult.content);
+                            
+                            // Only update innerHTML if rendering produced content
+                            // This prevents the bubble from becoming empty if rendering fails
+                            if (renderedHtml && renderedHtml.trim()) {
+                                streamingMessageElement.innerHTML = renderedHtml;
+                            } else {
+                                // Fallback: keep original content as escaped text if rendering fails
+                                if (window.console && console.warn) {
+                                    console.warn('[WP MCP AI] Markdown rendering returned empty, preserving original content');
+                                }
+                                // Convert textContent to escaped HTML to preserve the content
+                                streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');
                             }
-                            // Convert textContent to escaped HTML to preserve the content
-                            streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');
                         }
                         
                         attachSpeechButton(streamingMessageElement, state, streamResult.content);
@@ -10467,6 +10494,14 @@
 
                     // Create assistant message with display metadata
                     const displayPayload = { text: streamResult.content };
+                    
+                    // Set bubble type on the element before extracting metadata
+                    // This ensures truncated responses preserve their bubble type in storage
+                    if (streamingMessageElement && isTruncated) {
+                        streamingMessageElement.dataset.bubbleType = 'truncated';
+                        displayPayload.bubbleType = 'truncated';
+                    }
+                    
                     const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
                     const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
                     
