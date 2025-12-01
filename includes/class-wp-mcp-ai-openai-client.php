@@ -1585,15 +1585,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Use Responses API as a backup when conversation is clean (no tool calls).
 			// This allows non-image attachments to work when the conversation doesn't require tool support.
-			// If there are tool calls in the conversation, stick with Chat Completions API
+			// If there are tool calls in the conversation, stick with Chat Completions API.
+
 			// which supports tool_calls/tool_call_id mechanism.
 			if ( ! empty( $attachments ) && ! $should_use_responses_api && ! $this->has_tool_calls_in_messages( $messages ) ) {
-				// For non-image documents without tool calls, use Responses API
+				// For non-image documents without tool calls, use Responses API.
+
 				if ( ! $this->are_all_attachments_images( $attachments ) ) {
 					$should_use_responses_api = true;
 				}
-				// For images without tool calls, we can use either API
-				// Prefer Chat Completions API to maintain consistency and allow tools to work
+				// For images without tool calls, we can use either API.
+
+				// Prefer Chat Completions API to maintain consistency and allow tools to work.
+
 			}
 
 			$chat_messages     = $this->normalise_messages_for_payload( $messages );
@@ -1603,12 +1607,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
-				// When using Chat Completions API, convert input_image segments to image_url format
-				// This is necessary because Chat Completions API doesn't support input_image type
+				// When using Chat Completions API, convert input_image segments to image_url format.
+
+				// This is necessary because Chat Completions API doesn't support input_image type.
+
 				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				}
-				// Always run conversion to handle input_image segments from conversation history
+				// Always run conversion to handle input_image segments from conversation history.
+
 				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
@@ -2298,18 +2305,23 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return false;
 			}
 
-			// Check if attachments are present in options
+			// Check if attachments are present in options.
+
 			if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
-				// If all attachments are images, use Chat Completions API with image_url
-				// This allows tool calling to work with images
+				// If all attachments are images, use Chat Completions API with image_url.
+
+				// This allows tool calling to work with images.
+
 				if ( $this->are_all_attachments_images( $options['attachments'] ) ) {
 					return false;
 				}
-				// Otherwise, use Responses API for non-image documents
+				// Otherwise, use Responses API for non-image documents.
+
 				return true;
 			}
 
-			// Check for file references in message content
+			// Check for file references in message content.
+
 			$has_file_reference = false;
 
 			foreach ( $messages as $message ) {
@@ -2324,19 +2336,24 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
-					// Check for input_file type (non-image documents)
+					// Check for input_file type (non-image documents).
+
 					if ( 'input_file' === $type ) {
 						$has_file_reference = true;
 					}
 
-					// Check for file_id in various locations
-					// Only count as file reference if it's not an input_image type
+					// Check for file_id in various locations.
+
+					// Only count as file reference if it's not an input_image type.
+
 					if ( isset( $segment['file_id'] ) && 'input_image' !== $type ) {
 						$has_file_reference = true;
 					}
 
-					// Image-related file references don't require Responses API
-					// Skip checking isset for image/image_file as those are handled by type check above
+					// Image-related file references don't require Responses API.
+
+					// Skip checking isset for image/image_file as those are handled by type check above.
+
 
 					if ( strpos( $type, 'input_' ) === 0 && 'input_file' === $type && isset( $segment['file_id'] ) ) {
 						$has_file_reference = true;
@@ -2344,7 +2361,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
-			// Only use Responses API if there are non-image file references
+			// Only use Responses API if there are non-image file references.
+
 			return $has_file_reference;
 		}
 
@@ -2613,8 +2631,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					unset( $segment['image_url'] );
 				}
 			} elseif ( isset( $segment['image_url']['url'] ) ) {
-				// For Responses API, image_url should be a string URL, not an object
-				// Preserve detail if present in the nested object before extracting URL
+				// For Responses API, image_url should be a string URL, not an object.
+
+				// Preserve detail if present in the nested object before extracting URL.
+
 				if ( isset( $segment['image_url']['detail'] ) && ! isset( $segment['detail'] ) ) {
 					$segment['detail'] = sanitize_key( $segment['image_url']['detail'] );
 				}
@@ -2984,21 +3004,25 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$mime_type = '';
 
-				// Check for mime_type in the attachment metadata
+				// Check for mime_type in the attachment metadata.
+
 				if ( isset( $attachment['mime_type'] ) && '' !== $attachment['mime_type'] ) {
 					$mime_type = $attachment['mime_type'];
 				} elseif ( isset( $attachment['metadata']['mime_type'] ) && '' !== $attachment['metadata']['mime_type'] ) {
 					$mime_type = $attachment['metadata']['mime_type'];
 				} elseif ( isset( $attachment['attachment_id'] ) ) {
-					// Try to get mime type from WordPress attachment
+					// Try to get mime type from WordPress attachment.
+
 					$mime_type = get_post_mime_type( absint( $attachment['attachment_id'] ) );
 				} elseif ( isset( $attachment['id'] ) && is_numeric( $attachment['id'] ) ) {
-					// Try to get mime type from WordPress attachment using id field
+					// Try to get mime type from WordPress attachment using id field.
+
 					$mime_type = get_post_mime_type( absint( $attachment['id'] ) );
 				}
 
 				if ( '' === $mime_type ) {
-					// If we can't determine mime type, assume it's not an image (safer default)
+					// If we can't determine mime type, assume it's not an image (safer default).
+
 					return false;
 				}
 
@@ -3039,11 +3063,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
-					// Convert input_image segments to image_url format for Chat Completions API
+					// Convert input_image segments to image_url format for Chat Completions API.
+
 					if ( 'input_image' === $type ) {
-						// Check if the segment already has an image_url (from external URLs)
+						// Check if the segment already has an image_url (from external URLs).
+
 						if ( isset( $segment['image_url'] ) ) {
-							// Extract URL from image_url structure
+							// Extract URL from image_url structure.
+
 							$image_url = '';
 							if ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
 								$image_url = esc_url_raw( (string) $segment['image_url']['url'] );
@@ -3052,13 +3079,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							}
 
 							if ( '' !== $image_url ) {
-								// Convert to image_url type with proper structure
+								// Convert to image_url type with proper structure.
+
 								$converted_segment = array(
 									'type'      => 'image_url',
 									'image_url' => array( 'url' => $image_url ),
 								);
 
-								// Preserve detail level if present
+								// Preserve detail level if present.
+
 								if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
 									$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
 								} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['detail'] ) ) {
@@ -3070,9 +3099,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							}
 						}
 
-						// Handle input_image segments with file_id
+						// Handle input_image segments with file_id.
+
 						if ( ! isset( $segment['file_id'] ) ) {
-							// input_image without file_id or image_url cannot be converted - skip it
+							// input_image without file_id or image_url cannot be converted - skip it.
+
 							WP_MCP_AI_Logger::log_error(
 								'Skipping input_image segment without file_id or image_url for Chat Completions API.',
 								array(
@@ -3084,15 +3115,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 						$file_id = (string) $segment['file_id'];
 
-						// Try to get the attachment data
+						// Try to get the attachment data.
+
 						$attachment_id = 0;
 						if ( isset( $attachment_lookup[ $file_id ] ) && isset( $attachment_lookup[ $file_id ]['attachment_id'] ) ) {
 							$attachment_id = absint( $attachment_lookup[ $file_id ]['attachment_id'] );
 						}
 
-						// If we can get a URL for the image, use image_url format
+						// If we can get a URL for the image, use image_url format.
+
 						if ( $attachment_id > 0 ) {
-							// Verify attachment exists and get its post status
+							// Verify attachment exists and get its post status.
+
 							$attachment_post = get_post( $attachment_id );
 							$can_use_url     = false;
 
@@ -3102,7 +3136,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 									$public_statuses = array( 'publish' );
 								}
 
-								// Check if attachment or its parent is publicly accessible
+								// Check if attachment or its parent is publicly accessible.
+
 								if ( in_array( $attachment_post->post_status, $public_statuses, true ) || 'inherit' === $attachment_post->post_status ) {
 									$can_use_url = true;
 								}
@@ -3116,7 +3151,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 										'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
 									);
 
-									// Preserve detail level if present
+									// Preserve detail level if present.
+
 									if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
 										$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
 									}
@@ -3139,14 +3175,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						continue;
 					}
 
-					// Keep all other segments as-is
+					// Keep all other segments as-is.
+
 					$converted_segments[] = $segment;
 				}
 
-				// Handle messages that have no content after filtering
+				// Handle messages that have no content after filtering.
+
 				if ( empty( $converted_segments ) ) {
-					// Add a fallback text segment to preserve the message in chat UI
-					// This prevents empty content errors and maintains conversation continuity
+					// Add a fallback text segment to preserve the message in chat UI.
+
+					// This prevents empty content errors and maintains conversation continuity.
+
 					$converted_segments[] = array(
 						'type' => 'text',
 						'text' => '[Image could not be loaded]',
@@ -3176,7 +3216,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return int|WP_Error Token count or WP_Error on failure.
 		 */
 		public function count_tokens( array $messages, array $options = array() ) {
-			// For OpenAI, we don't have a direct token counting API endpoint,
+			// For OpenAI, we don't have a direct token counting API endpoint,.
+
 			// so we use estimation based on character count.
 			// This is a reasonable heuristic: ~4 characters per token for English text.
 
@@ -3187,12 +3228,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				}
 
-				// Count role
+				// Count role.
+
 				if ( isset( $message['role'] ) ) {
 					$total_chars += strlen( (string) $message['role'] );
 				}
 
-				// Count content
+				// Count content.
+
 				if ( isset( $message['content'] ) ) {
 					if ( is_string( $message['content'] ) ) {
 						$total_chars += strlen( $message['content'] );
@@ -3207,7 +3250,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					}
 				}
 
-				// Count tool calls
+				// Count tool calls.
+
 				if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 					$encoded = wp_json_encode( $message['tool_calls'] );
 					if ( false !== $encoded ) {
@@ -3215,7 +3259,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					}
 				}
 
-				// Count tool responses
+				// Count tool responses.
+
 				if ( isset( $message['tool_call_id'] ) ) {
 					$total_chars += strlen( (string) $message['tool_call_id'] );
 				}
@@ -3224,7 +3269,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
-			// Apply the ~4 characters per token heuristic
+			// Apply the ~4 characters per token heuristic.
+
 			$estimated_tokens = (int) ceil( $total_chars / self::CHAT_APPROX_CHARS_PER_TOKEN );
 
 			WP_MCP_AI_Logger::log_event(

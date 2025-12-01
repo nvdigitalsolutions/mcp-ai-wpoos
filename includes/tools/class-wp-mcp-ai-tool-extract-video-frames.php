@@ -134,7 +134,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		// Check FFmpeg availability.
 		if ( ! $frame_extractor->is_ffmpeg_available() ) {
 			if ( $temp_file && file_exists( $video_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
+
 				unlink( $video_path );
 			}
 
@@ -155,7 +156,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 		// Clean up temporary video file if downloaded.
 		if ( $temp_file && file_exists( $video_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
+
 			unlink( $video_path );
 		}
 
@@ -285,7 +287,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$temp_file = wp_tempnam( 'video' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents.
+
 		$written = file_put_contents( $temp_file, $body );
 
 		if ( false === $written ) {
@@ -344,7 +347,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		$upload_dir = wp_upload_dir();
 		$temp_dir   = $upload_dir['basedir'] . '/wp-mcp-ai-temp/frames_' . uniqid( '', true );
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir.
+
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_dir_failed',
@@ -387,7 +391,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 		if ( empty( $frame_paths ) ) {
 			// Clean up temp directory.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir.
+
 			rmdir( $temp_dir );
 
 			return new WP_Error(
@@ -430,7 +435,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		$output      = array();
 		$return_code = 0;
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
+
 		exec( $command, $output, $return_code );
 
 		if ( 0 !== $return_code ) {
@@ -503,7 +509,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			$filename = 'video-frame-' . ( $index + 1 ) . '-' . uniqid( '', true ) . '.jpg';
 
 			// Read file contents.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
+
 			$file_content = file_get_contents( $frame_path );
 
 			if ( false === $file_content ) {
@@ -588,7 +595,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( isset( $result['frames'] ) && is_array( $result['frames'] ) ) {
 			$has_base64 = false;
 
-			// Check if frames contain base64 data (look at first frame)
+			// Check if frames contain base64 data (look at first frame).
+
 			if ( ! empty( $result['frames'] ) ) {
 				$first_frame = reset( $result['frames'] );
 				if ( is_string( $first_frame ) && strpos( $first_frame, 'data:image/' ) === 0 ) {
@@ -597,7 +605,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			if ( $has_base64 ) {
-				// Strip base64 data but keep frame count
+				// Strip base64 data but keep frame count.
+
 				$frame_count                    = count( $result['frames'] );
 				$result['frame_count']          = $frame_count;
 				$result['frames_data_stripped'] = true;

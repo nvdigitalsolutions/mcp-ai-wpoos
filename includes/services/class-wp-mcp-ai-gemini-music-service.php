@@ -152,8 +152,10 @@ class WP_MCP_AI_Gemini_Music_Service {
 		);
 
 		// Make API request.
-		// Note: This is a simplified implementation. In production, you would use
-		// the Vertex AI endpoint: https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predict
+		// Note: This is a simplified implementation. In production, you would use.
+
+		// the Vertex AI endpoint: https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predict.
+
 		$endpoint = $this->get_music_endpoint( $model );
 		$response = wp_remote_post(
 			$endpoint,

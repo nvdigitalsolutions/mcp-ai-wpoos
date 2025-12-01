@@ -87,17 +87,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$this->oauth_manager = $oauth_manager ?? $container->get( 'admin.oauth_manager' );
 
 			// Legacy settings page registration disabled - now using WP_MCP_AI_Settings_Dashboard.
-			// add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
-			// add_action( 'admin_init', array( $this, 'register_settings' ) );
-			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+			// add_action( 'admin_menu', array( $this, 'register_settings_page' ) );.
+
+			// add_action( 'admin_init', array( $this, 'register_settings' ) );.
+
+			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );.
+
 			// Delegate OAuth handlers to the OAuth manager component.
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this->oauth_manager, 'handle_gmail_oauth_start' ) );
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this->oauth_manager, 'handle_gmail_oauth_callback' ) );
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			// Legacy settings page notices disabled - now handled by WP_MCP_AI_Settings_Dashboard.
-			// add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
-			// add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );
+			// add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );.
+
+			// add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );.
+
 
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -1301,14 +1306,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function register_settings() {
 			// REMOVED: Settings registration now handled by Settings Dashboard.
-			// The old base class register_settings() method has been removed to prevent
+			// The old base class register_settings() method has been removed to prevent.
+
 			// conflicting sanitization callbacks that wipe provider subtab settings.
-			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296
+			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296.
+
 
 			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
 			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.
 			// Keeping this would cause all checkboxes from inactive subtabs to be cleared to false.
-			// register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );
+			// register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );.
+
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',

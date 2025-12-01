@@ -74,12 +74,14 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			return null;
 		}
 
-		// Extract session key before saving
+		// Extract session key before saving.
+
 		$session_key = isset( $record['session_key'] ) ? $record['session_key'] : null;
 
 		// Check if an existing record exists for this session.
 		// If so, we'll update it instead of creating a new one to prevent duplicates.
-		// The repository must be an instance of WP_MCP_AI_Transcript_Repository and
+		// The repository must be an instance of WP_MCP_AI_Transcript_Repository and.
+
 		// support the find_existing_session_id method (added in the same version as this fix).
 		$existing_id = null;
 		$is_update   = false;

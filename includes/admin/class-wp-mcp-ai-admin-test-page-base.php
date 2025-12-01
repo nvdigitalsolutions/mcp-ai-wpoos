@@ -115,7 +115,8 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 */
 	protected function enqueue_chat_assets() {
 		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		$script_relative            = 'assets/js/chat-bundle.min.js';
 		$style_relative             = 'assets/css/chat.css';
@@ -129,7 +130,8 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 		$style_version             = $this->get_asset_version( $style_relative );
 		$cron_status_style_version = $this->get_asset_version( $cron_status_style_relative );
 
-		// Enqueue cron status styles (CSS only - JS is bundled)
+		// Enqueue cron status styles (CSS only - JS is bundled).
+
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			$cron_status_style_path,
@@ -144,7 +146,8 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			$style_version
 		);
 
-		// Register bundled chat script (includes all services in a single file)
+		// Register bundled chat script (includes all services in a single file).
+
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
 			$script_path,

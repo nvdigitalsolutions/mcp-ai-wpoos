@@ -25,7 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
 // Register autoloader for settings sections (lazy loading).
-// This loads section class files only when they are actually instantiated,
+// This loads section class files only when they are actually instantiated,.
+
 // significantly improving admin page load performance.
 spl_autoload_register(
 	function ( $class_name ) {
@@ -63,8 +64,10 @@ spl_autoload_register(
 // These need to be loaded eagerly as they register admin menus and hooks.
 // Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.
 // Note: External tools integration (Gmail, Crawl4AI, etc.) now uses sections instead of standalone page.
-// require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-plugins.php';
-// require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php';
+// require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-plugins.php';.
+
+// require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php';.
+
 
 /**
  * Initialize the settings dashboard system.
@@ -105,9 +108,12 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
+
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
+
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
+
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.
@@ -117,8 +123,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize integration admin pages.
 		// Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.
 		// Note: External tools integration (Gmail, Crawl4AI, etc.) now uses sections instead of standalone page.
-		// $GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );
-		// $GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );
+		// $GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );.
+
+		// $GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );.
+
 
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.

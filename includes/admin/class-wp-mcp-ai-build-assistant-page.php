@@ -120,7 +120,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * into a single optimized file, reducing HTTP requests from 9 files to 1 file.
 	 */
 	private function enqueue_chat_assets() {
-		// Enqueue cron status styles (CSS only - JS is bundled)
+		// Enqueue cron status styles (CSS only - JS is bundled).
+
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			WP_MCP_AI_URL . 'assets/css/cron-status.css',
@@ -136,7 +137,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 		);
 
 		// Register bundled chat script (includes all services in a single file).
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
