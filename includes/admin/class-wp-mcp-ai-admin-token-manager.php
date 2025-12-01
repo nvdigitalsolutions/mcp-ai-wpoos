@@ -91,6 +91,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 			. '.wp-mcp-ai-token-manager__security-note{margin-top:1.5rem;padding:1rem;background:#fff8e5;border-left:4px solid #dba617;}'
 			. '.wp-mcp-ai-token-manager__security-note p{margin:0;}';
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline-only style registration.
 		wp_register_style( 'wp-mcp-ai-token-manager-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-token-manager-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-token-manager-inline', $inline_css );
@@ -283,9 +284,10 @@ class WP_MCP_AI_Admin_Token_Manager {
 
 			<?php
 			// Display action status messages.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display after redirect.
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display after redirect.
 			if ( isset( $_GET['action'] ) ) :
-				$action_result  = sanitize_key( wp_unslash( $_GET['action'] ) );
+				$action_result = sanitize_key( wp_unslash( $_GET['action'] ) );
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
 				$valid_actions  = array( 'revoked', 'deleted', 'error' );
 				$action_notices = array(
 					'revoked' => array(
