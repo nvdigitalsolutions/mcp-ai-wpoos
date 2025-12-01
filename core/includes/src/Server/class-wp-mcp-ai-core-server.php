@@ -78,9 +78,38 @@ class WP_MCP_AI_Core_Server {
 	}
 
 	/**
+	 * Load baseline tool class files.
+	 *
+	 * Ensures tool classes are available before registration.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function load_baseline_tools() {
+		// Only load if not already loaded.
+		if ( class_exists( 'WP_MCP_AI_Core_Tool_Posts' ) ) {
+			return;
+		}
+
+		$tool_files = array(
+			'class-wp-mcp-ai-core-tool-posts.php',
+			'class-wp-mcp-ai-core-tool-media.php',
+			'class-wp-mcp-ai-core-tool-users.php',
+			'class-wp-mcp-ai-core-tool-taxonomies.php',
+		);
+
+		foreach ( $tool_files as $file ) {
+			$path = WP_MCP_AI_CORE_PATH . 'includes/src/Tools/' . $file;
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+	}
+
+	/**
 	 * Initialize the MCP server.
 	 *
-	 * Registers REST API endpoints and sets up hooks.
+	 * Registers baseline tools, fires registration action for add-ons,
+	 * and sets up REST API endpoints.
 	 *
 	 * @since 1.0.0
 	 */
@@ -90,6 +119,27 @@ class WP_MCP_AI_Core_Server {
 		}
 
 		$this->initialized = true;
+
+		// Load baseline tool files if not already loaded.
+		$this->load_baseline_tools();
+
+		// Register baseline tools.
+		$this->register_tool( new WP_MCP_AI_Core_Tool_Posts() );
+		$this->register_tool( new WP_MCP_AI_Core_Tool_Media() );
+		$this->register_tool( new WP_MCP_AI_Core_Tool_Users() );
+		$this->register_tool( new WP_MCP_AI_Core_Tool_Taxonomies() );
+
+		/**
+		 * Allow add-ons and third-party plugins to register tools.
+		 *
+		 * This action is the primary extension point for the MCP Core plugin.
+		 * Add-ons should hook into this action to register their tools.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param WP_MCP_AI_Core_Server $server The MCP server instance.
+		 */
+		do_action( 'wp_mcp_ai_register_tools', $this );
 
 		// Register REST API endpoints.
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
@@ -265,6 +315,9 @@ class WP_MCP_AI_Core_Server {
 	 * @return WP_MCP_AI_Core_Tool_Interface|null Tool or null if not found.
 	 */
 	public function get_tool( $slug ) {
+		// Ensure server is initialized before retrieving tools.
+		$this->init();
+
 		$slug = sanitize_key( $slug );
 		return isset( $this->tools[ $slug ] ) ? $this->tools[ $slug ] : null;
 	}
@@ -277,6 +330,9 @@ class WP_MCP_AI_Core_Server {
 	 * @return WP_MCP_AI_Core_Tool_Interface[]
 	 */
 	public function get_tools() {
+		// Ensure server is initialized before retrieving tools.
+		$this->init();
+
 		return array_values( $this->tools );
 	}
 
@@ -289,6 +345,9 @@ class WP_MCP_AI_Core_Server {
 	 * @return bool
 	 */
 	public function is_tool_registered( $slug ) {
+		// Ensure server is initialized before checking tools.
+		$this->init();
+
 		$slug = sanitize_key( $slug );
 		return isset( $this->tools[ $slug ] );
 	}
