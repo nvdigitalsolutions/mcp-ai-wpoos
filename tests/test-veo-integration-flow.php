@@ -125,7 +125,7 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 			'url'           => 'http://example.com/integration-test-video.mp4',
 			'prompt'        => 'Test video for integration',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
 			'provider'      => 'gemini',

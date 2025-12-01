@@ -86,7 +86,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'product_attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID of the product image to be composited.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'WordPress attachment ID of the product image to be composited. Can also accept a file_id string from chat file uploads (e.g., "file-abc123").', 'wp-mcp-ai-pro' ),
 				),
 				'mode'                  => array(
 					'type'        => 'string',
@@ -100,9 +100,9 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				),
 				'aspect_ratio'          => array(
 					'type'        => 'string',
-					'enum'        => array( '1:1', '4:5', '16:9', '9:16', 'auto' ),
-					'default'     => '16:9',
-					'description' => __( 'Aspect ratio for the background generation.', 'wp-mcp-ai-pro' ),
+					'enum'        => array( '1:1', '4:5', '16:9', '9:16', '3:2', '2:3', 'auto' ),
+					'default'     => '3:2',
+					'description' => __( 'Aspect ratio for the background generation. Note: For image mode, OpenAI supports 1:1, 2:3 (portrait), and 3:2 (landscape). For video mode with Veo, supports 1:1, 2:3, 3:2, and auto. 16:9 and 9:16 will map to closest supported ratios.', 'wp-mcp-ai-pro' ),
 				),
 				'duration_seconds'      => array(
 					'type'        => 'integer',
@@ -174,7 +174,23 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Validate required parameters.
-		$product_id   = isset( $arguments['product_attachment_id'] ) ? absint( $arguments['product_attachment_id'] ) : 0;
+		$product_id_param = isset( $arguments['product_attachment_id'] ) ? $arguments['product_attachment_id'] : 0;
+		
+		// Handle both integer attachment IDs and string file IDs from chat uploads.
+		// When files are uploaded via the chat attach button with OpenAI, they get a file_id like "file-abc123".
+		// We need to resolve this back to the WordPress attachment_id.
+		$product_id = 0;
+		if ( is_int( $product_id_param ) || is_numeric( $product_id_param ) ) {
+			$product_id = absint( $product_id_param );
+		} elseif ( is_string( $product_id_param ) && '' !== $product_id_param ) {
+			// This might be a file_id from OpenAI - try to resolve it to an attachment_id.
+			if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+			}
+			$attachments_helper = new WP_MCP_AI_Message_Attachments();
+			$product_id         = $attachments_helper->get_attachment_id_for_openai_file( $product_id_param );
+		}
+		
 		$scene_prompt = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
 		$mode         = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
 		$aspect_ratio = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
@@ -514,12 +530,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * Remove background from an image.
 	 *
-	 * This is a placeholder that could integrate with services like:
-	 * - remove.bg API
-	 * - Cloudinary background removal
-	 * - Local ML model
-	 *
-	 * For now, returns an error to indicate implementation is needed.
+	 * Uses the remove.bg API service or custom filter implementation.
+	 * Falls back gracefully if background removal fails.
 	 *
 	 * @param string $file_path Path to the file.
 	 * @return string|WP_Error Path to file with removed background or error.
@@ -537,10 +549,24 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			return $custom_result;
 		}
 
+		// Use the built-in remove.bg integration if available.
+		if ( function_exists( 'wp_mcp_ai_remove_image_background' ) ) {
+			return wp_mcp_ai_remove_image_background( $file_path );
+		}
+
+		// If remove-background.php isn't loaded, try to load it.
+		$remove_bg_file = WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
+		if ( file_exists( $remove_bg_file ) ) {
+			require_once $remove_bg_file;
+			if ( function_exists( 'wp_mcp_ai_remove_image_background' ) ) {
+				return wp_mcp_ai_remove_image_background( $file_path );
+			}
+		}
+
 		// Default: Return error indicating implementation needed.
 		return new WP_Error(
 			'wp_mcp_ai_bg_removal_not_configured',
-			__( 'Background removal is not configured. Please set background_mode to "preserve" or implement a custom background removal filter.', 'wp-mcp-ai-pro' )
+			__( 'Background removal is not configured. Please set background_mode to "preserve" or configure the remove.bg API key in plugin settings.', 'wp-mcp-ai-pro' )
 		);
 	}
 
@@ -593,8 +619,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * Convert aspect ratio to OpenAI image size.
 	 *
-	 * Note: OpenAI currently supports square (1024x1024) and rectangular (1792x1024, 1024x1792) sizes.
-	 * For 4:5 ratio, we use the closest available size and handle cropping/padding in compositing.
+	 * Note: OpenAI currently supports square (1024x1024) and rectangular (1536x1024, 1024x1536) sizes.
+	 * For 4:5 and 16:9 ratios, we use the closest available size and handle cropping/padding in compositing.
 	 *
 	 * @param string $aspect_ratio Aspect ratio string.
 	 * @return string OpenAI size parameter.
@@ -603,8 +629,10 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$map = array(
 			'1:1'  => '1024x1024',
 			'4:5'  => '1024x1024', // Use square and adjust in compositing (OpenAI doesn't support 4:5).
-			'16:9' => '1792x1024',
-			'9:16' => '1024x1792',
+			'16:9' => '1536x1024', // Closest available landscape size (3:2 ratio).
+			'9:16' => '1024x1536', // Closest available portrait size (2:3 ratio).
+			'3:2'  => '1536x1024', // Native OpenAI landscape size.
+			'2:3'  => '1024x1536', // Native OpenAI portrait size.
 			'auto' => 'auto',
 		);
 

@@ -96,7 +96,7 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 			'attachment_id' => 123,
 			'url'           => 'https://example.com/video.mp4',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => 'veo-2.0-generate-001',
 			'provider'      => 'gemini',

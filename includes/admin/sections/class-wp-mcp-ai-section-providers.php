@@ -156,11 +156,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_image_size'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Size', 'wp-mcp-ai' ),
-					'description' => __( 'Default size for generated images. Square format (1024x1024) works best for most purposes. Portrait and landscape formats offer creative flexibility.', 'wp-mcp-ai' ),
+					'description' => __( 'Default size for generated images. Square format (1024x1024) works best for most purposes. Portrait (2:3) and landscape (3:2) formats offer creative flexibility.', 'wp-mcp-ai' ),
 					'options'     => array(
 						'1024x1024' => '1024x1024 (Square)',
-						'1024x1792' => '1024x1792 (Portrait)',
-						'1792x1024' => '1792x1024 (Landscape)',
+						'1024x1536' => '1024x1536 (Portrait 2:3)',
+						'1536x1024' => '1536x1024 (Landscape 3:2)',
 						'auto'      => 'Auto (Let AI decide)',
 					),
 					'default'     => '1024x1024',

@@ -371,8 +371,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	protected static function get_allowed_sizes() {
 		return array(
 			'1024x1024',
-			'1024x1792',
-			'1792x1024',
+			'1024x1536',
+			'1536x1024',
 			'auto',
 		);
 	}
@@ -944,7 +944,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 * - Output tokens: Based on image size (varies by model and size)
 	 *
 	 * @param string $prompt Text prompt for image generation.
-	 * @param string $size   Image size (e.g., '1024x1024', '1024x1792').
+	 * @param string $size   Image size (e.g., '1024x1024', '1024x1536').
 	 * @param string $model  Model identifier (e.g., 'gpt-image-1', 'dall-e-3').
 	 * @return array Estimated usage array with is_estimated flag.
 	 */
@@ -957,8 +957,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// These are rough estimates based on OpenAI's image generation token consumption.
 		$output_tokens_map = array(
 			'1024x1024' => 2048,  // Standard square image.
-			'1024x1792' => 3584,  // Portrait format.
-			'1792x1024' => 3584,  // Landscape format.
+			'1024x1536' => 3072,  // Portrait format (2:3 ratio).
+			'1536x1024' => 3072,  // Landscape format (3:2 ratio).
 			'512x512'   => 512,   // DALL-E 2 size.
 			'256x256'   => 256,   // DALL-E 2 size.
 		);
@@ -990,7 +990,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 * - DALL-E 3:
 	 *   - Standard quality (1024x1024): $0.04
 	 *   - HD quality (1024x1024): $0.08
-	 *   - Larger sizes (1024x1792): Standard $0.08, HD $0.12
+	 *   - Larger sizes (1024x1536): Standard $0.08, HD $0.12
 	 *
 	 * @param string $model   Model identifier.
 	 * @param string $size    Image size.
@@ -1014,7 +1014,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			}
 
 			// Adjust for larger sizes (approximately 1.5x cost for larger).
-			if ( in_array( $size, array( '1024x1792', '1792x1024' ), true ) ) {
+			if ( in_array( $size, array( '1024x1536', '1536x1024' ), true ) ) {
 				$base_cost *= 1.5;
 			}
 
@@ -1023,7 +1023,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// DALL-E 3 pricing (per-image).
 		if ( 'dall-e-3' === $model ) {
-			$is_large = in_array( $size, array( '1024x1792', '1792x1024' ), true );
+			$is_large = in_array( $size, array( '1024x1536', '1536x1024' ), true );
 			$is_hd    = 'hd' === $quality;
 
 			if ( $is_large ) {

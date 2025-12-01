@@ -152,7 +152,7 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 			'video_data'   => 'mock_video_data',
 			'prompt'       => 'Test video for completion hook',
 			'duration'     => 5,
-			'aspect_ratio' => '16:9',
+			'aspect_ratio' => '3:2',
 			'resolution'   => '720p',
 			'model'        => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
 			'provider'     => 'gemini',

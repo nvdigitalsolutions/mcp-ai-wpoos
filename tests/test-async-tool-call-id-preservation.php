@@ -107,7 +107,7 @@ class Test_Async_Tool_Call_ID_Preservation extends WP_UnitTestCase {
 			),
 			'prompt'        => 'Test video',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => 'veo-2.0',
 			'provider'      => 'gemini',

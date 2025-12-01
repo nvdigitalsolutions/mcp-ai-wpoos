@@ -82,7 +82,7 @@ class Test_Veo_Async_Cron_Status_Sanitization extends WP_UnitTestCase {
 			'edit_url'      => 'https://example.com/wp-admin/post.php?post=456&action=edit',
 			'prompt'        => 'A cinematic video of a sunset over mountains',
 			'duration'      => 5,
-			'aspect_ratio'  => '16:9',
+			'aspect_ratio'  => '3:2',
 			'resolution'    => '720p',
 			'model'         => 'veo-3.1-generate-preview',
 			'provider'      => 'gemini',
