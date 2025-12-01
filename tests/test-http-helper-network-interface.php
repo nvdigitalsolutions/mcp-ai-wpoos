@@ -33,7 +33,7 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 */
 	public function test_network_interface_binding_applied_to_lm_studio() {
 		$defaults                                  = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']        = 'http://localhost:1234/v1';
+		$defaults['lm_studio_endpoint_url']        = 'http://localhost:1234';
 		$defaults['lm_studio_network_interface']   = '192.168.1.100';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -41,7 +41,7 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 		// Create a mock cURL handle.
 		$handle = curl_init();
 
-		// Test URL that matches LM Studio endpoint.
+		// Test URL that matches LM Studio endpoint (client appends /v1).
 		$url = 'http://localhost:1234/v1/chat/completions';
 
 		$result = WP_MCP_AI_HTTP_Helper::apply_network_interface_binding( $handle, array(), $url );
@@ -236,7 +236,7 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 */
 	public function test_private_ip_with_localhost_endpoint_detected() {
 		$defaults                                = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']      = 'http://localhost:1234/v1';
+		$defaults['lm_studio_endpoint_url']      = 'http://localhost:1234';
 		// Misconfiguration: user wants to reach 192.168.2.222 but put it in wrong field.
 		$defaults['lm_studio_network_interface'] = '192.168.2.222';
 
@@ -245,7 +245,7 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 		// Create a mock cURL handle.
 		$handle = curl_init();
 
-		// Test URL that matches LM Studio endpoint.
+		// Test URL that matches LM Studio endpoint (client appends /v1).
 		$url = 'http://localhost:1234/v1/models';
 
 		$result = WP_MCP_AI_HTTP_Helper::apply_network_interface_binding( $handle, array(), $url );

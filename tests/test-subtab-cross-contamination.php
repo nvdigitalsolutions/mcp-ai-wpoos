@@ -115,14 +115,14 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 		$_POST['subtab'] = 'custom_filters';
 		$submitted       = array(
 			'filter_default_ollama_endpoint_url'    => '',
-			'filter_default_lm_studio_endpoint_url' => 'http://localhost:1234/v1',
+			'filter_default_lm_studio_endpoint_url' => 'http://localhost:1234',
 		);
 
 		$sanitized = $section->sanitize( $submitted );
 
 		// Verify empty URLs are preserved as empty strings.
 		$this->assertSame( '', $sanitized['filter_default_ollama_endpoint_url'] );
-		$this->assertSame( 'http://localhost:1234/v1', $sanitized['filter_default_lm_studio_endpoint_url'] );
+		$this->assertSame( 'http://localhost:1234', $sanitized['filter_default_lm_studio_endpoint_url'] );
 
 		// Clean up.
 		unset( $_POST['subtab'] );

@@ -508,7 +508,7 @@ add_filter( 'wp_mcp_ai_default_ollama_endpoint_url', function( $url ) {
 
 Filter the default LM Studio endpoint URL.
 
-**Default:** `http://localhost:1234/v1`  
+**Default:** `http://localhost:1234`  
 **Since:** 1.0.0  
 **Admin UI:** Yes (Custom AI Settings tab)
 
@@ -519,7 +519,7 @@ Filter the default LM Studio endpoint URL.
 ```php
 // Use a remote LM Studio server
 add_filter( 'wp_mcp_ai_default_lm_studio_endpoint_url', function( $url ) {
-    return 'http://lm-studio-server.local:1234/v1';
+    return 'http://lm-studio-server.local:1234';
 } );
 ```
 
@@ -725,7 +725,7 @@ add_filter( 'wp_mcp_ai_default_ollama_endpoint_url', function() {
 } );
 
 add_filter( 'wp_mcp_ai_default_lm_studio_endpoint_url', function() {
-    return 'http://ai-server-02.internal:1234/v1';
+    return 'http://ai-server-02.internal:1234';
 } );
 ```
 
