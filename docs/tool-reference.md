@@ -97,6 +97,7 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Crop Image** (`crop_image`) crops an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.【F:includes/tools/class-wp-mcp-ai-tool-crop-image.php†L17-L150】
 - **Rotate Image** (`rotate_image`) rotates an image by degrees or flips it horizontally/vertically.【F:includes/tools/class-wp-mcp-ai-tool-rotate-image.php†L17-L150】
 - **Convert Image Format** (`convert_image_format`) converts an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.【F:includes/tools/class-wp-mcp-ai-tool-convert-image-format.php†L17-L150】
+- **Remove Background** (`remove_background`) removes the background from an image, making it transparent. Supports two methods: free (Python rembg library, requires `pip3 install rembg pillow`) and paid (remove.bg API, requires API key from https://www.remove.bg/api). The `method` parameter allows selection: "auto" (default, tries free first then paid), "free" (rembg only), or "paid" (remove.bg API only). Automatically detects Python availability and rembg installation status. When using the free method, requires Python 3.x and the rembg package installed on the server. The paid method requires a remove.bg API key configured in Settings → WP oOS → Tools → External Tools.【F:includes/tools/class-wp-mcp-ai-tool-remove-background.php†L17-L370】
 
 ## AI-powered media analysis
 

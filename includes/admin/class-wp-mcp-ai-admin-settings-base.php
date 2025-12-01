@@ -308,6 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'mailjet_api_secret'                   => '',
 				'mailjet_from_email'                   => '',
 				'mailjet_from_name'                    => '',
+				'removebg_api_key'                     => '',
 				'quickbooks_company_id'                => '',
 				'quickbooks_api_key'                   => '',
 				'quickbooks_client_id'                 => '',

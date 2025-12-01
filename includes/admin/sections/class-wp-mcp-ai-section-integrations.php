@@ -171,6 +171,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => 'My Site',
 				),
 
+				// remove.bg API.
+				'removebg_api_key'             => array(
+					'type'         => 'password',
+					'label'        => __( 'remove.bg API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to remove.bg API */
+						__( 'API key for remove.bg background removal service. Get your API key from %s. Note: A free tier with Python rembg is also available without an API key.', 'wp-mcp-ai' ),
+						'<a href="https://www.remove.bg/api" target="_blank">remove.bg API</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
 				// QuickBooks.
 				'quickbooks_api_key'           => array(
 					'type'         => 'password',
