@@ -754,20 +754,43 @@ class WP_MCP_AI_Gemini_File_Service {
 				$result = $this->delete_file( $file_info['file_name'] );
 
 				if ( is_wp_error( $result ) ) {
-					++$failed_count;
-					$errors[] = array(
-						'file_name' => $file_info['file_name'],
-						'error'     => $result->get_error_message(),
-					);
+					// Check if it's a 404 (file not found) - treat as successful cleanup.
+					$error_data = $result->get_error_data();
+					$status     = isset( $error_data['status'] ) ? $error_data['status'] : 0;
 
-					WP_MCP_AI_Logger::log_error(
-						'Failed to delete old Gemini file during cleanup.',
-						array(
+					if ( 404 === $status ) {
+						// File already gone on Gemini, clean up local tracking.
+						++$deleted_count;
+
+						if ( isset( $file_info['cache_key'] ) ) {
+							delete_transient( $file_info['cache_key'] );
+							$this->remove_from_tracked_files_list( $file_info['cache_key'] );
+						}
+
+						WP_MCP_AI_Logger::log_event(
+							'gemini_file_cleanup',
+							'Gemini file already deleted (404), cleaned up local tracking.',
+							array(
+								'file_name' => $file_info['file_name'],
+								'age'       => $age,
+							)
+						);
+					} else {
+						++$failed_count;
+						$errors[] = array(
 							'file_name' => $file_info['file_name'],
-							'age'       => $age,
 							'error'     => $result->get_error_message(),
-						)
-					);
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'Failed to delete old Gemini file during cleanup.',
+							array(
+								'file_name' => $file_info['file_name'],
+								'age'       => $age,
+								'error'     => $result->get_error_message(),
+							)
+						);
+					}
 				} else {
 					++$deleted_count;
 

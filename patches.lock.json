@@ -1,0 +1,17 @@
+{
+    "_hash": "5aa77cb0a679ec060ca07d019d702cf0a0653169cbd79b276a57b231e0c5a2b8",
+    "patches": {
+        "wp-phpunit/wp-phpunit": [
+            {
+                "package": "wp-phpunit/wp-phpunit",
+                "description": "Add guard check for WP_LANG_DIR constant",
+                "url": "patches/wp-phpunit-wp-lang-dir-guard.patch",
+                "sha256": "193063ae066c514012432aed894106c2bc3c7798588d7ef9e17c4b3983f39f6d",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}
