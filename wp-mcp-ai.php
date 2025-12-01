@@ -501,6 +501,7 @@ if ( ! is_admin() ) {
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
@@ -694,6 +695,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_cron_manager;
 
 		/**
+		 * Admin token manager instance.
+		 *
+		 * @var WP_MCP_AI_Admin_Token_Manager
+		 */
+		public $admin_token_manager;
+
+		/**
 		 * Resource manager instance.
 		 *
 		 * @var WP_MCP_AI_Resource_Manager
@@ -768,7 +776,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$this->federation         = $container->get( 'federation' );
 
 			if ( is_admin() ) {
-				$this->admin_cron_manager = $container->get( 'admin.cron_manager' );
+				$this->admin_cron_manager  = $container->get( 'admin.cron_manager' );
+				$this->admin_token_manager = $container->get( 'admin.token_manager' );
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
@@ -779,7 +788,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
 
 			if ( is_admin() ) {
-				$GLOBALS['wp_mcp_ai_admin_cron_manager'] = $this->admin_cron_manager;
+				$GLOBALS['wp_mcp_ai_admin_cron_manager']  = $this->admin_cron_manager;
+				$GLOBALS['wp_mcp_ai_admin_token_manager'] = $this->admin_token_manager;
 			}
 
 			WP_MCP_AI_Crawler::init();
