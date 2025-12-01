@@ -1035,7 +1035,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Pre-generate the expected filename for file-based polling.
 		// This allows us to detect completion by checking for file creation
 		// in addition to polling the Gemini API operation endpoint.
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		// Use sanitize_file_name() for consistency with save_video_to_media().
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		// Generate expected URL for the video file.
 		// This allows the chat client to display a placeholder video element
