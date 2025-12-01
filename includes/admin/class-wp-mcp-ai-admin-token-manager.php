@@ -189,18 +189,18 @@ class WP_MCP_AI_Admin_Token_Manager {
 					array(
 						'assistant_id'    => $assistant_id,
 						'assistant_title' => $assistant->post_title,
+						// Pre-process timestamp for efficient sorting.
+						'_sort_timestamp' => isset( $credential['created_at'] ) ? strtotime( $credential['created_at'] ) : 0,
 					)
 				);
 			}
 		}
 
-		// Sort by created_at descending (newest first).
+		// Sort by created_at descending (newest first) using pre-processed timestamps.
 		usort(
 			$all_credentials,
 			function ( $a, $b ) {
-				$a_time = isset( $a['created_at'] ) ? strtotime( $a['created_at'] ) : 0;
-				$b_time = isset( $b['created_at'] ) ? strtotime( $b['created_at'] ) : 0;
-				return $b_time - $a_time;
+				return $b['_sort_timestamp'] - $a['_sort_timestamp'];
 			}
 		);
 
@@ -283,25 +283,31 @@ class WP_MCP_AI_Admin_Token_Manager {
 
 			<?php
 			// Display action status messages.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display after redirect.
 			if ( isset( $_GET['action'] ) ) :
-				$action_result = sanitize_key( wp_unslash( $_GET['action'] ) );
-				if ( 'revoked' === $action_result ) :
+				$action_result  = sanitize_key( wp_unslash( $_GET['action'] ) );
+				$valid_actions  = array( 'revoked', 'deleted', 'error' );
+				$action_notices = array(
+					'revoked' => array(
+						'type'    => 'success',
+						'message' => __( 'Token successfully revoked. It can no longer be used for authentication.', 'wp-mcp-ai' ),
+					),
+					'deleted' => array(
+						'type'    => 'success',
+						'message' => __( 'Token permanently deleted.', 'wp-mcp-ai' ),
+					),
+					'error'   => array(
+						'type'    => 'error',
+						'message' => __( 'The requested action could not be completed. The token may have already been modified or does not exist.', 'wp-mcp-ai' ),
+					),
+				);
+
+				// Only display notice for valid, expected action values.
+				if ( in_array( $action_result, $valid_actions, true ) && isset( $action_notices[ $action_result ] ) ) :
+					$notice = $action_notices[ $action_result ];
 					?>
-					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Token successfully revoked. It can no longer be used for authentication.', 'wp-mcp-ai' ); ?></p>
-					</div>
-					<?php
-				elseif ( 'deleted' === $action_result ) :
-					?>
-					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Token permanently deleted.', 'wp-mcp-ai' ); ?></p>
-					</div>
-					<?php
-				elseif ( 'error' === $action_result ) :
-					?>
-					<div class="notice notice-error is-dismissible">
-						<p><?php esc_html_e( 'The requested action could not be completed. The token may have already been modified or does not exist.', 'wp-mcp-ai' ); ?></p>
+					<div class="notice notice-<?php echo esc_attr( $notice['type'] ); ?> is-dismissible">
+						<p><?php echo esc_html( $notice['message'] ); ?></p>
 					</div>
 					<?php
 				endif;
