@@ -12,8 +12,15 @@ opcache-reset.php
 *.rar
 composer.phar
 
-# Build output
-/build/
+# Build output - keep the directory but ignore temp files
+# The ZIP files in build/ are tracked for releases
+!/build/
+/build/wp-mcp-ai/
+/build/wp-mcp-ai-core/
+/build/wp-mcp-ai-pro/
+
+# Allow release ZIP files in build directory
+!build/*.zip
 
 # Ignore all vendor by default
 /vendor/*
