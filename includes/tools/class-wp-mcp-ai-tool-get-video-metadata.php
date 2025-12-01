@@ -10,11 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Retrieves comprehensive metadata about video files including duration, format, dimensions, and codec information.
  */
 class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -47,11 +49,13 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'string',
 					'description' => __( 'URL of the video file to analyze.', 'wp-mcp-ai' ),
 				),
+				'url'             => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to analyze.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
+				'file_id'         => $this->get_file_id_parameter_schema(),
 				'include_streams' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include detailed stream information (audio/video tracks). Default is true.', 'wp-mcp-ai' ),
@@ -163,10 +167,31 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error Array with file_path and temp_file flag.
 	 */
 	protected function get_video_file_info( $arguments ) {
-		if ( ! empty( $arguments['attachment_id'] ) ) {
-			$attachment_id = absint( $arguments['attachment_id'] );
-			$file_path     = get_attached_file( $attachment_id );
-			$mime_type     = get_post_mime_type( $attachment_id );
+		$attachment_id = 0;
+		$video_url     = '';
+
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				$video_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+
+		// Fallback to legacy video_url parameter.
+		if ( 0 === $attachment_id && '' === $video_url && ! empty( $arguments['video_url'] ) ) {
+			$video_url = esc_url_raw( $arguments['video_url'] );
+		}
+
+		if ( $attachment_id > 0 ) {
+			$file_path = get_attached_file( $attachment_id );
+			$mime_type = get_post_mime_type( $attachment_id );
 
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
@@ -191,14 +216,13 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		if ( ! empty( $arguments['video_url'] ) ) {
-			$video_url = esc_url_raw( $arguments['video_url'] );
+		if ( '' !== $video_url ) {
 			return $this->download_video_to_temp( $video_url );
 		}
 
 		return new WP_Error(
 			'wp_mcp_ai_missing_video',
-			__( 'Either video_url or attachment_id must be provided.', 'wp-mcp-ai' ),
+			__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
 			array( 'status' => 400 )
 		);
 	}
