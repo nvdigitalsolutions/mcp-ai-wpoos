@@ -2,6 +2,7 @@
 /**
  * Tool that returns Rank Math SEO metadata for a post.
  *
+ *
  * @package WP_MCP_AI
  */
 

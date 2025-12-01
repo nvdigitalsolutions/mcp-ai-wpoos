@@ -2,6 +2,7 @@
 /**
  * Remote MCP API connectivity tester.
  *
+ *
  * @package WP_MCP_AI
  */
 

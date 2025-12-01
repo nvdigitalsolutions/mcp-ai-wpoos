@@ -5,6 +5,7 @@
  * Tests the complete flow from chat client request through nested async
  * to final video completion and parent job update.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * This file contains the Model Context Protocol (MCP) implementation
  * for the REST API controller.
  *
+ *
  * @package WP_MCP_AI
  */
 

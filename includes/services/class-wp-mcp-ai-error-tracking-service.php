@@ -6,6 +6,7 @@
  * Provides real-time error monitoring, rate calculation, and integration with
  * the Performance Monitor CCT.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * This test verifies the fix for the issue where AI agents could select duration=4
  * from the tool schema, which would fail when falling back to Veo 2.0 (requires min 5s).
  *
+ *
  * @package WP_MCP_AI
  */
 

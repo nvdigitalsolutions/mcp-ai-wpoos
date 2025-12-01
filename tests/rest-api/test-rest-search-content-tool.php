@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Search Content tool REST endpoint.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Search_Content_Tool_Test extends WP_Test_REST_TestCase {
 	/**

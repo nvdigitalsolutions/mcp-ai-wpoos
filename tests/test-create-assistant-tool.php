@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for Create Assistant tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 

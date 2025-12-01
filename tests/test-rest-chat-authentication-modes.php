@@ -1,6 +1,8 @@
 <?php
 /**
  * Verify chat endpoint access under each supported authentication mode.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Chat_Authentication_Modes_Test extends WP_UnitTestCase {
 

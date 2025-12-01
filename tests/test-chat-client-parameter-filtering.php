@@ -5,6 +5,7 @@
  * This test demonstrates that the fix prevents "Invalid parameter(s): messages"
  * errors when AI providers include extra parameters during tool execution.
  *
+ *
  * @package WP_MCP_AI
  */
 

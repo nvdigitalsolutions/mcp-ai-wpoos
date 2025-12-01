@@ -2,6 +2,7 @@
 /**
  * Tests for image URL persistence in chat client.
  *
+ *
  * @package WP_MCP_AI
  */
 

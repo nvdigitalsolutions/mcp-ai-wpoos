@@ -2,6 +2,7 @@
 /**
  * Server-side rendering of the `wp-mcp-ai/knowledge-base` block.
  *
+ *
  * @package WP_MCP_AI
  */
 

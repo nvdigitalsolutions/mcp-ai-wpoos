@@ -8,6 +8,7 @@
  * This class follows the Template Method pattern to ensure consistent file handling
  * while allowing provider-specific implementations.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

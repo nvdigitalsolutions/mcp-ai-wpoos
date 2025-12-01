@@ -4,6 +4,7 @@
  *
  * Validates that security checks can run without errors.
  *
+ *
  * @package WP_MCP_AI
  */
 

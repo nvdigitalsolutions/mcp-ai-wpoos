@@ -2,6 +2,7 @@
 /**
  * Tests to verify all tools with user_can checks have requires-capability flag.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Ensures that the /mcp endpoint properly validates JSON-RPC requests
  * and returns clear, actionable error messages when validation fails.
  *
+ *
  * @package WP_MCP_AI
  */
 

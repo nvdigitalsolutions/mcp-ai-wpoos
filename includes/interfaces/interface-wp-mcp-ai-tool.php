@@ -2,6 +2,7 @@
 /**
  * Interface that all WP MCP AI tools must implement.
  *
+ *
  * @package WP_MCP_AI
  */
 

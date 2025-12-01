@@ -2,6 +2,7 @@
 /**
  * Elementor widget for listing an assistant's configured prompt shortcuts.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Google Maps Platform API client wrapper.
  *
+ *
  * @package WP_MCP_AI
  */
 

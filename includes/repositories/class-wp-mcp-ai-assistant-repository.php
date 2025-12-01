@@ -5,6 +5,7 @@
  * Handles database operations for assistants.
  * Part of Phase 4 refactoring (Milestone 9 - Repository Pattern).
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

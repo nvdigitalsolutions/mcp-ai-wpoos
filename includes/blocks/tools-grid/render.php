@@ -2,6 +2,7 @@
 /**
  * Server-side rendering of the `wp-mcp-ai/tools-grid` block.
  *
+ *
  * @package WP_MCP_AI
  */
 

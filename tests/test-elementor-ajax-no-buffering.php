@@ -5,6 +5,7 @@
  * Verifies that the plugin's early output buffering is skipped during
  * Elementor AJAX requests, particularly for cache clearing functionality.
  *
+ *
  * @package WP_MCP_AI
  */
 

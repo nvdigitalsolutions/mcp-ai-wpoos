@@ -2,6 +2,7 @@
 /**
  * Tests for WP_MCP_AI_Shortcodes coordinator class.
  *
+ *
  * @package WP_MCP_AI
  */
 

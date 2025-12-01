@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for media integration.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Media_Integration_Test extends WP_UnitTestCase {
 

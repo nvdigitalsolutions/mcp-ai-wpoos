@@ -2,6 +2,7 @@
 /**
  * Elementor widget for previewing the configured chat theme tokens.
  *
+ *
  * @package WP_MCP_AI
  */
 

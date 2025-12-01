@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves event data from GDACS.
  *
+ *
  * @package WP_MCP_AI
  */
 

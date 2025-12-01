@@ -2,6 +2,7 @@
 /**
  * Tests for per-assistant capability checks.
  *
+ *
  * @package WP_MCP_AI
  */
 

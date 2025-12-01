@@ -4,6 +4,8 @@
  *
  * Tests the backward-compatible query_items() implementation that handles
  * both old and new JetEngine API changes.
+ *
+ * @package WP_MCP_AI
  */
 
 /**

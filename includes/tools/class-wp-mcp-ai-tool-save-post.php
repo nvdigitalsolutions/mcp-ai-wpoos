@@ -2,6 +2,7 @@
 /**
  * Tool that creates or updates WordPress posts.
  *
+ *
  * @package WP_MCP_AI
  */
 

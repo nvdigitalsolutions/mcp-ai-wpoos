@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for Vision API tools.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 

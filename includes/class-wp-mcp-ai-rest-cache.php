@@ -5,6 +5,7 @@
  * Provides caching capabilities for REST API endpoints to improve performance.
  * Uses WordPress Transients API for consistent cache management.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

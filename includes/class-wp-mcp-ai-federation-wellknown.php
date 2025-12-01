@@ -5,6 +5,7 @@
  * Implements /.well-known/ai-peer and /.well-known/jwks.json endpoints
  * for publishing this site's MCP capabilities to the federation network.
  *
+ *
  * @package WP_MCP_AI
  */
 

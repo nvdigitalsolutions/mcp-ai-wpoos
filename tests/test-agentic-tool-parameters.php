@@ -4,6 +4,8 @@
  *
  * Ensures that tool arguments are properly validated and error handling
  * works correctly for invalid JSON and malformed parameters.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 

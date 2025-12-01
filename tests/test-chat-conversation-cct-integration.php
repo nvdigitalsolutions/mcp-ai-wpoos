@@ -7,6 +7,7 @@
  * 2. Retrieve conversation via GET /chat-transcripts
  * 3. Verify data integrity (user isolation, assistant filtering, message preservation)
  *
+ *
  * @package WP_MCP_AI
  */
 

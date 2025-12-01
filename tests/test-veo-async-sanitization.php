@@ -6,6 +6,7 @@
  * when sanitizing results for display, ensuring the chat UI can properly
  * detect and handle async video generation.
  *
+ *
  * @package WP_MCP_AI
  */
 

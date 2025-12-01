@@ -2,6 +2,7 @@
 /**
  * Tool returning items registered via JetEngine (custom post types).
  *
+ *
  * @package WP_MCP_AI
  */
 

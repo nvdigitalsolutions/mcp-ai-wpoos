@@ -4,6 +4,7 @@
  *
  * Provides insights about professions and their usage.
  *
+ *
  * @package WP_MCP_AI
  */
 

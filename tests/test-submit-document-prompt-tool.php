@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-submit-document-prompt-tool.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php';

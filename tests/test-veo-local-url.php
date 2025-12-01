@@ -5,6 +5,7 @@
  * This test verifies that when media is saved to WordPress, the returned URL
  * is from the local uploads directory, not from external storage like OneDrive.
  *
+ *
  * @package WP_MCP_AI
  */
 

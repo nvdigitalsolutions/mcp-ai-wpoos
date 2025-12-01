@@ -2,6 +2,7 @@
 /**
  * Tests for the Scrape Product tool.
  *
+ *
  * @package WP_MCP_AI
  */
 

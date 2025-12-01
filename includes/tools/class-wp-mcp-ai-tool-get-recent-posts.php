@@ -2,6 +2,7 @@
 /**
  * Tool that returns recent WordPress posts.
  *
+ *
  * @package WP_MCP_AI
  */
 

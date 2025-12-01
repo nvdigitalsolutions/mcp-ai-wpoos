@@ -18,6 +18,7 @@
  * - Minimal memory footprint
  * - Efficient database operations
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

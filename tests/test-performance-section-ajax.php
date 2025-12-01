@@ -5,6 +5,7 @@
  * Verifies that the Performance Monitoring section correctly configures
  * AJAX handlers and localized script data for performance tests.
  *
+ *
  * @package WP_MCP_AI
  */
 

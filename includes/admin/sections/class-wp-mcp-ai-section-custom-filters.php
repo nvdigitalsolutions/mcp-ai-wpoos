@@ -2,6 +2,7 @@
 /**
  * Custom AI Filters Settings Section
  *
+ *
  * @package WP_MCP_AI
  */
 

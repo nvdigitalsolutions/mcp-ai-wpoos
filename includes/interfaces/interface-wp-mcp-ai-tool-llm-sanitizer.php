@@ -2,6 +2,7 @@
 /**
  * Optional interface for tools that need custom LLM sanitization rules.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the usage tracker utilities.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {

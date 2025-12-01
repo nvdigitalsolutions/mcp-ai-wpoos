@@ -5,6 +5,7 @@
  * Provides common functionality for all REST controllers including error handling,
  * response formatting, authentication, and request validation.
  *
+ *
  * @package WP_MCP_AI
  */
 

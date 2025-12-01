@@ -2,6 +2,7 @@
 /**
  * Elementor widget for surfacing an assistant's default model settings.
  *
+ *
  * @package WP_MCP_AI
  */
 

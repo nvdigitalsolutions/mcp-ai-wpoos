@@ -6,6 +6,7 @@
  * 1. Response messages that duplicate request messages are filtered out
  * 2. Existing sessions are updated instead of creating new records
  *
+ *
  * @package WP_MCP_AI
  */
 class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {

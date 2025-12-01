@@ -2,6 +2,7 @@
 /**
  * Tool for querying remote WordPress sites in the mesh network.
  *
+ *
  * @package WP_MCP_AI
  */
 

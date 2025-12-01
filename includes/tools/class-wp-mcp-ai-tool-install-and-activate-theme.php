@@ -2,6 +2,7 @@
 /**
  * Tool for installing and activating WordPress themes.
  *
+ *
  * @package WP_MCP_AI
  */
 

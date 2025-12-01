@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for provider enable/disable functionality.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 

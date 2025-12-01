@@ -2,6 +2,7 @@
 /**
  * Tool for rotating and flipping images.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * REST API endpoints for job notification system.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool for Google Cloud Vision API Object Localization.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves product pricing from wholesale club websites using Crawl4AI web search.
  *
+ *
  * @package WP_MCP_AI
  */
 

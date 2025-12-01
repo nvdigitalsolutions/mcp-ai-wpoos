@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves LinkedIn organization insights.
  *
+ *
  * @package WP_MCP_AI
  */
 

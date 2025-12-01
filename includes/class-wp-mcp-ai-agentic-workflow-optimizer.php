@@ -11,6 +11,7 @@
  * - Smart iteration prediction
  * - Performance metrics collection
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

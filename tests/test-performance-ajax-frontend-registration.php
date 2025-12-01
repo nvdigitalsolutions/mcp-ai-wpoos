@@ -5,6 +5,7 @@
  * Verifies that the Performance section's AJAX handlers are properly
  * registered on the frontend for use by Elementor widgets.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Enables AI assistants to integrate with plugins and services
  * that haven't been explicitly integrated into WP oOS.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests to verify bearer token authentication doesn't inadvertently use session user privileges.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 

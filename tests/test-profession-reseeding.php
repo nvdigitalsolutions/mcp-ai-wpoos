@@ -4,6 +4,7 @@
  *
  * Tests for the profession reseeding functionality.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Visualizes historical performance data to help AI assistants identify
  * performance degradation or improvements over time.
  *
+ *
  * @package WP_MCP_AI
  */
 

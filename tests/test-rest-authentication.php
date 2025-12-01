@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests covering authentication paths for the MCP REST layer.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 

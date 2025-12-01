@@ -5,6 +5,7 @@
  * Handles SSE streaming operations for real-time communication with MCP clients.
  * Extracted from WP_MCP_AI_REST class as part of Milestone 3 refactoring.
  *
+ *
  * @package WP_MCP_AI
  * @subpackage REST
  * @since 1.0.0

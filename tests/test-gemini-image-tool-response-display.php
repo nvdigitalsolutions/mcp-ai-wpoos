@@ -2,6 +2,7 @@
 /**
  * Test that Gemini image tool results are properly formatted for chat display.
  *
+ *
  * @package WP_MCP_AI
  */
 

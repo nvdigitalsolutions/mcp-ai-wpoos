@@ -4,6 +4,7 @@
  *
  * Configuration profiles for common tool queue behaviors.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

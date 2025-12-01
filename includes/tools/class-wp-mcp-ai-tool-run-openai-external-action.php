@@ -2,6 +2,7 @@
 /**
  * Tool that triggers OpenAI workflows or assistants via the Responses API.
  *
+ *
  * @package WP_MCP_AI
  */
 

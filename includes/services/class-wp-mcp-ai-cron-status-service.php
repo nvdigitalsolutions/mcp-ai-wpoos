@@ -5,6 +5,7 @@
  * Provides lightweight cron job status information for chat interfaces.
  * Follows separation of concerns by encapsulating cron status logic.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

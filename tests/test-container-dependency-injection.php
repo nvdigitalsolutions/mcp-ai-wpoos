@@ -4,6 +4,7 @@
  *
  * Tests that the container properly manages dependencies and eliminates hard-coded instantiations.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool that sends a Telegram bot message.
  *
+ *
  * @package WP_MCP_AI
  */
 

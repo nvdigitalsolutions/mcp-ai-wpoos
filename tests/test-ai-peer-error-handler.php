@@ -2,6 +2,7 @@
 /**
  * Tests for AI Peer error handler integration.
  *
+ *
  * @package WP_MCP_AI
  */
 

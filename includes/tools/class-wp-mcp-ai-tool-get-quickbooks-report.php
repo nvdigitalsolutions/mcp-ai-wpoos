@@ -2,6 +2,7 @@
 /**
  * Tool that fetches reporting data from QuickBooks Online.
  *
+ *
  * @package WP_MCP_AI
  */
 

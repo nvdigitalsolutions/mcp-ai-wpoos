@@ -15,6 +15,7 @@
  *
  * Requires Plugins: wp-mcp-ai-core
  *
+ *
  * @package WP_MCP_AI_Pro
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)

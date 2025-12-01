@@ -4,6 +4,7 @@
  *
  * Displays usage pattern analysis (hourly and daily patterns).
  *
+ *
  * @package WP_MCP_AI
  * @var array $data Widget data containing pattern information.
  */

@@ -2,6 +2,7 @@
 /**
  * Test Gemini 2.5 Pro pricing update.
  *
+ *
  * @package WP_MCP_AI
  */
 

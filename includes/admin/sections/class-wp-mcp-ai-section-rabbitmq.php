@@ -5,6 +5,7 @@
  * Provides admin UI for configuring RabbitMQ integration settings
  * when deployed on Cloudways with RabbitMQ enabled.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

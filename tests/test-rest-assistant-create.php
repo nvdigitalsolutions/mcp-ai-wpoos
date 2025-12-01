@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the assistant POST REST endpoint.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 

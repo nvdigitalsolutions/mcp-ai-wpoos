@@ -4,6 +4,7 @@
  *
  * Handles OAuth flows for GitHub integration.
  *
+ *
  * @package WP_MCP_AI
  */
 

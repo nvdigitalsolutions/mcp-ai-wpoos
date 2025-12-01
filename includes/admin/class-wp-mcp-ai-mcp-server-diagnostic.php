@@ -5,6 +5,7 @@
  * Comprehensive diagnostic page for testing and verifying MCP (Model Context Protocol) functionality.
  * Tests endpoints, protocol compliance, authentication, tools, and server capabilities.
  *
+ *
  * @package WP_MCP_AI
  */
 

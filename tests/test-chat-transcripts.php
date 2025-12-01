@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for persisting chat transcripts to the JetEngine CCT.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 	/**

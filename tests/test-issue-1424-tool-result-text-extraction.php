@@ -6,6 +6,7 @@
  * are properly formatted in the chat response so the frontend can extract
  * both the image attachment and the descriptive text.
  *
+ *
  * @package WP_MCP_AI
  */
 

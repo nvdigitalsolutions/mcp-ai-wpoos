@@ -5,6 +5,7 @@
  * This test suite validates the WP_MCP_AI_STDIO_Transport class
  * which implements MCP over stdin/stdout for local agent integration.
  *
+ *
  * @package WP_MCP_AI
  */
 

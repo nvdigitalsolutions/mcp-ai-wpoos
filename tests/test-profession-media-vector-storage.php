@@ -4,6 +4,7 @@
  *
  * Tests the new media (MIME) and vector ID storage functionality for professions.
  *
+ *
  * @package WP_MCP_AI
  */
 

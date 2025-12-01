@@ -2,6 +2,7 @@
 /**
  * Optional interface for tools that define specific execution rules.
  *
+ *
  * @package WP_MCP_AI_Core
  */
 

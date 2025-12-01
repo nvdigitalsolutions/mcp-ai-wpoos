@@ -4,6 +4,7 @@
  *
  * Manages the modern tabbed settings interface.
  *
+ *
  * @package WP_MCP_AI
  */
 

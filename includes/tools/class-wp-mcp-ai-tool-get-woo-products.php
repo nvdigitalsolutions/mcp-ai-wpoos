@@ -2,6 +2,7 @@
 /**
  * Tool returning WooCommerce products.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-remote-tester.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 

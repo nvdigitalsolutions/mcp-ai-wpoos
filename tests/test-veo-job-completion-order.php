@@ -10,6 +10,7 @@
  * This ensures the notification system caches results properly and the chat client
  * receives the video URL without timing out.
  *
+ *
  * @package WP_MCP_AI
  */
 

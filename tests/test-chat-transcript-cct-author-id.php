@@ -5,6 +5,7 @@
  * Verifies that the transcript recorder properly sets cct_author_id
  * to match user_id, ensuring transcripts can be retrieved properly.
  *
+ *
  * @package WP_MCP_AI
  */
 

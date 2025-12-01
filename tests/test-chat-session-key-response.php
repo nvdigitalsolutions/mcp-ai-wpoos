@@ -5,6 +5,7 @@
  * Verifies that the server returns the session_key in the response payload
  * so the client can save it for future reference.
  *
+ *
  * @package WP_MCP_AI
  * @subpackage Tests
  */

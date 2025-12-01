@@ -4,6 +4,7 @@
  *
  * Verifies that the General tab is the default/first tab in the settings dashboard.
  *
+ *
  * @package WP_MCP_AI
  */
 

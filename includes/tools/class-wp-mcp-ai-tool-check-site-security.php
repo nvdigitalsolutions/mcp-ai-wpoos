@@ -2,6 +2,7 @@
 /**
  * Tool that checks if the WordPress site has security issues.
  *
+ *
  * @package WP_MCP_AI
  */
 

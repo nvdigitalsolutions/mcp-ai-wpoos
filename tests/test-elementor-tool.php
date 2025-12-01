@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Elementor templates tool.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_Elementor_Tool_Availability_Test extends WP_UnitTestCase {

@@ -2,6 +2,7 @@
 /**
  * Tool exposing JetEngine REST API route metadata.
  *
+ *
  * @package WP_MCP_AI
  */
 

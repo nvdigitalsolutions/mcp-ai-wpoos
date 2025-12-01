@@ -6,6 +6,7 @@
  * These are dynamic blocks that use PHP render callbacks since they need
  * to fetch real-time data (assistants, tools) from the WordPress backend.
  *
+ *
  * @package WP_MCP_AI
  */
 

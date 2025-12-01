@@ -2,6 +2,7 @@
 /**
  * Tests for SVG file validation based on provider.
  *
+ *
  * @package WP_MCP_AI
  */
 

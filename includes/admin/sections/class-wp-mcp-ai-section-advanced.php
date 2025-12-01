@@ -2,6 +2,7 @@
 /**
  * Advanced Settings Section
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Ollama client wrapper.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 

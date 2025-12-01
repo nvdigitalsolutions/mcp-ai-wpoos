@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests that the tools endpoint normalises incoming tool identifiers.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase {
 	/**

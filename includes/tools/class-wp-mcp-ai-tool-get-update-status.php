@@ -2,6 +2,7 @@
 /**
  * Tool exposing pending core, plugin, and theme updates.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool for cropping images.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool that inspects the availability of the WP-CLI binary.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Test WP_MCP_AI_Cost_Calculator class.
  *
+ *
  * @package WP_MCP_AI
  */
 

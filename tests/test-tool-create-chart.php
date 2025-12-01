@@ -2,6 +2,7 @@
 /**
  * Tests for WP_MCP_AI_Tool_Create_Chart class.
  *
+ *
  * @package WP_MCP_AI
  */
 

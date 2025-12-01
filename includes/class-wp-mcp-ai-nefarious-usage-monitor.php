@@ -4,6 +4,7 @@
  *
  * Detects suspicious usage patterns and automatically disables tools to protect the site.
  *
+ *
  * @package WP_MCP_AI
  */
 

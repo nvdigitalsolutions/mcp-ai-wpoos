@@ -2,6 +2,7 @@
 /**
  * Tool that scrapes product information from a URL and downloads images.
  *
+ *
  * @package WP_MCP_AI
  */
 

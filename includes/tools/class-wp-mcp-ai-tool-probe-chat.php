@@ -2,6 +2,7 @@
 /**
  * Tool that probes the local chat endpoint without contacting the model provider.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Data access layer for teams.
  * Handles all database queries and caching for team data.
  *
+ *
  * @package WP_MCP_AI
  */
 

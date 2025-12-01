@@ -2,6 +2,7 @@
 /**
  * Tool for converting image formats.
  *
+ *
  * @package WP_MCP_AI
  */
 

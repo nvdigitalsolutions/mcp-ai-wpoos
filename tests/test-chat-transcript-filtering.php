@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for chat transcript filtering by assistant_id.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Transcript_Filtering_Test extends WP_UnitTestCase {
 	/**

@@ -5,6 +5,7 @@
  * Verifies that the chat widget properly declares script and style dependencies
  * for Elementor editor rendering.
  *
+ *
  * @package WP_MCP_AI
  */
 

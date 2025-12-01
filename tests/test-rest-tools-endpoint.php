@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the /tools REST endpoint.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
 

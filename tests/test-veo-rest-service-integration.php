@@ -8,6 +8,7 @@
  * 3. Service layer validation works end-to-end
  * 4. Default duration (5 seconds) is applied correctly through the entire stack
  *
+ *
  * @package WP_MCP_AI
  */
 

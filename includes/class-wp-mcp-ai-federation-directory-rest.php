@@ -4,6 +4,7 @@
  *
  * Provides endpoints for peer registration, discovery, and search.
  *
+ *
  * @package WP_MCP_AI
  */
 

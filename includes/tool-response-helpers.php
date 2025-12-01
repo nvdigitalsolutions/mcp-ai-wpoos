@@ -4,6 +4,7 @@
  *
  * Provides utility functions for working with generic tool responses.
  *
+ *
  * @package WP_MCP_AI
  */
 

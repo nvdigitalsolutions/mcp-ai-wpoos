@@ -2,6 +2,7 @@
 /**
  * JetEngine Custom Content Type registration for AI assistants.
  *
+ *
  * @package WP_MCP_AI
  */
 

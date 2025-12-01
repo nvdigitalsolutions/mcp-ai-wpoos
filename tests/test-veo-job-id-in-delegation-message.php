@@ -6,6 +6,7 @@
  * the veo job ID is properly included in the message field so the chat UI
  * can display it to the user.
  *
+ *
  * @package WP_MCP_AI
  */
 

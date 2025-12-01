@@ -4,6 +4,7 @@
  *
  * Handles cost-related REST API endpoints.
  *
+ *
  * @package WP_MCP_AI
  */
 

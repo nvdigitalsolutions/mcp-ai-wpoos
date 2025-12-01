@@ -2,6 +2,7 @@
 /**
  * Tool for generating videos using Gemini Veo models with automatic fallback.
  *
+ *
  * @package WP_MCP_AI
  */
 

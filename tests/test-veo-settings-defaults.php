@@ -2,6 +2,7 @@
 /**
  * Tests for Veo video generation settings defaults.
  *
+ *
  * @package WP_MCP_AI
  */
 

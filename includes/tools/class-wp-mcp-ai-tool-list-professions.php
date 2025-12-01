@@ -4,6 +4,7 @@
  *
  * Allows AI assistants to discover available professions.
  *
+ *
  * @package WP_MCP_AI
  */
 

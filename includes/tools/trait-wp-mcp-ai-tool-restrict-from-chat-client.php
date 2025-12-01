@@ -6,6 +6,7 @@
  * sensitive operations (code execution, system modifications, etc.) and
  * should only be available via controlled MCP endpoints, not public chat interfaces.
  *
+ *
  * @package WP_MCP_AI
  */
 

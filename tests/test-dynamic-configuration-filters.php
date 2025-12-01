@@ -3,6 +3,8 @@
  * Tests for dynamic configuration filters.
  *
  * Ensures that all hardcoded values can be overridden via WordPress filters.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Dynamic_Configuration_Filters_Test extends WP_UnitTestCase {
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for token sanitization across external messaging tools.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	/**

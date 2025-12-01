@@ -2,6 +2,7 @@
 /**
  * Server-Sent Events (SSE) stream handler for real-time job updates.
  *
+ *
  * @package WP_MCP_AI
  */
 

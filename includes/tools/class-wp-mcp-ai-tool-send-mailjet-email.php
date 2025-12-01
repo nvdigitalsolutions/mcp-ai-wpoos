@@ -2,6 +2,7 @@
 /**
  * Tool that sends emails through the Mailjet API.
  *
+ *
  * @package WP_MCP_AI
  */
 

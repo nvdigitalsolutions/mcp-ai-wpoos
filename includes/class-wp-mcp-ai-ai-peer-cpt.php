@@ -5,6 +5,7 @@
  * Stores peer site registrations with their capabilities, health status,
  * and metadata for discovery and routing.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Handles registration and management of the team CPT.
  * Teams group multiple professionals together for deployment as a set of assistants.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Crawl4AI local REST API wrapper.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 

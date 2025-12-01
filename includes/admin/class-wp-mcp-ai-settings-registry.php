@@ -4,6 +4,7 @@
  *
  * Central registry for all plugin settings, organized by tabs and sections.
  *
+ *
  * @package WP_MCP_AI
  */
 

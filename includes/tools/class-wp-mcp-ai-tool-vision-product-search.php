@@ -2,6 +2,7 @@
 /**
  * Tool for Google Cloud Vision API Product Search.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool for creating Google Calendar events.
  *
+ *
  * @package WP_MCP_AI
  */
 

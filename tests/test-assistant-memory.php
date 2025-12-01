@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for assistant memory integration.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
 	use WP_MCP_AI_Docx_Test_Helper;

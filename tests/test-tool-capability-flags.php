@@ -2,6 +2,7 @@
 /**
  * Tests for tool capability flags system.
  *
+ *
  * @package WP_MCP_AI
  */
 

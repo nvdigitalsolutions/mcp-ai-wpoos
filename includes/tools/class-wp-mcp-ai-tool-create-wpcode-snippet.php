@@ -2,6 +2,7 @@
 /**
  * Tool that creates or updates WPCode snippets.
  *
+ *
  * @package WP_MCP_AI
  */
 

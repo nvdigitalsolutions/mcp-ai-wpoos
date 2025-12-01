@@ -8,6 +8,7 @@
  * This class is maintained for backward compatibility only.
  * All functionality has been moved to the Performance Reporting Service.
  *
+ *
  * @package WP_MCP_AI
  */
 

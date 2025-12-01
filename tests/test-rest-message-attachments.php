@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for REST chat message attachment handling.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 	use WP_MCP_AI_Docx_Test_Helper;

@@ -8,6 +8,7 @@
  * CRITICAL: All methods implement defensive programming with try-catch blocks
  * and fallback rendering to ensure the admin UI never breaks.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

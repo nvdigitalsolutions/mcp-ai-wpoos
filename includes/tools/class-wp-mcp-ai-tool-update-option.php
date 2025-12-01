@@ -2,6 +2,7 @@
 /**
  * Tool for updating WordPress options.
  *
+ *
  * @package WP_MCP_AI
  */
 

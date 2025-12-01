@@ -2,6 +2,7 @@
 /**
  * Tool that creates WooCommerce product drafts populated with merchandising data.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Manages per-tool token usage limits and tracking.
  *
+ *
  * @package WP_MCP_AI
  */
 

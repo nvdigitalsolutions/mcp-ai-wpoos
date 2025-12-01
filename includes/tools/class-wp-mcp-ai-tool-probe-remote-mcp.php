@@ -2,6 +2,7 @@
 /**
  * Tool that probes a remote MCP REST namespace.
  *
+ *
  * @package WP_MCP_AI
  */
 

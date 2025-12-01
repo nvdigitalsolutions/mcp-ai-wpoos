@@ -4,6 +4,7 @@
  *
  * Registers performance monitoring blocks for use in the block editor.
  *
+ *
  * @package WP_MCP_AI
  */
 

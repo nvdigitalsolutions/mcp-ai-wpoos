@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves ReliefWeb reports filtered by country or disaster type.
  *
+ *
  * @package WP_MCP_AI
  */
 

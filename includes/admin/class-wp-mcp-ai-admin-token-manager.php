@@ -10,6 +10,7 @@
  * - Audit trail information (who created/revoked)
  * - Bulk visibility across all assistants
  *
+ *
  * @package WP_MCP_AI
  */
 

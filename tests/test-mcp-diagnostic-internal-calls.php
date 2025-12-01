@@ -5,6 +5,7 @@
  * Verifies that the MCP diagnostic page uses internal REST API calls
  * instead of making HTTP requests to itself.
  *
+ *
  * @package WP_MCP_AI
  */
 

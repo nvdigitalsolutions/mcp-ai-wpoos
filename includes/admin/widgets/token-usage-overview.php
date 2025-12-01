@@ -2,6 +2,7 @@
 /**
  * Token Usage Overview Widget Template
  *
+ *
  * @package WP_MCP_AI
  * @var array $data Widget data containing usage statistics and chart data.
  */

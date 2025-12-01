@@ -6,6 +6,7 @@
  * by reading files directly from the filesystem instead of downloading via HTTP.
  * This prevents 403 errors when sites have authentication enabled.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -4,6 +4,7 @@
  *
  * Allows AI assistants to create or update profession definitions.
  *
+ *
  * @package WP_MCP_AI
  */
 

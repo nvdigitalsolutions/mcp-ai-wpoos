@@ -2,6 +2,7 @@
 /**
  * Simple JWT Login integration for WP oOS.
  *
+ *
  * @package WP_MCP_AI
  */
 

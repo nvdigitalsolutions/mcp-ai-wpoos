@@ -5,6 +5,7 @@
  * Verifies that the Elementor editor loads correctly when WP_DEBUG is enabled
  * by suppressing display_errors to prevent debug output from breaking JSON responses.
  *
+ *
  * @package WP_MCP_AI
  */
 

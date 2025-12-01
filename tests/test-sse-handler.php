@@ -2,6 +2,7 @@
 /**
  * Tests for WP_MCP_AI_SSE_Handler class.
  *
+ *
  * @package WP_MCP_AI
  * @subpackage Tests
  */

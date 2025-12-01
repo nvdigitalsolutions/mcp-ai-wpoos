@@ -2,6 +2,7 @@
 /**
  * Elementor integration for the chat shortcode.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -6,6 +6,7 @@
  * the response_payload is properly constructed with assistant messages
  * in the OpenAI API format so they can be extracted when retrieving the transcript.
  *
+ *
  * @package WP_MCP_AI
  */
 

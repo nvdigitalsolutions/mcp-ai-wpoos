@@ -2,6 +2,7 @@
 /**
  * Tests for Tool Toggle AJAX Handler
  *
+ *
  * @package WP_MCP_AI
  */
 

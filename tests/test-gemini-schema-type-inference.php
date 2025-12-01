@@ -2,6 +2,7 @@
 /**
  * Tests for Gemini schema sanitization with type inference from structure.
  *
+ *
  * @package WP_MCP_AI
  */
 

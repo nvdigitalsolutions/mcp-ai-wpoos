@@ -5,6 +5,7 @@
  * Verifies that capability flags are included in tool execution responses
  * for both chat endpoints and direct tool execution endpoints.
  *
+ *
  * @package WP_MCP_AI
  */
 

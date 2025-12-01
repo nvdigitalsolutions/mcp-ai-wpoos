@@ -2,6 +2,7 @@
 /**
  * Tool that purges the Cloudflare cache for the configured zone.
  *
+ *
  * @package WP_MCP_AI
  */
 

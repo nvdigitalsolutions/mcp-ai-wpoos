@@ -2,6 +2,7 @@
 /**
  * Tests to verify that all tools are registered with the correct slugs.
  *
+ *
  * @package WP_MCP_AI
  */
 

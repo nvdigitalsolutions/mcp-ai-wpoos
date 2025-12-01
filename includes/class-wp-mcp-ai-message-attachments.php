@@ -2,6 +2,7 @@
 /**
  * Helper for preparing structured chat message segments and attachments.
  *
+ *
  * @package WP_MCP_AI
  */
 

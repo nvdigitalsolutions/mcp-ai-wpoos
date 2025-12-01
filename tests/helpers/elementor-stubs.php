@@ -1,6 +1,8 @@
 <?php
 /**
  * Minimal Elementor stubs for unit tests.
+ *
+ * @package WP_MCP_AI
  */
 
 namespace Elementor {

@@ -2,6 +2,7 @@
 /**
  * WooCommerce Integration Admin Page
  *
+ *
  * @package WP_MCP_AI
  */
 

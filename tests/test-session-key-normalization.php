@@ -5,6 +5,7 @@
  * Ensures that session keys with UUIDs (containing hyphens) are handled
  * consistently across POST and GET endpoints.
  *
+ *
  * @package WP_MCP_AI
  * @subpackage Tests
  */

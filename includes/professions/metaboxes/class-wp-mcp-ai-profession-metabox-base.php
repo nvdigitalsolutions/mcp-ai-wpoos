@@ -2,6 +2,7 @@
 /**
  * Base class for Profession metaboxes.
  *
+ *
  * @package WP_MCP_AI
  */
 

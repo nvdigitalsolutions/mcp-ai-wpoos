@@ -5,6 +5,7 @@
  * Provides a quick snapshot of overall system health to help AI assistants
  * rapidly identify critical issues.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -8,6 +8,7 @@
  * - AJAX handler load tests
  * - Multi-instance widget stress tests
  *
+ *
  * @package WP_MCP_AI
  */
 

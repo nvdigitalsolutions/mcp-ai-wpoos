@@ -2,6 +2,7 @@
 /**
  * Tests for security hardening improvements.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool that searches Gmail messages using stored OAuth credentials.
  *
+ *
  * @package WP_MCP_AI
  */
 

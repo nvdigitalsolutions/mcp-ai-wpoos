@@ -2,6 +2,7 @@
 /**
  * Tool returning a quick link to the OpenAI usage dashboard.
  *
+ *
  * @package WP_MCP_AI
  */
 

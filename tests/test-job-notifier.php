@@ -2,6 +2,7 @@
 /**
  * Tests for job notification system.
  *
+ *
  * @package WP_MCP_AI
  */
 

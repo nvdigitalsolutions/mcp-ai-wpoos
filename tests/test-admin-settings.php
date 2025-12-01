@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the admin settings class.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 

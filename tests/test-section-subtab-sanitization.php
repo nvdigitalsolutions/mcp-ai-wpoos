@@ -2,6 +2,7 @@
 /**
  * Tests for section subtab sanitization (fix for private method visibility issue).
  *
+ *
  * @package WP_MCP_AI
  */
 

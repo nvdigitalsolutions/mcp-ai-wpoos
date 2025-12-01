@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for automatic JetEngine data stores module activation.
+ *
+ * @package WP_MCP_AI
  */
 
 if ( ! class_exists( 'Jet_Engine_Modules' ) ) {

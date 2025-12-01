@@ -1,6 +1,8 @@
 <?php
 /**
  * Helper client that forces the Chat Completions endpoint during detection.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
 

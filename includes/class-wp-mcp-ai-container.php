@@ -5,6 +5,7 @@
  * Simple PSR-11 inspired DI container for managing plugin dependencies.
  * Part of Phase 4 refactoring (Milestone 10).
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

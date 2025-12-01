@@ -2,6 +2,7 @@
 /**
  * Test coverage for the shortcode front-end integrations.
  *
+ *
  * @package WP_MCP_AI\Tests
  */
 

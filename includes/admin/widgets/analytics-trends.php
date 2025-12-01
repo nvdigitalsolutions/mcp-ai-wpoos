@@ -4,6 +4,7 @@
  *
  * Displays trend analysis with linear regression for token usage.
  *
+ *
  * @package WP_MCP_AI
  * @var array $data Widget data containing trend information.
  */

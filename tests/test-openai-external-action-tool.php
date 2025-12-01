@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-openai-external-action-tool.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';

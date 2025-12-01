@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the explicit transcript save endpoint (POST /chat-transcripts).
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	/**

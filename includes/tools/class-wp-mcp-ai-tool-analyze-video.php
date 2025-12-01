@@ -2,6 +2,7 @@
 /**
  * Tool for analyzing video content using AI vision capabilities.
  *
+ *
  * @package WP_MCP_AI
  */
 

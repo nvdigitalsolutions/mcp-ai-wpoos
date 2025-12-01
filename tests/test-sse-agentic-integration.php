@@ -4,6 +4,7 @@
  *
  * Tests Server-Sent Events streaming during agentic tool execution loops.
  *
+ *
  * @package WP_MCP_AI
  */
 

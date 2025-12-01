@@ -2,6 +2,7 @@
 /**
  * Tool for searching Media Library attachments accessible to the assistant.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tests for Video Frame Extractor Service.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves Google Business Profile insights.
  *
+ *
  * @package WP_MCP_AI
  */
 

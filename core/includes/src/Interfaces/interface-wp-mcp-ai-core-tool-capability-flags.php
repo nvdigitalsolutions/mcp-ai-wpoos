@@ -2,6 +2,7 @@
 /**
  * Optional interface for tools that expose capability flags.
  *
+ *
  * @package WP_MCP_AI_Core
  */
 

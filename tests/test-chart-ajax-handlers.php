@@ -2,6 +2,7 @@
 /**
  * Test chart AJAX handlers for Token Manager
  *
+ *
  * @package WP_MCP_AI
  */
 

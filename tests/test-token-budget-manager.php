@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Token Budget Manager.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Token_Budget_Manager_Test extends WP_UnitTestCase {
 

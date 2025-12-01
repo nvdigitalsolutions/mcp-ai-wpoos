@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-site-health-tool.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php';
 

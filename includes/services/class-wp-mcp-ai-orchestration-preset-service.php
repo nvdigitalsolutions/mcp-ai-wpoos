@@ -5,6 +5,7 @@
  * Handles configuration preset management for the orchestration layer.
  * Provides business logic for preset definitions, application, and auto-detection.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

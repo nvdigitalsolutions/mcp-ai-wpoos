@@ -5,6 +5,7 @@
  * This test validates the fix for Gemini and other providers that require or recommend
  * the 'name' field in tool result messages according to 2024 API specifications.
  *
+ *
  * @package WP_MCP_AI
  */
 

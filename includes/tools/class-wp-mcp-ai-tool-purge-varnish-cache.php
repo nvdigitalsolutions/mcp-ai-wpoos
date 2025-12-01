@@ -2,6 +2,7 @@
 /**
  * Tool that purges the Varnish cache for the local server.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Backward-compatible loader for the tool registry singleton.
  *
+ *
  * @package WP_MCP_AI
  */
 

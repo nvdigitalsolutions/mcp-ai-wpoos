@@ -2,6 +2,7 @@
 /**
  * Silent upgrader skin for plugin and theme installations.
  *
+ *
  * @package WP_MCP_AI
  */
 

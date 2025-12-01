@@ -4,6 +4,7 @@
  *
  * Handles the expertise areas, default tools, and knowledge base fields.
  *
+ *
  * @package WP_MCP_AI
  */
 

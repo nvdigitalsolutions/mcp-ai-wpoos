@@ -2,6 +2,7 @@
 /**
  * Tool returning recent WooCommerce orders.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * This test verifies that the register_meta_boxes() method only runs
  * for assistant post types and doesn't crash when editing regular pages/posts.
  *
+ *
  * @package WP_MCP_AI
  */
 

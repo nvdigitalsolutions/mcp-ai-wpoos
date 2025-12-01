@@ -11,6 +11,7 @@
  * - Does NOT manage cron scheduling
  * - Provides metrics and diagnostics only
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

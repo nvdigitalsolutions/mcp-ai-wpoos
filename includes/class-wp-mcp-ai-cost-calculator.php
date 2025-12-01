@@ -4,6 +4,7 @@
  *
  * Calculates costs based on provider-specific pricing models.
  *
+ *
  * @package WP_MCP_AI
  */
 

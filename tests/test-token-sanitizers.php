@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-token-sanitizers.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-whatsapp-message.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php';

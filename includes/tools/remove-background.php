@@ -2,6 +2,7 @@
 /**
  * Tool for removing image backgrounds using remove.bg API.
  *
+ *
  * @package WP_MCP_AI
  */
 

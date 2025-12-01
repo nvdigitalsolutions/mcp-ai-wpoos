@@ -6,6 +6,7 @@
  * the original tool_call_id from the LLM is preserved in the response
  * and can be properly extracted by the chat client.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tests for the Open-Meteo forecast tool.
  *
+ *
  * @package WP_MCP_AI
  */
 

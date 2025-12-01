@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Auth0 GitHub bridge integration.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_Auth0_Github_Integration_Test extends WP_UnitTestCase {

@@ -12,6 +12,7 @@
  * - Tool permission escalation
  * - Credential leakage protection
  *
+ *
  * @package WP_MCP_AI
  */
 

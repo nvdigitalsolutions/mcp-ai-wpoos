@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests covering assistant tool registrations and sanitization.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
 

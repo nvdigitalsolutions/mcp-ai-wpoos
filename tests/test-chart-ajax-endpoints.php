@@ -2,6 +2,7 @@
 /**
  * Test chart AJAX endpoints registration
  *
+ *
  * @package WP_MCP_AI
  */
 

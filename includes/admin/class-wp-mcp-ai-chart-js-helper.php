@@ -5,6 +5,7 @@
  * Provides helper methods for integrating Chart.js visualizations
  * in the Token Manager admin section.
  *
+ *
  * @package WP_MCP_AI
  */
 

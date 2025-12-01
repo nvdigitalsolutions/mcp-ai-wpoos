@@ -4,6 +4,7 @@
  *
  * Handles UI rendering logic for the settings page.
  *
+ *
  * @package WP_MCP_AI
  */
 

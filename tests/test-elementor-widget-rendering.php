@@ -5,6 +5,7 @@
  * Verifies that the chat widget renders correctly in Elementor editor mode
  * and displays a preview notice to inform users.
  *
+ *
  * @package WP_MCP_AI
  */
 

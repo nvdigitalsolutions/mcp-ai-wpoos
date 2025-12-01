@@ -8,6 +8,7 @@
  * - Maximum iteration limits prevent infinite loops
  * - Ollama/local LLM timeouts work correctly
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Test chart "Today" option and new distribution charts for Token Manager
  *
+ *
  * @package WP_MCP_AI
  */
 

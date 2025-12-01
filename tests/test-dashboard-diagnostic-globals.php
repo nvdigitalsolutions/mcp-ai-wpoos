@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the dashboard diagnostic global variables check.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 

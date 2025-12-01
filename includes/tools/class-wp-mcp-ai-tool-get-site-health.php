@@ -2,6 +2,7 @@
 /**
  * Tool that returns a structured view of Site Health tests.
  *
+ *
  * @package WP_MCP_AI
  */
 

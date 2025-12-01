@@ -6,6 +6,7 @@
  * to prevent Chart.js "canvas already in use" errors when multiple widgets
  * are present or when Elementor re-renders widgets in the editor.
  *
+ *
  * @package WP_MCP_AI
  */
 

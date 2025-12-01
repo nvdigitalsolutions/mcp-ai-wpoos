@@ -5,6 +5,7 @@
  * This test ensures that both methods use the same image model and API configuration,
  * preventing accidental divergence in future modifications.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -5,6 +5,7 @@
  * Orchestrates video analysis workflow including file caching, upload management,
  * and AI provider integration. Follows SoC principles by centralizing business logic.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

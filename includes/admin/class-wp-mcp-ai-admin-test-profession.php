@@ -6,6 +6,7 @@
  * Allows testing a profession by creating a temporary assistant and chatting with it.
  * Uses base class for better SoC and code reuse.
  *
+ *
  * @package WP_MCP_AI
  */
 

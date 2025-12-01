@@ -2,6 +2,7 @@
 /**
  * Tool that sends a WhatsApp message via the WhatsApp Cloud API.
  *
+ *
  * @package WP_MCP_AI
  */
 

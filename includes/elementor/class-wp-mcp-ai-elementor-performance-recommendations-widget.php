@@ -5,6 +5,7 @@
  * Shows actionable recommendations to help AI assistants suggest fixes
  * for performance and security issues.
  *
+ *
  * @package WP_MCP_AI
  */
 

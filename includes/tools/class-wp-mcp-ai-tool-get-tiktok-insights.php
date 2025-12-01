@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves TikTok account insights.
  *
+ *
  * @package WP_MCP_AI
  */
 

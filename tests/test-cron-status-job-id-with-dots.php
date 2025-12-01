@@ -6,6 +6,7 @@
  * dots (e.g., veo_69203b5b2388f5.11575461) are properly handled by the
  * REST API endpoint.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for WP_MCP_AI_HTTP_Helper network interface binding.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 

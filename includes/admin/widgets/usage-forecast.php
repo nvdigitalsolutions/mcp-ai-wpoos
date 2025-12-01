@@ -2,6 +2,7 @@
 /**
  * Usage Forecast Widget Template
  *
+ *
  * @package WP_MCP_AI
  * @var array $data Widget data containing forecast information.
  */

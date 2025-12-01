@@ -9,6 +9,7 @@
  * If AJAX functionality is needed in the future, it should integrate with
  * WP_MCP_AI_Admin_AJAX_Handlers following the existing pattern in the codebase.
  *
+ *
  * @package WP_MCP_AI
  */
 

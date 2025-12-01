@@ -5,6 +5,7 @@
  * Verifies that when a veo job completes, it also completes the parent async job
  * and includes proper context (assistant_id, user_id) in completion hooks.
  *
+ *
  * @package WP_MCP_AI
  */
 

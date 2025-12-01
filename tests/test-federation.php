@@ -2,6 +2,7 @@
 /**
  * Tests for the federation system.
  *
+ *
  * @package WP_MCP_AI
  */
 

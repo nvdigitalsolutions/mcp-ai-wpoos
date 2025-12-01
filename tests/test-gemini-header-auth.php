@@ -2,6 +2,7 @@
 /**
  * Tests for Gemini client header-based authentication.
  *
+ *
  * @package WP_MCP_AI
  */
 

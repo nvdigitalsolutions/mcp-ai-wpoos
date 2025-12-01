@@ -5,6 +5,7 @@
  * Verifies that widgets can be registered and instantiated without
  * output buffering suppressing their content.
  *
+ *
  * @package WP_MCP_AI
  */
 

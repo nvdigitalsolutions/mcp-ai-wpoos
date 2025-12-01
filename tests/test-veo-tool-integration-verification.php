@@ -9,6 +9,7 @@
  * 4. Service validates and corrects invalid durations
  * 5. End-to-end flow works as expected
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tests for get_recent_posts tool.
  *
+ *
  * @package WP_MCP_AI
  */
 

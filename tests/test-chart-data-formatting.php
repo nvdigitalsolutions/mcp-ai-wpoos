@@ -2,6 +2,7 @@
 /**
  * Test Chart.js data formatting and helper methods
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -4,6 +4,7 @@
  *
  * Admin page for building assistants with a tabbed interface.
  *
+ *
  * @package WP_MCP_AI
  */
 

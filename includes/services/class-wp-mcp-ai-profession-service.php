@@ -5,6 +5,7 @@
  * Business logic layer for profession operations.
  * Separates business logic from data access (repository) and presentation (CPT).
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -6,6 +6,7 @@
  * error responses from the AJAX endpoint, especially when the error
  * data is an object with message, details, cli_command, and setup_command.
  *
+ *
  * @package WP_MCP_AI
  */
 

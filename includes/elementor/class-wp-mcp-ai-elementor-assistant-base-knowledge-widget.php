@@ -2,6 +2,7 @@
 /**
  * Elementor widget for listing an assistant's base knowledge files and vector store.
  *
+ *
  * @package WP_MCP_AI
  */
 

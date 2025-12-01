@@ -2,6 +2,7 @@
 /**
  * Simple logging utility for WP oOS.
  *
+ *
  * @package WP_MCP_AI
  */
 

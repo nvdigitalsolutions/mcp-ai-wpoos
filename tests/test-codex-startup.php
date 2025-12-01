@@ -1,6 +1,8 @@
 <?php
 /**
  * Test suite for the Codex startup provisioning script.
+ *
+ * @package WP_MCP_AI
  */
 
 class Test_Codex_Startup extends WP_UnitTestCase {

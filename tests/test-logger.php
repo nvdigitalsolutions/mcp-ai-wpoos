@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the logging helper.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 

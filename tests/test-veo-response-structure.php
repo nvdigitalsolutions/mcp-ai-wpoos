@@ -4,6 +4,7 @@
  *
  * Tests that the service can handle both old (legacy) and new (2025) API response structures.
  *
+ *
  * @package WP_MCP_AI
  */
 

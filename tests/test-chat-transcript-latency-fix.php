@@ -6,6 +6,7 @@
  * This test validates the fix for the issue where response_completed_at was not updated
  * after the agentic loop, causing inaccurate latency measurements.
  *
+ *
  * @package WP_MCP_AI
  */
 

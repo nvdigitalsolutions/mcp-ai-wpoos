@@ -2,6 +2,7 @@
 /**
  * Resource Manager for dynamic AI resource management.
  *
+ *
  * @package WP_MCP_AI
  */
 

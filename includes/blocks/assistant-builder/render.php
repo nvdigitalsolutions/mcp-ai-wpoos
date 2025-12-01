@@ -2,6 +2,7 @@
 /**
  * Server-side rendering of the `wp-mcp-ai/assistant-builder` block.
  *
+ *
  * @package WP_MCP_AI
  */
 

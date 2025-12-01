@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests covering team post type registrations and sanitization.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Team_Tools_Test extends WP_UnitTestCase {
 

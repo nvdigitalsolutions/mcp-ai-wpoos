@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for comments integration.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Comments_Integration_Test extends WP_UnitTestCase {
 

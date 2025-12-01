@@ -2,6 +2,7 @@
 /**
  * Test OpenAI image generation tool agentic loop support.
  *
+ *
  * @package WP_MCP_AI
  */
 

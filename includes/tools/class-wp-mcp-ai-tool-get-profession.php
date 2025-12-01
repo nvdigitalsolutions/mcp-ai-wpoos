@@ -4,6 +4,7 @@
  *
  * Retrieves detailed information about a specific profession.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -2,6 +2,7 @@
 /**
  * Tests for WP_MCP_AI_Response_Attachments class.
  *
+ *
  * @package WP_MCP_AI
  */
 

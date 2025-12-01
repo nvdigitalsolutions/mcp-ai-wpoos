@@ -1,4 +1,11 @@
 <?php
+/**
+ * tests/rest/test-simple-jwt-login-authentication.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
+
 namespace SimpleJWTLogin\Modules {
 	if ( ! class_exists( __NAMESPACE__ . '\\WordPressData' ) ) {
 		class WordPressData {

@@ -4,6 +4,7 @@
  *
  * Safely loads and manages custom tools from the custom-tools directory.
  *
+ *
  * @package WP_MCP_AI
  */
 
@@ -326,6 +327,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 <?php
 /**
  * Custom Tool: {$class_name}
+ *
  *
  * @package WP_MCP_AI
  */

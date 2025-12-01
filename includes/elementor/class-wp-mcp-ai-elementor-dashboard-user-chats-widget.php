@@ -2,6 +2,7 @@
 /**
  * Elementor widget for browsing a user's chat transcript history.
  *
+ *
  * @package WP_MCP_AI
  */
 

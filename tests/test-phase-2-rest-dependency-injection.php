@@ -5,6 +5,7 @@
  * Tests that REST controller uses dependency injection for authenticator, validator, and SSE handler.
  * Part of Phase 2 separation of concerns refactoring.
  *
+ *
  * @package WP_MCP_AI
  */
 

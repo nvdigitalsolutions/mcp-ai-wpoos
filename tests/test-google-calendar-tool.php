@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Google Calendar tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 

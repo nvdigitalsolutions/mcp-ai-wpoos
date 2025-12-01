@@ -8,6 +8,7 @@
  * This transport is designed for MCP clients like Claude Desktop that
  * communicate via stdin/stdout rather than HTTP.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

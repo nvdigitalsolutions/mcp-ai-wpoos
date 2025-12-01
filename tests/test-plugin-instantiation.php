@@ -2,6 +2,7 @@
 /**
  * Test plugin instantiation and bootstrap.
  *
+ *
  * @package WP_MCP_AI
  */
 

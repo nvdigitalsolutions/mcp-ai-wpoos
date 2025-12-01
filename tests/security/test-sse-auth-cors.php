@@ -5,6 +5,7 @@
  * Tests to verify that the /sse endpoint requires authentication
  * and respects CORS/origin headers properly.
  *
+ *
  * @package WP_MCP_AI
  */
 

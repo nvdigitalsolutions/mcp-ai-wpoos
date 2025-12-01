@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the assistant DELETE REST endpoint.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 

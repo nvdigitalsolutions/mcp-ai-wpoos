@@ -2,6 +2,7 @@
 /**
  * Tool returning Elementor templates.
  *
+ *
  * @package WP_MCP_AI
  */
 

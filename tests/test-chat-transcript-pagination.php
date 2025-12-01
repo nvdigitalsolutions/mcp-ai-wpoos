@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for chat transcript pagination functionality.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	/**

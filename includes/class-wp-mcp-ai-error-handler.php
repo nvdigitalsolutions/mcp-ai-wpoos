@@ -5,6 +5,7 @@
  * Provides consistent error handling across the plugin with user-friendly
  * messages and recovery suggestions.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

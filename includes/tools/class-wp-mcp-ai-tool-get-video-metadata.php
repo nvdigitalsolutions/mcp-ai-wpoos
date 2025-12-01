@@ -2,6 +2,7 @@
 /**
  * Tool for retrieving detailed video metadata.
  *
+ *
  * @package WP_MCP_AI
  */
 

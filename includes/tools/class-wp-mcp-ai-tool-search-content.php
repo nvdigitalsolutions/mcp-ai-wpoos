@@ -2,6 +2,7 @@
 /**
  * Tool that searches WordPress content with taxonomy and meta filters.
  *
+ *
  * @package WP_MCP_AI
  */
 

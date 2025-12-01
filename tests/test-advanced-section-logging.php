@@ -2,6 +2,7 @@
 /**
  * Tests for Advanced Section Logging Table Display
  *
+ *
  * @package WP_MCP_AI
  */
 

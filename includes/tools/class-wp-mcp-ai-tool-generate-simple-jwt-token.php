@@ -2,6 +2,7 @@
 /**
  * Tool for generating Simple JWT Login bearer tokens.
  *
+ *
  * @package WP_MCP_AI
  */
 

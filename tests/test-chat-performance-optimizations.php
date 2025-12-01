@@ -2,6 +2,7 @@
 /**
  * Tests for chat performance optimizations.
  *
+ *
  * @package WP_MCP_AI
  */
 

@@ -6,6 +6,7 @@
  * Tools implementing this interface can declare their priority, timeout, and
  * retry behavior when executed via RabbitMQ.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

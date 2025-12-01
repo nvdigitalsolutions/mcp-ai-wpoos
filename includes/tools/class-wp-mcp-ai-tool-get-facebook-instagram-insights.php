@@ -2,6 +2,7 @@
 /**
  * Tool that retrieves insights for Facebook Pages and Instagram business accounts.
  *
+ *
  * @package WP_MCP_AI
  */
 

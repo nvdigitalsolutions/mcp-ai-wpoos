@@ -5,6 +5,7 @@
  * Loads and initializes the profession management system.
  * Follows separation of concerns pattern.
  *
+ *
  * @package WP_MCP_AI
  */
 

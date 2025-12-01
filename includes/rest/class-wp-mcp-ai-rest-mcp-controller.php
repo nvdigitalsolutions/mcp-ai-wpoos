@@ -5,6 +5,7 @@
  * Handles MCP (Model Context Protocol) specific endpoints including
  * JSON-RPC 2.0 protocol, SSE streaming, and assistant directory.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

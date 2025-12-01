@@ -5,6 +5,7 @@
  * Extracts key frames from video files using FFmpeg for use with OpenAI Vision API.
  * Supports multiple video formats and provides intelligent frame selection.
  *
+ *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

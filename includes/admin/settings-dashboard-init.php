@@ -4,6 +4,7 @@
  *
  * Loads the modular settings dashboard system.
  *
+ *
  * @package WP_MCP_AI
  */
 

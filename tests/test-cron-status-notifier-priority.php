@@ -7,6 +7,7 @@
  * being detected because the service was only checking the transient status,
  * not the Job Notifier cache which is updated when completion hooks fire.
  *
+ *
  * @package WP_MCP_AI
  */
 

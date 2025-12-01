@@ -4,6 +4,7 @@
  *
  * Handles default AI provider, model, and temperature settings for professions.
  *
+ *
  * @package WP_MCP_AI
  */
 

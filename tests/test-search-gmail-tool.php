@@ -1,4 +1,10 @@
 <?php
+/**
+ * tests/test-search-gmail-tool.php
+ *
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';

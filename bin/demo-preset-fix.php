@@ -5,6 +5,7 @@
  *
  * This script simulates the old vs new behavior.
  *
+ *
  * @package WP_MCP_AI
  */
 
