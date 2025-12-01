@@ -5,6 +5,7 @@
  * @package WP_MCP_AI
  */
 
+// Load required tool classes.
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
 
