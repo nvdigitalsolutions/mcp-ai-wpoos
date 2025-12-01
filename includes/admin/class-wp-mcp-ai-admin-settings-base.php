@@ -322,7 +322,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'tiktok_access_token'                  => '',
 				'tiktok_client_key'                    => '',
 				'tiktok_client_secret'                 => '',
-				'brave_search_api_key'                 => '',
 				'gmail_client_id'                      => '',
 				'gmail_client_secret'                  => '',
 				'gmail_refresh_token'                  => '',
