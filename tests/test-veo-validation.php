@@ -2,7 +2,6 @@
 /**
  * Tests for Veo video generation parameter validation.
  *
- *
  * @package WP_MCP_AI
  */
 

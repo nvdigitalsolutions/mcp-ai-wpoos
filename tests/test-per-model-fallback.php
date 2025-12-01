@@ -2,7 +2,6 @@
 /**
  * Test per-model high token fallback configuration.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for WP_MCP_AI_Request_Context utilities.
  *
- *
  * @package WP_MCP_AI
  */
 

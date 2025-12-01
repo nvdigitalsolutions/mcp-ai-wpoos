@@ -4,7 +4,6 @@
  *
  * Displays database optimization and caching performance metrics.
  *
- *
  * @package WP_MCP_AI
  * @var array $data Widget data containing performance statistics.
  */

@@ -2,7 +2,6 @@
 /**
  * Admin UI for Create Assistant button.
  *
- *
  * @package WP_MCP_AI
  */
 

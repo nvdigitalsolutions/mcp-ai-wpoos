@@ -2,7 +2,6 @@
 /**
  * Test double-async execution fix for video generation.
  *
- *
  * @package WP_MCP_AI
  */
 

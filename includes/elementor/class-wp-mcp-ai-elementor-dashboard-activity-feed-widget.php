@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying recent tool and request activity.
  *
- *
  * @package WP_MCP_AI
  */
 

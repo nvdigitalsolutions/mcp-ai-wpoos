@@ -5,7 +5,6 @@
  * Validates that the MCP diagnostic AJAX endpoints work correctly
  * and return proper responses for testing the MCP protocol implementation.
  *
- *
  * @package WP_MCP_AI
  */
 

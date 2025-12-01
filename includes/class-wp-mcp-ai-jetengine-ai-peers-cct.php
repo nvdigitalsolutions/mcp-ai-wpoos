@@ -2,7 +2,6 @@
 /**
  * JetEngine Custom Content Type registration for AI Peers.
  *
- *
  * @package WP_MCP_AI
  */
 

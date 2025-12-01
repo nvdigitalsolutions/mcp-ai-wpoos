@@ -2,7 +2,6 @@
 /**
  * Tests for the Count Tokens tool.
  *
- *
  * @package WP_MCP_AI
  */
 

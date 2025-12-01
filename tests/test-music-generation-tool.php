@@ -2,7 +2,6 @@
 /**
  * tests/test-music-generation-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

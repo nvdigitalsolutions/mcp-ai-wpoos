@@ -6,7 +6,6 @@
  * 1. All AJAX action hooks are registered
  * 2. All handlers have proper security checks (nonce verification and capability checks)
  *
- *
  * @package WP_MCP_AI
  */
 

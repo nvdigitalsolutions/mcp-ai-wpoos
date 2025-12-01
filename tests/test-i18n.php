@@ -2,7 +2,6 @@
 /**
  * Tests for internationalisation (i18n) functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

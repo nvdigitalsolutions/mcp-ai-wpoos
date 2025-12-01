@@ -2,7 +2,6 @@
 /**
  * Tests for Cron Status REST endpoint
  *
- *
  * @package WP_MCP_AI
  */
 

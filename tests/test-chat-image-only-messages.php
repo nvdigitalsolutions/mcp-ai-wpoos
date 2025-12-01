@@ -5,7 +5,6 @@
  * This test validates the fix for the issue where image-only messages cause
  * "Invalid parameter(s): messages" errors in the agentic workflow.
  *
- *
  * @package WP_MCP_AI
  */
 

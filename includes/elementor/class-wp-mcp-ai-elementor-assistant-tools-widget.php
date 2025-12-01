@@ -2,7 +2,6 @@
 /**
  * Elementor widget that lists tools assigned to a specific assistant.
  *
- *
  * @package WP_MCP_AI
  */
 

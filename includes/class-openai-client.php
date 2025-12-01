@@ -2,7 +2,6 @@
 /**
  * Backward-compatible loader for the OpenAI client wrapper.
  *
- *
  * @package WP_MCP_AI
  */
 

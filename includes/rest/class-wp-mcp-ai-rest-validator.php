@@ -6,7 +6,6 @@
  * This class is part of the refactoring effort to separate concerns from the
  * monolithic REST controller class.
  *
- *
  * @package WP_MCP_AI
  * @subpackage REST
  * @since 1.0.0

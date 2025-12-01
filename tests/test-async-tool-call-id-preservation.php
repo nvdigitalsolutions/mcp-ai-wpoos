@@ -5,7 +5,6 @@
  * Verifies that the original tool_call_id from the LLM is preserved
  * in async job execution and returned in the completion response.
  *
- *
  * @package WP_MCP_AI
  */
 

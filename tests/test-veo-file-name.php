@@ -5,7 +5,6 @@
  * This test verifies that when a video is generated, the response includes
  * the file_name field so the chat client can display the correct filename.
  *
- *
  * @package WP_MCP_AI
  */
 

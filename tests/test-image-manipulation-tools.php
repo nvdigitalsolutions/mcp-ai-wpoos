@@ -2,7 +2,6 @@
 /**
  * Test image manipulation tools.
  *
- *
  * @package WP_MCP_AI
  */
 

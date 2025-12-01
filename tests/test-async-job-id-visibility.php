@@ -4,7 +4,6 @@
  *
  * Verifies that job IDs are properly communicated to users when async tools are queued.
  *
- *
  * @package WP_MCP_AI
  */
 

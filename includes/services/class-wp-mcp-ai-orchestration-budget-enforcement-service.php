@@ -5,7 +5,6 @@
  * Applies orchestration layer settings to control budget management features.
  * This service hooks into resource manager filters to enforce orchestration policies.
  *
- *
  * @package WP_MCP_AI
  */
 

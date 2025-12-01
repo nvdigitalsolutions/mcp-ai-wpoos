@@ -4,7 +4,6 @@
  *
  * Verifies that the autoloader properly loads section classes on demand.
  *
- *
  * @package WP_MCP_AI
  */
 

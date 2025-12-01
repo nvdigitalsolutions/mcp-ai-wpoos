@@ -2,7 +2,6 @@
 /**
  * Tracks per-user language model usage for billing purposes.
  *
- *
  * @package WP_MCP_AI
  */
 

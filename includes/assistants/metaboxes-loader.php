@@ -2,7 +2,6 @@
 /**
  * Metaboxes loader for Assistant CPT.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

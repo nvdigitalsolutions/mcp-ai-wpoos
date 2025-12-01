@@ -11,7 +11,6 @@
  * - Caching layers cache responses that should vary by context parameter
  * - Server configurations don't preserve query parameters
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

@@ -4,7 +4,6 @@
  *
  * Handles settings UI and configuration for the federation features.
  *
- *
  * @package WP_MCP_AI
  */
 

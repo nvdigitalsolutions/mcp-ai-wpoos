@@ -2,7 +2,6 @@
 /**
  * Test tool result sanitization for display to ensure base64 content is stripped.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tool that generates images using Gemini's multimodal endpoint.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Ensures async and sync results include proper messages and metadata
  * for display in chat interfaces without bloating LLM context.
  *
- *
  * @package WP_MCP_AI
  */
 

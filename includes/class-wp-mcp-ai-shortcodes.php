@@ -2,7 +2,6 @@
 /**
  * Coordinates registration of the chat shortcodes.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Simple logging utility for debugging.
  *
- *
  * @package WP_MCP_AI_Shared
  */
 

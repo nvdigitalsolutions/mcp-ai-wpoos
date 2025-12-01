@@ -2,7 +2,6 @@
 /**
  * Test token manager AJAX handlers
  *
- *
  * @package WP_MCP_AI
  */
 

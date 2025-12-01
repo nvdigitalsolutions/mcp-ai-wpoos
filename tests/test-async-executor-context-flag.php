@@ -2,7 +2,6 @@
 /**
  * Test async executor passes in_async_executor context flag.
  *
- *
  * @package WP_MCP_AI
  */
 

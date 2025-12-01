@@ -2,7 +2,6 @@
 /**
  * tests/test-remote-tester.php
  *
- *
  * @package WP_MCP_AI
  */
 

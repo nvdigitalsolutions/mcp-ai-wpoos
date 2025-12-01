@@ -2,7 +2,6 @@
 /**
  * Tests for Gemini tool parameter sanitization - scalar property value fix.
  *
- *
  * @package WP_MCP_AI
  */
 

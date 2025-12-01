@@ -2,7 +2,6 @@
 /**
  * Tests for orchestration view-aware sanitization.
  *
- *
  * @package WP_MCP_AI
  */
 

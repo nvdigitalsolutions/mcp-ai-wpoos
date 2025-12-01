@@ -2,7 +2,6 @@
 /**
  * Shared text formatting helpers for Elementor widgets.
  *
- *
  * @package WP_MCP_AI
  */
 

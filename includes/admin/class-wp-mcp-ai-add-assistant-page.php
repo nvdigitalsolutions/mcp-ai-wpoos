@@ -4,7 +4,6 @@
  *
  * Admin page for creating assistants from professional templates.
  *
- *
  * @package WP_MCP_AI
  */
 

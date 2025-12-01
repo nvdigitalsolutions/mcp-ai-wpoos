@@ -9,7 +9,6 @@
  * - Cron arguments are handled correctly
  * - Multiple simultaneous cron jobs don't interfere
  *
- *
  * @package WP_MCP_AI
  */
 

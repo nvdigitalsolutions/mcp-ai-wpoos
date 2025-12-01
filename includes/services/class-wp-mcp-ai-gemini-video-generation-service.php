@@ -15,7 +15,6 @@
  * - 1080p Requirement: Enforces 8 seconds duration for 1080p resolution (REQUIRED_1080P_DURATION constant)
  * - Aspect Ratio: 1080p only supported for 16:9 (line 165-168)
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

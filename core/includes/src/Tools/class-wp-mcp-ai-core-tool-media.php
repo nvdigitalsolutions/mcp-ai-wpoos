@@ -2,7 +2,6 @@
 /**
  * Media Tool - Operations for WordPress media attachments.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

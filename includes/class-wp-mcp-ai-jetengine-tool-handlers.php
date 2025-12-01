@@ -2,7 +2,6 @@
 /**
  * Helper for invoking JetEngine REST controllers on behalf of MCP tools.
  *
- *
  * @package WP_MCP_AI
  */
 

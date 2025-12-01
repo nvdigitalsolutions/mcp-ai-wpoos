@@ -2,7 +2,6 @@
 /**
  * Tool that submits a document alongside a follow-up prompt.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Test Assistant Builder Blocks.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * This test suite validates that the /mcp endpoint correctly implements
  * the Model Context Protocol specification using JSON-RPC 2.0 format.
  *
- *
  * @package WP_MCP_AI
  */
 

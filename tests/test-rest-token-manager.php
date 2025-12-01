@@ -2,7 +2,6 @@
 /**
  * Test REST API token manager endpoints.
  *
- *
  * @package WP_MCP_AI
  */
 

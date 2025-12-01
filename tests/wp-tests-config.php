@@ -2,7 +2,6 @@
 /**
  * Local configuration for the WordPress PHPUnit test suite.
  *
- *
  * @package WP_MCP_AI
  */
 

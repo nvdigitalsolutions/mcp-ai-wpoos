@@ -9,7 +9,6 @@
  * This test addresses the bug where videos generated via async executor
  * were not being returned to the chat client with OpenAI as provider.
  *
- *
  * @package WP_MCP_AI
  */
 

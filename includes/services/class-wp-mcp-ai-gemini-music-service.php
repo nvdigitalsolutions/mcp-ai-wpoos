@@ -2,7 +2,6 @@
 /**
  * Service for generating music using Google Gemini Lyria model.
  *
- *
  * @package WP_MCP_AI
  */
 

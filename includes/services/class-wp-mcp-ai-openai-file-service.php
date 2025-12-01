@@ -13,7 +13,6 @@
  * - Cleanup of old files via cron
  * - Support for WordPress attachments and local files
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

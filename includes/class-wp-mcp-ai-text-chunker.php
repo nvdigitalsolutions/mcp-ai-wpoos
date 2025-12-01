@@ -2,7 +2,6 @@
 /**
  * Text chunking utility for splitting large documents.
  *
- *
  * @package WP_MCP_AI
  */
 

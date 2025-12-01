@@ -2,7 +2,6 @@
 /**
  * Tests for profession tools registration in tool group map.
  *
- *
  * @package WP_MCP_AI
  */
 

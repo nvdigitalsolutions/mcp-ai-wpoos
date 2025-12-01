@@ -4,7 +4,6 @@
  *
  * Provides methods to interact with the GitHub REST API.
  *
- *
  * @package WP_MCP_AI
  */
 

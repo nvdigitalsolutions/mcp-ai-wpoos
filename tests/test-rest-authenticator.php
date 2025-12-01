@@ -2,7 +2,6 @@
 /**
  * Tests for REST API Authenticator
  *
- *
  * @package WP_MCP_AI
  * @subpackage Tests
  */

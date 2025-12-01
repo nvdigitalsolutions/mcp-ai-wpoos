@@ -5,7 +5,6 @@
  * Provides REST endpoints for analytics data including trends, patterns,
  * comparisons, and anomaly detection.
  *
- *
  * @package WP_MCP_AI
  */
 

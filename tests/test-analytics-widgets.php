@@ -2,7 +2,6 @@
 /**
  * Test Analytics Widgets
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Tests that the Veo video generation service correctly falls back to async mode
  * when approaching PHP timeout (10 seconds before max_execution_time).
  *
- *
  * @package WP_MCP_AI
  */
 

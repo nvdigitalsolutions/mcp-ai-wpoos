@@ -2,7 +2,6 @@
 /**
  * Tests for Queue Manager.
  *
- *
  * @package WP_MCP_AI
  */
 

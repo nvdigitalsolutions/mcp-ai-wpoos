@@ -2,7 +2,6 @@
 /**
  * Bootstrap default tool registrations.
  *
- *
  * @package WP_MCP_AI
  */
 

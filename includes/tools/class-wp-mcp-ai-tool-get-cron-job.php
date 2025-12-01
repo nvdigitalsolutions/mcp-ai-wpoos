@@ -2,7 +2,6 @@
 /**
  * Tool for getting details of a specific WordPress cron job.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Shortcode renderer for the front-end chat interface.
  *
- *
  * @package WP_MCP_AI
  */
 

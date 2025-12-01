@@ -5,7 +5,6 @@
  * Ensures that all endpoints properly validate their input parameters
  * and return clear, actionable error messages when validation fails.
  *
- *
  * @package WP_MCP_AI
  */
 

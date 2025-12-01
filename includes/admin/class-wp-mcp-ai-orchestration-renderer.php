@@ -9,7 +9,6 @@
  * and fallback rendering to ensure the admin UI never breaks, even if
  * underlying services fail.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

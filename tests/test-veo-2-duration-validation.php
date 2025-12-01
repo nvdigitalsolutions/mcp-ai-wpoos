@@ -5,7 +5,6 @@
  * Tests that the final validation stage correctly enforces model-specific minimum durations.
  * This prevents "durationSeconds is out of bound" errors from the Gemini API.
  *
- *
  * @package WP_MCP_AI
  */
 

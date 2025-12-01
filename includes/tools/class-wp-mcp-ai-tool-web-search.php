@@ -2,7 +2,6 @@
 /**
  * Tool that performs a web search using the configured provider.
  *
- *
  * @package WP_MCP_AI
  */
 

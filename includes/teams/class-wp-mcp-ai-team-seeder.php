@@ -4,7 +4,6 @@
  *
  * Seeds default teams into the database on plugin activation.
  *
- *
  * @package WP_MCP_AI
  */
 

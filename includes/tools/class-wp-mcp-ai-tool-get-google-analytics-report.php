@@ -2,7 +2,6 @@
 /**
  * Tool that fetches reporting data from Google Analytics 4.
  *
- *
  * @package WP_MCP_AI
  */
 

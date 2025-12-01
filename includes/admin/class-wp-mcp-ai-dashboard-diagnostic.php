@@ -5,7 +5,6 @@
  * Temporary admin page to diagnose why the settings dashboard isn't loading.
  * This creates a simple diagnostic page under Tools menu.
  *
- *
  * @package WP_MCP_AI
  */
 

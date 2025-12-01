@@ -4,7 +4,6 @@
  *
  * Displays anomaly detection with Z-score analysis.
  *
- *
  * @package WP_MCP_AI
  * @var array $data Widget data containing anomaly information.
  */

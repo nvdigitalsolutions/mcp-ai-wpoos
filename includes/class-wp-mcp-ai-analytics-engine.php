@@ -5,7 +5,6 @@
  * Provides advanced statistical analysis, trend detection, and pattern recognition
  * for token usage data.
  *
- *
  * @package WP_MCP_AI
  */
 

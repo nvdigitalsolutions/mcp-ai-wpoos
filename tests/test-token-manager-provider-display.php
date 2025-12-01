@@ -2,7 +2,6 @@
 /**
  * Tests for Token Manager provider display name functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

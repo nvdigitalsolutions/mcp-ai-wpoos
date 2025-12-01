@@ -10,7 +10,6 @@
  * - Auth0 bearer tokens
  * - Guest tokens
  *
- *
  * @package WP_MCP_AI
  */
 

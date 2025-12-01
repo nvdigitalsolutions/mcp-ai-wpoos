@@ -2,7 +2,6 @@
 /**
  * Tests for Authentication section subtab settings persistence.
  *
- *
  * @package WP_MCP_AI
  */
 

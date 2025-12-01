@@ -2,7 +2,6 @@
 /**
  * Backward-compatible loader for the assistant custom post type class.
  *
- *
  * @package WP_MCP_AI
  */
 

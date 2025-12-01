@@ -2,7 +2,6 @@
 /**
  * Test Veo 2.0 fallback functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

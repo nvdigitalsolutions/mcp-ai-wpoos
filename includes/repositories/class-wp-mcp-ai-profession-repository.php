@@ -6,7 +6,6 @@
  * Handles all database queries and caching for profession data.
  * Separates data access from business logic (service) and presentation (CPT).
  *
- *
  * @package WP_MCP_AI
  */
 

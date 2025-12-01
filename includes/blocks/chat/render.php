@@ -2,7 +2,6 @@
 /**
  * Server-side rendering of the `wp-mcp-ai/chat` block.
  *
- *
  * @package WP_MCP_AI
  */
 

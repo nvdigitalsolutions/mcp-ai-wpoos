@@ -5,7 +5,6 @@
  * Verifies that tool results are properly sanitized before being sent to the LLM
  * in the agentic loop, while preserving the full result for frontend display.
  *
- *
  * @package WP_MCP_AI
  */
 

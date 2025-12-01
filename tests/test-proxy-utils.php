@@ -2,7 +2,6 @@
 /**
  * Tests for WP_MCP_AI_Proxy_Utils class.
  *
- *
  * @package WP_MCP_AI
  */
 

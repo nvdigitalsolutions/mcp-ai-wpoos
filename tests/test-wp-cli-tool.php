@@ -2,7 +2,6 @@
 /**
  * tests/test-wp-cli-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

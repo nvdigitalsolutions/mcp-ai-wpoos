@@ -9,7 +9,6 @@
  * - Database query count tracking
  * - Response time regression tests
  *
- *
  * @package WP_MCP_AI
  */
 

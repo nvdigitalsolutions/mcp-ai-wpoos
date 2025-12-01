@@ -2,7 +2,6 @@
 /**
  * Tool returning a diagnostic snapshot of the WP oOS environment.
  *
- *
  * @package WP_MCP_AI
  */
 

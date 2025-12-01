@@ -2,7 +2,6 @@
 /**
  * Tool for extracting specific frames from video files.
  *
- *
  * @package WP_MCP_AI
  */
 

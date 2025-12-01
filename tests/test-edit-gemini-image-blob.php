@@ -2,7 +2,6 @@
 /**
  * Test Edit Gemini Image Tool with Blob Data
  *
- *
  * @package WP_MCP_AI
  */
 

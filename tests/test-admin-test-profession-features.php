@@ -2,7 +2,6 @@
 /**
  * Tests for Admin Test Profession Features
  *
- *
  * @package WP_MCP_AI
  */
 

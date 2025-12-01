@@ -5,7 +5,6 @@
  * Verifies that the plugin's early output buffering is skipped during
  * Elementor editor page loads to prevent interference with JavaScript module initialization.
  *
- *
  * @package WP_MCP_AI
  */
 

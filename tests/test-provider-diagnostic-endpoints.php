@@ -5,7 +5,6 @@
  * Validates that the provider diagnostic AJAX endpoints work correctly
  * and return proper responses for testing AI provider connectivity.
  *
- *
  * @package WP_MCP_AI
  */
 

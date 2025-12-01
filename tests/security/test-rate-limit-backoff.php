@@ -5,7 +5,6 @@
  * Tests to verify that rate limiting returns 429 status codes on burst requests,
  * backoff logs are generated, and audit entries are created.
  *
- *
  * @package WP_MCP_AI
  */
 

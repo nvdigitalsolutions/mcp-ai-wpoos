@@ -2,7 +2,6 @@
 /**
  * Tool that retrieves import duty information for supported countries.
  *
- *
  * @package WP_MCP_AI
  */
 

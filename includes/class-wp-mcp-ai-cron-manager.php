@@ -2,7 +2,6 @@
 /**
  * Cron manager utilities for WP oOS.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -4,7 +4,6 @@
  *
  * Coordinates all federation components and conditionally loads them based on settings.
  *
- *
  * @package WP_MCP_AI
  */
 

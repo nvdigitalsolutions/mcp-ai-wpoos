@@ -5,7 +5,6 @@
  * This file contains common utility functions that are used by both
  * the Core plugin and Pro add-ons. It is licensed under GPL-3.0-or-later.
  *
- *
  * @package WP_MCP_AI_Shared
  */
 

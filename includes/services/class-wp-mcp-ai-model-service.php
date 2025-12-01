@@ -5,7 +5,6 @@
  * Handles AI model management operations.
  * Separates model logic from token limits class following SoC principles.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

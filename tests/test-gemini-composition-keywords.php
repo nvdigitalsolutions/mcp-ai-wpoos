@@ -2,7 +2,6 @@
 /**
  * Test for Gemini schema composition keyword handling.
  *
- *
  * @package WP_MCP_AI
  */
 

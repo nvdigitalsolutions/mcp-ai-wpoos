@@ -5,7 +5,6 @@
  * Shows recent test results to help AI assistants quickly identify failures
  * and performance issues.
  *
- *
  * @package WP_MCP_AI
  */
 

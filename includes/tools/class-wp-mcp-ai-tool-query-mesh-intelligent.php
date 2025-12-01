@@ -2,7 +2,6 @@
 /**
  * Intelligent mesh query tool with AI-powered routing.
  *
- *
  * @package WP_MCP_AI
  */
 

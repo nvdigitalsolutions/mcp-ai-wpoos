@@ -2,7 +2,6 @@
 /**
  * Tests for Elementor widget enable/disable setting.
  *
- *
  * @package WP_MCP_AI
  */
 

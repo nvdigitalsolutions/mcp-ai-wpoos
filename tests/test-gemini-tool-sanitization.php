@@ -2,7 +2,6 @@
 /**
  * Tests for Gemini tool parameter sanitization.
  *
- *
  * @package WP_MCP_AI
  */
 

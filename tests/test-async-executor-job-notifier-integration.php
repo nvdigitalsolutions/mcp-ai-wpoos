@@ -2,7 +2,6 @@
 /**
  * Test async executor job notifier integration.
  *
- *
  * @package WP_MCP_AI
  */
 

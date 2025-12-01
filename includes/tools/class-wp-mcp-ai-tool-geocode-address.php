@@ -2,7 +2,6 @@
 /**
  * Tool that geocodes addresses using Google Maps Platform Geocoding API.
  *
- *
  * @package WP_MCP_AI
  */
 

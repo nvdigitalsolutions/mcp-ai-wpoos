@@ -2,7 +2,6 @@
 /**
  * Tool that publishes Facebook Page and Instagram posts using the Graph API.
  *
- *
  * @package WP_MCP_AI
  */
 

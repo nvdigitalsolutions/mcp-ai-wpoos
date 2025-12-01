@@ -2,7 +2,6 @@
 /**
  * Tool that converts text to speech using OpenAI's Text-to-Speech API.
  *
- *
  * @package WP_MCP_AI
  */
 

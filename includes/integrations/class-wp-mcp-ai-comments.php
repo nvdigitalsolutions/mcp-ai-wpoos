@@ -2,7 +2,6 @@
 /**
  * Comments integration for AI-powered comment moderation.
  *
- *
  * @package WP_MCP_AI
  */
 

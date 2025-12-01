@@ -2,7 +2,6 @@
 /**
  * Persist chat transcripts to the JetEngine Custom Content Type.
  *
- *
  * @package WP_MCP_AI
  */
 

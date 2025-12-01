@@ -2,7 +2,6 @@
 /**
  * Tests for Settings Dashboard
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Elementor widget loading and registration.
  *
- *
  * @package WP_MCP_AI
  */
 

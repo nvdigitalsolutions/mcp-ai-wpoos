@@ -2,7 +2,6 @@
 /**
  * Tests for the nefarious usage monitor.
  *
- *
  * @package WP_MCP_AI
  */
 

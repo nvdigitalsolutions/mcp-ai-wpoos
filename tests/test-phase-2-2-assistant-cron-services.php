@@ -8,7 +8,6 @@
  * 3. REST Controller uses lazy-loading for Cron Status Service
  * 4. Backward compatibility is maintained
  *
- *
  * @package WP_MCP_AI
  */
 

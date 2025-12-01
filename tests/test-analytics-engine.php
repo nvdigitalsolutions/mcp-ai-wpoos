@@ -2,7 +2,6 @@
 /**
  * Tests for Analytics Engine.
  *
- *
  * @package WP_MCP_AI
  */
 

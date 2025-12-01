@@ -7,7 +7,6 @@
  * WordPress registration, hooks, and admin UI integration.
  * Business logic is delegated to the service layer.
  *
- *
  * @package WP_MCP_AI
  */
 

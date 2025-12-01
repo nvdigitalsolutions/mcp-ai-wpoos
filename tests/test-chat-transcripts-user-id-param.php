@@ -3,7 +3,6 @@
  * Tests for ensuring user_id parameter is properly accepted and processed
  * in the chat-transcripts endpoint.
  *
- *
  * @package WP_MCP_AI
  */
 

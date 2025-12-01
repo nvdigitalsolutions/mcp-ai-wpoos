@@ -2,7 +2,6 @@
 /**
  * Test token tracking for async veo video generation jobs.
  *
- *
  * @package WP_MCP_AI
  */
 

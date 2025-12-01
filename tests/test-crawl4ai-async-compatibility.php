@@ -5,7 +5,6 @@
  * Verifies that crawl4ai async results follow the same pattern as veo
  * (async, status, job_id fields) to ensure consistent JavaScript detection.
  *
- *
  * @package WP_MCP_AI
  */
 

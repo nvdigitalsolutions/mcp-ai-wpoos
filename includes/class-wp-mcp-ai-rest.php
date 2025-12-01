@@ -2,7 +2,6 @@
 /**
  * REST API controller for WP oOS.
  *
- *
  * @package WP_MCP_AI
  */
 

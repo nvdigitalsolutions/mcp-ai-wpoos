@@ -2,7 +2,6 @@
 /**
  * Provides a structured summary of JetEngine REST endpoints and CRUD coverage.
  *
- *
  * @package WP_MCP_AI
  */
 

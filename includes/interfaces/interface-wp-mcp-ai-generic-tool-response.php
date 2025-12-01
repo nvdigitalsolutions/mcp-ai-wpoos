@@ -4,7 +4,6 @@
  *
  * Defines the contract for standardized tool/AI provider responses.
  *
- *
  * @package WP_MCP_AI
  */
 

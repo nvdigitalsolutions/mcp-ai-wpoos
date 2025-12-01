@@ -2,7 +2,6 @@
 /**
  * JetEngine Integration Settings Section
  *
- *
  * @package WP_MCP_AI
  */
 

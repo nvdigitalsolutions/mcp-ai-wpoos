@@ -5,7 +5,6 @@
  * Tests that async tool responses (job_id) are properly formatted and returned
  * to the chat UI for display and polling.
  *
- *
  * @package WP_MCP_AI
  */
 

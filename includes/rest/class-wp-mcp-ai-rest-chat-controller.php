@@ -5,7 +5,6 @@
  * Handles chat-related endpoints including MCP chat, browser chat,
  * and transcript management.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

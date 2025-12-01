@@ -2,7 +2,6 @@
 /**
  * Tests for the Generate Auth0 Token tool.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -4,7 +4,6 @@
  *
  * Admin page for deploying teams of assistants.
  *
- *
  * @package WP_MCP_AI
  */
 

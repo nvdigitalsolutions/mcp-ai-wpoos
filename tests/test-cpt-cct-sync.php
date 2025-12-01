@@ -2,7 +2,6 @@
 /**
  * Tests for CPT to CCT synchronization.
  *
- *
  * @package WP_MCP_AI
  */
 

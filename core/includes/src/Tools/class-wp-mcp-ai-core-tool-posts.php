@@ -2,7 +2,6 @@
 /**
  * Posts Tool - CRUD operations for WordPress posts.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

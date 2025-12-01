@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying the acting user's capability snapshot.
  *
- *
  * @package WP_MCP_AI
  */
 

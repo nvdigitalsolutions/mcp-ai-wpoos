@@ -2,7 +2,6 @@
 /**
  * Test video download authentication fix for 403 errors.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Error Tracking Service.
  *
- *
  * @package WP_MCP_AI
  */
 

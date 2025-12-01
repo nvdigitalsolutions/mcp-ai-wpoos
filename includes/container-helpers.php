@@ -5,7 +5,6 @@
  * Provides easy access to the DI container and its services.
  * Part of Phase 4 refactoring (Milestone 10).
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying a matrix of available WP oOS tools.
  *
- *
  * @package WP_MCP_AI
  */
 

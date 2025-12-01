@@ -2,7 +2,6 @@
 /**
  * Tests for the admin cron manager UI enhancements.
  *
- *
  * @package WP_MCP_AI
  */
 

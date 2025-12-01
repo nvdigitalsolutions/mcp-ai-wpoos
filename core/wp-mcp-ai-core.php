@@ -14,7 +14,6 @@
  * Domain Path: /languages
  * Network: true
  *
- *
  * @package WP_MCP_AI_Core
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)

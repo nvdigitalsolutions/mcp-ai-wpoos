@@ -2,7 +2,6 @@
 /**
  * Tests for OpenAI multi-tool call handling.
  *
- *
  * @package WP_MCP_AI
  */
 

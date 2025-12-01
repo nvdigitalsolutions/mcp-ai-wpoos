@@ -2,7 +2,6 @@
 /**
  * Tests for Gemini schema sanitization with missing type fields.
  *
- *
  * @package WP_MCP_AI
  */
 

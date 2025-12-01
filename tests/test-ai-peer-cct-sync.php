@@ -2,7 +2,6 @@
 /**
  * Tests for AI Peer CCT synchronization.
  *
- *
  * @package WP_MCP_AI
  */
 

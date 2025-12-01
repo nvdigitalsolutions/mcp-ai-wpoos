@@ -2,7 +2,6 @@
 /**
  * tests/test-gemini-image-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

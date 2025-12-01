@@ -5,7 +5,6 @@
  * This test validates that the performance test fixes for security
  * (user authentication and capabilities) are working correctly.
  *
- *
  * @package WP_MCP_AI
  */
 

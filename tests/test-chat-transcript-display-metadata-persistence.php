@@ -5,7 +5,6 @@
  * This test verifies that display metadata (including video attachments, bubble type,
  * usage/cost badges) is properly saved and restored from chat transcripts.
  *
- *
  * @package WP_MCP_AI
  */
 

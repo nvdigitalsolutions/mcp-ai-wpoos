@@ -2,7 +2,6 @@
 /**
  * tests/test-openai-transcription-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

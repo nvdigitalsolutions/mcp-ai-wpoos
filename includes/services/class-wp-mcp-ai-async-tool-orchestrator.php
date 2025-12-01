@@ -12,7 +12,6 @@
  * - Does NOT format results for UI
  * - Does NOT log events (delegates to logger)
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

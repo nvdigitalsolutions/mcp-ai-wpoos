@@ -2,7 +2,6 @@
 /**
  * Model Pricing Checker - Monthly cron job to check for pricing updates.
  *
- *
  * @package WP_MCP_AI
  */
 

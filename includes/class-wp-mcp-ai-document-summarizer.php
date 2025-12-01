@@ -2,7 +2,6 @@
 /**
  * Document summarization utility for managing large attachments.
  *
- *
  * @package WP_MCP_AI
  */
 

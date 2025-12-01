@@ -2,7 +2,6 @@
 /**
  * tests/test-openai-image-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

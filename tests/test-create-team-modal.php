@@ -2,7 +2,6 @@
 /**
  * Tests for Create Team Modal functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

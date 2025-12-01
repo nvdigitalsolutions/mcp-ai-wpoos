@@ -2,7 +2,6 @@
 /**
  * Concurrent job queue manager for API request throttling.
  *
- *
  * @package WP_MCP_AI
  */
 

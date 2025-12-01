@@ -2,7 +2,6 @@
 /**
  * Tests for tool argument filtering in agentic workflow.
  *
- *
  * @package WP_MCP_AI
  */
 

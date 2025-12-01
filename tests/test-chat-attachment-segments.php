@@ -2,7 +2,6 @@
 /**
  * Test chat attachment segment handling
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Handles health status monitoring, metrics collection, and predictive analytics
  * for the orchestration layer. Implements graceful degradation if monitoring fails.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

@@ -2,7 +2,6 @@
 /**
  * Users Tool - Operations for WordPress users.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

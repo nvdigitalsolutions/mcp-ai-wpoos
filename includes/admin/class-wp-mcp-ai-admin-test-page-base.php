@@ -5,7 +5,6 @@
  * Provides shared functionality for test pages (Assistant, Profession, Team).
  * Follows SoC by centralizing common logic and reducing code duplication.
  *
- *
  * @package WP_MCP_AI
  */
 

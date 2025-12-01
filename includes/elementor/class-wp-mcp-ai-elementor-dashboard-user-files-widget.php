@@ -2,7 +2,6 @@
 /**
  * Elementor widget for listing files owned by a user.
  *
- *
  * @package WP_MCP_AI
  */
 

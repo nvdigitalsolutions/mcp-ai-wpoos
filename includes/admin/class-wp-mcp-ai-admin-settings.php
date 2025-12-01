@@ -2,7 +2,6 @@
 /**
  * Admin settings for WP oOS.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Tests that WP_MCP_AI_OAuth_Manager can be instantiated without causing
  * a circular dependency with WP_MCP_AI_Admin_Settings.
  *
- *
  * @package WP_MCP_AI
  */
 

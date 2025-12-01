@@ -6,7 +6,6 @@
  * a nested async response (e.g., veo video generation falling back to async).
  * The parent job should be marked as 'delegated' not 'completed'.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for OAuth token preservation in settings.
  *
- *
  * @package WP_MCP_AI
  */
 

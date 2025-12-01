@@ -5,7 +5,6 @@
  * Integrates cost calculation with token usage tracking.
  * Follows separation of concerns - bridges Cost Calculator and Token Limits.
  *
- *
  * @package WP_MCP_AI
  */
 

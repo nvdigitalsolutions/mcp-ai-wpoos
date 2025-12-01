@@ -2,7 +2,6 @@
 /**
  * Media integration for AI-powered image analysis.
  *
- *
  * @package WP_MCP_AI
  */
 

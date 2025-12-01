@@ -11,7 +11,6 @@
  * - File generation: Provide expected file paths or download URLs.
  * - Long-running tasks: Provide estimated completion times or progress indicators.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

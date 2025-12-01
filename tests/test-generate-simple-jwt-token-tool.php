@@ -2,7 +2,6 @@
 /**
  * tests/test-generate-simple-jwt-token-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

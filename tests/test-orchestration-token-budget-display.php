@@ -2,7 +2,6 @@
 /**
  * Test Token Budget Display Improvements
  *
- *
  * @package WP_MCP_AI
  */
 

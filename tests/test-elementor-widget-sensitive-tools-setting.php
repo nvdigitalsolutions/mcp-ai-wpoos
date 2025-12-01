@@ -5,7 +5,6 @@
  * Verifies that the allow_sensitive_tools setting is properly registered
  * and passed through to the shortcode when rendering.
  *
- *
  * @package WP_MCP_AI
  */
 

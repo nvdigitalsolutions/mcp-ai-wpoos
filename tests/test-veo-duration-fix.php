@@ -2,7 +2,6 @@
 /**
  * Tests for Veo video generation duration validation fix.
  *
- *
  * @package WP_MCP_AI
  */
 

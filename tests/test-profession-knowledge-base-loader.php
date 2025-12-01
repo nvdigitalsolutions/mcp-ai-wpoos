@@ -4,7 +4,6 @@
  *
  * Tests for the profession knowledge base loader service.
  *
- *
  * @package WP_MCP_AI
  */
 

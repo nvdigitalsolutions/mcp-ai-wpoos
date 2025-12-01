@@ -2,7 +2,6 @@
 /**
  * Tool that retrieves the National Hurricane Center active storms feed.
  *
- *
  * @package WP_MCP_AI
  */
 

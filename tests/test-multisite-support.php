@@ -2,7 +2,6 @@
 /**
  * Tests for multisite support.
  *
- *
  * @package WP_MCP_AI
  */
 

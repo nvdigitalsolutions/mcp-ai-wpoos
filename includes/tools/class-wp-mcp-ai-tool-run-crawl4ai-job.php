@@ -2,7 +2,6 @@
 /**
  * Tool that submits Crawl4AI crawl jobs.
  *
- *
  * @package WP_MCP_AI
  */
 

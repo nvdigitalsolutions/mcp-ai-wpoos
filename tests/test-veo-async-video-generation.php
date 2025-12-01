@@ -2,7 +2,6 @@
 /**
  * Test async video generation functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

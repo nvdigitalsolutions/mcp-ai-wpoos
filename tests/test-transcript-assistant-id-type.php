@@ -2,7 +2,6 @@
 /**
  * Tests for Transcript Repository assistant_id type handling.
  *
- *
  * @package WP_MCP_AI
  */
 

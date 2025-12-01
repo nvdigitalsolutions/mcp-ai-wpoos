@@ -2,7 +2,6 @@
 /**
  * Tests for Veo video generation service - specifically ensuring generateAudio is not sent.
  *
- *
  * @package WP_MCP_AI
  */
 

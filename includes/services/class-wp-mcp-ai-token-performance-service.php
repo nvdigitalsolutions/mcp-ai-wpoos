@@ -5,7 +5,6 @@
  * Provides performance metrics and statistics for token management.
  * Separates data retrieval from presentation logic.
  *
- *
  * @package WP_MCP_AI
  */
 

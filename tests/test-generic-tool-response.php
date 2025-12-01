@@ -2,7 +2,6 @@
 /**
  * Tests for the Generic Tool Response system.
  *
- *
  * @package WP_MCP_AI
  */
 

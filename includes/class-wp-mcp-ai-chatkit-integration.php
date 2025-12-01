@@ -2,7 +2,6 @@
 /**
  * ChatKit integration bootstrap for WP oOS.
  *
- *
  * @package WP_MCP_AI
  */
 

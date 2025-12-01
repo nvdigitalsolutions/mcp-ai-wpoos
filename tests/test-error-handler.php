@@ -2,7 +2,6 @@
 /**
  * Tests for the centralized error handler.
  *
- *
  * @package WP_MCP_AI
  */
 

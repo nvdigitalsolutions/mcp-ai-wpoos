@@ -4,7 +4,6 @@
  *
  * Loads GitHub OAuth handler and sets up integration hooks.
  *
- *
  * @package WP_MCP_AI
  */
 

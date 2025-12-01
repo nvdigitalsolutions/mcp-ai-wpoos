@@ -2,7 +2,6 @@
 /**
  * Tests for Auth0 GitHub Bridge Toggle Functionality
  *
- *
  * @package WP_MCP_AI
  */
 

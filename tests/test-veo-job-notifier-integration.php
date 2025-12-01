@@ -2,7 +2,6 @@
 /**
  * Test Veo video generation job notifier integration.
  *
- *
  * @package WP_MCP_AI
  */
 

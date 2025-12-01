@@ -2,7 +2,6 @@
 /**
  * Abstract base class for settings sections.
  *
- *
  * @package WP_MCP_AI
  */
 

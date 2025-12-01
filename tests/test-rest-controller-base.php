@@ -2,7 +2,6 @@
 /**
  * Tests for WP_MCP_AI_REST_Controller_Base class.
  *
- *
  * @package WP_MCP_AI
  */
 

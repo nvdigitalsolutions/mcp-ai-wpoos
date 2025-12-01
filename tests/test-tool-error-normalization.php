@@ -2,7 +2,6 @@
 /**
  * Test tool error normalization.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Test that save endpoint returns proper error when JetEngine is not available.
  *
- *
  * @package WP_MCP_AI
  */
 

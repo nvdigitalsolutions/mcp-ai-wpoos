@@ -2,7 +2,6 @@
 /**
  * Tests for Media Library Columns integration.
  *
- *
  * @package WP_MCP_AI
  */
 

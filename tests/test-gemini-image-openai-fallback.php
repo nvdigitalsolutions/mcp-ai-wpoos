@@ -6,7 +6,6 @@
  * 1. The chat provider is OpenAI
  * 2. The text field is missing from the tool result
  *
- *
  * @package WP_MCP_AI
  */
 

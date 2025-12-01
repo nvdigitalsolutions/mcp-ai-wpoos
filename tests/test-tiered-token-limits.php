@@ -2,7 +2,6 @@
 /**
  * Test tiered token limits functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

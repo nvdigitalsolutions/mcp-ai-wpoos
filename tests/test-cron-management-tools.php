@@ -2,7 +2,6 @@
 /**
  * tests/test-cron-management-tools.php
  *
- *
  * @package WP_MCP_AI
  */
 

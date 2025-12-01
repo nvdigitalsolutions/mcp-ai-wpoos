@@ -2,7 +2,6 @@
 /**
  * Provides a local Crawl4AI-compatible REST API.
  *
- *
  * @package WP_MCP_AI
  */
 

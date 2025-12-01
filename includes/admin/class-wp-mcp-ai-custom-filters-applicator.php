@@ -4,7 +4,6 @@
  *
  * Applies saved custom filter values from settings to WordPress filters.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Persist assistant response files to the Media Library.
  *
- *
  * @package WP_MCP_AI
  */
 

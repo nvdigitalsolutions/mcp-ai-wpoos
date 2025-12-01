@@ -4,7 +4,6 @@
  *
  * Handles verification of peer health, JWKS availability, and latency measurement.
  *
- *
  * @package WP_MCP_AI
  */
 

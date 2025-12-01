@@ -4,7 +4,6 @@
  *
  * Tests that professions can be associated with an assistant for testing purposes.
  *
- *
  * @package WP_MCP_AI
  */
 

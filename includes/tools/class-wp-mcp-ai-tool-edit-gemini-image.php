@@ -2,7 +2,6 @@
 /**
  * Tool that edits images using Gemini's Nano Banana (image editing) capabilities.
  *
- *
  * @package WP_MCP_AI
  */
 

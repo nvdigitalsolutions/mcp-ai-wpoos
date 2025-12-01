@@ -2,7 +2,6 @@
 /**
  * tests/test-site-health-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

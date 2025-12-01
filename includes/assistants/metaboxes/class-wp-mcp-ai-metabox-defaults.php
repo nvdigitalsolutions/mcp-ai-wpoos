@@ -2,7 +2,6 @@
 /**
  * Defaults Metabox for Assistants.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

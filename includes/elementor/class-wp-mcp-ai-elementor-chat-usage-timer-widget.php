@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying usage summaries and a focus timer near the chat interface.
  *
- *
  * @package WP_MCP_AI
  */
 

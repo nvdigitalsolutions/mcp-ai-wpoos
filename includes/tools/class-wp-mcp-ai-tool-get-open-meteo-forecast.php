@@ -2,7 +2,6 @@
 /**
  * Tool that fetches weather forecasts from the Open-Meteo API.
  *
- *
  * @package WP_MCP_AI
  */
 

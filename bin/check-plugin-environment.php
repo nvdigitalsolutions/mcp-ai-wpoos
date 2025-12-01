@@ -3,7 +3,6 @@
 /**
  * Simple environment health check for WP oOS plugin.
  *
- *
  * @package WP_MCP_AI
  */
 

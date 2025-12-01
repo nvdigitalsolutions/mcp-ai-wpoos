@@ -5,7 +5,6 @@
  * Verifies that the chat service correctly saves transcripts to CCT
  * using the proper static method call.
  *
- *
  * @package WP_MCP_AI
  */
 

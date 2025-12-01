@@ -9,7 +9,6 @@
  * register_settings() method in WP_MCP_AI_Admin_Settings_Base was
  * wiping provider subtab settings.
  *
- *
  * @package WP_MCP_AI
  */
 

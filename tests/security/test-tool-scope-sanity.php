@@ -5,7 +5,6 @@
  * Tests to ensure least-privilege for Gmail/Calendar tools and verify
  * OAuth scopes are appropriate and capability checks are enforced.
  *
- *
  * @package WP_MCP_AI
  */
 

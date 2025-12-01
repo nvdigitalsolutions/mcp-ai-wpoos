@@ -6,7 +6,6 @@
  * This addresses the issue where Gemini image generation with OpenAI provider
  * would result in empty SSE stream content.
  *
- *
  * @package WP_MCP_AI
  */
 

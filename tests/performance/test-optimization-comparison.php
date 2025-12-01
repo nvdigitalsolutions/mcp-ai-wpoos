@@ -8,7 +8,6 @@
  * - localStorage performance impact
  * - DOM rendering optimization validation
  *
- *
  * @package WP_MCP_AI
  */
 

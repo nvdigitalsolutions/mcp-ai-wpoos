@@ -2,7 +2,6 @@
 /**
  * Tests for the Check Site Security tool.
  *
- *
  * @package WP_MCP_AI
  */
 

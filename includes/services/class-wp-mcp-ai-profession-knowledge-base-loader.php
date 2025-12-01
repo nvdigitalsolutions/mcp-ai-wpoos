@@ -5,7 +5,6 @@
  * Service layer for loading and validating profession knowledge base from JSON files.
  * Follows separation of concerns - handles business logic for loading JSON data.
  *
- *
  * @package WP_MCP_AI
  */
 

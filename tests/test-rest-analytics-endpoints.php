@@ -2,7 +2,6 @@
 /**
  * Tests for Analytics REST API endpoints.
  *
- *
  * @package WP_MCP_AI
  */
 

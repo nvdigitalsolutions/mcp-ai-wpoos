@@ -2,7 +2,6 @@
 /**
  * Test tool error handling in chat context.
  *
- *
  * @package WP_MCP_AI
  */
 

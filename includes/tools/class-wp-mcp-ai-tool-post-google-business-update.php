@@ -2,7 +2,6 @@
 /**
  * Tool that publishes updates to Google Business Profile locations.
  *
- *
  * @package WP_MCP_AI
  */
 

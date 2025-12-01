@@ -2,7 +2,6 @@
 /**
  * tests/test-token-sanitizers.php
  *
- *
  * @package WP_MCP_AI
  */
 

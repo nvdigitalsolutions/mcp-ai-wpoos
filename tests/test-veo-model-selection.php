@@ -6,7 +6,6 @@
  * and that both short form (veo-2.0) and full form (veo-2.0-generate-001)
  * model identifiers are correctly detected.
  *
- *
  * @package WP_MCP_AI
  */
 

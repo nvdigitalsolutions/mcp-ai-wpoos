@@ -5,7 +5,6 @@
  * Tests to verify that emergency shutdown with Root Security Key
  * blocks re-enablement and creates proper log trail.
  *
- *
  * @package WP_MCP_AI
  */
 

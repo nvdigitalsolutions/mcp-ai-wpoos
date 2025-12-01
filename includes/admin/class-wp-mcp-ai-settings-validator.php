@@ -4,7 +4,6 @@
  *
  * Provides validation utilities for settings fields.
  *
- *
  * @package WP_MCP_AI
  */
 

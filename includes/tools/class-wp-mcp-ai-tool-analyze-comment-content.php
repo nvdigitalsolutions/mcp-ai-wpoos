@@ -2,7 +2,6 @@
 /**
  * Tool for analyzing comment content for spam and toxicity using AI.
  *
- *
  * @package WP_MCP_AI
  */
 

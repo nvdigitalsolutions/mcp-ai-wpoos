@@ -5,7 +5,6 @@
  * Validates that video completion can be detected by checking for file creation
  * in the uploads directory, in addition to polling the Gemini API.
  *
- *
  * @package WP_MCP_AI
  */
 

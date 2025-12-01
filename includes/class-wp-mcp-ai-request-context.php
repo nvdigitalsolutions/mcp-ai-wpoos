@@ -2,7 +2,6 @@
 /**
  * Helpers for aligning REST URLs with the active request context.
  *
- *
  * @package WP_MCP_AI
  */
 

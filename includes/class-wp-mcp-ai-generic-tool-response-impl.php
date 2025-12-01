@@ -4,7 +4,6 @@
  *
  * Concrete implementation of the generic tool response interface.
  *
- *
  * @package WP_MCP_AI
  */
 

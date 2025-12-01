@@ -5,7 +5,6 @@
  * This test reproduces the issue where a conversation is saved via POST /chat-transcripts
  * but then cannot be retrieved immediately via GET /chat-transcripts?session_key=xxx
  *
- *
  * @package WP_MCP_AI
  */
 

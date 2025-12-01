@@ -2,7 +2,6 @@
 /**
  * Helper utilities for working with WordPress HTTP responses.
  *
- *
  * @package WP_MCP_AI
  */
 

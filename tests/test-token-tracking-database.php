@@ -2,7 +2,6 @@
 /**
  * Test Enhanced Token Tracking Database functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

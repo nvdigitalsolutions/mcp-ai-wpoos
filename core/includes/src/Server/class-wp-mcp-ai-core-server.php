@@ -2,7 +2,6 @@
 /**
  * MCP Core Server - Tool registry and dispatcher.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

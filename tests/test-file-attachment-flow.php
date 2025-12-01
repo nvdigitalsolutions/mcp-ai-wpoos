@@ -2,7 +2,6 @@
 /**
  * Tests for file attachment flow from upload to AI provider.
  *
- *
  * @package WP_MCP_AI
  */
 

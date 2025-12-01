@@ -2,7 +2,6 @@
 /**
  * Backward-compatible loader for the admin settings class.
  *
- *
  * @package WP_MCP_AI
  */
 

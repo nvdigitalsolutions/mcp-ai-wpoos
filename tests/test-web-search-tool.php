@@ -2,7 +2,6 @@
 /**
  * tests/test-web-search-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

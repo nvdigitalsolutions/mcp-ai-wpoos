@@ -5,7 +5,6 @@
  * Verifies that the WP_MCP_AI_Tool_Async_Executor properly registers
  * its cron hook handler during initialization, allowing async tools to execute.
  *
- *
  * @package WP_MCP_AI
  */
 

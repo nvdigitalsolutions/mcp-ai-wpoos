@@ -4,7 +4,6 @@
  *
  * Provides WordPress dashboard widgets for token usage analytics.
  *
- *
  * @package WP_MCP_AI
  */
 

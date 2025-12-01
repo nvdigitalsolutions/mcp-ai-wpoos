@@ -2,7 +2,6 @@
 /**
  * Tool that schedules a Notify.lk SMS using the official PHP SDK.
  *
- *
  * @package WP_MCP_AI
  */
 

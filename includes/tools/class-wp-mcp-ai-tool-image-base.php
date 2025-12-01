@@ -8,7 +8,6 @@
  * - WordPress image editor integration
  * - Common sanitization and validation
  *
- *
  * @package WP_MCP_AI
  */
 

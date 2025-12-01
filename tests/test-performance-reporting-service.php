@@ -2,7 +2,6 @@
 /**
  * Tests for Performance Reporting Service.
  *
- *
  * @package WP_MCP_AI
  */
 

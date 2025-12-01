@@ -5,7 +5,6 @@
  * Shows current performance metrics including response times, memory usage,
  * and database queries to help AI assistants diagnose issues.
  *
- *
  * @package WP_MCP_AI
  */
 

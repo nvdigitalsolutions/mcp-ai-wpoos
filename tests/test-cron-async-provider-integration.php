@@ -8,7 +8,6 @@
  * - Agentic workflows can schedule and execute tasks asynchronously
  * - Provider-specific features are compatible with the async/cron system
  *
- *
  * @package WP_MCP_AI
  */
 

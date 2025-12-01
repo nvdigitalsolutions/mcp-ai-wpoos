@@ -7,7 +7,6 @@
  * 2. Safeguards around tool payload encoding (Medium priority)
  * 3. Invalid resource entries validation (Low priority)
  *
- *
  * @package WP_MCP_AI
  */
 

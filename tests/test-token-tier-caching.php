@@ -2,7 +2,6 @@
 /**
  * Test token tier caching functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

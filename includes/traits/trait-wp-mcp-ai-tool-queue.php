@@ -4,7 +4,6 @@
  *
  * Provides default queue configuration behavior for tools.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

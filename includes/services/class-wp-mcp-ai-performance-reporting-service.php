@@ -9,7 +9,6 @@
  * - Automated baseline updates
  * - Settings optimization recommendations
  *
- *
  * @package WP_MCP_AI
  */
 

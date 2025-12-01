@@ -2,7 +2,6 @@
 /**
  * ChatKit integration tests.
  *
- *
  * @package WP_MCP_AI\Tests
  */
 

@@ -5,7 +5,6 @@
  * Validates that the tools/list method properly returns tool definitions
  * in a format compatible with MCP clients like OpenAI Agent Builder.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for GitHub Client
  *
- *
  * @package WP_MCP_AI
  */
 

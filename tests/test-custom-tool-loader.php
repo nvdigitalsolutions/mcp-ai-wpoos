@@ -2,7 +2,6 @@
 /**
  * Tests for Custom Tool Loader
  *
- *
  * @package WP_MCP_AI
  */
 

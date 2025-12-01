@@ -4,7 +4,6 @@
  *
  * Handles OAuth flows for third-party service integrations (Gmail, Google Analytics, etc.).
  *
- *
  * @package WP_MCP_AI
  */
 

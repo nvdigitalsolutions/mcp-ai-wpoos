@@ -2,7 +2,6 @@
 /**
  * Tests for translation loading timing (WordPress 6.7.0+ compatibility).
  *
- *
  * @package WP_MCP_AI
  */
 

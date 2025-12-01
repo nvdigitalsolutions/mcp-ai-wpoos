@@ -2,7 +2,6 @@
 /**
  * Tests for mesh router with AI-powered load balancing.
  *
- *
  * @package WP_MCP_AI
  */
 

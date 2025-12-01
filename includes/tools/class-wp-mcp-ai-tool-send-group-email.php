@@ -2,7 +2,6 @@
 /**
  * Tool that sends group emails using the WordPress mail API.
  *
- *
  * @package WP_MCP_AI
  */
 

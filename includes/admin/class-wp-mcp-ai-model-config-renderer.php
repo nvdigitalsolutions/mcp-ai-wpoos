@@ -5,7 +5,6 @@
  * Handles UI rendering for the per-model view in the Token Manager tab.
  * Follows Separation of Concerns - only handles presentation logic.
  *
- *
  * @package WP_MCP_AI
  */
 

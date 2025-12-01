@@ -5,7 +5,6 @@
  * Handles chat message processing and orchestration.
  * Extracted from WP_MCP_AI_REST as part of service layer refactoring.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

@@ -2,7 +2,6 @@
 /**
  * Tests for Cron Status REST endpoint SSE streaming support
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Token budget manager for API usage optimization.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Token Manager tool multiplier functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

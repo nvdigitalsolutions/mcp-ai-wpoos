@@ -6,7 +6,6 @@
  * used by the Profession and Team custom post types, ensuring data integrity
  * and security when creating assistants from professions/teams.
  *
- *
  * @package WP_MCP_AI
  */
 

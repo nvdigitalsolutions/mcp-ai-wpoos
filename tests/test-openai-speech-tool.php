@@ -2,7 +2,6 @@
 /**
  * tests/test-openai-speech-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

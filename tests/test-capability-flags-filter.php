@@ -2,7 +2,6 @@
 /**
  * Tests for capability flags filter in model selection.
  *
- *
  * @package WP_MCP_AI
  */
 

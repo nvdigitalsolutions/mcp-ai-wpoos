@@ -2,7 +2,6 @@
 /**
  * Shared helpers for proxying REST requests through WordPress.
  *
- *
  * @package WP_MCP_AI
  */
 

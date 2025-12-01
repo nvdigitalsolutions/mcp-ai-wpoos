@@ -2,7 +2,6 @@
 /**
  * Tests for the send group email tool.
  *
- *
  * @package WP_MCP_AI
  */
 

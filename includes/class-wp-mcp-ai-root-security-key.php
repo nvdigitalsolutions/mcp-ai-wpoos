@@ -5,7 +5,6 @@
  * Provides optional security key verification for plugin initialization.
  * Can be enabled during emergency shutdown to require authentication for re-enabling.
  *
- *
  * @package WP_MCP_AI
  */
 

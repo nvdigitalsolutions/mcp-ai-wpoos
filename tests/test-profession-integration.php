@@ -4,7 +4,6 @@
  *
  * Tests that professions are properly integrated when testing via the Test Profession page.
  *
- *
  * @package WP_MCP_AI
  */
 

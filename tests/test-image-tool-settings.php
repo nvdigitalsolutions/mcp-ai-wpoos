@@ -4,7 +4,6 @@
  *
  * Verifies that image generation tools properly load settings from the admin UI.
  *
- *
  * @package WP_MCP_AI
  */
 

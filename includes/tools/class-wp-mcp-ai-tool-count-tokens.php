@@ -2,7 +2,6 @@
 /**
  * Tool for estimating token counts for text and messages.
  *
- *
  * @package WP_MCP_AI
  */
 

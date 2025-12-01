@@ -4,7 +4,6 @@
  *
  * Verifies that saving one subtab doesn't affect fields from other subtabs.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -6,7 +6,6 @@
  * 1. SSE streaming is explicitly disabled (enableStreaming=false)
  * 2. SSE is enabled but server returns JSON (fallback scenario)
  *
- *
  * @package WP_MCP_AI
  */
 

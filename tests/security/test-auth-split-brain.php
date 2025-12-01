@@ -5,7 +5,6 @@
  * Tests to verify that the /mcp endpoint enforces bearer-only authentication
  * for remote MCP access, while nonce-only authentication should fail.
  *
- *
  * @package WP_MCP_AI
  */
 

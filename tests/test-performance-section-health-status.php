@@ -5,7 +5,6 @@
  * Verifies that the Performance Monitoring section correctly displays
  * the orchestration health status instead of performance test results.
  *
- *
  * @package WP_MCP_AI
  */
 

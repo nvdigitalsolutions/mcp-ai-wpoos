@@ -2,7 +2,6 @@
 /**
  * Tool for scheduling WordPress cron events.
  *
- *
  * @package WP_MCP_AI
  */
 

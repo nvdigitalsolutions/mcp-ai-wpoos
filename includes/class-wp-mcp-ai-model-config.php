@@ -5,7 +5,6 @@
  * This class stores model configuration primarily in WordPress options
  * with optional JetEngine CCT backup for enhanced queryability.
  *
- *
  * @package WP_MCP_AI
  */
 

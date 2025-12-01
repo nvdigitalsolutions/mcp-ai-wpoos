@@ -4,7 +4,6 @@
  *
  * Verifies that orchestration layer settings actually control whether features are applied.
  *
- *
  * @package WP_MCP_AI
  */
 

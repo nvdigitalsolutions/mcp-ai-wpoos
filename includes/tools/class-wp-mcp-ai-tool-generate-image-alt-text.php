@@ -2,7 +2,6 @@
 /**
  * Tool for generating alt text for images using AI vision capabilities.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tool listing JetFormBuilder forms.
  *
- *
  * @package WP_MCP_AI
  */
 

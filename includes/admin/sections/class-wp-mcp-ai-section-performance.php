@@ -9,7 +9,6 @@
  * - Optimization toggle testing
  * - Export test results
  *
- *
  * @package WP_MCP_AI
  */
 

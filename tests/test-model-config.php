@@ -2,7 +2,6 @@
 /**
  * Tests for WP_MCP_AI_Model_Config class.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Provides message queue integration for agentic workflows and tool management
  * when deployed on Cloudways with RabbitMQ enabled.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

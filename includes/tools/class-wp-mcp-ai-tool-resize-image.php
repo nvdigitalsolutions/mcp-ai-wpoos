@@ -2,7 +2,6 @@
 /**
  * Tool for resizing images.
  *
- *
  * @package WP_MCP_AI
  */
 

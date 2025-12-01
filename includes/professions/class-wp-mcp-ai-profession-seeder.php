@@ -10,7 +10,6 @@
  * - FEMA (emergency management)
  * - Animal/Ocean related
  *
- *
  * @package WP_MCP_AI
  */
 

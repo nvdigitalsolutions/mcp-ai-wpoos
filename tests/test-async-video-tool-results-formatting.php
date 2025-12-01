@@ -5,7 +5,6 @@
  * Verifies that completed async jobs include tool_results array with proper structure
  * for chat client display, including video URLs, cost badges, and usage data.
  *
- *
  * @package WP_MCP_AI
  */
 

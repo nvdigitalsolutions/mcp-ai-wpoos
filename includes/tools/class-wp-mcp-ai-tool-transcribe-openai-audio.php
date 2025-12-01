@@ -2,7 +2,6 @@
 /**
  * Tool that transcribes or translates audio into English text using OpenAI.
  *
- *
  * @package WP_MCP_AI
  */
 

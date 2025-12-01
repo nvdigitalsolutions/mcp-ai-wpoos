@@ -2,7 +2,6 @@
 /**
  * Tests for tool result sanitization before passing to LLM.
  *
- *
  * @package WP_MCP_AI
  */
 

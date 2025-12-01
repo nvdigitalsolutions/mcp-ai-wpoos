@@ -2,7 +2,6 @@
 /**
  * Tool returning a high-level summary of the WordPress site.
  *
- *
  * @package WP_MCP_AI
  */
 

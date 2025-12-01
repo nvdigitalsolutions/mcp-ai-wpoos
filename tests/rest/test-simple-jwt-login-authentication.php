@@ -2,7 +2,6 @@
 /**
  * tests/rest/test-simple-jwt-login-authentication.php
  *
- *
  * @package WP_MCP_AI
  */
 

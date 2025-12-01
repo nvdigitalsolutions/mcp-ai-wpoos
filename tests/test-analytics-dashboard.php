@@ -2,7 +2,6 @@
 /**
  * Test Analytics Dashboard functionality
  *
- *
  * @package WP_MCP_AI
  */
 

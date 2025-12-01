@@ -12,7 +12,6 @@
  * - Streaming (SSE) with tool execution
  * - Transcript recording with tool results
  *
- *
  * @package WP_MCP_AI
  */
 

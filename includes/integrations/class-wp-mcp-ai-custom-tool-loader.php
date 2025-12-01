@@ -4,7 +4,6 @@
  *
  * Safely loads and manages custom tools from the custom-tools directory.
  *
- *
  * @package WP_MCP_AI
  */
 

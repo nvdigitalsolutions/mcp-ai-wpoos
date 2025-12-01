@@ -2,7 +2,6 @@
 /**
  * Tests for chat transcript sorting to ensure most recent conversations appear first.
  *
- *
  * @package WP_MCP_AI
  */
 

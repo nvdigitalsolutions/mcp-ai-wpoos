@@ -2,7 +2,6 @@
 /**
  * Tool returning a quick link to the OpenAI platform logs dashboard.
  *
- *
  * @package WP_MCP_AI
  */
 

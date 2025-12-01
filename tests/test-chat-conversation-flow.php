@@ -7,7 +7,6 @@
  * 2. Widget settings properly filter conversations
  * 3. Conversations can be loaded back into chat with full context
  *
- *
  * @package WP_MCP_AI
  */
 

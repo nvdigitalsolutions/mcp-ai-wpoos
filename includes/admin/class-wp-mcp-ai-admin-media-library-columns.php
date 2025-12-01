@@ -4,7 +4,6 @@
  *
  * Adds AI usage and cost badges to the media library admin list page.
  *
- *
  * @package WP_MCP_AI
  */
 

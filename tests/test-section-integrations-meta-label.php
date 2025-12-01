@@ -2,7 +2,6 @@
 /**
  * Tests for Integrations Section - Meta Label
  *
- *
  * @package WP_MCP_AI
  */
 

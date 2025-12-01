@@ -2,7 +2,6 @@
 /**
  * Model selector for intelligent routing between models.
  *
- *
  * @package WP_MCP_AI
  */
 

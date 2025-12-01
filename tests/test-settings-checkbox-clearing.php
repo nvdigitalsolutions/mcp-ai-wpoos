@@ -2,7 +2,6 @@
 /**
  * Tests for checkbox clearing issue in settings.
  *
- *
  * @package WP_MCP_AI
  */
 

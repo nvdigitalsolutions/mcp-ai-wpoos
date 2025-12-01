@@ -2,7 +2,6 @@
 /**
  * Language model router.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -4,7 +4,6 @@
  *
  * Tests that the custom filter settings are properly applied to WordPress filters.
  *
- *
  * @package WP_MCP_AI
  */
 

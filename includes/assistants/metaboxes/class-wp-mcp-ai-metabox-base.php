@@ -2,7 +2,6 @@
 /**
  * Base class for Assistant metaboxes.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

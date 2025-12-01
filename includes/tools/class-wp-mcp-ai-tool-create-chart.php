@@ -2,7 +2,6 @@
 /**
  * Tool for creating charts using Chart.js library.
  *
- *
  * @package WP_MCP_AI
  */
 

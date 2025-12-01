@@ -5,7 +5,6 @@
  * Verifies that PHP output during widget registration does not break
  * Elementor's JSON API responses.
  *
- *
  * @package WP_MCP_AI
  */
 

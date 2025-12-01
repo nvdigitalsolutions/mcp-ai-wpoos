@@ -5,7 +5,6 @@
  * Handles database operations for chat transcripts.
  * Part of Phase 1.3 separation of concerns refactoring.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

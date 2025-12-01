@@ -2,7 +2,6 @@
 /**
  * Tests for the base version mode functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

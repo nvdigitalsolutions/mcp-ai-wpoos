@@ -2,7 +2,6 @@
 /**
  * Tool returning recent system log entries.
  *
- *
  * @package WP_MCP_AI
  */
 

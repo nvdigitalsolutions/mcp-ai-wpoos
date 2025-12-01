@@ -5,7 +5,6 @@
  * Validates that transients are properly set, updated, and can be retrieved
  * throughout the video generation lifecycle.
  *
- *
  * @package WP_MCP_AI
  */
 

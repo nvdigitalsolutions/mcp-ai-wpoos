@@ -2,7 +2,6 @@
 /**
  * Taxonomies Tool - Operations for WordPress taxonomies and terms.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

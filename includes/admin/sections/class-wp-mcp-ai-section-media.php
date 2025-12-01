@@ -2,7 +2,6 @@
 /**
  * AI Media Library Settings Section
  *
- *
  * @package WP_MCP_AI
  */
 

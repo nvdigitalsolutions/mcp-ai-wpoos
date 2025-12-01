@@ -5,7 +5,6 @@
  * Tests the Resource Manager's ensure_execution_time() method and its integration
  * with AJAX handlers for preventing "Maximum execution time exceeded" errors.
  *
- *
  * @package WP_MCP_AI
  */
 

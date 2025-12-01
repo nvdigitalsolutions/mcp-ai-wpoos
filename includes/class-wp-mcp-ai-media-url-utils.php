@@ -7,7 +7,6 @@
  * the chat client shows local WordPress URLs even when media offloading plugins
  * (like WP Offload Media) are active.
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

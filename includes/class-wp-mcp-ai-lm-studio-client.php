@@ -2,7 +2,6 @@
 /**
  * LM Studio API client wrapper.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for WP MCP AI Core Server and Tools.
  *
- *
  * @package WP_MCP_AI_Core
  */
 

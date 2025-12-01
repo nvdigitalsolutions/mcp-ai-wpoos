@@ -2,7 +2,6 @@
 /**
  * Tool returning information about a WordPress user.
  *
- *
  * @package WP_MCP_AI
  */
 

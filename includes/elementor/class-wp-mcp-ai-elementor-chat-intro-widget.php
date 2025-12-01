@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying an introductory block above the chat interface.
  *
- *
  * @package WP_MCP_AI
  */
 

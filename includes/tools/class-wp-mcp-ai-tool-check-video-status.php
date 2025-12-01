@@ -2,7 +2,6 @@
 /**
  * Tool for checking video generation status.
  *
- *
  * @package WP_MCP_AI
  */
 

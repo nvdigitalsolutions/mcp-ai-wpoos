@@ -2,7 +2,6 @@
 /**
  * Test WP_MCP_AI_Token_Budget_Manager enhancements.
  *
- *
  * @package WP_MCP_AI
  */
 

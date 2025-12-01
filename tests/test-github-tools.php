@@ -2,7 +2,6 @@
 /**
  * Tests for GitHub Tools
  *
- *
  * @package WP_MCP_AI
  */
 

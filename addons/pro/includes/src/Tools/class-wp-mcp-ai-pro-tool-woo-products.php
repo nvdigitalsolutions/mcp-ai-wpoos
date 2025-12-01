@@ -2,7 +2,6 @@
 /**
  * WooCommerce Products Tool - Pro add-on tool for WooCommerce product operations.
  *
- *
  * @package WP_MCP_AI_Pro
  */
 

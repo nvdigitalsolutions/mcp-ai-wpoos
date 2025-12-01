@@ -2,7 +2,6 @@
 /**
  * tests/test-submit-document-prompt-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

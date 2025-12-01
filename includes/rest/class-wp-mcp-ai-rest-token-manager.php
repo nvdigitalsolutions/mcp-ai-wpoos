@@ -2,7 +2,6 @@
 /**
  * REST API endpoints for Token Manager.
  *
- *
  * @package WP_MCP_AI
  */
 

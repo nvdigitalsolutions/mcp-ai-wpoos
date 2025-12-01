@@ -2,7 +2,6 @@
 /**
  * Tests for enhanced logging functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

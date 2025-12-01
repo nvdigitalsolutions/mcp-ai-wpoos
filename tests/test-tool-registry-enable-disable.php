@@ -2,7 +2,6 @@
 /**
  * Tests for Tool Registry Enable/Disable Functionality
  *
- *
  * @package WP_MCP_AI
  */
 

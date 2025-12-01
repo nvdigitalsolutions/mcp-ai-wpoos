@@ -2,7 +2,6 @@
 /**
  * Tool that generates images using OpenAI's Images API.
  *
- *
  * @package WP_MCP_AI
  */
 

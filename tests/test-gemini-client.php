@@ -2,7 +2,6 @@
 /**
  * Tests for the Gemini client wrapper.
  *
- *
  * @package WP_MCP_AI
  */
 

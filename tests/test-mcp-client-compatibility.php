@@ -5,7 +5,6 @@
  * This test suite validates that the MCP endpoint works correctly
  * with various client types and scenarios.
  *
- *
  * @package WP_MCP_AI
  */
 

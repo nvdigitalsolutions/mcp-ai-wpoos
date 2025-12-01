@@ -2,7 +2,6 @@
 /**
  * Tests for assistant prompt shortcut aggregation.
  *
- *
  * @package WP_MCP_AI\Tests
  */
 

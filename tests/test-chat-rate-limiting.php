@@ -2,7 +2,6 @@
 /**
  * Tests for chat request rate limiting enforcement.
  *
- *
  * @package WP_MCP_AI
  */
 

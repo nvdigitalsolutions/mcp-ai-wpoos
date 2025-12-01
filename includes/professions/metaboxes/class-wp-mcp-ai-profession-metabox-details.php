@@ -4,7 +4,6 @@
  *
  * Handles the category, role description, and warnings fields.
  *
- *
  * @package WP_MCP_AI
  */
 

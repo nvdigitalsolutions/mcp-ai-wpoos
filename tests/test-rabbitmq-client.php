@@ -2,7 +2,6 @@
 /**
  * Tests for RabbitMQ Client.
  *
- *
  * @package WP_MCP_AI
  */
 

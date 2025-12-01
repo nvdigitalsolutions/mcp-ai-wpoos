@@ -2,7 +2,6 @@
 /**
  * Tool for installing and activating WordPress plugins.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Backward-compatible loader for the REST API controller.
  *
- *
  * @package WP_MCP_AI
  */
 

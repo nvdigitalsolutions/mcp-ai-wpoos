@@ -2,7 +2,6 @@
 /**
  * Test that Gemini tools are properly tracked in the token usage manager.
  *
- *
  * @package WP_MCP_AI
  */
 

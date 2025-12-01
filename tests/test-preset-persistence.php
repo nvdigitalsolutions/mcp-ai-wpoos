@@ -2,7 +2,6 @@
 /**
  * Tests for configuration preset persistence.
  *
- *
  * @package WP_MCP_AI
  */
 

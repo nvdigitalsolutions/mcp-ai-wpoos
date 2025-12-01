@@ -2,7 +2,6 @@
 /**
  * Elementor widget for rendering the WP oOS chat shortcode.
  *
- *
  * @package WP_MCP_AI
  */
 

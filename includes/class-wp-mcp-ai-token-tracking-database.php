@@ -5,7 +5,6 @@
  * Manages the enhanced hourly token usage tracking database table with
  * provider, model, and cost information for accurate cost attribution.
  *
- *
  * @package WP_MCP_AI
  * @since 1.1.0
  */

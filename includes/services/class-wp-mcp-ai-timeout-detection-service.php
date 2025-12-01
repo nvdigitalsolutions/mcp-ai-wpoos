@@ -11,7 +11,6 @@
  * 2. In polling/processing loop: if ($detector->is_approaching_timeout()) { fallback to async }
  * 3. Service automatically calculates thresholds based on PHP configuration
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

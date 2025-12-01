@@ -6,7 +6,6 @@
  * scheduling cron events, which is critical for async job execution
  * when users are on SSE connections or close their browsers.
  *
- *
  * @package WP_MCP_AI
  */
 

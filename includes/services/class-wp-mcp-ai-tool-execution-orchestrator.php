@@ -18,7 +18,6 @@
  * - Long-running tools are queued immediately without calling tool->execute()
  * - Fast tools are executed synchronously as before
  *
- *
  * @package WP_MCP_AI
  * @since 1.0.0
  */

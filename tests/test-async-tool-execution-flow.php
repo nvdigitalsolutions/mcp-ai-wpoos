@@ -2,7 +2,6 @@
 /**
  * Test async tool execution flow end-to-end.
  *
- *
  * @package WP_MCP_AI
  */
 

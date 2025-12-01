@@ -2,7 +2,6 @@
 /**
  * Tests for Auth0 Setup Menu Registration
  *
- *
  * @package WP_MCP_AI
  */
 

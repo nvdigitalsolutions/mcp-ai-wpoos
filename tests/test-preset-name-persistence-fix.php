@@ -4,7 +4,6 @@
  *
  * Verifies that preset names stick after page reload (Issue #1093).
  *
- *
  * @package WP_MCP_AI
  */
 

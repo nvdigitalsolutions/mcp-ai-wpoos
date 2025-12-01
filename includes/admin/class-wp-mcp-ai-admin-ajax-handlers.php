@@ -4,7 +4,6 @@
  *
  * Handles all AJAX requests for the admin settings page.
  *
- *
  * @package WP_MCP_AI
  */
 

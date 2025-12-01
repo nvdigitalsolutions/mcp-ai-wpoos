@@ -2,7 +2,6 @@
 /**
  * Tests for the WP_MCP_AI_Cache_Helper class.
  *
- *
  * @package WP_MCP_AI
  */
 

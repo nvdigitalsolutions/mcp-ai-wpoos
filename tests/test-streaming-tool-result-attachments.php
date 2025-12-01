@@ -5,7 +5,6 @@
  * Validates that tool results with attachments (images, files) are properly
  * formatted in streaming SSE events for chat client display.
  *
- *
  * @package WP_MCP_AI
  */
 

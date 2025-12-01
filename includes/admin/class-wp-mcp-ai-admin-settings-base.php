@@ -4,7 +4,6 @@
  *
  * Handles core settings registration and management.
  *
- *
  * @package WP_MCP_AI
  */
 

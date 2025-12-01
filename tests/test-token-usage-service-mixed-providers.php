@@ -2,7 +2,6 @@
 /**
  * Tests for WP_MCP_AI_Token_Usage_Service with mixed provider scenarios.
  *
- *
  * @package WP_MCP_AI
  */
 

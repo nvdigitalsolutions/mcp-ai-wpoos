@@ -2,7 +2,6 @@
 /**
  * tests/test-search-gmail-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

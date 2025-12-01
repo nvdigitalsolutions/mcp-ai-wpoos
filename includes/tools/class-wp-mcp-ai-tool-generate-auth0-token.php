@@ -2,7 +2,6 @@
 /**
  * Tool for generating Auth0 bearer tokens using client credentials flow.
  *
- *
  * @package WP_MCP_AI
  */
 

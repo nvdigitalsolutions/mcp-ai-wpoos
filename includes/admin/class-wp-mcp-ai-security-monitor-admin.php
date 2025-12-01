@@ -2,7 +2,6 @@
 /**
  * Security Monitor Admin Interface
  *
- *
  * @package WP_MCP_AI
  */
 

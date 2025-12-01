@@ -2,7 +2,6 @@
 /**
  * Tool for creating AI assistants programmatically.
  *
- *
  * @package WP_MCP_AI
  */
 

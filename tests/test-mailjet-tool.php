@@ -2,7 +2,6 @@
 /**
  * tests/test-mailjet-tool.php
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -5,7 +5,6 @@
  * Handles media files, vector store configuration, and MIME type restrictions
  * for profession templates.
  *
- *
  * @package WP_MCP_AI
  */
 

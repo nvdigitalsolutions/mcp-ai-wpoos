@@ -2,7 +2,6 @@
 /**
  * Tool for generating captions for videos using AI vision capabilities.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Design Professional tool preset.
  *
- *
  * @package WP_MCP_AI
  */
 

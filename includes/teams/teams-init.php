@@ -4,7 +4,6 @@
  *
  * Loads and initializes the team management system.
  *
- *
  * @package WP_MCP_AI
  */
 

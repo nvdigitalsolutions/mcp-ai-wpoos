@@ -2,7 +2,6 @@
 /**
  * Tool that publishes TikTok videos using the Open API.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Token Manager reset functionality.
  *
- *
  * @package WP_MCP_AI
  */
 

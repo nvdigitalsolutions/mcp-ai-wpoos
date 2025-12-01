@@ -5,7 +5,6 @@
  * This test ensures that intermediate assistant messages with tool_calls are
  * included in the response so the frontend can maintain complete conversation history.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Elementor widget for displaying a FAQ block alongside the chat interface.
  *
- *
  * @package WP_MCP_AI
  */
 

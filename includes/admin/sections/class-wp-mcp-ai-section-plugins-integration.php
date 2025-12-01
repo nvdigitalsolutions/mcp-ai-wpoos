@@ -4,7 +4,6 @@
  *
  * Consolidated section for all WordPress plugin integrations (JetEngine, WooCommerce, Elementor).
  *
- *
  * @package WP_MCP_AI
  */
 

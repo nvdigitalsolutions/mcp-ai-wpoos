@@ -5,7 +5,6 @@
  * Provides an interface for administrators to test AI assistants directly from the WordPress admin.
  * Refactored to use base class for better SoC and code reuse.
  *
- *
  * @package WP_MCP_AI
  */
 

@@ -2,7 +2,6 @@
 /**
  * Tests for Gemini Client file support enhancements.
  *
- *
  * @package WP_MCP_AI
  */
 

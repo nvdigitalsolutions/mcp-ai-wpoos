@@ -9,7 +9,6 @@
  * - Content creation tools (save_post, create_woo_product)
  * - External API tools (run_crawl4ai_job, quickbooks_report)
  *
- *
  * @package WP_MCP_AI
  */
 

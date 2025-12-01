@@ -2,7 +2,6 @@
 /**
  * Tool that searches for places using Google Maps Platform Places API.
  *
- *
  * @package WP_MCP_AI
  */
 
