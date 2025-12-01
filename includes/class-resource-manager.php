@@ -226,7 +226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 
 			$base_timeout = isset( $timeout_map[ $tier ] ) ? $timeout_map[ $tier ] : 60;
 
-			// For external HTTP requests (e.g., to local AI providers), we can ignore
+			// For external HTTP requests (e.g., to local AI providers), we can ignore.
 			// max_execution_time since the HTTP API handles the wait without consuming PHP time.
 			if ( ! $ignore_execution_time ) {
 				// Ensure timeout doesn't exceed max_execution_time minus a buffer.

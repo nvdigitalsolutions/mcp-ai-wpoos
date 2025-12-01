@@ -28,7 +28,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		parent::tearDown();
@@ -437,7 +437,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		global $wpdb;
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$gemini_records = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT tool, provider, model, is_estimated FROM {$table_name} WHERE provider = %s ORDER BY tool",
@@ -460,7 +460,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		}
 
 		// Verify OpenAI record was not touched.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$openai_records = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT tool FROM {$table_name} WHERE provider = %s",

@@ -793,7 +793,7 @@ class WP_MCP_AI_Tool_Generic_REST_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'Authorization', $captured_request['headers'] );
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode.
 		$expected = 'Basic ' . base64_encode( 'username:password' );
 		$this->assertEquals( $expected, $captured_request['headers']['Authorization'] );
 	}

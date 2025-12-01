@@ -33,7 +33,7 @@ class Test_Transcript_Assistant_ID_Type extends WP_UnitTestCase {
 		$prepared_query = $wpdb->prepare( $query_template, $where_values );
 
 		// Verify the query contains the assistant_id as a quoted string.
-		// wpdb::prepare should produce: assistant_id = '372'
+		// wpdb::prepare should produce: assistant_id = '372'.
 		$this->assertStringContainsString( "assistant_id = '372'", $prepared_query );
 
 		// Verify the session_key is also quoted.

@@ -263,9 +263,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		return true;
 	}
 
-	// ========================================================================
-	// Abstract methods to be implemented by provider-specific subclasses
-	// ========================================================================
+	// ========================================================================.
+	// Abstract methods to be implemented by provider-specific subclasses.
+	// ========================================================================.
 
 	/**
 	 * Get API credentials for the provider
@@ -376,9 +376,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 */
 	abstract protected function is_processing_failed( $state );
 
-	// ========================================================================
+	// ========================================================================.
 	// Common helper methods (with default implementations)
-	// ========================================================================
+	// ========================================================================.
 
 	/**
 	 * Validate upload inputs
@@ -415,7 +415,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 * @return string|WP_Error File content or error.
 	 */
 	protected function read_file_content( $file_path ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 		$file_content = file_get_contents( $file_path );
 
 		if ( false === $file_content ) {
@@ -504,9 +504,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		);
 	}
 
-	// ========================================================================
-	// Logging methods
-	// ========================================================================
+	// ========================================================================.
+	// Logging methods.
+	// ========================================================================.
 
 	/**
 	 * Log upload start

@@ -48,7 +48,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 		$filter_method = new ReflectionMethod( $rest_controller, 'filter_duplicate_messages' );
 		$filter_method->setAccessible( true );
 
-		// Existing conversation has user message and assistant message
+		// Existing conversation has user message and assistant message.
 		$conversation = array(
 			array(
 				'role'    => 'user',
@@ -60,7 +60,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Candidate messages include a duplicate assistant message
+		// Candidate messages include a duplicate assistant message.
 		$candidates = array(
 			array(
 				'role'    => 'assistant',
@@ -74,7 +74,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 
 		$filtered = $filter_method->invokeArgs( $rest_controller, array( $conversation, $candidates ) );
 
-		// Should only have the new message
+		// Should only have the new message.
 		$this->assertCount( 1, $filtered );
 		$this->assertSame( 'How can I help?', $filtered[0]['content'] );
 	}
@@ -102,7 +102,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Existing conversation has assistant message with tool_calls
+		// Existing conversation has assistant message with tool_calls.
 		$conversation = array(
 			array(
 				'role'       => 'assistant',
@@ -111,7 +111,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Candidate is the same assistant message with tool_calls
+		// Candidate is the same assistant message with tool_calls.
 		$candidates = array(
 			array(
 				'role'       => 'assistant',
@@ -122,7 +122,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 
 		$filtered = $filter_method->invokeArgs( $rest_controller, array( $conversation, $candidates ) );
 
-		// Should be empty since the message is a duplicate
+		// Should be empty since the message is a duplicate.
 		$this->assertCount( 0, $filtered );
 	}
 
@@ -154,7 +154,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 
 		$filtered = $filter_method->invokeArgs( $rest_controller, array( $conversation, $candidates ) );
 
-		// Should return all candidates
+		// Should return all candidates.
 		$this->assertCount( 2, $filtered );
 	}
 
@@ -236,10 +236,10 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Filter response messages against request messages
+		// Filter response messages against request messages.
 		$filtered = $filter_method->invokeArgs( $rest_controller, array( $request_messages, $response_messages ) );
 
-		// All response messages should be filtered out since they're duplicates
+		// All response messages should be filtered out since they're duplicates.
 		$this->assertCount( 0, $filtered, 'All response messages should be filtered as duplicates' );
 	}
 
@@ -256,7 +256,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 		$filter_method = new ReflectionMethod( $rest_controller, 'filter_duplicate_messages' );
 		$filter_method->setAccessible( true );
 
-		// Existing conversation
+		// Existing conversation.
 		$conversation = array(
 			array(
 				'role'    => 'assistant',
@@ -264,7 +264,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Candidates with different content
+		// Candidates with different content.
 		$candidates = array(
 			array(
 				'role'    => 'assistant',
@@ -274,7 +274,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 
 		$filtered = $filter_method->invokeArgs( $rest_controller, array( $conversation, $candidates ) );
 
-		// Should keep the different message
+		// Should keep the different message.
 		$this->assertCount( 1, $filtered );
 		$this->assertSame( 'Hello there!', $filtered[0]['content'] );
 	}

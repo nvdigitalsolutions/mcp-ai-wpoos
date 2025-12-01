@@ -186,7 +186,7 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			),
 		);
 
-		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
+		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included.
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
 		// If base64 content is needed, it should be retrieved via a separate endpoint or parameter.
 

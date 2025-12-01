@@ -276,12 +276,12 @@ class Test_Gemini_File_Service_Caching extends WP_UnitTestCase {
 		}
 
 		// Try to clean up files older than 24 hours.
-		// Note: This will fail to delete because we don't have a real API key,
+		// Note: This will fail to delete because we don't have a real API key,.
 		// but it should attempt deletion.
 		$result = $this->service->cleanup_old_files( 24 * HOUR_IN_SECONDS );
 
 		$this->assertEquals( 1, $result['total_checked'], 'Should check 1 file' );
-		// The file won't actually be deleted because API call will fail,
+		// The file won't actually be deleted because API call will fail,.
 		// but we've verified the age check logic works.
 	}
 

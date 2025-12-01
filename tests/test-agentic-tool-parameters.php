@@ -24,7 +24,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$message_sequence = array();
 
 		// The agentic loop makes TWO calls:
-		// 1. Initial call returns assistant message with tool_calls
+		// 1. Initial call returns assistant message with tool_calls.
 		// 2. Second call after tool execution (even when tool returns error)
 		$mock_client
 			->expects( $this->exactly( 2 ) )
@@ -210,7 +210,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$message_sequence = array();
 
 		// The agentic loop makes TWO calls:
-		// 1. Initial call returns assistant message with tool_calls
+		// 1. Initial call returns assistant message with tool_calls.
 		// 2. Second call after tool execution (even when tool returns error)
 		$mock_client
 			->expects( $this->exactly( 2 ) )

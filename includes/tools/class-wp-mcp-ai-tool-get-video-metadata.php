@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! $ffprobe_available ) {
 			if ( $temp_file && file_exists( $video_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 				unlink( $video_path );
 			}
 
@@ -127,7 +127,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Clean up temporary video file if downloaded.
 		if ( $temp_file && file_exists( $video_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 			unlink( $video_path );
 		}
 
@@ -244,7 +244,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$temp_file = wp_tempnam( 'video' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents.
 		$written = file_put_contents( $temp_file, $body );
 
 		if ( false === $written ) {
@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		$return_code = 0;
 
 		// Try to execute FFprobe version command.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( 'which ffprobe 2>&1', $ffprobe_path, $which_return );
 
 		if ( 0 === $which_return && ! empty( $ffprobe_path[0] ) ) {
@@ -282,7 +282,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 			$ffprobe_cmd = 'ffprobe -version 2>&1';
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $ffprobe_cmd, $output, $return_code );
 
 		// FFprobe should return 0 and have output containing 'ffprobe version'.
@@ -315,7 +315,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		$output      = array();
 		$return_code = 0;
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $command, $output, $return_code );
 
 		if ( 0 !== $return_code || empty( $output ) ) {

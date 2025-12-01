@@ -145,7 +145,7 @@ class WP_MCP_AI_Resource_Manager {
 echo "Active Preset Update Test\n";
 echo "=========================\n\n";
 
-// Test 1: Verify apply_preset updates the orchestration_preset setting
+// Test 1: Verify apply_preset updates the orchestration_preset setting.
 echo "Test 1: Apply preset updates orchestration_preset setting...\n";
 delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
@@ -153,14 +153,14 @@ delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 $initial_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'custom' );
 echo "  Initial preset: $initial_preset\n";
 
-// Apply balanced preset
+// Apply balanced preset.
 $result = WP_MCP_AI_Orchestration_Preset_Service::apply_preset( 'balanced' );
 if ( $result !== true ) {
 	echo "  ✗ Failed to apply preset\n";
 	exit( 1 );
 }
 
-// Verify preset was updated
+// Verify preset was updated.
 $active_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset' );
 if ( $active_preset === 'balanced' ) {
 	echo "  ✓ Preset updated to: $active_preset\n";
@@ -170,20 +170,20 @@ if ( $active_preset === 'balanced' ) {
 	exit( 1 );
 }
 
-// Test 2: Verify preset persists across form saves
+// Test 2: Verify preset persists across form saves.
 echo "Test 2: Preset persists when other settings are saved...\n";
 
-// Simulate saving the form with the orchestration_preset field included
+// Simulate saving the form with the orchestration_preset field included.
 $form_data = array(
 	'orchestration_preset' => 'balanced',  // This should be in the form.
 	'default_model'        => 'gpt-4o',
 	'enable_logging'       => '1',
 );
 
-// Update settings
+// Update settings.
 WP_MCP_AI_Settings_Registry::update_settings( $form_data );
 
-// Verify preset is still 'balanced'
+// Verify preset is still 'balanced'.
 $preset_after_save = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset' );
 if ( $preset_after_save === 'balanced' ) {
 	echo "  ✓ Preset still 'balanced' after form save\n";
@@ -193,7 +193,7 @@ if ( $preset_after_save === 'balanced' ) {
 	exit( 1 );
 }
 
-// Test 3: Apply different preset and verify it updates
+// Test 3: Apply different preset and verify it updates.
 echo "Test 3: Apply different preset (aggressive)...\n";
 
 $result = WP_MCP_AI_Orchestration_Preset_Service::apply_preset( 'aggressive' );
@@ -211,11 +211,11 @@ if ( $new_preset === 'aggressive' ) {
 	exit( 1 );
 }
 
-// Test 4: Verify preset settings were also applied
+// Test 4: Verify preset settings were also applied.
 echo "Test 4: Verify preset settings were applied...\n";
 
 $memory_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold' );
-// Aggressive preset should have memory_warning_threshold of 80
+// Aggressive preset should have memory_warning_threshold of 80.
 if ( $memory_threshold === 80 ) {
 	echo "  ✓ Memory warning threshold: $memory_threshold (aggressive preset value)\n";
 	echo "✓ Test 4 passed\n\n";

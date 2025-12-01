@@ -38,7 +38,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	 * result.async === true && result.status === 'pending' && result.job_id
 	 */
 	public function test_sanitize_preserves_async_fields() {
-		// Mock pending crawl4ai result
+		// Mock pending crawl4ai result.
 		$pending_result = array(
 			'async'    => true,
 			'status'   => 'pending',
@@ -54,14 +54,14 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $pending_result );
 
-		// Critical async fields must be preserved
+		// Critical async fields must be preserved.
 		$this->assertArrayHasKey( 'async', $sanitized, 'async field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'status', $sanitized, 'status field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'task_id', $sanitized, 'task_id field must be preserved for polling' );
 		$this->assertArrayHasKey( 'job_id', $sanitized, 'job_id field must be preserved for consistency with veo' );
 		$this->assertArrayHasKey( 'message', $sanitized, 'message field should be preserved for user feedback' );
 
-		// Verify values are unchanged
+		// Verify values are unchanged.
 		$this->assertTrue( $sanitized['async'], 'async flag must be true' );
 		$this->assertSame( 'pending', $sanitized['status'], 'status must be pending' );
 		$this->assertSame( 'crawl_abc123', $sanitized['task_id'], 'task_id must be preserved' );
@@ -75,7 +75,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	 * at chat.js:8942 that detects async tool execution.
 	 */
 	public function test_javascript_async_detection_compatibility() {
-		// Mock pending result
+		// Mock pending result.
 		$result = array(
 			'async'   => true,
 			'status'  => 'pending',
@@ -87,7 +87,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id
+		// Simulate JavaScript check: result.async === true && result.status === 'pending' && result.job_id.
 		$js_check = (
 			isset( $sanitized['async'] ) &&
 			$sanitized['async'] === true &&
@@ -106,7 +106,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	 * When crawl completes, results array is populated and status changes.
 	 */
 	public function test_sanitize_preserves_completed_metadata() {
-		// Mock completed crawl result
+		// Mock completed crawl result.
 		$completed = array(
 			'status'   => 'completed',
 			'task_id'  => 'crawl_done',
@@ -127,19 +127,19 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $completed );
 
-		// Essential fields should be preserved
+		// Essential fields should be preserved.
 		$this->assertArrayHasKey( 'status', $sanitized );
 		$this->assertArrayHasKey( 'task_id', $sanitized );
 		$this->assertArrayHasKey( 'results', $sanitized );
 		$this->assertSame( 'completed', $sanitized['status'] );
 
-		// Results should be preserved but HTML stripped
+		// Results should be preserved but HTML stripped.
 		$this->assertIsArray( $sanitized['results'] );
 		$this->assertCount( 1, $sanitized['results'] );
 		$this->assertArrayHasKey( 'markdown', $sanitized['results'][0] );
 		$this->assertArrayNotHasKey( 'html', $sanitized['results'][0], 'HTML should be stripped' );
 
-		// Verbose metadata should be stripped
+		// Verbose metadata should be stripped.
 		if ( isset( $sanitized['metadata'] ) ) {
 			$this->assertArrayNotHasKey( 'headers', $sanitized['metadata'], 'Headers should be stripped from metadata' );
 		}
@@ -190,7 +190,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// task_id should still be preserved
+		// task_id should still be preserved.
 		$this->assertArrayHasKey( 'task_id', $sanitized );
 		$this->assertSame( 'crawl_old_format', $sanitized['task_id'] );
 	}
@@ -215,7 +215,7 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	 * async tools for a consistent user experience.
 	 */
 	public function test_async_pattern_consistency_with_veo() {
-		// Crawl4AI pending result
+		// Crawl4AI pending result.
 		$crawl_result = array(
 			'async'   => true,
 			'status'  => 'pending',
@@ -234,13 +234,13 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 
 		$crawl_sanitized = $this->tool->sanitize_for_llm( $crawl_result );
 
-		// Both should have the same required async fields
+		// Both should have the same required async fields.
 		$required = array( 'async', 'status', 'job_id', 'message' );
 		foreach ( $required as $field ) {
 			$this->assertArrayHasKey( $field, $crawl_sanitized, "Crawl4AI must have $field like veo" );
 		}
 
-		// Verify JavaScript detection would work for both
+		// Verify JavaScript detection would work for both.
 		$crawl_js_check = (
 			$crawl_sanitized['async'] === true &&
 			$crawl_sanitized['status'] === 'pending' &&

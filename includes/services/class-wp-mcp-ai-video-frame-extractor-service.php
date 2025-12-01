@@ -75,7 +75,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$return_code = 0;
 
 		// Use absolute path if available, otherwise rely on PATH.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( 'which ffmpeg 2>&1', $ffmpeg_path, $which_return );
 
 		if ( 0 === $which_return && ! empty( $ffmpeg_path[0] ) ) {
@@ -86,7 +86,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			$ffmpeg_cmd = 'ffmpeg -version 2>&1';
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $ffmpeg_cmd, $output, $return_code );
 
 		// FFmpeg should return 0 and have output containing 'ffmpeg version'.
@@ -125,7 +125,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$output      = array();
 		$return_code = 0;
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $command, $output, $return_code );
 
 		if ( 0 !== $return_code || empty( $output ) ) {
@@ -269,9 +269,9 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
 
 		// FFmpeg command to extract frame at specific timestamp.
-		// -ss: seek to timestamp
-		// -i: input file
-		// -vframes 1: extract 1 frame
+		// -ss: seek to timestamp.
+		// -i: input file.
+		// -vframes 1: extract 1 frame.
 		// -q:v: quality (2 is high quality)
 		// -y: overwrite output file.
 		$command = sprintf(
@@ -285,7 +285,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$output      = array();
 		$return_code = 0;
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $command, $output, $return_code );
 
 		if ( 0 !== $return_code ) {
@@ -317,7 +317,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 
 		// Create base temp directory if it doesn't exist.
 		if ( ! file_exists( $base_dir ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir.
 			if ( ! mkdir( $base_dir, 0755, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_temp_dir_failed',
@@ -331,7 +331,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$unique_id = uniqid( 'frames_', true );
 		$temp_dir  = $base_dir . '/' . $unique_id;
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir.
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_subdir_failed',
@@ -405,14 +405,14 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( ! empty( $files ) && is_array( $files ) ) {
 			foreach ( $files as $file ) {
 				if ( is_file( $file ) ) {
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 					unlink( $file );
 				}
 			}
 		}
 
 		// Delete the directory itself.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir.
 		$result = rmdir( $directory );
 
 		if ( $result ) {
@@ -442,7 +442,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 			$image_data = file_get_contents( $frame_path );
 			if ( false === $image_data ) {
 				continue;

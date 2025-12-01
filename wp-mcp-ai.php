@@ -475,7 +475,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 }
 
 // Load assistant builder blocks for all versions (base and full).
-// These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,
+// These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,.
 // Tools Grid, Knowledge Base, and full Assistant Builder components.
 require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-assistant-builder-blocks.php';
 
@@ -486,7 +486,7 @@ if ( ! $skip_buffering ) {
 }
 
 // Load Performance section AJAX handlers for Elementor widgets on frontend.
-// The Performance section's AJAX handlers are needed by Elementor widgets that can
+// The Performance section's AJAX handlers are needed by Elementor widgets that can.
 // be displayed on the frontend (Performance Test Runner and Performance Metrics widgets).
 if ( ! is_admin() ) {
 	// Load required dependencies for Performance section.
@@ -858,7 +858,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
 				// Suppress display_errors to prevent debug output from breaking JSON responses.
-				// Error suppression is intentional: some hosts disable ini_set changes,
+				// Error suppression is intentional: some hosts disable ini_set changes,.
 				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
@@ -869,7 +869,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				$this->elementor_buffer_level = ob_get_level();
 
 				// Start output buffering to catch any stray output that could break JSON responses.
-				// This protects against any echoed content, warnings, or notices that occur
+				// This protects against any echoed content, warnings, or notices that occur.
 				// during the Elementor save process.
 				ob_start();
 
@@ -945,7 +945,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 				// Prevent debug output from breaking Elementor's JSON responses.
 				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
-				// Error suppression is intentional: some hosts disable ini_set changes,
+				// Error suppression is intentional: some hosts disable ini_set changes,.
 				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
@@ -1331,7 +1331,7 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
 
-		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
+		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here.
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
 		flush_rewrite_rules();

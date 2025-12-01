@@ -87,7 +87,7 @@ class WP_MCP_AI_Shortcode {
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
 		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		$script_relative            = 'assets/js/chat-bundle.min.js';
 		$style_relative             = 'assets/css/chat.css';
@@ -125,7 +125,7 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		// Register bundled chat script (includes all services in a single file)
-		// This replaces the previous 8 separate script registrations with 1 bundled file
+		// This replaces the previous 8 separate script registrations with 1 bundled file.
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$script_path,
@@ -452,7 +452,7 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Render the actual widget in Elementor editor for better preview.
-			// The WP_DEBUG fix in the main plugin class ensures debug output
+			// The WP_DEBUG fix in the main plugin class ensures debug output.
 			// won't break the editor when WP_DEBUG is enabled.
 			$is_elementor_editor = $this->is_elementor_editor();
 

@@ -275,7 +275,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY timestamp DESC";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $params ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -316,7 +316,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$result = $wpdb->get_row( $wpdb->prepare( $query, $user_id, $start_date, $end_date ), ARRAY_A );
 
 		if ( ! $result ) {
@@ -361,7 +361,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			GROUP BY provider
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -393,7 +393,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			GROUP BY provider, model
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -424,7 +424,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			GROUP BY tool
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -456,7 +456,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			ORDER BY DATE(timestamp)
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -488,7 +488,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			ORDER BY total_cost DESC
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -508,7 +508,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table_name} WHERE timestamp < %s",
@@ -527,7 +527,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function drop_table() {
 		global $wpdb;
 		$table_name = self::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange.
 		$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" );
 		delete_option( self::DB_VERSION_OPTION );
 	}

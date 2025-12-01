@@ -149,7 +149,7 @@ require_once ABSPATH . 'includes/services/class-wp-mcp-ai-orchestration-preset-s
 echo "Preset Page Reload Scenario Test\n";
 echo "=================================\n\n";
 
-// Simulate initial page load - no settings yet
+// Simulate initial page load - no settings yet.
 delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 echo "Step 1: Initial page load (no preset saved yet)...\n";
@@ -162,7 +162,7 @@ if ( $initial_preset !== 'custom' ) {
 }
 echo "  ✓ Correct initial state\n\n";
 
-// Step 2: User clicks "Apply" on "Balanced" preset
+// Step 2: User clicks "Apply" on "Balanced" preset.
 echo "Step 2: User clicks 'Apply' on 'Balanced' preset (AJAX call)...\n";
 $result = WP_MCP_AI_Orchestration_Preset_Service::apply_preset( 'balanced' );
 
@@ -171,7 +171,7 @@ if ( $result !== true ) {
 	exit( 1 );
 }
 
-// Verify it was saved to database
+// Verify it was saved to database.
 $saved_options = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 $saved_preset  = isset( $saved_options['orchestration_preset'] ) ? $saved_options['orchestration_preset'] : 'NOT SET';
 echo "  Saved to database: orchestration_preset = $saved_preset\n";
@@ -182,7 +182,7 @@ if ( $saved_preset !== 'balanced' ) {
 }
 echo "  ✓ Preset saved to database\n\n";
 
-// Step 3: Simulate page reload - re-read from database
+// Step 3: Simulate page reload - re-read from database.
 echo "Step 3: Page reloads (simulating browser refresh)...\n";
 echo "  Reading orchestration_preset from database...\n";
 
@@ -196,7 +196,7 @@ if ( $current_preset !== 'balanced' ) {
 }
 echo "  ✓ Preset correctly shows as 'balanced' after reload\n\n";
 
-// Step 4: Verify the preset card would show as active
+// Step 4: Verify the preset card would show as active.
 echo "Step 4: Verify UI would render correctly...\n";
 $presets             = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
 $current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : 'Unknown';

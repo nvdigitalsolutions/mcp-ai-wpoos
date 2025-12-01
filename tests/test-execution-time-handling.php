@@ -105,7 +105,7 @@ class WP_MCP_AI_Execution_Time_Test extends WP_UnitTestCase {
 		);
 
 		// Try to adjust execution time.
-		// This might or might not succeed depending on hosting restrictions,
+		// This might or might not succeed depending on hosting restrictions,.
 		// but the action should still fire.
 		$manager->ensure_execution_time( 999 );
 

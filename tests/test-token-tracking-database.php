@@ -28,7 +28,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		parent::tearDown();
@@ -43,7 +43,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
 
 		// Check table exists.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		$this->assertEquals( $table_name, $table_exists, 'Token tracking table should be created' );
@@ -102,7 +102,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		// Verify cost was calculated.
 		global $wpdb;
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$record = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $insert_id ), ARRAY_A );
 
 		$this->assertNotNull( $record, 'Record should exist' );

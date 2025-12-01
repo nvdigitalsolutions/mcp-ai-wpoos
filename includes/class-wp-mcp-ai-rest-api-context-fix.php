@@ -76,7 +76,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 
 		// Check if context parameter was explicitly provided by the client.
 		// We check both query params and body params, but NOT route defaults.
-		// This ensures we only apply no-cache headers when the client actually requested
+		// This ensures we only apply no-cache headers when the client actually requested.
 		// a specific context, not when the endpoint just has a default context value.
 		$query_params         = $request->get_query_params();
 		$body_params          = $request->get_body_params();
@@ -151,7 +151,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 	 * @return bool
 	 */
 	public static function ensure_query_string_preservation( $served, $result, $request, $server ) {
-		// This is primarily a diagnostic hook - we can't actually restore stripped parameters,
+		// This is primarily a diagnostic hook - we can't actually restore stripped parameters,.
 		// but we can log when they appear to be missing.
 
 		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {

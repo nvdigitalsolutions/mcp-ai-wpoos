@@ -33,7 +33,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		parent::tearDown();
@@ -123,7 +123,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		// Verify record was NOT actually updated (dry run).
 		global $wpdb;
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$record = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT provider FROM {$table_name} WHERE tool = %s",
@@ -177,7 +177,7 @@ class Test_Gemini_Migration_AJAX extends WP_UnitTestCase {
 		// Verify record WAS actually updated.
 		global $wpdb;
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$record = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT provider, model FROM {$table_name} WHERE tool = %s",

@@ -371,7 +371,7 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 			return call_user_func_array( array( $this->client, $method ), $args );
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error.
 		trigger_error( 'Call to undefined method ' . esc_html( __CLASS__ . '::' . $method ) . '()', E_USER_ERROR );
 	}
 }

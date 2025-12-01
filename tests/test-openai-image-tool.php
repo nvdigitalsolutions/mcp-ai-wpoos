@@ -418,7 +418,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'model', $result );
-		// The result should reflect the model actually returned by OpenAI
+		// The result should reflect the model actually returned by OpenAI.
 		$this->assertSame( 'dall-e-3', $result['model'] );
 
 		if ( ! empty( $result['attachment_id'] ) ) {

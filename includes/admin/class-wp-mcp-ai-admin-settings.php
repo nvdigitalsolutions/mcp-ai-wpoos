@@ -1301,9 +1301,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function register_settings() {
 			// REMOVED: Settings registration now handled by Settings Dashboard.
-			// The old base class register_settings() method has been removed to prevent
+			// The old base class register_settings() method has been removed to prevent.
 			// conflicting sanitization callbacks that wipe provider subtab settings.
-			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296
+			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296.
 
 			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
 			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.

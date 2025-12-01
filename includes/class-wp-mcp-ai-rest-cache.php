@@ -108,7 +108,7 @@ class WP_MCP_AI_REST_Cache {
 		$pattern        = self::CACHE_PREFIX . sanitize_key( $endpoint ) . '_%';
 		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -130,7 +130,7 @@ class WP_MCP_AI_REST_Cache {
 		$pattern        = self::CACHE_PREFIX . '%';
 		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",

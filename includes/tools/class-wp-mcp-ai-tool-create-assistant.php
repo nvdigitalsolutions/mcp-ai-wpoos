@@ -1765,7 +1765,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$upload_dir = wp_upload_dir();
 			$temp_file  = wp_tempnam( $filename, $upload_dir['path'] );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents.
 			if ( false === file_put_contents( $temp_file, $content ) ) {
 				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to write document file.', 'wp-mcp-ai' ) );
 			}
@@ -1780,7 +1780,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			// Clean up temp file.
 			if ( file_exists( $temp_file ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 				unlink( $temp_file );
 			}
 

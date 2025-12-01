@@ -157,7 +157,7 @@ class WP_MCP_AI_STDIO_Transport {
 		}
 
 		// Write response followed by newline.
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 		fwrite( STDOUT, $json . "\n" );
 
 		// Flush output immediately.
@@ -588,7 +588,7 @@ class WP_MCP_AI_STDIO_Transport {
 	 */
 	protected function log_debug( $message ) {
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 			fwrite( STDERR, '[WP oOS STDIO] ' . $message . "\n" );
 		}
 	}

@@ -694,7 +694,7 @@ composer install</pre>
 		$return_var = 0;
 
 		// Execute the test.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( $command, $output, $return_var );
 
 		$output_text = implode( "\n", $output );
@@ -752,7 +752,7 @@ composer install</pre>
 		}
 
 		$return_var = 0;
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
 		exec( 'command -v ' . escapeshellarg( $command ) . ' 2>/dev/null', $output, $return_var );
 		return 0 === $return_var;
 	}

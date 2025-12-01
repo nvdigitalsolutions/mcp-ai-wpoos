@@ -287,7 +287,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display after redirect.
 			if ( isset( $_GET['action'] ) ) :
 				$action_result = sanitize_key( wp_unslash( $_GET['action'] ) );
-				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended.
 				$valid_actions  = array( 'revoked', 'deleted', 'error' );
 				$action_notices = array(
 					'revoked' => array(

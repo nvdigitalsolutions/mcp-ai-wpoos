@@ -201,7 +201,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 			),
 		);
 
-		// === PART 1: SAVE TO CCT ===
+		// === PART 1: SAVE TO CCT ===.
 		// Save via POST /chat-transcripts.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
@@ -238,11 +238,11 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'Hello, how are you?', $saved_payload['messages'][0]['content'], 'First message content should match' );
 		$this->assertEquals( 'I am doing well, thank you for asking!', $saved_payload['messages'][1]['content'], 'Second message content should match' );
 
-		// === PART 2: SIMULATE RETRIEVAL FROM CCT ===
+		// === PART 2: SIMULATE RETRIEVAL FROM CCT ===.
 		// In a real scenario with JetEngine CCT, GET /chat-transcripts would:
-		// 1. Query database: WHERE session_key = X AND user_id = Y
-		// 2. Call extract_request_messages() to decode request_payload
-		// 3. Return messages to client
+		// 1. Query database: WHERE session_key = X AND user_id = Y.
+		// 2. Call extract_request_messages() to decode request_payload.
+		// 3. Return messages to client.
 		//
 		// We simulate this by filtering our saved_records (which represents the CCT database)
 		$retrieved_records = array_filter(
@@ -266,7 +266,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'I am doing well, thank you for asking!', $retrieved_messages[1]['content'], 'Retrieved second message should match' );
 
 		// This confirms the complete cycle:
-		// ✓ POST saves data to CCT with correct structure
+		// ✓ POST saves data to CCT with correct structure.
 		// ✓ Data can be queried by session_key + user_id (simulated)
 		// ✓ Messages can be extracted from saved payload (simulated)
 		// ✓ Retrieved messages match original (simulated)
@@ -573,19 +573,19 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// VERIFY RETRIEVAL-CRITICAL FIELDS:
 		// These fields are what get_transcript_session() uses to reconstruct the conversation.
 
-		// 1. User ID - required for user isolation in WHERE clause
+		// 1. User ID - required for user isolation in WHERE clause.
 		$this->assertArrayHasKey( 'user_id', $saved, 'Record must have user_id for retrieval filtering' );
 		$this->assertEquals( self::$user_id, $saved['user_id'], 'User ID must match for retrieval' );
 
-		// 2. Session key - required for WHERE clause to find specific conversation
+		// 2. Session key - required for WHERE clause to find specific conversation.
 		$this->assertArrayHasKey( 'session_key', $saved, 'Record must have session_key for retrieval' );
 		$this->assertEquals( $session_key, $saved['session_key'], 'Session key must match for retrieval' );
 
-		// 3. Assistant ID - used for filtering and metadata
+		// 3. Assistant ID - used for filtering and metadata.
 		$this->assertArrayHasKey( 'assistant_id', $saved, 'Record must have assistant_id for retrieval' );
 		$this->assertEquals( self::$assistant_id, (int) $saved['assistant_id'], 'Assistant ID must match for retrieval' );
 
-		// 4. Request payload - contains the messages array that get_transcript_session extracts
+		// 4. Request payload - contains the messages array that get_transcript_session extracts.
 		$this->assertArrayHasKey( 'request_payload', $saved, 'Record must have request_payload for message retrieval' );
 		$request_payload = json_decode( $saved['request_payload'], true );
 		$this->assertIsArray( $request_payload, 'Request payload must be valid JSON array' );
@@ -600,9 +600,9 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'Test response for retrieval', $extracted_messages[1]['content'], 'Second message content should be extractable' );
 
 		// SIMULATION OF RETRIEVAL PROCESS:
-		// This demonstrates what happens when GET /chat-transcripts?session_key=X&user_id=Y is called
+		// This demonstrates what happens when GET /chat-transcripts?session_key=X&user_id=Y is called.
 
-		// Step 1: Query finds records WHERE session_key = X AND user_id = Y
+		// Step 1: Query finds records WHERE session_key = X AND user_id = Y.
 		// (Our mock demonstrates this by filtering saved_records)
 		$retrieved_records = array_filter(
 			$this->saved_records,
@@ -614,20 +614,20 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertCount( 1, $retrieved_records, 'Retrieval query should find 1 record' );
 		$retrieved = array_values( $retrieved_records )[0];
 
-		// Step 2: extract_request_messages() decodes request_payload
+		// Step 2: extract_request_messages() decodes request_payload.
 		$retrieved_payload  = json_decode( $retrieved['request_payload'], true );
 		$retrieved_messages = $retrieved_payload['messages'];
 
-		// Step 3: Messages are reconstructed and returned to client
+		// Step 3: Messages are reconstructed and returned to client.
 		$this->assertCount( 2, $retrieved_messages, 'Retrieved messages count should match saved' );
 		$this->assertEquals( $messages[0]['content'], $retrieved_messages[0]['content'], 'Retrieved first message should match saved' );
 		$this->assertEquals( $messages[1]['content'], $retrieved_messages[1]['content'], 'Retrieved second message should match saved' );
 
 		// This verifies the COMPLETE SAVE → RETRIEVE cycle:
 		// ✓ Data saved with correct fields (user_id, session_key, assistant_id, request_payload)
-		// ✓ Data can be queried by session_key + user_id
-		// ✓ Messages can be extracted from request_payload
-		// ✓ Retrieved messages match original messages
+		// ✓ Data can be queried by session_key + user_id.
+		// ✓ Messages can be extracted from request_payload.
+		// ✓ Retrieved messages match original messages.
 	}
 
 	/**

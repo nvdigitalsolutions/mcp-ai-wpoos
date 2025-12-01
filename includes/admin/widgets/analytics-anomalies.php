@@ -122,7 +122,7 @@ $severity_colors = array(
 				if (ctx) {
 					var anomalies = <?php echo wp_json_encode( $anomalies ); ?>;
 					
-					// Prepare scatter plot data
+					// Prepare scatter plot data.
 					var scatterData = anomalies.map(function(anomaly, index) {
 						return {
 							x: index,
@@ -133,7 +133,7 @@ $severity_colors = array(
 						};
 					});
 					
-					// Color points by severity
+					// Color points by severity.
 					var pointColors = scatterData.map(function(point) {
 						var severityMap = <?php echo wp_json_encode( $severity_colors ); ?>;
 						return severityMap[point.severity] || '#666';

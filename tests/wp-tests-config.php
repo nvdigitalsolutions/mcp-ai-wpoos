@@ -30,15 +30,15 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 }
 
 // phpcs:ignore Squiz.PHP.CommentedOutCode.Found -- SQLite configuration for local development (optional).
-// if ( ! defined( 'DB_TYPE' ) ) {
+// if ( ! defined( 'DB_TYPE' ) ) {.
 // define( 'DB_TYPE', 'sqlite' );
 // }.
 //
-// if ( ! defined( 'DB_DIR' ) ) {
+// if ( ! defined( 'DB_DIR' ) ) {.
 // define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
 // }.
 //
-// if ( ! defined( 'DB_FILE' ) ) {
+// if ( ! defined( 'DB_FILE' ) ) {.
 // define( 'DB_FILE', 'wptests.sqlite' );
 // }.
 

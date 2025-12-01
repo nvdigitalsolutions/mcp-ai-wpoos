@@ -159,8 +159,8 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 			}
 		};
 
-		// We can't fully test without setting up the registry,
-		// but we verified the code structure above which is sufficient
+		// We can't fully test without setting up the registry,.
+		// but we verified the code structure above which is sufficient.
 		// to prove the fix is in place.
 		$this->assertNotNull( $mock_tool, 'Mock tool should be created' );
 	}

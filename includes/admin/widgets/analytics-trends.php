@@ -96,7 +96,7 @@ if ( $has_analytics ) {
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
 					
-					// Prepare data points for chart
+					// Prepare data points for chart.
 					var labels = [];
 					var dataPoints = [];
 					var trendLine = [];
@@ -106,7 +106,7 @@ if ( $has_analytics ) {
 						labels.push(date);
 						dataPoints.push(dailyUsage[date]);
 						
-						// Calculate trend line point: y = slope * x + intercept
+						// Calculate trend line point: y = slope * x + intercept.
 						var trendValue = trendInfo.slope * dayIndex + trendInfo.intercept;
 						trendLine.push(Math.max(0, trendValue));
 						dayIndex++;

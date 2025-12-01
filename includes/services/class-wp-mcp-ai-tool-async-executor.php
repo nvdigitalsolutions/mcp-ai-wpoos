@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Schedule cron job with a 20-second delay to ensure metadata and recording complete first.
 		// This prevents race condition where cron executes before transient is saved or job is recorded.
-		// The delay also accounts for potential delays in agentic workflows where the chat client
+		// The delay also accounts for potential delays in agentic workflows where the chat client.
 		// expects to receive a response after the job completes.
 		$timestamp = time() + 20;
 		$scheduled = wp_schedule_single_event(
@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$context   = isset( $metadata['context'] ) ? $metadata['context'] : array();
 
 		// Multisite support: Switch to the correct blog context if running in multisite.
-		// This ensures that file paths, attachment lookups, and other blog-specific operations
+		// This ensures that file paths, attachment lookups, and other blog-specific operations.
 		// work correctly when the async tool runs via WP-Cron.
 		$switched_blog = false;
 		if ( is_multisite() && isset( $context['blog_id'] ) ) {
@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		}
 
 		// Add flag to context indicating this tool is running in async executor.
-		// This prevents double-async execution (e.g., video generation tool
+		// This prevents double-async execution (e.g., video generation tool.
 		// queueing its own async job when already running in async context).
 		$context['in_async_executor'] = true;
 
@@ -336,13 +336,13 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// Apply filter to allow customization per tool.
 			$tool_timeout = apply_filters( 'wp_mcp_ai_async_tool_timeout', $tool_timeout, $tool_slug, $job_id );
 
-			// Set timeout if function exists. Some hosting environments disable set_time_limit
+			// Set timeout if function exists. Some hosting environments disable set_time_limit.
 			// for security reasons (safe mode, disable_functions in php.ini).
 			// Silencing errors because set_time_limit may trigger:
 			// - Warning when disabled in php.ini (disable_functions)
-			// - Warning when safe mode is enabled
-			// - Warning when running as Apache module with certain configurations
-			// These warnings are expected and can be safely ignored as we're providing
+			// - Warning when safe mode is enabled.
+			// - Warning when running as Apache module with certain configurations.
+			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for long-running tools.
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -363,12 +363,12 @@ class WP_MCP_AI_Tool_Async_Executor {
 			}
 
 			// Check if the tool returned a nested async response.
-			// This happens when a tool (like veo video generation) falls back to its own async mode
-			// due to timeout or other reasons. In this case, the parent job should be marked as
+			// This happens when a tool (like veo video generation) falls back to its own async mode.
+			// due to timeout or other reasons. In this case, the parent job should be marked as.
 			// 'delegated' rather than 'completed', and the nested job will complete the parent later.
 			//
-			// EXCEPTION: If the returned job_id matches the parent job_id, it means the tool
-			// (e.g., veo video generation) is reusing the parent job ID directly. In this case,
+			// EXCEPTION: If the returned job_id matches the parent job_id, it means the tool.
+			// (e.g., veo video generation) is reusing the parent job ID directly. In this case,.
 			// the veo service will manage the job polling and update this transient directly.
 			// We should NOT mark it as delegated - just return and let veo handle it.
 			$is_nested_async = is_array( $result )
@@ -396,8 +396,8 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 					// IMPORTANT: Refresh metadata from transient before updating.
 					// The veo service has already merged its fields (operation_name, model, etc.)
-					// into the transient. If we use our stale $metadata copy and save it,
-					// we would overwrite those veo-specific fields, causing the veo polling
+					// into the transient. If we use our stale $metadata copy and save it,.
+					// we would overwrite those veo-specific fields, causing the veo polling.
 					// to fail with "metadata not found" error.
 					$fresh_metadata = $this->get_metadata( $job_id );
 					if ( $fresh_metadata && is_array( $fresh_metadata ) ) {
@@ -456,7 +456,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 				);
 
 				// Fire job started hook to notify the chat client that the job is now in progress.
-				// The nested job (veo_xxx) will call complete_parent_job() when it finishes,
+				// The nested job (veo_xxx) will call complete_parent_job() when it finishes,.
 				// which will update this parent job to 'completed' and fire wp_mcp_ai_job_completed.
 				do_action(
 					'wp_mcp_ai_job_started',
@@ -500,7 +500,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 			);
 
 			// Fire job completed hook for notification system.
-			// This allows the chat client to receive completion notifications via SSE/polling
+			// This allows the chat client to receive completion notifications via SSE/polling.
 			// for any tool that runs through the async executor.
 			do_action(
 				'wp_mcp_ai_job_completed',
@@ -514,10 +514,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 			);
 
 			// Fire tool execution hook for token tracking and orchestration.
-			// This ensures async tools are properly tracked by the token manager,
-			// enabling proper orchestration and agentic loop completion for tools
+			// This ensures async tools are properly tracked by the token manager,.
+			// enabling proper orchestration and agentic loop completion for tools.
 			// with media-only responses (like veo video generation).
-			// NOTE: This must fire AFTER the result is stored but BEFORE job cleanup,
+			// NOTE: This must fire AFTER the result is stored but BEFORE job cleanup,.
 			// so token usage can be recorded for the completed async job.
 			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
 
@@ -560,7 +560,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		);
 
 		// Fire job failed hook for notification system.
-		// This allows the chat client to receive failure notifications via SSE/polling
+		// This allows the chat client to receive failure notifications via SSE/polling.
 		// for any tool that runs through the async executor.
 		$wp_error = $error instanceof WP_Error ? $error : new WP_Error( 'async_tool_failed', $error_message );
 		do_action(
@@ -806,7 +806,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Find expired transients.
 		$prefix = self::METADATA_TRANSIENT_PREFIX;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery.
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT option_name FROM {$wpdb->options} 

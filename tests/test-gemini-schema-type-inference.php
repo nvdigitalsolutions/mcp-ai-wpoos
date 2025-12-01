@@ -80,7 +80,7 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 								'items'       => array(
 									'type' => 'string',
 								),
-								// Note: No 'type' field - should be inferred as 'array'
+								// Note: No 'type' field - should be inferred as 'array'.
 							),
 						),
 					),
@@ -180,7 +180,7 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 										'description' => 'Whether enabled',
 									),
 								),
-								// Note: No 'type' field - should be inferred as 'object'
+								// Note: No 'type' field - should be inferred as 'object'.
 							),
 						),
 					),
@@ -274,7 +274,7 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 						'properties' => array(
 							'value' => array(
 								'description' => 'A value field',
-								// Note: No 'type', 'items', or 'properties' - should default to 'string'
+								// Note: No 'type', 'items', or 'properties' - should default to 'string'.
 							),
 						),
 					),
@@ -367,7 +367,7 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 								'type'        => 'array',
 								'description' => 'Array of filter objects',
 								'items'       => array(
-									// Note: items has 'properties' but no 'type'
+									// Note: items has 'properties' but no 'type'.
 									'properties' => array(
 										'key'    => array(
 											'type'        => 'string',
@@ -375,14 +375,14 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 										),
 										'value'  => array(
 											'description' => 'Filter value - no type',
-											// No type, items, or properties - should default to string
+											// No type, items, or properties - should default to string.
 										),
 										'values' => array(
 											'description' => 'Multiple values',
 											'items'       => array(
 												'type' => 'string',
 											),
-											// Has items but no type - should infer array
+											// Has items but no type - should infer array.
 										),
 									),
 								),

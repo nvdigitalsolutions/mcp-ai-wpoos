@@ -659,8 +659,8 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 */
 	public function handle_mcp_get_request( WP_REST_Request $request ) {
 		// Check if client explicitly requested SSE streaming via parameter.
-		// NOTE: We do NOT check the Accept header because LM Studio and other
-		// MCP clients send "Accept: text/event-stream" by default but expect
+		// NOTE: We do NOT check the Accept header because LM Studio and other.
+		// MCP clients send "Accept: text/event-stream" by default but expect.
 		// JSON-RPC responses for Streamable HTTP transport (MCP 2024-11-05 spec).
 		$wants_streaming = $request->get_param( 'stream' ) === 'true' || $request->get_param( 'stream' ) === '1';
 

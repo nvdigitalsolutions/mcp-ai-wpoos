@@ -108,7 +108,7 @@ class WP_MCP_AI_Gemini_File_Service {
 		}
 
 		// Read file content (local file, not remote URL).
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 		$file_content = file_get_contents( $file_path );
 		if ( false === $file_content ) {
 			return new WP_Error(
@@ -853,7 +853,7 @@ class WP_MCP_AI_Gemini_File_Service {
 			$mod_time  = '';
 
 			if ( $file_path && file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime.
 				$mod_time = filemtime( $file_path );
 			}
 

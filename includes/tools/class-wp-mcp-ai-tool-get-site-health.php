@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
 
-		// Provide polyfills for WordPress admin functions that may not be available
+		// Provide polyfills for WordPress admin functions that may not be available.
 		// in certain contexts, especially when Site Health is accessed via REST API.
 
 		// Polyfill for wp_check_php_version() - introduced in WordPress 5.1.0.

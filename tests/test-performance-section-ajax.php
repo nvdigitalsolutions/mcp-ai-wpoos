@@ -213,8 +213,8 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 			$this->assertIsBool( $result, 'command_exists should return boolean when exec() is available' );
 		}
 
-		// Note: We can't actually disable exec() in the test environment,
-		// but we've verified the code path exists and returns false when
+		// Note: We can't actually disable exec() in the test environment,.
+		// but we've verified the code path exists and returns false when.
 		// function_exists('exec') returns false.
 		$this->assertTrue( true, 'command_exists method has proper exec() availability check' );
 	}
@@ -244,13 +244,13 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 			$this->assertIsArray( $result, 'Should return array result' );
 			$this->assertArrayHasKey( 'success', $result, 'Result should have success key' );
 
-			// The result might be true (if PHPUnit available) or false (if not),
+			// The result might be true (if PHPUnit available) or false (if not),.
 			// but should not throw a fatal error about exec() being undefined.
 			$this->assertIsBool( $result['success'], 'Success should be boolean' );
 		}
 
 		// Verify the error structure that would be returned when exec() is disabled.
-		// We can't actually test this without disabling exec(), but we can verify
+		// We can't actually test this without disabling exec(), but we can verify.
 		// the code structure is correct by checking the method has the check.
 		$source = file_get_contents( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php' );
 		$this->assertStringContainsString(

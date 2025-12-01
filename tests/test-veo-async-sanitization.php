@@ -39,7 +39,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * "Completed" immediately instead of "Processing in background".
 	 */
 	public function test_sanitize_for_llm_preserves_async_fields() {
-		// Mock async result from video generation service
+		// Mock async result from video generation service.
 		$async_result = array(
 			'async'   => true,
 			'status'  => 'pending',
@@ -49,13 +49,13 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $async_result );
 
-		// Critical assertions: async metadata must be preserved
+		// Critical assertions: async metadata must be preserved.
 		$this->assertArrayHasKey( 'async', $sanitized, 'async field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'status', $sanitized, 'status field must be preserved for UI detection' );
 		$this->assertArrayHasKey( 'job_id', $sanitized, 'job_id field must be preserved for polling' );
 		$this->assertArrayHasKey( 'message', $sanitized, 'message field should be preserved for user feedback' );
 
-		// Verify values are unchanged
+		// Verify values are unchanged.
 		$this->assertSame( true, $sanitized['async'], 'async flag must be true' );
 		$this->assertSame( 'pending', $sanitized['status'], 'status must be pending' );
 		$this->assertSame( 'veo_test_12345', $sanitized['job_id'], 'job_id must be preserved' );
@@ -68,7 +68,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * and metadata. These should be preserved while stripping binary data.
 	 */
 	public function test_sanitize_for_llm_preserves_completed_result_metadata() {
-		// Mock completed result with attachment
+		// Mock completed result with attachment.
 		$completed_result = array(
 			'success'       => true,
 			'attachment_id' => 123,
@@ -85,7 +85,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $completed_result );
 
-		// Verify all metadata is preserved
+		// Verify all metadata is preserved.
 		$this->assertArrayHasKey( 'success', $sanitized );
 		$this->assertArrayHasKey( 'attachment_id', $sanitized );
 		$this->assertArrayHasKey( 'url', $sanitized );
@@ -98,7 +98,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'provider', $sanitized );
 		$this->assertArrayHasKey( 'message', $sanitized );
 
-		// Verify values
+		// Verify values.
 		$this->assertSame( 123, $sanitized['attachment_id'] );
 		$this->assertSame( 'https://example.com/video.mp4', $sanitized['url'] );
 		$this->assertSame( 5, $sanitized['duration'] );
@@ -112,7 +112,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * bloating the LLM context.
 	 */
 	public function test_sanitize_for_llm_strips_base64_video_data() {
-		// Mock result with base64 video data URL
+		// Mock result with base64 video data URL.
 		$result_with_data = array(
 			'success'      => true,
 			'video_url'    => 'data:video/mp4;base64,AAAA...verylongbase64string...ZZZZ',
@@ -126,12 +126,12 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result_with_data );
 
-		// Video data URL should be stripped
+		// Video data URL should be stripped.
 		$this->assertArrayNotHasKey( 'video_url', $sanitized, 'Base64 video URL should be stripped' );
 		$this->assertArrayHasKey( 'video_data_stripped', $sanitized, 'Should indicate data was stripped' );
 		$this->assertTrue( $sanitized['video_data_stripped'], 'Flag should be true' );
 
-		// Other metadata should be preserved
+		// Other metadata should be preserved.
 		$this->assertArrayHasKey( 'success', $sanitized );
 		$this->assertArrayHasKey( 'prompt', $sanitized );
 		$this->assertArrayHasKey( 'duration', $sanitized );
@@ -158,8 +158,8 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 		$sanitized = $this->tool->sanitize_for_llm( $result_with_url );
 
 		// HTTP URL should be preserved (it's just a reference, not base64 data)
-		// Note: video_url is not in the keep_fields list, so it will be stripped
-		// This is intentional - we only keep attachment URLs and edit URLs
+		// Note: video_url is not in the keep_fields list, so it will be stripped.
+		// This is intentional - we only keep attachment URLs and edit URLs.
 		$this->assertArrayNotHasKey( 'video_url', $sanitized, 'video_url is not in keep_fields list' );
 	}
 
@@ -170,7 +170,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * parent job ID that needs to be preserved for proper job completion.
 	 */
 	public function test_sanitize_for_llm_preserves_parent_job_id() {
-		// Mock result with parent job ID
+		// Mock result with parent job ID.
 		$result = array(
 			'async'         => true,
 			'status'        => 'pending',
@@ -181,7 +181,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// Parent job ID must be preserved
+		// Parent job ID must be preserved.
 		$this->assertArrayHasKey( 'parent_job_id', $sanitized, 'parent_job_id must be preserved' );
 		$this->assertSame( 'async_test_67890', $sanitized['parent_job_id'] );
 	}
@@ -192,7 +192,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * Token usage and cost information should be kept for UI display.
 	 */
 	public function test_sanitize_for_llm_preserves_usage_and_cost() {
-		// Mock result with usage and cost data
+		// Mock result with usage and cost data.
 		$result = array(
 			'success'       => true,
 			'attachment_id' => 123,
@@ -209,7 +209,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
 
-		// Usage and cost should be preserved
+		// Usage and cost should be preserved.
 		$this->assertArrayHasKey( 'usage', $sanitized );
 		$this->assertArrayHasKey( 'cost', $sanitized );
 		$this->assertSame(
@@ -237,7 +237,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * structure, allowing the chat client to display a placeholder video.
 	 */
 	public function test_sanitize_for_llm_uses_expected_url_when_url_not_available() {
-		// Mock pending async result with expected_url but no url
+		// Mock pending async result with expected_url but no url.
 		$pending_result = array(
 			'async'             => true,
 			'status'            => 'pending',
@@ -249,7 +249,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $pending_result );
 
-		// video_url structure should be created from expected_url
+		// video_url structure should be created from expected_url.
 		$this->assertArrayHasKey( 'video_url', $sanitized, 'video_url should be created from expected_url' );
 		$this->assertIsArray( $sanitized['video_url'], 'video_url should be an array structure' );
 		$this->assertArrayHasKey( 'url', $sanitized['video_url'], 'video_url should have url key' );
@@ -259,7 +259,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 			'video_url should use expected_url value'
 		);
 
-		// Other async fields should be preserved
+		// Other async fields should be preserved.
 		$this->assertTrue( $sanitized['async'] );
 		$this->assertSame( 'pending', $sanitized['status'] );
 		$this->assertSame( 'veo_test_12345', $sanitized['job_id'] );
@@ -274,7 +274,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * used for video_url, even if expected_url is also present.
 	 */
 	public function test_sanitize_for_llm_prefers_url_over_expected_url() {
-		// Mock completed result with both url and expected_url
+		// Mock completed result with both url and expected_url.
 		$completed_result = array(
 			'success'           => true,
 			'attachment_id'     => 123,
@@ -287,7 +287,7 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 
 		$sanitized = $this->tool->sanitize_for_llm( $completed_result );
 
-		// video_url should use the real url, not expected_url
+		// video_url should use the real url, not expected_url.
 		$this->assertArrayHasKey( 'video_url', $sanitized );
 		$this->assertSame(
 			'https://example.com/wp-content/uploads/2024/01/video.mp4',
@@ -303,17 +303,17 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 	 * be returned as-is without modification.
 	 */
 	public function test_sanitize_for_llm_handles_non_array_results() {
-		// Test with string result
+		// Test with string result.
 		$string_result = 'Video generation failed: API error';
 		$sanitized     = $this->tool->sanitize_for_llm( $string_result );
 		$this->assertSame( $string_result, $sanitized, 'String results should pass through unchanged' );
 
-		// Test with null result
+		// Test with null result.
 		$null_result = null;
 		$sanitized   = $this->tool->sanitize_for_llm( $null_result );
 		$this->assertNull( $sanitized, 'Null results should pass through unchanged' );
 
-		// Test with numeric result
+		// Test with numeric result.
 		$numeric_result = 42;
 		$sanitized      = $this->tool->sanitize_for_llm( $numeric_result );
 		$this->assertSame( $numeric_result, $sanitized, 'Numeric results should pass through unchanged' );

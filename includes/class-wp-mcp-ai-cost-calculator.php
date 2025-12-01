@@ -143,7 +143,7 @@ class WP_MCP_AI_Cost_Calculator {
 			// Veo video generation models.
 			// Pricing is per second of generated video.
 			// Based on Google Cloud Vertex AI documentation.
-			// Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing
+			// Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing.
 			'veo-3.1-generate-001'   => array(
 				'per_second' => 0.025,  // $0.025 per second of generated video.
 			),

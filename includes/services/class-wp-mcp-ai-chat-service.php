@@ -208,7 +208,7 @@ class WP_MCP_AI_Chat_Service {
 			$finish_reason = $this->extract_finish_reason_from_response( $response );
 
 			// Exit loop if no tool calls or if model indicates completion.
-			// finish_reason of 'stop' means the model has completed its response,
+			// finish_reason of 'stop' means the model has completed its response,.
 			// even if tool_calls are present in the message (for context/history).
 			if ( empty( $tool_calls ) || 'stop' === $finish_reason ) {
 				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
@@ -224,7 +224,7 @@ class WP_MCP_AI_Chat_Service {
 							'assistant_id'     => $assistant_id,
 						)
 					);
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 					error_log( sprintf( '[WP oOS Agentic Loop] Completed after %d iterations - %s', $iteration, $exit_reason ) );
 				}
 				break; // Final response ready.
@@ -250,7 +250,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 				error_log(
 					sprintf(
 						'[WP oOS Agentic Loop] Iteration %d/%d - Executing %d tool(s): %s',
@@ -289,7 +289,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 				error_log(
 					sprintf(
 						'[WP oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
@@ -313,7 +313,7 @@ class WP_MCP_AI_Chat_Service {
 				$messages[]       = $sanitized_result;
 			}
 
-			// Extract any images from tool results and add them as a user message
+			// Extract any images from tool results and add them as a user message.
 			// so vision models can "see" them in subsequent agentic loop iterations.
 			$image_message = $this->extract_images_from_tool_results( $tool_results );
 			if ( $image_message ) {
@@ -346,7 +346,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 				error_log(
 					sprintf(
 						'[WP oOS Agentic Loop] Iteration %d - Sending follow-up request with %d messages',
@@ -395,7 +395,7 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		// Add intermediate assistant messages with tool_calls to response for conversation state preservation.
-		// This ensures the frontend can reconstruct the full conversation history including which tools
+		// This ensures the frontend can reconstruct the full conversation history including which tools.
 		// were called and when, which is essential for agentic flow continuity and transcript storage.
 		if ( ! empty( $agentic_tool_messages ) ) {
 			$response['agentic_tool_messages'] = $agentic_tool_messages;
@@ -498,7 +498,7 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			// If tool returned async result, wait for completion in agentic loop.
-			// This prevents the LLM from seeing "pending" status and ensures it gets
+			// This prevents the LLM from seeing "pending" status and ensures it gets.
 			// the actual tool result (e.g., video URL) for proper response generation.
 			if ( $this->is_async_tool_result( $tool_result ) ) {
 				$tool_result = $this->wait_for_async_tool_completion( $tool_result['job_id'], $tool_name );
@@ -600,7 +600,7 @@ class WP_MCP_AI_Chat_Service {
 			);
 		} else {
 			$old_limit = ini_get( 'max_execution_time' );
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.system_calls_set_time_limit
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.system_calls_set_time_limit.
 			@set_time_limit( $required_time );
 
 			// Check if it actually changed (some hosts disable this via safe mode or disable_functions).

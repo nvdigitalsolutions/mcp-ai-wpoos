@@ -165,7 +165,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 
 		// Log to WordPress error log if WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 			error_log( sprintf( '[WP_MCP_AI] %s: %s', $component, $message ) );
 		}
 

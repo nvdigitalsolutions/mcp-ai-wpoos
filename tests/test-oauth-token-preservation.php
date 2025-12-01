@@ -30,7 +30,7 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
 		// Simulate saving the external_tools subtab with updated credentials.
-		// The critical issue: github_access_token and github_username are NOT in the form
+		// The critical issue: github_access_token and github_username are NOT in the form.
 		// because they're hidden fields populated by OAuth, not user input.
 		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$_POST['subtab'] = 'external_tools'; // Simulate subtab being submitted.
@@ -39,7 +39,7 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 			'github_client_id'     => 'updated-client-id',
 			'github_client_secret' => 'updated-client-secret',
 			'brave_search_api_key' => 'test-brave-key',
-			// Note: github_access_token and github_username are NOT in POST data
+			// Note: github_access_token and github_username are NOT in POST data.
 			// because they're hidden fields, not editable by user.
 		);
 

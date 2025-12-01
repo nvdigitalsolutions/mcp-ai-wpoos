@@ -316,7 +316,7 @@ class Test_Veo_Async_Video_Generation extends WP_UnitTestCase {
 		$new_path   = $upload_dir['path'] . '/veo-video-' . $unique_id . '.mp4';
 
 		// Rename the file to match external upload pattern.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename.
 		rename( $file_path, $new_path );
 		update_attached_file( $attachment_id, $new_path );
 

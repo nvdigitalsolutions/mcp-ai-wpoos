@@ -64,26 +64,26 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 */
 	public function should_execute_async( $tool, array $arguments = array(), array $context = array() ) {
 		// Priority 1: Background-only tools MUST run async regardless of other settings.
-		// These tools take so long (60+ seconds) that they would cause HTTP timeouts
+		// These tools take so long (60+ seconds) that they would cause HTTP timeouts.
 		// if run synchronously. This takes highest priority to prevent timeouts.
 		if ( $this->is_background_only( $tool ) ) {
 			return true;
 		}
 
-		// Priority 2: Explicit async parameter from user/LLM
+		// Priority 2: Explicit async parameter from user/LLM.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
 		}
 
-		// Priority 3: Legacy compatibility - respect wait_for_completion parameter
+		// Priority 3: Legacy compatibility - respect wait_for_completion parameter.
 		// If wait_for_completion=false, tool wants async (don't wait)
 		// If wait_for_completion=true, tool wants sync (wait in same request)
 		if ( isset( $arguments['wait_for_completion'] ) ) {
 			return ! (bool) $arguments['wait_for_completion'];
 		}
 
-		// Priority 4: Agentic loop context - force synchronous execution
-		// When executing in an agentic loop, tools MUST complete synchronously so the LLM
+		// Priority 4: Agentic loop context - force synchronous execution.
+		// When executing in an agentic loop, tools MUST complete synchronously so the LLM.
 		// receives actual results (e.g., generated image URL) before generating its response.
 		// Without this, the LLM would see only "pending" status and cannot produce meaningful output.
 		// Exception: background-only tools (Priority 1) still run async even in agentic loops.
@@ -91,17 +91,17 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 			return false;
 		}
 
-		// Priority 5: System intelligence - check global setting
+		// Priority 5: System intelligence - check global setting.
 		if ( ! $this->is_async_execution_enabled() ) {
 			return false;
 		}
 
-		// Priority 6: Check tool capability flags for timeout risk
+		// Priority 6: Check tool capability flags for timeout risk.
 		if ( ! $this->has_timeout_risk( $tool ) ) {
 			return false;
 		}
 
-		// Priority 7: Check if tool prefers background execution
+		// Priority 7: Check if tool prefers background execution.
 		if ( $this->prefers_background( $tool ) ) {
 			return true;
 		}

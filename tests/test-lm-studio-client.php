@@ -472,8 +472,8 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->test_connection();
 
-		// Verify URL is correctly formed: http://localhost:1234/v1/models
-		// NOT: http://localhost:1234/v1/v1/models
+		// Verify URL is correctly formed: http://localhost:1234/v1/models.
+		// NOT: http://localhost:1234/v1/v1/models.
 		$this->assertNotNull( $captured_url, 'URL should be captured' );
 		$this->assertStringEndsWith( '/v1/models', $captured_url, 'URL should end with /v1/models' );
 		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should NOT contain /v1/v1/ (double v1)' );

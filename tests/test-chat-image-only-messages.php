@@ -17,12 +17,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * Test that extract_request_messages preserves messages with image content.
 	 */
 	public function test_extract_request_messages_preserves_image_only_messages() {
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// Create a mock transcript row with an image-only message
+		// Create a mock transcript row with an image-only message.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -48,7 +48,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 				'name'         => 'generate_openai_image',
 				'content'      => '{"image_url":"https://example.com/cat.jpg"}',
 			),
-			// This is the critical message - assistant returns only an image, no text
+			// This is the critical message - assistant returns only an image, no text.
 			array(
 				'role'    => 'assistant',
 				'content' => array(
@@ -72,18 +72,18 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'request_payload' => $request_payload,
 		);
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'extract_request_messages' );
 		$method->setAccessible( true );
 
-		// Extract messages
+		// Extract messages.
 		$extracted = $method->invoke( $rest, $row );
 
-		// Verify all messages were preserved
+		// Verify all messages were preserved.
 		$this->assertCount( 4, $extracted, 'All 4 messages should be preserved' );
 
-		// Verify the image-only assistant message was preserved
+		// Verify the image-only assistant message was preserved.
 		$last_message = end( $extracted );
 		$this->assertSame( 'assistant', $last_message['role'], 'Last message should be assistant role' );
 		$this->assertIsArray( $last_message['content'], 'Image-only message content should be preserved as array' );
@@ -95,12 +95,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * Test that extract_response_messages preserves image-only assistant responses.
 	 */
 	public function test_extract_response_messages_preserves_image_only_responses() {
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// Create a mock response payload with an image-only message
+		// Create a mock response payload with an image-only message.
 		$response_payload = wp_json_encode(
 			array(
 				'choices' => array(
@@ -125,15 +125,15 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'response_payload' => $response_payload,
 		);
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'extract_response_messages' );
 		$method->setAccessible( true );
 
-		// Extract messages
+		// Extract messages.
 		$extracted = $method->invoke( $rest, $row );
 
-		// Verify the message was preserved
+		// Verify the message was preserved.
 		$this->assertCount( 1, $extracted, 'Image-only response message should be preserved' );
 		$this->assertSame( 'assistant', $extracted[0]['role'], 'Message should be assistant role' );
 		$this->assertIsArray( $extracted[0]['content'], 'Image-only message content should be preserved as array' );
@@ -144,17 +144,17 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * Test message_has_image_content helper method.
 	 */
 	public function test_message_has_image_content_detection() {
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'message_has_image_content' );
 		$method->setAccessible( true );
 
-		// Test 1: Message with image_url type should be detected
+		// Test 1: Message with image_url type should be detected.
 		$message_with_image_url = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -171,7 +171,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with image_url type'
 		);
 
-		// Test 2: Message with image_file type should be detected
+		// Test 2: Message with image_file type should be detected.
 		$message_with_image_file = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -188,7 +188,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with image_file type'
 		);
 
-		// Test 3: Message with mixed text and image should be detected
+		// Test 3: Message with mixed text and image should be detected.
 		$message_with_mixed_content = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -209,7 +209,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should detect message with mixed text and image content'
 		);
 
-		// Test 4: Text-only message should not be detected as having image content
+		// Test 4: Text-only message should not be detected as having image content.
 		$message_text_only = array(
 			'role'    => 'assistant',
 			'content' => array(
@@ -224,7 +224,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should not detect text-only message as having image content'
 		);
 
-		// Test 5: String content should not be detected as having image content
+		// Test 5: String content should not be detected as having image content.
 		$message_string_content = array(
 			'role'    => 'assistant',
 			'content' => 'This is a plain string',
@@ -234,7 +234,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'Should not detect string content as having image content'
 		);
 
-		// Test 6: Empty message should not be detected as having image content
+		// Test 6: Empty message should not be detected as having image content.
 		$empty_message = array(
 			'role' => 'assistant',
 		);
@@ -251,11 +251,11 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * and the workflow needs to continue to the next iteration.
 	 */
 	public function test_agentic_workflow_with_image_only_message() {
-		// Create an admin user
+		// Create an admin user.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		// Create a test assistant
+		// Create a test assistant.
 		$assistant_id = $this->factory->post->create(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -264,12 +264,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Configure assistant with a model and tools
+		// Configure assistant with a model and tools.
 		update_post_meta( $assistant_id, 'model', 'gpt-4o-mini' );
 		update_post_meta( $assistant_id, 'provider', 'openai' );
 		update_post_meta( $assistant_id, 'enabled_tools', array( 'get_current_time' ) );
 
-		// Build a message array that includes an image-only message
+		// Build a message array that includes an image-only message.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -295,7 +295,7 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 				'name'         => 'get_current_time',
 				'content'      => wp_json_encode( array( 'time' => '2:00 PM' ) ),
 			),
-			// Image-only message that previously caused issues
+			// Image-only message that previously caused issues.
 			array(
 				'role'    => 'assistant',
 				'content' => array(
@@ -309,12 +309,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// Create a mock transcript row
+		// Create a mock transcript row.
 		$request_payload = wp_json_encode(
 			array(
 				'messages' => $messages,
@@ -325,18 +325,18 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'request_payload' => $request_payload,
 		);
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'extract_request_messages' );
 		$method->setAccessible( true );
 
-		// Extract messages - this should not fail
+		// Extract messages - this should not fail.
 		$extracted = $method->invoke( $rest, $row );
 
-		// Verify all messages were preserved, including the image-only one
+		// Verify all messages were preserved, including the image-only one.
 		$this->assertCount( 4, $extracted, 'All messages including image-only should be preserved' );
 
-		// Verify the image-only message structure is intact
+		// Verify the image-only message structure is intact.
 		$image_message = $extracted[3];
 		$this->assertSame( 'assistant', $image_message['role'] );
 		$this->assertIsArray( $image_message['content'] );
@@ -350,12 +350,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * Test that user messages with images are also preserved.
 	 */
 	public function test_user_messages_with_images_preserved() {
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// Create messages with user sending an image
+		// Create messages with user sending an image.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -388,18 +388,18 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'request_payload' => $request_payload,
 		);
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'extract_request_messages' );
 		$method->setAccessible( true );
 
-		// Extract messages
+		// Extract messages.
 		$extracted = $method->invoke( $rest, $row );
 
-		// Verify both messages were preserved
+		// Verify both messages were preserved.
 		$this->assertCount( 2, $extracted, 'Both user and assistant messages should be preserved' );
 
-		// Verify user message with mixed content is preserved correctly
+		// Verify user message with mixed content is preserved correctly.
 		$user_message = $extracted[0];
 		$this->assertSame( 'user', $user_message['role'] );
 		$this->assertIsArray( $user_message['content'], 'Mixed content should be preserved as array' );
@@ -412,12 +412,12 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 	 * Test that image-only user messages are preserved.
 	 */
 	public function test_user_image_only_messages_preserved() {
-		// Load the REST class
+		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
 		$rest = new WP_MCP_AI_REST();
 
-		// User sends only an image, no text
+		// User sends only an image, no text.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -442,15 +442,15 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 			'request_payload' => $request_payload,
 		);
 
-		// Use reflection to access protected method
+		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'extract_request_messages' );
 		$method->setAccessible( true );
 
-		// Extract messages
+		// Extract messages.
 		$extracted = $method->invoke( $rest, $row );
 
-		// Verify the image-only user message was preserved
+		// Verify the image-only user message was preserved.
 		$this->assertCount( 1, $extracted, 'Image-only user message should be preserved' );
 		$this->assertSame( 'user', $extracted[0]['role'] );
 		$this->assertIsArray( $extracted[0]['content'] );

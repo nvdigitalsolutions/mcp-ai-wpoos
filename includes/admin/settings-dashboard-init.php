@@ -25,7 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
 // Register autoloader for settings sections (lazy loading).
-// This loads section class files only when they are actually instantiated,
+// This loads section class files only when they are actually instantiated,.
 // significantly improving admin page load performance.
 spl_autoload_register(
 	function ( $class_name ) {

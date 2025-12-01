@@ -474,8 +474,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return absint( $assistant_config['max_agentic_iterations'] );
 		}
 
-		// If admin setting was applied by custom filters applicator (priority 5),
-		// it will be in $default_max. Only use chat client default if $default_max
+		// If admin setting was applied by custom filters applicator (priority 5),.
+		// it will be in $default_max. Only use chat client default if $default_max.
 		// is still the base default (5 for /chat endpoint).
 		// This allows admin setting to override the chat client default.
 		if ( $default_max > 5 ) {
@@ -737,8 +737,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Build a response payload from the conversation messages.
-		// When manually saving a conversation, we need to construct a response that includes
-		// the assistant messages in the expected OpenAI format so they can be properly extracted
+		// When manually saving a conversation, we need to construct a response that includes.
+		// the assistant messages in the expected OpenAI format so they can be properly extracted.
 		// when the transcript is loaded later.
 		$response = $this->build_response_from_messages( $clean_messages, $model, $response_metadata );
 

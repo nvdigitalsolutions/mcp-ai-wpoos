@@ -1086,9 +1086,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				);
 
 				// Example worker loop (pseudo-code):
-				// while ( true ) {
+				// while ( true ) {.
 				// $message = $queue->get();
-				// if ( ! $message ) {
+				// if ( ! $message ) {.
 				// usleep( 100000 ); // 100ms.
 				// continue;
 				// }
@@ -1096,7 +1096,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// $payload = json_decode( $message->getBody(), true );
 				// $tool = $registry->get_tool( $payload['tool_name'] );
 				//
-				// if ( $tool ) {
+				// if ( $tool ) {.
 				// $result = $tool->execute( $payload['arguments'], $payload['context'] );
 				// $client->store_job_result( $payload['job_id'], $result );
 				// }
@@ -1104,7 +1104,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// $queue->ack( $message->getDeliveryTag() );
 				// $jobs_processed++;
 				//
-				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
+				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {.
 				// break;
 				// }
 				// }
@@ -1195,11 +1195,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				}
 
 				// Write startup message to stderr (not stdout, which is for JSON-RPC).
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 				fwrite( STDERR, "[WP oOS] STDIO transport starting...\n" );
 
 				if ( $assistant_id > 0 ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 					fwrite( STDERR, "[WP oOS] Scoped to assistant ID: {$assistant_id}\n" );
 				}
 
@@ -1209,7 +1209,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// Handle SIGTERM and SIGINT for graceful shutdown.
 				if ( function_exists( 'pcntl_signal' ) ) {
 					$shutdown_handler = function () use ( $transport ) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						fwrite( STDERR, "\n[WP oOS] Shutting down...\n" );
 						$transport->stop();
 					};
@@ -1220,7 +1220,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				$transport->run();
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 				fwrite( STDERR, "[WP oOS] STDIO transport stopped.\n" );
 			}
 		}

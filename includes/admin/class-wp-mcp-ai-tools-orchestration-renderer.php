@@ -433,19 +433,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						<?php
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_stat_card method.
 						echo self::render_stat_card( $stats['total_tools'], __( 'Total Tools', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['tools_with_capabilities'], __( 'With Capabilities', 'wp-mcp-ai' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['tools_with_model_reqs'], __( 'With Model Reqs', 'wp-mcp-ai' ), '#8c68cd' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['tools_with_rules'], __( 'With Rules', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['read_only_tools'], __( 'Read-only', 'wp-mcp-ai' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['state_changing_tools'], __( 'State-changing', 'wp-mcp-ai' ), '#d63638' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['external_api_tools'], __( 'External API', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped.
 						echo self::render_stat_card( $stats['long_running_tools'], __( 'Long-running', 'wp-mcp-ai' ), '#f0b849' );
 						?>
 					</div>

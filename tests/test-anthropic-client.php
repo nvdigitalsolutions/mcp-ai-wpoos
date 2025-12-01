@@ -50,7 +50,7 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 
 		$response = $client->create_chat_completion( $messages, array() );
 
-		// Should use default model, so this should not error
+		// Should use default model, so this should not error.
 		// Instead, it will error on HTTP request (no real API key)
 		$this->assertWPError( $response );
 	}

@@ -416,7 +416,7 @@ class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					break;
 
 				case 'basic':
-					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode.
 					$headers['Authorization'] = 'Basic ' . base64_encode( $auth_value );
 					break;
 

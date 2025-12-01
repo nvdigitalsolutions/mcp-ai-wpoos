@@ -19,7 +19,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	 * Hook into JetEngine to provision the model rate limits content type.
 	 */
 	public static function bootstrap() {
-		// Run after JetEngine initialises the Custom Content Types module but before
+		// Run after JetEngine initialises the Custom Content Types module but before.
 		// the manager registers existing instances (priority 10).
 		// Using priority 5 to ensure translations are loaded (WordPress 6.7.0+ requirement).
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 5 );
@@ -99,7 +99,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 		}
 
 		// Try prefix match for model families, preferring the longest match.
-		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,
+		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,.
 		// even when both "gpt-5" and "gpt-5-nano" exist in the database.
 		$all_items = $factory->db->query( array() );
 

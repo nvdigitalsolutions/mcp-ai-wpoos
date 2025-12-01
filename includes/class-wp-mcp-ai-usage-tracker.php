@@ -571,7 +571,7 @@ class WP_MCP_AI_Usage_Tracker {
 		}
 
 		// Try prefix match for model families, preferring the longest match.
-		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,
+		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,.
 		// even when both "gpt-5" and "gpt-5-mini" exist in the map.
 		$best_match        = null;
 		$best_match_length = 0;

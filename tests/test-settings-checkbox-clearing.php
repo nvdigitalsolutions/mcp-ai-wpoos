@@ -183,7 +183,7 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
 		// Now simulate saving the Advanced tab with enable_extended_logging turned on.
-		// The key here is that enable_logging is NOT in the posted settings because
+		// The key here is that enable_logging is NOT in the posted settings because.
 		// it's on a different tab (General tab).
 		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$posted_settings = array(

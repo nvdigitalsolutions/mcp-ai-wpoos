@@ -342,7 +342,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 	 * This ensures the fix doesn't break the existing behavior for external URLs.
 	 */
 	public function test_external_url_files_marked_as_temp() {
-		// We can't easily test actual HTTP downloads in unit tests,
+		// We can't easily test actual HTTP downloads in unit tests,.
 		// but we can verify that base64 data creates temp files.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
 

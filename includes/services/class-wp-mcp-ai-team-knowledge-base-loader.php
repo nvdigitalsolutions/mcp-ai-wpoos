@@ -82,7 +82,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 		$json_content = file_get_contents( $file_path );
 
 		if ( false === $json_content ) {
@@ -171,7 +171,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 			return array();
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_dir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_dir.
 		$files = glob( $this->knowledge_base_path . '*.json' );
 
 		if ( false === $files ) {

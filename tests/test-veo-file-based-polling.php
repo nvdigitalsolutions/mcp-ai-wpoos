@@ -68,7 +68,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		$this->assertIsArray( $metadata );
 		$this->assertArrayHasKey( 'expected_filename', $metadata );
 
-		// Verify filename format: veo-video-{job_id}.mp4
+		// Verify filename format: veo-video-{job_id}.mp4.
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 		$this->assertEquals( $expected_filename, $metadata['expected_filename'] );
 	}

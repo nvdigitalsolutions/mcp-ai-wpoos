@@ -207,7 +207,7 @@ class WP_MCP_AI_Token_Performance_Service {
 		global $wpdb;
 
 		// Get sample user IDs.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT ID FROM {$wpdb->users} ORDER BY ID LIMIT %d",

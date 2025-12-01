@@ -141,7 +141,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 		$json_files          = glob( $knowledge_base_path . '*.json' );
 
 		foreach ( $json_files as $file ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 			$content = file_get_contents( $file );
 			$data    = json_decode( $content, true );
 

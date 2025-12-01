@@ -300,7 +300,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 		$primary_roles = array( $profession_id );
 
 		// Build system prompt from profession data (backward compatibility).
-		// Note: With primary roles set, get_assistant_configuration() will programmatically
+		// Note: With primary roles set, get_assistant_configuration() will programmatically.
 		// build the prompt. We keep this for assistants that may not use primary roles.
 		$system_prompt = $role_description;
 		if ( ! empty( $knowledge_base ) ) {

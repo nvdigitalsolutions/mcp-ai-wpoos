@@ -158,11 +158,11 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		// phpcs:disable WordPressVIPMinimum.Security.UserCan
+		// phpcs:disable WordPressVIPMinimum.Security.UserCan.
 		if ( ! $user_id || ! user_can( $user_id, 'wpcode_edit_snippets' ) ) { // phpcs:ignore WordPressVIPMinimum.Security.UserCan.Unknown
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage WPCode snippets.', 'wp-mcp-ai' ) );
 		}
-		// phpcs:enable WordPressVIPMinimum.Security.UserCan
+		// phpcs:enable WordPressVIPMinimum.Security.UserCan.
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );

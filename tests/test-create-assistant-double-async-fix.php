@@ -30,7 +30,7 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 	public function test_execute_respects_executor_context() {
 		$tool = new WP_MCP_AI_Tool_Create_Assistant();
 
-		// We need to use reflection to test the private logic since we can't
+		// We need to use reflection to test the private logic since we can't.
 		// actually create an assistant without proper setup.
 		$reflection = new ReflectionClass( $tool );
 
@@ -61,7 +61,7 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 		$reflection   = new ReflectionClass( $tool );
 		$execute_file = $reflection->getFileName();
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 		$source = file_get_contents( $execute_file );
 
 		// Verify the fix code exists in the source.

@@ -175,7 +175,7 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 		// Should keep the original model when auto-switching is disabled.
 		$selected_model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		// Note: The model selector might still apply other logic, but auto-switching
+		// Note: The model selector might still apply other logic, but auto-switching.
 		// to high-capacity fallback should not happen.
 		$this->assertNotEmpty( $selected_model, 'Should return a model even with auto-switching disabled' );
 	}

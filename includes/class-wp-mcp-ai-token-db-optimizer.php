@@ -62,7 +62,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 
 		// Add index for tier lookups (meta_key + user_id).
 		if ( ! in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange.
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(50), user_id)
@@ -72,7 +72,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 
 		// Add index for usage data lookups.
 		if ( ! in_array( 'idx_wp_mcp_ai_usage', $indexes, true ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange.
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(50), user_id)
@@ -104,7 +104,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 	protected static function get_existing_indexes() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$indexes = $wpdb->get_results(
 			"SHOW INDEX FROM {$wpdb->usermeta}",
 			ARRAY_A
@@ -134,7 +134,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 
 		// Remove token tier index.
 		if ( in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching.
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta} DROP INDEX idx_wp_mcp_ai_token_tier"
 			);
@@ -142,7 +142,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 
 		// Remove usage index.
 		if ( in_array( 'idx_wp_mcp_ai_usage', $indexes, true ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching.
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta} DROP INDEX idx_wp_mcp_ai_usage"
 			);
@@ -165,12 +165,12 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		$indexes = self::get_existing_indexes();
 
 		// Get count of token-related user meta records.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$tier_count = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = '_wp_mcp_ai_token_tier'"
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$usage_count = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = '_wp_mcp_ai_tool_token_usage'"
 		);
@@ -208,7 +208,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		);
 
 		// Analyze tier lookup query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$tier_explain = $wpdb->get_results(
 			$wpdb->prepare(
 				"EXPLAIN SELECT meta_value FROM {$wpdb->usermeta}
@@ -229,7 +229,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		}
 
 		// Analyze usage lookup query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 		$usage_explain = $wpdb->get_results(
 			$wpdb->prepare(
 				"EXPLAIN SELECT meta_value FROM {$wpdb->usermeta}

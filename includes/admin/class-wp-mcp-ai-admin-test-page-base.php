@@ -115,7 +115,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 */
 	protected function enqueue_chat_assets() {
 		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		$script_relative            = 'assets/js/chat-bundle.min.js';
 		$style_relative             = 'assets/css/chat.css';

@@ -82,7 +82,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents.
 		$json_content = file_get_contents( $file_path );
 
 		if ( false === $json_content ) {

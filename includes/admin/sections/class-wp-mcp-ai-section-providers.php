@@ -469,7 +469,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				$subtab = sanitize_key( $_GET['subtab'] );
 			}
-			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended.
 
 			// Default to 'priority' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {

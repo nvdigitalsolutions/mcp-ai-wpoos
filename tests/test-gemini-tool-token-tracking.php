@@ -34,7 +34,7 @@ class Test_Gemini_Tool_Token_Tracking extends WP_UnitTestCase {
 
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		// Clear settings.

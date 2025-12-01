@@ -30,11 +30,11 @@ class WP_MCP_AI_Shared_Logger {
 		$entry = '[WP MCP AI] ' . $message;
 
 		if ( null !== $data ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r.
 			$entry .= ' | Data: ' . print_r( $data, true );
 		}
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log.
 		error_log( $entry );
 	}
 

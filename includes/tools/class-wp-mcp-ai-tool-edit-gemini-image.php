@@ -174,7 +174,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Ensure image data is base64-encoded for Gemini API.
 		// All sources return raw binary data, so we need to encode it.
 		if ( isset( $source_image['data'] ) && ! empty( $source_image['data'] ) ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode.
 			$source_image['data'] = base64_encode( $source_image['data'] );
 		}
 
@@ -256,7 +256,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$result['usage'] = $image['usage'];
 		}
 
-		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
+		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included.
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
 		// If base64 content is needed, it should be retrieved via a separate endpoint or parameter.
 
@@ -317,8 +317,8 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		} elseif ( '' !== $image_url ) {
 			// Try to resolve URL to attachment ID first.
-			// This handles cases where the URL is a WordPress media URL that might have
-			// different scheme (http vs https) or other variations that prevent direct
+			// This handles cases where the URL is a WordPress media URL that might have.
+			// different scheme (http vs https) or other variations that prevent direct.
 			// filesystem access but still refers to a valid local attachment.
 			$resolved_attachment_id = $this->resolve_attachment_id_from_url( $image_url );
 
@@ -576,7 +576,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		// If that failed, try with the opposite scheme.
-		// This handles cases where the LLM passes a URL with http but WordPress
+		// This handles cases where the LLM passes a URL with http but WordPress.
 		// is configured with https (or vice versa).
 		$alternate_url = '';
 

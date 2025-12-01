@@ -74,13 +74,13 @@ class Test_Gemini_File_Service extends WP_UnitTestCase {
 	public function test_upload_file_requires_mime_type() {
 		// Create a temporary test file.
 		$temp_file = wp_tempnam( 'test' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents.
 		file_put_contents( $temp_file, 'test content' );
 
 		$result = $this->service->upload_file( $temp_file, '', 'test.txt' );
 
 		// Clean up.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 		unlink( $temp_file );
 
 		$this->assertWPError( $result, 'Should return WP_Error for empty MIME type' );
@@ -96,13 +96,13 @@ class Test_Gemini_File_Service extends WP_UnitTestCase {
 
 		// Create a temporary test file.
 		$temp_file = wp_tempnam( 'test' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents.
 		file_put_contents( $temp_file, 'test content' );
 
 		$result = $this->service->upload_file( $temp_file, 'text/plain', 'test.txt' );
 
 		// Clean up.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink.
 		unlink( $temp_file );
 
 		$this->assertWPError( $result, 'Should return WP_Error when API key is missing' );

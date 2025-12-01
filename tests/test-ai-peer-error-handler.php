@@ -103,7 +103,7 @@ class WP_MCP_AI_AI_Peer_Error_Handler_Test extends WP_UnitTestCase {
 		// Verify error was created.
 		$this->assertInstanceOf( 'WP_Error', $error, 'Should return WP_Error instance' );
 
-		// Note: We can't easily test that error_log() was called, but we can verify
+		// Note: We can't easily test that error_log() was called, but we can verify.
 		// that the error handler doesn't throw exceptions and returns proper objects.
 	}
 

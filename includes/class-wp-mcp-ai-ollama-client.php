@@ -238,7 +238,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		protected function resolve_timeout( array $options ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			// Use ignore_execution_time=true for local AI providers since these are external
+			// Use ignore_execution_time=true for local AI providers since these are external.
 			// HTTP requests that don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {

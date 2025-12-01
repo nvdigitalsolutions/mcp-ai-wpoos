@@ -41,7 +41,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$container = wp_mcp_ai_container();
 		$service   = $container->get( 'service.assistant' );
 
-		// Use reflection to check if settings repository was injected
+		// Use reflection to check if settings repository was injected.
 		$reflection = new ReflectionClass( $service );
 		$property   = $reflection->getProperty( 'settings_repository' );
 		$property->setAccessible( true );
@@ -54,7 +54,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that Assistant Service uses Settings Repository for default assistant
 	 */
 	public function test_assistant_service_uses_settings_repository() {
-		// Set up a test default assistant in options
+		// Set up a test default assistant in options.
 		update_option( 'wp_mcp_ai_default_assistant', '123' );
 
 		$container = wp_mcp_ai_container();
@@ -63,7 +63,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$default_id = $service->get_default_assistant_id();
 		$this->assertEquals( 123, $default_id );
 
-		// Clean up
+		// Clean up.
 		delete_option( 'wp_mcp_ai_default_assistant' );
 	}
 
@@ -71,23 +71,23 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that Assistant Service can be created with mock Settings Repository
 	 */
 	public function test_assistant_service_accepts_mock_settings_repository() {
-		// Create a mock Settings Repository
+		// Create a mock Settings Repository.
 		$mock_repo = $this->getMockBuilder( 'WP_MCP_AI_Settings_Repository' )
 			->getMock();
 
-		// Configure mock to return a specific value
+		// Configure mock to return a specific value.
 		$mock_repo->expects( $this->once() )
 			->method( 'get' )
 			->with( 'default_assistant' )
 			->willReturn( '456' );
 
-		// Create service with mock
+		// Create service with mock.
 		$service = new WP_MCP_AI_Assistant_Service( $mock_repo );
 
-		// Call method that uses settings repository
+		// Call method that uses settings repository.
 		$default_id = $service->get_default_assistant_id();
 
-		// Verify mock was called correctly
+		// Verify mock was called correctly.
 		$this->assertEquals( 456, $default_id );
 	}
 
@@ -95,11 +95,11 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that Assistant Service maintains backward compatibility
 	 */
 	public function test_assistant_service_backward_compatibility() {
-		// Service should work when instantiated without arguments
+		// Service should work when instantiated without arguments.
 		$service = new WP_MCP_AI_Assistant_Service();
 		$this->assertInstanceOf( 'WP_MCP_AI_Assistant_Service', $service );
 
-		// Should be able to call methods without errors
+		// Should be able to call methods without errors.
 		$default_id = $service->get_default_assistant_id();
 		$this->assertNull( $default_id ); // No default set
 	}
@@ -166,12 +166,12 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$container  = wp_mcp_ai_container();
 		$controller = $container->get( 'rest_controller' );
 
-		// Use reflection to access the protected method
+		// Use reflection to access the protected method.
 		$reflection = new ReflectionClass( $controller );
 		$method     = $reflection->getMethod( 'get_cron_status_service' );
 		$method->setAccessible( true );
 
-		// First call should create the service
+		// First call should create the service.
 		$service1 = $method->invoke( $controller );
 		$this->assertInstanceOf( 'WP_MCP_AI_Cron_Status_Service', $service1 );
 
@@ -199,21 +199,21 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'handle_cron_status_request' );
 		$filename   = $reflection->getFileName();
 
-		// Get the method source code
+		// Get the method source code.
 		$start_line = $method->getStartLine();
 		$end_line   = $method->getEndLine();
 		$length     = $end_line - $start_line + 1;
 		$source     = file( $filename );
 		$body       = implode( '', array_slice( $source, $start_line - 1, $length ) );
 
-		// Check that the method doesn't contain "new WP_MCP_AI_Cron_Status_Service()"
+		// Check that the method doesn't contain "new WP_MCP_AI_Cron_Status_Service()".
 		$this->assertStringNotContainsString(
 			'new WP_MCP_AI_Cron_Status_Service()',
 			$body,
 			'handle_cron_status_request should not contain hard-coded service instantiation'
 		);
 
-		// Check that it uses the lazy-loading method
+		// Check that it uses the lazy-loading method.
 		$this->assertStringContainsString(
 			'get_cron_status_service()',
 			$body,
@@ -227,14 +227,14 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	public function test_phase_2_2_documentation() {
 		$container = wp_mcp_ai_container();
 
-		// Get all registered services
+		// Get all registered services.
 		$services = $container->get_registered_services();
 
-		// Verify Phase 2.2 services are registered
+		// Verify Phase 2.2 services are registered.
 		$this->assertContains( 'service.assistant', $services );
 		$this->assertContains( 'service.cron_status', $services );
 
-		// Verify these services are accessible
+		// Verify these services are accessible.
 		$this->assertTrue( $container->has( 'service.assistant' ) );
 		$this->assertTrue( $container->has( 'service.cron_status' ) );
 	}
@@ -243,7 +243,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that all Phase 2.2 changes maintain backward compatibility
 	 */
 	public function test_phase_2_2_backward_compatibility() {
-		// Test 1: Assistant Service can still be instantiated manually
+		// Test 1: Assistant Service can still be instantiated manually.
 		$assistant_service = new WP_MCP_AI_Assistant_Service();
 		$this->assertInstanceOf( 'WP_MCP_AI_Assistant_Service', $assistant_service );
 
@@ -252,7 +252,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$controller = $container->get( 'rest_controller' );
 		$this->assertInstanceOf( 'WP_MCP_AI_REST', $controller );
 
-		// Test 3: Services can still be retrieved from container
+		// Test 3: Services can still be retrieved from container.
 		$service = $container->get( 'service.assistant' );
 		$this->assertInstanceOf( 'WP_MCP_AI_Assistant_Service', $service );
 	}
@@ -265,21 +265,21 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_default_assistant_id' );
 		$filename   = $reflection->getFileName();
 
-		// Get the method source code
+		// Get the method source code.
 		$start_line = $method->getStartLine();
 		$end_line   = $method->getEndLine();
 		$length     = $end_line - $start_line + 1;
 		$source     = file( $filename );
 		$body       = implode( '', array_slice( $source, $start_line - 1, $length ) );
 
-		// Check that the method doesn't contain "get_option("
+		// Check that the method doesn't contain "get_option(".
 		$this->assertStringNotContainsString(
 			'get_option(',
 			$body,
 			'get_default_assistant_id should not call get_option directly'
 		);
 
-		// Check that it uses the settings repository
+		// Check that it uses the settings repository.
 		$this->assertStringContainsString(
 			'settings_repository',
 			$body,

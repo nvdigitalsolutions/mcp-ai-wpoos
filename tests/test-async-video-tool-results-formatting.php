@@ -295,7 +295,7 @@ class Test_Async_Video_Tool_Results_Formatting extends WP_UnitTestCase {
 			'resolution'    => '1080p',
 			'model'         => 'veo-3.1',
 			'provider'      => 'gemini',
-			// Note: NO video_url structure yet - sanitizer should add it
+			// Note: NO video_url structure yet - sanitizer should add it.
 		);
 
 		// Store async job metadata.

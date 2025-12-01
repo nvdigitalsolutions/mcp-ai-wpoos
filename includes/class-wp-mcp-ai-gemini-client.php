@@ -1107,7 +1107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 									}
 
 									if ( isset( $part['thought'] ) ) {
-										// Gemini 2.0 Flash Thinking mode provides thinking text
+										// Gemini 2.0 Flash Thinking mode provides thinking text.
 										if ( ! isset( $accumulated['thinking'] ) ) {
 											$accumulated['thinking'] = '';
 										}
@@ -1881,7 +1881,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$normalized = array();
 
 			foreach ( $properties as $prop_name => $prop_value ) {
-				// If a property value is a scalar (string/number/bool) instead of a schema object,
+				// If a property value is a scalar (string/number/bool) instead of a schema object,.
 				// convert it to a proper schema object with that value as the type.
 				if ( ! is_array( $prop_value ) && ! is_object( $prop_value ) ) {
 					// Assume the scalar value is meant to be the type.
@@ -2025,8 +2025,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			// Enhancement: Ensure property schemas have a 'type' field.
-			// If we're processing a property definition (parent_key is a property name from 'properties'),
-			// or an items definition (parent_key is 'items'), and it lacks a 'type' field,
+			// If we're processing a property definition (parent_key is a property name from 'properties'),.
+			// or an items definition (parent_key is 'items'), and it lacks a 'type' field,.
 			// infer an appropriate type based on schema structure.
 			if ( 'properties' === $parent_key ) {
 				foreach ( $sanitized as $prop_name => $prop_schema ) {
@@ -2512,7 +2512,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							}
 
 							if ( isset( $part['thought'] ) ) {
-								// Gemini 2.0 Flash Thinking mode provides thinking text
+								// Gemini 2.0 Flash Thinking mode provides thinking text.
 								$thinking .= (string) $part['thought'];
 								continue;
 							}

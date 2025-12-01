@@ -676,7 +676,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
 
 			// Build a minimal response payload for the recorder.
-			// Since this is just saving a conversation without a new response,
+			// Since this is just saving a conversation without a new response,.
 			// we create a synthetic response payload.
 			$response = array(
 				'model'   => $model,
@@ -1001,13 +1001,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Calculate required time: (max_polls * poll_interval) + buffer for processing.
 			$required_time = ( $max_polls * $poll_interval ) + 60; // 6 minutes + 1 minute buffer = 420 seconds.
 
-			// Set timeout if function exists. Some hosting environments disable set_time_limit
+			// Set timeout if function exists. Some hosting environments disable set_time_limit.
 			// for security reasons (safe mode, disable_functions in php.ini).
 			// Silencing errors because set_time_limit may trigger:
 			// - Warning when disabled in php.ini (disable_functions)
-			// - Warning when safe mode is enabled
-			// - Warning when running as Apache module with certain configurations
-			// These warnings are expected and can be safely ignored as we're providing
+			// - Warning when safe mode is enabled.
+			// - Warning when running as Apache module with certain configurations.
+			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for SSE streaming.
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -1019,13 +1019,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				++$poll_count;
 
 				// Trigger WordPress cron to ensure async jobs continue processing.
-				// WordPress cron only runs on page loads by default. When a client
-				// is waiting on an SSE connection, no new page loads occur, so cron
+				// WordPress cron only runs on page loads by default. When a client.
+				// is waiting on an SSE connection, no new page loads occur, so cron.
 				// jobs (including veo video polling) may not run. Calling spawn_cron()
 				// ensures any scheduled cron events execute, allowing the job to progress.
-				// We call this periodically (every heartbeat interval) to balance
+				// We call this periodically (every heartbeat interval) to balance.
 				// responsiveness with avoiding excessive cron triggers.
-				// Note: spawn_cron() is non-blocking and returns quickly; failures
+				// Note: spawn_cron() is non-blocking and returns quickly; failures.
 				// are silently ignored to prevent disrupting the SSE polling loop.
 				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL && function_exists( 'spawn_cron' ) ) {
 					spawn_cron();
@@ -1917,7 +1917,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
-			// This enables the diagnostic page to test MCP endpoint connectivity without requiring
+			// This enables the diagnostic page to test MCP endpoint connectivity without requiring.
 			// bearer tokens for internal REST API calls made via rest_do_request().
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
 				// Verify this is an internal request (not from external source).
@@ -2422,7 +2422,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Add the assistant message with tool_calls to the conversation.
-				// This is required by OpenAI's API: an assistant message with tool_calls
+				// This is required by OpenAI's API: an assistant message with tool_calls.
 				// must be followed by tool response messages.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
@@ -2444,7 +2444,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
 					// Check if this is an async pending result (background-only tools like video generation).
-					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
+					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop.
 					// after processing this iteration. The frontend will handle polling for the async result.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
@@ -2521,7 +2521,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),
+				// If any tool returned an async pending result (e.g., video generation),.
 				// exit the agentic loop. The frontend will poll for the async job completion.
 				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
@@ -2708,7 +2708,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
-			// Include the session key in the response so the client can save it
+			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
@@ -2767,8 +2767,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return absint( $assistant_config['max_agentic_iterations'] );
 			}
 
-			// If admin setting was applied by custom filters applicator (priority 5),
-			// it will be in $default_max. Only use chat client default if $default_max
+			// If admin setting was applied by custom filters applicator (priority 5),.
+			// it will be in $default_max. Only use chat client default if $default_max.
 			// is still the base default (5 for /chat endpoint).
 			// This allows admin setting to override the chat client default.
 			if ( $default_max > 5 ) {
@@ -2955,9 +2955,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result = $this->normalize_tool_result( $tool_result );
 
 					// Check if this is an async pending result (background-only tools like video generation).
-					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
+					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop.
 					// after processing this iteration. The frontend will handle polling for the async result.
-					// Continuing to call the LLM with a pending status would cause issues since the LLM
+					// Continuing to call the LLM with a pending status would cause issues since the LLM.
 					// doesn't understand async job states and might try to call the same tool again.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
@@ -3070,9 +3070,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),
-				// exit the agentic loop. The frontend is notified via SSE and will poll
-				// for the async job completion. Continuing to call the LLM with pending
+				// If any tool returned an async pending result (e.g., video generation),.
+				// exit the agentic loop. The frontend is notified via SSE and will poll.
+				// for the async job completion. Continuing to call the LLM with pending.
 				// status would cause confusion and potential infinite loops.
 				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
@@ -3238,11 +3238,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$thinking_text            = '';
 			$thinking_provider_format = 'gemini'; // Default to Gemini format
 
-			// Validate response structure before accessing nested keys
+			// Validate response structure before accessing nested keys.
 			if ( ! empty( $response['choices'] ) && is_array( $response['choices'] ) && isset( $response['choices'][0]['message'] ) ) {
 				$message = $response['choices'][0]['message'];
 
-				// Check for Gemini thinking text
+				// Check for Gemini thinking text.
 				if ( ! empty( $message['thinking'] ) ) {
 					$thinking_text            = $message['thinking'];
 					$thinking_provider_format = 'gemini';
@@ -3391,7 +3391,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
-			// Include the session key in the response so the client can save it
+			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
@@ -6597,8 +6597,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Filter out response messages that are already present in the conversation.
-				// This prevents duplicates when transcripts are manually saved via the chat client,
-				// where all messages (including assistant responses) are stored in request_payload,
+				// This prevents duplicates when transcripts are manually saved via the chat client,.
+				// where all messages (including assistant responses) are stored in request_payload,.
 				// and assistant messages are also constructed into response_payload.
 				$filtered_response_messages = $this->filter_duplicate_messages( $messages, $response_messages );
 
@@ -7244,17 +7244,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$content = $message['content'];
 
-			// Content must be an array to contain image segments
+			// Content must be an array to contain image segments.
 			if ( ! is_array( $content ) ) {
 				return false;
 			}
 
-			// Check if content is a sequential array of segments
+			// Check if content is a sequential array of segments.
 			if ( ! $this->is_sequential_array( $content ) ) {
 				return false;
 			}
 
-			// Look for image_url or image_file type segments
+			// Look for image_url or image_file type segments.
 			foreach ( $content as $segment ) {
 				if ( ! is_array( $segment ) || ! isset( $segment['type'] ) ) {
 					continue;
@@ -7358,7 +7358,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'content' => $content,
 				);
 
-				// If message has image content, preserve the original content structure
+				// If message has image content, preserve the original content structure.
 				// instead of the extracted text (which would be empty for image-only messages)
 				if ( $has_image_content && isset( $message['content'] ) ) {
 					$message_entry['content'] = $message['content'];
@@ -7454,7 +7454,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'content' => $content,
 						);
 
-						// If message has image content, preserve the original content structure
+						// If message has image content, preserve the original content structure.
 						// instead of the extracted text (which would be empty for image-only messages)
 						if ( $has_image_content && isset( $choice['message']['content'] ) ) {
 							$message_entry['content'] = $choice['message']['content'];
@@ -8026,7 +8026,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Extract tool_call_id if available (from OpenAI/Gemini tool calls).
-			// This is critical for async tools to preserve the original tool_call_id
+			// This is critical for async tools to preserve the original tool_call_id.
 			// in their completion responses instead of generating a new one.
 			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
 
@@ -8043,7 +8043,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Add tool_call_id to context if available.
-			// This ensures async jobs can preserve the original tool_call_id for proper
+			// This ensures async jobs can preserve the original tool_call_id for proper.
 			// correlation with the LLM's tool call requests.
 			if ( '' !== $tool_call_id ) {
 				$context['tool_call_id'] = $tool_call_id;
@@ -8068,7 +8068,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Filter arguments to only include parameters defined in the tool's schema.
-			// This prevents "Invalid parameter(s)" errors when AI providers include extra
+			// This prevents "Invalid parameter(s)" errors when AI providers include extra.
 			// parameters like 'messages' that aren't in the tool's schema.
 			$arguments = $this->filter_tool_arguments_by_schema( $tool, $arguments );
 
@@ -8078,12 +8078,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$should_async = $orchestrator->should_execute_async( $tool, $arguments, $context );
 
 			// CRITICAL: Force synchronous execution in agentic loop for most tools.
-			// Async tools must complete before the loop continues to ensure the LLM
-			// receives actual results, not pending status. Without this, the agentic
-			// loop would continue with pending tool results, and the final LLM response
+			// Async tools must complete before the loop continues to ensure the LLM.
+			// receives actual results, not pending status. Without this, the agentic.
+			// loop would continue with pending tool results, and the final LLM response.
 			// would not include the actual tool output (e.g., generated image links).
 			//
-			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that
+			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that.
 			// they MUST run async to avoid HTTP timeouts, even in agentic loops.
 			// These tools are marked with 'background-only' capability flag.
 			$must_run_async = false;
@@ -8197,7 +8197,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 
 					// Check if tool provides pre-execution metadata for async responses.
-					// This allows tools like video generation to provide expected_url and expected_filename
+					// This allows tools like video generation to provide expected_url and expected_filename.
 					// so the UI can display a placeholder before the actual result is ready.
 					if ( $tool instanceof WP_MCP_AI_Tool_Async_Metadata_Interface ) {
 						$async_metadata = $tool->get_async_pending_metadata( $job_id, $arguments, $context );
@@ -8224,8 +8224,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Execute tool synchronously (either not async-capable or async queueing failed).
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement and timeouts.
 			try {
-				// Set execution time limit for synchronous tool execution in agentic loop
-				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s
+				// Set execution time limit for synchronous tool execution in agentic loop.
+				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s.
 				// for tools that might take longer (like image generation).
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					$original_time_limit = ini_get( 'max_execution_time' );
@@ -8244,8 +8244,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
-					// In agentic loop, if sync execution failed and tool supports async,
-					// provide helpful error message instead of returning WP_Error object
+					// In agentic loop, if sync execution failed and tool supports async,.
+					// provide helpful error message instead of returning WP_Error object.
 					// which would break the conversation flow.
 					if ( ! empty( $context['agentic_loop'] ) ) {
 						return sprintf(
@@ -8284,7 +8284,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				// In agentic loop, provide a graceful error message that the LLM can understand
+				// In agentic loop, provide a graceful error message that the LLM can understand.
 				// and potentially work around, rather than breaking the conversation flow.
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					return sprintf(

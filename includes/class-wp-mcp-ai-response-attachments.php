@@ -123,7 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 				$processed[ $file_id ] = $stored['attachment_id'];
 			}
 
-			// Intentionally avoid mutating the request payload. Persisted attachments
+			// Intentionally avoid mutating the request payload. Persisted attachments.
 			// are discoverable via the Media Library metadata.
 		}
 

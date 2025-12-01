@@ -51,7 +51,7 @@ class WP_MCP_AI_Test_Multisite_Support extends WP_UnitTestCase {
 		// Call the activation function.
 		wp_mcp_ai_activate_single_site();
 
-		// Note: As of WordPress 6.7+, the post type is not registered during activation
+		// Note: As of WordPress 6.7+, the post type is not registered during activation.
 		// to avoid triggering translation loading before the init action.
 		// The post type will be registered on the next page load via the init hook.
 		// Manually trigger the post type registration to verify it works.

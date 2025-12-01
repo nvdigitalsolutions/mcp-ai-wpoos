@@ -84,7 +84,7 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	 */
 	public function test_sse_stream_connection_abortion() {
 		// This test verifies the code checks connection_aborted().
-		// We can't actually abort a connection in unit tests, but we can verify
+		// We can't actually abort a connection in unit tests, but we can verify.
 		// the code path exists.
 
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );

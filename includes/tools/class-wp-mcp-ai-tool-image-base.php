@@ -69,8 +69,8 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			}
 		} elseif ( '' !== $image_url ) {
 			// Try to resolve URL to attachment ID first.
-			// This handles cases where the URL is a WordPress media URL that might have
-			// different scheme (http vs https) or other variations that prevent direct
+			// This handles cases where the URL is a WordPress media URL that might have.
+			// different scheme (http vs https) or other variations that prevent direct.
 			// filesystem access but still refers to a valid local attachment.
 			$file_path              = null;
 			$resolved_attachment_id = $this->resolve_attachment_id_from_url( $image_url );
@@ -323,7 +323,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// If that failed, try with the opposite scheme.
-		// This handles cases where the LLM passes a URL with http but WordPress
+		// This handles cases where the LLM passes a URL with http but WordPress.
 		// is configured with https (or vice versa).
 		$alternate_url = '';
 

@@ -324,7 +324,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			// Get all users who have usage data.
 			global $wpdb;
 			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 			$user_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -419,7 +419,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 		// Define tool patterns that indicate specific providers.
 		// IMPORTANT: Only include tools that EXPLICITLY use Gemini (have "gemini" in tool name).
-		// Tools like analyze_comment_content can use either OpenAI or Gemini based on settings,
+		// Tools like analyze_comment_content can use either OpenAI or Gemini based on settings,.
 		// so we should NOT migrate them as they might legitimately use OpenAI.
 		$provider_patterns = array(
 			'gemini' => array(
@@ -450,7 +450,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$count_prepare_args   = $gemini_tools;
 		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared.
 		$total_gemini_records            = $wpdb->get_var( $count_prepared_query );
 		$results['total_gemini_records'] = intval( $total_gemini_records );
 
@@ -464,7 +464,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 		$misattributed_count_prepared = $wpdb->prepare( $misattributed_count_query, $gemini_tools ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared.
 		$total_misattributed = $wpdb->get_var( $misattributed_count_prepared );
 		$total_misattributed = intval( $total_misattributed );
 
@@ -485,7 +485,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$prepare_args   = array_merge( $gemini_tools, array( $limit ) );
 		$prepared_query = $wpdb->prepare( $query, $prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared.
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
 		$results['total_checked']           = count( $records );
@@ -528,7 +528,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 			// Apply update if not dry run.
 			if ( ! $dry_run ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching.
 				$updated = $wpdb->update(
 					$table_name,
 					array(

@@ -269,8 +269,8 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 		$executor->init();
 
 		// Create a mock tool that simulates veo's unified job flow:
-		// 1. It will receive the parent_job_id in context
-		// 2. It will merge its own metadata (like operation_name) into the transient
+		// 1. It will receive the parent_job_id in context.
+		// 2. It will merge its own metadata (like operation_name) into the transient.
 		// 3. It will return the same job_id as the parent (unified flow)
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			public function get_slug() {
