@@ -9787,6 +9787,13 @@
                     if (display.bubbleType) {
                         displayPayload.bubbleType = display.bubbleType;
                     }
+                    
+                    // Preserve chart HTML for Chart.js visualizations
+                    if (display.chartHtml) {
+                        displayPayload.chartHtml = display.chartHtml;
+                        displayPayload.chartWidth = display.chartWidth || 800;
+                        displayPayload.chartHeight = display.chartHeight || 400;
+                    }
                 } else {
                     // Fallback: build display payload from content
                     displayPayload = { text: '', attachments: [] };
@@ -9871,6 +9878,13 @@
                     // Preserve bubbleType if present
                     if (display.bubbleType) {
                         assistantPayload.bubbleType = display.bubbleType;
+                    }
+                    
+                    // Preserve chart HTML for Chart.js visualizations
+                    if (display.chartHtml) {
+                        assistantPayload.chartHtml = display.chartHtml;
+                        assistantPayload.chartWidth = display.chartWidth || 800;
+                        assistantPayload.chartHeight = display.chartHeight || 400;
                     }
                     
                     // Preserve tool_calls in display for rendering context
