@@ -120,6 +120,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Register Pro tool group mappings.
 		add_filter( 'wp_mcp_ai_tool_group_map', 'wp_mcp_ai_pro_tool_group_map', 20 );
 
+		// Register Pro tool categories for recommendations.
+		add_filter( 'wp_mcp_ai_tool_categories', 'wp_mcp_ai_pro_tool_categories', 20 );
+
 		/**
 		 * Fires after WP MCP AI Pro has completed initialization.
 		 *
@@ -131,13 +134,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	/**
-	 * Register Pro tools with the MCP server.
+	 * Register Pro tools with the tool registry.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WP_MCP_AI_Core_Server $server MCP server instance.
+	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
 	 */
-	function wp_mcp_ai_pro_register_tools( $server ) {
+	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Load Pro tool files.
 		$pro_tools = array(
 			// WooCommerce tools.
@@ -175,7 +178,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 					}
 
 					if ( $should_register ) {
-						$server->register_tool( new $class() );
+						$registry->register_tool( new $class() );
 					}
 				}
 			}
@@ -350,6 +353,47 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 
 		// Merge Pro tools into the main group map.
 		return array_merge( $group_map, $pro_tools );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
+	/**
+	 * Add Pro tools to tool categories for recommendations.
+	 *
+	 * Extends the core tool categories to include Pro addon tools
+	 * so they get proper recommendations for token limits and models.
+	 * Only adds tools to existing categories; does not create new ones.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $categories Associative array of category identifiers to category data.
+	 * @return array Modified categories with Pro tools added.
+	 */
+	function wp_mcp_ai_pro_tool_categories( $categories ) {
+		// Add pro tools to existing categories only.
+
+		// WooCommerce, JetEngine, and Elementor tools - medium resource.
+		if ( isset( $categories['medium_resource'] ) ) {
+			$categories['medium_resource']['tools'][] = 'woo_products';
+			$categories['medium_resource']['tools'][] = 'woo_orders';
+			$categories['medium_resource']['tools'][] = 'jetengine';
+			$categories['medium_resource']['tools'][] = 'elementor';
+		}
+
+		// Product Actualization and Price Lookup - high resource (uses AI vision and web scraping).
+		if ( isset( $categories['high_resource'] ) ) {
+			$categories['high_resource']['tools'][] = 'product_actualization';
+			$categories['high_resource']['tools'][] = 'lookup_product_price';
+		}
+
+		/**
+		 * Filter the Pro tool category assignments.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $categories Complete category array with Pro tools added.
+		 */
+		return apply_filters( 'wp_mcp_ai_pro_tool_categories_filtered', $categories );
 	}
 }
 
