@@ -17,7 +17,7 @@
         "wp-coding-standards/wpcs": "^3.0",
         "phpunit/phpunit": "^9.6",
         "wp-phpunit/wp-phpunit": "^6.5",
-        "yoast/phpunit-polyfills": "^3.0"
+        "yoast/phpunit-polyfills": "^4.0"
     },
     "scripts": {
         "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples .",
