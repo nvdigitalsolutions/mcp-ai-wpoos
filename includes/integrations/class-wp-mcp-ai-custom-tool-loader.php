@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 				// Add .htaccess to prevent direct access.
 				$htaccess_file = $this->custom_tools_dir . '/.htaccess';
 				if ( ! file_exists( $htaccess_file ) ) {
-					$htaccess_content = "# Deny direct access to custom tools\n";
+					$htaccess_content  = "# Deny direct access to custom tools\n";
 					$htaccess_content .= "Order deny,allow\n";
 					$htaccess_content .= "Deny from all\n";
 					file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
@@ -453,4 +453,3 @@ PHP;
 		}
 	}
 }
-

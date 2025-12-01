@@ -43,11 +43,11 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'video_url'     => array(
+				'video_url'       => array(
 					'type'        => 'string',
 					'description' => __( 'URL of the video file to analyze.', 'wp-mcp-ai' ),
 				),
-				'attachment_id' => array(
+				'attachment_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to analyze.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
@@ -137,10 +137,10 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Add WordPress-specific metadata if attachment.
 		if ( ! empty( $arguments['attachment_id'] ) ) {
-			$attachment_id = absint( $arguments['attachment_id'] );
+			$attachment_id      = absint( $arguments['attachment_id'] );
 			$file_path_for_size = get_attached_file( $attachment_id );
-			$file_size = file_exists( $file_path_for_size ) ? filesize( $file_path_for_size ) : 0;
-			
+			$file_size          = file_exists( $file_path_for_size ) ? filesize( $file_path_for_size ) : 0;
+
 			$metadata['wordpress'] = array(
 				'id'          => $attachment_id,
 				'url'         => wp_get_attachment_url( $attachment_id ),
@@ -339,17 +339,17 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Build metadata result.
-		$format   = $data['format'];
-		$streams  = isset( $data['streams'] ) ? $data['streams'] : array();
+		$format  = $data['format'];
+		$streams = isset( $data['streams'] ) ? $data['streams'] : array();
 
 		$metadata = array(
 			'format' => array(
-				'filename'       => isset( $format['filename'] ) ? basename( $format['filename'] ) : '',
-				'format_name'    => isset( $format['format_name'] ) ? $format['format_name'] : '',
+				'filename'         => isset( $format['filename'] ) ? basename( $format['filename'] ) : '',
+				'format_name'      => isset( $format['format_name'] ) ? $format['format_name'] : '',
 				'format_long_name' => isset( $format['format_long_name'] ) ? $format['format_long_name'] : '',
-				'duration'       => isset( $format['duration'] ) ? floatval( $format['duration'] ) : 0,
-				'size'           => isset( $format['size'] ) ? intval( $format['size'] ) : 0,
-				'bit_rate'       => isset( $format['bit_rate'] ) ? intval( $format['bit_rate'] ) : 0,
+				'duration'         => isset( $format['duration'] ) ? floatval( $format['duration'] ) : 0,
+				'size'             => isset( $format['size'] ) ? intval( $format['size'] ) : 0,
+				'bit_rate'         => isset( $format['bit_rate'] ) ? intval( $format['bit_rate'] ) : 0,
 			),
 		);
 

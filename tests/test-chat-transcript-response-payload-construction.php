@@ -332,15 +332,15 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 
 		// Provide response metadata with usage data.
 		$response_metadata = array(
-			'usage'             => array(
+			'usage'              => array(
 				'prompt_tokens'     => 100,
 				'completion_tokens' => 50,
 				'total_tokens'      => 150,
 			),
-			'provider'          => 'openai',
-			'id'                => 'chatcmpl-test123',
-			'created'           => 1234567890,
-			'service_tier'      => 'default',
+			'provider'           => 'openai',
+			'id'                 => 'chatcmpl-test123',
+			'created'            => 1234567890,
+			'service_tier'       => 'default',
 			'system_fingerprint' => 'fp_test123',
 		);
 

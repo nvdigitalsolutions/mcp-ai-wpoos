@@ -53,9 +53,9 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 	 * Test that subtab groups include enable fields.
 	 */
 	public function test_subtab_groups_include_enable_fields() {
-		$section = new WP_MCP_AI_Section_Providers();
+		$section    = new WP_MCP_AI_Section_Providers();
 		$reflection = new ReflectionClass( $section );
-		$method = $reflection->getMethod( 'get_subtab_groups' );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$groups = $method->invoke( $section );
 
@@ -71,9 +71,9 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 	 * Test that enable fields are first in their respective subtabs.
 	 */
 	public function test_enable_fields_are_first_in_subtabs() {
-		$section = new WP_MCP_AI_Section_Providers();
+		$section    = new WP_MCP_AI_Section_Providers();
 		$reflection = new ReflectionClass( $section );
-		$method = $reflection->getMethod( 'get_subtab_groups' );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$groups = $method->invoke( $section );
 
@@ -90,13 +90,16 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 	 */
 	public function test_provider_enable_settings_save_and_retrieve() {
 		// Save settings.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'    => false,
-			'enable_anthropic' => true,
-			'enable_gemini'    => false,
-			'enable_ollama'    => true,
-			'enable_lm_studio' => false,
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'    => false,
+				'enable_anthropic' => true,
+				'enable_gemini'    => false,
+				'enable_ollama'    => true,
+				'enable_lm_studio' => false,
+			)
+		);
 
 		// Retrieve settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -122,14 +125,14 @@ class WP_MCP_AI_Provider_Enable_Disable_Test extends WP_UnitTestCase {
 		$input_enabled = array(
 			'enable_openai' => '1',
 		);
-		$sanitized = $section->sanitize( $input_enabled );
+		$sanitized     = $section->sanitize( $input_enabled );
 		$this->assertTrue( $sanitized['enable_openai'] );
 
 		// Test with checkbox disabled (not present in input).
 		$input_disabled = array();
 		// Simulate form submission for openai subtab.
 		$_POST['subtab'] = 'openai';
-		$sanitized = $section->sanitize( $input_disabled );
+		$sanitized       = $section->sanitize( $input_disabled );
 		$this->assertFalse( $sanitized['enable_openai'] );
 
 		// Clean up.

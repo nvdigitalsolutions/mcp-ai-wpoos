@@ -424,10 +424,10 @@ class WP_MCP_AI_Transcript_Repository {
 			// Security check: verify the rows belong to the expected user.
 			// This prevents unauthorized access when using the session_key-only fallback.
 			if ( ! empty( $rows ) && $user_id > 0 ) {
-				$first_row      = $rows[0];
-				$row_user_id    = isset( $first_row['user_id'] ) ? absint( $first_row['user_id'] ) : 0;
-				$row_author_id  = isset( $first_row['cct_author_id'] ) ? absint( $first_row['cct_author_id'] ) : 0;
-				$user_matches   = ( $row_user_id === $user_id ) || ( $row_author_id === $user_id );
+				$first_row     = $rows[0];
+				$row_user_id   = isset( $first_row['user_id'] ) ? absint( $first_row['user_id'] ) : 0;
+				$row_author_id = isset( $first_row['cct_author_id'] ) ? absint( $first_row['cct_author_id'] ) : 0;
+				$user_matches  = ( $row_user_id === $user_id ) || ( $row_author_id === $user_id );
 
 				if ( ! $user_matches ) {
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -607,7 +607,7 @@ class WP_MCP_AI_Transcript_Repository {
 	 * @return string SQL SELECT fields.
 	 */
 	private function get_select_fields() {
-		return "session_key,
+		return 'session_key,
                 request_payload,
                 response_payload,
                 metadata,
@@ -618,7 +618,7 @@ class WP_MCP_AI_Transcript_Repository {
                 assistant_id,
                 assistant_model,
                 latency_ms,
-                user_id";
+                user_id';
 	}
 
 	/**

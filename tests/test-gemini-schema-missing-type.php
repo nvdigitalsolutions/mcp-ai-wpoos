@@ -83,7 +83,7 @@ class WP_MCP_AI_Gemini_Schema_Missing_Type_Test extends WP_UnitTestCase {
 								'description' => 'Field without type - should get string added',
 							),
 						),
-						'required' => array( 'value' ),
+						'required'   => array( 'value' ),
 					),
 				),
 			),

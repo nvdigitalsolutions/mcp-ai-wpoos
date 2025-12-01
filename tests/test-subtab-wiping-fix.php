@@ -35,21 +35,24 @@ class WP_MCP_AI_Subtab_Wiping_Fix_Test extends WP_UnitTestCase {
 	 */
 	public function test_saving_openai_preserves_anthropic_settings() {
 		// Set up initial state with both providers enabled.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'     => true,
-			'openai_api_key'    => 'sk-old-openai-key',
-			'enable_anthropic'  => true,
-			'anthropic_api_key' => 'sk-ant-old-key',
-			'enable_gemini'     => true,
-			'gemini_api_key'    => 'AIza-old-key',
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'     => true,
+				'openai_api_key'    => 'sk-old-openai-key',
+				'enable_anthropic'  => true,
+				'anthropic_api_key' => 'sk-ant-old-key',
+				'enable_gemini'     => true,
+				'gemini_api_key'    => 'AIza-old-key',
+			)
+		);
 
 		// Create dashboard instance.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
 		// Simulate saving OpenAI subtab with new API key.
 		$_POST['subtab'] = 'openai';
-		$input = array(
+		$input           = array(
 			'enable_openai'  => '1', // Still enabled.
 			'openai_api_key' => 'sk-new-openai-key', // New key.
 			'default_model'  => 'gpt-4o',
@@ -60,7 +63,7 @@ class WP_MCP_AI_Subtab_Wiping_Fix_Test extends WP_UnitTestCase {
 
 		// Merge with existing settings (simulating actual save).
 		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 
 		// Verify OpenAI settings were updated.
 		$this->assertTrue( $merged['enable_openai'], 'OpenAI should still be enabled' );
@@ -80,26 +83,29 @@ class WP_MCP_AI_Subtab_Wiping_Fix_Test extends WP_UnitTestCase {
 	 */
 	public function test_disabling_openai_preserves_other_providers() {
 		// Set up initial state with all providers enabled.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'     => true,
-			'enable_anthropic'  => true,
-			'enable_gemini'     => true,
-			'enable_ollama'     => true,
-			'enable_lm_studio'  => true,
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'    => true,
+				'enable_anthropic' => true,
+				'enable_gemini'    => true,
+				'enable_ollama'    => true,
+				'enable_lm_studio' => true,
+			)
+		);
 
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
 		// Disable OpenAI.
 		$_POST['subtab'] = 'openai';
-		$input = array(
+		$input           = array(
 			// enable_openai NOT in input = unchecked = disabled.
 			'openai_api_key' => '',
 		);
 
 		$sanitized = $dashboard->sanitize_settings( $input, 'providers' );
-		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$existing  = get_option( 'wp_mcp_ai_settings', array() );
+		$merged    = array_merge( $existing, $sanitized );
 
 		// Verify OpenAI is disabled.
 		$this->assertFalse( $merged['enable_openai'], 'OpenAI should be disabled' );
@@ -116,24 +122,27 @@ class WP_MCP_AI_Subtab_Wiping_Fix_Test extends WP_UnitTestCase {
 	 */
 	public function test_changing_priority_preserves_enable_states() {
 		// Set up initial state.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'         => true,
-			'enable_anthropic'      => false,
-			'enable_gemini'         => true,
-			'provider_priority_list' => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'          => true,
+				'enable_anthropic'       => false,
+				'enable_gemini'          => true,
+				'provider_priority_list' => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+			)
+		);
 
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
 		// Change priority order.
 		$_POST['subtab'] = 'priority';
-		$input = array(
+		$input           = array(
 			'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'anthropic', 'lm_studio' ),
 		);
 
 		$sanitized = $dashboard->sanitize_settings( $input, 'providers' );
-		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$existing  = get_option( 'wp_mcp_ai_settings', array() );
+		$merged    = array_merge( $existing, $sanitized );
 
 		// Verify priority changed.
 		$this->assertEquals( 'gemini', $merged['provider_priority_list'][0] );
@@ -155,35 +164,35 @@ class WP_MCP_AI_Subtab_Wiping_Fix_Test extends WP_UnitTestCase {
 
 		// Save OpenAI.
 		$_POST['subtab'] = 'openai';
-		$input1 = array(
+		$input1          = array(
 			'enable_openai'  => '1',
 			'openai_api_key' => 'sk-openai-123',
 		);
-		$sanitized1 = $dashboard->sanitize_settings( $input1, 'providers' );
-		$existing1 = get_option( 'wp_mcp_ai_settings', array() );
-		$merged1 = array_merge( $existing1, $sanitized1 );
+		$sanitized1      = $dashboard->sanitize_settings( $input1, 'providers' );
+		$existing1       = get_option( 'wp_mcp_ai_settings', array() );
+		$merged1         = array_merge( $existing1, $sanitized1 );
 		update_option( 'wp_mcp_ai_settings', $merged1 );
 
 		// Save Anthropic.
 		$_POST['subtab'] = 'anthropic';
-		$input2 = array(
+		$input2          = array(
 			'enable_anthropic'  => '1',
 			'anthropic_api_key' => 'sk-ant-456',
 		);
-		$sanitized2 = $dashboard->sanitize_settings( $input2, 'providers' );
-		$existing2 = get_option( 'wp_mcp_ai_settings', array() );
-		$merged2 = array_merge( $existing2, $sanitized2 );
+		$sanitized2      = $dashboard->sanitize_settings( $input2, 'providers' );
+		$existing2       = get_option( 'wp_mcp_ai_settings', array() );
+		$merged2         = array_merge( $existing2, $sanitized2 );
 		update_option( 'wp_mcp_ai_settings', $merged2 );
 
 		// Save Gemini.
 		$_POST['subtab'] = 'gemini';
-		$input3 = array(
+		$input3          = array(
 			'enable_gemini'  => '1',
 			'gemini_api_key' => 'AIza-789',
 		);
-		$sanitized3 = $dashboard->sanitize_settings( $input3, 'providers' );
-		$existing3 = get_option( 'wp_mcp_ai_settings', array() );
-		$merged3 = array_merge( $existing3, $sanitized3 );
+		$sanitized3      = $dashboard->sanitize_settings( $input3, 'providers' );
+		$existing3       = get_option( 'wp_mcp_ai_settings', array() );
+		$merged3         = array_merge( $existing3, $sanitized3 );
 		update_option( 'wp_mcp_ai_settings', $merged3 );
 
 		// Verify all three are saved and enabled.

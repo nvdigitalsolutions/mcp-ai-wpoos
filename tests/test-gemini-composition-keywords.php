@@ -389,11 +389,11 @@ class WP_MCP_AI_Gemini_Composition_Test extends WP_UnitTestCase {
 						'type'       => 'object',
 						'properties' => array(
 							'data' => array(
-								'type'       => 'array',
-								'items'      => array(
+								'type'  => 'array',
+								'items' => array(
 									'type'       => 'object',
 									'properties' => array(
-										'value' => array(
+										'value'    => array(
 											'oneOf' => array(
 												array( 'type' => 'string' ),
 												array( 'type' => 'number' ),
@@ -402,7 +402,7 @@ class WP_MCP_AI_Gemini_Composition_Test extends WP_UnitTestCase {
 										'metadata' => array(
 											'anyOf' => array(
 												array(
-													'type'       => 'object',
+													'type' => 'object',
 													'properties' => array(
 														'id' => array( 'type' => 'integer' ),
 													),
@@ -433,7 +433,7 @@ class WP_MCP_AI_Gemini_Composition_Test extends WP_UnitTestCase {
 		// Verify nested composition keywords were all removed.
 		$items = $declaration['parameters']['properties']['data']['items'];
 		$this->assertArrayHasKey( 'properties', $items );
-		
+
 		$value_schema = $items['properties']['value'];
 		$this->assertArrayNotHasKey( 'oneOf', $value_schema );
 		$this->assertArrayHasKey( 'type', $value_schema );

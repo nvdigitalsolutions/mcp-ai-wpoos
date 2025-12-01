@@ -152,22 +152,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 			// Get values with defaults.
-			$gmail_client_id                = isset( $settings['gmail_client_id'] ) ? $settings['gmail_client_id'] : '';
-			$gmail_client_secret            = isset( $settings['gmail_client_secret'] ) ? $settings['gmail_client_secret'] : '';
-			$crawl4ai_base_url              = isset( $settings['crawl4ai_base_url'] ) ? $settings['crawl4ai_base_url'] : '';
-			$crawl4ai_api_key               = isset( $settings['crawl4ai_api_key'] ) ? $settings['crawl4ai_api_key'] : '';
-			$brave_search_api_key           = isset( $settings['brave_search_api_key'] ) ? $settings['brave_search_api_key'] : '';
-			$cloudflare_api_token           = isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
-			$cloudflare_zone_id             = isset( $settings['cloudflare_zone_id'] ) ? $settings['cloudflare_zone_id'] : '';
-			$cloudways_api_key              = isset( $settings['cloudways_api_key'] ) ? $settings['cloudways_api_key'] : '';
-			$cloudways_email                = isset( $settings['cloudways_email'] ) ? $settings['cloudways_email'] : '';
-			$mailjet_api_key                = isset( $settings['mailjet_api_key'] ) ? $settings['mailjet_api_key'] : '';
-			$mailjet_api_secret             = isset( $settings['mailjet_api_secret'] ) ? $settings['mailjet_api_secret'] : '';
-			$quickbooks_api_key             = isset( $settings['quickbooks_api_key'] ) ? $settings['quickbooks_api_key'] : '';
-			$quickbooks_client_id           = isset( $settings['quickbooks_client_id'] ) ? $settings['quickbooks_client_id'] : '';
-			$quickbooks_client_secret       = isset( $settings['quickbooks_client_secret'] ) ? $settings['quickbooks_client_secret'] : '';
-			$google_analytics_property_id   = isset( $settings['google_analytics_property_id'] ) ? $settings['google_analytics_property_id'] : '';
-			$google_analytics_credentials   = isset( $settings['google_analytics_credentials'] ) ? $settings['google_analytics_credentials'] : '';
+			$gmail_client_id              = isset( $settings['gmail_client_id'] ) ? $settings['gmail_client_id'] : '';
+			$gmail_client_secret          = isset( $settings['gmail_client_secret'] ) ? $settings['gmail_client_secret'] : '';
+			$crawl4ai_base_url            = isset( $settings['crawl4ai_base_url'] ) ? $settings['crawl4ai_base_url'] : '';
+			$crawl4ai_api_key             = isset( $settings['crawl4ai_api_key'] ) ? $settings['crawl4ai_api_key'] : '';
+			$brave_search_api_key         = isset( $settings['brave_search_api_key'] ) ? $settings['brave_search_api_key'] : '';
+			$cloudflare_api_token         = isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
+			$cloudflare_zone_id           = isset( $settings['cloudflare_zone_id'] ) ? $settings['cloudflare_zone_id'] : '';
+			$cloudways_api_key            = isset( $settings['cloudways_api_key'] ) ? $settings['cloudways_api_key'] : '';
+			$cloudways_email              = isset( $settings['cloudways_email'] ) ? $settings['cloudways_email'] : '';
+			$mailjet_api_key              = isset( $settings['mailjet_api_key'] ) ? $settings['mailjet_api_key'] : '';
+			$mailjet_api_secret           = isset( $settings['mailjet_api_secret'] ) ? $settings['mailjet_api_secret'] : '';
+			$quickbooks_api_key           = isset( $settings['quickbooks_api_key'] ) ? $settings['quickbooks_api_key'] : '';
+			$quickbooks_client_id         = isset( $settings['quickbooks_client_id'] ) ? $settings['quickbooks_client_id'] : '';
+			$quickbooks_client_secret     = isset( $settings['quickbooks_client_secret'] ) ? $settings['quickbooks_client_secret'] : '';
+			$google_analytics_property_id = isset( $settings['google_analytics_property_id'] ) ? $settings['google_analytics_property_id'] : '';
+			$google_analytics_credentials = isset( $settings['google_analytics_credentials'] ) ? $settings['google_analytics_credentials'] : '';
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'External Tools Integration', 'wp-mcp-ai' ); ?></h1>

@@ -235,7 +235,7 @@ class WP_MCP_AI_Gemini_Image_OpenAI_Fallback_Test extends WP_UnitTestCase {
 			'aspect_ratio'   => '4:3',
 			'format'         => 'jpeg',
 		);
-		$text = wp_mcp_ai_generate_gemini_image_fallback_text( $complete );
+		$text     = wp_mcp_ai_generate_gemini_image_fallback_text( $complete );
 		$this->assertStringContainsString( 'Complete Image', $text );
 		$this->assertStringContainsString( 'A beautiful sunset', $text );
 		$this->assertStringContainsString( '4:3', $text );

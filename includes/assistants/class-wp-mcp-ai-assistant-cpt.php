@@ -103,7 +103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 */
 		protected function get_tool_presets() {
 			$presets = array(
-				'content_writing' => array(
+				'content_writing'     => array(
 					'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
 					'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -117,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'web_search',
 					),
 				),
-				'ecommerce'       => array(
+				'ecommerce'           => array(
 					'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
 					'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -128,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'send_mailjet_email',
 					),
 				),
-				'site_management' => array(
+				'site_management'     => array(
 					'name'        => __( 'Site Management', 'wp-mcp-ai' ),
 					'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'list_cron_jobs',
 					),
 				),
-				'seo_marketing'   => array(
+				'seo_marketing'       => array(
 					'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
 					'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -156,7 +156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'create_google_calendar_event',
 					),
 				),
-				'development'     => array(
+				'development'         => array(
 					'name'        => __( 'Development', 'wp-mcp-ai' ),
 					'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -168,7 +168,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'query_remote_site',
 					),
 				),
-				'data_analytics'  => array(
+				'data_analytics'      => array(
 					'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
 					'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
 					'tools'       => array(
@@ -3688,7 +3688,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// Get warnings.
 				$warnings = get_post_meta( $role_id, '_wp_mcp_ai_profession_warnings', true );
 				if ( is_array( $warnings ) && ! empty( $warnings ) ) {
-					$warnings_list = implode( "\n- ", $warnings );
+					$warnings_list  = implode( "\n- ", $warnings );
 					$prompt_parts[] = sprintf(
 						"### Important Warnings for %s\n\n- %s",
 						$profession->post_title,
@@ -3702,7 +3702,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Combine all parts with separators.
-			$prompt = "# Your Roles and Capabilities\n\n";
+			$prompt  = "# Your Roles and Capabilities\n\n";
 			$prompt .= "You are an AI assistant with the following professional roles:\n\n";
 			$prompt .= implode( "\n\n---\n\n", $prompt_parts );
 

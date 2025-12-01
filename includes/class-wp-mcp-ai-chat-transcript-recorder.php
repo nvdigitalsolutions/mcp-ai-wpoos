@@ -81,9 +81,9 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		// If so, we'll update it instead of creating a new one to prevent duplicates.
 		// The repository must be an instance of WP_MCP_AI_Transcript_Repository and
 		// support the find_existing_session_id method (added in the same version as this fix).
-		$existing_id  = null;
-		$is_update    = false;
-		$repository   = wp_mcp_ai_get_transcript_repository();
+		$existing_id = null;
+		$is_update   = false;
+		$repository  = wp_mcp_ai_get_transcript_repository();
 
 		if ( $repository instanceof WP_MCP_AI_Transcript_Repository && $session_key ) {
 			$existing_id = $repository->find_existing_session_id( $session_key, $user_id, $assistant_id );

@@ -48,9 +48,12 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
 		// Force low tier for predictable test.
-		add_filter( 'wp_mcp_ai_workload_tier', function() {
-			return 'low';
-		} );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function () {
+				return 'low';
+			}
+		);
 
 		// Enable budget management - should use low tier timeout (30s).
 		update_option( 'wp_mcp_ai_settings', array( 'enable_budget_management' => true ) );
@@ -79,9 +82,12 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
 		// Force low tier and typical max_execution_time.
-		add_filter( 'wp_mcp_ai_workload_tier', function() {
-			return 'low';
-		} );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function () {
+				return 'low';
+			}
+		);
 
 		// Disable budget management.
 		update_option( 'wp_mcp_ai_settings', array( 'enable_budget_management' => false ) );
@@ -110,10 +116,10 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 		update_option( 'wp_mcp_ai_settings', array( 'enable_cron_orchestration' => false ) );
 
 		// Try to create a cron job - should be blocked.
-		$tool = new WP_MCP_AI_Tool_Create_Cron_Job();
+		$tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$result = $tool->execute(
 			array(
-				'hook' => 'test_hook',
+				'hook'     => 'test_hook',
 				'schedule' => 'single',
 			),
 			array( 'user_id' => $user_id )
@@ -138,11 +144,11 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 		update_option( 'wp_mcp_ai_settings', array( 'enable_cron_orchestration' => true ) );
 
 		// Try to create a cron job - should work.
-		$tool = new WP_MCP_AI_Tool_Create_Cron_Job();
+		$tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$result = $tool->execute(
 			array(
-				'hook' => 'test_hook',
-				'schedule' => 'single',
+				'hook'      => 'test_hook',
+				'schedule'  => 'single',
 				'timestamp' => time() + 3600,
 			),
 			array( 'user_id' => $user_id )

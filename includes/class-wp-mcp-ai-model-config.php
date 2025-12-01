@@ -255,7 +255,7 @@ class WP_MCP_AI_Model_Config {
 		return array(
 			// OpenAI Models (November 2025).
 			// GPT-5 series: Flagship models (multimodal - vision capable) - 2025.
-			'gpt-5.1'              => array(
+			'gpt-5.1'                                      => array(
 				'name'           => 'GPT-5.1 (Flagship)',
 				'provider'       => 'openai',
 				'tpm'            => 100000,
@@ -267,7 +267,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.01,
 				'status'         => 'active',
 			),
-			'gpt-5.1-2025-11-13'   => array(
+			'gpt-5.1-2025-11-13'                           => array(
 				'name'           => 'GPT-5.1 (Nov 2025)',
 				'provider'       => 'openai',
 				'tpm'            => 100000,
@@ -279,7 +279,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.01,
 				'status'         => 'active',
 			),
-			'gpt-5'                => array(
+			'gpt-5'                                        => array(
 				'name'           => 'GPT-5',
 				'provider'       => 'openai',
 				'tpm'            => 80000,
@@ -291,7 +291,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.008,
 				'status'         => 'active',
 			),
-			'gpt-5-2025-08-07'     => array(
+			'gpt-5-2025-08-07'                             => array(
 				'name'           => 'GPT-5 (Aug 2025)',
 				'provider'       => 'openai',
 				'tpm'            => 80000,
@@ -303,7 +303,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.008,
 				'status'         => 'active',
 			),
-			'gpt-5-mini'           => array(
+			'gpt-5-mini'                                   => array(
 				'name'           => 'GPT-5 Mini',
 				'provider'       => 'openai',
 				'tpm'            => 150000,
@@ -315,7 +315,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.002,
 				'status'         => 'active',
 			),
-			'gpt-5-nano'           => array(
+			'gpt-5-nano'                                   => array(
 				'name'           => 'GPT-5 Nano',
 				'provider'       => 'openai',
 				'tpm'            => 200000,
@@ -327,7 +327,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0005,
 				'status'         => 'active',
 			),
-			'gpt-5-pro'            => array(
+			'gpt-5-pro'                                    => array(
 				'name'           => 'GPT-5 Pro',
 				'provider'       => 'openai',
 				'tpm'            => 50000,
@@ -340,7 +340,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// GPT-5 Codex variants (coding-optimized, text-only).
-			'gpt-5-codex'          => array(
+			'gpt-5-codex'                                  => array(
 				'name'           => 'GPT-5 Codex',
 				'provider'       => 'openai',
 				'tpm'            => 100000,
@@ -352,7 +352,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.008,
 				'status'         => 'active',
 			),
-			'gpt-5-codex-mini'     => array(
+			'gpt-5-codex-mini'                             => array(
 				'name'           => 'GPT-5 Codex Mini',
 				'provider'       => 'openai',
 				'tpm'            => 150000,
@@ -365,7 +365,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// GPT-4o series: Multimodal models.
-			'gpt-4o'               => array(
+			'gpt-4o'                                       => array(
 				'name'           => 'GPT-4o',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -377,7 +377,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.005,
 				'status'         => 'active',
 			),
-			'gpt-4o-mini'          => array(
+			'gpt-4o-mini'                                  => array(
 				'name'           => 'GPT-4o Mini',
 				'provider'       => 'openai',
 				'tpm'            => 200000,
@@ -389,7 +389,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00015,
 				'status'         => 'active',
 			),
-			'gpt-4o-2024-11-20'    => array(
+			'gpt-4o-2024-11-20'                            => array(
 				'name'           => 'GPT-4o (Nov 2024)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -401,7 +401,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.005,
 				'status'         => 'active',
 			),
-			'gpt-4o-2024-08-06'    => array(
+			'gpt-4o-2024-08-06'                            => array(
 				'name'           => 'GPT-4o (Aug 2024)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -413,7 +413,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.005,
 				'status'         => 'active',
 			),
-			'gpt-4o-2024-05-13'    => array(
+			'gpt-4o-2024-05-13'                            => array(
 				'name'           => 'GPT-4o (May 2024)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -425,7 +425,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.005,
 				'status'         => 'active',
 			),
-			'chatgpt-4o-latest'    => array(
+			'chatgpt-4o-latest'                            => array(
 				'name'           => 'ChatGPT-4o (Latest)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -438,7 +438,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Legacy models (text-only).
-			'gpt-4-turbo'          => array(
+			'gpt-4-turbo'                                  => array(
 				'name'           => 'GPT-4 Turbo (Legacy)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -450,7 +450,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.01,
 				'status'         => 'active',
 			),
-			'gpt-4'                => array(
+			'gpt-4'                                        => array(
 				'name'           => 'GPT-4 (Legacy)',
 				'provider'       => 'openai',
 				'tpm'            => 10000,
@@ -462,7 +462,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.03,
 				'status'         => 'active',
 			),
-			'gpt-3.5-turbo'        => array(
+			'gpt-3.5-turbo'                                => array(
 				'name'           => 'GPT-3.5 Turbo (Legacy)',
 				'provider'       => 'openai',
 				'tpm'            => 60000,
@@ -475,7 +475,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Deprecated models (Nov 2025) - kept for backward compatibility.
-			'o3'                   => array(
+			'o3'                                           => array(
 				'name'           => 'o3 (Deprecated - use GPT-5)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -487,7 +487,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.015,
 				'status'         => 'deprecated',
 			),
-			'o3-mini'              => array(
+			'o3-mini'                                      => array(
 				'name'           => 'o3 Mini (Deprecated - use GPT-5 Mini)',
 				'provider'       => 'openai',
 				'tpm'            => 80000,
@@ -499,7 +499,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.003,
 				'status'         => 'deprecated',
 			),
-			'o4-mini'              => array(
+			'o4-mini'                                      => array(
 				'name'           => 'o4 Mini (Deprecated - use GPT-5 Mini)',
 				'provider'       => 'openai',
 				'tpm'            => 100000,
@@ -511,7 +511,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.002,
 				'status'         => 'deprecated',
 			),
-			'o1'                   => array(
+			'o1'                                           => array(
 				'name'           => 'o1 (Deprecated - use GPT-5)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -523,7 +523,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.015,
 				'status'         => 'deprecated',
 			),
-			'o1-preview'           => array(
+			'o1-preview'                                   => array(
 				'name'           => 'o1 Preview (Deprecated - use GPT-5)',
 				'provider'       => 'openai',
 				'tpm'            => 30000,
@@ -535,7 +535,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.015,
 				'status'         => 'deprecated',
 			),
-			'o1-mini'              => array(
+			'o1-mini'                                      => array(
 				'name'           => 'o1 Mini (Deprecated - use GPT-5 Mini)',
 				'provider'       => 'openai',
 				'tpm'            => 80000,
@@ -550,7 +550,7 @@ class WP_MCP_AI_Model_Config {
 
 			// Anthropic Models (November 2025).
 			// Claude 4 series (multimodal - vision capable) - 2025.
-			'claude-sonnet-4.5'         => array(
+			'claude-sonnet-4.5'                            => array(
 				'name'           => 'Claude Sonnet 4.5 (Recommended)',
 				'provider'       => 'anthropic',
 				'tpm'            => 80000,
@@ -562,7 +562,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
-			'claude-sonnet-4-5-20250929' => array(
+			'claude-sonnet-4-5-20250929'                   => array(
 				'name'           => 'Claude Sonnet 4.5 (Sep 2025)',
 				'provider'       => 'anthropic',
 				'tpm'            => 80000,
@@ -574,7 +574,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
-			'claude-haiku-4.5'          => array(
+			'claude-haiku-4.5'                             => array(
 				'name'           => 'Claude Haiku 4.5 (Fastest)',
 				'provider'       => 'anthropic',
 				'tpm'            => 100000,
@@ -586,7 +586,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.001,
 				'status'         => 'active',
 			),
-			'claude-opus-4.1'           => array(
+			'claude-opus-4.1'                              => array(
 				'name'           => 'Claude Opus 4.1 (Flagship)',
 				'provider'       => 'anthropic',
 				'tpm'            => 40000,
@@ -598,7 +598,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.015,
 				'status'         => 'active',
 			),
-			'claude-opus-4.0'           => array(
+			'claude-opus-4.0'                              => array(
 				'name'           => 'Claude Opus 4.0',
 				'provider'       => 'anthropic',
 				'tpm'            => 40000,
@@ -611,7 +611,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Claude 3.5 series (legacy - for backward compatibility).
-			'claude-3-5-sonnet-20241022' => array(
+			'claude-3-5-sonnet-20241022'                   => array(
 				'name'           => 'Claude 3.5 Sonnet (Legacy)',
 				'provider'       => 'anthropic',
 				'tpm'            => 80000,
@@ -623,7 +623,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
-			'claude-3-5-haiku-20241022'  => array(
+			'claude-3-5-haiku-20241022'                    => array(
 				'name'           => 'Claude 3.5 Haiku (Legacy)',
 				'provider'       => 'anthropic',
 				'tpm'            => 100000,
@@ -635,7 +635,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.001,
 				'status'         => 'active',
 			),
-			'claude-3-opus-20240229'    => array(
+			'claude-3-opus-20240229'                       => array(
 				'name'           => 'Claude 3 Opus (Legacy)',
 				'provider'       => 'anthropic',
 				'tpm'            => 40000,
@@ -650,7 +650,7 @@ class WP_MCP_AI_Model_Config {
 
 			// Google Gemini Models (November 2025).
 			// Gemini 3 series (multimodal - latest generation) - Preview.
-			'gemini-3-pro-preview'   => array(
+			'gemini-3-pro-preview'                         => array(
 				'name'           => 'Gemini 3 Pro (Preview)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -663,7 +663,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Gemini 2.5 series (multimodal - text, image, video) - Stable.
-			'gemini-2.5-pro'         => array(
+			'gemini-2.5-pro'                               => array(
 				'name'           => 'Gemini 2.5 Pro',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -675,7 +675,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
-			'gemini-2.5-flash'       => array(
+			'gemini-2.5-flash'                             => array(
 				'name'           => 'Gemini 2.5 Flash (Recommended)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -687,7 +687,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0001,
 				'status'         => 'active',
 			),
-			'gemini-2.5-flash-lite'  => array(
+			'gemini-2.5-flash-lite'                        => array(
 				'name'           => 'Gemini 2.5 Flash Lite',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -699,7 +699,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00005,
 				'status'         => 'active',
 			),
-			'gemini-2.5-flash-preview-09-2025' => array(
+			'gemini-2.5-flash-preview-09-2025'             => array(
 				'name'           => 'Gemini 2.5 Flash (Sep 2025 Preview)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -712,7 +712,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Gemini 2.5 specialized models.
-			'gemini-live-2.5-flash-preview' => array(
+			'gemini-live-2.5-flash-preview'                => array(
 				'name'           => 'Gemini Live 2.5 Flash (Voice/Multimodal)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -736,7 +736,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0001,
 				'status'         => 'active',
 			),
-			'gemini-2.5-flash-preview-tts' => array(
+			'gemini-2.5-flash-preview-tts'                 => array(
 				'name'           => 'Gemini 2.5 Flash TTS',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -748,7 +748,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0001,
 				'status'         => 'active',
 			),
-			'gemini-2.5-pro-preview-tts'   => array(
+			'gemini-2.5-pro-preview-tts'                   => array(
 				'name'           => 'Gemini 2.5 Pro TTS',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -760,7 +760,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00125,
 				'status'         => 'active',
 			),
-			'gemini-2.5-flash-image' => array(
+			'gemini-2.5-flash-image'                       => array(
 				'name'           => 'Gemini 2.5 Flash Image',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -773,7 +773,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Gemini 2.0 series (stable).
-			'gemini-2.0-flash'       => array(
+			'gemini-2.0-flash'                             => array(
 				'name'           => 'Gemini 2.0 Flash',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -785,7 +785,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0001,
 				'status'         => 'active',
 			),
-			'gemini-2.0-flash-lite'  => array(
+			'gemini-2.0-flash-lite'                        => array(
 				'name'           => 'Gemini 2.0 Flash Lite',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -797,7 +797,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00005,
 				'status'         => 'active',
 			),
-			'gemini-2.0-flash-exp'   => array(
+			'gemini-2.0-flash-exp'                         => array(
 				'name'           => 'Gemini 2.0 Flash (Experimental)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -810,7 +810,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'experimental',
 			),
 			// Experimental models (unstable, for testing only).
-			'gemini-exp-1206'        => array(
+			'gemini-exp-1206'                              => array(
 				'name'           => 'Gemini Exp 1206 (Experimental)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -822,7 +822,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'experimental',
 			),
-			'gemini-exp-1121'        => array(
+			'gemini-exp-1121'                              => array(
 				'name'           => 'Gemini Exp 1121 (Experimental)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -835,7 +835,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'experimental',
 			),
 			// Gemini 1.5 series (legacy but still supported).
-			'gemini-1.5-pro'         => array(
+			'gemini-1.5-pro'                               => array(
 				'name'           => 'Gemini 1.5 Pro (Legacy)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -847,7 +847,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00125,
 				'status'         => 'active',
 			),
-			'gemini-1.5-flash'       => array(
+			'gemini-1.5-flash'                             => array(
 				'name'           => 'Gemini 1.5 Flash (Legacy)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -860,7 +860,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Deprecated Gemini models.
-			'gemini-pro'             => array(
+			'gemini-pro'                                   => array(
 				'name'           => 'Gemini Pro (Deprecated - use 2.5 Pro)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -872,7 +872,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00125,
 				'status'         => 'deprecated',
 			),
-			'gemini-pro-vision'      => array(
+			'gemini-pro-vision'                            => array(
 				'name'           => 'Gemini Pro Vision (Deprecated - use 2.5 Flash)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -885,7 +885,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'deprecated',
 			),
 			// Gemma models (Google's open models - text-only).
-			'gemma-2-27b-it'         => array(
+			'gemma-2-27b-it'                               => array(
 				'name'           => 'Gemma 2 27B (Instruct)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -897,7 +897,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'gemma-2-9b-it'          => array(
+			'gemma-2-9b-it'                                => array(
 				'name'           => 'Gemma 2 9B (Instruct)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -909,7 +909,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'gemma-2-2b-it'          => array(
+			'gemma-2-2b-it'                                => array(
 				'name'           => 'Gemma 2 2B (Instruct)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
@@ -924,7 +924,7 @@ class WP_MCP_AI_Model_Config {
 
 			// LM Studio Models (Local AI).
 			// Qwen models (function calling, coding, vision) - Top performers.
-			'qwen/qwen3-coder-30b'        => array(
+			'qwen/qwen3-coder-30b'                         => array(
 				'name'           => 'Qwen 3 Coder 30B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -936,7 +936,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'qwen/qwen3-vl-30b'           => array(
+			'qwen/qwen3-vl-30b'                            => array(
 				'name'           => 'Qwen 3 Vision-Language 30B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -948,7 +948,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'qwen/qwen2.5-coder-32b'      => array(
+			'qwen/qwen2.5-coder-32b'                       => array(
 				'name'           => 'Qwen 2.5 Coder 32B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -960,7 +960,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'qwen/qwen2.5-32b'            => array(
+			'qwen/qwen2.5-32b'                             => array(
 				'name'           => 'Qwen 2.5 32B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -972,7 +972,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'qwen/qwen2.5-14b'            => array(
+			'qwen/qwen2.5-14b'                             => array(
 				'name'           => 'Qwen 2.5 14B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -984,7 +984,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'qwen/qwen2.5-7b'             => array(
+			'qwen/qwen2.5-7b'                              => array(
 				'name'           => 'Qwen 2.5 7B',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -997,7 +997,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Meta Llama models.
-			'meta-llama/llama-3.3-70b-instruct' => array(
+			'meta-llama/llama-3.3-70b-instruct'            => array(
 				'name'           => 'Llama 3.3 70B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1009,7 +1009,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'meta-llama/llama-3.2-3b-instruct'  => array(
+			'meta-llama/llama-3.2-3b-instruct'             => array(
 				'name'           => 'Llama 3.2 3B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1021,7 +1021,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'meta-llama/llama-3.2-1b-instruct'  => array(
+			'meta-llama/llama-3.2-1b-instruct'             => array(
 				'name'           => 'Llama 3.2 1B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1033,7 +1033,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'meta-llama/llama-3.1-8b-instruct'  => array(
+			'meta-llama/llama-3.1-8b-instruct'             => array(
 				'name'           => 'Llama 3.1 8B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1046,7 +1046,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Mistral models (efficient reasoning).
-			'mistralai/mistral-large-2411'      => array(
+			'mistralai/mistral-large-2411'                 => array(
 				'name'           => 'Mistral Large 2411',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1058,7 +1058,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'mistralai/mistral-nemo-2407'       => array(
+			'mistralai/mistral-nemo-2407'                  => array(
 				'name'           => 'Mistral Nemo 2407',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1070,7 +1070,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'mistralai/mistral-7b-instruct-v0.3' => array(
+			'mistralai/mistral-7b-instruct-v0.3'           => array(
 				'name'           => 'Mistral 7B Instruct v0.3',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1082,7 +1082,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'mistralai/mixtral-8x7b-instruct'   => array(
+			'mistralai/mixtral-8x7b-instruct'              => array(
 				'name'           => 'Mixtral 8x7B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1094,7 +1094,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'mistralai/mixtral-8x22b-instruct'  => array(
+			'mistralai/mixtral-8x22b-instruct'             => array(
 				'name'           => 'Mixtral 8x22B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1107,7 +1107,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// DeepSeek models (coding specialist).
-			'deepseek-ai/deepseek-coder-33b-instruct' => array(
+			'deepseek-ai/deepseek-coder-33b-instruct'      => array(
 				'name'           => 'DeepSeek Coder 33B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1119,7 +1119,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'deepseek-ai/deepseek-v3'                 => array(
+			'deepseek-ai/deepseek-v3'                      => array(
 				'name'           => 'DeepSeek V3',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1131,7 +1131,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'deepseek-ai/deepseek-r1'                 => array(
+			'deepseek-ai/deepseek-r1'                      => array(
 				'name'           => 'DeepSeek R1 (Reasoning)',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1144,7 +1144,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Microsoft Phi models (small but capable).
-			'microsoft/phi-4'                   => array(
+			'microsoft/phi-4'                              => array(
 				'name'           => 'Phi-4',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1156,7 +1156,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'microsoft/phi-3.5-mini-instruct'   => array(
+			'microsoft/phi-3.5-mini-instruct'              => array(
 				'name'           => 'Phi-3.5 Mini Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1169,7 +1169,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Google Gemma models.
-			'google/gemma-3-12b-it'             => array(
+			'google/gemma-3-12b-it'                        => array(
 				'name'           => 'Gemma 3 12B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1181,7 +1181,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'google/gemma-2-27b-it'             => array(
+			'google/gemma-2-27b-it'                        => array(
 				'name'           => 'Gemma 2 27B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1193,7 +1193,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'google/gemma-2-9b-it'              => array(
+			'google/gemma-2-9b-it'                         => array(
 				'name'           => 'Gemma 2 9B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,
@@ -1205,7 +1205,7 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			'google/gemma-2-2b-it'              => array(
+			'google/gemma-2-2b-it'                         => array(
 				'name'           => 'Gemma 2 2B Instruct',
 				'provider'       => 'lm_studio',
 				'tpm'            => 1000000,

@@ -89,10 +89,10 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 
 		// Enable rate limiting with low limits for testing.
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']    = true;
-		$settings['rate_limit_requests']     = 3; // Allow only 3 requests.
-		$settings['rate_limit_window']       = 60; // Per 60 seconds.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 3; // Allow only 3 requests.
+		$settings['rate_limit_window']    = 60; // Per 60 seconds.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$successful_count   = 0;
@@ -103,12 +103,15 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 			$request->set_header( 'X-WP-Nonce', $nonce );
 			$request->set_param( 'assistant_id', $assistant_id );
-			$request->set_param( 'messages', array(
+			$request->set_param(
+				'messages',
 				array(
-					'role'    => 'user',
-					'content' => 'Hello',
-				),
-			) );
+					array(
+						'role'    => 'user',
+						'content' => 'Hello',
+					),
+				)
+			);
 
 			$response = rest_do_request( $request );
 			$status   = $response->get_status();
@@ -151,34 +154,40 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 
 		// Enable strict rate limiting.
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']    = true;
-		$settings['rate_limit_requests']     = 1; // Allow only 1 request.
-		$settings['rate_limit_window']       = 60;
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 1; // Allow only 1 request.
+		$settings['rate_limit_window']    = 60;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// First request should succeed.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_header( 'X-WP-Nonce', $nonce );
 		$request->set_param( 'assistant_id', $assistant_id );
-		$request->set_param( 'messages', array(
+		$request->set_param(
+			'messages',
 			array(
-				'role'    => 'user',
-				'content' => 'Hello',
-			),
-		) );
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
+		);
 		$response = rest_do_request( $request );
 
 		// Second request should be rate limited.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_header( 'X-WP-Nonce', $nonce );
 		$request->set_param( 'assistant_id', $assistant_id );
-		$request->set_param( 'messages', array(
+		$request->set_param(
+			'messages',
 			array(
-				'role'    => 'user',
-				'content' => 'Hello again',
-			),
-		) );
+				array(
+					'role'    => 'user',
+					'content' => 'Hello again',
+				),
+			)
+		);
 		$response = rest_do_request( $request );
 
 		$this->assertEquals( 429, $response->get_status(), 'Rate limited response should return 429 status' );
@@ -211,10 +220,10 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 
 		// Disable rate limiting.
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']    = false;
-		$settings['rate_limit_requests']     = 1; // Set low limit, but disabled.
-		$settings['rate_limit_window']       = 60;
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = false;
+		$settings['rate_limit_requests']  = 1; // Set low limit, but disabled.
+		$settings['rate_limit_window']    = 60;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$non_rate_limited_count = 0;
@@ -224,12 +233,15 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 			$request->set_header( 'X-WP-Nonce', $nonce );
 			$request->set_param( 'assistant_id', $assistant_id );
-			$request->set_param( 'messages', array(
+			$request->set_param(
+				'messages',
 				array(
-					'role'    => 'user',
-					'content' => "Hello $i",
-				),
-			) );
+					array(
+						'role'    => 'user',
+						'content' => "Hello $i",
+					),
+				)
+			);
 
 			$response = rest_do_request( $request );
 			$status   = $response->get_status();
@@ -262,10 +274,10 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 
 		// Enable rate limiting with specific window.
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']    = true;
-		$settings['rate_limit_requests']     = 2;
-		$settings['rate_limit_window']       = 60; // 60 seconds window.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 2;
+		$settings['rate_limit_window']    = 60; // 60 seconds window.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Make 2 requests (should succeed).
@@ -273,12 +285,15 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 			$request->set_header( 'X-WP-Nonce', $nonce );
 			$request->set_param( 'assistant_id', $assistant_id );
-			$request->set_param( 'messages', array(
+			$request->set_param(
+				'messages',
 				array(
-					'role'    => 'user',
-					'content' => "Request $i",
-				),
-			) );
+					array(
+						'role'    => 'user',
+						'content' => "Request $i",
+					),
+				)
+			);
 			$response = rest_do_request( $request );
 		}
 
@@ -286,12 +301,15 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_header( 'X-WP-Nonce', $nonce );
 		$request->set_param( 'assistant_id', $assistant_id );
-		$request->set_param( 'messages', array(
+		$request->set_param(
+			'messages',
 			array(
-				'role'    => 'user',
-				'content' => 'Request 3',
-			),
-		) );
+				array(
+					'role'    => 'user',
+					'content' => 'Request 3',
+				),
+			)
+		);
 		$response = rest_do_request( $request );
 
 		$this->assertEquals( 429, $response->get_status(), 'Third request should be rate limited' );

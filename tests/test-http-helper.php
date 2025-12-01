@@ -348,26 +348,26 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 	 */
 	public function test_handle_loopback_requests_timeout_for_all_private_ranges() {
 		// Test 10.x.x.x range.
-		$args1 = array( 'timeout' => 5 );
-		$url1  = 'http://10.0.0.50:11434/api/tags';
+		$args1     = array( 'timeout' => 5 );
+		$url1      = 'http://10.0.0.50:11434/api/tags';
 		$modified1 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args1, $url1 );
 		$this->assertEquals( 30, $modified1['timeout'] );
 
 		// Test 172.16-31.x.x range.
-		$args2 = array( 'timeout' => 5 );
-		$url2  = 'http://172.16.0.10:11434/api/tags';
+		$args2     = array( 'timeout' => 5 );
+		$url2      = 'http://172.16.0.10:11434/api/tags';
 		$modified2 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args2, $url2 );
 		$this->assertEquals( 30, $modified2['timeout'] );
 
 		// Test 192.168.x.x range.
-		$args3 = array( 'timeout' => 5 );
-		$url3  = 'http://192.168.1.100:11434/api/tags';
+		$args3     = array( 'timeout' => 5 );
+		$url3      = 'http://192.168.1.100:11434/api/tags';
 		$modified3 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args3, $url3 );
 		$this->assertEquals( 30, $modified3['timeout'] );
 
 		// Test localhost.
-		$args4 = array( 'timeout' => 5 );
-		$url4  = 'http://localhost:11434/api/tags';
+		$args4     = array( 'timeout' => 5 );
+		$url4      = 'http://localhost:11434/api/tags';
 		$modified4 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args4, $url4 );
 		$this->assertEquals( 30, $modified4['timeout'] );
 	}
@@ -448,11 +448,11 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 	 */
 	public function test_set_connection_timeout_all_private_ranges() {
 		$test_cases = array(
-			'10.0.0.50:11434'       => 'http://10.0.0.50:11434/api/tags',
-			'172.16.0.10:11434'     => 'http://172.16.0.10:11434/api/tags',
-			'192.168.1.100:11434'   => 'http://192.168.1.100:11434/api/tags',
-			'localhost:11434'       => 'http://localhost:11434/api/tags',
-			'127.0.0.1:11434'       => 'http://127.0.0.1:11434/api/tags',
+			'10.0.0.50:11434'     => 'http://10.0.0.50:11434/api/tags',
+			'172.16.0.10:11434'   => 'http://172.16.0.10:11434/api/tags',
+			'192.168.1.100:11434' => 'http://192.168.1.100:11434/api/tags',
+			'localhost:11434'     => 'http://localhost:11434/api/tags',
+			'127.0.0.1:11434'     => 'http://127.0.0.1:11434/api/tags',
 		);
 
 		foreach ( $test_cases as $description => $url ) {
@@ -493,7 +493,7 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 	 */
 	public function test_handle_loopback_requests_respects_ssl_bypass_disabled() {
 		// Disable SSL bypass.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_loopback_ssl_bypass'] = false;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -552,7 +552,7 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 	 */
 	public function test_handle_loopback_requests_ssl_bypass_all_private_ranges() {
 		// Ensure SSL bypass is enabled.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_loopback_ssl_bypass'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

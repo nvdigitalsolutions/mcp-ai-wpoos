@@ -151,13 +151,13 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 		set_transient( WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id, $status, WP_MCP_AI_Job_Notifier::CACHE_DURATION );
 
 		// Test status endpoint.
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $job_id );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $job_id );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$response = rest_do_request( $request );
 		$this->assertNotEquals( 404, $response->get_status(), 'Status endpoint should work with real uniqid format' );
 
 		// Test stream endpoint.
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $job_id . '/stream' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $job_id . '/stream' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$response = rest_do_request( $request );
 		$this->assertNotEquals( 404, $response->get_status(), 'Stream endpoint should work with real uniqid format' );

@@ -115,7 +115,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'b64_json', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
 		$this->assertSame( 456, $result['created'] );
-		
+
 		// Verify text field includes descriptive information.
 		$this->assertArrayHasKey( 'text', $result );
 		$this->assertStringContainsString( 'Successfully generated image', $result['text'] );

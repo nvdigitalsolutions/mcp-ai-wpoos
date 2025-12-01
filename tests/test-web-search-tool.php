@@ -574,7 +574,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$call_count = 0;
 
 		$http_stub = static function ( $preempt, $args, $url ) use ( &$call_count ) {
-			$call_count++;
+			++$call_count;
 			return array(
 				'response' => array(
 					'code' => 200,

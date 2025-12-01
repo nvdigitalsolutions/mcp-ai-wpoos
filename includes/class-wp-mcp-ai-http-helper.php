@@ -71,7 +71,7 @@ class WP_MCP_AI_HTTP_Helper {
 		// Check if this is a loopback or private network address.
 		if ( ! empty( $parsed_url['host'] ) && self::is_loopback_address( $parsed_url['host'] ) ) {
 			// Get settings to check if SSL bypass is enabled.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
 			$ssl_bypass_enabled = isset( $settings['enable_loopback_ssl_bypass'] ) ? (bool) $settings['enable_loopback_ssl_bypass'] : true;
 
 			if ( $ssl_bypass_enabled ) {
@@ -264,7 +264,7 @@ class WP_MCP_AI_HTTP_Helper {
 		}
 
 		// Get settings to check if private network requests are enabled.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                = WP_MCP_AI_Admin_Settings::get_settings();
 		$private_network_enabled = isset( $settings['enable_loopback_private_network_requests'] ) ? (bool) $settings['enable_loopback_private_network_requests'] : true;
 
 		if ( ! $private_network_enabled ) {

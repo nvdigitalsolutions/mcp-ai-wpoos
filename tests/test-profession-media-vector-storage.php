@@ -55,12 +55,12 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		$cpt = new WP_MCP_AI_Profession_CPT();
 
 		// Test valid array of IDs.
-		$input = array( '123', '456', '789' );
+		$input  = array( '123', '456', '789' );
 		$output = $cpt->sanitize_memory_files( $input );
 		$this->assertEquals( array( 123, 456, 789 ), $output );
 
 		// Test with invalid values (zeros should be removed).
-		$input = array( '123', '0', '456', '' );
+		$input  = array( '123', '0', '456', '' );
 		$output = $cpt->sanitize_memory_files( $input );
 		$this->assertEquals( array( 123, 456 ), array_values( $output ) );
 
@@ -76,12 +76,12 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		$cpt = new WP_MCP_AI_Profession_CPT();
 
 		// Test valid string.
-		$input = 'vs_abc123xyz';
+		$input  = 'vs_abc123xyz';
 		$output = $cpt->sanitize_vector_store_id( $input );
 		$this->assertEquals( 'vs_abc123xyz', $output );
 
 		// Test string with HTML (should be sanitized).
-		$input = '<script>alert("xss")</script>vs_test';
+		$input  = '<script>alert("xss")</script>vs_test';
 		$output = $cpt->sanitize_vector_store_id( $input );
 		$this->assertStringNotContainsString( '<script>', $output );
 
@@ -188,19 +188,19 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 				'post_type' => WP_MCP_AI_Profession_CPT::POST_TYPE,
 			)
 		);
-		$post = get_post( $post_id );
+		$post    = get_post( $post_id );
 
 		// Simulate POST data.
-		$_POST['wp_mcp_ai_profession_memory_files'] = array( '123', '456' );
+		$_POST['wp_mcp_ai_profession_memory_files']    = array( '123', '456' );
 		$_POST['wp_mcp_ai_profession_vector_store_id'] = 'vs_test123';
-		$_POST['wp_mcp_ai_profession_mime_types'] = array( 'application/pdf', 'image/jpeg' );
+		$_POST['wp_mcp_ai_profession_mime_types']      = array( 'application/pdf', 'image/jpeg' );
 
 		// Create metabox instance and save.
 		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
-		
+
 		// Mock current user as admin.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
-		
+
 		$metabox->save( $post_id, $post );
 
 		// Verify saved data.
@@ -229,7 +229,7 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 				'post_type' => WP_MCP_AI_Profession_CPT::POST_TYPE,
 			)
 		);
-		$post = get_post( $post_id );
+		$post    = get_post( $post_id );
 
 		// First, set some values.
 		update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, array( 123 ) );
@@ -240,7 +240,7 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 
 		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
-		
+
 		$metabox->save( $post_id, $post );
 
 		// Verify that fields were cleared.

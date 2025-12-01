@@ -51,12 +51,14 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_contains_error_object_handling() {
 		// Set widget settings.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'description'   => 'Test Description',
-			'enabled_tests' => array( 'security' ),
-			'show_results'  => 'yes',
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'description'   => 'Test Description',
+				'enabled_tests' => array( 'security' ),
+				'show_results'  => 'yes',
+			)
+		);
 
 		// Capture the output.
 		ob_start();
@@ -137,11 +139,13 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_handles_string_errors() {
 		// Set widget settings.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'enabled_tests' => array( 'security' ),
-			'show_results'  => 'yes',
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'enabled_tests' => array( 'security' ),
+				'show_results'  => 'yes',
+			)
+		);
 
 		// Capture the output.
 		ob_start();
@@ -172,10 +176,12 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		wp_set_current_user( $user_id );
 
 		// Set widget settings.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'enabled_tests' => array( 'security' ),
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'enabled_tests' => array( 'security' ),
+			)
+		);
 
 		// Capture the output.
 		ob_start();
@@ -202,11 +208,13 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_renders_enabled_test_types() {
 		// Set widget settings with all test types.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
-			'show_results'  => 'yes',
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
+				'show_results'  => 'yes',
+			)
+		);
 
 		// Capture the output.
 		ob_start();
@@ -251,11 +259,13 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_widget_handles_output_field_in_errors() {
 		// Set widget settings.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'enabled_tests' => array( 'security' ),
-			'show_results'  => 'yes',
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'enabled_tests' => array( 'security' ),
+				'show_results'  => 'yes',
+			)
+		);
 
 		// Capture the output.
 		ob_start();
@@ -317,11 +327,13 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	 */
 	public function test_output_field_works_for_all_test_types() {
 		// Set widget settings with all 4 test types enabled.
-		$this->widget->set_settings( array(
-			'title'         => 'Test Runner',
-			'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
-			'show_results'  => 'yes',
-		) );
+		$this->widget->set_settings(
+			array(
+				'title'         => 'Test Runner',
+				'enabled_tests' => array( 'stress', 'security', 'speed', 'optimization' ),
+				'show_results'  => 'yes',
+			)
+		);
 
 		// Capture the output.
 		ob_start();

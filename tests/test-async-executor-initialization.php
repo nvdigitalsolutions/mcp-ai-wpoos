@@ -40,8 +40,8 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 			foreach ( $wp_filter[ $hook_name ]->callbacks as $priority => $callbacks ) {
 				foreach ( $callbacks as $callback ) {
 					if ( is_array( $callback['function'] ) &&
-					     $callback['function'][0] instanceof WP_MCP_AI_Tool_Async_Executor &&
-					     'execute_async_tool' === $callback['function'][1] ) {
+						$callback['function'][0] instanceof WP_MCP_AI_Tool_Async_Executor &&
+						'execute_async_tool' === $callback['function'][1] ) {
 						$has_callback = true;
 						break 2;
 					}
@@ -67,13 +67,16 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 
 		// Create a mock tool for testing.
 		$mock_tool = $this->create_mock_tool();
-		
+
 		// Register the mock tool.
 		$registry = new WP_MCP_AI_Tool_Registry();
-		add_filter( 'wp_mcp_ai_register_tools', function( $tools ) use ( $mock_tool ) {
-			$tools[] = $mock_tool;
-			return $tools;
-		} );
+		add_filter(
+			'wp_mcp_ai_register_tools',
+			function ( $tools ) use ( $mock_tool ) {
+				$tools[] = $mock_tool;
+				return $tools;
+			}
+		);
 		$registry->init();
 
 		// Create and initialize executor.
@@ -102,7 +105,7 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 'completed', $result['status'], 'Tool should execute and complete' );
 		$this->assertArrayHasKey( 'result', $result );
-		
+
 		// Verify the tool actually ran (check the mock tool's output).
 		if ( isset( $result['result']['data'] ) ) {
 			$tool_result = $result['result']['data'];
@@ -142,9 +145,9 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 
 			public function get_definition() {
 				return array(
-					'name'              => 'Test Mock Tool',
-					'description'       => 'A mock tool for testing async execution',
-					'inputSchema'       => array(
+					'name'               => 'Test Mock Tool',
+					'description'        => 'A mock tool for testing async execution',
+					'inputSchema'        => array(
 						'type'       => 'object',
 						'properties' => array(
 							'test_param' => array(

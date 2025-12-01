@@ -18,7 +18,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Remove any previously registered actions to start fresh.
 		remove_all_actions( 'wp_ajax_wp_mcp_ai_run_performance_test' );
 		remove_all_actions( 'wp_ajax_wp_mcp_ai_get_performance_metrics' );
@@ -32,7 +32,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 	public function test_ajax_handlers_registered_on_frontend() {
 		// Simulate frontend context by setting is_admin() to return false.
 		// We can't override is_admin() directly, but we can test the section behavior.
-		
+
 		// Load required dependencies.
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
@@ -75,7 +75,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		// Check if admin_enqueue_scripts is registered.
 		$admin_enqueue_registered = false;
 		$callbacks                = $GLOBALS['wp_filter']['admin_enqueue_scripts'] ?? null;
-		
+
 		if ( $callbacks ) {
 			foreach ( $callbacks as $priority => $callbacks_at_priority ) {
 				foreach ( $callbacks_at_priority as $callback_data ) {
@@ -150,7 +150,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		// This simulates what happens in wp-mcp-ai.php.
 		try {
 			$section = $container->get( 'section.performance' );
-			
+
 			$this->assertInstanceOf(
 				'WP_MCP_AI_Section_Performance',
 				$section,
@@ -194,7 +194,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		);
 
 		// Verify both actions are pointing to the same section instance.
-		$run_test_callbacks = $GLOBALS['wp_filter']['wp_ajax_wp_mcp_ai_run_performance_test'] ?? null;
+		$run_test_callbacks    = $GLOBALS['wp_filter']['wp_ajax_wp_mcp_ai_run_performance_test'] ?? null;
 		$get_metrics_callbacks = $GLOBALS['wp_filter']['wp_ajax_wp_mcp_ai_get_performance_metrics'] ?? null;
 
 		$this->assertNotNull( $run_test_callbacks, 'Run test callbacks should exist' );

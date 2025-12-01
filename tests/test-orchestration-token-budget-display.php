@@ -81,7 +81,7 @@ class Test_Orchestration_Token_Budget_Display extends WP_UnitTestCase {
 	public function test_stats_card_shows_context_window_label() {
 		// This is an integration test - we need to check the orchestration section output.
 		$section = new WP_MCP_AI_Section_Orchestration();
-		
+
 		// Get the stats content using reflection since it's a private method.
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_stats_content' );

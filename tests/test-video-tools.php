@@ -21,7 +21,7 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$this->registry->init();
@@ -48,12 +48,12 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_analyze_video_tool_definition() {
 		$definition = $this->registry->get_tool_definition( 'analyze_video' );
-		
+
 		$this->assertIsArray( $definition, 'Tool definition should be an array' );
 		$this->assertEquals( 'analyze_video', $definition['name'], 'Tool name should be analyze_video' );
 		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
 		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
-		
+
 		// Check parameters.
 		$params = $definition['parameters'];
 		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
@@ -68,12 +68,12 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_generate_video_caption_tool_definition() {
 		$definition = $this->registry->get_tool_definition( 'generate_video_caption' );
-		
+
 		$this->assertIsArray( $definition, 'Tool definition should be an array' );
 		$this->assertEquals( 'generate_video_caption', $definition['name'], 'Tool name should be generate_video_caption' );
 		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
 		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
-		
+
 		// Check parameters.
 		$params = $definition['parameters'];
 		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
@@ -87,10 +87,10 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_video_tools_in_core_group() {
 		$groups = $this->registry->get_tool_group_map();
-		
+
 		$this->assertArrayHasKey( 'analyze_video', $groups, 'analyze_video should be in group map' );
 		$this->assertEquals( 'wordpress-core', $groups['analyze_video'], 'analyze_video should be in wordpress-core group' );
-		
+
 		$this->assertArrayHasKey( 'generate_video_caption', $groups, 'generate_video_caption should be in group map' );
 		$this->assertEquals( 'wordpress-core', $groups['generate_video_caption'], 'generate_video_caption should be in wordpress-core group' );
 	}
@@ -100,11 +100,11 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_video_tools_have_video_model_flag() {
 		$video_tools = array( 'analyze_video', 'generate_video_caption' );
-		
+
 		foreach ( $video_tools as $tool_slug ) {
 			$tool = $this->registry->get_tool( $tool_slug );
 			$this->assertInstanceOf( WP_MCP_AI_Tool_Capability_Flags_Interface::class, $tool, "$tool_slug should implement capability flags interface" );
-			
+
 			$flags = $this->registry->get_tool_capability_flags( $tool_slug );
 			$this->assertContains( 'requires-video-model', $flags, "$tool_slug should have requires-video-model flag" );
 		}
@@ -115,22 +115,22 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_video_tools_operational_flags() {
 		$video_tools = array( 'analyze_video', 'generate_video_caption' );
-		
+
 		foreach ( $video_tools as $tool_slug ) {
 			$flags = $this->registry->get_tool_capability_flags( $tool_slug );
-			
+
 			// Should be read-only.
 			$this->assertContains( 'read-only', $flags, "$tool_slug should be read-only" );
-			
+
 			// Should require credentials.
 			$this->assertContains( 'requires-credentials', $flags, "$tool_slug should require credentials" );
-			
+
 			// Should use external API.
 			$this->assertContains( 'external-api', $flags, "$tool_slug should use external API" );
-			
+
 			// Should be network dependent.
 			$this->assertContains( 'network-dependent', $flags, "$tool_slug should be network dependent" );
-			
+
 			// Should consume tokens.
 			$this->assertContains( 'consumes-tokens', $flags, "$tool_slug should consume tokens" );
 		}
@@ -141,16 +141,16 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_analyze_video_requires_video_source() {
 		$tool = $this->registry->get_tool( 'analyze_video' );
-		
+
 		// Create a user with upload_files capability.
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		
+
 		// Execute without any video source.
 		$result = $tool->execute(
 			array(),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error when no video source provided' );
 		$this->assertEquals( 'wp_mcp_ai_missing_video', $result->get_error_code(), 'Should return missing video error' );
 	}
@@ -160,16 +160,16 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_generate_video_caption_requires_video_source() {
 		$tool = $this->registry->get_tool( 'generate_video_caption' );
-		
+
 		// Create a user with upload_files capability.
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		
+
 		// Execute without any video source.
 		$result = $tool->execute(
 			array(),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error when no video source provided' );
 		$this->assertEquals( 'wp_mcp_ai_missing_video', $result->get_error_code(), 'Should return missing video error' );
 	}
@@ -180,15 +180,15 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	public function test_video_tools_reject_non_video_attachments() {
 		// Create an image attachment.
 		$attachment_id = $this->factory->attachment->create_upload_object( WP_MCP_AI_PATH . 'tests/fixtures/test-image.png' );
-		
+
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		
-		$tool = $this->registry->get_tool( 'analyze_video' );
+
+		$tool   = $this->registry->get_tool( 'analyze_video' );
 		$result = $tool->execute(
 			array( 'attachment_id' => $attachment_id ),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error for non-video attachment' );
 		$this->assertEquals( 'wp_mcp_ai_not_video', $result->get_error_code(), 'Should return not-video error' );
 	}
@@ -199,13 +199,13 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	public function test_video_tools_check_capabilities() {
 		// Create a user without upload_files capability.
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		
-		$tool = $this->registry->get_tool( 'analyze_video' );
+
+		$tool   = $this->registry->get_tool( 'analyze_video' );
 		$result = $tool->execute(
 			array( 'video_url' => 'https://example.com/video.mp4' ),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error for insufficient capabilities' );
 		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code(), 'Should return forbidden error' );
 	}
@@ -215,10 +215,10 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_video_tools_implement_interfaces() {
 		$video_tools = array( 'analyze_video', 'generate_video_caption' );
-		
+
 		foreach ( $video_tools as $tool_slug ) {
 			$tool = $this->registry->get_tool( $tool_slug );
-			
+
 			$this->assertInstanceOf( WP_MCP_AI_Tool_Interface::class, $tool, "$tool_slug should implement tool interface" );
 			$this->assertInstanceOf( WP_MCP_AI_Tool_Capability_Flags_Interface::class, $tool, "$tool_slug should implement capability flags interface" );
 		}
@@ -229,8 +229,8 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_video_caption_max_length_parameter() {
 		$definition = $this->registry->get_tool_definition( 'generate_video_caption' );
-		$params = $definition['parameters']['properties'];
-		
+		$params     = $definition['parameters']['properties'];
+
 		$this->assertArrayHasKey( 'max_length', $params, 'Should have max_length parameter' );
 		$this->assertEquals( 'integer', $params['max_length']['type'], 'max_length should be integer type' );
 		$this->assertEquals( 50, $params['max_length']['minimum'], 'max_length minimum should be 50' );
@@ -244,18 +244,18 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	public function test_video_tools_gemini_provider_requirement() {
 		// This test verifies the tools are designed to prefer Gemini.
 		// In actual execution, tools should use Gemini as primary provider.
-		
+
 		$analyze_tool = $this->registry->get_tool( 'analyze_video' );
 		$caption_tool = $this->registry->get_tool( 'generate_video_caption' );
-		
+
 		// Both tools should exist and be ready.
 		$this->assertNotNull( $analyze_tool, 'Analyze video tool should exist' );
 		$this->assertNotNull( $caption_tool, 'Generate video caption tool should exist' );
-		
+
 		// Get tool descriptions - they should mention video capabilities.
 		$analyze_desc = $analyze_tool->get_description();
 		$caption_desc = $caption_tool->get_description();
-		
+
 		$this->assertStringContainsString( 'video', strtolower( $analyze_desc ), 'Analyze tool description should mention video' );
 		$this->assertStringContainsString( 'video', strtolower( $caption_desc ), 'Caption tool description should mention video' );
 	}
@@ -328,12 +328,12 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_extract_video_frames_tool_definition() {
 		$definition = $this->registry->get_tool_definition( 'extract_video_frames' );
-		
+
 		$this->assertIsArray( $definition, 'Tool definition should be an array' );
 		$this->assertEquals( 'extract_video_frames', $definition['name'], 'Tool name should be extract_video_frames' );
 		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
 		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
-		
+
 		// Check parameters.
 		$params = $definition['parameters'];
 		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
@@ -358,12 +358,12 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_get_video_metadata_tool_definition() {
 		$definition = $this->registry->get_tool_definition( 'get_video_metadata' );
-		
+
 		$this->assertIsArray( $definition, 'Tool definition should be an array' );
 		$this->assertEquals( 'get_video_metadata', $definition['name'], 'Tool name should be get_video_metadata' );
 		$this->assertArrayHasKey( 'description', $definition, 'Definition should have description' );
 		$this->assertArrayHasKey( 'parameters', $definition, 'Definition should have parameters' );
-		
+
 		// Check parameters.
 		$params = $definition['parameters'];
 		$this->assertArrayHasKey( 'properties', $params, 'Parameters should have properties' );
@@ -377,10 +377,10 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_new_video_tools_in_core_group() {
 		$groups = $this->registry->get_tool_group_map();
-		
+
 		$this->assertArrayHasKey( 'extract_video_frames', $groups, 'extract_video_frames should be in group map' );
 		$this->assertEquals( 'wordpress-core', $groups['extract_video_frames'], 'extract_video_frames should be in wordpress-core group' );
-		
+
 		$this->assertArrayHasKey( 'get_video_metadata', $groups, 'get_video_metadata should be in group map' );
 		$this->assertEquals( 'wordpress-core', $groups['get_video_metadata'], 'get_video_metadata should be in wordpress-core group' );
 	}
@@ -393,7 +393,7 @@ class Test_Video_Tools extends WP_UnitTestCase {
 		$extract_flags = $this->registry->get_tool_capability_flags( 'extract_video_frames' );
 		$this->assertContains( 'requires-capability', $extract_flags, 'extract_video_frames should require capabilities' );
 		$this->assertContains( 'write', $extract_flags, 'extract_video_frames should have write flag (creates files)' );
-		
+
 		// Test get_video_metadata.
 		$metadata_flags = $this->registry->get_tool_capability_flags( 'get_video_metadata' );
 		$this->assertContains( 'requires-capability', $metadata_flags, 'get_video_metadata should require capabilities' );
@@ -406,13 +406,13 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_extract_video_frames_check_capabilities() {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		
-		$tool = $this->registry->get_tool( 'extract_video_frames' );
+
+		$tool   = $this->registry->get_tool( 'extract_video_frames' );
 		$result = $tool->execute(
 			array( 'video_url' => 'https://example.com/video.mp4' ),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error for insufficient capabilities' );
 		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code(), 'Should return forbidden error' );
 	}
@@ -422,13 +422,13 @@ class Test_Video_Tools extends WP_UnitTestCase {
 	 */
 	public function test_get_video_metadata_check_capabilities() {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		
-		$tool = $this->registry->get_tool( 'get_video_metadata' );
+
+		$tool   = $this->registry->get_tool( 'get_video_metadata' );
 		$result = $tool->execute(
 			array( 'video_url' => 'https://example.com/video.mp4' ),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result, 'Should return WP_Error for insufficient capabilities' );
 		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code(), 'Should return forbidden error' );
 	}

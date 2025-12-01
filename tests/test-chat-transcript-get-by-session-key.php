@@ -102,7 +102,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
 
 		$status = $response->get_status();
-		
+
 		// The response should be either:
 		// - 404 if the transcript doesn't exist (when JetEngine is available)
 		// - 200 with null session if transcript storage is unavailable (when JetEngine is not active)
@@ -111,7 +111,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 			array( 200, 404 ),
 			'Should return 404 for missing transcript or 200 if storage unavailable'
 		);
-		
+
 		// If 200, verify it has the expected structure for unavailable storage
 		if ( 200 === $status ) {
 			$data = $response->get_data();
@@ -180,7 +180,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
 
 		$status = $response->get_status();
-		
+
 		// Should return 404 for non-existent transcript or 200 if storage unavailable
 		$this->assertContains(
 			$status,
@@ -206,7 +206,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
 
 		$status = $response->get_status();
-		
+
 		// Should return 404 for non-existent transcript or 200 if storage unavailable
 		$this->assertContains(
 			$status,

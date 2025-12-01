@@ -413,7 +413,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	public function test_longest_prefix_matching() {
 		// When we have gpt-5, gpt-5-mini, and gpt-5-nano in the system,
 		// gpt-5-2025-08-07 should match gpt-5 (not just any prefix).
-		
+
 		// Get pricing for different variants to ensure longest match wins.
 		$pricing_gpt5           = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-5' );
 		$pricing_gpt5_mini      = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-5-mini' );

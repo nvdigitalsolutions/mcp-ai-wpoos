@@ -51,7 +51,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 	 * Test that loader can get list of categories.
 	 */
 	public function test_get_categories() {
-		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$loader     = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$categories = $loader->get_categories();
 
 		$this->assertIsArray( $categories, 'Categories should be an array' );
@@ -65,7 +65,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 	 * Test that loader can load a single category file.
 	 */
 	public function test_load_single_category() {
-		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$professions = $loader->load_category( 'technology' );
 
 		$this->assertIsArray( $professions, 'Loaded professions should be an array' );
@@ -88,7 +88,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 	 * Test that loader can load all professions.
 	 */
 	public function test_load_all_professions() {
-		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$professions = $loader->load_all();
 
 		$this->assertIsArray( $professions, 'Loaded professions should be an array' );
@@ -100,7 +100,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 	 * Test that loaded professions are properly sanitized.
 	 */
 	public function test_profession_sanitization() {
-		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$professions = $loader->load_category( 'healthcare-medicine' );
 
 		foreach ( $professions as $profession ) {
@@ -138,12 +138,12 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 	 */
 	public function test_json_files_are_valid() {
 		$knowledge_base_path = WP_MCP_AI_PATH . 'includes/knowledge-base/professions/';
-		$json_files = glob( $knowledge_base_path . '*.json' );
+		$json_files          = glob( $knowledge_base_path . '*.json' );
 
 		foreach ( $json_files as $file ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			$content = file_get_contents( $file );
-			$data = json_decode( $content, true );
+			$data    = json_decode( $content, true );
 
 			$this->assertNotNull( $data, basename( $file ) . ' should contain valid JSON' );
 			$this->assertArrayHasKey( 'category', $data, basename( $file ) . ' should have category field' );
@@ -163,7 +163,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 		$repository = new WP_MCP_AI_Profession_Repository();
 
 		// Load professions using the loader (same as seeder does).
-		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$professions = $loader->load_all();
 
 		$this->assertIsArray( $professions );
@@ -171,7 +171,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 
 		// Test saving one profession.
 		$test_profession = $professions[0];
-		$result = $repository->save( $test_profession );
+		$result          = $repository->save( $test_profession );
 
 		$this->assertNotWPError( $result, 'Saving profession should not return error' );
 		$this->assertIsInt( $result, 'Saving profession should return post ID' );

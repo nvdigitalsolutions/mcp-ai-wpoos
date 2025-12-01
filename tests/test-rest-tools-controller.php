@@ -123,7 +123,7 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 		$route = $routes['/mcp-ai/v1/tools'];
 
 		// Check that GET and POST methods are supported.
-		$methods = wp_list_pluck( $route, 'methods' );
+		$methods     = wp_list_pluck( $route, 'methods' );
 		$all_methods = array();
 
 		foreach ( $methods as $method_array ) {
@@ -149,7 +149,7 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 		$route = $routes[ $route_pattern ];
 
 		// Check that GET method is supported.
-		$methods = wp_list_pluck( $route, 'methods' );
+		$methods     = wp_list_pluck( $route, 'methods' );
 		$all_methods = array();
 
 		foreach ( $methods as $method_array ) {
@@ -173,7 +173,7 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 		$route = $routes['/mcp-ai/v1/cron-status'];
 
 		// Check that GET method is supported.
-		$methods = wp_list_pluck( $route, 'methods' );
+		$methods     = wp_list_pluck( $route, 'methods' );
 		$all_methods = array();
 
 		foreach ( $methods as $method_array ) {

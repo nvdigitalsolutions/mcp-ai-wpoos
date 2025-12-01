@@ -283,10 +283,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 					'async_tool_switched_blog',
 					sprintf( 'Switched to blog %d for async tool execution', $target_blog_id ),
 					array(
-						'job_id'          => $job_id,
-						'tool_slug'       => $tool_slug,
-						'from_blog_id'    => $current_blog_id,
-						'to_blog_id'      => $target_blog_id,
+						'job_id'       => $job_id,
+						'tool_slug'    => $tool_slug,
+						'from_blog_id' => $current_blog_id,
+						'to_blog_id'   => $target_blog_id,
 					)
 				);
 			}

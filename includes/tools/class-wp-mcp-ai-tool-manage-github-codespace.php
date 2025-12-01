@@ -193,9 +193,9 @@ class WP_MCP_AI_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'Codespace created successfully.', 'wp-mcp-ai' ),
-			'codespace'    => array(
+			'success'   => true,
+			'message'   => __( 'Codespace created successfully.', 'wp-mcp-ai' ),
+			'codespace' => array(
 				'name'       => $codespace['name'],
 				'web_url'    => $codespace['web_url'],
 				'state'      => $codespace['state'],

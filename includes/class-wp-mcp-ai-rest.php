@@ -47,9 +47,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 *
 		 * @since 1.0.0
 		 */
-		const SSE_JOB_MAX_POLLS           = 120;   // Maximum number of status polls (120 * 3s = 6 minutes).
-		const SSE_JOB_POLL_INTERVAL       = 3;     // Seconds between status polls.
-		const SSE_JOB_HEARTBEAT_INTERVAL  = 5;     // Send heartbeat every N polls (5 * 3s = 15 seconds).
+		const SSE_JOB_MAX_POLLS          = 120;   // Maximum number of status polls (120 * 3s = 6 minutes).
+		const SSE_JOB_POLL_INTERVAL      = 3;     // Seconds between status polls.
+		const SSE_JOB_HEARTBEAT_INTERVAL = 5;     // Send heartbeat every N polls (5 * 3s = 15 seconds).
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -964,10 +964,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Keeps the SSE connection open and periodically polls for job status updates,
 		 * sending events to the client as the job progresses from pending → polling → completed.
 		 *
-		 * @param array                          $initial_details Initial job details.
-		 * @param string                         $job_id          Job identifier.
+		 * @param array                         $initial_details Initial job details.
+		 * @param string                        $job_id          Job identifier.
 		 * @param WP_MCP_AI_Cron_Status_Service $service         Cron status service instance.
-		 * @param int                            $user_id         User ID for permission checks.
+		 * @param int                           $user_id         User ID for permission checks.
 		 * @return WP_REST_Response Response with SSE streaming configured.
 		 */
 		protected function stream_job_status_updates( $initial_details, $job_id, $service, $user_id ) {
@@ -2965,10 +2965,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'async_tool_pending_in_agentic_loop',
 							'Async tool returned pending status, will exit agentic loop after this iteration',
 							array(
-								'tool_name'  => $tool_name,
-								'job_id'     => $tool_result['job_id'] ?? 'unknown',
-								'iteration'  => $iteration,
-								'tool_slug'  => $tool_slug ?? $tool_name,
+								'tool_name' => $tool_name,
+								'job_id'    => $tool_result['job_id'] ?? 'unknown',
+								'iteration' => $iteration,
+								'tool_slug' => $tool_slug ?? $tool_name,
 							)
 						);
 					}
@@ -3079,9 +3079,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'agentic_loop_exit_async_pending',
 						'Exiting agentic loop due to async pending tool result',
 						array(
-							'iteration'     => $iteration,
-							'assistant_id'  => $assistant_id,
-							'tool_count'    => count( $tool_result_messages ),
+							'iteration'    => $iteration,
+							'assistant_id' => $assistant_id,
+							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
 					break;
@@ -3235,7 +3235,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Supports multiple providers:
 			// - Gemini 2.0 Flash Thinking mode: message['thinking']
 			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning']
-			$thinking_text = '';
+			$thinking_text            = '';
 			$thinking_provider_format = 'gemini'; // Default to Gemini format
 
 			// Validate response structure before accessing nested keys
@@ -3244,17 +3244,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Check for Gemini thinking text
 				if ( ! empty( $message['thinking'] ) ) {
-					$thinking_text = $message['thinking'];
+					$thinking_text            = $message['thinking'];
 					$thinking_provider_format = 'gemini';
 				}
 				// Check for OpenAI reasoning_content (future-ready)
 				elseif ( ! empty( $message['reasoning_content'] ) ) {
-					$thinking_text = $message['reasoning_content'];
+					$thinking_text            = $message['reasoning_content'];
 					$thinking_provider_format = 'openai';
 				}
 				// Check for OpenAI reasoning (alternative field)
 				elseif ( ! empty( $message['reasoning'] ) ) {
-					$thinking_text = $message['reasoning'];
+					$thinking_text            = $message['reasoning'];
 					$thinking_provider_format = 'openai';
 				}
 			}
@@ -3265,7 +3265,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
 				if ( 'openai' === $thinking_provider_format ) {
 					// Use OpenAI format for reasoning fields.
-					$thinking_formatter = function( $chunk ) {
+					$thinking_formatter = function ( $chunk ) {
 						return array(
 							'choices' => array(
 								array(
@@ -3278,7 +3278,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					};
 				} else {
 					// Use Gemini format for thinking field.
-					$thinking_formatter = function( $chunk ) {
+					$thinking_formatter = function ( $chunk ) {
 						return array(
 							'candidates' => array(
 								array(
@@ -3313,14 +3313,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Common with image generation tools where the tool result contains descriptive text.
 			if ( ( '' === $text_content || ! is_string( $text_content ) ) && ! empty( $tool_result_messages ) ) {
 				$text_content = $this->extract_text_from_tool_results( $tool_result_messages );
-				
+
 				if ( '' !== $text_content ) {
 					// Update response to include the extracted text so it appears in the message payload.
 					if ( ! isset( $response['choices'][0]['message'] ) ) {
 						$response['choices'][0]['message'] = array();
 					}
 					$response['choices'][0]['message']['content'] = $text_content;
-					
+
 					WP_MCP_AI_Logger::log_event(
 						'debug',
 						'SSE Streaming: Extracted text from tool results',
@@ -3336,7 +3336,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Send text content in chunks to simulate streaming (for better UX).
 			if ( is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
-				$content_formatter = function( $chunk ) {
+				$content_formatter = function ( $chunk ) {
 					return array(
 						'choices' => array(
 							array(
@@ -3355,11 +3355,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'debug',
 					'SSE Streaming: No text chunks to send',
 					array(
-						'has_text_content' => ! empty( $text_content ),
-						'is_string'        => is_string( $text_content ),
-						'response_keys'    => array_keys( $response ),
+						'has_text_content'  => ! empty( $text_content ),
+						'is_string'         => is_string( $text_content ),
+						'response_keys'     => array_keys( $response ),
 						'tool_result_count' => count( $tool_result_messages ),
-						'assistant_id'     => $assistant_id,
+						'assistant_id'      => $assistant_id,
 					)
 				);
 			}
@@ -5841,7 +5841,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// If no specific fallback text was generated, create a generic one.
 			if ( empty( $fallback_parts ) && ! empty( $required_providers ) ) {
-				$provider_list = implode( ', ', array_map( array( $this, 'format_provider_name' ), $required_providers ) );
+				$provider_list    = implode( ', ', array_map( array( $this, 'format_provider_name' ), $required_providers ) );
 				$fallback_parts[] = sprintf(
 					/* translators: %s: comma-separated list of required providers */
 					__( 'Note: This tool requires one of the following providers: %s.', 'wp-mcp-ai' ),
@@ -6609,10 +6609,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'debug',
 					'get_transcript_session: appended response messages',
 					array(
-						'new_message_count'              => count( $messages ) - $before_response,
-						'original_response_count'        => count( $response_messages ),
-						'filtered_response_count'        => count( $filtered_response_messages ),
-						'duplicates_removed'             => count( $response_messages ) - count( $filtered_response_messages ),
+						'new_message_count'       => count( $messages ) - $before_response,
+						'original_response_count' => count( $response_messages ),
+						'filtered_response_count' => count( $filtered_response_messages ),
+						'duplicates_removed'      => count( $response_messages ) - count( $filtered_response_messages ),
 					)
 				);
 
@@ -7941,7 +7941,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request          Original REST request.
 		 * @param int             $iteration        Current iteration number (default 0).
 		 * @param int             $max_iterations   Maximum iterations (default 5).
-	 * @param array           $transcript_context Transcript context containing session_key for async job routing (default empty array).
+		 * @param array           $transcript_context Transcript context containing session_key for async job routing (default empty array).
 		 * @return mixed Tool execution result.
 		 */
 		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5, $transcript_context = array() ) {
@@ -8082,7 +8082,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// receives actual results, not pending status. Without this, the agentic
 			// loop would continue with pending tool results, and the final LLM response
 			// would not include the actual tool output (e.g., generated image links).
-			// 
+			//
 			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that
 			// they MUST run async to avoid HTTP timeouts, even in agentic loops.
 			// These tools are marked with 'background-only' capability flag.
@@ -8093,7 +8093,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$must_run_async = true;
 				}
 			}
-			
+
 			if ( $should_async && ! empty( $context['agentic_loop'] ) && ! $must_run_async ) {
 				$should_async = false;
 				WP_MCP_AI_Logger::log_event(
@@ -8230,20 +8230,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					$original_time_limit = ini_get( 'max_execution_time' );
 					$tool_timeout        = apply_filters( 'wp_mcp_ai_agentic_tool_timeout', 60, $tool_slug );
-					
+
 					// Only set if we can (some hosting environments don't allow this)
 					if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
 						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 					}
 				}
-				
+
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
 				$result = $tool->execute( $arguments, $context );
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
-					
+
 					// In agentic loop, if sync execution failed and tool supports async,
 					// provide helpful error message instead of returning WP_Error object
 					// which would break the conversation flow.
@@ -8255,7 +8255,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							$result->get_error_message()
 						);
 					}
-					
+
 					return $result->get_error_message();
 				}
 
@@ -8442,7 +8442,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string SQL SELECT fields.
 		 */
 		private function get_transcript_select_fields() {
-			return "request_payload,
+			return 'request_payload,
                     response_payload,
                     metadata,
                     request_started_at,
@@ -8450,7 +8450,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
                     cct_created,
                     assistant_id,
                     assistant_model,
-                    latency_ms";
+                    latency_ms';
 		}
 
 		/**
@@ -8579,7 +8579,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Convert WP_Error to a serializable array format.
-			$error_data = $result->get_error_data();
+			$error_data  = $result->get_error_data();
 			$error_array = array(
 				'error'   => true,
 				'code'    => $result->get_error_code(),

@@ -285,10 +285,10 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// Clear any existing GitHub settings.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['github_access_token'] = '';
-		$settings['github_username']     = '';
-		$settings['github_client_id']    = '';
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token']  = '';
+		$settings['github_username']      = '';
+		$settings['github_client_id']     = '';
 		$settings['github_client_secret'] = '';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -320,10 +320,10 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// Set up GitHub as connected.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['github_access_token'] = 'test_token_12345';
-		$settings['github_username']     = 'testuser';
-		$settings['github_client_id']    = 'test_client_id';
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token']  = 'test_token_12345';
+		$settings['github_username']      = 'testuser';
+		$settings['github_client_id']     = 'test_client_id';
 		$settings['github_client_secret'] = 'test_client_secret';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -355,10 +355,10 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// Set up GitHub credentials but no access token.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['github_access_token'] = '';
-		$settings['github_username']     = '';
-		$settings['github_client_id']    = 'test_client_id';
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['github_access_token']  = '';
+		$settings['github_username']      = '';
+		$settings['github_client_id']     = 'test_client_id';
 		$settings['github_client_secret'] = 'test_client_secret';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -407,7 +407,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		// Check that filter bar exists.
 		$this->assertStringContainsString( 'wp-mcp-ai-tools-filter-bar', $output, 'Should contain filter bar' );
 		$this->assertStringContainsString( 'wp-mcp-ai-tools-filter-form', $output, 'Should contain filter form div' );
-		
+
 		// Verify JavaScript filter button exists.
 		$this->assertStringContainsString( 'id="wp-mcp-ai-filter-tools"', $output, 'Should have filter button' );
 		$this->assertStringContainsString( 'type="button"', $output, 'Filter button should be type button' );
@@ -415,7 +415,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		// Verify search and filter inputs exist.
 		$this->assertStringContainsString( 'name="tool_search"', $output, 'Should have tool_search input' );
 		$this->assertStringContainsString( 'name="tool_group"', $output, 'Should have tool_group select' );
-		
+
 		// Verify JavaScript handler is included.
 		$this->assertStringContainsString( '#wp-mcp-ai-filter-tools', $output, 'Should include JavaScript handler' );
 		$this->assertStringContainsString( 'window.location.href', $output, 'Should navigate using JavaScript' );
@@ -428,7 +428,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Set up the query string with search parameter.
-		$_GET['subtab']     = 'tools_manager';
+		$_GET['subtab']      = 'tools_manager';
 		$_GET['tool_search'] = 'test_search_term';
 
 		// Capture output.
@@ -451,7 +451,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Set up the query string with category filter.
-		$_GET['subtab']    = 'tools_manager';
+		$_GET['subtab']     = 'tools_manager';
 		$_GET['tool_group'] = 'wordpress-core';
 
 		// Capture output.

@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	protected function get_default_prompt_for_type( $analysis_type, $include_timestamps ) {
-		$timestamp_instruction = $include_timestamps 
+		$timestamp_instruction = $include_timestamps
 			? __( ' Include approximate timestamps or time ranges for key events.', 'wp-mcp-ai' )
 			: '';
 

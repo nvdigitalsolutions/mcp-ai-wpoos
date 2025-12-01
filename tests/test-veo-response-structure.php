@@ -21,10 +21,10 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		
+
 		// Set up mock API key
 		update_option(
 			'wp_mcp_ai_settings',

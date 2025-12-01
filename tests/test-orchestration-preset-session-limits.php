@@ -270,8 +270,8 @@ class Test_Orchestration_Preset_Session_Limits extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Orchestration Preset Service not available' );
 		}
 
-		$presets     = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
-		$failsafe    = $presets['failsafe']['settings'];
+		$presets      = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
+		$failsafe     = $presets['failsafe']['settings'];
 		$conservative = $presets['conservative']['settings'];
 
 		// Failsafe should be even stricter than conservative.

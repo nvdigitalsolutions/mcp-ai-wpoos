@@ -124,7 +124,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Create a mock transcript handler.
 		add_filter(
 			'wp_mcp_ai_chat_transcript_handler',
-			function() {
+			function () {
 				return new class() {
 					public function update_item( $record ) {
 						return true;
@@ -167,7 +167,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify debug log was captured.
 		$debug_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'debug' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcript_save: Saving transcript' );
 			}
 		);
@@ -186,7 +186,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify info log was captured.
 		$info_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'info' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcript_save: Transcript saved successfully' );
 			}
 		);
@@ -222,7 +222,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Mock the repository getter.
 		add_filter(
 			'wp_mcp_ai_transcript_repository',
-			function() use ( $mock_repository ) {
+			function () use ( $mock_repository ) {
 				return $mock_repository;
 			}
 		);
@@ -244,7 +244,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify debug log was captured.
 		$debug_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'debug' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcript_delete: Deleting transcript' );
 			}
 		);
@@ -260,7 +260,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify info log was captured.
 		$info_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'info' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcript_delete: Transcript deleted successfully' );
 			}
 		);
@@ -296,7 +296,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Mock the repository getter.
 		add_filter(
 			'wp_mcp_ai_transcript_repository',
-			function() use ( $mock_repository ) {
+			function () use ( $mock_repository ) {
 				return $mock_repository;
 			}
 		);
@@ -318,7 +318,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify error log was captured.
 		$error_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'error' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcript_delete: Failed to delete transcript' );
 			}
 		);
@@ -340,7 +340,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Create a mock transcript handler.
 		add_filter(
 			'wp_mcp_ai_chat_transcript_handler',
-			function() {
+			function () {
 				return new class() {
 					public function update_item( $record ) {
 						return true;
@@ -397,7 +397,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Verify debug log was captured.
 		$debug_logs = array_filter(
 			$this->log_events,
-			function( $event ) {
+			function ( $event ) {
 				return 'debug' === $event['type'] && false !== strpos( $event['message'], 'handle_chat_transcripts: Request parameters' );
 			}
 		);

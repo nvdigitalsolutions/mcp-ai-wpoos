@@ -447,11 +447,11 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			WHERE tool IN ({$placeholders})
 		";
 
-		$count_prepare_args = $gemini_tools;
+		$count_prepare_args   = $gemini_tools;
 		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$total_gemini_records = $wpdb->get_var( $count_prepared_query );
+		$total_gemini_records            = $wpdb->get_var( $count_prepared_query );
 		$results['total_gemini_records'] = intval( $total_gemini_records );
 
 		// Count misattributed records (all records that need migration, not just the limited batch).
@@ -488,7 +488,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
-		$results['total_checked'] = count( $records );
+		$results['total_checked']           = count( $records );
 		$results['total_needing_migration'] = $total_misattributed;
 
 		foreach ( $records as $record ) {

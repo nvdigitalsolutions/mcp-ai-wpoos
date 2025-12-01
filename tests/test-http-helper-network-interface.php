@@ -32,9 +32,9 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 * Test that network interface binding is applied to LM Studio requests.
 	 */
 	public function test_network_interface_binding_applied_to_lm_studio() {
-		$defaults                                  = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']        = 'http://localhost:1234';
-		$defaults['lm_studio_network_interface']   = '192.168.1.100';
+		$defaults                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['lm_studio_endpoint_url']      = 'http://localhost:1234';
+		$defaults['lm_studio_network_interface'] = '192.168.1.100';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -153,8 +153,8 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 * IP address in the network interface field instead of a local interface.
 	 */
 	public function test_network_interface_binding_not_applied_when_interface_matches_destination() {
-		$defaults                                = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']      = 'http://192.168.2.222:1234/v1';
+		$defaults                           = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['lm_studio_endpoint_url'] = 'http://192.168.2.222:1234/v1';
 		// Misconfiguration: user entered destination IP in interface field.
 		$defaults['lm_studio_network_interface'] = '192.168.2.222';
 
@@ -180,8 +180,8 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 * This detects when users enter an IP from the endpoint URL in the interface field.
 	 */
 	public function test_network_interface_binding_not_applied_when_interface_in_endpoint_url() {
-		$defaults                             = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']      = 'http://10.0.0.50:11434';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://10.0.0.50:11434';
 		// Misconfiguration: user entered destination IP in interface field.
 		$defaults['ollama_network_interface'] = '10.0.0.50';
 
@@ -207,8 +207,8 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 * This ensures that legitimate configurations still work after validation.
 	 */
 	public function test_valid_network_interface_binding_still_works() {
-		$defaults                                = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']      = 'http://192.168.2.222:1234/v1';
+		$defaults                           = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['lm_studio_endpoint_url'] = 'http://192.168.2.222:1234/v1';
 		// Valid configuration: local interface on WordPress server.
 		$defaults['lm_studio_network_interface'] = '192.168.1.50';
 
@@ -235,8 +235,8 @@ class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 	 * while endpoint is still set to localhost.
 	 */
 	public function test_private_ip_with_localhost_endpoint_detected() {
-		$defaults                                = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['lm_studio_endpoint_url']      = 'http://localhost:1234';
+		$defaults                           = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['lm_studio_endpoint_url'] = 'http://localhost:1234';
 		// Misconfiguration: user wants to reach 192.168.2.222 but put it in wrong field.
 		$defaults['lm_studio_network_interface'] = '192.168.2.222';
 

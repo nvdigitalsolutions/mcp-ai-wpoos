@@ -103,7 +103,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 * Test updating existing model configuration.
 	 */
 	public function test_update_model_config() {
-		$model         = 'gpt-4o';
+		$model          = 'gpt-4o';
 		$initial_config = WP_MCP_AI_Model_Config::get_model_config( $model );
 
 		// Update TPM.

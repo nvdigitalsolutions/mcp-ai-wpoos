@@ -62,31 +62,31 @@ class WP_MCP_AI_Async_Health_Monitor {
 		$health['cron_scheduled'] = (bool) wp_next_scheduled( WP_MCP_AI_Tool_Async_Executor::CRON_HOOK );
 
 		if ( ! $health['cron_scheduled'] ) {
-			$health['status'] = 'warning';
+			$health['status']   = 'warning';
 			$health['issues'][] = 'Async executor cron hook not scheduled';
 		}
 
 		// Check for stuck jobs.
-		$stuck_jobs = self::get_stuck_jobs();
+		$stuck_jobs           = self::get_stuck_jobs();
 		$health['stuck_jobs'] = count( $stuck_jobs );
 
 		if ( $health['stuck_jobs'] > 0 ) {
-			$health['status'] = 'warning';
+			$health['status']   = 'warning';
 			$health['issues'][] = sprintf( '%d potentially stuck jobs detected', $health['stuck_jobs'] );
 		}
 
 		// Check for long-running jobs.
-		$long_running = self::get_long_running_jobs();
+		$long_running           = self::get_long_running_jobs();
 		$health['long_running'] = count( $long_running );
 
 		if ( $health['long_running'] > 3 ) {
-			$health['status'] = 'warning';
+			$health['status']   = 'warning';
 			$health['issues'][] = sprintf( '%d long-running jobs detected', $health['long_running'] );
 		}
 
 		// Check cleanup cron.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_async_results' ) ) {
-			$health['status'] = 'warning';
+			$health['status']   = 'warning';
 			$health['issues'][] = 'Cleanup cron job not scheduled';
 		}
 
@@ -105,7 +105,7 @@ class WP_MCP_AI_Async_Health_Monitor {
 		global $wpdb;
 
 		$stuck_jobs = array();
-		$threshold = time() - self::STUCK_JOB_THRESHOLD;
+		$threshold  = time() - self::STUCK_JOB_THRESHOLD;
 
 		// Query transients for async jobs.
 		$transient_prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
@@ -156,7 +156,7 @@ class WP_MCP_AI_Async_Health_Monitor {
 	protected static function get_long_running_jobs() {
 		global $wpdb;
 
-		$long_running = array();
+		$long_running     = array();
 		$transient_prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery

@@ -162,50 +162,50 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		}
 
 
-	/**
-	 * Get the recommended maximum tokens based on the current workload tier.
-	 *
-	 * This represents the Context Window limit - the total token budget for each
-	 * complete AI interaction including system prompt, conversation history,
-	 * user input, tool data, and AI output.
-	 *
-	 * @return int Recommended maximum tokens (context window size).
-	 */
-	public function get_max_tokens() {
-		$tier = $this->get_workload_tier();
-
-		// Read from orchestration settings if available (configured via Settings > Orchestration Layer).
-		// These settings are managed by Configuration Presets and can be customized per workload tier.
-		$setting_key      = $tier . '_tier_max_tokens';
-		$configured_value = null;
-
-		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
-			$configured_value = WP_MCP_AI_Settings_Registry::get_setting( $setting_key );
-		}
-
-		// Fallback to modern defaults if settings not available.
-		// Updated from legacy values (1000/4000/16000) to match modern AI standards.
-		$default_map = array(
-			'low'    => 2000,
-			'medium' => 8000,
-			'high'   => 32000,
-		);
-
-		// Use configured value if available, otherwise use default for tier.
-		if ( null !== $configured_value && absint( $configured_value ) > 0 ) {
-			$max_tokens = absint( $configured_value );
-		} else {
-			$max_tokens = isset( $default_map[ $tier ] ) ? $default_map[ $tier ] : 8000;
-		}
-
 		/**
-		 * Filter the recommended maximum tokens (context window size).
+		 * Get the recommended maximum tokens based on the current workload tier.
 		 *
-		 * @param int    $max_tokens The recommended maximum tokens.
-		 * @param string $tier       The current workload tier ('low', 'medium', or 'high').
+		 * This represents the Context Window limit - the total token budget for each
+		 * complete AI interaction including system prompt, conversation history,
+		 * user input, tool data, and AI output.
+		 *
+		 * @return int Recommended maximum tokens (context window size).
 		 */
-		return apply_filters( 'wp_mcp_ai_resource_max_tokens', $max_tokens, $tier );
-	}
+		public function get_max_tokens() {
+			$tier = $this->get_workload_tier();
+
+			// Read from orchestration settings if available (configured via Settings > Orchestration Layer).
+			// These settings are managed by Configuration Presets and can be customized per workload tier.
+			$setting_key      = $tier . '_tier_max_tokens';
+			$configured_value = null;
+
+			if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+				$configured_value = WP_MCP_AI_Settings_Registry::get_setting( $setting_key );
+			}
+
+			// Fallback to modern defaults if settings not available.
+			// Updated from legacy values (1000/4000/16000) to match modern AI standards.
+			$default_map = array(
+				'low'    => 2000,
+				'medium' => 8000,
+				'high'   => 32000,
+			);
+
+			// Use configured value if available, otherwise use default for tier.
+			if ( null !== $configured_value && absint( $configured_value ) > 0 ) {
+				$max_tokens = absint( $configured_value );
+			} else {
+				$max_tokens = isset( $default_map[ $tier ] ) ? $default_map[ $tier ] : 8000;
+			}
+
+			/**
+			 * Filter the recommended maximum tokens (context window size).
+			 *
+			 * @param int    $max_tokens The recommended maximum tokens.
+			 * @param string $tier       The current workload tier ('low', 'medium', or 'high').
+			 */
+			return apply_filters( 'wp_mcp_ai_resource_max_tokens', $max_tokens, $tier );
+		}
 
 		/**
 		 * Get the recommended request timeout based on the current workload tier.

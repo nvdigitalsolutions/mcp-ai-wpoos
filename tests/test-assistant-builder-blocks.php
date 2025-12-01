@@ -107,7 +107,7 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 
 			$this->assertNotNull( $decoded, "block.json for {$block_type} should contain valid JSON" );
 			$this->assertArrayHasKey( 'name', $decoded, "block.json for {$block_type} should have a name" );
-			$this->assertStringStartsWith( 'wp-mcp-ai/', $decoded['name'], "Block name should start with wp-mcp-ai/" );
+			$this->assertStringStartsWith( 'wp-mcp-ai/', $decoded['name'], 'Block name should start with wp-mcp-ai/' );
 		}
 	}
 
@@ -168,7 +168,10 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 	 */
 	public function test_register_block_category_returns_correct_structure() {
 		$existing_categories = array(
-			array( 'slug' => 'text', 'title' => 'Text' ),
+			array(
+				'slug'  => 'text',
+				'title' => 'Text',
+			),
 		);
 
 		// Create a mock context.

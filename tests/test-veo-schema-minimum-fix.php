@@ -113,7 +113,7 @@ class WP_MCP_AI_Veo_Schema_Minimum_Fix_Test extends WP_UnitTestCase {
 		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
-		$reflection = new ReflectionClass( $service );
+		$reflection  = new ReflectionClass( $service );
 		$veo_3_model = $reflection->getConstant( 'VEO_MODEL' );
 		$veo_2_model = $reflection->getConstant( 'VEO_2_MODEL' );
 

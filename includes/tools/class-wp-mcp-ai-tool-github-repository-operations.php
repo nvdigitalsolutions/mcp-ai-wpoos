@@ -44,33 +44,33 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'      => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list_branches, create_branch, get_file, or update_file.', 'wp-mcp-ai' ),
 					'enum'        => array( 'list_branches', 'create_branch', 'get_file', 'update_file' ),
 				),
-				'owner'       => array(
+				'owner'          => array(
 					'type'        => 'string',
 					'description' => __( 'Repository owner.', 'wp-mcp-ai' ),
 				),
-				'repo'        => array(
+				'repo'           => array(
 					'type'        => 'string',
 					'description' => __( 'Repository name.', 'wp-mcp-ai' ),
 				),
-				'branch_name' => array(
+				'branch_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Branch name for create_branch action.', 'wp-mcp-ai' ),
 				),
-				'source_branch' => array(
+				'source_branch'  => array(
 					'type'        => 'string',
 					'description' => __( 'Source branch to branch from (default: main).', 'wp-mcp-ai' ),
 					'default'     => 'main',
 				),
-				'file_path'   => array(
+				'file_path'      => array(
 					'type'        => 'string',
 					'description' => __( 'File path (must be within custom-tools/ directory for safety).', 'wp-mcp-ai' ),
 				),
-				'file_content' => array(
+				'file_content'   => array(
 					'type'        => 'string',
 					'description' => __( 'File content for update_file action.', 'wp-mcp-ai' ),
 				),
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Commit message for update_file action.', 'wp-mcp-ai' ),
 				),
-				'branch'      => array(
+				'branch'         => array(
 					'type'        => 'string',
 					'description' => __( 'Branch to operate on (default: main).', 'wp-mcp-ai' ),
 					'default'     => 'main',
@@ -151,8 +151,8 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 		$formatted = array_map(
 			function ( $branch ) {
 				return array(
-					'name'   => $branch['name'],
-					'sha'    => $branch['commit']['sha'] ?? '',
+					'name'      => $branch['name'],
+					'sha'       => $branch['commit']['sha'] ?? '',
 					'protected' => $branch['protected'] ?? false,
 				);
 			},
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Get existing file SHA if it exists.
-		$sha             = '';
+		$sha           = '';
 		$existing_file = $client->get_contents( $owner, $repo, $file_path, $branch );
 		if ( ! is_wp_error( $existing_file ) && isset( $existing_file['sha'] ) ) {
 			$sha = $existing_file['sha'];

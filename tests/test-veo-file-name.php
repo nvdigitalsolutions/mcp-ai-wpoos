@@ -29,14 +29,14 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php';
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
-		
+
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$this->tool    = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Set up mock API key.
 		update_option(
 			'wp_mcp_ai_settings',
@@ -76,7 +76,7 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 	 */
 	public function test_service_save_video_includes_file_name() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		$result = array(
 			'video_data'   => 'fake-video-data',
 			'prompt'       => 'Test video',
@@ -96,14 +96,14 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 
 		// Verify it's not an error.
 		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
-		
+
 		// Verify file_name is included.
 		$this->assertArrayHasKey( 'file_name', $save_result, 'Result should have file_name' );
 		$this->assertNotEmpty( $save_result['file_name'], 'file_name should not be empty' );
-		
+
 		// Verify file_name has .mp4 extension.
 		$this->assertStringEndsWith( '.mp4', $save_result['file_name'], 'file_name should end with .mp4' );
-		
+
 		// Verify file_name starts with veo-video-.
 		$this->assertStringStartsWith( 'veo-video-', $save_result['file_name'], 'file_name should start with veo-video-' );
 	}
@@ -113,7 +113,7 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 	 */
 	public function test_tool_save_video_includes_file_name() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		$result = array(
 			'video_data'   => 'fake-video-data',
 			'prompt'       => 'Test video',
@@ -133,11 +133,11 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 
 		// Verify it's not an error.
 		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
-		
+
 		// Verify file_name is included.
 		$this->assertArrayHasKey( 'file_name', $save_result, 'Result should have file_name' );
 		$this->assertNotEmpty( $save_result['file_name'], 'file_name should not be empty' );
-		
+
 		// Verify file_name has .mp4 extension.
 		$this->assertStringEndsWith( '.mp4', $save_result['file_name'], 'file_name should end with .mp4' );
 	}
@@ -168,12 +168,12 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 		// Verify file_name is preserved.
 		$this->assertArrayHasKey( 'file_name', $sanitized, 'Sanitized result should have file_name' );
 		$this->assertEquals( 'veo-video-test.mp4', $sanitized['file_name'], 'file_name should be preserved' );
-		
+
 		// Verify other essential fields are preserved.
 		$this->assertArrayHasKey( 'attachment_id', $sanitized );
 		$this->assertArrayHasKey( 'url', $sanitized );
 		$this->assertArrayHasKey( 'prompt', $sanitized );
-		
+
 		// Verify binary data is stripped.
 		$this->assertArrayNotHasKey( 'video_data', $sanitized, 'video_data should be stripped' );
 	}
@@ -184,7 +184,7 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 	public function test_tool_save_video_uses_job_id_in_filename() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$job_id  = 'async_test123abc';
-		
+
 		$result = array(
 			'video_data'   => 'fake-video-data',
 			'prompt'       => 'Test video with job ID',
@@ -204,12 +204,12 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 
 		// Verify it's not an error.
 		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
-		
+
 		// Verify file_name includes the job_id.
 		$this->assertArrayHasKey( 'file_name', $save_result, 'Result should have file_name' );
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 		$this->assertEquals( $expected_filename, $save_result['file_name'], 'file_name should include job_id' );
-		
+
 		// Verify attachment has job_id in metadata.
 		$stored_job_id = get_post_meta( $save_result['attachment_id'], '_veo_job_id', true );
 		$this->assertEquals( $job_id, $stored_job_id, 'Attachment should have job_id in metadata' );
@@ -226,11 +226,13 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 		$job_id  = 'veo_test_file_name_recovery';
 
 		// Create a video attachment with the required metadata.
-		$attachment_id = $this->factory->attachment->create( array(
-			'post_mime_type' => 'video/mp4',
-			'post_author'    => $user_id,
-			'post_title'     => 'Test Veo Video',
-		) );
+		$attachment_id = $this->factory->attachment->create(
+			array(
+				'post_mime_type' => 'video/mp4',
+				'post_author'    => $user_id,
+				'post_title'     => 'Test Veo Video',
+			)
+		);
 
 		// Set the veo metadata.
 		update_post_meta( $attachment_id, '_veo_job_id', $job_id );
@@ -264,16 +266,18 @@ class Test_Veo_File_Name extends WP_UnitTestCase {
 	 * is detected via file-based polling.
 	 */
 	public function test_check_for_created_video_file_includes_file_name() {
-		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		$job_id  = 'veo_file_based_polling_test';
+		$user_id           = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$job_id            = 'veo_file_based_polling_test';
 		$expected_filename = 'veo-video-' . $job_id . '.mp4';
 
 		// Create a video attachment with the required metadata.
-		$attachment_id = $this->factory->attachment->create( array(
-			'post_mime_type' => 'video/mp4',
-			'post_author'    => $user_id,
-			'post_title'     => 'Test Veo Video File Polling',
-		) );
+		$attachment_id = $this->factory->attachment->create(
+			array(
+				'post_mime_type' => 'video/mp4',
+				'post_author'    => $user_id,
+				'post_title'     => 'Test Veo Video File Polling',
+			)
+		);
 
 		// Set the veo metadata (job_id specifically for file-based detection).
 		update_post_meta( $attachment_id, '_veo_job_id', $job_id );

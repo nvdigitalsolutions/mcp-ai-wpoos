@@ -47,18 +47,18 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'angle'            => array(
+					'angle'           => array(
 						'type'        => 'number',
 						'description' => __( 'Rotation angle in degrees (clockwise). Common values: 90, 180, 270.', 'wp-mcp-ai' ),
 						'minimum'     => -360,
 						'maximum'     => 360,
 					),
-					'flip_horizontal'  => array(
+					'flip_horizontal' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Flip the image horizontally (mirror).', 'wp-mcp-ai' ),
 						'default'     => false,
 					),
-					'flip_vertical'    => array(
+					'flip_vertical'   => array(
 						'type'        => 'boolean',
 						'description' => __( 'Flip the image vertically.', 'wp-mcp-ai' ),
 						'default'     => false,
