@@ -406,6 +406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'crop_image'                      => 'wordpress-core',
 				'rotate_image'                    => 'wordpress-core',
 				'convert_image_format'            => 'wordpress-core',
+				'remove_background'               => 'wordpress-core',
 
 				// Data Visualization.
 				'create_chart'                    => 'wordpress-core',
@@ -844,6 +845,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
+				'WP_MCP_AI_Tool_Remove_Background'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
 				// GitHub integration tools.
 				'WP_MCP_AI_Tool_List_Github_Repositories' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-github-repositories.php',
 				'WP_MCP_AI_Tool_Github_Repository_Operations' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-github-repository-operations.php',
