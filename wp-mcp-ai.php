@@ -447,6 +447,17 @@ require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
+
+// Load Pro addon early so it can register tool hooks before tool registry initializes.
+// This must happen BEFORE tools-init.php is loaded to ensure Pro tools are included
+// in the initial tool registration when wp_mcp_ai_register_tools action fires.
+if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+	$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+	if ( file_exists( $pro_addon_file ) ) {
+		require_once $pro_addon_file;
+	}
+}
+
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
@@ -994,8 +1005,10 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 		 */
 		do_action( 'wp_mcp_ai_bootstrapped' );
 
-		// Auto-load pro addon if present in addons directory and not loaded as separate plugin.
-		wp_mcp_ai_maybe_load_pro_addon();
+		// Note: Pro addon is now loaded earlier (before tools-init.php) to ensure
+		// Pro tools can register hooks before tool registry initialization.
+		// The wp_mcp_ai_maybe_load_pro_addon() function is kept for backward
+		// compatibility but is no longer called from here.
 	}
 }
 

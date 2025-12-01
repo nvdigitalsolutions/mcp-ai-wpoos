@@ -409,8 +409,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 	}
 }
 
-// Initialize Pro on plugins_loaded, after Core.
-add_action( 'plugins_loaded', 'wp_mcp_ai_pro_init', 15 );
+// Initialize Pro addon.
+// When loaded as part of combined plugin (via inline require_once), init immediately.
+// When loaded as separate plugin, use plugins_loaded hook.
+if ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) ) {
+	// Already in plugins_loaded or after - init immediately.
+	// This handles the combined plugin scenario where Pro is loaded inline.
+	wp_mcp_ai_pro_init();
+} else {
+	// Not yet at plugins_loaded - schedule init for when it fires.
+	// This handles the separate plugin scenario.
+	add_action( 'plugins_loaded', 'wp_mcp_ai_pro_init', 15 );
+}
 
 /**
  * ============================================================================
