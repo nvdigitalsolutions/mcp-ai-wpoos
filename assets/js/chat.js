@@ -11487,7 +11487,25 @@
                 }
                 
                 // Add tool result to conversation for agentic flow continuity
+                // Preserve display metadata for proper UI restoration after page reload
                 if (state.conversation && Array.isArray(state.conversation)) {
+                    // Add display metadata to tool result for persistence
+                    if (normalized) {
+                        const toolDisplay = {
+                            bubbleType: 'tool',
+                            text: normalized.text || '',
+                            attachments: normalized.attachments || []
+                        };
+                        
+                        // Preserve chart data if present
+                        if (normalized.chartHtml) {
+                            toolDisplay.chartHtml = normalized.chartHtml;
+                            toolDisplay.chartWidth = normalized.chartWidth || 800;
+                            toolDisplay.chartHeight = normalized.chartHeight || 400;
+                        }
+                        
+                        toolResult.display = toolDisplay;
+                    }
                     state.conversation.push(toolResult);
                 }
             });
@@ -12196,6 +12214,36 @@
                         }
                         return; // Skip this tool result
                     }
+                    
+                    // Add display metadata to tool result for persistence across page reloads
+                    // Parse and normalize the tool result to extract display information
+                    let parsedForDisplay = toolResult.content;
+                    if (typeof parsedForDisplay === 'string') {
+                        try {
+                            parsedForDisplay = JSON.parse(parsedForDisplay);
+                        } catch (e) {
+                            parsedForDisplay = toolResult.content;
+                        }
+                    }
+                    
+                    const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedForDisplay);
+                    if (normalizedForDisplay) {
+                        const toolDisplay = {
+                            bubbleType: 'tool',
+                            text: normalizedForDisplay.text || '',
+                            attachments: normalizedForDisplay.attachments || []
+                        };
+                        
+                        // Preserve chart data if present
+                        if (normalizedForDisplay.chartHtml) {
+                            toolDisplay.chartHtml = normalizedForDisplay.chartHtml;
+                            toolDisplay.chartWidth = normalizedForDisplay.chartWidth || 800;
+                            toolDisplay.chartHeight = normalizedForDisplay.chartHeight || 400;
+                        }
+                        
+                        toolResult.display = toolDisplay;
+                    }
+                    
                     state.conversation.push(toolResult);
                 }
             });
