@@ -117,6 +117,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Register Pro rate limiting.
 		add_filter( 'wp_mcp_ai_rate_limit_allow', 'wp_mcp_ai_pro_rate_limit_filter', 20, 4 );
 
+		// Register Pro tool group mappings.
+		add_filter( 'wp_mcp_ai_tool_group_map', 'wp_mcp_ai_pro_tool_group_map', 20 );
+
 		/**
 		 * Fires after WP MCP AI Pro has completed initialization.
 		 *
@@ -303,6 +306,46 @@ if ( ! function_exists( 'wp_mcp_ai_pro_rate_limit_filter' ) ) {
 		}
 
 		return $allow;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
+	/**
+	 * Add Pro tools to the tool group map.
+	 *
+	 * Extends the core tool group map to include Pro addon tools
+	 * so they appear in the assistant edit page.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $group_map Associative array of tool slugs to group identifiers.
+	 * @return array Modified group map with Pro tools added.
+	 */
+	function wp_mcp_ai_pro_tool_group_map( $group_map ) {
+		// Pro tools and their group assignments.
+		$pro_tools = array(
+			// Product Actualization - Requires external APIs (OpenAI, Gemini).
+			'product_actualization' => 'external-tools',
+			// WooCommerce tools - Require WooCommerce plugin.
+			'woo_products'          => 'wordpress-plugins',
+			'woo_orders'            => 'wordpress-plugins',
+			// JetEngine tools - Require JetEngine plugin.
+			'jetengine'             => 'wordpress-plugins',
+			// Elementor tools - Require Elementor plugin.
+			'elementor'             => 'wordpress-plugins',
+		);
+
+		/**
+		 * Filter the Pro tool group assignments.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $pro_tools Associative array of Pro tool slugs to group identifiers.
+		 */
+		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tool_groups', $pro_tools );
+
+		// Merge Pro tools into the main group map.
+		return array_merge( $group_map, $pro_tools );
 	}
 }
 
