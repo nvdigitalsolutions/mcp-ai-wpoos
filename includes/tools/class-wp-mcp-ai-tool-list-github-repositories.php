@@ -106,19 +106,19 @@ class WP_MCP_AI_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interfac
 		$formatted_repos = array_map(
 			function ( $repo ) {
 				return array(
-					'id'            => $repo['id'],
-					'name'          => $repo['name'],
-					'full_name'     => $repo['full_name'],
-					'owner'         => $repo['owner']['login'],
-					'private'       => $repo['private'],
-					'description'   => $repo['description'] ?? '',
-					'url'           => $repo['html_url'],
-					'clone_url'     => $repo['clone_url'],
-					'ssh_url'       => $repo['ssh_url'],
+					'id'             => $repo['id'],
+					'name'           => $repo['name'],
+					'full_name'      => $repo['full_name'],
+					'owner'          => $repo['owner']['login'],
+					'private'        => $repo['private'],
+					'description'    => $repo['description'] ?? '',
+					'url'            => $repo['html_url'],
+					'clone_url'      => $repo['clone_url'],
+					'ssh_url'        => $repo['ssh_url'],
 					'default_branch' => $repo['default_branch'],
-					'updated_at'    => $repo['updated_at'],
-					'created_at'    => $repo['created_at'],
-					'language'      => $repo['language'] ?? null,
+					'updated_at'     => $repo['updated_at'],
+					'created_at'     => $repo['created_at'],
+					'language'       => $repo['language'] ?? null,
 				);
 			},
 			$repos

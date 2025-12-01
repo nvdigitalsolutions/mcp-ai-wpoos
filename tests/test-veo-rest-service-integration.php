@@ -94,7 +94,7 @@ class WP_MCP_AI_Veo_REST_Service_Integration_Test extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 		wp_delete_post( $this->assistant_id, true );
 		wp_delete_user( $this->user_id );
-		
+
 		parent::tearDown();
 	}
 

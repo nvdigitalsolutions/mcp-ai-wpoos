@@ -847,16 +847,16 @@ class WP_MCP_AI_Gemini_File_Service {
 	private function generate_cache_key( $video_url = '', $attachment_id = null ) {
 		if ( $attachment_id ) {
 			$attachment_id = absint( $attachment_id );
-			
+
 			// Include file modification time to invalidate cache if file changes.
 			$file_path = get_attached_file( $attachment_id );
 			$mod_time  = '';
-			
+
 			if ( $file_path && file_exists( $file_path ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime
 				$mod_time = filemtime( $file_path );
 			}
-			
+
 			return 'wp_mcp_ai_gemini_file_' . $attachment_id . '_' . $mod_time;
 		}
 
@@ -875,7 +875,7 @@ class WP_MCP_AI_Gemini_File_Service {
 	 * @param int    $uploaded_at  Upload timestamp.
 	 */
 	private function add_to_tracked_files_list( $cache_key, $file_name, $uploaded_at ) {
-		$tracked_files = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
+		$tracked_files               = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
 		$tracked_files[ $cache_key ] = array(
 			'file_name'   => $file_name,
 			'uploaded_at' => $uploaded_at,

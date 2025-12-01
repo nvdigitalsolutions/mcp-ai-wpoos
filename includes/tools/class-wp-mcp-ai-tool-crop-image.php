@@ -159,7 +159,10 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
-		$new_size = isset( $storage['size'] ) ? $storage['size'] : array( 'width' => $crop_params['width'], 'height' => $crop_params['height'] );
+		$new_size = isset( $storage['size'] ) ? $storage['size'] : array(
+			'width'  => $crop_params['width'],
+			'height' => $crop_params['height'],
+		);
 
 		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],

@@ -1087,26 +1087,26 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				// Example worker loop (pseudo-code):
 				// while ( true ) {
-				//     $message = $queue->get();
-				//     if ( ! $message ) {
-				//         usleep( 100000 ); // 100ms.
-				//         continue;
-				//     }
+				// $message = $queue->get();
+				// if ( ! $message ) {
+				// usleep( 100000 ); // 100ms.
+				// continue;
+				// }
 				//
-				//     $payload = json_decode( $message->getBody(), true );
-				//     $tool = $registry->get_tool( $payload['tool_name'] );
+				// $payload = json_decode( $message->getBody(), true );
+				// $tool = $registry->get_tool( $payload['tool_name'] );
 				//
-				//     if ( $tool ) {
-				//         $result = $tool->execute( $payload['arguments'], $payload['context'] );
-				//         $client->store_job_result( $payload['job_id'], $result );
-				//     }
+				// if ( $tool ) {
+				// $result = $tool->execute( $payload['arguments'], $payload['context'] );
+				// $client->store_job_result( $payload['job_id'], $result );
+				// }
 				//
-				//     $queue->ack( $message->getDeliveryTag() );
-				//     $jobs_processed++;
+				// $queue->ack( $message->getDeliveryTag() );
+				// $jobs_processed++;
 				//
-				//     if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
-				//         break;
-				//     }
+				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
+				// break;
+				// }
 				// }
 
 				WP_CLI::success( sprintf( 'Worker stopped. Processed %d jobs.', $jobs_processed ) );
@@ -1146,7 +1146,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 *     # Use with Claude Desktop (in claude_desktop_config.json):
 			 *     # {
 			 *     #   "mcpServers": {
-			 *     #     "wordpress": {
+			 *     #     "WordPress": {
 			 *     #       "command": "wp",
 			 *     #       "args": ["mcp-ai", "stdio", "--path=/path/to/wordpress"]
 			 *     #     }

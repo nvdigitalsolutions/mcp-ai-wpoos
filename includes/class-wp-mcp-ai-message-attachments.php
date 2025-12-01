@@ -1050,7 +1050,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 */
 		public static function get_allowed_mime_types( $usage = null, $provider = 'openai' ) {
 			$provider = strtolower( sanitize_key( $provider ) );
-			
+
 			// Base image MIME types supported by most providers.
 			$image_mimes = array(
 				'image/jpeg',
@@ -1061,7 +1061,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				'image/heif',
 				'image/bmp',
 			);
-			
+
 			// SVG is only supported by Gemini, not by OpenAI.
 			// OpenAI Vision API explicitly does NOT support SVG files.
 			if ( in_array( $provider, array( 'gemini', 'google' ), true ) ) {

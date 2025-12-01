@@ -122,7 +122,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 
 		// Build request payload.
 		$payload = array(
-			'instances' => array(
+			'instances'  => array(
 				array(
 					'prompt'      => $full_prompt,
 					'duration'    => $duration,
@@ -278,10 +278,10 @@ class WP_MCP_AI_Gemini_Music_Service {
 	protected function extract_audio_from_response( array $response ) {
 		// Note: This is a simplified implementation.
 		// The actual response structure from Google's API should be consulted.
-		
+
 		if ( isset( $response['predictions'] ) && is_array( $response['predictions'] ) ) {
 			$prediction = $response['predictions'][0] ?? array();
-			
+
 			if ( isset( $prediction['audio_content'] ) ) {
 				return array(
 					'audio'       => $prediction['audio_content'],

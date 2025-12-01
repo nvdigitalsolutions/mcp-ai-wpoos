@@ -25,7 +25,12 @@ class WP_MCP_AI_Tool_Result_Name_Field_Test extends WP_UnitTestCase {
 
 		$mock_tool_registry
 			->method( 'execute_tool' )
-			->willReturn( array( 'status' => 'success', 'data' => 'Tool executed successfully' ) );
+			->willReturn(
+				array(
+					'status' => 'success',
+					'data'   => 'Tool executed successfully',
+				)
+			);
 
 		// Create mock dependencies for chat service.
 		$mock_router = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )

@@ -78,7 +78,7 @@ class Test_Chart_Today_Option extends WP_UnitTestCase {
 
 		// Add usage for user2 - Google Gemini and Anthropic Claude.
 		$usage_data = array(
-			'google' => array(
+			'google'    => array(
 				'gemini-pro' => array(
 					'total_tokens'      => 8000,
 					'prompt_tokens'     => 5000,

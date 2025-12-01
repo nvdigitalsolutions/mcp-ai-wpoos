@@ -102,12 +102,12 @@ class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 
 		$result = $tool->execute(
 			array(
-				'prompt'      => 'jazz piano trio',
-				'duration'    => 30,
-				'genre'       => 'jazz',
-				'mood'        => 'relaxed',
-				'bpm'         => 100,
-				'file_name'   => 'jazz-piece',
+				'prompt'    => 'jazz piano trio',
+				'duration'  => 30,
+				'genre'     => 'jazz',
+				'mood'      => 'relaxed',
+				'bpm'       => 100,
+				'file_name' => 'jazz-piece',
 			),
 			array( 'user_id' => $user_id )
 		);

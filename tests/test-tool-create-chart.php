@@ -71,13 +71,13 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 	 */
 	public function test_create_bar_chart() {
 		$arguments = array(
-			'type' => 'bar',
-			'data' => array(
+			'type'  => 'bar',
+			'data'  => array(
 				'labels'   => array( 'Jan', 'Feb', 'Mar', 'Apr' ),
 				'datasets' => array(
 					array(
-						'label' => 'Sales',
-						'data'  => array( 100, 150, 200, 175 ),
+						'label'           => 'Sales',
+						'data'            => array( 100, 150, 200, 175 ),
 						'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
 					),
 				),
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 				'labels'   => array( 'Red', 'Blue', 'Yellow' ),
 				'datasets' => array(
 					array(
-						'data' => array( 300, 50, 100 ),
+						'data'            => array( 300, 50, 100 ),
 						'backgroundColor' => array( '#FF6384', '#36A2EB', '#FFCE56' ),
 					),
 				),
@@ -133,10 +133,10 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 				'labels'   => array( 'Week 1', 'Week 2', 'Week 3', 'Week 4' ),
 				'datasets' => array(
 					array(
-						'label' => 'Revenue',
-						'data'  => array( 1000, 1500, 1200, 1800 ),
+						'label'       => 'Revenue',
+						'data'        => array( 1000, 1500, 1200, 1800 ),
 						'borderColor' => 'rgb(75, 192, 192)',
-						'tension' => 0.1,
+						'tension'     => 0.1,
 					),
 				),
 			),
@@ -259,8 +259,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 	 */
 	public function test_save_as_attachment() {
 		$arguments = array(
-			'type' => 'bar',
-			'data' => array(
+			'type'               => 'bar',
+			'data'               => array(
 				'labels'   => array( 'A', 'B', 'C' ),
 				'datasets' => array(
 					array(
@@ -378,13 +378,13 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 				'labels'   => array( 'Q1', 'Q2', 'Q3', 'Q4' ),
 				'datasets' => array(
 					array(
-						'label' => '2023',
-						'data'  => array( 100, 150, 200, 175 ),
+						'label'           => '2023',
+						'data'            => array( 100, 150, 200, 175 ),
 						'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
 					),
 					array(
-						'label' => '2024',
-						'data'  => array( 120, 170, 220, 195 ),
+						'label'           => '2024',
+						'data'            => array( 120, 170, 220, 195 ),
 						'backgroundColor' => 'rgba(255, 99, 132, 0.6)',
 					),
 				),

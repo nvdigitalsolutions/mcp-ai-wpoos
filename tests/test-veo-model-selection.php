@@ -36,7 +36,7 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		
+
 		$captured_model = null;
 
 		// Mock HTTP requests to capture which model is being called.
@@ -98,7 +98,7 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		
+
 		$captured_model = null;
 
 		// Mock HTTP requests to capture which model is being called.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		
+
 		$captured_model = null;
 
 		// Mock HTTP requests to capture which model is being called.
@@ -217,18 +217,18 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 	public function test_settings_veo_2_default_honored() {
 		// Configure settings to use Veo 2.
 		$settings = array(
-			'gemini_api_key'    => 'test-api-key-12345',
+			'gemini_api_key'     => 'test-api-key-12345',
 			'gemini_video_model' => 'veo-2.0-generate-001',
 		);
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $tool );
-		$method = $reflection->getMethod( 'get_default_video_settings' );
+		$method     = $reflection->getMethod( 'get_default_video_settings' );
 		$method->setAccessible( true );
-		
+
 		$defaults = $method->invoke( $tool );
 
 		// Verify Veo 2 is the default model.
@@ -281,7 +281,7 @@ class WP_MCP_AI_Veo_Model_Selection_Test extends WP_UnitTestCase {
 		);
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Create a test user with upload permissions.
 		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 

@@ -144,7 +144,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 						// Sort by cost descending.
 						uasort(
 							$by_model,
-							function( $a, $b ) {
+							function ( $a, $b ) {
 								return $b['total_cost'] <=> $a['total_cost'];
 							}
 						);

@@ -61,7 +61,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_blocked_when_setting_disabled() {
 		// Ensure the setting is disabled (default).
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = false;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -85,7 +85,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_succeeds_when_setting_enabled() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -139,7 +139,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_with_minimal_data() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -169,7 +169,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_with_tools() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -211,7 +211,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_with_system_prompt() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -247,7 +247,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_with_draft_status() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -282,7 +282,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_returns_400_for_missing_title() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -306,7 +306,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_requires_authentication() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -329,13 +329,13 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_fires_action_hook() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
-		$action_fired      = false;
-		$action_id         = null;
-		$action_request    = null;
+		$action_fired   = false;
+		$action_id      = null;
+		$action_request = null;
 
 		add_action(
 			'wp_mcp_ai_rest_assistant_created',
@@ -366,7 +366,7 @@ class WP_MCP_AI_REST_Assistant_Create_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_sets_location_header() {
 		// Enable the setting.
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_create'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

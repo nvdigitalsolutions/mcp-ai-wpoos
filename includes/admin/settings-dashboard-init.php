@@ -31,22 +31,22 @@ spl_autoload_register(
 	function ( $class_name ) {
 		// Map of section class names to their file paths.
 		$section_files = array(
-			'WP_MCP_AI_Section_Overview'                 => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
-			'WP_MCP_AI_Section_General'                  => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
-			'WP_MCP_AI_Section_Custom_Filters'           => 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php',
-			'WP_MCP_AI_Section_Providers'                => 'includes/admin/sections/class-wp-mcp-ai-section-providers.php',
-			'WP_MCP_AI_Section_Authentication'           => 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php',
-			'WP_MCP_AI_Section_Tools'                    => 'includes/admin/sections/class-wp-mcp-ai-section-tools.php',
-			'WP_MCP_AI_Section_Orchestration'            => 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php',
-			'WP_MCP_AI_Section_Integrations'             => 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php',
-			'WP_MCP_AI_Section_Plugins_Integration'      => 'includes/admin/sections/class-wp-mcp-ai-section-plugins-integration.php',
-			'WP_MCP_AI_Section_Token_Manager'            => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
-			'WP_MCP_AI_Section_Security'                 => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
-			'WP_MCP_AI_Section_Performance'              => 'includes/admin/sections/class-wp-mcp-ai-section-performance.php',
-			'WP_MCP_AI_Section_Advanced'                 => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
-			'WP_MCP_AI_Section_Media'                    => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
-			'WP_MCP_AI_Section_Comments'                 => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
-			'WP_MCP_AI_Section_Site_Creator'             => 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php',
+			'WP_MCP_AI_Section_Overview'            => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
+			'WP_MCP_AI_Section_General'             => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
+			'WP_MCP_AI_Section_Custom_Filters'      => 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php',
+			'WP_MCP_AI_Section_Providers'           => 'includes/admin/sections/class-wp-mcp-ai-section-providers.php',
+			'WP_MCP_AI_Section_Authentication'      => 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php',
+			'WP_MCP_AI_Section_Tools'               => 'includes/admin/sections/class-wp-mcp-ai-section-tools.php',
+			'WP_MCP_AI_Section_Orchestration'       => 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php',
+			'WP_MCP_AI_Section_Integrations'        => 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php',
+			'WP_MCP_AI_Section_Plugins_Integration' => 'includes/admin/sections/class-wp-mcp-ai-section-plugins-integration.php',
+			'WP_MCP_AI_Section_Token_Manager'       => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
+			'WP_MCP_AI_Section_Security'            => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
+			'WP_MCP_AI_Section_Performance'         => 'includes/admin/sections/class-wp-mcp-ai-section-performance.php',
+			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
+			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
+			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
+			'WP_MCP_AI_Section_Site_Creator'        => 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php',
 		);
 
 		// Check if this is a section class we should autoload.

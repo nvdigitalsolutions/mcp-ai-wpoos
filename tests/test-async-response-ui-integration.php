@@ -183,7 +183,7 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString(
-			"return \$result",
+			'return $result',
 			$tool_code,
 			'Tool should return async result directly'
 		);
@@ -220,11 +220,11 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		$this->assertIsString( $result['message'] );
 
 		// Message should mention background processing or job_id.
-		$message_lower = strtolower( $result['message'] );
+		$message_lower    = strtolower( $result['message'] );
 		$has_helpful_info = strpos( $message_lower, 'job' ) !== false ||
-		                    strpos( $message_lower, 'status' ) !== false ||
-		                    strpos( $message_lower, 'background' ) !== false ||
-		                    strpos( $message_lower, 'started' ) !== false;
+							strpos( $message_lower, 'status' ) !== false ||
+							strpos( $message_lower, 'background' ) !== false ||
+							strpos( $message_lower, 'started' ) !== false;
 
 		$this->assertTrue( $has_helpful_info, 'Message should mention job/status/background processing' );
 
@@ -295,7 +295,7 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		$this->assertNotEmpty( $decoded['job_id'] );
 
 		// Step 5: Verify UI can poll for status.
-		$job_id = $decoded['job_id'];
+		$job_id   = $decoded['job_id'];
 		$metadata = get_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 
 		$this->assertIsArray( $metadata, 'Job metadata should be stored for polling' );

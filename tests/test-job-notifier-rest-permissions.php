@@ -229,10 +229,10 @@ class Test_Job_Notifier_REST_Permissions extends WP_UnitTestCase {
 		// Now test without nonce - both should fail similarly.
 		wp_set_current_user( 0 );
 
-		$request_status_no_auth = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id );
+		$request_status_no_auth  = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id );
 		$response_status_no_auth = rest_do_request( $request_status_no_auth );
 
-		$request_stream_no_auth = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id . '/stream' );
+		$request_stream_no_auth  = new WP_REST_Request( 'GET', '/mcp-ai/v1/jobs/' . $this->job_id . '/stream' );
 		$response_stream_no_auth = rest_do_request( $request_stream_no_auth );
 
 		// Both should require authentication.

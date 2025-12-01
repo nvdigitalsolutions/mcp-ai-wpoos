@@ -42,7 +42,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 	public function tearDown(): void {
 		// Clean up user meta and transients.
 		delete_user_meta( $this->test_user_id, '_wp_mcp_ai_tool_token_usage' );
-		
+
 		parent::tearDown();
 	}
 

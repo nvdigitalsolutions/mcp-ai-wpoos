@@ -57,7 +57,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_array_field with valid string array.
 	 */
 	public function test_profession_sanitize_array_field_valid_strings() {
-		$input = array( 'WordPress', 'PHP', 'JavaScript', 'MySQL' );
+		$input  = array( 'WordPress', 'PHP', 'JavaScript', 'MySQL' );
 		$result = $this->profession_cpt->sanitize_array_field( $input );
 
 		$this->assertIsArray( $result );
@@ -111,7 +111,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_memory_files with valid attachment IDs.
 	 */
 	public function test_profession_sanitize_memory_files_valid_ids() {
-		$input = array( 123, 456, 789 );
+		$input  = array( 123, 456, 789 );
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertIsArray( $result );
@@ -125,7 +125,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_memory_files converts string IDs to integers.
 	 */
 	public function test_profession_sanitize_memory_files_string_ids() {
-		$input = array( '123', '456', '789' );
+		$input  = array( '123', '456', '789' );
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertIsArray( $result );
@@ -139,7 +139,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_memory_files filters zero values.
 	 */
 	public function test_profession_sanitize_memory_files_filters_zero() {
-		$input = array( 0, '0', 123, 456 );
+		$input  = array( 0, '0', 123, 456 );
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertIsArray( $result );
@@ -153,7 +153,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_memory_files converts negative to zero and filters.
 	 */
 	public function test_profession_sanitize_memory_files_negative_values() {
-		$input = array( -1, -999, 123 );
+		$input  = array( -1, -999, 123 );
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertIsArray( $result );
@@ -167,7 +167,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_memory_files with all invalid values.
 	 */
 	public function test_profession_sanitize_memory_files_all_invalid() {
-		$input = array( 'invalid', null, false, '', array(), 0 );
+		$input  = array( 'invalid', null, false, '', array(), 0 );
 		$result = $this->profession_cpt->sanitize_memory_files( $input );
 
 		$this->assertSame( array(), $result );
@@ -177,7 +177,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_vector_store_id with valid ID.
 	 */
 	public function test_profession_sanitize_vector_store_id_valid() {
-		$input = 'vs_1234567890abcdef';
+		$input  = 'vs_1234567890abcdef';
 		$result = $this->profession_cpt->sanitize_vector_store_id( $input );
 
 		$this->assertSame( $input, $result );
@@ -187,7 +187,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 	 * Test sanitize_vector_store_id removes HTML and JavaScript.
 	 */
 	public function test_profession_sanitize_vector_store_id_removes_tags() {
-		$input = '<script>alert("XSS")</script>vs_test';
+		$input  = '<script>alert("XSS")</script>vs_test';
 		$result = $this->profession_cpt->sanitize_vector_store_id( $input );
 
 		$this->assertSame( 'alert("XSS")vs_test', $result );
@@ -219,7 +219,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$input = array( $prof1, $prof2 );
+		$input  = array( $prof1, $prof2 );
 		$result = $this->team_cpt->sanitize_team_members( $input );
 
 		$this->assertIsArray( $result );
@@ -247,7 +247,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$input = array( $prof, $post );
+		$input  = array( $prof, $post );
 		$result = $this->team_cpt->sanitize_team_members( $input );
 
 		$this->assertIsArray( $result );
@@ -275,7 +275,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$input = array( $prof1, $prof2, $prof1, $prof2, $prof1 );
+		$input  = array( $prof1, $prof2, $prof1, $prof2, $prof1 );
 		$result = $this->team_cpt->sanitize_team_members( $input );
 
 		$this->assertIsArray( $result );
@@ -295,7 +295,7 @@ class WP_MCP_AI_Profession_Team_CPT_Sanitization_Test extends WP_UnitTestCase {
 		);
 
 		// Pass as string.
-		$input = array( (string) $prof );
+		$input  = array( (string) $prof );
 		$result = $this->team_cpt->sanitize_team_members( $input );
 
 		$this->assertIsArray( $result );

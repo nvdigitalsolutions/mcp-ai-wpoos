@@ -103,12 +103,15 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 
 		foreach ( $valid_params as $args ) {
 			$result = $this->service->generate_video( $args );
-			
+
 			// Without API key, we expect a missing API key error, not a validation error.
 			// This confirms the validation passed.
 			if ( is_wp_error( $result ) ) {
-				$this->assertNotEquals( 'wp_mcp_ai_invalid_arguments', $result->get_error_code(),
-					'Valid 720p parameters should not trigger validation error' );
+				$this->assertNotEquals(
+					'wp_mcp_ai_invalid_arguments',
+					$result->get_error_code(),
+					'Valid 720p parameters should not trigger validation error'
+				);
 			}
 		}
 	}

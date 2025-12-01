@@ -141,9 +141,9 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			}
 
 			// Get profession metadata.
-			$category = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+			$category  = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
 			$expertise = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
-			$tools = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+			$tools     = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 
 			$category_labels = array(
 				'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),

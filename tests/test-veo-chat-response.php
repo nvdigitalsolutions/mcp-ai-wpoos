@@ -35,7 +35,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Mock HTTP requests for sync video generation.
 		add_filter(
 			'pre_http_request',
@@ -134,7 +134,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Mock HTTP request for async video generation.
 		add_filter(
 			'pre_http_request',
@@ -170,8 +170,8 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 				'duration' => 5,
 			),
 			array(
-				'user_id'            => $user_id,
-				'in_async_executor'  => false, // Allow tool-level async.
+				'user_id'           => $user_id,
+				'in_async_executor' => false, // Allow tool-level async.
 			)
 		);
 
@@ -251,7 +251,7 @@ class WP_MCP_AI_Veo_Chat_Response_Test extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Create fake async metadata.
-		$job_id = 'veo_test_' . uniqid();
+		$job_id   = 'veo_test_' . uniqid();
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op',

@@ -61,10 +61,10 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	public function render( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
 
-		$default_provider      = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
-		$default_model         = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
-		$default_temperature   = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_temperature', true );
-		$associated_assistant  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
+		$default_provider     = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
+		$default_model        = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
+		$default_temperature  = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_temperature', true );
+		$associated_assistant = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
 
 		if ( empty( $default_provider ) ) {
 			$default_provider = 'openai';

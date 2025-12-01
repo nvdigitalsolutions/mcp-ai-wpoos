@@ -287,13 +287,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
-		$text_parts = array();
+		$text_parts   = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: attachment ID */
 			__( 'Successfully generated image (ID: %d).', 'wp-mcp-ai' ),
 			$storage['attachment_id']
 		);
-		
+
 		if ( ! empty( $image['revised_prompt'] ) ) {
 			$text_parts[] = sprintf(
 				/* translators: %s: revised prompt from OpenAI */
@@ -301,7 +301,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 				$image['revised_prompt']
 			);
 		}
-		
+
 		$text_parts[] = sprintf(
 			/* translators: 1: size, 2: quality */
 			__( 'Size: %1$s, Quality: %2$s', 'wp-mcp-ai' ),
@@ -617,7 +617,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Store OpenAI response metadata for reference.
 		$openai_meta = array(
-			'source'         => 'openai',
+			'source'          => 'openai',
 			'original_prompt' => sanitize_textarea_field( $prompt ),
 		);
 

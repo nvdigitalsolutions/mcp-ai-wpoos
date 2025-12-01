@@ -127,7 +127,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					<tbody>
 						<?php foreach ( $professions as $profession ) : ?>
 							<?php
-							$category = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_category', true );
+							$category    = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_category', true );
 							$is_selected = in_array( $profession->ID, $primary_roles, true );
 							?>
 							<tr>
@@ -147,7 +147,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 									<?php endif; ?>
 								</td>
 								<td>
-									<?php 
+									<?php
 									if ( $profession->post_excerpt ) {
 										echo esc_html( $profession->post_excerpt );
 									} elseif ( $profession->post_content ) {

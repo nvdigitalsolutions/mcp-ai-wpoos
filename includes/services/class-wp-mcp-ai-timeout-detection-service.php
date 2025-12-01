@@ -81,7 +81,7 @@ class WP_MCP_AI_Timeout_Detection_Service {
 		}
 
 		// Calculate timeout threshold.
-		$safety_buffer = null !== $safety_buffer ? absint( $safety_buffer ) : self::DEFAULT_SAFETY_BUFFER;
+		$safety_buffer           = null !== $safety_buffer ? absint( $safety_buffer ) : self::DEFAULT_SAFETY_BUFFER;
 		$this->timeout_threshold = $this->max_execution_time - $safety_buffer;
 
 		// Ensure minimum threshold to prevent immediate timeout.
@@ -143,10 +143,10 @@ class WP_MCP_AI_Timeout_Detection_Service {
 	 */
 	public function get_metadata() {
 		return array(
-			'elapsed_time'       => $this->get_elapsed_time(),
-			'remaining_time'     => $this->get_remaining_time(),
-			'timeout_threshold'  => $this->timeout_threshold,
-			'max_execution_time' => $this->max_execution_time,
+			'elapsed_time'        => $this->get_elapsed_time(),
+			'remaining_time'      => $this->get_remaining_time(),
+			'timeout_threshold'   => $this->timeout_threshold,
+			'max_execution_time'  => $this->max_execution_time,
 			'approaching_timeout' => $this->is_approaching_timeout(),
 		);
 	}

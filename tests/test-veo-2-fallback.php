@@ -15,7 +15,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_veo_2_constant_defined() {
 		// Use reflection to access class constant.
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		$service    = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$reflection = new ReflectionClass( $service );
 
 		$this->assertTrue(
@@ -36,9 +36,9 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 * Test that Veo 2 minimum duration constant is defined.
 	 */
 	public function test_veo_2_min_duration_constant() {
-		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
+		$service    = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$reflection = new ReflectionClass( $service );
-		$constant = $reflection->getConstant( 'VEO_2_MIN_DURATION' );
+		$constant   = $reflection->getConstant( 'VEO_2_MIN_DURATION' );
 
 		$this->assertEquals(
 			5,
@@ -52,7 +52,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_should_fallback_on_quota_error() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
+		$method  = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
 		$method->setAccessible( true );
 
 		// Test quota exceeded error.
@@ -82,7 +82,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_should_fallback_on_availability_error() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
+		$method  = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
 		$method->setAccessible( true );
 
 		// Test model not available error.
@@ -112,7 +112,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_should_fallback_on_http_status() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
+		$method  = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
 		$method->setAccessible( true );
 
 		// Test 429 Too Many Requests.
@@ -142,7 +142,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_should_not_fallback_on_non_retryable_errors() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
+		$method  = new ReflectionMethod( $service, 'should_fallback_to_veo_2' );
 		$method->setAccessible( true );
 
 		// Test validation error - should not fallback.
@@ -172,7 +172,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_veo_2_minimum_duration_enforcement() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		// Test that duration below 5 seconds is adjusted for Veo 2.
@@ -182,7 +182,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		);
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$payload = $method->invoke( $service, $args, $veo_2_constant );
+		$payload        = $method->invoke( $service, $args, $veo_2_constant );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -199,7 +199,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_veo_2_resolution_excluded() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		// Test that resolution parameter is excluded for Veo 2.0 even with 1080p request.
@@ -210,7 +210,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		);
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$payload = $method->invoke( $service, $args, $veo_2_constant );
+		$payload        = $method->invoke( $service, $args, $veo_2_constant );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -226,7 +226,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_veo_2_resolution_excluded_720p() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		// Test that resolution parameter is excluded for Veo 2.0 even with 720p request.
@@ -237,7 +237,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		);
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
-		$payload = $method->invoke( $service, $args, $veo_2_constant );
+		$payload        = $method->invoke( $service, $args, $veo_2_constant );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -253,7 +253,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_veo_3_supports_1080p() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'build_generation_payload' );
+		$method  = new ReflectionMethod( $service, 'build_generation_payload' );
 		$method->setAccessible( true );
 
 		// Test that 1080p is preserved for Veo 3.1.
@@ -265,7 +265,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		);
 
 		$veo_3_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_MODEL' );
-		$payload = $method->invoke( $service, $args, $veo_3_constant );
+		$payload        = $method->invoke( $service, $args, $veo_3_constant );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'parameters', $payload );
@@ -282,7 +282,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_async_metadata_includes_model() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
-		$method = new ReflectionMethod( $service, 'queue_async_polling' );
+		$method  = new ReflectionMethod( $service, 'queue_async_polling' );
 		$method->setAccessible( true );
 
 		$veo_2_constant = ( new ReflectionClass( $service ) )->getConstant( 'VEO_2_MODEL' );
@@ -303,7 +303,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'job_id', $result );
 
 		// Retrieve the metadata from transient.
-		$job_id = $result['job_id'];
+		$job_id   = $result['job_id'];
 		$metadata = get_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 
 		$this->assertIsArray( $metadata );
@@ -322,7 +322,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 * Test tool description mentions fallback support.
 	 */
 	public function test_tool_description_mentions_fallback() {
-		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+		$tool        = new WP_MCP_AI_Tool_Generate_Veo_Video();
 		$description = $tool->get_description();
 
 		$this->assertStringContainsString(
@@ -348,7 +348,7 @@ class Test_Veo_2_Fallback extends WP_UnitTestCase {
 	 * Test tool parameters schema includes model parameter.
 	 */
 	public function test_tool_schema_includes_model_parameter() {
-		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+		$tool   = new WP_MCP_AI_Tool_Generate_Veo_Video();
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertArrayHasKey( 'properties', $schema );

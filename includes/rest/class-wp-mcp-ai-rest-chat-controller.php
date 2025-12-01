@@ -154,19 +154,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_chat_transcript_save' ),
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
-						'assistant_id' => array(
+						'assistant_id'      => array(
 							'description'       => __( 'ID of the assistant for this chat transcript.', 'wp-mcp-ai' ),
 							'type'              => 'integer',
 							'required'          => true,
 							'sanitize_callback' => 'absint',
 						),
-						'session_key'  => array(
+						'session_key'       => array(
 							'description'       => __( 'Session key for this conversation.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'messages'     => array(
+						'messages'          => array(
 							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
 							'type'              => 'array',
 							'required'          => true,
@@ -1060,8 +1060,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			// User, system, and tool messages are stored in request_payload.
 			if ( 'assistant' === $message['role'] ) {
 				$choice = array(
-					'index'   => $index++,
-					'message' => array(
+					'index'         => $index++,
+					'message'       => array(
 						'role'    => 'assistant',
 						'content' => isset( $message['content'] ) ? $message['content'] : null,
 					),

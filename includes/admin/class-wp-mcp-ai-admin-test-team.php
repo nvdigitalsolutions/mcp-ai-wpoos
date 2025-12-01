@@ -69,13 +69,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 		 */
 		protected function get_chat_strings() {
 			$strings = parent::get_chat_strings();
-			
+
 			// Customize specific strings for team context.
-			$strings['waiting'] = __( 'Waiting for team member…', 'wp-mcp-ai' );
-			$strings['missingAssistant'] = __( 'Team configuration was not found.', 'wp-mcp-ai' );
-			$strings['notAuthorized'] = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
+			$strings['waiting']                 = __( 'Waiting for team member…', 'wp-mcp-ai' );
+			$strings['missingAssistant']        = __( 'Team configuration was not found.', 'wp-mcp-ai' );
+			$strings['notAuthorized']           = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
 			$strings['roleLabels']['assistant'] = __( 'Team Member', 'wp-mcp-ai' );
-			
+
 			return $strings;
 		}
 
@@ -167,10 +167,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 						<tbody>
 							<?php foreach ( $teams as $team ) : ?>
 								<?php
-								$team_members        = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
-								$default_provider    = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_PROVIDER, true );
-								$default_model       = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_MODEL, true );
-								$edit_url            = get_edit_post_link( $team->ID );
+								$team_members     = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+								$default_provider = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_PROVIDER, true );
+								$default_model    = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_MODEL, true );
+								$edit_url         = get_edit_post_link( $team->ID );
 
 								$member_count = is_array( $team_members ) ? count( $team_members ) : 0;
 

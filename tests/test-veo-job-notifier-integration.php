@@ -31,13 +31,13 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_started',
-			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+			function ( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_metadata = $meta;
@@ -107,14 +107,14 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_result    = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_result   = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function( $id, $result, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_result, &$hook_metadata ) {
+			function ( $id, $result, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_result, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_result   = $result;
@@ -222,14 +222,14 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_error     = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_error    = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_failed',
-			function( $id, $error, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_error, &$hook_metadata ) {
+			function ( $id, $error, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_error, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_error    = $error;
@@ -240,9 +240,9 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		);
 
 		// Manually update metadata to failed state and fire hook.
-		$error_message         = 'Test error message for job failure';
-		$metadata['status']    = 'failed';
-		$metadata['error']     = $error_message;
+		$error_message      = 'Test error message for job failure';
+		$metadata['status'] = 'failed';
+		$metadata['error']  = $error_message;
 		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Fire the failure hook manually to test notification system integration.
@@ -282,7 +282,7 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_failed',
-			function( $id ) use ( $job_id, &$hook_called ) {
+			function ( $id ) use ( $job_id, &$hook_called ) {
 				if ( $id === $job_id ) {
 					$hook_called = true;
 				}
@@ -331,14 +331,14 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		set_transient( WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_progress  = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_progress = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_progress',
-			function( $id, $progress, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_progress, &$hook_metadata ) {
+			function ( $id, $progress, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_progress, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_progress = $progress;

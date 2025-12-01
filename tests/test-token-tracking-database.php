@@ -113,7 +113,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	 * Test getting user usage.
 	 */
 	public function test_get_user_usage() {
-		$user_id  = $this->factory->user->create();
+		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
 
@@ -150,7 +150,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	 * Test getting user usage with tool filter.
 	 */
 	public function test_get_user_usage_with_tool_filter() {
-		$user_id  = $this->factory->user->create();
+		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
 
@@ -169,7 +169,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	 * Test getting cost summary.
 	 */
 	public function test_get_user_cost_summary() {
-		$user_id  = $this->factory->user->create();
+		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
 
@@ -327,7 +327,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	 * Test cost summary for user with no usage.
 	 */
 	public function test_cost_summary_no_usage() {
-		$user_id  = $this->factory->user->create();
+		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
 
@@ -345,7 +345,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create();
 		$fired   = false;
 
-		$callback = function() use ( &$fired ) {
+		$callback = function () use ( &$fired ) {
 			$fired = true;
 		};
 

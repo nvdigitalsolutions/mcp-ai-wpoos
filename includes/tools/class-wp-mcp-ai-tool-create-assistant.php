@@ -337,13 +337,13 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error Result or error.
 	 */
 	protected function create_assistant( $arguments, $user_id ) {
-		$title           = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$professions     = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
-		$regions         = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
-		$industry_focus  = isset( $arguments['industry_focus'] ) ? sanitize_text_field( $arguments['industry_focus'] ) : '';
-		$description     = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
-		$system_prompt   = isset( $arguments['system_prompt'] ) ? sanitize_textarea_field( $arguments['system_prompt'] ) : '';
-		$attachment_ids  = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
+		$title          = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$professions    = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
+		$regions        = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
+		$industry_focus = isset( $arguments['industry_focus'] ) ? sanitize_text_field( $arguments['industry_focus'] ) : '';
+		$description    = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
+		$system_prompt  = isset( $arguments['system_prompt'] ) ? sanitize_textarea_field( $arguments['system_prompt'] ) : '';
+		$attachment_ids = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
 
 		if ( '' === $title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Title is required.', 'wp-mcp-ai' ) );
@@ -535,15 +535,15 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'assistant_id'          => $assistant_id,
-			'title'                 => $title,
-			'status'                => 'draft',
-			'edit_link'             => get_edit_post_link( $assistant_id, '' ),
-			'documents'             => count( $all_document_ids ),
-			'mode'                  => $mode,
-			'inferred_professions'  => $inferred_professions,
-			'inferred_regions'      => $inferred_regions,
-			'message'               => sprintf(
+			'assistant_id'         => $assistant_id,
+			'title'                => $title,
+			'status'               => 'draft',
+			'edit_link'            => get_edit_post_link( $assistant_id, '' ),
+			'documents'            => count( $all_document_ids ),
+			'mode'                 => $mode,
+			'inferred_professions' => $inferred_professions,
+			'inferred_regions'     => $inferred_regions,
+			'message'              => sprintf(
 				/* translators: %s: assistant title */
 				__( 'AI assistant "%s" created successfully as draft.', 'wp-mcp-ai' ),
 				$title
@@ -2128,7 +2128,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function generate_generic_instructions( $title ) {
 		$instructions  = "You are {$title}, a helpful AI assistant.\n\n";
 		$instructions .= "YOUR ROLE:\n";
-		$instructions .= "You are a knowledgeable assistant who helps users by providing accurate information, ";
+		$instructions .= 'You are a knowledgeable assistant who helps users by providing accurate information, ';
 		$instructions .= "practical guidance, and professional support.\n\n";
 		$instructions .= "GUIDELINES:\n";
 		$instructions .= "- Provide accurate, helpful, and professional responses\n";

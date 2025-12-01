@@ -28,12 +28,12 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $tool );
-		$method = $reflection->getMethod( 'get_default_video_settings' );
+		$method     = $reflection->getMethod( 'get_default_video_settings' );
 		$method->setAccessible( true );
-		
+
 		$defaults = $method->invoke( $tool );
 
 		// Verify hardcoded defaults.
@@ -57,12 +57,12 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $tool );
-		$method = $reflection->getMethod( 'get_default_video_settings' );
+		$method     = $reflection->getMethod( 'get_default_video_settings' );
 		$method->setAccessible( true );
-		
+
 		$defaults = $method->invoke( $tool );
 
 		// Verify settings are used.
@@ -83,12 +83,12 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $tool );
-		$method = $reflection->getMethod( 'get_default_video_settings' );
+		$method     = $reflection->getMethod( 'get_default_video_settings' );
 		$method->setAccessible( true );
-		
+
 		$defaults = $method->invoke( $tool );
 
 		// Verify fallback to hardcoded default.
@@ -115,12 +115,12 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		);
 
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $tool );
-		$method = $reflection->getMethod( 'get_default_video_settings' );
+		$method     = $reflection->getMethod( 'get_default_video_settings' );
 		$method->setAccessible( true );
-		
+
 		$defaults = $method->invoke( $tool );
 
 		// Verify filter overrides settings.
@@ -135,14 +135,14 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 	 */
 	public function test_provider_settings_definitions_exist() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
-		
+
 		$section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $section );
-		$method = $reflection->getMethod( 'get_fields' );
+		$method     = $reflection->getMethod( 'get_fields' );
 		$method->setAccessible( true );
-		
+
 		$fields = $method->invoke( $section );
 
 		// Verify all video settings are defined.
@@ -163,19 +163,19 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 	 */
 	public function test_gemini_subtab_includes_video_settings() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
-		
+
 		$section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Use reflection to call protected method.
 		$reflection = new ReflectionClass( $section );
-		$method = $reflection->getMethod( 'get_subtab_groups' );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		
+
 		$groups = $method->invoke( $section );
 
 		// Verify gemini subtab exists and includes video settings.
 		$this->assertArrayHasKey( 'gemini', $groups, 'Gemini subtab should exist' );
-		
+
 		$gemini_fields = $groups['gemini']['fields'];
 		$this->assertContains( 'gemini_video_model', $gemini_fields, 'Gemini subtab should include video model' );
 		$this->assertContains( 'gemini_video_resolution', $gemini_fields, 'Gemini subtab should include video resolution' );

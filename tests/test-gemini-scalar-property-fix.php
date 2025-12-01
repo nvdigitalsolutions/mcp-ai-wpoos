@@ -75,9 +75,9 @@ class WP_MCP_AI_Gemini_Scalar_Property_Fix_Test extends WP_UnitTestCase {
 
 		// Tool with malformed properties where values are scalars instead of schema objects.
 		// This simulates a bug where a tool definition incorrectly uses:
-		//   'properties' => array( 'field1' => 'string' )
+		// 'properties' => array( 'field1' => 'string' )
 		// instead of:
-		//   'properties' => array( 'field1' => array('type' => 'string') )
+		// 'properties' => array( 'field1' => array('type' => 'string') )
 		$tools = array(
 			array(
 				'type'     => 'function',
@@ -232,10 +232,10 @@ class WP_MCP_AI_Gemini_Scalar_Property_Fix_Test extends WP_UnitTestCase {
 
 		$payload = json_decode( $captured_request['args']['body'], true );
 
-		$declaration    = $payload['tools'][0]['functionDeclarations'][0];
-		$items_list     = $declaration['parameters']['properties']['items_list'];
-		$item_schema    = $items_list['items'];
-		$item_props     = $item_schema['properties'];
+		$declaration = $payload['tools'][0]['functionDeclarations'][0];
+		$items_list  = $declaration['parameters']['properties']['items_list'];
+		$item_schema = $items_list['items'];
+		$item_props  = $item_schema['properties'];
 
 		// Verify nested scalar values were converted to schema objects.
 		$this->assertIsArray( $item_props['name'], 'Nested name property should be an array (schema object)' );

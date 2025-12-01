@@ -200,7 +200,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php';
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
-		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+		$tool  = new WP_MCP_AI_Tool_Generate_Veo_Video();
 		$flags = $tool->get_capability_flags();
 
 		// Verify Veo tool should use timeout detection.

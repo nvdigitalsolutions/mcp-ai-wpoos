@@ -30,7 +30,7 @@ class Test_Github_Client extends WP_UnitTestCase {
 	public function test_client_requires_token() {
 		$client = new WP_MCP_AI_Github_Client( '' );
 		$result = $client->get_user();
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_github_no_token', $result->get_error_code() );
 	}
@@ -46,12 +46,12 @@ class Test_Github_Client extends WP_UnitTestCase {
 		);
 
 		$client = new WP_MCP_AI_Github_Client();
-		
+
 		// Use reflection to check private property.
 		$reflection = new ReflectionClass( $client );
 		$property   = $reflection->getProperty( 'access_token' );
 		$property->setAccessible( true );
-		
+
 		$this->assertEquals( 'test_token_from_settings', $property->getValue( $client ) );
 	}
 }

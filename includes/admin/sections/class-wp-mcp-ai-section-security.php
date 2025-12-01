@@ -57,41 +57,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_root_security_key'             => array(
+				'enable_root_security_key'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Root Security Key', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Require root security key for sensitive operations', 'wp-mcp-ai' ),
 					'description'    => __( 'Adds an extra layer of security for administrative operations.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'root_security_key'                    => array(
+				'root_security_key'                        => array(
 					'type'        => 'password',
 					'label'       => __( 'Root Security Key', 'wp-mcp-ai' ),
 					'description' => __( 'A secure key for sensitive operations (minimum 32 characters).', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'enable_rate_limiting'                 => array(
+				'enable_rate_limiting'                     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Rate Limiting', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Limit request rates to prevent abuse', 'wp-mcp-ai' ),
 					'description'    => __( 'Protects your installation from excessive API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'rate_limit_requests'                  => array(
+				'rate_limit_requests'                      => array(
 					'type'        => 'number',
 					'label'       => __( 'Rate Limit (requests)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of requests allowed per time window.', 'wp-mcp-ai' ),
 					'default'     => 100,
 					'placeholder' => '100',
 				),
-				'rate_limit_window'                    => array(
+				'rate_limit_window'                        => array(
 					'type'        => 'number',
 					'label'       => __( 'Rate Limit Window (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'Time window for rate limiting.', 'wp-mcp-ai' ),
 					'default'     => 3600,
 					'placeholder' => '3600',
 				),
-				'enable_loopback_ssl_bypass'           => array(
+				'enable_loopback_ssl_bypass'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Loopback/Private Network SSL Bypass', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically disable SSL verification for localhost and private network addresses', 'wp-mcp-ai' ),

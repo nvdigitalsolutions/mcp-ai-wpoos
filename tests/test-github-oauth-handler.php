@@ -29,10 +29,10 @@ class Test_Github_OAuth_Handler extends WP_UnitTestCase {
 	 */
 	public function test_github_oauth_redirect_host_filter() {
 		$handler = new WP_MCP_AI_Github_OAuth_Handler();
-		
+
 		$allowed_hosts = array( 'example.com' );
 		$result        = $handler->allow_github_oauth_redirect_host( $allowed_hosts );
-		
+
 		$this->assertContains( 'github.com', $result );
 	}
 

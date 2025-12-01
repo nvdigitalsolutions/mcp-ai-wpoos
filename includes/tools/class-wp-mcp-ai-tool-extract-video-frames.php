@@ -173,8 +173,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 		if ( $save_to_media ) {
 			// Save frames to Media Library.
-			$attachment_ids = $this->save_frames_to_media( $frame_paths, $user_id );
-			$result['frames'] = $attachment_ids;
+			$attachment_ids    = $this->save_frames_to_media( $frame_paths, $user_id );
+			$result['frames']  = $attachment_ids;
 			$result['message'] = sprintf(
 				/* translators: %d: number of frames */
 				__( 'Successfully extracted and saved %d frames to Media Library.', 'wp-mcp-ai' ),
@@ -182,8 +182,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			);
 		} else {
 			// Return base64-encoded frames (temporary).
-			$base64_frames = $frame_extractor->frames_to_base64( $frame_paths );
-			$result['frames'] = $base64_frames;
+			$base64_frames     = $frame_extractor->frames_to_base64( $frame_paths );
+			$result['frames']  = $base64_frames;
 			$result['message'] = sprintf(
 				/* translators: %d: number of frames */
 				__( 'Successfully extracted %d frames (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
@@ -306,8 +306,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * Extract frames based on the specified mode.
 	 *
 	 * @param WP_MCP_AI_Video_Frame_Extractor_Service $frame_extractor Frame extractor service.
-	 * @param string                                   $video_path      Video file path.
-	 * @param array                                    $arguments       Tool arguments.
+	 * @param string                                  $video_path      Video file path.
+	 * @param array                                   $arguments       Tool arguments.
 	 * @return array|WP_Error Array of frame file paths or error.
 	 */
 	protected function extract_frames_by_mode( $frame_extractor, $video_path, $arguments ) {
@@ -329,8 +329,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * Extract frames at specific timestamps.
 	 *
 	 * @param WP_MCP_AI_Video_Frame_Extractor_Service $frame_extractor Frame extractor service.
-	 * @param string                                   $video_path      Video file path.
-	 * @param array                                    $timestamps      Array of timestamps in seconds.
+	 * @param string                                  $video_path      Video file path.
+	 * @param array                                   $timestamps      Array of timestamps in seconds.
 	 * @return array|WP_Error Array of frame file paths or error.
 	 */
 	protected function extract_frames_at_timestamps( $frame_extractor, $video_path, $timestamps ) {
@@ -409,14 +409,14 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * Wraps the service's protected method to avoid using reflection.
 	 *
 	 * @param WP_MCP_AI_Video_Frame_Extractor_Service $frame_extractor Frame extractor service.
-	 * @param string                                   $video_path      Video file path.
-	 * @param float                                    $timestamp       Timestamp in seconds.
-	 * @param string                                   $output_path     Output path for frame.
+	 * @param string                                  $video_path      Video file path.
+	 * @param float                                   $timestamp       Timestamp in seconds.
+	 * @param string                                  $output_path     Output path for frame.
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function extract_single_frame_at_timestamp( $frame_extractor, $video_path, $timestamp, $output_path ) {
-		$escaped_video  = escapeshellarg( $video_path );
-		$escaped_output = escapeshellarg( $output_path );
+		$escaped_video       = escapeshellarg( $video_path );
+		$escaped_output      = escapeshellarg( $output_path );
 		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
 
 		// FFmpeg command to extract frame at specific timestamp.
@@ -455,8 +455,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * Extract frames at regular intervals.
 	 *
 	 * @param WP_MCP_AI_Video_Frame_Extractor_Service $frame_extractor Frame extractor service.
-	 * @param string                                   $video_path      Video file path.
-	 * @param float                                    $interval        Interval in seconds.
+	 * @param string                                  $video_path      Video file path.
+	 * @param float                                   $interval        Interval in seconds.
 	 * @return array|WP_Error Array of frame file paths or error.
 	 */
 	protected function extract_frames_at_interval( $frame_extractor, $video_path, $interval ) {
@@ -587,7 +587,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		// When save_to_media=false, frames are returned as base64 data URLs.
 		if ( isset( $result['frames'] ) && is_array( $result['frames'] ) ) {
 			$has_base64 = false;
-			
+
 			// Check if frames contain base64 data (look at first frame)
 			if ( ! empty( $result['frames'] ) ) {
 				$first_frame = reset( $result['frames'] );
@@ -598,8 +598,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			if ( $has_base64 ) {
 				// Strip base64 data but keep frame count
-				$frame_count = count( $result['frames'] );
-				$result['frame_count'] = $frame_count;
+				$frame_count                    = count( $result['frames'] );
+				$result['frame_count']          = $frame_count;
 				$result['frames_data_stripped'] = true;
 				unset( $result['frames'] );
 			}

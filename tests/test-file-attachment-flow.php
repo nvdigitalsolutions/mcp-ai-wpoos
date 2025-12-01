@@ -106,7 +106,7 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 	 */
 	public function test_attachment_permission_check() {
 		// Create a private attachment by another user.
-		$other_user = $this->factory->user->create();
+		$other_user    = $this->factory->user->create();
 		$attachment_id = $this->factory->attachment->create_object(
 			array(
 				'file'        => WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg',
@@ -156,9 +156,12 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 		$helper = new WP_MCP_AI_Message_Attachments();
 
 		// Set a very low file size limit via filter.
-		add_filter( 'wp_mcp_ai_max_attachment_bytes', function() {
-			return 512; // 512 bytes limit.
-		} );
+		add_filter(
+			'wp_mcp_ai_max_attachment_bytes',
+			function () {
+				return 512; // 512 bytes limit.
+			}
+		);
 
 		// Attempt to prepare file segment.
 		$segment = $helper->prepare_input_file_segment(

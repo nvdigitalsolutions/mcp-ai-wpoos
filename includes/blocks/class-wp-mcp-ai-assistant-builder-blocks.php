@@ -173,10 +173,10 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 	public static function enqueue_frontend_assets() {
 		// Only enqueue if blocks are present on the page.
 		if ( ! has_block( 'wp-mcp-ai/assistant-builder' ) &&
-			 ! has_block( 'wp-mcp-ai/knowledge-base' ) &&
-			 ! has_block( 'wp-mcp-ai/tools-grid' ) &&
-			 ! has_block( 'wp-mcp-ai/assistant-selector' ) &&
-			 ! has_block( 'wp-mcp-ai/chat' ) ) {
+			! has_block( 'wp-mcp-ai/knowledge-base' ) &&
+			! has_block( 'wp-mcp-ai/tools-grid' ) &&
+			! has_block( 'wp-mcp-ai/assistant-selector' ) &&
+			! has_block( 'wp-mcp-ai/chat' ) ) {
 			return;
 		}
 

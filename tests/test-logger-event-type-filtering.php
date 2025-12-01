@@ -48,8 +48,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => true,
-				'enable_agentic_loop_logging'  => false,
+				'enable_logging'              => true,
+				'enable_agentic_loop_logging' => false,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -70,8 +70,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => true,
-				'enable_agentic_loop_logging'  => true,
+				'enable_logging'              => true,
+				'enable_agentic_loop_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -101,8 +101,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => true,
-				'enable_agentic_loop_logging'  => false,
+				'enable_logging'              => true,
+				'enable_agentic_loop_logging' => false,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -131,8 +131,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => false,
+				'enable_logging'     => true,
+				'enable_api_logging' => false,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -154,8 +154,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => true,
+				'enable_logging'     => true,
+				'enable_api_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -177,8 +177,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => false,
+				'enable_logging'     => true,
+				'enable_api_logging' => false,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -202,8 +202,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => true,
+				'enable_logging'     => true,
+				'enable_api_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -224,8 +224,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => false,
+				'enable_logging'     => true,
+				'enable_api_logging' => false,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -271,9 +271,9 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => true,
-				'enable_api_logging'           => false,
-				'enable_agentic_loop_logging'  => false,
+				'enable_logging'                => true,
+				'enable_api_logging'            => false,
+				'enable_agentic_loop_logging'   => false,
 				'enable_tool_execution_logging' => false,
 			)
 		);
@@ -295,9 +295,9 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => true,
-				'enable_api_logging'           => false,
-				'enable_agentic_loop_logging'  => true,
+				'enable_logging'              => true,
+				'enable_api_logging'          => false,
+				'enable_agentic_loop_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -335,9 +335,9 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'               => false,
-				'enable_api_logging'           => true,
-				'enable_agentic_loop_logging'  => true,
+				'enable_logging'              => false,
+				'enable_api_logging'          => true,
+				'enable_agentic_loop_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -363,8 +363,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => true,
+				'enable_logging'     => true,
+				'enable_api_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
@@ -395,8 +395,8 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_logging'      => true,
-				'enable_api_logging'  => true,
+				'enable_logging'     => true,
+				'enable_api_logging' => true,
 			)
 		);
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();

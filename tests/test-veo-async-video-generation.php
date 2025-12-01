@@ -215,7 +215,10 @@ class Test_Veo_Async_Video_Generation extends WP_UnitTestCase {
 		$metadata = array(
 			'job_id'         => $job_id,
 			'operation_name' => 'operations/test-op',
-			'args'           => array( 'prompt' => 'Test', 'user_id' => 1 ),
+			'args'           => array(
+				'prompt'  => 'Test',
+				'user_id' => 1,
+			),
 			'status'         => 'pending',
 			'queued_at'      => time(),
 			'poll_attempt'   => 1,

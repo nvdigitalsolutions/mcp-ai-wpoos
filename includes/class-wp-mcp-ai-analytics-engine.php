@@ -501,7 +501,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Aggregate usage from all users.
 		foreach ( $user_ids as $user_id ) {
-			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+			$usage             = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
 			$user_daily_totals = self::extract_daily_totals( $usage, $cutoff_date );
 
 			foreach ( $user_daily_totals as $date => $tokens ) {

@@ -37,15 +37,15 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 */
 	public function test_list_repositories_requires_capability() {
 		$tool = new WP_MCP_AI_Tool_List_Github_Repositories();
-		
+
 		// Create user without capability.
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		
+
 		$result = $tool->execute(
 			array(),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_github_forbidden', $result->get_error_code() );
 	}
@@ -78,15 +78,15 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 */
 	public function test_manage_codespace_requires_action() {
 		$tool = new WP_MCP_AI_Tool_Manage_Github_Codespace();
-		
+
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		$result = $tool->execute(
 			array(), // No action parameter.
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_missing_action', $result->get_error_code() );
 	}
@@ -119,10 +119,10 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 */
 	public function test_repository_operations_safe_path_restriction() {
 		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
-		
+
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		// Try to access a file outside custom-tools directory.
 		$result = $tool->execute(
 			array(
@@ -133,7 +133,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 			),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_unsafe_path', $result->get_error_code() );
 	}
@@ -143,10 +143,10 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 */
 	public function test_repository_operations_allows_custom_tools_path() {
 		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
-		
+
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		// Try to access a file in custom-tools directory (will fail due to no GitHub token, but should pass safety check).
 		$result = $tool->execute(
 			array(
@@ -157,7 +157,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 			),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		// Should fail with GitHub error (no token), not safety error.
 		$this->assertWPError( $result );
 		$this->assertNotEquals( 'wp_mcp_ai_unsafe_path', $result->get_error_code() );

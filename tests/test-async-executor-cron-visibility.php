@@ -33,10 +33,10 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 
 		// Mock tool that does nothing.
 		$tool_slug = 'test_tool_' . uniqid();
-		
+
 		// Create a mock tool.
 		$tool = $this->create_mock_tool( $tool_slug );
-		
+
 		// Register the tool.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
@@ -46,7 +46,7 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		$context = array(
 			'user_id' => 1,
 		);
-		
+
 		$job_id = $executor->queue_tool( $tool_slug, array(), $context );
 
 		$this->assertIsString( $job_id, 'Job ID should be returned' );
@@ -62,10 +62,16 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
 
 		// Check that job was recorded in cron manager.
-		$recorded_job = WP_MCP_AI_Cron_Manager::get_job( md5( wp_json_encode( array(
-			'hook' => $hook,
-			'args' => array( $job_id ),
-		) ) ) );
+		$recorded_job = WP_MCP_AI_Cron_Manager::get_job(
+			md5(
+				wp_json_encode(
+					array(
+						'hook' => $hook,
+						'args' => array( $job_id ),
+					)
+				)
+			)
+		);
 
 		$this->assertIsArray( $recorded_job, 'Job should be recorded in cron manager' );
 		$this->assertEquals( $hook, $recorded_job['hook'], 'Hook should match' );
@@ -79,7 +85,7 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 	 */
 	public function test_veo_service_schedules_with_delay() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
-		
+
 		WP_MCP_AI_Gemini_Video_Generation_Service::init();
 
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
@@ -118,10 +124,16 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Veo cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
 
 		// Check that job was recorded in cron manager.
-		$recorded_job = WP_MCP_AI_Cron_Manager::get_job( md5( wp_json_encode( array(
-			'hook' => $hook,
-			'args' => array( $job_id ),
-		) ) ) );
+		$recorded_job = WP_MCP_AI_Cron_Manager::get_job(
+			md5(
+				wp_json_encode(
+					array(
+						'hook' => $hook,
+						'args' => array( $job_id ),
+					)
+				)
+			)
+		);
 
 		$this->assertIsArray( $recorded_job, 'Veo job should be recorded in cron manager' );
 		$this->assertEquals( $hook, $recorded_job['hook'], 'Hook should match' );

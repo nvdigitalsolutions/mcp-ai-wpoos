@@ -130,12 +130,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for external HTTP requests to local AI providers
 			// since these don't consume PHP execution time while waiting.
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
-			$timeout      = max( 30, $timeout );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout = max( 30, $timeout );
 
-		// Ensure PHP execution time is sufficient for the HTTP request timeout.
-		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the HTTP request timeout.
+			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -188,12 +188,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for external HTTP requests to local AI providers
 			// since these don't consume PHP execution time while waiting.
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
-			$timeout      = max( 30, $timeout );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout = max( 30, $timeout );
 
-		// Ensure PHP execution time is sufficient for the HTTP request timeout.
-		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the HTTP request timeout.
+			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -246,12 +246,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for external HTTP requests to local AI providers
 			// since these don't consume PHP execution time while waiting.
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
-			$timeout      = max( 30, $timeout );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout = max( 30, $timeout );
 
-		// Ensure PHP execution time is sufficient for the HTTP request timeout.
-		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the HTTP request timeout.
+			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -304,12 +304,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for external HTTP requests to local AI providers
 			// since these don't consume PHP execution time while waiting.
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
-			$timeout      = max( 30, $timeout );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout = max( 30, $timeout );
 
-		// Ensure PHP execution time is sufficient for the HTTP request timeout.
-		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the HTTP request timeout.
+			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -612,7 +612,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				$api_url,
 				array(
 					'headers' => array(
-						'Accept'              => 'application/json',
+						'Accept'               => 'application/json',
 						'X-Subscription-Token' => $api_key,
 					),
 					'timeout' => $timeout,
@@ -1667,241 +1667,240 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 		}
 
-	/**
-	 * Handle team reseed AJAX request.
-	 *
-	 * @return void
-	 */
-	private function handle_reseed_teams() {
-		check_ajax_referer( 'wp_mcp_ai_reseed_teams', 'nonce' );
+		/**
+		 * Handle team reseed AJAX request.
+		 *
+		 * @return void
+		 */
+		private function handle_reseed_teams() {
+			check_ajax_referer( 'wp_mcp_ai_reseed_teams', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
-				)
-			);
-			return;
-		}
-
-		// Get action type: 'update' or 'replace'.
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
-		$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'update';
-
-		if ( ! in_array( $action, array( 'update', 'replace' ), true ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
-				)
-			);
-			return;
-		}
-
-		// Load team seeder.
-		if ( ! class_exists( 'WP_MCP_AI_Team_Seeder' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-seeder.php';
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Team_Repository' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-team-repository.php';
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Team_Knowledge_Base_Loader' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-team-knowledge-base-loader.php';
-		}
-
-		// If replace action, delete all existing teams.
-		if ( 'replace' === $action ) {
-			$existing_teams = get_posts(
-				array(
-					'post_type'      => 'mcp_ai_team',
-					'posts_per_page' => -1,
-					'post_status'    => 'any',
-					'fields'         => 'ids',
-				)
-			);
-
-			foreach ( $existing_teams as $post_id ) {
-				wp_delete_post( $post_id, true );
-			}
-		}
-
-		// Clear the seeded option to allow re-seeding.
-		delete_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION );
-
-		// Load teams from JSON files.
-		$loader = new WP_MCP_AI_Team_Knowledge_Base_Loader();
-		$teams  = $loader->load_all();
-
-		if ( is_wp_error( $teams ) ) {
-			wp_send_json_error(
-				array(
-					'message' => sprintf(
-						/* translators: %s: Error message */
-						__( 'Failed to load team data: %s', 'wp-mcp-ai' ),
-						$teams->get_error_message()
-					),
-				)
-			);
-			return;
-		}
-
-		// Save teams.
-		$repository = new WP_MCP_AI_Team_Repository();
-		$saved      = 0;
-		$updated    = 0;
-		$errors     = array();
-
-		foreach ( $teams as $team_data ) {
-			// Check if team already exists by slug.
-			$existing = null;
-			if ( 'update' === $action && ! empty( $team_data['slug'] ) ) {
-				$existing = $repository->find_one( $team_data['slug'] );
-			}
-
-			if ( $existing ) {
-				// Update existing team.
-				$team_data['id'] = $existing->ID;
-				$result          = $repository->save( $team_data );
-				if ( ! is_wp_error( $result ) ) {
-					++$updated;
-				} else {
-					$errors[] = $result->get_error_message();
-				}
-			} else {
-				// Create new team.
-				$result = $repository->save( $team_data );
-				if ( ! is_wp_error( $result ) ) {
-					++$saved;
-				} else {
-					$errors[] = $result->get_error_message();
-				}
-			}
-		}
-
-		// Mark as seeded.
-		update_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION, true, false );
-
-		// Clear cache.
-		$repository->clear_cache();
-
-		$message = sprintf(
-			/* translators: 1: Number of teams created, 2: Number of teams updated */
-			__( 'Teams reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),
-			$saved,
-			$updated
-		);
-
-		if ( ! empty( $errors ) ) {
-			$message .= ' ' . sprintf(
-				/* translators: %d: Number of errors */
-				__( 'Errors: %d', 'wp-mcp-ai' ),
-				count( $errors )
-			);
-		}
-
-		wp_send_json_success(
-			array(
-				'message' => $message,
-				'created' => $saved,
-				'updated' => $updated,
-				'errors'  => count( $errors ),
-			)
-		);
-	}
-
-	/**
-	 * Handle Gemini cost tracking migration AJAX request.
-	 *
-	 * Migrates historical token tracking records where Gemini tools were
-	 * incorrectly attributed to OpenAI provider, fixing provider attribution
-	 * and recalculating costs with correct Gemini pricing.
-	 *
-	 * @since 1.1.0
-	 */
-	private function handle_migrate_gemini_costs() {
-		check_ajax_referer( 'wp_mcp_ai_migrate_gemini_costs', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
-				)
-			);
-			return;
-		}
-
-		// Get action type: 'preview' or 'migrate'.
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
-		$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'preview';
-
-		if ( ! in_array( $action, array( 'preview', 'migrate' ), true ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
-				)
-			);
-			return;
-		}
-
-		// Load enhanced token tracking class.
-		if ( ! class_exists( 'WP_MCP_AI_Enhanced_Token_Tracking' ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Enhanced token tracking is not available.', 'wp-mcp-ai' ),
-				)
-			);
-			return;
-		}
-
-		// Determine if this is a dry run (preview).
-		$dry_run = ( 'preview' === $action );
-		$limit   = 1000; // Process up to 1000 records at a time.
-
-		// Run the migration.
-		$results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( $dry_run, $limit );
-
-		// Build response message.
-		if ( $dry_run ) {
-			if ( 0 === $results['total_gemini_records'] ) {
-				// No Gemini tool records exist at all.
-				$message = __( 'No Gemini tool usage records found in the database. This is expected if you haven\'t used any Gemini tools yet.', 'wp-mcp-ai' );
-			} elseif ( 0 === $results['total_needing_migration'] ) {
-				// All Gemini records are correctly attributed.
-				$message = sprintf(
-					/* translators: %d: Number of correctly attributed Gemini records */
-					__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'wp-mcp-ai' ),
-					$results['correctly_attributed']
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
 				);
-			} else {
-				// Some records need migration.
-				if ( $results['total_needing_migration'] > $limit ) {
-					// More records than batch limit - warn user.
+				return;
+			}
+
+			// Get action type: 'update' or 'replace'.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'update';
+
+			if ( ! in_array( $action, array( 'update', 'replace' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load team seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Team_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-seeder.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Team_Repository' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-team-repository.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Team_Knowledge_Base_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-team-knowledge-base-loader.php';
+			}
+
+			// If replace action, delete all existing teams.
+			if ( 'replace' === $action ) {
+				$existing_teams = get_posts(
+					array(
+						'post_type'      => 'mcp_ai_team',
+						'posts_per_page' => -1,
+						'post_status'    => 'any',
+						'fields'         => 'ids',
+					)
+				);
+
+				foreach ( $existing_teams as $post_id ) {
+					wp_delete_post( $post_id, true );
+				}
+			}
+
+			// Clear the seeded option to allow re-seeding.
+			delete_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION );
+
+			// Load teams from JSON files.
+			$loader = new WP_MCP_AI_Team_Knowledge_Base_Loader();
+			$teams  = $loader->load_all();
+
+			if ( is_wp_error( $teams ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Failed to load team data: %s', 'wp-mcp-ai' ),
+							$teams->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			// Save teams.
+			$repository = new WP_MCP_AI_Team_Repository();
+			$saved      = 0;
+			$updated    = 0;
+			$errors     = array();
+
+			foreach ( $teams as $team_data ) {
+				// Check if team already exists by slug.
+				$existing = null;
+				if ( 'update' === $action && ! empty( $team_data['slug'] ) ) {
+					$existing = $repository->find_one( $team_data['slug'] );
+				}
+
+				if ( $existing ) {
+					// Update existing team.
+					$team_data['id'] = $existing->ID;
+					$result          = $repository->save( $team_data );
+					if ( ! is_wp_error( $result ) ) {
+						++$updated;
+					} else {
+						$errors[] = $result->get_error_message();
+					}
+				} else {
+					// Create new team.
+					$result = $repository->save( $team_data );
+					if ( ! is_wp_error( $result ) ) {
+						++$saved;
+					} else {
+						$errors[] = $result->get_error_message();
+					}
+				}
+			}
+
+			// Mark as seeded.
+			update_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION, true, false );
+
+			// Clear cache.
+			$repository->clear_cache();
+
+			$message = sprintf(
+			/* translators: 1: Number of teams created, 2: Number of teams updated */
+				__( 'Teams reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),
+				$saved,
+				$updated
+			);
+
+			if ( ! empty( $errors ) ) {
+				$message .= ' ' . sprintf(
+				/* translators: %d: Number of errors */
+					__( 'Errors: %d', 'wp-mcp-ai' ),
+					count( $errors )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => $message,
+					'created' => $saved,
+					'updated' => $updated,
+					'errors'  => count( $errors ),
+				)
+			);
+		}
+
+		/**
+		 * Handle Gemini cost tracking migration AJAX request.
+		 *
+		 * Migrates historical token tracking records where Gemini tools were
+		 * incorrectly attributed to OpenAI provider, fixing provider attribution
+		 * and recalculating costs with correct Gemini pricing.
+		 *
+		 * @since 1.1.0
+		 */
+		private function handle_migrate_gemini_costs() {
+			check_ajax_referer( 'wp_mcp_ai_migrate_gemini_costs', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Get action type: 'preview' or 'migrate'.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'preview';
+
+			if ( ! in_array( $action, array( 'preview', 'migrate' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load enhanced token tracking class.
+			if ( ! class_exists( 'WP_MCP_AI_Enhanced_Token_Tracking' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Enhanced token tracking is not available.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Determine if this is a dry run (preview).
+			$dry_run = ( 'preview' === $action );
+			$limit   = 1000; // Process up to 1000 records at a time.
+
+			// Run the migration.
+			$results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( $dry_run, $limit );
+
+			// Build response message.
+			if ( $dry_run ) {
+				if ( 0 === $results['total_gemini_records'] ) {
+					// No Gemini tool records exist at all.
+					$message = __( 'No Gemini tool usage records found in the database. This is expected if you haven\'t used any Gemini tools yet.', 'wp-mcp-ai' );
+				} elseif ( 0 === $results['total_needing_migration'] ) {
+					// All Gemini records are correctly attributed.
 					$message = sprintf(
-						/* translators: 1: Total records needing migration, 2: Batch size that will be processed, 3: Total Gemini records, 4: Already correct records */
-						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'wp-mcp-ai' ),
-						$results['total_needing_migration'],
-						$results['total_gemini_records'],
-						$limit,
+					/* translators: %d: Number of correctly attributed Gemini records */
+						__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'wp-mcp-ai' ),
 						$results['correctly_attributed']
 					);
 				} else {
-					$message = sprintf(
+					// Some records need migration.
+					if ( $results['total_needing_migration'] > $limit ) {
+						// More records than batch limit - warn user.
+						$message = sprintf(
+						/* translators: 1: Total records needing migration, 2: Batch size that will be processed, 3: Total Gemini records, 4: Already correct records */
+							__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'wp-mcp-ai' ),
+							$results['total_needing_migration'],
+							$results['total_gemini_records'],
+							$limit,
+							$results['correctly_attributed']
+						);
+					} else {
+						$message = sprintf(
 						/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
-						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
-						$results['total_needing_migration'],
-						$results['total_gemini_records'],
-						$results['correctly_attributed']
-					);
+							__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
+							$results['total_needing_migration'],
+							$results['total_gemini_records'],
+							$results['correctly_attributed']
+						);
+					}
 				}
-			}
-		} else {
-			if ( 0 === $results['records_updated'] ) {
+			} elseif ( 0 === $results['records_updated'] ) {
 				if ( 0 === $results['total_gemini_records'] ) {
 					$message = __( 'No Gemini tool usage records found in the database.', 'wp-mcp-ai' );
 				} else {
 					$message = sprintf(
-						/* translators: %d: Number of correctly attributed records */
+					/* translators: %d: Number of correctly attributed records */
 						__( 'No records were updated. All %d Gemini tool records are already correctly attributed.', 'wp-mcp-ai' ),
 						$results['correctly_attributed']
 					);
@@ -1911,7 +1910,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				$remaining = $results['total_needing_migration'] - $results['records_updated'];
 				if ( $remaining > 0 ) {
 					$message = sprintf(
-						/* translators: 1: Number of records updated, 2: Total records needing migration, 3: Remaining records */
+					/* translators: 1: Number of records updated, 2: Total records needing migration, 3: Remaining records */
 						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. %2$d records still need migration. Please run the migration again to process the remaining records.', 'wp-mcp-ai' ),
 						$results['records_updated'],
 						$results['total_needing_migration'],
@@ -1919,87 +1918,86 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					);
 				} else {
 					$message = sprintf(
-						/* translators: 1: Number of records updated, 2: Total Gemini records */
+					/* translators: 1: Number of records updated, 2: Total Gemini records */
 						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. All Gemini tool records are now correctly attributed. Total Gemini tool records: %2$d', 'wp-mcp-ai' ),
 						$results['records_updated'],
 						$results['total_gemini_records']
 					);
 				}
 			}
-		}
 
-		wp_send_json_success(
-			array(
-				'message'                 => $message,
-				'dry_run'                 => $dry_run,
-				'total_checked'           => $results['total_checked'],
-				'records_updated'         => $results['records_updated'],
-				'total_gemini_records'    => $results['total_gemini_records'],
-				'correctly_attributed'    => $results['correctly_attributed'],
-				'total_needing_migration' => $results['total_needing_migration'],
-			)
-		);
-	}
-
-	/**
-	 * Handle AJAX request to save model configuration.
-	 *
-	 * Follows SoC: delegates data operations to WP_MCP_AI_Model_Config.
-	 *
-	 * @since 1.0.0
-	 */
-	public function handle_save_model_config() {
-		// Verify nonce.
-		check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
-
-		// Check permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions.', 'wp-mcp-ai' ) );
-		}
-
-		// Get model ID.
-		$model = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
-
-		if ( empty( $model ) ) {
-			wp_send_json_error( __( 'Model ID is required.', 'wp-mcp-ai' ) );
-		}
-
-		// Get config data.
-		$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		if ( empty( $config ) ) {
-			wp_send_json_error( __( 'Configuration data is required.', 'wp-mcp-ai' ) );
-		}
-
-		// Load model config class if not already loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
-		}
-
-		// Get existing config to merge.
-		$existing_config = WP_MCP_AI_Model_Config::get_model_config( $model );
-
-		if ( ! $existing_config ) {
-			$existing_config = array();
-		}
-
-		// Merge with incoming changes.
-		$updated_config = array_merge( $existing_config, $config );
-
-		// Delegate save operation to model config class (SoC).
-		$result = WP_MCP_AI_Model_Config::set_model_config( $model, $updated_config );
-
-		if ( $result ) {
 			wp_send_json_success(
 				array(
-					'message' => __( 'Model configuration saved successfully.', 'wp-mcp-ai' ),
-					'model'   => $model,
-					'config'  => $updated_config,
+					'message'                 => $message,
+					'dry_run'                 => $dry_run,
+					'total_checked'           => $results['total_checked'],
+					'records_updated'         => $results['records_updated'],
+					'total_gemini_records'    => $results['total_gemini_records'],
+					'correctly_attributed'    => $results['correctly_attributed'],
+					'total_needing_migration' => $results['total_needing_migration'],
 				)
 			);
-		} else {
-			wp_send_json_error( __( 'Failed to save model configuration.', 'wp-mcp-ai' ) );
 		}
-	}
+
+		/**
+		 * Handle AJAX request to save model configuration.
+		 *
+		 * Follows SoC: delegates data operations to WP_MCP_AI_Model_Config.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_save_model_config() {
+			// Verify nonce.
+			check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
+
+			// Check permissions.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( __( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+			}
+
+			// Get model ID.
+			$model = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
+
+			if ( empty( $model ) ) {
+				wp_send_json_error( __( 'Model ID is required.', 'wp-mcp-ai' ) );
+			}
+
+			// Get config data.
+			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( empty( $config ) ) {
+				wp_send_json_error( __( 'Configuration data is required.', 'wp-mcp-ai' ) );
+			}
+
+			// Load model config class if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
+			}
+
+			// Get existing config to merge.
+			$existing_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+
+			if ( ! $existing_config ) {
+				$existing_config = array();
+			}
+
+			// Merge with incoming changes.
+			$updated_config = array_merge( $existing_config, $config );
+
+			// Delegate save operation to model config class (SoC).
+			$result = WP_MCP_AI_Model_Config::set_model_config( $model, $updated_config );
+
+			if ( $result ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Model configuration saved successfully.', 'wp-mcp-ai' ),
+						'model'   => $model,
+						'config'  => $updated_config,
+					)
+				);
+			} else {
+				wp_send_json_error( __( 'Failed to save model configuration.', 'wp-mcp-ai' ) );
+			}
+		}
 	}
 }

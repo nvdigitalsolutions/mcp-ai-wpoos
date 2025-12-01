@@ -33,8 +33,8 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
-		$this->rest = new WP_MCP_AI_REST();
+
+		$this->rest           = new WP_MCP_AI_REST();
 		$this->extract_method = new ReflectionMethod( $this->rest, 'extract_text_from_tool_results' );
 		$this->extract_method->setAccessible( true );
 	}

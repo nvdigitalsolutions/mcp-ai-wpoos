@@ -547,7 +547,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			// Only render this section when the 'connections' subtab is active in Tools.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$current_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
-			
+
 			// This section is embedded within Tools > Connections subtab.
 			// Don't render if we're not in the connections subtab.
 			if ( 'connections' !== $current_subtab ) {
@@ -570,22 +570,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							<?php
 							// When rendered within Tools > Connections, preserve the connections subtab
 							// Otherwise link directly to the integration subtab
-							$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							$current_tab           = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
 							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
-							
+
 							$url_args = array(
 								'page' => 'wp-mcp-ai-dashboard',
 								'tab'  => $current_tab,
 							);
-							
+
 							// If we're in the connections subtab, add it to maintain context
 							if ( 'connections' === $current_parent_subtab ) {
-								$url_args['subtab'] = 'connections';
+								$url_args['subtab']     = 'connections';
 								$url_args['connection'] = $group['id'];
 							} else {
 								$url_args['subtab'] = $group['id'];
 							}
-							
+
 							$subtab_url = add_query_arg( $url_args, admin_url( 'admin.php' ) );
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
