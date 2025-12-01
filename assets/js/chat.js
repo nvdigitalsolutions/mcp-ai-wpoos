@@ -10441,12 +10441,12 @@
 
                 // Fallback: Add accumulated content to conversation if no final data
                 if (streamResult && streamResult.content) {
+                    // Detect truncated responses once (avoid duplicate detection)
+                    const isTruncated = isTruncatedByOrchestration(streamResult.content);
+                    
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
                         // streamingMessageElement is now the bubble itself (merged structure)
-                        
-                        // Detect truncated responses (truncation detection works regardless of markdown mode)
-                        const isTruncated = isTruncatedByOrchestration(streamResult.content);
                         
                         // Render content with proper structure based on type
                         if (isTruncated) {
@@ -10495,16 +10495,11 @@
                     // Create assistant message with display metadata
                     const displayPayload = { text: streamResult.content };
                     
-                    // Detect and set bubble type on the element before extracting metadata
+                    // Set bubble type on the element before extracting metadata
                     // This ensures truncated responses preserve their bubble type in storage
-                    if (streamingMessageElement) {
-                        // Check if this is a truncated response
-                        const isTruncated = isTruncatedByOrchestration(streamResult.content);
-                        
-                        if (isTruncated) {
-                            streamingMessageElement.dataset.bubbleType = 'truncated';
-                            displayPayload.bubbleType = 'truncated';
-                        }
+                    if (streamingMessageElement && isTruncated) {
+                        streamingMessageElement.dataset.bubbleType = 'truncated';
+                        displayPayload.bubbleType = 'truncated';
                     }
                     
                     const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
