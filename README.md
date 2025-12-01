@@ -51,6 +51,7 @@
 - [🌊 SSE Streaming Support](#sse-streaming-support)
 - [📝 MCP JSON-RPC 2.0 Endpoint](#mcp-json-rpc-20-endpoint)
 - [🔑 Assistant API Credentials](#assistant-api-credentials)
+- [🎫 Token Management UI](#token-management-ui)
 
 ### Assistant Management
 - [🛠 Assistant Editor Overview](#assistant-editor-overview)
@@ -1267,6 +1268,66 @@ For comprehensive setup guides, troubleshooting, and advanced configurations, se
 - **[MCP Server Authentication](docs/mcp-server-authentication.md)** – Authentication methods and credential management
 - **[REST API Reference](docs/rest-api.md)** – Endpoint documentation and payload examples
 - **[Example Configurations](assets/examples/)** – Ready-to-use config files for all major MCP clients
+
+---
+
+## 🎫 Token Management UI
+
+**WP oOS 1.0.0 introduces a centralized Token Manager** for managing all external agent access tokens across your assistants. Access it via **WP oOS → Token Manager** in the admin menu.
+
+### Features
+
+- **Centralized Control** - Manage all assistant credentials in one place
+- **Security Best Practice** - Tokens shown only once after creation (cannot be retrieved later)
+- **Lifecycle Management** - Create, view, revoke, and delete credentials
+- **Audit Trail** - Track who created/revoked each token and when
+- **Metadata Display** - See creation date, status (active/revoked), associated assistant  
+- **Bulk Visibility** - View credentials across all assistants at a glance
+
+### How It Works
+
+The Token Manager follows industry standards similar to GitHub Personal Access Tokens, Stripe API keys, and Auth0 credentials:
+
+1. **Create Token** - Generate new credentials from the assistant editor
+2. **Copy Immediately** - Token shown once and cannot be retrieved later
+3. **Use in MCP Clients** - Configure external applications (Codex CLI, MCP clients, custom integrations)
+4. **Revoke When Needed** - Disable compromised tokens without deleting audit history
+5. **Delete When Done** - Permanently remove tokens and all metadata
+
+### Security Notes
+
+- Tokens are hashed before storage (only hash stored, never plaintext)
+- Requires `manage_options` capability
+- All actions logged with user attribution
+- Revoked tokens cannot be reactivated (must create new)
+- HTTPS strongly recommended for token transmission
+
+### Usage Example
+
+```bash
+# In assistant editor: Create credential → Copy token immediately
+# Token format: cred_[YOUR_PREFIX].[YOUR_SECRET_KEY_HERE]
+# Example format only - never share real tokens!
+
+# Configure MCP client (e.g., Codex CLI)
+export WPOOS_BEARER_TOKEN="your_token_here"
+codex chat --assistant 123 "Hello world"
+
+# Later: Revoke from Token Manager UI if compromised
+# Or: Delete entirely when integration removed
+```
+
+⚠️ **Security Warning:** The examples above use placeholder tokens. Never share real tokens publicly or commit them to version control.
+
+### Access Requirements
+
+- **Capability:** `manage_options` (administrators only)
+- **Menu Location:** WP oOS → Token Manager
+- **REST API:** `/wp-json/mcp-ai/v1/token-manager/*`
+
+For complete documentation, see [Token Management Guide](docs/token-management.md).
+
+---
 
 ## 🤖 ChatGPT Connector
 OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because WP oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】

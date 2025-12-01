@@ -2,7 +2,27 @@
 
 Based on the comprehensive code review, here are actionable improvements organized by priority and category.
 
-## ✅ Completed
+**Last Updated:** December 1, 2025
+
+## ✅ Recently Completed (December 2025)
+
+### Major Achievements
+- [x] **CodeSniffer Systematic Cleanup** - 64.4% reduction (2,838 of 4,410 issues fixed)
+  - Phase 1: Auto-fix with PHPCBF - 2,516 issues
+  - Phase 2: Critical fixes and exclusions - 250 issues
+  - Phase 3: Test helpers and inline comments - 72 issues
+- [x] **Token Management UI** - Centralized credential management system added
+- [x] **Pro Addon Tools Integration** - Fixed visibility and dependency issues
+- [x] **New Pro Tools** - Added Product Actualization and Lookup Product Price
+- [x] **Enhanced scrape_product** - Added Schema.org extraction support
+
+### December Bug Fixes
+- [x] Pro addon tools visibility fix (PR #1879, #1878, #1875)
+- [x] OpenAI file cleanup 404 handling (PR #1870)
+- [x] edit_gemini_image format field fix (PR #1865)
+- [x] wp_mcp_ai_core_loaded() function addition
+
+## ✅ Completed (Pre-December 2025)
 
 ### Code Standards & Formatting
 - [x] Auto-format 20,000+ coding standard violations using PHPCBF
@@ -100,6 +120,13 @@ Based on the comprehensive code review, here are actionable improvements organiz
   - Create helper traits for common patterns
 
 ## 📋 Medium-term Priority (Complete in Month 2)
+
+### Documentation (New Priority)
+- [x] **Document December 2025 Changes** - Created comprehensive RECENT_CHANGES_DEC_2025.md
+- [x] **Update Tool Reference** - Added new Pro addon tools
+- [x] **Token Management Documentation** - Full guide in README and dedicated section
+- [ ] **Update DOCUMENTATION_INDEX.md** - Reflect new documentation files
+- [ ] **Architecture Documentation** - Document core/pro split and build process
 
 ### Architecture Improvements
 - [ ] **Implement repository pattern** (12-16 hours)
