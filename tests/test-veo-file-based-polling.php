@@ -68,8 +68,9 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		$this->assertIsArray( $metadata );
 		$this->assertArrayHasKey( 'expected_filename', $metadata );
 
-		// Verify filename format: veo-video-{job_id}.mp4
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		// Verify filename format: veo-video-{sanitized_job_id}.mp4
+		// Note: sanitize_file_name() is used for consistency with save_video_to_media().
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 		$this->assertEquals( $expected_filename, $metadata['expected_filename'] );
 	}
 
@@ -103,8 +104,8 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 		$file_path     = get_attached_file( $attachment_id );
 		$filename      = basename( $file_path );
 
-		// Verify filename uses job_id format.
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		// Verify filename uses job_id format with sanitization.
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 		$this->assertEquals( $expected_filename, $filename );
 
 		// Verify job_id is stored in metadata.
@@ -121,7 +122,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 	public function test_check_for_created_video_file_detects_existing_video() {
 		// First, create a video attachment with a specific filename.
 		$job_id            = 'veo_test_456';
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		// Create a temporary video file.
 		$upload_dir = wp_upload_dir();
@@ -173,7 +174,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 	 */
 	public function test_check_for_created_video_file_returns_false_when_not_found() {
 		$job_id            = 'veo_nonexistent_789';
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		$reflection = new ReflectionClass( $this->service );
 		$method     = $reflection->getMethod( 'check_for_created_video_file' );
@@ -195,7 +196,7 @@ class Test_Veo_File_Based_Polling extends WP_UnitTestCase {
 	public function test_poll_video_async_uses_file_based_detection() {
 		// Create a mock transient with job metadata.
 		$job_id            = 'veo_test_poll_123';
-		$expected_filename = 'veo-video-' . $job_id . '.mp4';
+		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		$metadata = array(
 			'job_id'            => $job_id,
