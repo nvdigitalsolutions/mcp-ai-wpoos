@@ -45,7 +45,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	}
 
 	$settings = WP_MCP_AI_Admin_Settings::get_settings();
-	$api_key  = isset( $settings['wp_mcp_ai_removebg_api_key'] ) ? $settings['wp_mcp_ai_removebg_api_key'] : '';
+	$api_key  = isset( $settings['removebg_api_key'] ) ? $settings['removebg_api_key'] : '';
 
 	if ( empty( $api_key ) ) {
 		return new WP_Error(

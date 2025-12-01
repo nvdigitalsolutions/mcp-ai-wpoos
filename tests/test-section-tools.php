@@ -466,4 +466,38 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'selected', $output, 'Selected category should be marked' );
 		$this->assertStringContainsString( 'Clear', $output, 'Clear button should be visible when filter is active' );
 	}
+
+	/**
+	 * Test that remove.bg API key field is in external_tools subtab.
+	 */
+	public function test_removebg_api_key_field_in_external_tools_subtab() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
+		$method->setAccessible( true );
+
+		$subtabs = $method->invoke( $section );
+
+		$this->assertArrayHasKey( 'external_tools', $subtabs, 'external_tools subtab should exist' );
+		$this->assertContains( 'removebg_api_key', $subtabs['external_tools']['fields'], 'removebg_api_key should be in external_tools fields' );
+	}
+
+	/**
+	 * Test that remove.bg API key field is defined.
+	 */
+	public function test_removebg_api_key_field_exists() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+		$fields  = $section->get_fields();
+
+		$this->assertArrayHasKey( 'removebg_api_key', $fields, 'removebg_api_key field should exist' );
+
+		// Verify field type.
+		$this->assertEquals( 'password', $fields['removebg_api_key']['type'], 'removebg_api_key should be password field' );
+
+		// Verify labels.
+		$this->assertStringContainsString( 'remove.bg API Key', $fields['removebg_api_key']['label'] );
+		$this->assertStringContainsString( 'remove.bg', $fields['removebg_api_key']['description'] );
+	}
 }

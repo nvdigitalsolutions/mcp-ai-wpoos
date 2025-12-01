@@ -194,6 +194,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder' => '{"type": "service_account", ...}',
 				),
 
+				// remove.bg API.
+				'removebg_api_key'                        => array(
+					'type'         => 'password',
+					'label'        => __( 'remove.bg API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to remove.bg API */
+						__( 'API key for remove.bg background removal service. Get your API key from %s. Note: A free tier with Python rembg is also available without an API key.', 'wp-mcp-ai' ),
+						'<a href="https://www.remove.bg/api" target="_blank">remove.bg API</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
 				// GitHub Integration fields.
 				'github_client_id'                        => array(
 					'type'         => 'text',
@@ -425,6 +438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'quickbooks_client_secret',
 						'google_analytics_property_id',
 						'google_analytics_credentials',
+						'removebg_api_key',
 						'github_client_id',
 						'github_client_secret',
 					),
