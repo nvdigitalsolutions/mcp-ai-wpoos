@@ -190,6 +190,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return WP_MCP_AI_Tool_Interface|null
 		 */
 		public function get_tool( $slug ) {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
 			$slug = sanitize_key( $slug );
 
 			return isset( $this->tools[ $slug ] ) ? $this->tools[ $slug ] : null;
@@ -201,6 +204,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return WP_MCP_AI_Tool_Interface[]
 		 */
 		public function get_tools() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
 			return array_values( $this->tools );
 		}
 
@@ -238,6 +244,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				 * @return bool Whether the tool is registered.
 				 */
 		public function is_tool_registered( $slug ) {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
 			$slug = sanitize_key( $slug );
 			return isset( $this->tools[ $slug ] );
 		}
@@ -307,6 +316,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<string, array<string>> Map of tool slugs to capability flag arrays.
 		 */
 		public function get_all_tool_capability_flags() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
 			$flags_map = array();
 
 			foreach ( $this->tools as $slug => $tool ) {
@@ -329,6 +341,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<WP_MCP_AI_Tool_Interface> Array of tool instances that have the flag.
 		 */
 		public function get_tools_by_capability_flag( $flag ) {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
 			$matching_tools = array();
 
 			foreach ( $this->tools as $slug => $tool ) {
@@ -347,6 +362,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<string, string>
 		 */
 		public function get_tool_group_map() {
+			// Ensure registry is initialized so that filters are applied (including pro tools).
+			$this->init();
+
 			$default_map = array(
 				// WordPress Core - Tools that work with base WordPress, no external dependencies.
 				'submit_document_prompt'          => 'wordpress-core',
@@ -485,6 +503,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<string, string>
 		 */
 		public function get_tool_group_labels() {
+			// Ensure registry is initialized so that filters are applied.
+			$this->init();
+
 			$default_labels = array(
 				'wordpress-core'    => __( 'WordPress Core', 'wp-mcp-ai' ),
 				'wordpress-plugins' => __( 'WordPress Plugins', 'wp-mcp-ai' ),
