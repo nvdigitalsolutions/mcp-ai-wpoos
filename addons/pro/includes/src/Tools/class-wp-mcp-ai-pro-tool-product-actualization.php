@@ -294,6 +294,22 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 				wp_delete_file( $background_path );
 			}
 
+			// Step 6: Save final asset to Media Library (image mode only).
+			$attachment_id = $this->import_composited_asset( $composited_path, $mode, $arguments, $user_id, $context );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				// Clean up.
+				if ( file_exists( $composited_path ) ) {
+					wp_delete_file( $composited_path );
+				}
+				return $attachment_id;
+			}
+
+			// Clean up composited file (now in Media Library).
+			if ( file_exists( $composited_path ) ) {
+				wp_delete_file( $composited_path );
+			}
+
 		} else {
 			// Video mode - use VEO for video generation with composited image as reference.
 			// First, create the composited image.
@@ -371,22 +387,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 			$attachment_id = $video_result['attachment_id'];
 		}
 
-		// Step 6: Save final asset to Media Library.
-		$attachment_id = $this->import_composited_asset( $composited_path, $mode, $arguments, $user_id, $context );
-
-		if ( is_wp_error( $attachment_id ) ) {
-			// Clean up.
-			if ( file_exists( $composited_path ) ) {
-				wp_delete_file( $composited_path );
-			}
-			return $attachment_id;
-		}
-
-		// Clean up composited file (now in Media Library).
-		if ( file_exists( $composited_path ) ) {
-			wp_delete_file( $composited_path );
-		}
-
+		// Get final URL.
 		$url = wp_get_attachment_url( $attachment_id );
 
 		return array(
