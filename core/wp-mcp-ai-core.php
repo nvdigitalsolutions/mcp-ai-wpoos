@@ -175,11 +175,8 @@ require_once WP_MCP_AI_CORE_PATH . 'includes/src/Server/class-wp-mcp-ai-core-ser
  * ============================================================================
  */
 
-// Load baseline tools.
-require_once WP_MCP_AI_CORE_PATH . 'includes/src/Tools/class-wp-mcp-ai-core-tool-posts.php';
-require_once WP_MCP_AI_CORE_PATH . 'includes/src/Tools/class-wp-mcp-ai-core-tool-media.php';
-require_once WP_MCP_AI_CORE_PATH . 'includes/src/Tools/class-wp-mcp-ai-core-tool-users.php';
-require_once WP_MCP_AI_CORE_PATH . 'includes/src/Tools/class-wp-mcp-ai-core-tool-taxonomies.php';
+// Tools are now loaded on-demand by the server's init() method.
+// This improves performance and ensures proper initialization order.
 
 /**
  * ============================================================================
@@ -194,29 +191,14 @@ if ( ! function_exists( 'wp_mcp_ai_core_init' ) ) {
 	 * Bootstraps the MCP server, registers baseline tools, and fires the
 	 * action hook for add-ons to register their tools.
 	 *
+	 * This function now delegates to the server's init() method to support
+	 * lazy initialization. The server will load tools and fire hooks on first access.
+	 *
 	 * @since 1.0.0
 	 */
 	function wp_mcp_ai_core_init() {
 		$server = WP_MCP_AI_Core_Server::get_instance();
 		$server->init();
-
-		// Register baseline tools.
-		$server->register_tool( new WP_MCP_AI_Core_Tool_Posts() );
-		$server->register_tool( new WP_MCP_AI_Core_Tool_Media() );
-		$server->register_tool( new WP_MCP_AI_Core_Tool_Users() );
-		$server->register_tool( new WP_MCP_AI_Core_Tool_Taxonomies() );
-
-		/**
-		 * Allow add-ons and third-party plugins to register tools.
-		 *
-		 * This action is the primary extension point for the MCP Core plugin.
-		 * Add-ons should hook into this action to register their tools.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param WP_MCP_AI_Core_Server $server The MCP server instance.
-		 */
-		do_action( 'wp_mcp_ai_register_tools', $server );
 
 		/**
 		 * Fires after WP MCP AI Core has completed initialization.

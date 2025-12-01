@@ -323,13 +323,17 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
 	 * Check if base version mode is enabled.
 	 *
-	 * Base version is enabled by default. To disable it and use the full version,
-	 * add this to wp-config.php: define( 'WP_MCP_AI_BASE_VERSION', false );
+	 * Full version is enabled by default, providing all 105+ tools.
+	 * To enable base version mode (only core 74 tools), add this to wp-config.php:
+	 * define( 'WP_MCP_AI_BASE_VERSION', true );
+	 *
+	 * Base version mode excludes tools requiring third-party plugins
+	 * (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
 	 *
 	 * @return bool Whether base version mode is active.
 	 */
 	function wp_mcp_ai_is_base_version() {
-		return ! defined( 'WP_MCP_AI_BASE_VERSION' ) || WP_MCP_AI_BASE_VERSION;
+		return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
 	}
 }
 
