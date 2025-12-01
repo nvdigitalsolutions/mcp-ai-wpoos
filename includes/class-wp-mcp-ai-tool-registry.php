@@ -244,7 +244,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				 * @return bool Whether the tool is registered.
 				 */
 		public function is_tool_registered( $slug ) {
-			// Ensure registry is initialized before checking registration.
+			// Ensure registry is initialized before retrieving tools.
 			$this->init();
 
 			$slug = sanitize_key( $slug );
@@ -316,7 +316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<string, array<string>> Map of tool slugs to capability flag arrays.
 		 */
 		public function get_all_tool_capability_flags() {
-			// Ensure registry is initialized before iterating tools.
+			// Ensure registry is initialized before retrieving tools.
 			$this->init();
 
 			$flags_map = array();
@@ -341,7 +341,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array<WP_MCP_AI_Tool_Interface> Array of tool instances that have the flag.
 		 */
 		public function get_tools_by_capability_flag( $flag ) {
-			// Ensure registry is initialized before iterating tools.
+			// Ensure registry is initialized before retrieving tools.
 			$this->init();
 
 			$matching_tools = array();
