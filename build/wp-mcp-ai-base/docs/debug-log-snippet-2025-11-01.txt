@@ -1,2 +1,0 @@
-Simulated cache purge warning captured during debugging session:
-[01-Nov-2025 16:55:21 UTC] PHP Warning:  Simulated cache purge failure in Command line code on line 1

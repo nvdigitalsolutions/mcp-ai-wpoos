@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "wordpress": {
-      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
-      "apiKey": "cred_xxxxx.SECRET",
-      "transport": "stdio"
-    }
-  }
-}
