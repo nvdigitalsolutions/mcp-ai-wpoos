@@ -9,6 +9,17 @@
  * @package WP_MCP_AI_Core
  */
 
+// Load Core interfaces early so mock class can implement them.
+if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Interface' ) ) {
+	require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
+}
+if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Capability_Flags_Interface' ) ) {
+	require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
+}
+if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Rules_Interface' ) ) {
+	require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
+}
+
 /**
  * Mock pro tool for testing dynamic registration in separated plugin architecture.
  */
@@ -65,16 +76,7 @@ class WP_MCP_AI_Core_Server_Lazy_Init_Tests extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Load Core interfaces and classes.
-		if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Interface' ) ) {
-			require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool.php';
-		}
-		if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Capability_Flags_Interface' ) ) {
-			require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-capability-flags.php';
-		}
-		if ( ! interface_exists( 'WP_MCP_AI_Core_Tool_Rules_Interface' ) ) {
-			require_once WP_MCP_AI_PATH . 'core/includes/src/Interfaces/interface-wp-mcp-ai-core-tool-rules.php';
-		}
+		// Load Core server class.
 		if ( ! class_exists( 'WP_MCP_AI_Core_Server' ) ) {
 			require_once WP_MCP_AI_PATH . 'core/includes/src/Server/class-wp-mcp-ai-core-server.php';
 		}
