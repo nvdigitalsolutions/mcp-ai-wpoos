@@ -618,11 +618,95 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Core_Tool_Int
 	 * @return string|WP_Error Text content or error.
 	 */
 	protected function extract_text_from_document( $file_path, $context ) {
-		// For now, return a placeholder.
-		// In production, this would use Crawl4AI's file processing or a PDF parser.
+		// Validate file exists and is readable.
+		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_file_not_readable',
+				__( 'Document file is not readable.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Get file type.
+		$file_type = wp_check_filetype( $file_path );
+		$mime_type = isset( $file_type['type'] ) ? $file_type['type'] : '';
+
+		// Check if it's a supported document type.
+		$supported_types = array(
+			'application/pdf',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+			'application/msword', // .doc
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+			'application/vnd.ms-excel', // .xls
+			'text/plain',
+			'text/csv',
+		);
+
+		if ( ! in_array( $mime_type, $supported_types, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_unsupported_file_type',
+				sprintf(
+					/* translators: %s: mime type */
+					__( 'Unsupported document type: %s. Supported types: PDF, Word, Excel, TXT, CSV.', 'wp-mcp-ai-pro' ),
+					$mime_type
+				)
+			);
+		}
+
+		// For text files, read directly.
+		if ( 'text/plain' === $mime_type || 'text/csv' === $mime_type ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for document processing.
+			$content = file_get_contents( $file_path );
+			if ( false === $content ) {
+				return new WP_Error(
+					'wp_mcp_ai_read_failed',
+					__( 'Failed to read document file.', 'wp-mcp-ai-pro' )
+				);
+			}
+			return $content;
+		}
+
+		// For binary documents (PDF, Word, Excel), use submit_document_prompt tool.
+		// This leverages the LLM's native document processing capabilities.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Submit_Document_Prompt' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_tool',
+				__( 'Document processing tool is not available. Text extraction requires submit_document_prompt tool.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Get attachment ID from file path.
+		$attachment_id = $this->get_attachment_id_from_path( $file_path );
+		if ( ! $attachment_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_attachment_id',
+				__( 'Could not determine attachment ID from file path.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Use submit_document_prompt to extract text.
+		$doc_tool = new WP_MCP_AI_Tool_Submit_Document_Prompt();
+		$doc_args = array(
+			'attachment_id' => $attachment_id,
+			'prompt'        => 'Extract all text content from this document. Return only the raw text without any formatting or commentary.',
+		);
+
+		$doc_result = $doc_tool->execute( $doc_args, $context );
+		if ( is_wp_error( $doc_result ) ) {
+			return $doc_result;
+		}
+
+		// Extract text from response.
+		if ( isset( $doc_result['text'] ) ) {
+			return $doc_result['text'];
+		} elseif ( isset( $doc_result['content'] ) ) {
+			return $doc_result['content'];
+		} elseif ( isset( $doc_result['response'] ) ) {
+			return $doc_result['response'];
+		}
+
 		return new WP_Error(
-			'wp_mcp_ai_not_implemented',
-			__( 'Document processing is not yet implemented. Please use image or URL input.', 'wp-mcp-ai-pro' )
+			'wp_mcp_ai_no_text_extracted',
+			__( 'No text content could be extracted from the document.', 'wp-mcp-ai-pro' )
 		);
 	}
 
@@ -634,9 +718,119 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Core_Tool_Int
 	 * @return array|WP_Error Array of line items or error.
 	 */
 	protected function extract_line_items_from_text( $text, $context ) {
-		// Placeholder for LLM-based extraction.
-		// Would use the current assistant's LLM to parse invoice/quote line items.
-		return array();
+		if ( empty( $text ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_text',
+				__( 'No text content provided for line item extraction.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Use submit_document_prompt tool to analyze text with LLM.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Submit_Document_Prompt' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_tool',
+				__( 'Line item extraction requires submit_document_prompt tool.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Create a temporary text file with the content.
+		$temp_file = $this->create_temp_text_file( $text );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
+
+		// Upload as attachment temporarily.
+		$attachment_id = $this->create_temp_attachment( $temp_file, 'document-extract.txt' );
+		if ( is_wp_error( $attachment_id ) ) {
+			// Clean up temp file.
+			wp_delete_file( $temp_file );
+			return $attachment_id;
+		}
+
+		// Prepare extraction prompt.
+		$extraction_prompt = 'Analyze this document and extract all product line items. For each line item, provide:
+- description: product name or description
+- brand: brand name (if mentioned)
+- model: model number or SKU (if mentioned)
+- quantity: quantity ordered (if mentioned)
+- unit_price: price per unit (if mentioned)
+- gtin: GTIN, UPC, or EAN code (if mentioned)
+
+Return ONLY a JSON array of objects, with each object representing one line item. Example format:
+[
+  {
+    "description": "Apple AirPods Pro",
+    "brand": "Apple",
+    "model": "A2931",
+    "quantity": 2,
+    "unit_price": 199.99,
+    "gtin": "194253482175"
+  }
+]
+
+If no line items are found, return an empty array [].';
+
+		$doc_tool = new WP_MCP_AI_Tool_Submit_Document_Prompt();
+		$doc_args = array(
+			'attachment_id' => $attachment_id,
+			'prompt'        => $extraction_prompt,
+		);
+
+		$doc_result = $doc_tool->execute( $doc_args, $context );
+
+		// Clean up temporary attachment.
+		wp_delete_attachment( $attachment_id, true );
+		wp_delete_file( $temp_file );
+
+		if ( is_wp_error( $doc_result ) ) {
+			return $doc_result;
+		}
+
+		// Parse the response to extract JSON.
+		$response_text = '';
+		if ( isset( $doc_result['text'] ) ) {
+			$response_text = $doc_result['text'];
+		} elseif ( isset( $doc_result['content'] ) ) {
+			$response_text = $doc_result['content'];
+		} elseif ( isset( $doc_result['response'] ) ) {
+			$response_text = $doc_result['response'];
+		}
+
+		if ( empty( $response_text ) ) {
+			return array(); // No line items found.
+		}
+
+		// Try to parse JSON from response.
+		$line_items = $this->parse_json_from_text( $response_text );
+		if ( is_wp_error( $line_items ) ) {
+			return $line_items;
+		}
+
+		// Validate and sanitize line items.
+		$validated_items = array();
+		foreach ( $line_items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			// Require at least a description.
+			if ( empty( $item['description'] ) ) {
+				continue;
+			}
+
+			$validated_item = array(
+				'description' => sanitize_text_field( $item['description'] ),
+				'brand'       => isset( $item['brand'] ) ? sanitize_text_field( $item['brand'] ) : '',
+				'model'       => isset( $item['model'] ) ? sanitize_text_field( $item['model'] ) : '',
+				'quantity'    => isset( $item['quantity'] ) ? absint( $item['quantity'] ) : 1,
+				'unit_price'  => isset( $item['unit_price'] ) ? floatval( $item['unit_price'] ) : 0,
+				'gtin'        => isset( $item['gtin'] ) ? sanitize_text_field( $item['gtin'] ) : '',
+			);
+
+			$validated_items[] = $validated_item;
+		}
+
+		return $validated_items;
 	}
 
 	/**
@@ -968,6 +1162,157 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Core_Tool_Int
 			return preg_replace( '/^www\./i', '', $parts['host'] );
 		}
 		return 'unknown';
+	}
+
+	/**
+	 * Get attachment ID from file path.
+	 *
+	 * @param string $file_path File path.
+	 * @return int|false Attachment ID or false.
+	 */
+	protected function get_attachment_id_from_path( $file_path ) {
+		global $wpdb;
+
+		// Normalize path.
+		$file_path = wp_normalize_path( $file_path );
+
+		// Query for attachment by file path.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for file path lookup.
+		$attachment_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value = %s LIMIT 1",
+				basename( $file_path )
+			)
+		);
+
+		if ( $attachment_id ) {
+			return absint( $attachment_id );
+		}
+
+		// Try with full path relative to uploads directory.
+		$upload_dir = wp_upload_dir();
+		$base_dir   = wp_normalize_path( $upload_dir['basedir'] );
+		if ( 0 === strpos( $file_path, $base_dir ) ) {
+			$relative_path = str_replace( trailingslashit( $base_dir ), '', $file_path );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Required for file path lookup.
+			$attachment_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value = %s LIMIT 1",
+					$relative_path
+				)
+			);
+
+			if ( $attachment_id ) {
+				return absint( $attachment_id );
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Create temporary text file.
+	 *
+	 * @param string $content Text content.
+	 * @return string|WP_Error File path or error.
+	 */
+	protected function create_temp_text_file( $content ) {
+		$upload_dir = wp_upload_dir();
+		$temp_dir   = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
+
+		if ( ! file_exists( $temp_dir ) ) {
+			wp_mkdir_p( $temp_dir );
+		}
+
+		$temp_file = trailingslashit( $temp_dir ) . 'extract-' . wp_generate_password( 12, false ) . '.txt';
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for temp file creation.
+		$result = file_put_contents( $temp_file, $content );
+
+		if ( false === $result ) {
+			return new WP_Error(
+				'wp_mcp_ai_temp_file_failed',
+				__( 'Failed to create temporary file for text extraction.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		return $temp_file;
+	}
+
+	/**
+	 * Create temporary attachment from file.
+	 *
+	 * @param string $file_path File path.
+	 * @param string $filename  Filename.
+	 * @return int|WP_Error Attachment ID or error.
+	 */
+	protected function create_temp_attachment( $file_path, $filename ) {
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+		if ( ! function_exists( 'wp_insert_attachment' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/post.php';
+		}
+
+		$filetype = wp_check_filetype( $filename );
+
+		$attachment = array(
+			'post_mime_type' => $filetype['type'],
+			'post_title'     => sanitize_file_name( $filename ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		$attachment_id = wp_insert_attachment( $attachment, $file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			return $attachment_id;
+		}
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Parse JSON from text response.
+	 *
+	 * @param string $text Text containing JSON.
+	 * @return array|WP_Error Parsed array or error.
+	 */
+	protected function parse_json_from_text( $text ) {
+		// Try to find JSON array in the text.
+		// Look for array pattern: [...].
+		if ( preg_match( '/\[\s*\{.*\}\s*\]/s', $text, $matches ) ) {
+			$json_text = $matches[0];
+		} elseif ( preg_match( '/\[\s*\]/s', $text, $matches ) ) {
+			// Empty array.
+			return array();
+		} else {
+			// Try the whole text.
+			$json_text = trim( $text );
+		}
+
+		// Decode JSON.
+		$decoded = json_decode( $json_text, true );
+
+		if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
+			return new WP_Error(
+				'wp_mcp_ai_json_parse_failed',
+				sprintf(
+					/* translators: %s: JSON error message */
+					__( 'Failed to parse JSON from LLM response: %s', 'wp-mcp-ai-pro' ),
+					json_last_error_msg()
+				)
+			);
+		}
+
+		if ( ! is_array( $decoded ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_json',
+				__( 'LLM response did not contain a valid JSON array.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		return $decoded;
 	}
 
 	/**

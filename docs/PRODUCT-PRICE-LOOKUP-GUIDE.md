@@ -48,7 +48,7 @@ The tool orchestrates multiple data sources and extraction methods to provide co
 ### 1. Multi-Source Input Support
 
 - **Image Recognition**: Upload product photos for Visual AI identification
-- **Document Processing**: Extract line items from invoices/quotes (future)
+- **Document Processing**: Extract line items from invoices/quotes (PDF, Word, Excel, TXT, CSV)
 - **URL Crawling**: Single or batch URL price comparison
 - **Automatic Fallbacks**: Graceful degradation when primary methods unavailable
 
@@ -203,6 +203,30 @@ Find the best price for these items:
 3. https://www.target.com/p/C
 ```
 
+### Example: Document Processing (Invoice/Quote)
+
+```
+Please upload your invoice/quote document and I'll check current market prices for all items.
+```
+
+Then the assistant calls:
+```
+lookup_product_price with document_attachment_id from the uploaded document
+```
+
+**Supported document formats:**
+- PDF (.pdf)
+- Microsoft Word (.docx, .doc)
+- Microsoft Excel (.xlsx, .xls)
+- Plain text (.txt)
+- CSV (.csv)
+
+**How it works:**
+1. Document text is extracted using LLM-based document processing
+2. LLM analyzes text to extract line items with product details
+3. For each line item, current prices are looked up across retailers
+4. Results show original quoted price vs. current market prices
+
 ## Integration with Enhanced scrape_product
 
 The core `scrape_product` tool has been enhanced to support price lookup functionality:
@@ -259,6 +283,12 @@ $result = $assistant->call_tool( 'scrape_product', [
 2. **Google Cloud Vision API** (Optional)
    - Required for image-based product identification
    - Configure credentials in Settings → WP oOS → Vision API
+
+3. **LLM Configuration** (Required for Document Processing)
+   - Document text extraction uses the `submit_document_prompt` tool
+   - Requires an active LLM provider (OpenAI, Google Gemini, etc.)
+   - Line item extraction uses LLM to parse invoice/quote structure
+   - Ensure your LLM supports document processing (PDF, Word, Excel)
 
 ### Optional Settings
 
@@ -387,6 +417,27 @@ add_filter( 'wp_mcp_ai_pro_price_cache_ttl', function( $ttl ) {
 3. Enable caching
 4. Consider async execution for batches
 
+### Document processing errors
+
+1. **"Unsupported document type"**
+   - Verify file is PDF, Word, Excel, TXT, or CSV
+   - Check MIME type is correct
+
+2. **"No text content could be extracted"**
+   - Ensure LLM provider supports document processing
+   - Try converting to plain text first
+   - Check if PDF is image-based (requires OCR)
+
+3. **"Failed to parse JSON from LLM response"**
+   - LLM may not have returned structured data
+   - Try again with simpler document
+   - Check document has clear line item structure
+
+4. **No line items found**
+   - Document may not contain product listings
+   - Format may be non-standard
+   - Try extracting text first to verify content
+
 ## Best Practices
 
 1. **Use image input for unknown products**: Vision API can identify products you don't know the name of
@@ -395,16 +446,87 @@ add_filter( 'wp_mcp_ai_pro_price_cache_ttl', function( $ttl ) {
 4. **Cache results**: Don't re-query immediately
 5. **Handle errors gracefully**: Provide fallback options to users
 6. **Monitor rate limits**: Track usage to avoid hitting limits
+7. **Document format matters**: For best results, use structured documents (PDFs with clear tables, Excel spreadsheets)
+8. **Verify line items**: Always review LLM-extracted line items for accuracy before querying prices
+
+## Document Processing Details
+
+### Supported File Formats
+
+| Format | Extension | Processing Method | Notes |
+|--------|-----------|-------------------|-------|
+| PDF | .pdf | LLM document parsing | Works best with text-based PDFs |
+| Word | .docx, .doc | LLM document parsing | Supports tables and structured content |
+| Excel | .xlsx, .xls | LLM document parsing | Ideal for line-item lists |
+| Text | .txt | Direct text extraction | Fastest processing |
+| CSV | .csv | Direct text extraction | Good for product lists |
+
+### Line Item Extraction
+
+The tool uses a two-step LLM process:
+
+1. **Text Extraction**: Document is processed to extract all text content
+2. **Structured Parsing**: LLM analyzes text to identify line items with:
+   - Product description
+   - Brand (if mentioned)
+   - Model/SKU (if mentioned)
+   - Quantity (if mentioned)
+   - Unit price (if mentioned)
+   - GTIN/UPC (if mentioned)
+
+**Example extraction from invoice:**
+
+Input document:
+```
+Invoice #12345
+Date: 2025-01-15
+
+Line Items:
+1. Apple AirPods Pro (2nd Gen) - Qty: 2 - $199.99 each
+2. Samsung Galaxy Buds2 Pro - Model SM-R510 - Qty: 1 - $149.99
+3. Sony WH-1000XM5 Headphones - GTIN: 4548736139847 - Qty: 3 - $329.99 each
+```
+
+Extracted line items:
+```json
+[
+  {
+    "description": "Apple AirPods Pro (2nd Gen)",
+    "brand": "Apple",
+    "model": "",
+    "quantity": 2,
+    "unit_price": 199.99,
+    "gtin": ""
+  },
+  {
+    "description": "Samsung Galaxy Buds2 Pro",
+    "brand": "Samsung",
+    "model": "SM-R510",
+    "quantity": 1,
+    "unit_price": 149.99,
+    "gtin": ""
+  },
+  {
+    "description": "Sony WH-1000XM5 Headphones",
+    "brand": "Sony",
+    "model": "WH-1000XM5",
+    "quantity": 3,
+    "unit_price": 329.99,
+    "gtin": "4548736139847"
+  }
+]
+```
 
 ## Future Enhancements
 
 Planned features:
-- Document processing (invoice/quote line item extraction)
 - Price history tracking
 - Price drop alerts
 - Additional retailer integrations
 - Currency conversion API integration
 - Product review/rating aggregation
+- OCR support for image-based PDFs
+- Batch document processing (multiple invoices at once)
 
 ## Related Documentation
 
