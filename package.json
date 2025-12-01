@@ -29,7 +29,7 @@
 		"chart.js": "^4.4.1",
 		"dompurify": "^3.3.0",
 		"ky": "^1.14.0",
-		"marked": "^17.0.0"
+		"marked": "^17.0.1"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.5",
