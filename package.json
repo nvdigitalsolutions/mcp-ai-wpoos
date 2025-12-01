@@ -14,6 +14,7 @@
 		"build:js": "node esbuild.config.js",
 		"build:js:legacy": "npm run minify:js:legacy",
 		"build": "npm run build:css && npm run build:js",
+		"build:zip": "./bin/build-plugin-zip.sh",
 		"minify:css": "cleancss -o assets/css/admin-settings.min.css assets/css/admin-settings.css && cleancss -o assets/css/chat.min.css assets/css/chat.css && cleancss -o assets/css/settings-dashboard.min.css assets/css/settings-dashboard.css && cleancss -o assets/css/user-chats.min.css assets/css/user-chats.css && cleancss -o assets/css/mcp-diagnostic.min.css assets/css/mcp-diagnostic.css",
 		"minify:js:legacy": "uglifyjs assets/js/admin-settings.js -o assets/js/admin-settings.min.js -c -m && uglifyjs assets/js/chat.js -o assets/js/chat.min.js -c -m && uglifyjs assets/js/settings-dashboard.js -o assets/js/settings-dashboard.min.js -c -m && uglifyjs assets/js/user-chats.js -o assets/js/user-chats.min.js -c -m && uglifyjs assets/js/auth0-setup.js -o assets/js/auth0-setup.min.js -c -m && uglifyjs assets/js/mcp-diagnostic.js -o assets/js/mcp-diagnostic.min.js -c -m && uglifyjs assets/js/performance-blocks.js -o assets/js/performance-blocks.min.js -c -m",
 		"watch:css": "npm run minify:css -- --watch",

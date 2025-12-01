@@ -341,6 +341,72 @@ npm run build
 git add assets/css/*.min.css assets/js/*.min.js
 ```
 
+## Plugin ZIP Files
+
+### Where to Find ZIP Files
+
+Plugin ZIP files are created in two ways:
+
+#### 1. GitHub Releases (Recommended for Production)
+
+When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workflow automatically:
+1. Builds production assets
+2. Creates a plugin ZIP file
+3. Uploads it to the GitHub Release page
+
+**To find released ZIP files:**
+1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
+2. Find the version you need
+3. Download `wp-mcp-ai-X.Y.Z.zip` from the release assets
+
+#### 2. GitHub Actions Artifacts (For Testing/Development)
+
+During any release workflow run, ZIP files are also uploaded as artifacts:
+1. Go to the repository's **Actions** tab
+2. Click on a workflow run
+3. Scroll down to **Artifacts** section
+4. Download the `wp-mcp-ai-X.Y.Z` artifact
+
+Artifacts are retained for 30 days after the workflow run.
+
+#### 3. Local Development (Build ZIP Locally)
+
+To create a plugin ZIP file locally for testing:
+
+```bash
+# Build the plugin ZIP
+./bin/build-plugin-zip.sh
+
+# Specify a version
+./bin/build-plugin-zip.sh 1.0.0
+```
+
+The ZIP file will be created in the `build/` directory as `wp-mcp-ai-X.Y.Z.zip`.
+
+**Note:** Local builds require:
+- Node.js and npm (for asset building)
+- Composer (for PHP dependencies)
+- zip command
+
+### Creating a Release
+
+To create a new release with ZIP files:
+
+```bash
+# 1. Ensure all changes are committed
+git add .
+git commit -m "Prepare release v1.0.0"
+git push origin main
+
+# 2. Create and push version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow will automatically build and publish the ZIP file to the release.
+
+See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for complete release instructions.
+
 ## Troubleshooting
 
 ### Build Fails
