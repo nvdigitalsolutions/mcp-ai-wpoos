@@ -144,6 +144,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_JetEngine'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			// Elementor tools.
 			'WP_MCP_AI_Pro_Tool_Elementor'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
+			// Product Actualization tool.
+			'WP_MCP_AI_Pro_Tool_Product_Actualization' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 		);
 
 		/**
