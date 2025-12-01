@@ -214,7 +214,6 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/ma
 == Changelog ==
 
 = 1.0.0 =
-Release Date: December 2025
 
 **Initial Release**
 
@@ -232,7 +231,7 @@ Release Date: December 2025
 
 = Development History =
 
-This plugin has been in active development since October 2024, with over 1,800 pull requests merged. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CHANGELOG.md) for detailed development history.
+This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
 

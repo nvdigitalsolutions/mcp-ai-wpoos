@@ -184,10 +184,30 @@ jobs:
             --exclude '*.zip' \
             --exclude '*.tar.gz'
           
-          # Ensure essential files are included
-          cp README.md build/${PLUGIN_SLUG}/ 2>/dev/null || true
-          cp CHANGELOG.md build/${PLUGIN_SLUG}/ 2>/dev/null || true
-          cp LICENSE build/${PLUGIN_SLUG}/
+          # Include essential documentation files
+          # README.md and CHANGELOG.md are optional but preferred
+          if [ -f "README.md" ]; then
+            cp README.md build/${PLUGIN_SLUG}/
+            echo "✅ README.md included"
+          else
+            echo "⚠️ README.md not found (optional)"
+          fi
+          
+          if [ -f "CHANGELOG.md" ]; then
+            cp CHANGELOG.md build/${PLUGIN_SLUG}/
+            echo "✅ CHANGELOG.md included"
+          else
+            echo "⚠️ CHANGELOG.md not found (optional)"
+          fi
+          
+          # LICENSE is required
+          if [ -f "LICENSE" ]; then
+            cp LICENSE build/${PLUGIN_SLUG}/
+            echo "✅ LICENSE included"
+          else
+            echo "❌ LICENSE file missing - this is required!"
+            exit 1
+          fi
           
           echo "✅ Plugin directory structure created"
 
@@ -253,8 +273,18 @@ jobs:
           VERSION="${{ needs.build.outputs.version }}"
           
           # Extract changelog section for this version from CHANGELOG.md
-          # Handle both "= 1.0.0 =" and "## [1.0.0]" formats
-          NOTES=$(awk "/^(=|##) .*${VERSION}/,/^(=|##) .*[0-9]+\.[0-9]+\.[0-9]+/" CHANGELOG.md | head -n -1 | tail -n +2)
+          # Escape dots in version for regex matching
+          VERSION_ESCAPED=$(echo "$VERSION" | sed 's/\./\\./g')
+          
+          # Handle multiple changelog formats:
+          # - WordPress style: "= 1.0.0 ="
+          # - Keep a Changelog style: "## [1.0.0]" or "## 1.0.0"
+          # Extract from version header to next version header, excluding headers
+          NOTES=$(awk "
+            /^(=|##) *\[?${VERSION_ESCAPED}\]?/ { found=1; next }
+            found && /^(=|##) *\[?[0-9]+\.[0-9]+\.[0-9]+/ { exit }
+            found { print }
+          " CHANGELOG.md | sed '/^$/d' | head -50)
           
           if [ -z "$NOTES" ]; then
             NOTES="Release version ${VERSION}. See CHANGELOG.md for details."
