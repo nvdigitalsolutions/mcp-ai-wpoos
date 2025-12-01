@@ -91,9 +91,11 @@ class WP_MCP_AI_Gemini_Image_Tool_Sanitization_Test extends WP_UnitTestCase {
 			'title'             => 'Edited Image',
 			'model'             => 'gemini-2.5-flash-image',
 			'aspect_ratio'      => '16:9',
+			'format'            => 'png',
 			'edit_instruction'  => 'Remove background',
 			'source_attachment' => 123,
 			'provider'          => 'gemini',
+			'text'              => 'Successfully edited image "Edited Image" (ID: 456). Edit instruction: Remove background',
 			'content'           => array(
 				'encoding'  => 'base64',
 				'data'      => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=',
@@ -112,11 +114,15 @@ class WP_MCP_AI_Gemini_Image_Tool_Sanitization_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'edit_instruction', $sanitized );
 		$this->assertArrayHasKey( 'source_attachment', $sanitized );
 		$this->assertArrayHasKey( 'model', $sanitized );
+		$this->assertArrayHasKey( 'format', $sanitized );
+		$this->assertArrayHasKey( 'text', $sanitized );
 
 		// Verify values.
 		$this->assertSame( 456, $sanitized['attachment_id'] );
 		$this->assertSame( 'Remove background', $sanitized['edit_instruction'] );
 		$this->assertSame( 123, $sanitized['source_attachment'] );
+		$this->assertSame( 'png', $sanitized['format'] );
+		$this->assertStringContainsString( 'Successfully edited', $sanitized['text'] );
 	}
 
 	/**
