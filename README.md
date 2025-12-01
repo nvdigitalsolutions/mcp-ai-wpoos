@@ -1306,15 +1306,18 @@ The Token Manager follows industry standards similar to GitHub Personal Access T
 
 ```bash
 # In assistant editor: Create credential → Copy token immediately
-# Token: cred_abc123def.SECRETKEYNEVERSEENAGAIN
+# Token format: cred_[YOUR_PREFIX].[YOUR_SECRET_KEY_HERE]
+# Example format only - never share real tokens!
 
 # Configure MCP client (e.g., Codex CLI)
-export WPOOS_BEARER_TOKEN="cred_abc123def.SECRETKEYNEVERSEENAGAIN"
+export WPOOS_BEARER_TOKEN="your_token_here"
 codex chat --assistant 123 "Hello world"
 
 # Later: Revoke from Token Manager UI if compromised
 # Or: Delete entirely when integration removed
 ```
+
+⚠️ **Security Warning:** The examples above use placeholder tokens. Never share real tokens publicly or commit them to version control.
 
 ### Access Requirements
 
