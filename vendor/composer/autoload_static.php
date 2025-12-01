@@ -68,6 +68,7 @@ class ComposerStaticInitfe761311332ededa24dcb4d1cccde15e
         'cweagans\\Composer\\' => 
         array (
             0 => __DIR__ . '/..' . '/cweagans/composer-patches/src',
+            1 => __DIR__ . '/..' . '/cweagans/composer-configurable-plugin/src',
         ),
         'Symfony\\Polyfill\\Php83\\' => 
         array (

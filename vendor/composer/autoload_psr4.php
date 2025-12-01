@@ -6,7 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'cweagans\\Composer\\' => array($vendorDir . '/cweagans/composer-patches/src'),
+    'cweagans\\Composer\\' => array($vendorDir . '/cweagans/composer-patches/src', $vendorDir . '/cweagans/composer-configurable-plugin/src'),
     'Symfony\\Polyfill\\Php83\\' => array($vendorDir . '/symfony/polyfill-php83'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
