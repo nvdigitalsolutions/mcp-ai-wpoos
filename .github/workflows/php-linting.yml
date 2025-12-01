@@ -1,0 +1,113 @@
+name: PHP Linting
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  phpcs:
+    name: PHP CodeSniffer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Get changed PHP files
+        id: changed-files
+        if: github.event_name == 'pull_request'
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.php
+          files_ignore: |
+            vendor/**
+            node_modules/**
+            assets/examples/**
+
+      - name: Run PHP CodeSniffer on changed files
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed PHP files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          vendor/bin/phpcs --standard=WordPress ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Run PHP CodeSniffer on all files
+        if: github.event_name == 'push'
+        run: composer run lint
+
+  php-compatibility:
+    name: PHP Compatibility Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Get changed PHP files
+        id: changed-files
+        if: github.event_name == 'pull_request'
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.php
+          files_ignore: |
+            vendor/**
+            node_modules/**
+            assets/examples/**
+
+      - name: Run PHP Compatibility Check on changed files
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed PHP files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Run PHP Compatibility Check on all files
+        if: github.event_name == 'push'
+        run: composer run lint:compat

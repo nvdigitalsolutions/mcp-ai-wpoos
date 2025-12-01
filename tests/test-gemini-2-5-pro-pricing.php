@@ -13,6 +13,7 @@ class Test_Gemini_25_Pro_Pricing extends WP_UnitTestCase {
 	/**
 	 * Test that gemini-2.5-pro has correct pricing.
 	 */
+	// phpcs:ignore PHPCompatibility.FunctionNameRestrictions.ReservedFunctionNames.MethodDoubleUnderscore -- False positive: PHPUnit test method, not a PHP4 constructor.
 	public function test_gemini_25_pro_pricing() {
 		$config = WP_MCP_AI_Model_Config::get_model_config( 'gemini-2.5-pro' );
 

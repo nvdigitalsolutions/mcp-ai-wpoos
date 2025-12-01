@@ -1,5 +1,12 @@
 # WP Open Operator System (WP oOS)
 
+[![PHPUnit](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/phpunit.yml)
+[![JavaScript Tests](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/javascript-tests.yml)
+[![PHP Linting](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/php-linting.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
+[![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
+
 **Version:** 1.0.0 (Beta)  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
