@@ -12,6 +12,9 @@ opcache-reset.php
 *.rar
 composer.phar
 
+# Build output
+/build/
+
 # Ignore all vendor by default
 /vendor/*
 
@@ -53,3 +56,6 @@ test-storage-service.html
 verify-*.php
 /wp-content/
 test-transcript-routes.php
+
+# SVN working copies (for WordPress.org deployment)
+/svn-*/
