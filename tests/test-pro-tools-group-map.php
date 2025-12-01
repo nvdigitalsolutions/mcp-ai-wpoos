@@ -47,9 +47,9 @@ class WP_MCP_AI_Pro_Tools_Group_Map_Test extends WP_UnitTestCase {
 	/**
 	 * Test that all Pro tools are in the group map.
 	 *
-	 * Validates that all 5 Pro tools (product_actualization, woo_products,
-	 * woo_orders, jetengine, elementor) are present in the group map with
-	 * correct group assignments.
+	 * Validates that all 6 Pro tools (product_actualization, lookup_product_price,
+	 * woo_products, woo_orders, jetengine, elementor) are present in the group map
+	 * with correct group assignments.
 	 */
 	public function test_all_pro_tools_in_group_map() {
 		if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
@@ -61,6 +61,7 @@ class WP_MCP_AI_Pro_Tools_Group_Map_Test extends WP_UnitTestCase {
 
 		$expected_tools = array(
 			'product_actualization' => 'external-tools',
+			'lookup_product_price'  => 'external-tools',
 			'woo_products'          => 'wordpress-plugins',
 			'woo_orders'            => 'wordpress-plugins',
 			'jetengine'             => 'wordpress-plugins',

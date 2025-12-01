@@ -328,6 +328,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools = array(
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
 			'product_actualization' => 'external-tools',
+			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
+			'lookup_product_price'  => 'external-tools',
 			// WooCommerce tools - Require WooCommerce plugin.
 			'woo_products'          => 'wordpress-plugins',
 			'woo_orders'            => 'wordpress-plugins',
