@@ -622,9 +622,17 @@ class WP_MCP_AI_AI_Peer_CPT {
 			}
 		} catch ( Throwable $e ) {
 			// Log error but don't block the save process.
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			// Only log the error type, not potentially sensitive details.
-			error_log( sprintf( 'WP_MCP_AI: Failed to sync peer %d to CCT: %s', $post_id, get_class( $e ) ) );
+			WP_MCP_AI_Error_Handler::create_error(
+				'ai_peer_cct_sync_failed',
+				sprintf( 'Failed to sync AI Peer %d to CCT: %s', $post_id, $e->getMessage() ),
+				array(
+					'peer_id'        => $post_id,
+					'exception_type' => get_class( $e ),
+					'file'           => $e->getFile(),
+					'line'           => $e->getLine(),
+				),
+				WP_MCP_AI_Logger::LEVEL_ERROR
+			);
 		} finally {
 			// Always release the lock.
 			delete_transient( $lock_key );
@@ -667,10 +675,26 @@ class WP_MCP_AI_AI_Peer_CPT {
 			return;
 		}
 
-		// Delete the CCT item.
-		$handler->delete_item( absint( $cct_item_id ) );
+		try {
+			// Delete the CCT item.
+			$handler->delete_item( absint( $cct_item_id ) );
 
-		// Remove the meta link.
-		delete_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id' );
+			// Remove the meta link.
+			delete_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id' );
+		} catch ( Throwable $e ) {
+			// Log error but don't block the delete process.
+			WP_MCP_AI_Error_Handler::create_error(
+				'ai_peer_cct_delete_failed',
+				sprintf( 'Failed to delete AI Peer %d CCT item: %s', $post_id, $e->getMessage() ),
+				array(
+					'peer_id'        => $post_id,
+					'cct_item_id'    => $cct_item_id,
+					'exception_type' => get_class( $e ),
+					'file'           => $e->getFile(),
+					'line'           => $e->getLine(),
+				),
+				WP_MCP_AI_Logger::LEVEL_ERROR
+			);
+		}
 	}
 }
