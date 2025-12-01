@@ -246,11 +246,16 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test video mode returns not implemented error.
+	 * Test video mode requires VEO tool.
 	 */
-	public function test_video_mode_not_implemented() {
+	public function test_video_mode_requires_veo_tool() {
 		if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
 			$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+		}
+
+		// Only test if VEO tool is not available.
+		if ( class_exists( 'WP_MCP_AI_Tool_Generate_Veo_Video' ) ) {
+			$this->markTestSkipped( 'VEO tool is available, video mode should work.' );
 		}
 
 		// Create a test image attachment.
@@ -282,7 +287,7 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 		wp_delete_attachment( $attachment_id, true );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_not_implemented', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_dependency', $result->get_error_code() );
 	}
 
 	/**

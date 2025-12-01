@@ -72,7 +72,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Composite a product image into a generated scene or short video while preserving the original product pixels. Best for lifestyle marketing shots, social ads, and product visualization.', 'wp-mcp-ai-pro' );
+		return __( 'Composite a product image into a generated scene or short video while preserving the original product pixels. Image mode creates static composited images. Video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -295,12 +295,80 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 			}
 
 		} else {
-			// Video mode.
-			return new WP_Error(
-				'wp_mcp_ai_not_implemented',
-				__( 'Video mode is not yet implemented. Please use image mode.', 'wp-mcp-ai-pro' ),
-				array( 'status' => 501 )
+			// Video mode - use VEO for video generation with composited image as reference.
+			// First, create the composited image.
+			$background_result = $this->generate_scene_image( $scene_prompt, $aspect_ratio, $context );
+			if ( is_wp_error( $background_result ) ) {
+				// Clean up working file.
+				if ( file_exists( $working_path ) ) {
+					wp_delete_file( $working_path );
+				}
+				return $background_result;
+			}
+
+			$background_path = $background_result['file_path'];
+
+			// Composite product onto image first.
+			$composited_path = $this->composite_product_onto_image(
+				$working_path,
+				$background_path,
+				$placement,
+				$scale_factor
 			);
+
+			if ( is_wp_error( $composited_path ) ) {
+				// Clean up.
+				if ( file_exists( $working_path ) ) {
+					wp_delete_file( $working_path );
+				}
+				if ( file_exists( $background_path ) ) {
+					wp_delete_file( $background_path );
+				}
+				return $composited_path;
+			}
+
+			// Import composited image temporarily to use as VEO reference.
+			$composited_attachment_id = $this->import_composited_asset(
+				$composited_path,
+				'image',
+				$arguments,
+				$user_id,
+				$context
+			);
+
+			// Clean up intermediate files.
+			if ( file_exists( $working_path ) ) {
+				wp_delete_file( $working_path );
+			}
+			if ( file_exists( $background_path ) ) {
+				wp_delete_file( $background_path );
+			}
+			if ( file_exists( $composited_path ) ) {
+				wp_delete_file( $composited_path );
+			}
+
+			if ( is_wp_error( $composited_attachment_id ) ) {
+				return $composited_attachment_id;
+			}
+
+			// Generate video using VEO with the composited image as reference.
+			$video_result = $this->generate_scene_video(
+				$scene_prompt,
+				$duration,
+				$aspect_ratio,
+				$composited_attachment_id,
+				$context
+			);
+
+			// Clean up temporary composited image.
+			wp_delete_attachment( $composited_attachment_id, true );
+
+			if ( is_wp_error( $video_result ) ) {
+				return $video_result;
+			}
+
+			// VEO already saves to Media Library, so we're done.
+			$attachment_id = $video_result['attachment_id'];
 		}
 
 		// Step 6: Save final asset to Media Library.
@@ -525,19 +593,77 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 	/**
 	 * Convert aspect ratio to OpenAI image size.
 	 *
+	 * Note: OpenAI currently supports square (1024x1024) and rectangular (1792x1024, 1024x1792) sizes.
+	 * For 4:5 ratio, we use the closest available size and handle cropping/padding in compositing.
+	 *
 	 * @param string $aspect_ratio Aspect ratio string.
 	 * @return string OpenAI size parameter.
 	 */
 	protected function aspect_ratio_to_size( $aspect_ratio ) {
 		$map = array(
 			'1:1'  => '1024x1024',
-			'4:5'  => '1024x1024', // Closest square.
+			'4:5'  => '1024x1024', // Use square and adjust in compositing (OpenAI doesn't support 4:5).
 			'16:9' => '1792x1024',
 			'9:16' => '1024x1792',
 			'auto' => 'auto',
 		);
 
 		return isset( $map[ $aspect_ratio ] ) ? $map[ $aspect_ratio ] : '1024x1024';
+	}
+
+	/**
+	 * Generate a scene video using VEO.
+	 *
+	 * @param string $prompt                     Scene description.
+	 * @param int    $duration                   Duration in seconds.
+	 * @param string $aspect_ratio               Aspect ratio.
+	 * @param int    $reference_image_attachment_id Reference image attachment ID (composited product scene).
+	 * @param array  $context                    Execution context.
+	 * @return array|WP_Error Array with attachment_id, or error.
+	 */
+	protected function generate_scene_video( $prompt, $duration, $aspect_ratio, $reference_image_attachment_id, $context ) {
+		// Check if VEO video generation tool exists.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Veo_Video' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_dependency',
+				__( 'VEO video generation tool is required but not available.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
+
+		// Build prompt that emphasizes keeping the product static while animating the scene.
+		$video_prompt = sprintf(
+			'%s. The product in the image should remain perfectly still and static while the environment around it is subtly animated (gentle lighting changes, atmospheric effects, slight camera movement). Cinematic, professional, smooth motion.',
+			$prompt
+		);
+
+		$args = array(
+			'prompt'             => $video_prompt,
+			'duration'           => $duration,
+			'aspect_ratio'       => $aspect_ratio,
+			'reference_image_id' => $reference_image_attachment_id,
+			'save_to_media'      => true,
+			'style'              => 'cinematic', // Use cinematic style for professional look.
+		);
+
+		$result = $tool->execute( $args, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! isset( $result['attachment_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_result',
+				__( 'Video generation returned invalid result.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		return array(
+			'attachment_id' => $result['attachment_id'],
+			'url'           => isset( $result['url'] ) ? $result['url'] : '',
+		);
 	}
 
 	/**
@@ -955,10 +1081,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 			'requires-capability',   // Requires upload_files capability.
 			'write',                 // Creates media files.
 			'async',                 // May take significant time.
-			'rate-limited',          // Subject to OpenAI rate limits.
 			'consumes-tokens',       // Uses AI credits/tokens for scene generation.
-			'external-api',          // Makes external API calls.
-			'network-dependent',     // Requires internet for scene generation.
+			'external-api',          // Makes external API calls (implies network-dependent).
 		);
 	}
 
@@ -981,8 +1105,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 	public function get_tool_rules() {
 		return array(
 			'model_requirements'    => array(
-				'providers'    => array( 'openai' ), // Currently uses OpenAI for scene generation.
-				'capabilities' => array( 'image-generation' ),
+				'providers'    => array( 'openai', 'google' ), // OpenAI for images, Google Gemini VEO for videos.
+				'capabilities' => array( 'image-generation' ), // Video generation via VEO when mode=video.
 				'required'     => true,
 			),
 			'parameter_constraints' => array(
@@ -995,14 +1119,16 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Core_Tool_In
 				'concurrent_requests' => 2,
 			),
 			'timeout_constraints'   => array(
-				'recommended_timeout' => 90,
-				'max_execution_time'  => 180,
+				'recommended_timeout' => 90,  // Image mode.
+				'max_execution_time'  => 300, // Video mode can take up to 5 minutes.
 			),
 			'dependencies'          => array(
 				'required_settings'   => array(
-					'api_key' => 'wp_mcp_ai_openai_api_key',
+					'api_key' => 'wp_mcp_ai_openai_api_key', // For image generation.
+					// VEO uses Google API key configured in core settings.
 				),
 				'required_extensions' => array( 'imagick', 'gd' ), // At least one required.
+				'optional_tools'      => array( 'generate_veo_video' ), // Required for video mode.
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,
