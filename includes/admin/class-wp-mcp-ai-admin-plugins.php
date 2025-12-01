@@ -89,10 +89,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 			// Get values with defaults.
-			$enable_jetengine_cct      = isset( $settings['enable_jetengine_cct'] ) ? $settings['enable_jetengine_cct'] : false;
-			$enable_jetengine_tools    = isset( $settings['enable_jetengine_tools'] ) ? $settings['enable_jetengine_tools'] : false;
-			$enable_woocommerce_tools  = isset( $settings['enable_woocommerce_tools'] ) ? $settings['enable_woocommerce_tools'] : false;
-			$enable_elementor_widgets  = isset( $settings['enable_elementor_widgets'] ) ? $settings['enable_elementor_widgets'] : false;
+			$enable_jetengine_cct     = isset( $settings['enable_jetengine_cct'] ) ? $settings['enable_jetengine_cct'] : false;
+			$enable_jetengine_tools   = isset( $settings['enable_jetengine_tools'] ) ? $settings['enable_jetengine_tools'] : false;
+			$enable_woocommerce_tools = isset( $settings['enable_woocommerce_tools'] ) ? $settings['enable_woocommerce_tools'] : false;
+			$enable_elementor_widgets = isset( $settings['enable_elementor_widgets'] ) ? $settings['enable_elementor_widgets'] : false;
 
 			// Check if plugins are active.
 			$jetengine_active   = class_exists( 'Jet_Engine' );

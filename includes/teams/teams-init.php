@@ -21,7 +21,7 @@ add_action(
 	function () {
 		// Initialize CPT.
 		new WP_MCP_AI_Team_CPT();
-		
+
 		// Initialize seeder.
 		WP_MCP_AI_Team_Seeder::init();
 	},

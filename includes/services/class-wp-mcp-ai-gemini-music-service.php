@@ -122,7 +122,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 
 		// Build request payload.
 		$payload = array(
-			'instances' => array(
+			'instances'  => array(
 				array(
 					'prompt'      => $full_prompt,
 					'duration'    => $duration,
@@ -152,8 +152,10 @@ class WP_MCP_AI_Gemini_Music_Service {
 		);
 
 		// Make API request.
-		// Note: This is a simplified implementation. In production, you would use
-		// the Vertex AI endpoint: https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predict
+		// Note: This is a simplified implementation. In production, you would use.
+
+		// the Vertex AI endpoint: https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predict.
+
 		$endpoint = $this->get_music_endpoint( $model );
 		$response = wp_remote_post(
 			$endpoint,
@@ -278,10 +280,10 @@ class WP_MCP_AI_Gemini_Music_Service {
 	protected function extract_audio_from_response( array $response ) {
 		// Note: This is a simplified implementation.
 		// The actual response structure from Google's API should be consulted.
-		
+
 		if ( isset( $response['predictions'] ) && is_array( $response['predictions'] ) ) {
 			$prediction = $response['predictions'][0] ?? array();
-			
+
 			if ( isset( $prediction['audio_content'] ) ) {
 				return array(
 					'audio'       => $prediction['audio_content'],

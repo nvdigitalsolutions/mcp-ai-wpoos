@@ -97,14 +97,14 @@ class WP_MCP_AI_Build_Assistant_Page {
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'wp_mcp_ai_create_assistant' ),
 				'strings'     => array(
-					'creating'           => __( 'Creating assistant...', 'wp-mcp-ai' ),
-					'createAssistant'    => __( 'Create Assistant', 'wp-mcp-ai' ),
-					'success'            => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
-					'error'              => __( 'Error creating assistant. Please try again.', 'wp-mcp-ai' ),
-					'required'           => __( 'This field is required.', 'wp-mcp-ai' ),
-					'maxProfessions'     => __( 'You can select up to 3 professions.', 'wp-mcp-ai' ),
-					'maxRegions'         => __( 'You can select up to 2 regions.', 'wp-mcp-ai' ),
-					'emptyConversation'  => __( 'Please describe what kind of assistant you want to create before clicking Build.', 'wp-mcp-ai' ),
+					'creating'          => __( 'Creating assistant...', 'wp-mcp-ai' ),
+					'createAssistant'   => __( 'Create Assistant', 'wp-mcp-ai' ),
+					'success'           => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
+					'error'             => __( 'Error creating assistant. Please try again.', 'wp-mcp-ai' ),
+					'required'          => __( 'This field is required.', 'wp-mcp-ai' ),
+					'maxProfessions'    => __( 'You can select up to 3 professions.', 'wp-mcp-ai' ),
+					'maxRegions'        => __( 'You can select up to 2 regions.', 'wp-mcp-ai' ),
+					'emptyConversation' => __( 'Please describe what kind of assistant you want to create before clicking Build.', 'wp-mcp-ai' ),
 				),
 				'professions' => $this->get_professions(),
 				'regions'     => $this->get_regions(),
@@ -120,7 +120,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * into a single optimized file, reducing HTTP requests from 9 files to 1 file.
 	 */
 	private function enqueue_chat_assets() {
-		// Enqueue cron status styles (CSS only - JS is bundled)
+		// Enqueue cron status styles (CSS only - JS is bundled).
+
 		wp_enqueue_style(
 			'wp-mcp-ai-cron-status',
 			WP_MCP_AI_URL . 'assets/css/cron-status.css',
@@ -136,7 +137,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 		);
 
 		// Register bundled chat script (includes all services in a single file).
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',

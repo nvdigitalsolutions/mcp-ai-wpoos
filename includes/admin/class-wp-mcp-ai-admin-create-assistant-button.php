@@ -233,10 +233,10 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 				$extracted_title = trim( $matches[1] );
 				// Sanitize the extracted title to ensure it's suitable for a post title.
 				// Remove any remaining special characters, limit length, and sanitize.
-				$extracted_title     = sanitize_text_field( $extracted_title );
-				$extracted_title     = preg_replace( '/[^\w\s\-]/', '', $extracted_title );
-				$extracted_title     = trim( $extracted_title );
-				$config['title']     = mb_substr( $extracted_title, 0, 200 ); // Limit to 200 chars.
+				$extracted_title = sanitize_text_field( $extracted_title );
+				$extracted_title = preg_replace( '/[^\w\s\-]/', '', $extracted_title );
+				$extracted_title = trim( $extracted_title );
+				$config['title'] = mb_substr( $extracted_title, 0, 200 ); // Limit to 200 chars.
 				break;
 			}
 		}

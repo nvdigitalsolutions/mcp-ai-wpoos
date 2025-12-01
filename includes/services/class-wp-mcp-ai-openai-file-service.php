@@ -326,7 +326,7 @@ class WP_MCP_AI_OpenAI_File_Service {
 	 * @param int    $uploaded_at  Upload timestamp.
 	 */
 	private function add_to_tracked_files_list( $cache_key, $file_id, $uploaded_at ) {
-		$tracked_files = get_option( 'wp_mcp_ai_openai_tracked_files', array() );
+		$tracked_files               = get_option( 'wp_mcp_ai_openai_tracked_files', array() );
 		$tracked_files[ $cache_key ] = array(
 			'file_id'     => $file_id,
 			'uploaded_at' => $uploaded_at,

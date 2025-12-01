@@ -212,8 +212,20 @@ class Test_Veo_Async_Sanitization extends WP_UnitTestCase {
 		// Usage and cost should be preserved
 		$this->assertArrayHasKey( 'usage', $sanitized );
 		$this->assertArrayHasKey( 'cost', $sanitized );
-		$this->assertSame( array( 'tokens' => 1000, 'credits' => 5 ), $sanitized['usage'] );
-		$this->assertSame( array( 'amount' => 0.05, 'currency' => 'USD' ), $sanitized['cost'] );
+		$this->assertSame(
+			array(
+				'tokens'  => 1000,
+				'credits' => 5,
+			),
+			$sanitized['usage']
+		);
+		$this->assertSame(
+			array(
+				'amount'   => 0.05,
+				'currency' => 'USD',
+			),
+			$sanitized['cost']
+		);
 	}
 
 	/**

@@ -174,14 +174,14 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Validate required parameters.
-		$product_id    = isset( $arguments['product_attachment_id'] ) ? absint( $arguments['product_attachment_id'] ) : 0;
-		$scene_prompt  = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
-		$mode          = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
-		$aspect_ratio  = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
-		$duration      = isset( $arguments['duration_seconds'] ) ? absint( $arguments['duration_seconds'] ) : 6;
-		$bg_mode       = isset( $arguments['background_mode'] ) ? sanitize_key( $arguments['background_mode'] ) : 'auto';
-		$placement     = isset( $arguments['placement_hint'] ) ? sanitize_text_field( $arguments['placement_hint'] ) : '';
-		$scale_factor  = isset( $arguments['scale_factor'] ) ? floatval( $arguments['scale_factor'] ) : 1.0;
+		$product_id   = isset( $arguments['product_attachment_id'] ) ? absint( $arguments['product_attachment_id'] ) : 0;
+		$scene_prompt = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
+		$mode         = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
+		$aspect_ratio = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
+		$duration     = isset( $arguments['duration_seconds'] ) ? absint( $arguments['duration_seconds'] ) : 6;
+		$bg_mode      = isset( $arguments['background_mode'] ) ? sanitize_key( $arguments['background_mode'] ) : 'auto';
+		$placement    = isset( $arguments['placement_hint'] ) ? sanitize_text_field( $arguments['placement_hint'] ) : '';
+		$scale_factor = isset( $arguments['scale_factor'] ) ? floatval( $arguments['scale_factor'] ) : 1.0;
 
 		if ( ! $product_id ) {
 			return new WP_Error(
@@ -309,7 +309,6 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			if ( file_exists( $composited_path ) ) {
 				wp_delete_file( $composited_path );
 			}
-
 		} else {
 			// Video mode - use VEO for video generation with composited image as reference.
 			// First, create the composited image.
@@ -425,10 +424,10 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			wp_mkdir_p( $temp_dir );
 		}
 
-		$file_info    = pathinfo( $file_path );
-		$extension    = isset( $file_info['extension'] ) ? $file_info['extension'] : 'png';
-		$temp_name    = 'product-' . $attachment_id . '-' . wp_generate_password( 12, false ) . '.' . $extension;
-		$temp_path    = trailingslashit( $temp_dir ) . $temp_name;
+		$file_info = pathinfo( $file_path );
+		$extension = isset( $file_info['extension'] ) ? $file_info['extension'] : 'png';
+		$temp_name = 'product-' . $attachment_id . '-' . wp_generate_password( 12, false ) . '.' . $extension;
+		$temp_path = trailingslashit( $temp_dir ) . $temp_name;
 
 		// Copy file.
 		if ( ! copy( $file_path, $temp_path ) ) {
@@ -721,7 +720,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			$max_height = (int) ( $bg_height * 0.8 );
 
 			if ( $new_prod_width > $max_width || $new_prod_height > $max_height ) {
-				$ratio = min( $max_width / $new_prod_width, $max_height / $new_prod_height );
+				$ratio           = min( $max_width / $new_prod_width, $max_height / $new_prod_height );
 				$new_prod_width  = (int) ( $new_prod_width * $ratio );
 				$new_prod_height = (int) ( $new_prod_height * $ratio );
 			}
@@ -819,7 +818,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$max_height = (int) ( $bg_height * 0.8 );
 
 		if ( $new_prod_width > $max_width || $new_prod_height > $max_height ) {
-			$ratio = min( $max_width / $new_prod_width, $max_height / $new_prod_height );
+			$ratio           = min( $max_width / $new_prod_width, $max_height / $new_prod_height );
 			$new_prod_width  = (int) ( $new_prod_width * $ratio );
 			$new_prod_height = (int) ( $new_prod_height * $ratio );
 		}
@@ -1050,12 +1049,12 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 
 		// Store metadata.
 		$meta = array(
-			'source'                => 'product_actualization',
-			'mode'                  => $mode,
-			'original_product_id'   => $arguments['product_attachment_id'],
-			'scene_prompt'          => sanitize_textarea_field( $arguments['scene_prompt'] ),
-			'aspect_ratio'          => sanitize_text_field( $arguments['aspect_ratio'] ),
-			'background_mode'       => sanitize_key( $arguments['background_mode'] ),
+			'source'              => 'product_actualization',
+			'mode'                => $mode,
+			'original_product_id' => $arguments['product_attachment_id'],
+			'scene_prompt'        => sanitize_textarea_field( $arguments['scene_prompt'] ),
+			'aspect_ratio'        => sanitize_text_field( $arguments['aspect_ratio'] ),
+			'background_mode'     => sanitize_key( $arguments['background_mode'] ),
 		);
 
 		if ( ! empty( $arguments['placement_hint'] ) ) {

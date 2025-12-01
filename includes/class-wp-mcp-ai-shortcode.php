@@ -87,21 +87,23 @@ class WP_MCP_AI_Shortcode {
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
 		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,
+		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+
 		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
-		$script_relative             = 'assets/js/chat-bundle.min.js';
-		$style_relative              = 'assets/css/chat.css';
-		$cron_status_style_relative  = 'assets/css/cron-status.css';
+		$script_relative            = 'assets/js/chat-bundle.min.js';
+		$style_relative             = 'assets/css/chat.css';
+		$cron_status_style_relative = 'assets/css/cron-status.css';
 
-		$script_path             = WP_MCP_AI_URL . $script_relative;
-		$style_path              = WP_MCP_AI_URL . $style_relative;
-		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
+		$script_path            = WP_MCP_AI_URL . $script_relative;
+		$style_path             = WP_MCP_AI_URL . $style_relative;
+		$cron_status_style_path = WP_MCP_AI_URL . $cron_status_style_relative;
 
-		$script_version             = $this->get_asset_version( $script_relative );
-		$style_version              = $this->get_asset_version( $style_relative );
-		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
+		$script_version            = $this->get_asset_version( $script_relative );
+		$style_version             = $this->get_asset_version( $style_relative );
+		$cron_status_style_version = $this->get_asset_version( $cron_status_style_relative );
 
-		// Register cron status styles (still needed for CSS)
+		// Register cron status styles (still needed for CSS).
+
 		wp_register_style(
 			'wp-mcp-ai-cron-status',
 			$cron_status_style_path,
@@ -124,8 +126,10 @@ class WP_MCP_AI_Shortcode {
 			}
 		}
 
-		// Register bundled chat script (includes all services in a single file)
-		// This replaces the previous 8 separate script registrations with 1 bundled file
+		// Register bundled chat script (includes all services in a single file).
+
+		// This replaces the previous 8 separate script registrations with 1 bundled file.
+
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$script_path,
@@ -140,7 +144,7 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		// Get plugin settings for cost display configuration.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
 		// Allow filtering of cost display setting.
@@ -180,7 +184,7 @@ class WP_MCP_AI_Shortcode {
 					'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),
 					'toolTimeout'                   => __( 'Tool timed out before completing.', 'wp-mcp-ai' ),
 					/* translators: %s: tool failure error message */
-				'toolFailed' => __( 'Tool failed: %s', 'wp-mcp-ai' ),
+					'toolFailed'                    => __( 'Tool failed: %s', 'wp-mcp-ai' ),
 					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
 					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
 					/* translators: %s: task name */
@@ -452,7 +456,8 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Render the actual widget in Elementor editor for better preview.
-			// The WP_DEBUG fix in the main plugin class ensures debug output
+			// The WP_DEBUG fix in the main plugin class ensures debug output.
+
 			// won't break the editor when WP_DEBUG is enabled.
 			$is_elementor_editor = $this->is_elementor_editor();
 

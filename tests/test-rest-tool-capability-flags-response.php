@@ -171,7 +171,7 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 	 */
 	public function test_tool_without_capability_flags_returns_empty_array() {
 		// Register a test tool without capability flags.
-		$test_tool = new class implements WP_MCP_AI_Tool_Interface {
+		$test_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			public function get_slug() {
 				return 'test_tool_no_flags';
 			}

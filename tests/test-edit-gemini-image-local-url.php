@@ -272,7 +272,7 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 	/**
 	 * Test that local files from image_url are not marked as temporary.
-	 * 
+	 *
 	 * This prevents data loss when image manipulation tools process local URLs
 	 * without attachment_id - the original file should not be deleted.
 	 */
@@ -291,15 +291,20 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 		try {
 			// Load using image base class (used by rotate, crop, resize tools).
 			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
-			
+
 			// Create a test subclass to access protected method.
-			$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
-				public function get_slug() { return 'test'; }
-				public function get_name() { return 'Test'; }
-				public function get_description() { return 'Test'; }
-				public function get_parameters_schema() { return array(); }
-				public function execute( array $arguments = array(), array $context = array() ) { return array(); }
-				
+			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				public function get_slug() {
+					return 'test'; }
+				public function get_name() {
+					return 'Test'; }
+				public function get_description() {
+					return 'Test'; }
+				public function get_parameters_schema() {
+					return array(); }
+				public function execute( array $arguments = array(), array $context = array() ) {
+					return array(); }
+
 				public function test_load_source_image( array $arguments, $user_id = 0 ) {
 					return $this->load_source_image( $arguments, $user_id );
 				}
@@ -333,29 +338,34 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 	/**
 	 * Test that downloaded files (external URLs) ARE marked as temporary.
-	 * 
+	 *
 	 * This ensures the fix doesn't break the existing behavior for external URLs.
 	 */
 	public function test_external_url_files_marked_as_temp() {
 		// We can't easily test actual HTTP downloads in unit tests,
 		// but we can verify that base64 data creates temp files.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
-		
+
 		// Create a test subclass.
-		$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
-			public function get_slug() { return 'test'; }
-			public function get_name() { return 'Test'; }
-			public function get_description() { return 'Test'; }
-			public function get_parameters_schema() { return array(); }
-			public function execute( array $arguments = array(), array $context = array() ) { return array(); }
-			
+		$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+			public function get_slug() {
+				return 'test'; }
+			public function get_name() {
+				return 'Test'; }
+			public function get_description() {
+				return 'Test'; }
+			public function get_parameters_schema() {
+				return array(); }
+			public function execute( array $arguments = array(), array $context = array() ) {
+				return array(); }
+
 			public function test_load_source_image( array $arguments, $user_id = 0 ) {
 				return $this->load_source_image( $arguments, $user_id );
 			}
 		};
 
 		// Test with base64 data (which creates a temp file).
-		$png_data = $this->get_test_png_data();
+		$png_data     = $this->get_test_png_data();
 		$base64_image = base64_encode( $png_data );
 
 		$arguments = array(
@@ -487,12 +497,17 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
 
 			// Create a test subclass to access protected method.
-			$test_class = new class extends WP_MCP_AI_Tool_Image_Base {
-				public function get_slug() { return 'test'; }
-				public function get_name() { return 'Test'; }
-				public function get_description() { return 'Test'; }
-				public function get_parameters_schema() { return array(); }
-				public function execute( array $arguments = array(), array $context = array() ) { return array(); }
+			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				public function get_slug() {
+					return 'test'; }
+				public function get_name() {
+					return 'Test'; }
+				public function get_description() {
+					return 'Test'; }
+				public function get_parameters_schema() {
+					return array(); }
+				public function execute( array $arguments = array(), array $context = array() ) {
+					return array(); }
 
 				public function test_load_source_image( array $arguments, $user_id = 0 ) {
 					return $this->load_source_image( $arguments, $user_id );

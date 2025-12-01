@@ -72,12 +72,12 @@ class WP_MCP_AI_Cost_Tracking_Service {
 		// Aggregate by provider.
 		$provider_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_datetime, $end_datetime );
 		foreach ( $provider_data as $row ) {
-			$provider                              = $row['provider'];
-			$cost                                  = floatval( $row['total_cost'] );
-			$tokens                                = intval( $row['total_tokens'] );
+			$provider                                   = $row['provider'];
+			$cost                                       = floatval( $row['total_cost'] );
+			$tokens                                     = intval( $row['total_tokens'] );
 			$site_breakdown['by_provider'][ $provider ] = $cost;
-			$site_breakdown['total_cost']         += $cost;
-			$site_breakdown['total_tokens']       += $tokens;
+			$site_breakdown['total_cost']              += $cost;
+			$site_breakdown['total_tokens']            += $tokens;
 		}
 
 		// Aggregate by model.
@@ -98,21 +98,21 @@ class WP_MCP_AI_Cost_Tracking_Service {
 		// Aggregate by tool.
 		$tool_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_tool( $start_datetime, $end_datetime );
 		foreach ( $tool_data as $row ) {
-			$tool                             = $row['tool'];
+			$tool                               = $row['tool'];
 			$site_breakdown['by_tool'][ $tool ] = floatval( $row['total_cost'] );
 		}
 
 		// Aggregate by date.
 		$date_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_date( $start_datetime, $end_datetime );
 		foreach ( $date_data as $row ) {
-			$date                             = $row['date'];
+			$date                               = $row['date'];
 			$site_breakdown['by_date'][ $date ] = floatval( $row['total_cost'] );
 		}
 
 		// Aggregate by user.
 		$user_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_user( $start_datetime, $end_datetime );
 		foreach ( $user_data as $row ) {
-			$user_id                             = intval( $row['user_id'] );
+			$user_id                               = intval( $row['user_id'] );
 			$site_breakdown['by_user'][ $user_id ] = floatval( $row['total_cost'] );
 		}
 

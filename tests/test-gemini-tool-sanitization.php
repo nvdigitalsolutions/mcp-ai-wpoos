@@ -177,12 +177,12 @@ class WP_MCP_AI_Gemini_Tool_Sanitization_Test extends WP_UnitTestCase {
 						'type'                 => 'object',
 						'properties'           => array(
 							'data' => array(
-								'type'       => 'object',
-								'properties' => array(
+								'type'                 => 'object',
+								'properties'           => array(
 									'items' => array(
 										'type'  => 'array',
 										'items' => array(
-											'type'                 => 'object',
+											'type' => 'object',
 											'additionalProperties' => false,
 										),
 									),
@@ -382,7 +382,7 @@ class WP_MCP_AI_Gemini_Tool_Sanitization_Test extends WP_UnitTestCase {
 								),
 							),
 						),
-						'required' => array( 'count' ),
+						'required'   => array( 'count' ),
 					),
 				),
 			),
@@ -403,10 +403,10 @@ class WP_MCP_AI_Gemini_Tool_Sanitization_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'integer', $declaration['parameters']['properties']['count']['type'] );
 		$this->assertEquals( 1, $declaration['parameters']['properties']['count']['minimum'] );
 		$this->assertEquals( 100, $declaration['parameters']['properties']['count']['maximum'] );
-		
+
 		// Verify 'default' is REMOVED (not supported by Gemini).
 		$this->assertArrayNotHasKey( 'default', $declaration['parameters']['properties']['count'] );
-		
+
 		$this->assertEquals( array( 'count' ), $declaration['parameters']['required'] );
 
 		// Verify array items are preserved.
@@ -632,8 +632,8 @@ class WP_MCP_AI_Gemini_Tool_Sanitization_Test extends WP_UnitTestCase {
 					'name'        => 'test_property_names',
 					'description' => 'Test that property names are preserved',
 					'parameters'  => array(
-						'type'       => 'object',
-						'properties' => array(
+						'type'                 => 'object',
+						'properties'           => array(
 							'format'   => array(
 								'type'        => 'string',
 								'description' => 'Output format (parameter name)',

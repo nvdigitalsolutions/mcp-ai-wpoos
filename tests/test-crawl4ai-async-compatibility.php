@@ -77,12 +77,12 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	public function test_javascript_async_detection_compatibility() {
 		// Mock pending result
 		$result = array(
-			'async'    => true,
-			'status'   => 'pending',
-			'task_id'  => 'crawl_test',
-			'job_id'   => 'crawl_test',
-			'message'  => 'Crawling in progress...',
-			'results'  => array(),
+			'async'   => true,
+			'status'  => 'pending',
+			'task_id' => 'crawl_test',
+			'job_id'  => 'crawl_test',
+			'message' => 'Crawling in progress...',
+			'results' => array(),
 		);
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
@@ -155,11 +155,17 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 			'status'  => 'completed',
 			'task_id' => 'crawl_raw_test',
 			'results' => array(
-				array( 'url' => 'https://example.com', 'markdown' => 'Content' ),
+				array(
+					'url'      => 'https://example.com',
+					'markdown' => 'Content',
+				),
 			),
 			'raw'     => array(
 				'results' => array(
-					array( 'url' => 'https://example.com', 'markdown' => 'Content' ),
+					array(
+						'url'      => 'https://example.com',
+						'markdown' => 'Content',
+					),
 				),
 			),
 		);
@@ -177,9 +183,9 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	 */
 	public function test_backward_compatibility_task_id_only() {
 		$result = array(
-			'status'   => 'pending',
-			'task_id'  => 'crawl_old_format',
-			'results'  => array(),
+			'status'  => 'pending',
+			'task_id' => 'crawl_old_format',
+			'results' => array(),
 		);
 
 		$sanitized = $this->tool->sanitize_for_llm( $result );
@@ -211,11 +217,11 @@ class Test_Crawl4AI_Async_Compatibility extends WP_UnitTestCase {
 	public function test_async_pattern_consistency_with_veo() {
 		// Crawl4AI pending result
 		$crawl_result = array(
-			'async'    => true,
-			'status'   => 'pending',
-			'task_id'  => 'crawl_123',
-			'job_id'   => 'crawl_123',
-			'message'  => 'Crawling...',
+			'async'   => true,
+			'status'  => 'pending',
+			'task_id' => 'crawl_123',
+			'job_id'  => 'crawl_123',
+			'message' => 'Crawling...',
 		);
 
 		// Veo pending result (for comparison)

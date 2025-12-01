@@ -96,8 +96,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 7200,
 				'response_completed_at' => $base_time + 7210,
-				'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => 'Test 3' ) ) ) ),
-				'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'Response 3' ) ) ) ) ),
+				'request_payload'       => wp_json_encode(
+					array(
+						'messages' => array(
+							array(
+								'role'    => 'user',
+								'content' => 'Test 3',
+							),
+						),
+					)
+				),
+				'response_payload'      => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Response 3',
+								),
+							),
+						),
+					)
+				),
 			),
 			// Session 1 - Second most recent.
 			array(
@@ -108,8 +128,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 3600,
 				'response_completed_at' => $base_time + 3610,
-				'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => 'Test 1' ) ) ) ),
-				'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'Response 1' ) ) ) ) ),
+				'request_payload'       => wp_json_encode(
+					array(
+						'messages' => array(
+							array(
+								'role'    => 'user',
+								'content' => 'Test 1',
+							),
+						),
+					)
+				),
+				'response_payload'      => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Response 1',
+								),
+							),
+						),
+					)
+				),
 			),
 			// Session 4 - Middle.
 			array(
@@ -120,8 +160,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 1800,
 				'response_completed_at' => $base_time + 1810,
-				'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => 'Test 4' ) ) ) ),
-				'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'Response 4' ) ) ) ) ),
+				'request_payload'       => wp_json_encode(
+					array(
+						'messages' => array(
+							array(
+								'role'    => 'user',
+								'content' => 'Test 4',
+							),
+						),
+					)
+				),
+				'response_payload'      => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Response 4',
+								),
+							),
+						),
+					)
+				),
 			),
 			// Session 2 - Second oldest.
 			array(
@@ -132,8 +192,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time + 900,
 				'response_completed_at' => $base_time + 910,
-				'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => 'Test 2' ) ) ) ),
-				'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'Response 2' ) ) ) ) ),
+				'request_payload'       => wp_json_encode(
+					array(
+						'messages' => array(
+							array(
+								'role'    => 'user',
+								'content' => 'Test 2',
+							),
+						),
+					)
+				),
+				'response_payload'      => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Response 2',
+								),
+							),
+						),
+					)
+				),
 			),
 			// Session 5 - Oldest (should be last).
 			array(
@@ -144,8 +224,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 				'assistant_model'       => 'gpt-4',
 				'request_started_at'    => $base_time,
 				'response_completed_at' => $base_time + 10,
-				'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => 'Test 5' ) ) ) ),
-				'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'Response 5' ) ) ) ) ),
+				'request_payload'       => wp_json_encode(
+					array(
+						'messages' => array(
+							array(
+								'role'    => 'user',
+								'content' => 'Test 5',
+							),
+						),
+					)
+				),
+				'response_payload'      => wp_json_encode(
+					array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Response 5',
+								),
+							),
+						),
+					)
+				),
 			),
 		);
 
@@ -228,8 +328,28 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 					'assistant_model'       => 'gpt-4',
 					'request_started_at'    => $base_time + ( $i * 60 ),
 					'response_completed_at' => $base_time + ( $i * 60 ) + 10,
-					'request_payload'       => wp_json_encode( array( 'messages' => array( array( 'role' => 'user', 'content' => "Test $i" ) ) ) ),
-					'response_payload'      => wp_json_encode( array( 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => "Response $i" ) ) ) ) ),
+					'request_payload'       => wp_json_encode(
+						array(
+							'messages' => array(
+								array(
+									'role'    => 'user',
+									'content' => "Test $i",
+								),
+							),
+						)
+					),
+					'response_payload'      => wp_json_encode(
+						array(
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => "Response $i",
+									),
+								),
+							),
+						)
+					),
 				)
 			);
 		}

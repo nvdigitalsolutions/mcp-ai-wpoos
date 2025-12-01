@@ -48,22 +48,22 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 
 		// Metadata as the async executor would store it.
 		$async_metadata = array(
-			'job_id'       => $async_job_id,
-			'tool_slug'    => 'generate_veo_video',
-			'arguments'    => array(
+			'job_id'    => $async_job_id,
+			'tool_slug' => 'generate_veo_video',
+			'arguments' => array(
 				'prompt' => 'Test video for integration',
 			),
-			'context'      => $context,
-			'status'       => 'pending',
-			'queued_at'    => time(),
+			'context'   => $context,
+			'status'    => 'pending',
+			'queued_at' => time(),
 		);
 
 		set_transient( 'wp_mcp_ai_async_meta_' . $async_job_id, $async_metadata, DAY_IN_SECONDS );
 
 		// Simulate async executor adding parent_job_id to context.
-		$execution_context = $context;
+		$execution_context                      = $context;
 		$execution_context['in_async_executor'] = true;
-		$execution_context['parent_job_id']    = $async_job_id;
+		$execution_context['parent_job_id']     = $async_job_id;
 
 		// Now simulate the veo service creating its own async job (timeout scenario).
 		$veo_job_id = 'veo_integration_' . uniqid();
@@ -106,7 +106,7 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function( $job_id, $result, $metadata ) use ( &$hooks_fired ) {
+			function ( $job_id, $result, $metadata ) use ( &$hooks_fired ) {
 				$hooks_fired[ $job_id ] = array(
 					'result'   => $result,
 					'metadata' => $metadata,
@@ -160,7 +160,7 @@ class Test_Veo_Integration_Flow extends WP_UnitTestCase {
 		$this->assertIsArray( $final_async_metadata, 'Async job metadata should exist' );
 		$this->assertEquals( 'completed', $final_async_metadata['status'], 'Async job should be completed' );
 		$this->assertArrayHasKey( 'result', $final_async_metadata, 'Async job should have result' );
-		
+
 		// Verify result is wrapped in async executor format.
 		$this->assertIsArray( $final_async_metadata['result'], 'Result should be an array' );
 		$this->assertArrayHasKey( 'compressed', $final_async_metadata['result'], 'Result should have compressed key' );

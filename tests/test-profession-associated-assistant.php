@@ -217,13 +217,13 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 
 		// Simulate what the test profession page does.
 		$associated_assistant_meta = get_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
-		
-		$assistant_title = '';
+
+		$assistant_title            = '';
 		$valid_associated_assistant = 0;
 		if ( $associated_assistant_meta ) {
 			$assistant_post = get_post( $associated_assistant_meta );
 			if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
-				$assistant_title = $assistant_post->post_title;
+				$assistant_title            = $assistant_post->post_title;
 				$valid_associated_assistant = absint( $associated_assistant_meta );
 			}
 		}
@@ -255,13 +255,13 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 
 		// Simulate what the test profession page does.
 		$associated_assistant_meta = get_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
-		
-		$assistant_title = '';
+
+		$assistant_title            = '';
 		$valid_associated_assistant = 0;
 		if ( $associated_assistant_meta ) {
 			$assistant_post = get_post( $associated_assistant_meta );
 			if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
-				$assistant_title = $assistant_post->post_title;
+				$assistant_title            = $assistant_post->post_title;
 				$valid_associated_assistant = absint( $associated_assistant_meta );
 			}
 		}

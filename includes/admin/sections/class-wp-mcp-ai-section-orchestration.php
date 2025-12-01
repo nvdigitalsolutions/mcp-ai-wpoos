@@ -913,7 +913,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		protected function sanitize_with_views( $input ) {
 			$view_groups = $this->get_view_groups();
-			
+
 			// Get the submitted view from the hidden field in the form.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
 			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
@@ -993,14 +993,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'prediction_safety_buffer',
 					),
 				),
-			'tools'      => array(
-				'label'  => __( 'Tools', 'wp-mcp-ai' ),
-				'fields' => array(
-					// Tools view is read-only, no editable fields.
+				'tools'      => array(
+					'label'  => __( 'Tools', 'wp-mcp-ai' ),
+					'fields' => array(
+						// Tools view is read-only, no editable fields.
+					),
 				),
-			),
-		);
-	}
+			);
+		}
 
 		/**
 		 * Validate section input.
@@ -1013,22 +1013,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			return $input;
 		}
 
-	/**
-	 * Render tools view.
-	 *
-	 * Displays all registered tools with their capabilities and orchestration settings.
-	 * Delegates rendering to WP_MCP_AI_Tools_Orchestration_Renderer (SoC).
-	 */
-	private function render_tools_view() {
-		// Load renderer class if not already loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-tools-orchestration-renderer.php';
-		}
+		/**
+		 * Render tools view.
+		 *
+		 * Displays all registered tools with their capabilities and orchestration settings.
+		 * Delegates rendering to WP_MCP_AI_Tools_Orchestration_Renderer (SoC).
+		 */
+		private function render_tools_view() {
+			// Load renderer class if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-tools-orchestration-renderer.php';
+			}
 
-		// Delegate rendering to the renderer class (SoC).
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
-		echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
-	}
+			// Delegate rendering to the renderer class (SoC).
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
+			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
+		}
 
 		/**
 		 * Get health icon for status.

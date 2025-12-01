@@ -78,8 +78,8 @@ class WP_MCP_AI_REST_API_Context_Fix {
 		// We check both query params and body params, but NOT route defaults.
 		// This ensures we only apply no-cache headers when the client actually requested
 		// a specific context, not when the endpoint just has a default context value.
-		$query_params = $request->get_query_params();
-		$body_params  = $request->get_body_params();
+		$query_params         = $request->get_query_params();
+		$body_params          = $request->get_body_params();
 		$has_explicit_context = isset( $query_params['context'] ) || isset( $body_params['context'] );
 
 		// For requests with explicit context parameter or edit-related endpoints, ensure no caching.

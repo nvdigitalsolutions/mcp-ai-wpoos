@@ -34,7 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			if ( $access_token ) {
 				$this->access_token = $access_token;
 			} else {
-				$settings             = WP_MCP_AI_Admin_Settings::get_settings();
+				$settings           = WP_MCP_AI_Admin_Settings::get_settings();
 				$this->access_token = isset( $settings['github_access_token'] ) ? $settings['github_access_token'] : '';
 			}
 		}
@@ -67,7 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			);
 
 			if ( ! empty( $body ) && in_array( $method, array( 'POST', 'PUT', 'PATCH' ), true ) ) {
-				$args['body']                   = wp_json_encode( $body );
+				$args['body']                    = wp_json_encode( $body );
 				$args['headers']['Content-Type'] = 'application/json';
 			}
 
@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 				return $response;
 			}
 
-			$status_code = wp_remote_retrieve_response_code( $response );
+			$status_code   = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
 
 			// Handle rate limiting.
@@ -255,8 +255,8 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 		public function create_codespace( $owner, $repo, $codespace_args = array() ) {
 			$endpoint = "/repos/{$owner}/{$repo}/codespaces";
 			$defaults = array(
-				'ref'              => 'main',
-				'machine'          => 'basicLinux32gb',
+				'ref'                      => 'main',
+				'machine'                  => 'basicLinux32gb',
 				'retention_period_minutes' => 10080, // 7 days.
 			);
 

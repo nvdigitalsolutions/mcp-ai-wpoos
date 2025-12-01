@@ -388,7 +388,10 @@ class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
 		$method = new ReflectionMethod( WP_MCP_AI_STDIO_Transport::class, 'convert_to_text' );
 		$method->setAccessible( true );
 
-		$input  = array( 'key' => 'value', 'number' => 42 );
+		$input  = array(
+			'key'    => 'value',
+			'number' => 42,
+		);
 		$result = $method->invoke( $transport, $input );
 
 		// Should return valid JSON.
@@ -445,7 +448,12 @@ class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
 		$method = new ReflectionMethod( WP_MCP_AI_STDIO_Transport::class, 'process_message' );
 		$method->setAccessible( true );
 
-		$message = wp_json_encode( array( 'id' => 1, 'method' => 'initialize' ) );
+		$message = wp_json_encode(
+			array(
+				'id'     => 1,
+				'method' => 'initialize',
+			)
+		);
 		$result  = $method->invoke( $transport, $message );
 
 		$this->assertIsArray( $result );
@@ -462,7 +470,12 @@ class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
 		$method = new ReflectionMethod( WP_MCP_AI_STDIO_Transport::class, 'process_message' );
 		$method->setAccessible( true );
 
-		$message = wp_json_encode( array( 'jsonrpc' => '2.0', 'id' => 1 ) );
+		$message = wp_json_encode(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+			)
+		);
 		$result  = $method->invoke( $transport, $message );
 
 		$this->assertIsArray( $result );

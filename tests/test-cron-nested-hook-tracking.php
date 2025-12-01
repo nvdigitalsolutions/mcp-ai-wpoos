@@ -155,7 +155,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 		);
 
 		// Verify webhook cron event was scheduled.
-		$cron = _get_cron_array();
+		$cron              = _get_cron_array();
 		$webhook_scheduled = false;
 		foreach ( $cron as $timestamp => $events ) {
 			if ( isset( $events['wp_mcp_ai_send_webhook'] ) ) {
@@ -202,7 +202,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$initial_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$initial_jobs  = WP_MCP_AI_Cron_Manager::get_jobs();
 		$initial_count = count( $initial_jobs );
 
 		// Simulate a nested poll by calling schedule_next_poll again.
@@ -226,7 +226,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 		$method->invoke( null, $task_id, $job );
 
 		$updated_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-		
+
 		// The count should remain the same since it's the same job_id.
 		$this->assertEquals(
 			$initial_count,
@@ -261,7 +261,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 		);
 
 		// Verify job was tracked with correct user_id from metadata.
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs  = WP_MCP_AI_Cron_Manager::get_jobs();
 		$found = false;
 		foreach ( $jobs as $job_data ) {
 			if ( isset( $job_data['hook'] ) && 'wp_mcp_ai_send_webhook' === $job_data['hook'] ) {

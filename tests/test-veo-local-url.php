@@ -29,13 +29,13 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php';
-		
+
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 		$this->tool    = new WP_MCP_AI_Tool_Generate_Veo_Video();
-		
+
 		// Set up mock API key.
 		update_option(
 			'wp_mcp_ai_settings',
@@ -53,7 +53,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 	 */
 	public function test_service_save_video_returns_local_url() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		$result = array(
 			'video_data'   => 'fake-video-data',
 			'prompt'       => 'Test video',
@@ -83,7 +83,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 
 		// Verify it's not an error.
 		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
-		
+
 		// Verify it returns an array with attachment_id and url.
 		$this->assertIsArray( $save_result, 'save_video_to_media should return array' );
 		$this->assertArrayHasKey( 'attachment_id', $save_result, 'Result should have attachment_id' );
@@ -92,7 +92,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 		// Verify the URL is a local WordPress URL, not OneDrive.
 		$this->assertStringContainsString( 'wp-content/uploads', $save_result['url'], 'URL should be local WordPress uploads URL' );
 		$this->assertStringNotContainsString( 'onedrive', $save_result['url'], 'URL should NOT be OneDrive URL' );
-		
+
 		// Verify it contains the year/month structure typical of WordPress uploads.
 		$year_month = gmdate( 'Y/m' );
 		$this->assertStringContainsString( $year_month, $save_result['url'], 'URL should contain current year/month path' );
@@ -103,7 +103,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 	 */
 	public function test_tool_save_video_returns_local_url() {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		
+
 		$result = array(
 			'video_data'   => 'fake-video-data',
 			'prompt'       => 'Test video',
@@ -133,7 +133,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 
 		// Verify it's not an error.
 		$this->assertNotWPError( $save_result, 'save_video_to_media should succeed' );
-		
+
 		// Verify it returns an array with attachment_id and url.
 		$this->assertIsArray( $save_result, 'save_video_to_media should return array' );
 		$this->assertArrayHasKey( 'attachment_id', $save_result, 'Result should have attachment_id' );
@@ -200,10 +200,10 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 		);
 
 		// Process the completed video using reflection.
-		$reflection        = new ReflectionClass( $this->service );
-		$process_method    = $reflection->getMethod( 'process_completed_video' );
+		$reflection     = new ReflectionClass( $this->service );
+		$process_method = $reflection->getMethod( 'process_completed_video' );
 		$process_method->setAccessible( true );
-		$video_result      = $process_method->invoke( $this->service, $result, $args );
+		$video_result = $process_method->invoke( $this->service, $result, $args );
 
 		$this->assertNotWPError( $video_result, 'process_completed_video should succeed' );
 
@@ -226,7 +226,7 @@ class Test_Veo_Local_URL extends WP_UnitTestCase {
 		// Remove all filters we added.
 		remove_all_filters( 'wp_get_attachment_url' );
 		remove_all_filters( 'pre_http_request' );
-		
+
 		parent::tearDown();
 	}
 }

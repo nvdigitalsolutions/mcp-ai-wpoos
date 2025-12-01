@@ -196,11 +196,11 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Get optional parameters.
-		$max_results          = isset( $arguments['max_results_per_item'] ) ? absint( $arguments['max_results_per_item'] ) : 5;
-		$max_results          = max( 1, min( 10, $max_results ) );
-		$preferred_retailers  = isset( $arguments['preferred_retailers'] ) && is_array( $arguments['preferred_retailers'] ) ? array_map( 'sanitize_text_field', $arguments['preferred_retailers'] ) : array();
-		$currency             = isset( $arguments['currency'] ) ? sanitize_text_field( $arguments['currency'] ) : '';
-		$locale               = isset( $arguments['locale'] ) ? sanitize_text_field( $arguments['locale'] ) : '';
+		$max_results         = isset( $arguments['max_results_per_item'] ) ? absint( $arguments['max_results_per_item'] ) : 5;
+		$max_results         = max( 1, min( 10, $max_results ) );
+		$preferred_retailers = isset( $arguments['preferred_retailers'] ) && is_array( $arguments['preferred_retailers'] ) ? array_map( 'sanitize_text_field', $arguments['preferred_retailers'] ) : array();
+		$currency            = isset( $arguments['currency'] ) ? sanitize_text_field( $arguments['currency'] ) : '';
+		$locale              = isset( $arguments['locale'] ) ? sanitize_text_field( $arguments['locale'] ) : '';
 
 		$items = array();
 
@@ -234,11 +234,11 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'items'    => $items,
 			'metadata' => array(
-				'total_items'         => count( $items ),
+				'total_items'          => count( $items ),
 				'max_results_per_item' => $max_results,
-				'currency'            => $currency,
-				'locale'              => $locale,
-				'timestamp'           => current_time( 'mysql', true ),
+				'currency'             => $currency,
+				'locale'               => $locale,
+				'timestamp'            => current_time( 'mysql', true ),
 			),
 		);
 	}
@@ -333,10 +333,10 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		$offers = $this->discover_prices( $search_query, $max_results, $preferred_retailers, $currency, $locale, $context );
 
 		$item = array(
-			'query_source'        => 'image',
-			'source_ref'          => 'attachment:' . $image_id,
-			'identified_product'  => $vision_result['product'],
-			'offers'              => $offers,
+			'query_source'       => 'image',
+			'source_ref'         => 'attachment:' . $image_id,
+			'identified_product' => $vision_result['product'],
+			'offers'             => $offers,
 		);
 
 		return array( $item );
@@ -468,8 +468,8 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 
 		$vision_tool = new WP_MCP_AI_Tool_Vision_Product_Search();
 		$vision_args = array(
-			'image_url'    => $image_url,
-			'max_results'  => 5,
+			'image_url'   => $image_url,
+			'max_results' => 5,
 		);
 
 		$vision_result = $vision_tool->execute( $vision_args, $context );
@@ -928,7 +928,7 @@ If no line items are found, return an empty array [].';
 
 		// Try to extract price using common patterns.
 		if ( isset( $crawl_result['results'][0]['markdown'] ) || isset( $crawl_result['results'][0]['text'] ) ) {
-			$content = isset( $crawl_result['results'][0]['markdown'] ) ? $crawl_result['results'][0]['markdown'] : $crawl_result['results'][0]['text'];
+			$content    = isset( $crawl_result['results'][0]['markdown'] ) ? $crawl_result['results'][0]['markdown'] : $crawl_result['results'][0]['text'];
 			$price_data = $this->extract_price_from_content( $content );
 			if ( $price_data ) {
 				$product['price']    = $price_data['price'];
@@ -1003,7 +1003,7 @@ If no line items are found, return an empty array [].';
 		} elseif ( ! empty( $product_data['title'] ) ) {
 			// Use title but limit length.
 			$title_words = explode( ' ', $product_data['title'] );
-			$parts[] = implode( ' ', array_slice( $title_words, 0, 5 ) );
+			$parts[]     = implode( ' ', array_slice( $title_words, 0, 5 ) );
 		}
 
 		return implode( ' ', $parts );
@@ -1357,8 +1357,8 @@ If no line items are found, return an empty array [].';
 				'max_execution_time'  => 300, // Batch mode with multiple URLs.
 			),
 			'dependencies'          => array(
-				'required_tools'      => array( 'run_crawl4ai_job' ),
-				'optional_tools'      => array( 'vision_product_search', 'vision_object_localization' ),
+				'required_tools' => array( 'run_crawl4ai_job' ),
+				'optional_tools' => array( 'vision_product_search', 'vision_object_localization' ),
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,

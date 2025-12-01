@@ -211,9 +211,9 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		$errors      = array();
 
 		for ( $i = 1; $i <= $frame_count; $i++ ) {
-			$timestamp   = $i * $interval;
-			$frame_path  = $temp_dir . '/frame_' . str_pad( $i, 3, '0', STR_PAD_LEFT ) . '.jpg';
-			$result      = $this->extract_single_frame( $video_path, $timestamp, $frame_path );
+			$timestamp  = $i * $interval;
+			$frame_path = $temp_dir . '/frame_' . str_pad( $i, 3, '0', STR_PAD_LEFT ) . '.jpg';
+			$result     = $this->extract_single_frame( $video_path, $timestamp, $frame_path );
 
 			if ( is_wp_error( $result ) ) {
 				$errors[] = $result->get_error_message();
@@ -244,11 +244,11 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			'video_frames_extracted',
 			sprintf( 'Extracted %d frames from video', count( $frame_paths ) ),
 			array(
-				'video_path'    => basename( $video_path ),
-				'frame_count'   => count( $frame_paths ),
-				'duration'      => $duration,
-				'interval'      => $interval,
-				'temp_dir'      => $temp_dir,
+				'video_path'  => basename( $video_path ),
+				'frame_count' => count( $frame_paths ),
+				'duration'    => $duration,
+				'interval'    => $interval,
+				'temp_dir'    => $temp_dir,
 			)
 		);
 
@@ -264,8 +264,8 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function extract_single_frame( $video_path, $timestamp, $output_path ) {
-		$escaped_video = escapeshellarg( $video_path );
-		$escaped_output = escapeshellarg( $output_path );
+		$escaped_video       = escapeshellarg( $video_path );
+		$escaped_output      = escapeshellarg( $output_path );
 		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
 
 		// FFmpeg command to extract frame at specific timestamp.
@@ -378,10 +378,10 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		}
 
 		// Security: Validate that directory is within WordPress uploads directory.
-		$upload_dir = wp_upload_dir();
-		$base_dir   = $upload_dir['basedir'] . '/wp-mcp-ai-temp';
+		$upload_dir     = wp_upload_dir();
+		$base_dir       = $upload_dir['basedir'] . '/wp-mcp-ai-temp';
 		$real_directory = realpath( $directory );
-		$real_base = realpath( $base_dir );
+		$real_base      = realpath( $base_dir );
 
 		if ( false === $real_directory || false === $real_base ) {
 			return false;
@@ -393,8 +393,8 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 				'video_frames_cleanup_security',
 				'Attempted to cleanup directory outside allowed path',
 				array(
-					'directory'  => $directory,
-					'base_dir'   => $base_dir,
+					'directory' => $directory,
+					'base_dir'  => $base_dir,
 				)
 			);
 			return false;
@@ -454,7 +454,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			finfo_close( $finfo );
 
 			// Create base64 data URL.
-			$base64 = base64_encode( $image_data );
+			$base64   = base64_encode( $image_data );
 			$data_url = 'data:' . $mime_type . ';base64,' . $base64;
 
 			$base64_frames[] = $data_url;

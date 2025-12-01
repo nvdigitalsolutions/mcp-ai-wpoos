@@ -31,13 +31,13 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_started',
-			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+			function ( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_metadata = $meta;
@@ -70,14 +70,14 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 
 		// Track if hook was called.
-		$hook_called    = false;
-		$hook_job_id    = null;
-		$hook_result    = null;
-		$hook_metadata  = null;
+		$hook_called   = false;
+		$hook_job_id   = null;
+		$hook_result   = null;
+		$hook_metadata = null;
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function( $id, $result, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_result, &$hook_metadata ) {
+			function ( $id, $result, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_result, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_result   = $result;
@@ -128,8 +128,8 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		};
 
 		// Use reflection to inject registry and execute tool.
-		$reflection      = new ReflectionClass( $executor );
-		$registry_prop   = $reflection->getProperty( 'registry' );
+		$reflection    = new ReflectionClass( $executor );
+		$registry_prop = $reflection->getProperty( 'registry' );
 		$registry_prop->setAccessible( true );
 		$registry_prop->setValue( $executor, $registry );
 
@@ -162,7 +162,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_failed',
-			function( $id, $error, $meta ) use ( &$hook_called, &$hook_error ) {
+			function ( $id, $error, $meta ) use ( &$hook_called, &$hook_error ) {
 				$hook_called = true;
 				$hook_error  = $error;
 			},
@@ -207,8 +207,8 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		};
 
 		// Use reflection to inject registry and execute tool.
-		$reflection      = new ReflectionClass( $executor );
-		$registry_prop   = $reflection->getProperty( 'registry' );
+		$reflection    = new ReflectionClass( $executor );
+		$registry_prop = $reflection->getProperty( 'registry' );
 		$registry_prop->setAccessible( true );
 		$registry_prop->setValue( $executor, $registry );
 
@@ -237,7 +237,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_failed',
-			function( $id ) use ( &$hook_called ) {
+			function ( $id ) use ( &$hook_called ) {
 				$hook_called = true;
 			},
 			10,
@@ -281,8 +281,8 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		};
 
 		// Use reflection to inject registry and execute tool.
-		$reflection      = new ReflectionClass( $executor );
-		$registry_prop   = $reflection->getProperty( 'registry' );
+		$reflection    = new ReflectionClass( $executor );
+		$registry_prop = $reflection->getProperty( 'registry' );
 		$registry_prop->setAccessible( true );
 		$registry_prop->setValue( $executor, $registry );
 

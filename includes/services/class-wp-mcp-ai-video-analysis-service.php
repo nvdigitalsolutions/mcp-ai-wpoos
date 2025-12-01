@@ -133,8 +133,8 @@ class WP_MCP_AI_Video_Analysis_Service {
 	/**
 	 * Upload video to Gemini File API
 	 *
-	 * @param string                            $video_url     Video URL.
-	 * @param int|null                          $attachment_id Attachment ID.
+	 * @param string                        $video_url     Video URL.
+	 * @param int|null                      $attachment_id Attachment ID.
 	 * @param WP_MCP_AI_Gemini_File_Service $file_service  File service instance.
 	 * @return array|WP_Error Upload result with file_uri and mime_type.
 	 */
@@ -269,8 +269,8 @@ class WP_MCP_AI_Video_Analysis_Service {
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'install_ffmpeg'   => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
-						'use_gemini'       => __( 'Alternatively, use Gemini which supports direct video analysis without FFmpeg.', 'wp-mcp-ai' ),
+						'install_ffmpeg' => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
+						'use_gemini'     => __( 'Alternatively, use Gemini which supports direct video analysis without FFmpeg.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -360,11 +360,11 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 		// Build result array.
 		$result = array(
-			'text'         => $analysis_text,
-			'provider'     => 'openai',
-			'model'        => isset( $response['model'] ) ? $response['model'] : $model,
-			'frame_count'  => count( $base64_frames ),
-			'usage'        => isset( $response['usage'] ) ? $response['usage'] : array(),
+			'text'        => $analysis_text,
+			'provider'    => 'openai',
+			'model'       => isset( $response['model'] ) ? $response['model'] : $model,
+			'frame_count' => count( $base64_frames ),
+			'usage'       => isset( $response['usage'] ) ? $response['usage'] : array(),
 		);
 
 		WP_MCP_AI_Logger::log_event(

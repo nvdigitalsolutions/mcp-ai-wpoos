@@ -967,14 +967,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							if ( ! isset( $model_name_counts[ $model_name ] ) ) {
 								$model_name_counts[ $model_name ] = 0;
 							}
-							$model_name_counts[ $model_name ]++;
+							++$model_name_counts[ $model_name ];
 						}
 
 						foreach ( $site_stats['top_models'] as $model_data ) :
-							$model_name      = $model_data['model'];
-							$provider_name   = $this->get_provider_display_name( $model_data['provider'] );
-							$is_mixed        = isset( $model_name_counts[ $model_name ] ) && $model_name_counts[ $model_name ] > 1;
-							$provider_badge  = $is_mixed ? '<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 5px;">' . esc_html( $provider_name ) . '</span>' : '';
+							$model_name     = $model_data['model'];
+							$provider_name  = $this->get_provider_display_name( $model_data['provider'] );
+							$is_mixed       = isset( $model_name_counts[ $model_name ] ) && $model_name_counts[ $model_name ] > 1;
+							$provider_badge = $is_mixed ? '<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 5px;">' . esc_html( $provider_name ) . '</span>' : '';
 							?>
 							<tr>
 								<td>

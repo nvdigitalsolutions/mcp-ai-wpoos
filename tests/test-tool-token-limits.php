@@ -353,11 +353,11 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 
 		// Create a mock tool with vision requirement.
 		$tool_slug = 'test_vision_tool';
-		
+
 		// Register a test tool with vision capability flag.
 		add_filter(
 			'wp_mcp_ai_tool_capability_flags_' . $tool_slug,
-			function() {
+			function () {
 				return array( 'requires-vision-model' );
 			}
 		);
@@ -365,7 +365,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		// Mock the tool registry to return our capability flags.
 		add_filter(
 			'wp_mcp_ai_tool_registry_capability_flags',
-			function( $flags, $slug ) use ( $tool_slug ) {
+			function ( $flags, $slug ) use ( $tool_slug ) {
 				if ( $slug === $tool_slug ) {
 					return array( 'requires-vision-model' );
 				}
@@ -381,7 +381,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		if ( isset( $models['openai_group']['options'] ) ) {
 			$this->assertArrayHasKey( 'gpt-4o', $models['openai_group']['options'] );
 			$this->assertArrayHasKey( 'gpt-4-vision-preview', $models['openai_group']['options'] );
-			
+
 			// Should NOT include text-only reasoning models.
 			$this->assertArrayNotHasKey( 'o1-2024-12-17', $models['openai_group']['options'] );
 			$this->assertArrayNotHasKey( 'gpt-3.5-turbo', $models['openai_group']['options'] );
@@ -408,7 +408,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		// Mock the tool registry for multimodal capability.
 		add_filter(
 			'wp_mcp_ai_tool_registry_capability_flags',
-			function( $flags, $slug ) use ( $tool_slug ) {
+			function ( $flags, $slug ) use ( $tool_slug ) {
 				if ( $slug === $tool_slug ) {
 					return array( 'requires-multimodal-model' );
 				}
@@ -423,7 +423,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		// Should include multimodal models.
 		if ( isset( $models['openai_group']['options'] ) ) {
 			$this->assertArrayHasKey( 'gpt-4o', $models['openai_group']['options'] );
-			
+
 			// Should NOT include text-only models.
 			$this->assertArrayNotHasKey( 'o1-2024-12-17', $models['openai_group']['options'] );
 			$this->assertArrayNotHasKey( 'gpt-4', $models['openai_group']['options'] );
@@ -431,7 +431,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 
 		if ( isset( $models['gemini_group']['options'] ) ) {
 			$this->assertArrayHasKey( 'gemini-2.5-flash', $models['gemini_group']['options'] );
-			
+
 			// Gemma models are text-only, should not be included.
 			$this->assertArrayNotHasKey( 'gemma-2-27b-it', $models['gemini_group']['options'] );
 		}
@@ -480,7 +480,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		// Should include Ollama group.
 		$this->assertArrayHasKey( 'ollama_group', $models );
 		$this->assertArrayHasKey( 'llama3', $models['ollama_group']['options'] );
-		
+
 		// Should include common Ollama models.
 		$this->assertArrayHasKey( 'gemma2', $models['ollama_group']['options'] );
 		$this->assertArrayHasKey( 'mistral', $models['ollama_group']['options'] );

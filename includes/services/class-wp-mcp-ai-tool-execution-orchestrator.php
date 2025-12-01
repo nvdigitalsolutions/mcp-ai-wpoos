@@ -63,8 +63,8 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null         $registry Tool registry instance.
-	 * @param WP_MCP_AI_Tool_Async_Executor|null   $async_executor Async executor instance.
+	 * @param WP_MCP_AI_Tool_Registry|null       $registry Tool registry instance.
+	 * @param WP_MCP_AI_Tool_Async_Executor|null $async_executor Async executor instance.
 	 */
 	public function __construct( $registry = null, $async_executor = null ) {
 		$this->registry       = $registry;
@@ -158,8 +158,8 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		}
 
 		// Check if auto-async is enabled in settings.
-		$settings              = get_option( 'wp_mcp_ai_settings', array() );
-		$auto_async_enabled    = isset( $settings['enable_auto_async_execution'] ) ? (bool) $settings['enable_auto_async_execution'] : true;
+		$settings                   = get_option( 'wp_mcp_ai_settings', array() );
+		$auto_async_enabled         = isset( $settings['enable_auto_async_execution'] ) ? (bool) $settings['enable_auto_async_execution'] : true;
 		$cron_orchestration_enabled = isset( $settings['enable_cron_orchestration'] ) ? (bool) $settings['enable_cron_orchestration'] : true;
 
 		// If auto-async is disabled, only respect explicit async requests.
@@ -215,7 +215,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 				sprintf( 'Tool "%s" falling back to sync execution (async executor unavailable)', $tool_slug ),
 				array( 'tool_slug' => $tool_slug )
 			);
-			
+
 			$registry = $this->get_registry();
 			if ( ! $registry ) {
 				return new WP_Error(
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 					array( 'status' => 500 )
 				);
 			}
-			
+
 			return $registry->execute_tool( $tool_slug, $arguments, $context );
 		}
 

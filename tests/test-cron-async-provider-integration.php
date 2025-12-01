@@ -84,7 +84,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		);
 
 		// Verify it's in the cron manager.
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs          = WP_MCP_AI_Cron_Manager::get_jobs();
 		$cleanup_found = false;
 
 		foreach ( $jobs as $job ) {
@@ -141,7 +141,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		$this->assertTrue( $should_async, 'Explicit async=true should force async execution' );
 
 		// Force sync even with async flags.
-		$async_tool = $this->create_async_tool_with_flags( array( 'async' ) );
+		$async_tool  = $this->create_async_tool_with_flags( array( 'async' ) );
 		$should_sync = $this->orchestrator->should_execute_async(
 			$async_tool,
 			array( 'async' => false ),
@@ -165,7 +165,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 
 		// Verify cron job was scheduled.
 		$cron_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-		$found = false;
+		$found     = false;
 
 		foreach ( $cron_jobs as $job ) {
 			if ( WP_MCP_AI_Tool_Async_Executor::CRON_HOOK === $job['hook'] ) {
@@ -188,10 +188,13 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 
 		// Register tool.
 		$registry = new WP_MCP_AI_Tool_Registry();
-		add_filter( 'wp_mcp_ai_register_tools', function( $tools ) use ( $mock_tool ) {
-			$tools[] = $mock_tool;
-			return $tools;
-		} );
+		add_filter(
+			'wp_mcp_ai_register_tools',
+			function ( $tools ) use ( $mock_tool ) {
+				$tools[] = $mock_tool;
+				return $tools;
+			}
+		);
 		$registry->init();
 
 		// Queue job.
@@ -220,12 +223,12 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 	 */
 	public function test_context_sanitization() {
 		$context = array(
-			'user_id'       => 1,
-			'assistant_id'  => 123,
-			'session_id'    => 'test_session',
-			'api_key'       => 'sk-secret', // Should be removed.
-			'password'      => 'secret123', // Should be removed.
-			'random_data'   => 'data',      // Should be removed.
+			'user_id'      => 1,
+			'assistant_id' => 123,
+			'session_id'   => 'test_session',
+			'api_key'      => 'sk-secret', // Should be removed.
+			'password'     => 'secret123', // Should be removed.
+			'random_data'  => 'data',      // Should be removed.
 		);
 
 		$job_id = $this->executor->queue_tool( 'test_tool', array(), $context );
@@ -251,11 +254,11 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		}
 
 		// Create large result (>100KB).
-		$large_data = str_repeat( 'Lorem ipsum dolor sit amet. ', 5000 );
+		$large_data  = str_repeat( 'Lorem ipsum dolor sit amet. ', 5000 );
 		$test_result = array( 'data' => $large_data );
 
 		// Use reflection to access protected methods.
-		$reflection = new ReflectionClass( $this->executor );
+		$reflection      = new ReflectionClass( $this->executor );
 		$compress_method = $reflection->getMethod( 'compress_result' );
 		$compress_method->setAccessible( true );
 		$decompress_method = $reflection->getMethod( 'decompress_result' );
@@ -331,7 +334,7 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
 		// Old job should be removed, recent job should remain.
-		$has_old = false;
+		$has_old    = false;
 		$has_recent = false;
 
 		foreach ( $jobs as $job ) {

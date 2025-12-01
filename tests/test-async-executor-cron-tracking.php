@@ -80,9 +80,9 @@ class WP_MCP_AI_Async_Executor_Cron_Tracking_Test extends WP_UnitTestCase {
 		$found = false;
 		foreach ( $jobs as $job ) {
 			if ( isset( $job['hook'] ) &&
-			     WP_MCP_AI_Tool_Async_Executor::CRON_HOOK === $job['hook'] &&
-			     isset( $job['args'][0] ) &&
-			     $job_id === $job['args'][0] ) {
+				WP_MCP_AI_Tool_Async_Executor::CRON_HOOK === $job['hook'] &&
+				isset( $job['args'][0] ) &&
+				$job_id === $job['args'][0] ) {
 				$found = true;
 				$this->assertSame( 'single', $job['schedule'], 'Should be a one-time job' );
 				$this->assertSame( $user_id, $job['created_by'], 'Should track the user who created it' );
@@ -115,9 +115,9 @@ class WP_MCP_AI_Async_Executor_Cron_Tracking_Test extends WP_UnitTestCase {
 		$found = false;
 		foreach ( $jobs as $job ) {
 			if ( isset( $job['hook'] ) &&
-			     WP_MCP_AI_Tool_Async_Executor::CRON_HOOK === $job['hook'] &&
-			     isset( $job['args'][0] ) &&
-			     $job_id === $job['args'][0] ) {
+				WP_MCP_AI_Tool_Async_Executor::CRON_HOOK === $job['hook'] &&
+				isset( $job['args'][0] ) &&
+				$job_id === $job['args'][0] ) {
 				$found = true;
 				$this->assertSame( 0, $job['created_by'], 'Should be recorded as system job' );
 				break;

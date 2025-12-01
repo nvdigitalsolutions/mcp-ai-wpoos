@@ -173,7 +173,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 	 */
 	protected static function render_model_row( $model_id, $config, $providers ) {
 		$model_id = sanitize_text_field( $model_id );
-		
+
 		// Extract config values with defaults.
 		$name           = isset( $config['name'] ) ? esc_html( $config['name'] ) : esc_html( $model_id );
 		$provider       = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
@@ -184,10 +184,10 @@ class WP_MCP_AI_Model_Config_Renderer {
 		$cost           = isset( $config['cost_per_1k'] ) ? floatval( $config['cost_per_1k'] ) : 0.0;
 		$status         = isset( $config['status'] ) ? sanitize_key( $config['status'] ) : 'active';
 		$provider_label = isset( $providers[ $provider ] ) ? esc_html( $providers[ $provider ] ) : esc_html( ucfirst( $provider ) );
-		
+
 		// Get capability flags for the current model.
 		$capability_flags = self::get_model_capability_flags( $model_id, $provider );
-		
+
 		// Get available models for fallback selection with capability filtering.
 		$available_models = self::get_available_models_for_fallback( $model_id, $capability_flags );
 
@@ -575,11 +575,11 @@ class WP_MCP_AI_Model_Config_Renderer {
 
 			// Create a temporary tool slug to get filtered models.
 			$temp_tool_slug = 'model_config_fallback_' . sanitize_key( $source_model_id );
-			
+
 			// Use filter to inject capability flags.
 			add_filter(
 				'wp_mcp_ai_tool_capability_flags',
-				function( $flags, $tool_slug ) use ( $temp_tool_slug, $capability_flags ) {
+				function ( $flags, $tool_slug ) use ( $temp_tool_slug, $capability_flags ) {
 					if ( $tool_slug === $temp_tool_slug ) {
 						return $capability_flags;
 					}
@@ -620,7 +620,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 			$model_service = new WP_MCP_AI_Model_Service();
 			$models        = array();
 			$settings      = get_option( 'wp_mcp_ai_settings', array() );
-			
+
 			// Build capability flags for filtering.
 			$capability_flags = array();
 			if ( $requires_vision ) {
@@ -629,9 +629,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 			if ( $requires_multimodal ) {
 				$capability_flags[] = 'multimodal';
 			}
-			
+
 			$args = array( 'capability_flags' => $capability_flags );
-			
+
 			// Get models for each configured provider.
 			$providers = array(
 				'openai'    => array(
@@ -655,14 +655,14 @@ class WP_MCP_AI_Model_Config_Renderer {
 					'check' => ! empty( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_model'] ),
 				),
 			);
-			
+
 			foreach ( $providers as $provider => $config ) {
 				if ( ! $config['check'] ) {
 					continue;
 				}
-				
+
 				$provider_models = $model_service->get_models_for_provider( $provider, $args );
-				
+
 				if ( ! empty( $provider_models ) ) {
 					$models[ $provider . '_group' ] = array(
 						'label'   => $config['label'],
@@ -670,10 +670,10 @@ class WP_MCP_AI_Model_Config_Renderer {
 					);
 				}
 			}
-			
+
 			return $models;
 		}
-		
+
 		// Ultimate fallback: return empty array if Model Service is not available.
 		// This should never happen in production, but provides safety.
 		return array();

@@ -25,7 +25,7 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function test_openai_image_tool_uses_configured_defaults() {
 		// Set custom settings.
-		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_image_model']           = 'dall-e-3';
 		$settings['openai_image_size']            = '1024x1792';
 		$settings['openai_image_quality']         = 'hd';
@@ -80,7 +80,7 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function test_gemini_image_tool_uses_configured_defaults() {
 		// Set custom settings.
-		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['gemini_image_model']        = 'gemini-exp-1206';
 		$settings['gemini_image_mime_type']    = 'image/webp';
 		$settings['gemini_image_aspect_ratio'] = '16:9';

@@ -310,9 +310,9 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 
 		$date = strtotime( '2025-01-01' );
 		foreach ( $base_usage as $tokens ) {
-			$date_key             = gmdate( 'Y-m-d', $date );
+			$date_key                                 = gmdate( 'Y-m-d', $date );
 			$usage['test_tool']['daily'][ $date_key ] = $tokens;
-			$date += DAY_IN_SECONDS;
+			$date                                    += DAY_IN_SECONDS;
 		}
 
 		// Add critical anomaly (6+ std dev).

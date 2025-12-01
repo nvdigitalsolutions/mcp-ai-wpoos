@@ -47,24 +47,24 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'width'             => array(
+					'width'          => array(
 						'type'        => 'integer',
 						'description' => __( 'Target width in pixels. Required if height is not specified.', 'wp-mcp-ai' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
-					'height'            => array(
+					'height'         => array(
 						'type'        => 'integer',
 						'description' => __( 'Target height in pixels. Required if width is not specified.', 'wp-mcp-ai' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
-					'maintain_ratio'    => array(
+					'maintain_ratio' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Whether to maintain aspect ratio. If true and both width and height are specified, the image will fit within those dimensions.', 'wp-mcp-ai' ),
 						'default'     => true,
 					),
-					'crop'              => array(
+					'crop'           => array(
 						'type'        => 'boolean',
 						'description' => __( 'Whether to crop the image to exact dimensions. Only applies when both width and height are specified.', 'wp-mcp-ai' ),
 						'default'     => false,
@@ -160,7 +160,10 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
-		$new_size = isset( $storage['size'] ) ? $storage['size'] : array( 'width' => $width, 'height' => $height );
+		$new_size = isset( $storage['size'] ) ? $storage['size'] : array(
+			'width'  => $width,
+			'height' => $height,
+		);
 
 		$result = array(
 			'attachment_id'   => $storage['attachment_id'],

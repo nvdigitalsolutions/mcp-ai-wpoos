@@ -25,20 +25,20 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 
 		// Simulate a Gemini image generation tool result.
 		$tool_result = array(
-			'attachment_id'  => 123,
-			'url'            => 'https://example.com/gemini-image.png',
-			'download_url'   => 'https://example.com/gemini-image.png',
-			'file_name'      => 'gemini-image.png',
-			'mime_type'      => 'image/png',
-			'bytes'          => 1024,
-			'title'          => 'Gemini Image: A test',
-			'model'          => 'gemini-2.5-flash-image',
-			'aspect_ratio'   => '1:1',
-			'format'         => 'png',
-			'prompt'         => 'A test',
-			'provider'       => 'gemini',
-			'text'           => 'Successfully generated image',
-			'content'        => array(
+			'attachment_id' => 123,
+			'url'           => 'https://example.com/gemini-image.png',
+			'download_url'  => 'https://example.com/gemini-image.png',
+			'file_name'     => 'gemini-image.png',
+			'mime_type'     => 'image/png',
+			'bytes'         => 1024,
+			'title'         => 'Gemini Image: A test',
+			'model'         => 'gemini-2.5-flash-image',
+			'aspect_ratio'  => '1:1',
+			'format'        => 'png',
+			'prompt'        => 'A test',
+			'provider'      => 'gemini',
+			'text'          => 'Successfully generated image',
+			'content'       => array(
 				'encoding'  => 'base64',
 				'data'      => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwsB9YwH0e0AAAAASUVORK5CYII=',
 				'mime_type' => 'image/png',
@@ -165,7 +165,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 	 * Test comparison: LLM sanitization vs Display sanitization.
 	 */
 	public function test_llm_vs_display_sanitization_difference() {
-		$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+		$tool      = new WP_MCP_AI_Tool_Generate_Gemini_Image();
 		$validator = new WP_MCP_AI_REST_Validator();
 
 		$tool_result = array(

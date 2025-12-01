@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 		// If completed, include result details.
 		if ( 'completed' === $status['status'] && isset( $status['result'] ) ) {
 			$result = $status['result'];
-			
+
 			// If save_to_media was requested in original args, the video should already be in media library.
 			// Return attachment info if available.
 			if ( isset( $result['attachment_id'] ) ) {

@@ -41,41 +41,41 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'url'                  => array(
+				'url'                     => array(
 					'type'        => 'string',
 					'description' => __( 'The product page URL to scrape. Either url or html_file is required.', 'wp-mcp-ai' ),
 					'format'      => 'uri',
 				),
-				'html_file'            => array(
+				'html_file'               => array(
 					'type'        => 'string',
 					'description' => __( 'Path to a saved HTML file to parse instead of fetching from URL. Either url or html_file is required.', 'wp-mcp-ai' ),
 				),
-				'title_selector'       => array(
+				'title_selector'          => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector for product title (default: .swa-product-information__title.swa-label-sans--default-strong).', 'wp-mcp-ai' ),
 					'default'     => '.swa-product-information__title.swa-label-sans--default-strong',
 				),
-				'subtitle_selector'    => array(
+				'subtitle_selector'       => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector for product subtitle (default: .swa-product-information__subtitle.swa-label-sans--default).', 'wp-mcp-ai' ),
 					'default'     => '.swa-product-information__subtitle.swa-label-sans--default',
 				),
-				'description_selector' => array(
+				'description_selector'    => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector for product description (default: .swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p).', 'wp-mcp-ai' ),
 					'default'     => '.swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p',
 				),
-				'images_selector'      => array(
+				'images_selector'         => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector or pattern for product images containers. Use "splide-slides" to match all div[id^="splide"] slide containers (default), or provide a custom selector.', 'wp-mcp-ai' ),
 					'default'     => 'splide-slides',
 				),
-				'download_images'      => array(
+				'download_images'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to download images to WordPress media library (default: true).', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
-				'price_selector'       => array(
+				'price_selector'          => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector for product price. If not provided, will attempt to extract from Schema.org JSON-LD or common price patterns.', 'wp-mcp-ai' ),
 				),

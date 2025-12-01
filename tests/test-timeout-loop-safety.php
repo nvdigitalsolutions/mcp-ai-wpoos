@@ -25,16 +25,16 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	public function test_sse_stream_max_duration_limit() {
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'build_sse_stream' );
+		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
 
 		// Set very short max duration for testing.
-		$max_duration = 2; // 2 seconds.
+		$max_duration  = 2; // 2 seconds.
 		$poll_interval = 1;
 
 		$start_time = time();
-		$stream = $method->invokeArgs( null, array( 'test_job_id', $max_duration, $poll_interval ) );
-		$end_time = time();
+		$stream     = $method->invokeArgs( null, array( 'test_job_id', $max_duration, $poll_interval ) );
+		$end_time   = time();
 
 		$duration = $end_time - $start_time;
 
@@ -55,19 +55,19 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	public function test_sse_stream_iteration_limit() {
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'build_sse_stream' );
+		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
 
 		// Set parameters that could cause many iterations.
-		$max_duration = 10; // 10 seconds.
+		$max_duration  = 10; // 10 seconds.
 		$poll_interval = 1; // Poll every second.
 
 		// Expected max iterations = ceil(10/1) + 10 = 20.
 		// Even if time() manipulation fails, iteration count should limit loops.
 
 		$start_time = microtime( true );
-		$stream = $method->invokeArgs( null, array( 'test_job_id', $max_duration, $poll_interval ) );
-		$end_time = microtime( true );
+		$stream     = $method->invokeArgs( null, array( 'test_job_id', $max_duration, $poll_interval ) );
+		$end_time   = microtime( true );
 
 		$duration = $end_time - $start_time;
 
@@ -88,12 +88,12 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 		// the code path exists.
 
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'build_sse_stream' );
+		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
 
 		// Get source code to verify connection_aborted check exists.
 		$filename = $reflection->getFileName();
-		$source = file_get_contents( $filename );
+		$source   = file_get_contents( $filename );
 
 		$this->assertStringContainsString(
 			'connection_aborted',
@@ -114,7 +114,7 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $client );
-		$method = $reflection->getMethod( 'resolve_timeout' );
+		$method     = $reflection->getMethod( 'resolve_timeout' );
 		$method->setAccessible( true );
 
 		// Test default timeout.
@@ -164,7 +164,7 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	public function test_sse_stream_parameter_validation() {
 		// Test that parameters are bounded.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'stream_job_status' );
+		$method     = $reflection->getMethod( 'stream_job_status' );
 		$method->setAccessible( true );
 
 		// Test with extreme values.
@@ -183,16 +183,16 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	 */
 	public function test_sse_stream_short_poll_interval() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'build_sse_stream' );
+		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
 
 		// Use minimum poll interval.
-		$max_duration = 2;
+		$max_duration  = 2;
 		$poll_interval = 1; // Minimum is 1 second.
 
 		$start_time = time();
-		$stream = $method->invokeArgs( null, array( 'test_job', $max_duration, $poll_interval ) );
-		$end_time = time();
+		$stream     = $method->invokeArgs( null, array( 'test_job', $max_duration, $poll_interval ) );
+		$end_time   = time();
 
 		// Should complete without hanging.
 		$this->assertLessThan( 5, $end_time - $start_time );
@@ -204,11 +204,11 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	 */
 	public function test_sse_stream_no_cache_headers() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'stream_job_status' );
+		$method     = $reflection->getMethod( 'stream_job_status' );
 		$method->setAccessible( true );
 
 		$response = $method->invokeArgs( null, array( 'test_job', 2, 1 ) );
-		$headers = $response->get_headers();
+		$headers  = $response->get_headers();
 
 		$this->assertStringContainsString( 'no-cache', $headers['Cache-Control'] );
 		$this->assertEquals( 'no', $headers['X-Accel-Buffering'] );
@@ -219,7 +219,7 @@ class Test_Timeout_Loop_Safety extends WP_UnitTestCase {
 	 */
 	public function test_sse_stream_heartbeat() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_SSE_Stream' );
-		$method = $reflection->getMethod( 'build_sse_stream' );
+		$method     = $reflection->getMethod( 'build_sse_stream' );
 		$method->setAccessible( true );
 
 		// Run for long enough to generate heartbeat.

@@ -97,15 +97,15 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'gemini'    => array(
 			// Gemini 2.5 series (November 2025).
-			'gemini-2.5-pro'   => array(
+			'gemini-2.5-pro'         => array(
 				'input'  => 1.20,
 				'output' => 4.80,
 			),
-			'gemini-2.5-flash' => array(
+			'gemini-2.5-flash'       => array(
 				'input'  => 0.10,
 				'output' => 0.40,
 			),
-			'gemini-2.5-flash-lite' => array(
+			'gemini-2.5-flash-lite'  => array(
 				'input'  => 0.05,
 				'output' => 0.20,
 			),
@@ -114,67 +114,68 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 39.00,
 			),
 			// Gemini 2.0 series.
-			'gemini-2.0-flash' => array(
+			'gemini-2.0-flash'       => array(
 				'input'  => 0.10,
 				'output' => 0.40,
 			),
 			// Gemini 1.5 series (legacy).
-			'gemini-1.5-pro'   => array(
+			'gemini-1.5-pro'         => array(
 				'input'  => 1.25,
 				'output' => 5.00,
 			),
-			'gemini-1.5-pro-002' => array(
+			'gemini-1.5-pro-002'     => array(
 				'input'  => 1.25,
 				'output' => 5.00,
 			),
-			'gemini-1.5-flash' => array(
+			'gemini-1.5-flash'       => array(
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
-			'gemini-1.5-flash-002' => array(
+			'gemini-1.5-flash-002'   => array(
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
 			// Deprecated Gemini 1.0.
-			'gemini-pro'       => array(
+			'gemini-pro'             => array(
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
 			// Veo video generation models.
 			// Pricing is per second of generated video.
 			// Based on Google Cloud Vertex AI documentation.
-			// Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing
-			'veo-3.1-generate-001' => array(
+			// Note: Verify current pricing at https://cloud.google.com/vertex-ai/generative-ai/pricing.
+
+			'veo-3.1-generate-001'   => array(
 				'per_second' => 0.025,  // $0.025 per second of generated video.
 			),
-			'veo-2.0-generate-001' => array(
+			'veo-2.0-generate-001'   => array(
 				'per_second' => 0.020,  // $0.020 per second of generated video.
 			),
 		),
 		'anthropic' => array(
 			// Claude 4.5 series (November 2025).
-			'claude-sonnet-4.5' => array(
+			'claude-sonnet-4.5'          => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-haiku-4.5' => array(
+			'claude-haiku-4.5'           => array(
 				'input'  => 1.00,
 				'output' => 5.00,
 			),
-			'claude-opus-4.1' => array(
+			'claude-opus-4.1'            => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-opus-4.0' => array(
+			'claude-opus-4.0'            => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
 			// Claude 3.5 series (deprecated Nov 10, 2025).
-			'claude-3.5-sonnet' => array(
+			'claude-3.5-sonnet'          => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3.5-sonnet-v2' => array(
+			'claude-3.5-sonnet-v2'       => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
@@ -182,24 +183,24 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-5-haiku-20241022' => array(
+			'claude-3-5-haiku-20241022'  => array(
 				'input'  => 0.80,
 				'output' => 4.00,
 			),
 			// Claude 3 series (legacy).
-			'claude-3-opus'     => array(
+			'claude-3-opus'              => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-3-opus-20240229' => array(
+			'claude-3-opus-20240229'     => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-3-sonnet'   => array(
+			'claude-3-sonnet'            => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-haiku'    => array(
+			'claude-3-haiku'             => array(
 				'input'  => 0.25,
 				'output' => 1.25,
 			),

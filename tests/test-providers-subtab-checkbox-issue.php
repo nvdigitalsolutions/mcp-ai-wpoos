@@ -38,7 +38,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// Simulate OpenAI subtab form submission with checkbox CHECKED.
 		$_POST['subtab'] = 'openai';
-		$input = array(
+		$input           = array(
 			'enable_openai'  => '1', // Checkbox is checked.
 			'openai_api_key' => 'sk-test-123',
 			'default_model'  => 'gpt-4o',
@@ -59,7 +59,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// Simulate OpenAI subtab form submission with checkbox UNCHECKED.
 		$_POST['subtab'] = 'openai';
-		$input = array(
+		$input           = array(
 			// enable_openai is NOT in the input (unchecked checkboxes don't send data).
 			'openai_api_key' => 'sk-test-123',
 			'default_model'  => 'gpt-4o',
@@ -77,18 +77,21 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 	 */
 	public function test_anthropic_subtab_doesnt_affect_openai() {
 		// First, save OpenAI settings with checkbox enabled.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'     => true,
-			'openai_api_key'    => 'sk-test-123',
-			'enable_anthropic'  => false,
-			'anthropic_api_key' => '',
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'     => true,
+				'openai_api_key'    => 'sk-test-123',
+				'enable_anthropic'  => false,
+				'anthropic_api_key' => '',
+			)
+		);
 
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Now save Anthropic subtab.
 		$_POST['subtab'] = 'anthropic';
-		$input = array(
+		$input           = array(
 			'enable_anthropic'  => '1', // Enable Anthropic.
 			'anthropic_api_key' => 'sk-ant-test-456',
 			'anthropic_model'   => 'claude-3-5-sonnet-20241022',
@@ -106,7 +109,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// Verify that when merged with existing settings, OpenAI stays enabled.
 		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 		$this->assertTrue( $merged['enable_openai'], 'OpenAI should still be enabled after saving Anthropic' );
 	}
 
@@ -115,20 +118,23 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 	 */
 	public function test_priority_order_doesnt_affect_provider_checkboxes() {
 		// Set up initial state with mixed enable settings.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'         => true,
-			'enable_anthropic'      => false,
-			'enable_gemini'         => true,
-			'enable_ollama'         => true,
-			'enable_lm_studio'      => false,
-			'provider_priority_list' => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'          => true,
+				'enable_anthropic'       => false,
+				'enable_gemini'          => true,
+				'enable_ollama'          => true,
+				'enable_lm_studio'       => false,
+				'provider_priority_list' => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+			)
+		);
 
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Save Priority Order subtab.
 		$_POST['subtab'] = 'priority';
-		$input = array(
+		$input           = array(
 			'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'anthropic', 'lm_studio' ),
 		);
 
@@ -146,7 +152,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// Verify that when merged with existing settings, enable flags are preserved.
 		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 		$this->assertTrue( $merged['enable_openai'], 'OpenAI should still be enabled' );
 		$this->assertFalse( $merged['enable_anthropic'], 'Anthropic should still be disabled' );
 		$this->assertTrue( $merged['enable_gemini'], 'Gemini should still be enabled' );
@@ -159,21 +165,24 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 	 */
 	public function test_complete_save_flow_through_dashboard() {
 		// Set up initial state.
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_openai'    => true,
-			'openai_api_key'   => 'sk-old-key',
-			'enable_ollama'    => true,
-			'ollama_model'     => 'llama3',
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'  => true,
+				'openai_api_key' => 'sk-old-key',
+				'enable_ollama'  => true,
+				'ollama_model'   => 'llama3',
+			)
+		);
 
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
 		// Simulate saving Ollama subtab.
 		$_POST['subtab'] = 'ollama';
-		$input = array(
-			'enable_ollama'        => '1', // Keep enabled.
-			'ollama_endpoint_url'  => 'http://localhost:11434',
-			'ollama_model'         => 'mistral',
+		$input           = array(
+			'enable_ollama'       => '1', // Keep enabled.
+			'ollama_endpoint_url' => 'http://localhost:11434',
+			'ollama_model'        => 'mistral',
 		);
 
 		// Use dashboard's sanitize method (which processes all sections for the tab).
@@ -190,7 +199,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// Merge with existing settings (simulating the actual save flow).
 		$existing = get_option( 'wp_mcp_ai_settings', array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 
 		// Verify OpenAI settings are preserved.
 		$this->assertTrue( $merged['enable_openai'], 'OpenAI should still be enabled after saving Ollama' );
@@ -212,7 +221,7 @@ class WP_MCP_AI_Providers_Subtab_Checkbox_Test extends WP_UnitTestCase {
 
 		// But form submits for OpenAI subtab (POST - from hidden field).
 		$_POST['subtab'] = 'openai';
-		$input = array(
+		$input           = array(
 			'enable_openai'  => '1',
 			'openai_api_key' => 'sk-test-123',
 		);

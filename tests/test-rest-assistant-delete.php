@@ -53,7 +53,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 * @param WP_MCP_AI_Language_Model_Router $mock_client Mock LM router.
 	 */
 	private function bootstrap_rest_controller( $mock_client ) {
-		$registry = wp_mcp_ai_get_registry();
+		$registry  = wp_mcp_ai_get_registry();
 		$container = wp_mcp_ai_container();
 
 		$authenticator = new WP_MCP_AI_REST_Authenticator();
@@ -70,7 +70,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_blocked_when_setting_disabled() {
 		// Ensure the setting is disabled (default).
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = false;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -97,7 +97,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_succeeds_when_setting_enabled() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -126,7 +126,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_returns_404_for_nonexistent_assistant() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -149,7 +149,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_returns_404_for_wrong_post_type() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -184,7 +184,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_requires_authentication() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -209,7 +209,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_checks_user_capability() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -239,7 +239,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	 */
 	public function test_delete_fires_action_hook() {
 		// Enable the setting.
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

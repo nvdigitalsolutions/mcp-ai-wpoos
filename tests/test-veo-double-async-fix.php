@@ -109,9 +109,9 @@ class Test_Veo_Double_Async_Fix extends WP_UnitTestCase {
 
 		// Simulate the context that async executor adds.
 		$context = array(
-			'user_id'            => 1,
-			'in_async_executor'  => true,  // This is the critical flag.
-			'assistant_id'       => 123,
+			'user_id'           => 1,
+			'in_async_executor' => true,  // This is the critical flag.
+			'assistant_id'      => 123,
 		);
 
 		// Even though the tool would normally default to async=true,
@@ -198,8 +198,8 @@ class Test_Veo_Double_Async_Fix extends WP_UnitTestCase {
 
 		// Test with both flags set.
 		$context = array(
-			'agentic_loop'       => true,
-			'in_async_executor'  => true,
+			'agentic_loop'      => true,
+			'in_async_executor' => true,
 		);
 		$result  = $method->invoke( $tool, array(), $context );
 		$this->assertFalse( $result, 'Should NOT use async when both flags are set' );

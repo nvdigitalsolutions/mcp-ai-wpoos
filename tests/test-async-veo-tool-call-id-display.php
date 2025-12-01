@@ -182,11 +182,11 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		// Verify the structure is correct for extraction.
 		$this->assertArrayHasKey( 'tool_results', $job_details, 'tool_results should exist' );
 		$this->assertIsArray( $job_details['tool_results'], 'tool_results should be array' );
-		
+
 		if ( ! empty( $job_details['tool_results'] ) ) {
 			$first_result = $job_details['tool_results'][0];
 			$this->assertIsArray( $first_result, 'First tool result should be array' );
-			
+
 			// This is what the JavaScript will extract.
 			$extracted_call_id = isset( $first_result['tool_call_id'] ) ? $first_result['tool_call_id'] : '';
 			$this->assertEquals( $original_tool_call_id, $extracted_call_id, 'JavaScript should be able to extract original tool_call_id' );

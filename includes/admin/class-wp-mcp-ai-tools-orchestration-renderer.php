@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		/**
 		 * Render a single tool row.
 		 *
-		 * @param string                      $tool_slug Tool slug identifier.
+		 * @param string                   $tool_slug Tool slug identifier.
 		 * @param WP_MCP_AI_Tool_Interface $tool      Tool instance.
 		 * @return string HTML output for tool row.
 		 */
@@ -268,13 +268,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			// Group flags by category.
 			$requirement_flags = array_filter(
 				$capability_flags,
-				function( $flag ) {
+				function ( $flag ) {
 					return strpos( $flag, 'requires-' ) === 0;
 				}
 			);
 			$operational_flags = array_filter(
 				$capability_flags,
-				function( $flag ) {
+				function ( $flag ) {
 					return in_array(
 						$flag,
 						array( 'read-only', 'write', 'state-changing', 'reversible', 'idempotent', 'performance-impact', 'consumes-tokens', 'model-dependent' ),
@@ -284,7 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			);
 			$network_flags     = array_filter(
 				$capability_flags,
-				function( $flag ) {
+				function ( $flag ) {
 					return in_array(
 						$flag,
 						array( 'local-only', 'external-api', 'network-dependent', 'async', 'rate-limited', 'deferred-result', 'requires-polling', 'supports-webhook', 'requires-callback', 'long-running', 'may-timeout', 'background-only', 'streaming-capable' ),
@@ -294,7 +294,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			);
 			$data_flags        = array_filter(
 				$capability_flags,
-				function( $flag ) {
+				function ( $flag ) {
 					return in_array(
 						$flag,
 						array( 'cacheable', 'non-deterministic', 'pii-data', 'large-response', 'paginated', 'supports-compression' ),

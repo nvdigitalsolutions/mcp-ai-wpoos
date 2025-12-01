@@ -32,9 +32,9 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 		// Simulate saving the external_tools subtab with updated credentials.
 		// The critical issue: github_access_token and github_username are NOT in the form
 		// because they're hidden fields populated by OAuth, not user input.
-		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$_POST['subtab'] = 'external_tools'; // Simulate subtab being submitted.
-		
+
 		$posted_settings = array(
 			'github_client_id'     => 'updated-client-id',
 			'github_client_secret' => 'updated-client-secret',
@@ -90,18 +90,18 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
 		// Simulate saving the external_tools subtab.
-		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$_POST['subtab'] = 'external_tools';
-		
+
 		$posted_settings = array(
 			'gmail_client_id'     => 'updated-gmail-client-id',
 			'gmail_client_secret' => 'updated-gmail-secret',
 			// gmail_refresh_token and gmail_user_email are NOT in POST.
 		);
 
-		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'tools' );
+		$sanitized         = $dashboard->sanitize_settings( $posted_settings, 'tools' );
 		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing_settings, $sanitized );
+		$merged            = array_merge( $existing_settings, $sanitized );
 
 		// OAuth tokens should be preserved.
 		$this->assertArrayHasKey( 'gmail_refresh_token', $merged );
@@ -143,7 +143,7 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 	 */
 	public function test_oauth_tokens_defined_in_tools_section() {
 		$section = new WP_MCP_AI_Section_Tools();
-		$fields = $section->get_fields();
+		$fields  = $section->get_fields();
 
 		// GitHub OAuth tokens should be defined as hidden fields.
 		$this->assertArrayHasKey( 'github_access_token', $fields );
@@ -162,7 +162,7 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 	 * Test that hidden fields are skipped during sanitization.
 	 */
 	public function test_hidden_fields_skipped_during_sanitization() {
-		$section = new WP_MCP_AI_Section_Tools();
+		$section         = new WP_MCP_AI_Section_Tools();
 		$_POST['subtab'] = 'external_tools';
 
 		// Simulate form submission without hidden fields.
@@ -197,9 +197,9 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 
 		// Step 2: User clicks "Connect GitHub Account" and completes OAuth flow.
 		// OAuth handler saves access token and username.
-		$settings_after_oauth = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings_after_oauth                        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$settings_after_oauth['github_access_token'] = 'gho_real_oauth_token';
-		$settings_after_oauth['github_username'] = 'octocat';
+		$settings_after_oauth['github_username']     = 'octocat';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings_after_oauth );
 
 		// Verify OAuth tokens are saved.
@@ -208,9 +208,9 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 		$this->assertSame( 'octocat', $settings['github_username'] );
 
 		// Step 3: User updates another field on the external_tools subtab (e.g., adds Brave API key).
-		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$_POST['subtab'] = 'external_tools';
-		
+
 		$posted_settings = array(
 			'github_client_id'     => 'oauth-app-client-id', // Unchanged.
 			'github_client_secret' => 'oauth-app-secret', // Unchanged.
@@ -219,8 +219,8 @@ class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 		);
 
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'tools' );
-		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing, $sanitized );
+		$existing  = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$merged    = array_merge( $existing, $sanitized );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
 
 		// Step 4: Verify OAuth tokens are STILL preserved after the save.

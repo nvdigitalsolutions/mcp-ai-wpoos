@@ -338,7 +338,7 @@ class WP_MCP_AI_Job_Notifier {
 	protected static function normalize_data_recursive( $data ) {
 		// Handle WP_Error directly.
 		if ( is_wp_error( $data ) ) {
-			$error_data = $data->get_error_data();
+			$error_data  = $data->get_error_data();
 			$error_array = array(
 				'error'   => true,
 				'code'    => $data->get_error_code(),

@@ -49,7 +49,10 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 
 		$tool_slug = 'test_tool';
 		$arguments = array( 'prompt' => 'test prompt' );
-		$context   = array( 'user_id' => 1, 'session_id' => 'test123' );
+		$context   = array(
+			'user_id'    => 1,
+			'session_id' => 'test123',
+		);
 
 		$job_id = $executor->queue_tool( $tool_slug, $arguments, $context );
 
@@ -102,8 +105,8 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 		$executor->init();
 
 		// Create a large result (>100KB to trigger compression).
-		$large_data   = str_repeat( 'A', 150000 );
-		$test_result  = array(
+		$large_data  = str_repeat( 'A', 150000 );
+		$test_result = array(
 			'data'    => $large_data,
 			'url'     => 'https://example.com/image.png',
 			'success' => true,

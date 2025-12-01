@@ -35,7 +35,7 @@ class WP_MCP_AI_Model_Service {
 	 */
 	public function get_models_for_provider( $provider, $args = array() ) {
 		$provider = sanitize_key( $provider );
-		
+
 		// Log the request for debugging.
 		WP_MCP_AI_Logger::log_event(
 			'model_service_get_models',
@@ -50,8 +50,8 @@ class WP_MCP_AI_Model_Service {
 		$models   = array();
 
 		// Extract capability requirements.
-		$capability_flags   = isset( $args['capability_flags'] ) ? $args['capability_flags'] : array();
-		$requires_vision    = in_array( 'vision', $capability_flags, true ) || in_array( 'requires-vision-model', $capability_flags, true );
+		$capability_flags    = isset( $args['capability_flags'] ) ? $args['capability_flags'] : array();
+		$requires_vision     = in_array( 'vision', $capability_flags, true ) || in_array( 'requires-vision-model', $capability_flags, true );
 		$requires_multimodal = in_array( 'multimodal', $capability_flags, true ) || in_array( 'requires-multimodal-model', $capability_flags, true );
 
 		switch ( $provider ) {
@@ -99,8 +99,8 @@ class WP_MCP_AI_Model_Service {
 			'model_service_models_retrieved',
 			'Successfully retrieved models for provider',
 			array(
-				'provider'     => $provider,
-				'model_count'  => count( $models ),
+				'provider'    => $provider,
+				'model_count' => count( $models ),
 			)
 		);
 
@@ -123,13 +123,13 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// GPT-5 series (flagship - 2025).
-		$models['gpt-5.1']              = 'GPT-5.1 (Flagship)';
-		$models['gpt-5.1-2025-11-13']   = 'GPT-5.1 (Nov 2025)';
-		$models['gpt-5']                = 'GPT-5';
-		$models['gpt-5-2025-08-07']     = 'GPT-5 (Aug 2025)';
-		$models['gpt-5-mini']           = 'GPT-5 Mini';
-		$models['gpt-5-nano']           = 'GPT-5 Nano';
-		$models['gpt-5-pro']            = 'GPT-5 Pro';
+		$models['gpt-5.1']            = 'GPT-5.1 (Flagship)';
+		$models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';
+		$models['gpt-5']              = 'GPT-5';
+		$models['gpt-5-2025-08-07']   = 'GPT-5 (Aug 2025)';
+		$models['gpt-5-mini']         = 'GPT-5 Mini';
+		$models['gpt-5-nano']         = 'GPT-5 Nano';
+		$models['gpt-5-pro']          = 'GPT-5 Pro';
 
 		// GPT-5 Codex variants (coding-optimized, text-only).
 		if ( ! $requires_vision && ! $requires_multimodal ) {
@@ -138,18 +138,18 @@ class WP_MCP_AI_Model_Service {
 		}
 
 		// GPT-4o series (multimodal - vision capable).
-		$models['gpt-4o']               = 'GPT-4o';
-		$models['gpt-4o-mini']          = 'GPT-4o Mini';
-		$models['gpt-4o-2024-11-20']    = 'GPT-4o (Nov 2024)';
-		$models['gpt-4o-2024-08-06']    = 'GPT-4o (Aug 2024)';
-		$models['gpt-4o-2024-05-13']    = 'GPT-4o (May 2024)';
-		$models['chatgpt-4o-latest']    = 'ChatGPT-4o (Latest)';
+		$models['gpt-4o']            = 'GPT-4o';
+		$models['gpt-4o-mini']       = 'GPT-4o Mini';
+		$models['gpt-4o-2024-11-20'] = 'GPT-4o (Nov 2024)';
+		$models['gpt-4o-2024-08-06'] = 'GPT-4o (Aug 2024)';
+		$models['gpt-4o-2024-05-13'] = 'GPT-4o (May 2024)';
+		$models['chatgpt-4o-latest'] = 'ChatGPT-4o (Latest)';
 
 		// Legacy models (text-only).
 		if ( ! $requires_vision && ! $requires_multimodal ) {
-			$models['gpt-4-turbo']    = 'GPT-4 Turbo (Legacy)';
-			$models['gpt-4']          = 'GPT-4 (Legacy)';
-			$models['gpt-3.5-turbo']  = 'GPT-3.5 Turbo (Legacy)';
+			$models['gpt-4-turbo']   = 'GPT-4 Turbo (Legacy)';
+			$models['gpt-4']         = 'GPT-4 (Legacy)';
+			$models['gpt-3.5-turbo'] = 'GPT-3.5 Turbo (Legacy)';
 		}
 
 		return $models;
@@ -169,11 +169,11 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// Claude 4 series (multimodal - vision capable) - 2025.
-		$models['claude-sonnet-4.5']         = 'Claude Sonnet 4.5 (Recommended)';
+		$models['claude-sonnet-4.5']          = 'Claude Sonnet 4.5 (Recommended)';
 		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
-		$models['claude-haiku-4.5']          = 'Claude Haiku 4.5 (Fastest)';
-		$models['claude-opus-4.1']           = 'Claude Opus 4.1 (Flagship)';
-		$models['claude-opus-4.0']           = 'Claude Opus 4.0';
+		$models['claude-haiku-4.5']           = 'Claude Haiku 4.5 (Fastest)';
+		$models['claude-opus-4.1']            = 'Claude Opus 4.1 (Flagship)';
+		$models['claude-opus-4.0']            = 'Claude Opus 4.0';
 
 		// Claude 3.5 series (legacy - for backward compatibility).
 		$models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Legacy)';
@@ -196,23 +196,23 @@ class WP_MCP_AI_Model_Service {
 			return array();
 		}
 
-		$models = array();
+		$models             = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
 		// Gemini 3 series (multimodal - latest generation) - Preview.
-		$models['gemini-3-pro-preview']   = 'Gemini 3 Pro (Preview)';
+		$models['gemini-3-pro-preview'] = 'Gemini 3 Pro (Preview)';
 
 		// Gemini 2.5 series (multimodal - text, image, video) - Stable.
-		$models['gemini-2.5-pro']         = 'Gemini 2.5 Pro';
-		$models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Recommended)';
-		$models['gemini-2.5-flash-lite']  = 'Gemini 2.5 Flash Lite';
+		$models['gemini-2.5-pro']                   = 'Gemini 2.5 Pro';
+		$models['gemini-2.5-flash']                 = 'Gemini 2.5 Flash (Recommended)';
+		$models['gemini-2.5-flash-lite']            = 'Gemini 2.5 Flash Lite';
 		$models['gemini-2.5-flash-preview-09-2025'] = 'Gemini 2.5 Flash (Sep 2025 Preview)';
 
 		// Gemini 2.5 specialized models.
-		$models['gemini-live-2.5-flash-preview'] = 'Gemini Live 2.5 Flash (Voice/Multimodal)';
+		$models['gemini-live-2.5-flash-preview']                = 'Gemini Live 2.5 Flash (Voice/Multimodal)';
 		$models['gemini-2.5-flash-preview-native-audio-dialog'] = 'Gemini 2.5 Native Audio Dialog';
-		$models['gemini-2.5-flash-preview-tts'] = 'Gemini 2.5 Flash TTS';
-		$models['gemini-2.5-pro-preview-tts']   = 'Gemini 2.5 Pro TTS';
+		$models['gemini-2.5-flash-preview-tts']                 = 'Gemini 2.5 Flash TTS';
+		$models['gemini-2.5-pro-preview-tts']                   = 'Gemini 2.5 Pro TTS';
 
 		// Image generation model - only for image generation/editing tools.
 		if ( $requires_image_gen ) {
@@ -220,23 +220,23 @@ class WP_MCP_AI_Model_Service {
 		}
 
 		// Gemini 2.0 series (stable).
-		$models['gemini-2.0-flash']       = 'Gemini 2.0 Flash';
-		$models['gemini-2.0-flash-lite']  = 'Gemini 2.0 Flash Lite';
-		$models['gemini-2.0-flash-exp']   = 'Gemini 2.0 Flash (Experimental)';
+		$models['gemini-2.0-flash']      = 'Gemini 2.0 Flash';
+		$models['gemini-2.0-flash-lite'] = 'Gemini 2.0 Flash Lite';
+		$models['gemini-2.0-flash-exp']  = 'Gemini 2.0 Flash (Experimental)';
 
 		// Experimental models.
-		$models['gemini-exp-1206']        = 'Gemini Exp 1206';
-		$models['gemini-exp-1121']        = 'Gemini Exp 1121';
+		$models['gemini-exp-1206'] = 'Gemini Exp 1206';
+		$models['gemini-exp-1121'] = 'Gemini Exp 1121';
 
 		// Gemini 1.5 series (legacy - for backward compatibility).
-		$models['gemini-1.5-pro']         = 'Gemini 1.5 Pro (Legacy)';
-		$models['gemini-1.5-flash']       = 'Gemini 1.5 Flash (Legacy)';
+		$models['gemini-1.5-pro']   = 'Gemini 1.5 Pro (Legacy)';
+		$models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
 
 		// Gemma models (Google's open models - text-only).
 		if ( ! $requires_vision && ! $requires_multimodal ) {
-			$models['gemma-2-27b-it']     = 'Gemma 2 27B (Instruct)';
-			$models['gemma-2-9b-it']      = 'Gemma 2 9B (Instruct)';
-			$models['gemma-2-2b-it']      = 'Gemma 2 2B (Instruct)';
+			$models['gemma-2-27b-it'] = 'Gemma 2 27B (Instruct)';
+			$models['gemma-2-9b-it']  = 'Gemma 2 9B (Instruct)';
+			$models['gemma-2-2b-it']  = 'Gemma 2 2B (Instruct)';
 		}
 
 		return $models;
@@ -261,18 +261,18 @@ class WP_MCP_AI_Model_Service {
 
 		// Add common Ollama models.
 		$common_ollama_models = array(
-			'llama3.2'          => 'Llama 3.2',
-			'llama3.1'          => 'Llama 3.1',
-			'llama3'            => 'Llama 3',
-			'llama2'            => 'Llama 2',
-			'mistral'           => 'Mistral',
-			'mixtral'           => 'Mixtral',
-			'gemma2'            => 'Gemma 2',
-			'gemma'             => 'Gemma',
-			'codellama'         => 'CodeLlama',
-			'deepseek-coder'    => 'DeepSeek Coder',
-			'phi3'              => 'Phi-3',
-			'qwen2.5'           => 'Qwen 2.5',
+			'llama3.2'       => 'Llama 3.2',
+			'llama3.1'       => 'Llama 3.1',
+			'llama3'         => 'Llama 3',
+			'llama2'         => 'Llama 2',
+			'mistral'        => 'Mistral',
+			'mixtral'        => 'Mixtral',
+			'gemma2'         => 'Gemma 2',
+			'gemma'          => 'Gemma',
+			'codellama'      => 'CodeLlama',
+			'deepseek-coder' => 'DeepSeek Coder',
+			'phi3'           => 'Phi-3',
+			'qwen2.5'        => 'Qwen 2.5',
 		);
 
 		// Add common models that match requirements.
@@ -307,35 +307,35 @@ class WP_MCP_AI_Model_Service {
 		// Add common LM Studio models (popular models from lmstudio.ai - 2025).
 		$common_lm_studio_models = array(
 			// Qwen models (function calling, coding, vision) - Top performers.
-			'qwen/qwen3-coder-30b'        => 'Qwen 3 Coder 30B',
-			'qwen/qwen3-vl-30b'           => 'Qwen 3 Vision-Language 30B',
-			'qwen/qwen2.5-coder-32b'      => 'Qwen 2.5 Coder 32B',
-			'qwen/qwen2.5-32b'            => 'Qwen 2.5 32B',
-			'qwen/qwen2.5-14b'            => 'Qwen 2.5 14B',
-			'qwen/qwen2.5-7b'             => 'Qwen 2.5 7B',
+			'qwen/qwen3-coder-30b'                    => 'Qwen 3 Coder 30B',
+			'qwen/qwen3-vl-30b'                       => 'Qwen 3 Vision-Language 30B',
+			'qwen/qwen2.5-coder-32b'                  => 'Qwen 2.5 Coder 32B',
+			'qwen/qwen2.5-32b'                        => 'Qwen 2.5 32B',
+			'qwen/qwen2.5-14b'                        => 'Qwen 2.5 14B',
+			'qwen/qwen2.5-7b'                         => 'Qwen 2.5 7B',
 			// Llama models (Meta's flagship).
-			'meta-llama/llama-3.3-70b-instruct' => 'Llama 3.3 70B Instruct',
-			'meta-llama/llama-3.2-3b-instruct'  => 'Llama 3.2 3B Instruct',
-			'meta-llama/llama-3.2-1b-instruct'  => 'Llama 3.2 1B Instruct',
-			'meta-llama/llama-3.1-8b-instruct'  => 'Llama 3.1 8B Instruct',
+			'meta-llama/llama-3.3-70b-instruct'       => 'Llama 3.3 70B Instruct',
+			'meta-llama/llama-3.2-3b-instruct'        => 'Llama 3.2 3B Instruct',
+			'meta-llama/llama-3.2-1b-instruct'        => 'Llama 3.2 1B Instruct',
+			'meta-llama/llama-3.1-8b-instruct'        => 'Llama 3.1 8B Instruct',
 			// Mistral models (efficient reasoning).
-			'mistralai/mistral-large-2411'      => 'Mistral Large 2411',
-			'mistralai/mistral-nemo-2407'       => 'Mistral Nemo 2407',
-			'mistralai/mistral-7b-instruct-v0.3' => 'Mistral 7B Instruct v0.3',
-			'mistralai/mixtral-8x7b-instruct'   => 'Mixtral 8x7B Instruct',
-			'mistralai/mixtral-8x22b-instruct'  => 'Mixtral 8x22B Instruct',
+			'mistralai/mistral-large-2411'            => 'Mistral Large 2411',
+			'mistralai/mistral-nemo-2407'             => 'Mistral Nemo 2407',
+			'mistralai/mistral-7b-instruct-v0.3'      => 'Mistral 7B Instruct v0.3',
+			'mistralai/mixtral-8x7b-instruct'         => 'Mixtral 8x7B Instruct',
+			'mistralai/mixtral-8x22b-instruct'        => 'Mixtral 8x22B Instruct',
 			// DeepSeek models (coding specialist).
 			'deepseek-ai/deepseek-coder-33b-instruct' => 'DeepSeek Coder 33B Instruct',
 			'deepseek-ai/deepseek-v3'                 => 'DeepSeek V3',
 			'deepseek-ai/deepseek-r1'                 => 'DeepSeek R1 (Reasoning)',
 			// Microsoft Phi models (small but capable).
-			'microsoft/phi-4'                   => 'Phi-4',
-			'microsoft/phi-3.5-mini-instruct'   => 'Phi-3.5 Mini Instruct',
+			'microsoft/phi-4'                         => 'Phi-4',
+			'microsoft/phi-3.5-mini-instruct'         => 'Phi-3.5 Mini Instruct',
 			// Google Gemma models.
-			'google/gemma-3-12b-it'             => 'Gemma 3 12B Instruct',
-			'google/gemma-2-27b-it'             => 'Gemma 2 27B Instruct',
-			'google/gemma-2-9b-it'              => 'Gemma 2 9B Instruct',
-			'google/gemma-2-2b-it'              => 'Gemma 2 2B Instruct',
+			'google/gemma-3-12b-it'                   => 'Gemma 3 12B Instruct',
+			'google/gemma-2-27b-it'                   => 'Gemma 2 27B Instruct',
+			'google/gemma-2-9b-it'                    => 'Gemma 2 9B Instruct',
+			'google/gemma-2-2b-it'                    => 'Gemma 2 2B Instruct',
 		);
 
 		// Add common models that match requirements.

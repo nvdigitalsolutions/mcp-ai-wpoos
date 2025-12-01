@@ -144,16 +144,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Load Pro tool files.
 		$pro_tools = array(
 			// WooCommerce tools.
-			'WP_MCP_AI_Pro_Tool_Woo_Products' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
-			'WP_MCP_AI_Pro_Tool_Woo_Orders'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Products'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Orders'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
 			// JetEngine tools.
-			'WP_MCP_AI_Pro_Tool_JetEngine'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
+			'WP_MCP_AI_Pro_Tool_JetEngine'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			// Elementor tools.
-			'WP_MCP_AI_Pro_Tool_Elementor'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
+			'WP_MCP_AI_Pro_Tool_Elementor'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.
-			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
+			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
 		);
 
 		/**

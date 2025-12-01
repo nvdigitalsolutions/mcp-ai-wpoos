@@ -37,7 +37,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_after_tool_execution',
-			function( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
+			function ( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
 				$hook_called    = true;
 				$hook_tool_slug = $tool_slug;
 				$hook_arguments = $arguments;
@@ -91,8 +91,8 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		};
 
 		// Use reflection to inject registry.
-		$reflection      = new ReflectionClass( $executor );
-		$registry_prop   = $reflection->getProperty( 'registry' );
+		$reflection    = new ReflectionClass( $executor );
+		$registry_prop = $reflection->getProperty( 'registry' );
 		$registry_prop->setAccessible( true );
 		$registry_prop->setValue( $executor, $registry );
 
@@ -122,7 +122,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_after_tool_execution',
-			function( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
+			function ( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
 				$hook_called    = true;
 				$hook_tool_slug = $tool_slug;
 				$hook_arguments = $arguments;
@@ -207,7 +207,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_after_tool_execution',
-			function( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
+			function ( $tool_slug, $arguments, $context, $result ) use ( &$hook_called, &$hook_tool_slug, &$hook_arguments, &$hook_context, &$hook_result ) {
 				$hook_called    = true;
 				$hook_tool_slug = $tool_slug;
 				$hook_arguments = $arguments;
@@ -222,19 +222,19 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Create mock parent job metadata.
-		$parent_job_id = 'async_test_parent';
+		$parent_job_id   = 'async_test_parent';
 		$parent_metadata = array(
-			'job_id'     => $parent_job_id,
-			'tool_slug'  => 'generate_veo_video',
-			'arguments'  => array(
-				'prompt'  => 'Parent job video prompt',
+			'job_id'    => $parent_job_id,
+			'tool_slug' => 'generate_veo_video',
+			'arguments' => array(
+				'prompt'   => 'Parent job video prompt',
 				'duration' => 8,
 			),
-			'context'    => array(
+			'context'   => array(
 				'user_id'      => 1,
 				'assistant_id' => 789,
 			),
-			'status'     => 'running',
+			'status'    => 'running',
 		);
 
 		// Save parent metadata to transient.
@@ -276,19 +276,19 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 
 		// Track both hooks.
-		$job_completed_called = false;
+		$job_completed_called  = false;
 		$tool_execution_called = false;
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function() use ( &$job_completed_called ) {
+			function () use ( &$job_completed_called ) {
 				$job_completed_called = true;
 			}
 		);
 
 		add_action(
 			'wp_mcp_ai_after_tool_execution',
-			function() use ( &$tool_execution_called ) {
+			function () use ( &$tool_execution_called ) {
 				$tool_execution_called = true;
 			}
 		);
@@ -330,8 +330,8 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		};
 
 		// Inject registry.
-		$reflection      = new ReflectionClass( $executor );
-		$registry_prop   = $reflection->getProperty( 'registry' );
+		$reflection    = new ReflectionClass( $executor );
+		$registry_prop = $reflection->getProperty( 'registry' );
 		$registry_prop->setAccessible( true );
 		$registry_prop->setValue( $executor, $registry );
 

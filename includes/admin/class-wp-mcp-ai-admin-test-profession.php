@@ -166,13 +166,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 						<tbody>
 							<?php foreach ( $professions as $profession ) : ?>
 								<?php
-								$category              = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
-								$expertise             = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
-								$tools                 = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
-								$role_description      = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
-								$knowledge_base        = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
-								$associated_assistant  = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
-								$edit_url              = get_edit_post_link( $profession->ID );
+								$category             = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+								$expertise            = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+								$tools                = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+								$role_description     = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
+								$knowledge_base       = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+								$associated_assistant = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
+								$edit_url             = get_edit_post_link( $profession->ID );
 
 								$category_labels = array(
 									'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
@@ -189,12 +189,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 								$tools_count      = is_array( $tools ) ? count( $tools ) : 0;
 
 								// Get associated assistant title if set and validate the assistant exists.
-								$assistant_title = '';
+								$assistant_title            = '';
 								$valid_associated_assistant = 0;
 								if ( $associated_assistant ) {
 									$assistant_post = get_post( $associated_assistant );
 									if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
-										$assistant_title = $assistant_post->post_title;
+										$assistant_title            = $assistant_post->post_title;
 										$valid_associated_assistant = absint( $associated_assistant );
 									}
 								}

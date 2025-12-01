@@ -141,7 +141,7 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_started',
-			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+			function ( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_metadata = $meta;
@@ -173,7 +173,7 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_started',
-			function( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
+			function ( $id, $meta ) use ( &$hook_called, &$hook_job_id, &$hook_metadata ) {
 				$hook_called   = true;
 				$hook_job_id   = $id;
 				$hook_metadata = $meta;
@@ -193,7 +193,14 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'queue_async_polling' );
 		$method->setAccessible( true );
 
-		$result = $method->invoke( $service, $mock_operation, array( 'prompt' => 'Test', 'user_id' => 1 ) );
+		$result = $method->invoke(
+			$service,
+			$mock_operation,
+			array(
+				'prompt'  => 'Test',
+				'user_id' => 1,
+			)
+		);
 
 		// Verify hook was called with job_id.
 		$this->assertTrue( $hook_called, 'job_started hook should be fired for veo job' );

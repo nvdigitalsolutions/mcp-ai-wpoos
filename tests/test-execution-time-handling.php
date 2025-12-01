@@ -42,8 +42,8 @@ class WP_MCP_AI_Execution_Time_Test extends WP_UnitTestCase {
 	 * Test that ensure_execution_time() returns false when current limit is already sufficient.
 	 */
 	public function test_ensure_execution_time_with_sufficient_limit() {
-		$manager        = WP_MCP_AI_Resource_Manager::instance();
-		$current_limit  = ini_get( 'max_execution_time' );
+		$manager       = WP_MCP_AI_Resource_Manager::instance();
+		$current_limit = ini_get( 'max_execution_time' );
 
 		// If we have a limit, test that requesting less returns false.
 		if ( $current_limit > 0 ) {
@@ -99,7 +99,7 @@ class WP_MCP_AI_Execution_Time_Test extends WP_UnitTestCase {
 		// Add a hook to detect the action.
 		add_action(
 			'wp_mcp_ai_execution_time_adjusted',
-			function() use ( &$action_fired ) {
+			function () use ( &$action_fired ) {
 				$action_fired = true;
 			}
 		);

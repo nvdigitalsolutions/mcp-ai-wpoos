@@ -1085,9 +1085,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'veo_merged_parent_job_metadata',
 					'Merged veo metadata with existing async executor metadata',
 					array(
-						'job_id'             => $job_id,
+						'job_id'              => $job_id,
 						'preserved_tool_slug' => isset( $existing_metadata['tool_slug'] ) ? $existing_metadata['tool_slug'] : 'not_set',
-						'has_context'        => isset( $existing_metadata['context'] ),
+						'has_context'         => isset( $existing_metadata['context'] ),
 					)
 				);
 			} else {
@@ -1098,8 +1098,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					'veo_parent_job_metadata_missing',
 					'Expected parent job metadata not found when use_parent_job is true',
 					array(
-						'job_id'          => $job_id,
-						'transient_key'   => $transient_prefix . $job_id,
+						'job_id'        => $job_id,
+						'transient_key' => $transient_prefix . $job_id,
 					)
 				);
 			}

@@ -139,10 +139,10 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$tool_name = 'gemini_tool';
 		$arguments = array();
 		$context   = array(
-			'user_id'  => $user_id,
+			'user_id' => $user_id,
 			// No token_usage in context - should come from result.
 		);
-		$result    = array(
+		$result = array(
 			'success'  => true,
 			'provider' => 'gemini', // Tool reports it used Gemini.
 			'model'    => 'gemini-1.5-flash',

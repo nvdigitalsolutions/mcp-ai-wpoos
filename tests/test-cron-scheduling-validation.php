@@ -61,8 +61,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 
 		$future_time = time() + HOUR_IN_SECONDS;
-		$hook = 'wp_mcp_ai_test_one_time';
-		$args = array( 'test_param' => 'test_value' );
+		$hook        = 'wp_mcp_ai_test_one_time';
+		$args        = array( 'test_param' => 'test_value' );
 
 		$result = $tool->execute(
 			array(
@@ -99,8 +99,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 
 		$start_time = time() + MINUTE_IN_SECONDS;
-		$hook = 'wp_mcp_ai_test_recurring';
-		$schedule = 'hourly';
+		$hook       = 'wp_mcp_ai_test_recurring';
+		$schedule   = 'hourly';
 
 		$result = $tool->execute(
 			array(
@@ -120,7 +120,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		// Verify cron manager tracked it.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-		$job = reset( $jobs );
+		$job  = reset( $jobs );
 		$this->assertEquals( $schedule, $job['schedule'], 'Schedule type should be recorded' );
 	}
 
@@ -151,11 +151,11 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		// Verify arguments were stored correctly.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-		$job = reset( $jobs );
+		$job  = reset( $jobs );
 
 		// Cron manager normalizes args, so check the structure is preserved.
 		$this->assertIsArray( $job['args'] );
-		
+
 		// For associative arrays, they are wrapped in another array by normalise_args.
 		$stored_args = $job['args'][0] ?? $job['args'];
 		$this->assertEquals( $args, $stored_args, 'Complex arguments should be preserved' );
@@ -180,7 +180,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		// List jobs.
 		$list_tool = new WP_MCP_AI_Tool_List_Cron_Jobs();
-		$result = $list_tool->execute( array(), array( 'user_id' => $this->admin_id ) );
+		$result    = $list_tool->execute( array(), array( 'user_id' => $this->admin_id ) );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'jobs', $result );
@@ -201,7 +201,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 	public function test_get_cron_job() {
 		// Create a job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
-		$hook = 'test_get_job';
+		$hook        = 'test_get_job';
 
 		$create_result = $create_tool->execute(
 			array(
@@ -216,7 +216,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		// Get the job.
 		$get_tool = new WP_MCP_AI_Tool_Get_Cron_Job();
-		$result = $get_tool->execute(
+		$result   = $get_tool->execute(
 			array( 'job_id' => $job_id ),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -234,7 +234,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 	public function test_delete_cron_job() {
 		// Create a job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
-		$hook = 'test_delete_job';
+		$hook        = 'test_delete_job';
 
 		$create_result = $create_tool->execute(
 			array(
@@ -251,7 +251,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		// Delete the job.
 		$delete_tool = new WP_MCP_AI_Tool_Delete_Cron_Job();
-		$result = $delete_tool->execute(
+		$result      = $delete_tool->execute(
 			array( 'job_id' => $job_id ),
 			array( 'user_id' => $this->admin_id )
 		);
@@ -299,7 +299,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		$this->assertNotFalse( wp_next_scheduled( $hook2, array( array( 'job' => 2 ) ) ) );
 
 		// Delete job 1.
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs    = WP_MCP_AI_Cron_Manager::get_jobs();
 		$job1_id = null;
 		foreach ( $jobs as $job ) {
 			if ( $hook1 === $job['hook'] ) {
@@ -391,11 +391,14 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 	public function test_argument_normalization() {
 		// Test numeric indexed array.
 		$numeric_args = array( 'value1', 'value2', 'value3' );
-		$normalized = WP_MCP_AI_Cron_Manager::normalise_args( $numeric_args );
+		$normalized   = WP_MCP_AI_Cron_Manager::normalise_args( $numeric_args );
 		$this->assertEquals( $numeric_args, $normalized, 'Numeric arrays should be preserved' );
 
 		// Test associative array.
-		$assoc_args = array( 'key1' => 'value1', 'key2' => 'value2' );
+		$assoc_args = array(
+			'key1' => 'value1',
+			'key2' => 'value2',
+		);
 		$normalized = WP_MCP_AI_Cron_Manager::normalise_args( $assoc_args );
 		$this->assertIsArray( $normalized );
 		$this->assertCount( 1, $normalized, 'Associative arrays should be wrapped' );
@@ -454,7 +457,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 	 */
 	public function test_cron_creation_requires_capability() {
 		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
-		$tool = new WP_MCP_AI_Tool_Create_Cron_Job();
+		$tool          = new WP_MCP_AI_Tool_Create_Cron_Job();
 
 		// Attempt to create job as subscriber (should check capability).
 		$result = $tool->execute(

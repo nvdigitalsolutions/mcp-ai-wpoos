@@ -34,7 +34,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Create parent async job metadata.
-		$parent_job_id = 'async_test_parent_' . uniqid();
+		$parent_job_id   = 'async_test_parent_' . uniqid();
 		$parent_metadata = array(
 			'job_id'       => $parent_job_id,
 			'tool_slug'    => 'generate_veo_video',
@@ -82,7 +82,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function( $id, $result, $metadata ) use ( $veo_job_id, $parent_job_id, &$veo_hook_called, &$parent_hook_called, &$veo_hook_data, &$parent_hook_data ) {
+			function ( $id, $result, $metadata ) use ( $veo_job_id, $parent_job_id, &$veo_hook_called, &$parent_hook_called, &$veo_hook_data, &$parent_hook_data ) {
 				if ( $id === $veo_job_id ) {
 					$veo_hook_called = true;
 					$veo_hook_data   = array(
@@ -109,15 +109,15 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 
 		// Mock video result.
 		$video_result = array(
-			'video_url'    => 'data:video/mp4;base64,mock_data',
+			'video_url'     => 'data:video/mp4;base64,mock_data',
 			'attachment_id' => 456,
-			'url'          => 'http://example.com/video.mp4',
-			'prompt'       => 'Test video',
-			'duration'     => 5,
-			'aspect_ratio' => '16:9',
-			'resolution'   => '720p',
-			'model'        => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
-			'provider'     => 'gemini',
+			'url'           => 'http://example.com/video.mp4',
+			'prompt'        => 'Test video',
+			'duration'      => 5,
+			'aspect_ratio'  => '16:9',
+			'resolution'    => '720p',
+			'model'         => WP_MCP_AI_Gemini_Video_Generation_Service::VEO_MODEL,
+			'provider'      => 'gemini',
 		);
 
 		// Complete parent job.
@@ -128,7 +128,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 		$this->assertIsArray( $updated_parent, 'Parent job metadata should exist' );
 		$this->assertEquals( 'completed', $updated_parent['status'], 'Parent job should be marked completed' );
 		$this->assertArrayHasKey( 'result', $updated_parent, 'Parent job should have result' );
-		
+
 		// Verify result is wrapped in async executor format.
 		$this->assertIsArray( $updated_parent['result'], 'Result should be an array' );
 		$this->assertArrayHasKey( 'compressed', $updated_parent['result'], 'Result should have compressed key' );
@@ -180,7 +180,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_job_completed',
-			function( $id, $result, $metadata ) use ( $veo_job_id, &$hook_metadata ) {
+			function ( $id, $result, $metadata ) use ( $veo_job_id, &$hook_metadata ) {
 				if ( $id === $veo_job_id ) {
 					$hook_metadata = $metadata;
 				}

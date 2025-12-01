@@ -281,7 +281,8 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return $this->prepare_input_file_segment( $segment );
 			}
 
-			// If no valid type, treat as text segment
+			// If no valid type, treat as text segment.
+
 			if ( isset( $segment['text'] ) ) {
 				return $this->prepare_input_text_segment( $segment['text'] );
 			}
@@ -319,17 +320,20 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$caption = isset( $segment['caption'] ) ? $this->sanitize_caption( $segment['caption'] ) : '';
 			$detail  = isset( $segment['detail'] ) ? $this->sanitize_detail( $segment['detail'] ) : '';
 
-			// Extract URL from various possible formats
+			// Extract URL from various possible formats.
+
 			$url = '';
 			if ( ! empty( $segment['url'] ) ) {
 				$url = $segment['url'];
 			} elseif ( isset( $segment['image_url'] ) ) {
-				// Handle image_url as string or object with url property
+				// Handle image_url as string or object with url property.
+
 				if ( is_string( $segment['image_url'] ) ) {
 					$url = $segment['image_url'];
 				} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
 					$url = $segment['image_url']['url'];
-					// Also extract detail from image_url if not already set
+					// Also extract detail from image_url if not already set.
+
 					if ( empty( $detail ) && isset( $segment['image_url']['detail'] ) ) {
 						$detail = $this->sanitize_detail( $segment['image_url']['detail'] );
 					}
@@ -1050,7 +1054,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 */
 		public static function get_allowed_mime_types( $usage = null, $provider = 'openai' ) {
 			$provider = strtolower( sanitize_key( $provider ) );
-			
+
 			// Base image MIME types supported by most providers.
 			$image_mimes = array(
 				'image/jpeg',
@@ -1061,7 +1065,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				'image/heif',
 				'image/bmp',
 			);
-			
+
 			// SVG is only supported by Gemini, not by OpenAI.
 			// OpenAI Vision API explicitly does NOT support SVG files.
 			if ( in_array( $provider, array( 'gemini', 'google' ), true ) ) {

@@ -50,19 +50,19 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 	 */
 	public function performance_test_classes_provider() {
 		return array(
-			'Elementor Performance Test'     => array(
+			'Elementor Performance Test'   => array(
 				'tests/performance/test-elementor-performance.php',
 				'WP_MCP_AI_Elementor_Performance_Test',
 			),
-			'Speed Benchmarks Test'          => array(
+			'Speed Benchmarks Test'        => array(
 				'tests/performance/test-speed-benchmarks.php',
 				'WP_MCP_AI_Speed_Benchmarks_Test',
 			),
-			'Stress Suite Test'              => array(
+			'Stress Suite Test'            => array(
 				'tests/performance/test-stress-suite.php',
 				'WP_MCP_AI_Stress_Suite_Test',
 			),
-			'Optimization Comparison Test'   => array(
+			'Optimization Comparison Test' => array(
 				'tests/performance/test-optimization-comparison.php',
 				'WP_MCP_AI_Optimization_Comparison_Test',
 			),

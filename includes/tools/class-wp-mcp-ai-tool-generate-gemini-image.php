@@ -190,14 +190,14 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
-		$text_parts = array();
+		$text_parts   = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: image title, 2: attachment ID */
 			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
 			$storage['title'],
 			$storage['attachment_id']
 		);
-		
+
 		if ( ! empty( $image['revised_prompt'] ) ) {
 			$text_parts[] = sprintf(
 				/* translators: %s: revised prompt from Gemini */
@@ -205,14 +205,14 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 				$image['revised_prompt']
 			);
 		}
-		
+
 		$text_parts[] = sprintf(
 			/* translators: 1: aspect ratio, 2: format */
 			__( 'Format: %1$s, %2$s', 'wp-mcp-ai' ),
 			isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
 			strtoupper( isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ) )
 		);
-		
+
 		$result = array(
 			'attachment_id'  => $storage['attachment_id'],
 			'url'            => $storage['url'],

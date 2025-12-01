@@ -1196,8 +1196,8 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 				'content'    => '',
 				'tool_calls' => array(
 					array(
-						'id'   => 'call_123',
-						'type' => 'function',
+						'id'       => 'call_123',
+						'type'     => 'function',
 						'function' => array(
 							'name'      => 'get_weather',
 							'arguments' => '{"location":"San Francisco"}',
@@ -1464,10 +1464,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 										'content'    => '',
 										'tool_calls' => array(
 											array(
-												'id'   => 'call_123',
-												'type' => 'function',
+												'id'       => 'call_123',
+												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_weather',
+													'name' => 'get_weather',
 													'arguments' => '{"location":"San Francisco"}',
 												),
 											),
@@ -1801,5 +1801,3 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		remove_all_filters( 'pre_http_request' );
 	}
 }
-
-

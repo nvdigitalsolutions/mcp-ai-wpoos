@@ -149,12 +149,12 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 
 		// Sanitize and structure the data.
 		$validated = array(
-			'title'              => sanitize_text_field( $team['title'] ),
-			'slug'               => sanitize_title( $team['slug'] ),
-			'description'        => isset( $team['description'] ) ? wp_kses_post( $team['description'] ) : '',
-			'members'            => array_map( 'sanitize_text_field', $team['members'] ),
-			'default_provider'   => isset( $team['default_provider'] ) ? sanitize_key( $team['default_provider'] ) : '',
-			'default_model'      => isset( $team['default_model'] ) ? sanitize_text_field( $team['default_model'] ) : '',
+			'title'               => sanitize_text_field( $team['title'] ),
+			'slug'                => sanitize_title( $team['slug'] ),
+			'description'         => isset( $team['description'] ) ? wp_kses_post( $team['description'] ) : '',
+			'members'             => array_map( 'sanitize_text_field', $team['members'] ),
+			'default_provider'    => isset( $team['default_provider'] ) ? sanitize_key( $team['default_provider'] ) : '',
+			'default_model'       => isset( $team['default_model'] ) ? sanitize_text_field( $team['default_model'] ) : '',
 			'default_temperature' => isset( $team['default_temperature'] ) ? floatval( $team['default_temperature'] ) : null,
 		);
 

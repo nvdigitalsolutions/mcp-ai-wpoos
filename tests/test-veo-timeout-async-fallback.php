@@ -115,7 +115,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		ini_set( 'max_execution_time', '30' );
 		$max_execution_time = ini_get( 'max_execution_time' );
 		$this->assertEquals( 30, (int) $max_execution_time );
-		
+
 		// Threshold should be 10 seconds before: 30 - 10 = 20.
 		$expected_threshold = 20;
 		$this->assertEquals( $expected_threshold, $max_execution_time - 10 );
@@ -124,7 +124,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		ini_set( 'max_execution_time', '5' );
 		$max_execution_time = ini_get( 'max_execution_time' );
 		$this->assertEquals( 5, (int) $max_execution_time );
-		
+
 		// Threshold calculation: 5 - 10 = -5, should use minimum of 5.
 		$calculated_threshold = $max_execution_time - 10;
 		$this->assertLessThan( 5, $calculated_threshold, 'Calculated threshold should be less than 5' );

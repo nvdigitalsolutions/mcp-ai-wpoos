@@ -113,7 +113,7 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		$this->assertTrue( $normalized['error'] );
 		$this->assertEquals( 'wp_mcp_ai_no_operation', $normalized['code'] );
 		$this->assertEquals( 'At least one parameter must be specified.', $normalized['message'] );
-		
+
 		// Data key should not be present if error data is empty.
 		$this->assertArrayNotHasKey( 'data', $normalized, 'Data key should not exist if error data is empty' );
 	}
@@ -124,9 +124,9 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 	public function test_normalize_data_recursive_with_nested_wp_error() {
 		// Create a nested structure with WP_Error inside.
 		$nested_data = array(
-			'job_id'  => 'veo_123',
-			'status'  => 'failed',
-			'result'  => new WP_Error(
+			'job_id'   => 'veo_123',
+			'status'   => 'failed',
+			'result'   => new WP_Error(
 				'wp_mcp_ai_veo_failed',
 				'Video generation failed due to quota exceeded.',
 				array( 'status' => 429 )
@@ -150,17 +150,17 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		$this->assertIsArray( $normalized );
 		$this->assertEquals( 'veo_123', $normalized['job_id'] );
 		$this->assertEquals( 'failed', $normalized['status'] );
-		
+
 		// Check that the nested WP_Error was converted.
 		$this->assertIsArray( $normalized['result'] );
 		$this->assertTrue( $normalized['result']['error'] );
 		$this->assertEquals( 'wp_mcp_ai_veo_failed', $normalized['result']['code'] );
 		$this->assertEquals( 'Video generation failed due to quota exceeded.', $normalized['result']['message'] );
-		
+
 		// Metadata should be unchanged.
 		$this->assertEquals( 'generate_veo_video', $normalized['metadata']['tool'] );
 		$this->assertEquals( 1, $normalized['metadata']['user_id'] );
-		
+
 		// Verify JSON encoding works.
 		$json = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json, 'Recursively normalized data should be JSON-encodable' );
@@ -197,17 +197,17 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 
 		// Navigate to the deeply nested error.
 		$deep_error = $normalized['level1']['level2']['level3']['error'];
-		
+
 		// Assert the error was normalized.
 		$this->assertIsArray( $deep_error );
 		$this->assertTrue( $deep_error['error'] );
 		$this->assertEquals( 'deep_error', $deep_error['code'] );
 		$this->assertEquals( 'Error at level 3', $deep_error['message'] );
 		$this->assertEquals( 3, $deep_error['data']['depth'] );
-		
+
 		// Normal value should be unchanged.
 		$this->assertEquals( 'normal_value', $normalized['level1']['level2']['level3']['value'] );
-		
+
 		// Verify JSON encoding works.
 		$json = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json, 'Deeply normalized data should be JSON-encodable' );
@@ -230,7 +230,10 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 				),
 				array(
 					'tool'   => 'tool_c',
-					'result' => array( 'success' => true, 'data' => 'ok' ),
+					'result' => array(
+						'success' => true,
+						'data'    => 'ok',
+					),
 				),
 			),
 		);
@@ -247,16 +250,16 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		// Check first error.
 		$this->assertTrue( $normalized['results'][0]['result']['error'] );
 		$this->assertEquals( 'error_a', $normalized['results'][0]['result']['code'] );
-		
+
 		// Check second error with data.
 		$this->assertTrue( $normalized['results'][1]['result']['error'] );
 		$this->assertEquals( 'error_b', $normalized['results'][1]['result']['code'] );
 		$this->assertEquals( 'timeout', $normalized['results'][1]['result']['data']['reason'] );
-		
+
 		// Check successful result is unchanged.
 		$this->assertTrue( $normalized['results'][2]['result']['success'] );
 		$this->assertEquals( 'ok', $normalized['results'][2]['result']['data'] );
-		
+
 		// Verify JSON encoding works.
 		$json = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json, 'Data with multiple normalized errors should be JSON-encodable' );
@@ -274,17 +277,17 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 
 		// Test with string.
 		$this->assertEquals( 'test string', $method->invoke( $rest_controller, 'test string' ) );
-		
+
 		// Test with integer.
 		$this->assertEquals( 42, $method->invoke( $rest_controller, 42 ) );
-		
+
 		// Test with float.
 		$this->assertEquals( 3.14, $method->invoke( $rest_controller, 3.14 ) );
-		
+
 		// Test with boolean.
 		$this->assertTrue( $method->invoke( $rest_controller, true ) );
 		$this->assertFalse( $method->invoke( $rest_controller, false ) );
-		
+
 		// Test with null.
 		$this->assertNull( $method->invoke( $rest_controller, null ) );
 	}
@@ -317,7 +320,7 @@ class Test_Tool_Error_Normalization extends WP_UnitTestCase {
 		$this->assertEquals( 'nested_error', $normalized['nested_err']['code'] );
 		$this->assertEquals( 'This is a nested error', $normalized['nested_err']['message'] );
 		$this->assertEquals( 'extra', $normalized['nested_err']['data']['info'] );
-		
+
 		// Verify JSON encoding works.
 		$json = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json );
