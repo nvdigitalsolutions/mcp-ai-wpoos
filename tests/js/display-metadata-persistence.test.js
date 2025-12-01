@@ -593,4 +593,280 @@ describe('Display Metadata Persistence', () => {
 			expect(retrieved.conversation[3].display.bubbleType).toBe('assistant');
 		});
 	});
+
+	describe('Tool result display metadata persistence', () => {
+		it('should preserve get_user_info tool result with display metadata', () => {
+			// This test validates the fix for get_user_info tool result not preserving display metadata
+			const conversation = [
+				{
+					role: 'user',
+					content: [
+						{
+							type: 'text',
+							text: 'get_user_info'
+						}
+					],
+					display: {
+						text: 'get_user_info',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_3bdjJ7F2pUp7T0cLcJRhK1nk',
+							type: 'function',
+							function: {
+								name: 'get_user_info',
+								arguments: '{}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"ID":1,"display_name":"Vijay","user_login":"vijay@nvdigitalsolutions.com","user_email":"vijay@nvdigitalsolutions.com","roles":["administrator"],"registered":"2024-01-01 00:00:00","first_name":"Vijay","last_name":"Kumar","message":"User: Vijay (ID: 1) | Name: Vijay Kumar | Email: vijay@nvdigitalsolutions.com | Roles: administrator"}',
+					tool_call_id: 'call_3bdjJ7F2pUp7T0cLcJRhK1nk',
+					name: 'get_user_info',
+					display: {
+						bubbleType: 'tool',
+						text: '✓ User: Vijay (ID: 1) | Name: Vijay Kumar | Email: vijay@nvdigitalsolutions.com | Roles: administrator',
+						attachments: []
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_get_user_info',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// Verify the tool result is persisted with display metadata
+			expect(retrieved.conversation).toHaveLength(3);
+			const toolResult = retrieved.conversation[2];
+			expect(toolResult.role).toBe('tool');
+			expect(toolResult.name).toBe('get_user_info');
+			expect(toolResult.display).toBeDefined();
+			expect(toolResult.display.bubbleType).toBe('tool');
+			expect(toolResult.display.text).toContain('✓ User: Vijay');
+			expect(toolResult.display.text).toContain('Roles: administrator');
+		});
+
+		it('should preserve generate_gemini_image tool result in agentic flow', () => {
+			// This test validates the fix for generate_gemini_image tool result not preserving display metadata in agentic flows
+			const conversation = [
+				{
+					role: 'user',
+					content: 'create an image of a sunset',
+					display: {
+						text: 'create an image of a sunset',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_gemini_img_456',
+							type: 'function',
+							function: {
+								name: 'generate_gemini_image',
+								arguments: '{"prompt":"A beautiful sunset over the ocean"}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"success":true,"attachment_id":3456,"url":"https://example.com/sunset.png","message":"Generated image: sunset.png"}',
+					tool_call_id: 'call_gemini_img_456',
+					name: 'generate_gemini_image',
+					display: {
+						bubbleType: 'tool',
+						text: '✓ Generated image: sunset.png',
+						attachments: [
+							{
+								url: 'https://example.com/sunset.png',
+								label: 'Generated Image',
+								meta: 'ID: 3456'
+							}
+						]
+					}
+				},
+				{
+					role: 'assistant',
+					content: "I've created a beautiful sunset image for you!",
+					display: {
+						text: "I've created a beautiful sunset image for you!",
+						bubbleType: 'assistant'
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_gemini_image',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// Verify the tool result is persisted with display metadata
+			expect(retrieved.conversation).toHaveLength(4);
+			const toolResult = retrieved.conversation[2];
+			expect(toolResult.role).toBe('tool');
+			expect(toolResult.name).toBe('generate_gemini_image');
+			expect(toolResult.display).toBeDefined();
+			expect(toolResult.display.bubbleType).toBe('tool');
+			expect(toolResult.display.text).toContain('✓ Generated image');
+			expect(toolResult.display.attachments).toHaveLength(1);
+			expect(toolResult.display.attachments[0].url).toBe('https://example.com/sunset.png');
+		});
+
+		it('should preserve edit_gemini_image tool result', () => {
+			// This test validates the fix for edit_gemini_image tool result not preserving display metadata
+			const conversation = [
+				{
+					role: 'user',
+					content: 'edit the image to add more clouds',
+					display: {
+						text: 'edit the image to add more clouds',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_edit_img_789',
+							type: 'function',
+							function: {
+								name: 'edit_gemini_image',
+								arguments: '{"attachment_id":3456,"prompt":"Add more clouds to the sky"}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"success":true,"attachment_id":3457,"url":"https://example.com/sunset-edited.png","message":"Edited image saved"}',
+					tool_call_id: 'call_edit_img_789',
+					name: 'edit_gemini_image',
+					display: {
+						bubbleType: 'tool',
+						text: '✓ Edited image saved',
+						attachments: [
+							{
+								url: 'https://example.com/sunset-edited.png',
+								label: 'Edited Image',
+								meta: 'ID: 3457'
+							}
+						]
+					}
+				},
+				{
+					role: 'assistant',
+					content: "I've edited the image with more clouds!",
+					display: {
+						text: "I've edited the image with more clouds!",
+						bubbleType: 'assistant'
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_edit_image',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// Verify the tool result is persisted with display metadata
+			expect(retrieved.conversation).toHaveLength(4);
+			const toolResult = retrieved.conversation[2];
+			expect(toolResult.role).toBe('tool');
+			expect(toolResult.name).toBe('edit_gemini_image');
+			expect(toolResult.display).toBeDefined();
+			expect(toolResult.display.bubbleType).toBe('tool');
+			expect(toolResult.display.text).toContain('✓ Edited image');
+			expect(toolResult.display.attachments).toHaveLength(1);
+		});
+
+		it('should preserve tool result with chart data', () => {
+			// This test validates chart HTML preservation in tool results
+			const conversation = [
+				{
+					role: 'user',
+					content: 'show me a chart of sales data',
+					display: {
+						text: 'show me a chart of sales data',
+						bubbleType: 'user'
+					}
+				},
+				{
+					role: 'assistant',
+					content: null,
+					tool_calls: [
+						{
+							id: 'call_chart_123',
+							type: 'function',
+							function: {
+								name: 'get_sales_chart',
+								arguments: '{}'
+							}
+						}
+					]
+				},
+				{
+					role: 'tool',
+					content: '{"output_format":"chart","html":"<div>Chart HTML</div>"}',
+					tool_call_id: 'call_chart_123',
+					name: 'get_sales_chart',
+					display: {
+						bubbleType: 'tool',
+						text: '✓ Sales chart generated',
+						attachments: [],
+						chartHtml: '<div>Chart HTML</div>',
+						chartWidth: 800,
+						chartHeight: 400
+					}
+				}
+			];
+
+			const storageKey = 'wp_mcp_ai_chat_test_assistant';
+			const data = {
+				conversation: conversation,
+				sessionKey: 'session_chart',
+				timestamp: Date.now(),
+				assistantId: 'test_assistant'
+			};
+
+			localStorage.setItem(storageKey, JSON.stringify(data));
+			const retrieved = JSON.parse(localStorage.getItem(storageKey));
+
+			// Verify the tool result is persisted with chart metadata
+			const toolResult = retrieved.conversation[2];
+			expect(toolResult.display).toBeDefined();
+			expect(toolResult.display.chartHtml).toBe('<div>Chart HTML</div>');
+			expect(toolResult.display.chartWidth).toBe(800);
+			expect(toolResult.display.chartHeight).toBe(400);
+		});
+	});
 });
