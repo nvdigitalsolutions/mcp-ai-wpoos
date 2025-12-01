@@ -362,6 +362,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 	 *
 	 * Extends the core tool categories to include Pro addon tools
 	 * so they get proper recommendations for token limits and models.
+	 * Only adds tools to existing categories; does not create new ones.
 	 *
 	 * @since 1.0.0
 	 *
@@ -369,27 +370,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 	 * @return array Modified categories with Pro tools added.
 	 */
 	function wp_mcp_ai_pro_tool_categories( $categories ) {
-		// Add pro tools to existing categories or create new ones.
+		// Add pro tools to existing categories only.
 		
-		// WooCommerce tools - medium resource (similar to core WooCommerce tools).
+		// WooCommerce, JetEngine, and Elementor tools - medium resource.
 		if ( isset( $categories['medium_resource'] ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_products';
 			$categories['medium_resource']['tools'][] = 'woo_orders';
-		}
-
-		// JetEngine and Elementor - medium resource.
-		if ( isset( $categories['medium_resource'] ) ) {
 			$categories['medium_resource']['tools'][] = 'jetengine';
 			$categories['medium_resource']['tools'][] = 'elementor';
 		}
 
-		// Product Actualization - high resource (uses AI vision and web scraping).
+		// Product Actualization and Price Lookup - high resource (uses AI vision and web scraping).
 		if ( isset( $categories['high_resource'] ) ) {
 			$categories['high_resource']['tools'][] = 'product_actualization';
-		}
-
-		// Product Price Lookup - high resource (uses AI vision and web scraping).
-		if ( isset( $categories['high_resource'] ) ) {
 			$categories['high_resource']['tools'][] = 'lookup_product_price';
 		}
 
