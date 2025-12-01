@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Scrapes product information (title, subtitle, description, images) from a product URL or saved HTML file and downloads highest resolution images to WordPress media library.', 'wp-mcp-ai' );
+		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file. Supports Schema.org JSON-LD parsing for structured product data. Downloads highest resolution images to WordPress media library.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -75,6 +75,15 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Whether to download images to WordPress media library (default: true).', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
+				'price_selector'       => array(
+					'type'        => 'string',
+					'description' => __( 'CSS selector for product price. If not provided, will attempt to extract from Schema.org JSON-LD or common price patterns.', 'wp-mcp-ai' ),
+				),
+				'extract_structured_data' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to extract Schema.org JSON-LD structured data (default: true).', 'wp-mcp-ai' ),
+					'default'     => true,
+				),
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -112,7 +121,9 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$subtitle_selector    = isset( $arguments['subtitle_selector'] ) ? sanitize_text_field( $arguments['subtitle_selector'] ) : '.swa-product-information__subtitle.swa-label-sans--default';
 		$description_selector = isset( $arguments['description_selector'] ) ? sanitize_text_field( $arguments['description_selector'] ) : '.swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p';
 		$images_selector      = isset( $arguments['images_selector'] ) ? sanitize_text_field( $arguments['images_selector'] ) : 'splide-slides';
+		$price_selector       = isset( $arguments['price_selector'] ) ? sanitize_text_field( $arguments['price_selector'] ) : '';
 		$download_images      = isset( $arguments['download_images'] ) ? (bool) $arguments['download_images'] : true;
+		$extract_structured   = isset( $arguments['extract_structured_data'] ) ? (bool) $arguments['extract_structured_data'] : true;
 
 		// Get HTML content from either URL or file.
 		if ( ! empty( $html_file ) ) {
@@ -136,7 +147,10 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$title_selector,
 			$subtitle_selector,
 			$description_selector,
-			$images_selector
+			$images_selector,
+			$price_selector,
+			$extract_structured,
+			! empty( $url ) ? $url : ''
 		);
 
 		if ( is_wp_error( $product_data ) ) {
@@ -303,9 +317,12 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @param string $subtitle_selector   CSS selector for subtitle.
 	 * @param string $description_selector CSS selector for description.
 	 * @param string $images_selector     CSS selector for images container.
+	 * @param string $price_selector      CSS selector for price.
+	 * @param bool   $extract_structured  Whether to extract Schema.org JSON-LD data.
+	 * @param string $source_url          Source URL for context.
 	 * @return array|WP_Error Parsed product data or error.
 	 */
-	protected function parse_product_data( $html, $title_selector, $subtitle_selector, $description_selector, $images_selector ) {
+	protected function parse_product_data( $html, $title_selector, $subtitle_selector, $description_selector, $images_selector, $price_selector = '', $extract_structured = true, $source_url = '' ) {
 		if ( ! class_exists( 'DOMDocument' ) ) {
 			return new WP_Error( 'wp_mcp_ai_no_dom', __( 'DOMDocument class is not available for HTML parsing.', 'wp-mcp-ai' ) );
 		}
@@ -321,24 +338,72 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$xpath = new DOMXPath( $dom );
 
-		// Extract product title.
-		$title = $this->extract_text_by_selector( $xpath, $title_selector );
+		// Extract Schema.org JSON-LD structured data first if enabled.
+		$structured_data = array();
+		if ( $extract_structured ) {
+			$structured_data = $this->extract_schema_org_data( $xpath, $html );
+		}
+
+		// Extract product title (prefer structured data, fall back to selector).
+		$title = '';
+		if ( ! empty( $structured_data['name'] ) ) {
+			$title = $structured_data['name'];
+		}
+		if ( empty( $title ) ) {
+			$title = $this->extract_text_by_selector( $xpath, $title_selector );
+		}
 
 		// Extract product subtitle.
 		$subtitle = $this->extract_text_by_selector( $xpath, $subtitle_selector );
 
-		// Extract product description.
-		$description = $this->extract_description_by_selector( $xpath, $description_selector );
+		// Extract product description (prefer structured data).
+		$description = '';
+		if ( ! empty( $structured_data['description'] ) ) {
+			$description = $structured_data['description'];
+		}
+		if ( empty( $description ) ) {
+			$description = $this->extract_description_by_selector( $xpath, $description_selector );
+		}
 
 		// Extract image URLs.
 		$image_urls = $this->extract_image_urls( $xpath, $images_selector );
 
-		return array(
+		// Merge with images from structured data if available.
+		if ( ! empty( $structured_data['image'] ) ) {
+			if ( is_array( $structured_data['image'] ) ) {
+				$image_urls = array_merge( $structured_data['image'], $image_urls );
+			} elseif ( is_string( $structured_data['image'] ) ) {
+				array_unshift( $image_urls, $structured_data['image'] );
+			}
+			$image_urls = array_unique( $image_urls );
+		}
+
+		// Extract pricing information.
+		$pricing_data = $this->extract_pricing_data( $xpath, $html, $price_selector, $structured_data );
+
+		$result = array(
 			'title'       => $title,
 			'subtitle'    => $subtitle,
 			'description' => $description,
 			'image_urls'  => $image_urls,
 		);
+
+		// Add pricing data if found.
+		if ( ! empty( $pricing_data ) ) {
+			$result = array_merge( $result, $pricing_data );
+		}
+
+		// Add structured data if found.
+		if ( ! empty( $structured_data ) && $extract_structured ) {
+			$result['structured_data'] = $structured_data;
+		}
+
+		// Add source URL if provided.
+		if ( ! empty( $source_url ) ) {
+			$result['source_url'] = $source_url;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -573,6 +638,282 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return $selector;
+	}
+
+	/**
+	 * Extract Schema.org JSON-LD structured data from HTML.
+	 *
+	 * @param DOMXPath $xpath XPath object.
+	 * @param string   $html  Full HTML content.
+	 * @return array Schema.org product data.
+	 */
+	protected function extract_schema_org_data( $xpath, $html ) {
+		$data = array();
+
+		// Find all script tags with type application/ld+json.
+		$scripts = $xpath->query( '//script[@type="application/ld+json"]' );
+
+		if ( ! $scripts || 0 === $scripts->length ) {
+			return $data;
+		}
+
+		foreach ( $scripts as $script ) {
+			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM property.
+			$json_content = $script->textContent;
+			$json_data    = json_decode( $json_content, true );
+
+			if ( ! $json_data ) {
+				continue;
+			}
+
+			// Handle @graph structure.
+			if ( isset( $json_data['@graph'] ) && is_array( $json_data['@graph'] ) ) {
+				foreach ( $json_data['@graph'] as $item ) {
+					if ( $this->is_product_schema( $item ) ) {
+						$data = $this->parse_product_schema( $item );
+						break 2; // Found product, exit both loops.
+					}
+				}
+			} elseif ( $this->is_product_schema( $json_data ) ) {
+				$data = $this->parse_product_schema( $json_data );
+				break;
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Check if schema data represents a product.
+	 *
+	 * @param array $schema Schema data.
+	 * @return bool True if product schema.
+	 */
+	protected function is_product_schema( $schema ) {
+		if ( ! is_array( $schema ) || ! isset( $schema['@type'] ) ) {
+			return false;
+		}
+
+		$type = $schema['@type'];
+		if ( is_array( $type ) ) {
+			return in_array( 'Product', $type, true );
+		}
+
+		return 'Product' === $type;
+	}
+
+	/**
+	 * Parse product schema data.
+	 *
+	 * @param array $schema Schema data.
+	 * @return array Parsed product data.
+	 */
+	protected function parse_product_schema( $schema ) {
+		$data = array();
+
+		// Extract name.
+		if ( isset( $schema['name'] ) ) {
+			$data['name'] = sanitize_text_field( $schema['name'] );
+		}
+
+		// Extract description.
+		if ( isset( $schema['description'] ) ) {
+			$data['description'] = sanitize_textarea_field( $schema['description'] );
+		}
+
+		// Extract brand.
+		if ( isset( $schema['brand'] ) ) {
+			if ( is_array( $schema['brand'] ) && isset( $schema['brand']['name'] ) ) {
+				$data['brand'] = sanitize_text_field( $schema['brand']['name'] );
+			} elseif ( is_string( $schema['brand'] ) ) {
+				$data['brand'] = sanitize_text_field( $schema['brand'] );
+			}
+		}
+
+		// Extract SKU/model/GTIN.
+		if ( isset( $schema['sku'] ) ) {
+			$data['sku'] = sanitize_text_field( $schema['sku'] );
+		}
+		if ( isset( $schema['mpn'] ) ) {
+			$data['model'] = sanitize_text_field( $schema['mpn'] );
+		}
+		if ( isset( $schema['gtin'] ) ) {
+			$data['gtin'] = sanitize_text_field( $schema['gtin'] );
+		}
+		if ( isset( $schema['gtin13'] ) ) {
+			$data['gtin'] = sanitize_text_field( $schema['gtin13'] );
+		}
+
+		// Extract images.
+		if ( isset( $schema['image'] ) ) {
+			if ( is_array( $schema['image'] ) ) {
+				$images = array();
+				foreach ( $schema['image'] as $img ) {
+					if ( is_string( $img ) ) {
+						$images[] = esc_url_raw( $img );
+					} elseif ( is_array( $img ) && isset( $img['url'] ) ) {
+						$images[] = esc_url_raw( $img['url'] );
+					}
+				}
+				$data['image'] = $images;
+			} elseif ( is_string( $schema['image'] ) ) {
+				$data['image'] = esc_url_raw( $schema['image'] );
+			}
+		}
+
+		// Extract offers/pricing.
+		if ( isset( $schema['offers'] ) ) {
+			$offers = $schema['offers'];
+			// Handle single offer or array of offers.
+			if ( isset( $offers['@type'] ) && 'Offer' === $offers['@type'] ) {
+				$offers = array( $offers );
+			}
+
+			if ( is_array( $offers ) ) {
+				foreach ( $offers as $offer ) {
+					if ( ! is_array( $offer ) ) {
+						continue;
+					}
+
+					if ( isset( $offer['price'] ) ) {
+						$data['price'] = floatval( $offer['price'] );
+					}
+					if ( isset( $offer['priceCurrency'] ) ) {
+						$data['currency'] = sanitize_text_field( $offer['priceCurrency'] );
+					}
+					if ( isset( $offer['availability'] ) ) {
+						$availability = $offer['availability'];
+						// Parse availability URL (e.g., "https://schema.org/InStock").
+						if ( is_string( $availability ) ) {
+							if ( strpos( $availability, 'InStock' ) !== false ) {
+								$data['availability'] = 'in_stock';
+							} elseif ( strpos( $availability, 'OutOfStock' ) !== false ) {
+								$data['availability'] = 'out_of_stock';
+							} elseif ( strpos( $availability, 'PreOrder' ) !== false ) {
+								$data['availability'] = 'pre_order';
+							} else {
+								$data['availability'] = 'unknown';
+							}
+						}
+					}
+					if ( isset( $offer['url'] ) ) {
+						$data['offer_url'] = esc_url_raw( $offer['url'] );
+					}
+
+					// We have pricing info, break.
+					if ( isset( $data['price'] ) ) {
+						break;
+					}
+				}
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Extract pricing data from HTML.
+	 *
+	 * @param DOMXPath $xpath          XPath object.
+	 * @param string   $html           Full HTML content.
+	 * @param string   $price_selector CSS selector for price.
+	 * @param array    $structured_data Schema.org data (already extracted).
+	 * @return array Pricing data.
+	 */
+	protected function extract_pricing_data( $xpath, $html, $price_selector, $structured_data ) {
+		$pricing = array();
+
+		// First check structured data.
+		if ( ! empty( $structured_data['price'] ) ) {
+			$pricing['price'] = $structured_data['price'];
+		}
+		if ( ! empty( $structured_data['currency'] ) ) {
+			$pricing['currency'] = $structured_data['currency'];
+		}
+		if ( ! empty( $structured_data['availability'] ) ) {
+			$pricing['availability'] = $structured_data['availability'];
+		}
+		if ( ! empty( $structured_data['brand'] ) ) {
+			$pricing['brand'] = $structured_data['brand'];
+		}
+		if ( ! empty( $structured_data['sku'] ) ) {
+			$pricing['sku'] = $structured_data['sku'];
+		}
+		if ( ! empty( $structured_data['model'] ) ) {
+			$pricing['model'] = $structured_data['model'];
+		}
+		if ( ! empty( $structured_data['gtin'] ) ) {
+			$pricing['gtin'] = $structured_data['gtin'];
+		}
+
+		// If no price from structured data, try selector or patterns.
+		if ( empty( $pricing['price'] ) ) {
+			// Try selector if provided.
+			if ( ! empty( $price_selector ) ) {
+				$price_text = $this->extract_text_by_selector( $xpath, $price_selector );
+				if ( ! empty( $price_text ) ) {
+					$price_data = $this->parse_price_from_text( $price_text );
+					if ( $price_data ) {
+						$pricing = array_merge( $pricing, $price_data );
+					}
+				}
+			}
+
+			// Fall back to pattern matching in full HTML.
+			if ( empty( $pricing['price'] ) ) {
+				$price_data = $this->parse_price_from_text( $html );
+				if ( $price_data ) {
+					$pricing = array_merge( $pricing, $price_data );
+				}
+			}
+		}
+
+		return $pricing;
+	}
+
+	/**
+	 * Parse price from text using common patterns.
+	 *
+	 * @param string $text Text to parse.
+	 * @return array|null Price data or null.
+	 */
+	protected function parse_price_from_text( $text ) {
+		// Common price patterns.
+		$patterns = array(
+			'/\$\s*([0-9,]+\.?\d{0,2})\s*(USD)?/i',  // $123.45 USD or $123.45.
+			'/([0-9,]+\.?\d{0,2})\s*USD/i',          // 123.45 USD.
+			'/€\s*([0-9,]+\.?\d{0,2})/i',            // €123.45.
+			'/£\s*([0-9,]+\.?\d{0,2})/i',            // £123.45.
+			'/price["\s:]+\$?([0-9,]+\.?\d{0,2})/i', // Price: $123.45 or price="123.45".
+		);
+
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $text, $matches ) ) {
+				$price_str = str_replace( ',', '', $matches[1] );
+				$price     = floatval( $price_str );
+
+				if ( $price <= 0 ) {
+					continue;
+				}
+
+				// Detect currency from pattern.
+				$currency = 'USD'; // Default.
+				if ( stripos( $matches[0], 'USD' ) !== false || strpos( $matches[0], '$' ) !== false ) {
+					$currency = 'USD';
+				} elseif ( strpos( $matches[0], '€' ) !== false ) {
+					$currency = 'EUR';
+				} elseif ( strpos( $matches[0], '£' ) !== false ) {
+					$currency = 'GBP';
+				}
+
+				return array(
+					'price'    => $price,
+					'currency' => $currency,
+				);
+			}
+		}
+
+		return null;
 	}
 
 	/**
