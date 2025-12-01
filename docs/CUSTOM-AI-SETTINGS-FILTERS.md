@@ -104,7 +104,7 @@ Plugin Behavior (model selection, retries, timeouts, etc.)
   - Used by: Admin settings sections
 
 - **Default LM Studio Endpoint URL** (`filter_default_lm_studio_endpoint_url`)
-  - Default: `http://localhost:1234/v1`
+  - Default: `http://localhost:1234`
   - Filter: `wp_mcp_ai_default_lm_studio_endpoint_url`
   - Used by: Admin settings sections
 
