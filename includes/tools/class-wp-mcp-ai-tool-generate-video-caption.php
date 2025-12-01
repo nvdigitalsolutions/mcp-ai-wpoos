@@ -10,11 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Generates descriptive captions for videos using AI vision models with video understanding.
  */
 class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -47,11 +49,13 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'string',
 					'description' => __( 'URL of the video to caption. Supports MP4 and QuickTime formats.', 'wp-mcp-ai' ),
 				),
+				'url'           => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to caption.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
+				'file_id'       => $this->get_file_id_parameter_schema(),
 				'context'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional context about the video to help generate more relevant captions.', 'wp-mcp-ai' ),
@@ -97,35 +101,52 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Get video source.
-		$video_url = '';
+		$video_url     = '';
+		$attachment_id = 0;
 
-		if ( ! empty( $arguments['attachment_id'] ) ) {
-			$attachment_id = absint( $arguments['attachment_id'] );
-			$video_url     = wp_get_attachment_url( $attachment_id );
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
 
-			if ( ! $video_url ) {
-				return new WP_Error(
-					'wp_mcp_ai_invalid_attachment',
-					__( 'Invalid attachment ID provided.', 'wp-mcp-ai' ),
-					array( 'status' => 400 )
-				);
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				$video_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+				$video_url     = wp_get_attachment_url( $attachment_id );
+
+				if ( ! $video_url ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_attachment',
+						__( 'Invalid attachment ID provided.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
+
+				// Verify it's a video attachment.
+				$mime_type = get_post_mime_type( $attachment_id );
+				if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_not_video',
+						__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
 			}
+		}
 
-			// Verify it's a video attachment.
-			$mime_type = get_post_mime_type( $attachment_id );
-			if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_not_video',
-					__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
-					array( 'status' => 400 )
-				);
-			}
-		} elseif ( ! empty( $arguments['video_url'] ) ) {
+		// Fallback to legacy video_url parameter.
+		if ( '' === $video_url && ! empty( $arguments['video_url'] ) ) {
 			$video_url = esc_url_raw( $arguments['video_url'] );
-		} else {
+		}
+
+		// Validate we have a video source.
+		if ( '' === $video_url ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_video',
-				__( 'Either video_url or attachment_id must be provided.', 'wp-mcp-ai' ),
+				__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -143,7 +164,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		$prompt = $this->build_prompt( $max_length, $user_context );
 
 		// Call video-capable vision model.
-		$attachment_id_for_video = ! empty( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null;
+		$attachment_id_for_video = $attachment_id > 0 ? $attachment_id : null;
 		$api_response            = $this->call_video_model( $video_url, $prompt, $default_provider, $attachment_id_for_video );
 
 		if ( is_wp_error( $api_response ) ) {

@@ -10,11 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Generates descriptive captions for images using AI vision models.
  */
 class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -47,6 +49,7 @@ class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'string',
 					'description' => __( 'URL of the image to analyze.', 'wp-mcp-ai' ),
 				),
+				'url'           => $this->get_url_parameter_schema( 'image', __( 'URL of the image to analyze. Alternative to image_url.', 'wp-mcp-ai' ) ),
 				'image_content' => array(
 					'type'        => 'string',
 					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'wp-mcp-ai' ),
@@ -56,6 +59,7 @@ class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'WordPress attachment ID to analyze.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
+				'file_id'       => $this->get_file_id_parameter_schema(),
 				'context'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional context about the image to help generate more relevant captions.', 'wp-mcp-ai' ),
@@ -96,26 +100,46 @@ class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface,
 		// Get image source.
 		$image_url     = '';
 		$image_content = '';
+		$attachment_id = 0;
 
-		if ( ! empty( $arguments['attachment_id'] ) ) {
-			$attachment_id = absint( $arguments['attachment_id'] );
-			$image_url     = wp_get_attachment_url( $attachment_id );
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
 
-			if ( ! $image_url ) {
-				return new WP_Error(
-					'wp_mcp_ai_invalid_attachment',
-					__( 'Invalid attachment ID provided.', 'wp-mcp-ai' ),
-					array( 'status' => 400 )
-				);
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				$image_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+				$image_url     = wp_get_attachment_url( $attachment_id );
+
+				if ( ! $image_url ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_attachment',
+						__( 'Could not get URL for attachment.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
 			}
-		} elseif ( ! empty( $arguments['image_url'] ) ) {
+		}
+
+		// Fallback to legacy image_url parameter.
+		if ( '' === $image_url && ! empty( $arguments['image_url'] ) ) {
 			$image_url = esc_url_raw( $arguments['image_url'] );
-		} elseif ( ! empty( $arguments['image_content'] ) ) {
+		}
+
+		// Fallback to image_content.
+		if ( '' === $image_url && ! empty( $arguments['image_content'] ) ) {
 			$image_content = $arguments['image_content'];
-		} else {
+		}
+
+		// Validate we have an image source.
+		if ( '' === $image_url && '' === $image_content ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_image',
-				__( 'Either image_url, image_content, or attachment_id must be provided.', 'wp-mcp-ai' ),
+				__( 'You must provide image_url, url, attachment_id, file_id, or image_content.', 'wp-mcp-ai' ),
 				array( 'status' => 400 )
 			);
 		}

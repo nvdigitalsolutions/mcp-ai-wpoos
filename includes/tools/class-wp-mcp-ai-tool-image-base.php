@@ -15,10 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+
 /**
  * Abstract base class for image manipulation tools.
  */
 abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
 	 * Get allowed image MIME types.
@@ -40,7 +43,9 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	 *
 	 * Supports:
 	 * - attachment_id: WordPress attachment ID
-	 * - image_url: URL to image file
+	 * - file_id: OpenAI/Gemini file identifier (converted to attachment_id)
+	 * - url: URL to image file
+	 * - image_url: URL to image file (legacy parameter)
 	 * - image_data: Base64-encoded image data
 	 *
 	 * @param array $arguments Tool arguments containing image source.
@@ -48,9 +53,29 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	 * @return WP_Image_Editor|WP_Error Image editor instance or error.
 	 */
 	protected function load_source_image( array $arguments, $user_id = 0 ) {
-		$attachment_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
-		$image_url     = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
-		$image_data    = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
+		// Try to resolve from attachment_id, file_id, or url first.
+		if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) || ! empty( $arguments['url'] ) ) {
+			$resolved = $this->resolve_attachment_id( $arguments );
+
+			// Handle remote URL case.
+			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
+				// Fall through to URL handling below.
+				$image_url = $resolved['url'];
+			} elseif ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			} elseif ( $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+
+		// Initialize variables if not set by above.
+		if ( ! isset( $attachment_id ) ) {
+			$attachment_id = 0;
+		}
+		if ( ! isset( $image_url ) ) {
+			$image_url = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
+		}
+		$image_data = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
 
 		$file_path     = '';
 		$is_local_file = false;
@@ -590,13 +615,15 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				'type'        => 'integer',
 				'description' => __( 'WordPress attachment ID of the image to process.', 'wp-mcp-ai' ),
 			),
+			'file_id'       => $this->get_file_id_parameter_schema(),
+			'url'           => $this->get_url_parameter_schema( 'image' ),
 			'image_url'     => array(
 				'type'        => 'string',
-				'description' => __( 'URL of the image to process (alternative to attachment_id).', 'wp-mcp-ai' ),
+				'description' => __( 'URL of the image to process (alternative to attachment_id). Legacy parameter, use url instead.', 'wp-mcp-ai' ),
 			),
 			'image_data'    => array(
 				'type'        => 'string',
-				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id or image_url).', 'wp-mcp-ai' ),
+				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id, file_id, or url).', 'wp-mcp-ai' ),
 			),
 			'file_name'     => array(
 				'type'        => 'string',
