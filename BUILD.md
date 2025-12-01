@@ -349,9 +349,14 @@ WP oOS is available in three distribution formats:
 
 | Version | File | Description |
 |---------|------|-------------|
-| **Base** | `wp-mcp-ai-core-X.Y.Z.zip` | Free version with baseline tools, suitable for WordPress.org |
+| **Base** | `wp-mcp-ai-base-X.Y.Z.zip` | Standalone fully functional plugin (works without Pro) |
 | **Pro** | `wp-mcp-ai-pro-X.Y.Z.zip` | Commercial add-on with advanced features (requires Base) |
 | **Base + Pro** | `wp-mcp-ai-X.Y.Z.zip` | Combined package with both Base and Pro included |
+
+**Usage Options:**
+1. Install **Base** alone for core functionality
+2. Install **Base** + **Pro** for all features
+3. Install **Combined** for convenience (includes everything)
 
 See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature comparison.
 
@@ -370,7 +375,7 @@ When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workfl
 1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
 2. Find the version you need
 3. Download the appropriate ZIP file:
-   - `wp-mcp-ai-core-X.Y.Z.zip` - Free base version
+   - `wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
    - `wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
    - `wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
 
@@ -418,7 +423,7 @@ npm run build:zip:combined  # Base + Pro combined
 ```
 
 ZIP files will be created in the `build/` directory:
-- `build/wp-mcp-ai-core-X.Y.Z.zip` - Base version
+- `build/wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
 - `build/wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
 - `build/wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
 

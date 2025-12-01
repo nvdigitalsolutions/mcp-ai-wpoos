@@ -1,0 +1,237 @@
+# Streaming Text Display Flow
+
+## User Experience Flow
+
+┌─────────────────────────────────────────────────────────────────┐
+│  1. USER SENDS MESSAGE                                          │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ User: "Tell me a story about a robot"                   │   │
+│  │ [Send]                                                  │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  2. STREAMING STARTS                                            │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Assistant:                                              │   │
+│  │ Once upon a time▋                                       │   │
+│  │                                                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  Status: "Sending message..."                                   │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  3. TEXT ACCUMULATES (Progressive Display)                      │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Assistant:                                              │   │
+│  │ Once upon a time, in a factory far away, there         │   │
+│  │ lived a little robot named▋                             │   │
+│  │                                                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  [Auto-scrolling to show new text]                              │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  4. MORE TEXT ARRIVES                                           │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Assistant:                                              │   │
+│  │ Once upon a time, in a factory far away, there         │   │
+│  │ lived a little robot named Bolt. Bolt was different    │   │
+│  │ from the other robots because▋                          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  [Cursor blinks to show streaming is active]                    │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  5. STREAMING COMPLETES                                         │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Assistant:                                              │   │
+│  │ Once upon a time, in a factory far away, there         │   │
+│  │ lived a **little robot** named Bolt. Bolt was          │   │
+│  │ different from the other robots because he had:        │   │
+│  │                                                         │   │
+│  │ - A heart full of dreams                               │   │
+│  │ - The ability to think creatively                      │   │
+│  │ - A passion for adventure                              │   │
+│  │                                                         │   │
+│  │ [🔊] [📋]  ← Speech and Copy buttons appear            │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  [Cursor removed, markdown rendered, buttons attached]          │
+└─────────────────────────────────────────────────────────────────┘
+
+
+## Technical Flow
+
+┌──────────────┐
+│  User Action │
+└──────┬───────┘
+       │
+       ↓
+┌──────────────────────────────┐
+│  JavaScript: sendMessage()   │
+│  - Add stream: true          │
+│  - Set Accept header         │
+└──────┬───────────────────────┘
+       │
+       ↓
+┌──────────────────────────────────────┐
+│  Backend: /chat-client endpoint      │
+│  - Detect stream parameter           │
+│  - Set Content-Type: text/event-stream│
+│  - Start SSE response                │
+└──────┬───────────────────────────────┘
+       │
+       ↓
+┌────────────────────────────────┐
+│  SSE Events Stream             │
+│  ┌──────────────────────────┐ │
+│  │ event: status            │ │
+│  │ data: {"message":"..."}  │ │
+│  │                          │ │
+│  │ event: message           │ │
+│  │ data: {"choices":[{      │ │
+│  │   "delta":{"content":"a"}│ │
+│  │ }]}                      │ │
+│  │                          │ │
+│  │ event: message           │ │
+│  │ data: {"choices":[{      │ │
+│  │   "delta":{"content":"b"}│ │
+│  │ }]}                      │ │
+│  │                          │ │
+│  │ data: [DONE]             │ │
+│  └──────────────────────────┘ │
+└────────┬───────────────────────┘
+         │
+         ↓
+┌─────────────────────────────────┐
+│  JavaScript: processSSEStream() │
+│  - Read chunks via ReadableStream│
+│  - Parse SSE format             │
+│  - Extract delta.content        │
+│  - Accumulate fullContent       │
+└────────┬────────────────────────┘
+         │
+         ↓
+┌─────────────────────────────────────┐
+│  JavaScript: updateStreamingMessage()│
+│  - Update bubble.textContent        │
+│  - Add streaming class (cursor)     │
+│  - Auto-scroll to bottom            │
+└────────┬────────────────────────────┘
+         │
+         ↓ (repeat for each chunk)
+         │
+         ↓
+┌──────────────────────────────────┐
+│  JavaScript: Finalize            │
+│  - Remove streaming class        │
+│  - Render markdown               │
+│  - Attach speech/copy buttons    │
+│  - Save to conversation          │
+└──────────────────────────────────┘
+
+
+## CSS State Changes
+
+Initial State (No Class):
+┌──────────────────────────┐
+│ Once upon a time         │
+└──────────────────────────┘
+
+Streaming State (.wp-mcp-ai-chat__bubble--streaming):
+┌──────────────────────────┐
+│ Once upon a time▋        │  ← Cursor added via ::after
+└──────────────────────────┘
+        ↑
+  Blinking cursor
+  (1s step animation)
+
+Complete State (Class Removed):
+┌──────────────────────────┐
+│ Once upon a time         │
+│                          │
+│ **The end.**             │  ← Markdown rendered
+│                          │
+│ [🔊] [📋]                │  ← Buttons attached
+└──────────────────────────┘
+
+
+## Event Timeline
+
+Time | Event                      | Visual State
+-----|----------------------------|----------------------------------
+0ms  | User clicks Send           | Button disabled
+50ms | Request sent               | Status: "Sending..."
+100ms| SSE connection opened      | Waiting for first chunk
+150ms| First chunk arrives        | "Once▋" appears
+200ms| Second chunk arrives       | "Once upon▋"
+250ms| Third chunk arrives        | "Once upon a▋"
+...  | More chunks...             | Text grows, cursor blinks
+2000ms| [DONE] received           | Streaming complete
+2010ms| Markdown rendered         | Bold, links, code formatted
+2020ms| Buttons attached          | 🔊 and 📋 buttons appear
+2030ms| Saved to localStorage     | Conversation persisted
+
+
+## Performance Optimizations
+
+┌─────────────────────────────────────────────────┐
+│  Optimization Layer                             │
+├─────────────────────────────────────────────────┤
+│  1. Scroll Batching (requestAnimationFrame)     │
+│     - Groups multiple scroll requests           │
+│     - Prevents layout thrashing                 │
+├─────────────────────────────────────────────────┤
+│  2. Text Updates (textContent)                  │
+│     - No HTML parsing during streaming          │
+│     - Prevents XSS risks                        │
+│     - Faster than innerHTML                     │
+├─────────────────────────────────────────────────┤
+│  3. Single DOM Element                          │
+│     - Reuses same bubble element                │
+│     - No repeated appendChild calls             │
+├─────────────────────────────────────────────────┤
+│  4. Debounced Storage                           │
+│     - Saves conversation after 300ms            │
+│     - Reduces localStorage writes               │
+├─────────────────────────────────────────────────┤
+│  5. CSS Animations (GPU Accelerated)            │
+│     - Cursor blink uses opacity                 │
+│     - No layout recalculation                   │
+└─────────────────────────────────────────────────┘
+
+
+## Browser Compatibility
+
+Feature              | Support            | Fallback
+---------------------|--------------------|-----------------
+ReadableStream       | All modern         | Full response
+Server-Sent Events   | All (except IE11)  | Full response
+TextDecoder          | All modern         | Full response
+classList API        | All modern         | className string
+requestAnimationFrame| All modern         | setTimeout
+
+
+## Error Handling
+
+┌─────────────────────────────────┐
+│  Error Scenarios                │
+├─────────────────────────────────┤
+│  1. Network error               │
+│     → Show error message        │
+│     → Remove streaming element  │
+│     → Restore form              │
+├─────────────────────────────────┤
+│  2. SSE not supported           │
+│     → Fallback to JSON response │
+│     → Show complete message     │
+├─────────────────────────────────┤
+│  3. Malformed SSE event         │
+│     → Ignore and continue       │
+│     → Try to parse next event   │
+├─────────────────────────────────┤
+│  4. Backend error               │
+│     → Parse error event         │
+│     → Display error message     │
+│     → Remove streaming element  │
+└─────────────────────────────────┘

@@ -13,8 +13,8 @@
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
-#   build/wp-mcp-ai-core-X.Y.Z.zip       (base version)
-#   build/wp-mcp-ai-pro-X.Y.Z.zip        (pro add-on)
+#   build/wp-mcp-ai-base-X.Y.Z.zip       (standalone base version - works alone)
+#   build/wp-mcp-ai-pro-X.Y.Z.zip        (pro add-on - requires base)
 #   build/wp-mcp-ai-X.Y.Z.zip            (base + pro combined)
 #
 # Requirements:
@@ -108,7 +108,7 @@ echo "Building WP oOS Plugin ZIP v${VERSION}"
 echo "=========================================="
 echo ""
 echo "Build targets:"
-[ "$BUILD_BASE" = true ] && echo "  ✓ Base version (wp-mcp-ai-core)"
+[ "$BUILD_BASE" = true ] && echo "  ✓ Base version (wp-mcp-ai-base) - standalone"
 [ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (wp-mcp-ai-pro)"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (wp-mcp-ai)"
 echo ""
@@ -152,75 +152,60 @@ rm -rf build
 mkdir -p build
 
 # ============================================================================
-# Build Base Version
+# Build Base Version (Standalone, fully functional without Pro)
 # ============================================================================
 if [ "$BUILD_BASE" = true ]; then
-    echo "Step 3a: Building Base version..."
+    echo "Step 3a: Building Base version (standalone)..."
     
-    CORE_SLUG="wp-mcp-ai-core"
-    mkdir -p "build/${CORE_SLUG}"
+    BASE_SLUG="wp-mcp-ai-base"
+    mkdir -p "build/${BASE_SLUG}"
     
-    # Copy core plugin files
-    if [ -d "core" ]; then
-        # Use the dedicated core directory
-        rsync -av --quiet core/ "build/${CORE_SLUG}/" \
-            --exclude '.git' \
-            --exclude 'node_modules' \
-            --exclude 'tests' \
-            --exclude '*.zip'
-    else
-        # Fall back to main plugin without pro addons
-        rsync -av --quiet . "build/${CORE_SLUG}/" \
-            --exclude '.git' \
-            --exclude '.git-branch-info' \
-            --exclude '.github' \
-            --exclude '.wordpress-org' \
-            --exclude '.codex' \
-            --exclude '.devcontainer' \
-            --exclude 'node_modules' \
-            --exclude 'tests' \
-            --exclude 'bin' \
-            --exclude 'coverage' \
-            --exclude 'build' \
-            --exclude 'svn-*' \
-            --exclude '.eslintrc.json' \
-            --exclude '.eslintignore' \
-            --exclude '.gitignore' \
-            --exclude 'phpunit.xml.dist' \
-            --exclude 'composer.json' \
-            --exclude 'composer.lock' \
-            --exclude 'package.json' \
-            --exclude 'package-lock.json' \
-            --exclude 'babel.config.js' \
-            --exclude 'jest.config.js' \
-            --exclude 'esbuild.config.js' \
-            --exclude 'docker-compose.yml' \
-            --exclude 'patches' \
-            --exclude 'RELEASE_CHECKLIST.md' \
-            --exclude 'CONTRIBUTING.md' \
-            --exclude 'SECURITY.md' \
-            --exclude 'BUILD.md' \
-            --exclude 'test-*.php' \
-            --exclude 'verify-*.sh' \
-            --exclude '*.zip' \
-            --exclude '*.tar.gz' \
-            --exclude '.distignore' \
-            --exclude 'addons/pro'
-    fi
-    
-    # Copy shared utilities if they exist
-    if [ -d "shared" ]; then
-        mkdir -p "build/${CORE_SLUG}/shared"
-        rsync -av --quiet shared/ "build/${CORE_SLUG}/shared/"
-    fi
+    # Copy full plugin files EXCEPT pro addons
+    # This creates a fully functional standalone plugin
+    rsync -av --quiet . "build/${BASE_SLUG}/" \
+        --exclude '.git' \
+        --exclude '.git-branch-info' \
+        --exclude '.github' \
+        --exclude '.wordpress-org' \
+        --exclude '.codex' \
+        --exclude '.devcontainer' \
+        --exclude 'node_modules' \
+        --exclude 'tests' \
+        --exclude 'bin' \
+        --exclude 'coverage' \
+        --exclude 'build' \
+        --exclude 'svn-*' \
+        --exclude '.eslintrc.json' \
+        --exclude '.eslintignore' \
+        --exclude '.gitignore' \
+        --exclude 'phpunit.xml.dist' \
+        --exclude 'composer.json' \
+        --exclude 'composer.lock' \
+        --exclude 'package.json' \
+        --exclude 'package-lock.json' \
+        --exclude 'babel.config.js' \
+        --exclude 'jest.config.js' \
+        --exclude 'esbuild.config.js' \
+        --exclude 'docker-compose.yml' \
+        --exclude 'patches' \
+        --exclude 'RELEASE_CHECKLIST.md' \
+        --exclude 'CONTRIBUTING.md' \
+        --exclude 'SECURITY.md' \
+        --exclude 'BUILD.md' \
+        --exclude 'test-*.php' \
+        --exclude 'verify-*.sh' \
+        --exclude '*.zip' \
+        --exclude '*.tar.gz' \
+        --exclude '.distignore' \
+        --exclude 'addons/pro'
     
     # Create ZIP
     cd build
-    zip -r -q "${CORE_SLUG}-${VERSION}.zip" "${CORE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
+    zip -r -q "${BASE_SLUG}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
     cd ..
     
-    CORE_SIZE=$(du -h "build/${CORE_SLUG}-${VERSION}.zip" | cut -f1)
-    echo "✅ Base version created: build/${CORE_SLUG}-${VERSION}.zip (${CORE_SIZE})"
+    BASE_SIZE=$(du -h "build/${BASE_SLUG}-${VERSION}.zip" | cut -f1)
+    echo "✅ Base version created: build/${BASE_SLUG}-${VERSION}.zip (${BASE_SIZE})"
     echo ""
 fi
 
@@ -323,7 +308,7 @@ echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
 echo "  2. Upload the appropriate ZIP file:"
-[ "$BUILD_BASE" = true ] && echo "     - wp-mcp-ai-core-${VERSION}.zip (Free base plugin)"
+[ "$BUILD_BASE" = true ] && echo "     - wp-mcp-ai-base-${VERSION}.zip (Standalone base plugin)"
 [ "$BUILD_PRO" = true ] && echo "     - wp-mcp-ai-pro-${VERSION}.zip (Pro add-on, requires base)"
 [ "$BUILD_COMBINED" = true ] && echo "     - wp-mcp-ai-${VERSION}.zip (Base + Pro combined)"
 echo "  3. Click 'Install Now' and then 'Activate'"

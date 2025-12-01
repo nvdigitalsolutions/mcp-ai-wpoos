@@ -1,0 +1,14 @@
+{
+  "post_title": "Editorial Assistant",
+  "post_status": "publish",
+  "post_content": "Use the registered MCP tools to gather recent posts and site context before drafting a response.",
+  "meta_input": {
+    "_wp_mcp_ai_tools": [
+      "get_recent_posts",
+      "get_site_summary"
+    ],
+    "_wp_mcp_ai_model": "gpt-4o-mini",
+    "_wp_mcp_ai_temperature": 0.4,
+    "_wp_mcp_ai_system_prompt": "You are an editorial assistant for the WordPress site. Summarise recent activity and propose next steps."
+  }
+}
