@@ -380,6 +380,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( $status_code < 200 || $status_code >= 300 ) {
+				/* translators: %d: HTTP status code */
 				return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
 			}
 
@@ -1062,6 +1063,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'title',
 			'model',
 			'aspect_ratio',
+			'format',           // Image format (png, jpeg, webp) for chat UI rendering.
 			'edit_instruction',
 			'source_attachment',
 			'provider',
