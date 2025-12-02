@@ -1389,6 +1389,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$response_format = 'json';
 			}
 
+			// Some model variants (e.g., those with '-api-' in the name) don't support verbose_json.
+			// Downgrade to json for these models to avoid API errors.
+			if ( 'verbose_json' === $response_format && false !== strpos( $model, '-api-' ) ) {
+				$response_format = 'json';
+			}
+
 			$fields = array(
 				'model'           => $model,
 				'response_format' => $response_format,
