@@ -507,8 +507,14 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'assistant_config' => $assistant_config,
 		);
 
-		// Validate user is authenticated.
-		if ( empty( $user_id ) && ! $this->is_guest_request() ) {
+		// Include token authentication flag if present.
+		if ( isset( $this->auth_context['token_authenticated'] ) && $this->auth_context['token_authenticated'] ) {
+			$context['token_authenticated'] = true;
+		}
+
+		// Validate user is authenticated (either via user_id, token, or guest token).
+		$is_token_authenticated = ! empty( $context['token_authenticated'] );
+		if ( empty( $user_id ) && ! $this->is_guest_request() && ! $is_token_authenticated ) {
 			return $this->error(
 				'wp_mcp_ai_anonymous_user',
 				__( 'You must be logged in to execute tools.', 'wp-mcp-ai' ),
