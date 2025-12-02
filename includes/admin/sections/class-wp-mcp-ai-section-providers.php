@@ -192,7 +192,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcription_model'           => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default model for audio transcription and translation via OpenAI Whisper. Models with -api- in the name are API-versioned and only support json format.', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for audio transcription and translation via OpenAI. Models with -api- in the name are API-versioned and only support json format.', 'wp-mcp-ai' ),
 					'options'     => array(
 						'gpt-4o-mini-transcribe'        => 'gpt-4o-mini-transcribe',
 						'gpt-4o-mini-transcribe-api-ev3' => 'gpt-4o-mini-transcribe-api-ev3 (API versioned)',
