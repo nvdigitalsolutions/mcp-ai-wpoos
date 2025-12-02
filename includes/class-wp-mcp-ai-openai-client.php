@@ -1374,11 +1374,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 5, $timeout );
 
-			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? strtolower( sanitize_key( $options['response_format'] ) ) : 'verbose_json';
+			// Default response format: 'json' for translations, 'verbose_json' for transcriptions.
+			// The translations endpoint doesn't support 'verbose_json'.
+			$default_format  = $translate ? 'json' : 'verbose_json';
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? strtolower( sanitize_key( $options['response_format'] ) ) : $default_format;
 			$allowed_formats = array( 'json', 'verbose_json' );
 
 			if ( ! in_array( $response_format, $allowed_formats, true ) ) {
-				$response_format = 'verbose_json';
+				$response_format = $default_format;
+			}
+
+			// If using translation endpoint and verbose_json was requested, downgrade to json.
+			if ( $translate && 'verbose_json' === $response_format ) {
+				$response_format = 'json';
 			}
 
 			$fields = array(
