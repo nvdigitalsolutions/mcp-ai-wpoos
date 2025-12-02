@@ -398,4 +398,46 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
 		}
 	}
+
+	/**
+	 * Ensure the global localized script includes toolsEndpoint for voice chat and transcription.
+	 */
+	public function test_chat_shortcode_localizes_tools_endpoint() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Tools Endpoint Assistant',
+			)
+		);
+
+		wp_scripts()->reset();
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+		$registered = wp_scripts()->registered[ $handle ];
+
+		// Check global localized data has toolsEndpoint.
+		$localised_data = $registered->extra['data'] ?? array();
+		if ( is_string( $localised_data ) ) {
+			$localised_data = array( $localised_data );
+		}
+		$localised = implode( "\n", $localised_data );
+		
+		// Verify toolsEndpoint is present in global config.
+		$this->assertMatchesRegularExpression( '/"toolsEndpoint":"[^"]+"/', $localised, 'Global config should include toolsEndpoint.' );
+		
+		// Parse and validate the toolsEndpoint URL.
+		if ( preg_match( '/var wpMcpAiChat\s*=\s*({.*?});/', $localised, $matches ) ) {
+			$global_config = json_decode( $matches[1], true );
+			$this->assertIsArray( $global_config, 'Global config should be valid JSON.' );
+			$this->assertArrayHasKey( 'toolsEndpoint', $global_config, 'Global config should have toolsEndpoint key.' );
+			$this->assertNotEmpty( $global_config['toolsEndpoint'], 'toolsEndpoint should not be empty.' );
+			$this->assertStringContainsString( '/wp-json/mcp-ai/v1/tools', $global_config['toolsEndpoint'], 'toolsEndpoint should point to the tools endpoint.' );
+		}
+	}
 }
