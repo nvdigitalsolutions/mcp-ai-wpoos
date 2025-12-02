@@ -154,7 +154,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			return $audio;
 		}
 
-		$translate = true;
+		$translate = false;
 		if ( isset( $arguments['translate'] ) ) {
 			$translate = (bool) $arguments['translate'];
 		}
@@ -383,9 +383,13 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'requires-credentials', // Requires OpenAI API credentials.
 			'requires-capability',  // Requires user capabilities.
+			'read-only',            // Does not modify WordPress state (only reads attachment).
+			'async',                // May take significant time for large audio files.
+			'rate-limited',         // Subject to OpenAI rate limits.
+			'requires-model',       // Uses AI model (has default).
+			'consumes-tokens',      // Uses AI credits/tokens.
 		);
 	}
 }
