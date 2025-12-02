@@ -105,6 +105,19 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		// Return a helpful message when no posts are found instead of an empty array.
+		// This provides clear feedback to the LLM and prevents breaking the agentic flow.
+		if ( empty( $results ) ) {
+			return array(
+				'message' => sprintf(
+					/* translators: %s: post type */
+					__( 'No published %s were found.', 'wp-mcp-ai' ),
+					$post_type
+				),
+				'count'   => 0,
+			);
+		}
+
 		return $results;
 	}
 
