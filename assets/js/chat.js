@@ -12102,7 +12102,7 @@
          */
         function addVideoPendingAttachment(assistantDisplay, parsedContent, bubbleElement) {
             // Check if this is a pending video generation
-            var isVideoPending = parsedContent.expected_url && 
+            const isVideoPending = parsedContent.expected_url && 
                                  parsedContent.expected_filename && 
                                  parsedContent.expected_filename.indexOf('.mp4') !== -1;
             
@@ -12111,7 +12111,7 @@
             }
             
             // Add text to assistant display if not already present
-            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+            const videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
             if (!assistantDisplay.text) {
                 assistantDisplay.text = videoText;
             } else if (assistantDisplay.text.indexOf(videoText) === -1) {
@@ -12119,7 +12119,7 @@
             }
             
             // Add video placeholder attachment to assistant display
-            var videoAttachment = {
+            const videoAttachment = {
                 url: parsedContent.expected_url,
                 label: parsedContent.expected_filename || 'Video (generating...)',
                 downloadName: parsedContent.expected_filename || 'video.mp4',
@@ -12154,20 +12154,20 @@
             }
             
             // Create the video attachment item
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__bubble-attachment';
             
             // Render video player
-            var videoContainer = document.createElement('div');
+            const videoContainer = document.createElement('div');
             videoContainer.className = 'wp-mcp-ai-chat__video-container';
             
-            var video = document.createElement('video');
+            const video = document.createElement('video');
             video.controls = true;
             
             // Check if this is a pending video (not yet generated)
             // Pending videos should use preload="none" to avoid 404 errors when browser
             // tries to fetch metadata from a file that doesn't exist yet
-            var isPending = isPendingVideo(attachment);
+            const isPending = isPendingVideo(attachment);
             video.preload = isPending ? 'none' : 'metadata';
             video.className = 'wp-mcp-ai-chat__video-player';
             
@@ -12176,17 +12176,17 @@
                 video.setAttribute('data-pending', 'true');
             }
             
-            var source = document.createElement('source');
+            const source = document.createElement('source');
             source.src = attachment.url;
             
             // Determine MIME type based on URL
-            var mimeType = getVideoMimeType(attachment.url);
+            const mimeType = getVideoMimeType(attachment.url);
             source.type = mimeType;
             
             video.appendChild(source);
             
             // Add fallback text
-            var fallbackText = document.createTextNode(
+            const fallbackText = document.createTextNode(
                 getString('videoNotSupported', 'Your browser does not support video playback.')
             );
             video.appendChild(fallbackText);
