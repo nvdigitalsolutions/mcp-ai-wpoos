@@ -3956,9 +3956,72 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$assistant_id = $scoped_id;
+			$raw_tool     = $request->get_param( 'tool' );
+			$arguments    = $request->get_param( 'arguments' );
 
+			// Allow assistant_id to be 0 for standalone tools that don't require assistant configuration.
+			// These tools (like transcribe_openai_audio) handle their own authentication.
 			if ( ! $assistant_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				$tool_candidates = $this->generate_tool_slug_candidates( $raw_tool );
+				$tool_slug       = reset( $tool_candidates ); // Use first candidate when no assistant context.
+
+				if ( ! $tool_slug ) {
+					return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Invalid tool slug provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				}
+
+				$tool = $this->registry->get_tool( $tool_slug );
+				if ( ! $tool ) {
+					return new WP_Error( 'wp_mcp_ai_tool_missing', __( 'The requested tool is not registered.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+				}
+
+				// Execute standalone tool without assistant context.
+				$auth_context = $this->get_auth_context();
+				$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
+
+				$context = array(
+					'user_id'      => $user_id,
+					'assistant_id' => 0,
+					'request'      => $request,
+				);
+
+				if ( ! empty( $auth_context['token_authenticated'] ) ) {
+					$context['token_authenticated'] = true;
+					$context['token_type']          = $auth_context['token_type'];
+
+					if ( ! empty( $auth_context['token_context'] ) ) {
+						$context['token_context'] = $auth_context['token_context'];
+					}
+				}
+
+				// Check if guest request.
+				$is_guest = isset( $auth_context['is_guest'] ) && $auth_context['is_guest'];
+				if ( $is_guest ) {
+					$context['is_guest'] = true;
+				}
+
+				$prepared_arguments = is_array( $arguments ) ? $arguments : array();
+
+				try {
+					do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+
+					$result = $tool->execute( $prepared_arguments, $context );
+
+					if ( is_wp_error( $result ) ) {
+						WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
+						return $result;
+					}
+
+					$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
+
+					do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $result, $context );
+
+					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
+
+					return rest_ensure_response( $result );
+				} catch ( Exception $e ) {
+					WP_MCP_AI_Logger::log_exception( $e, 'tool_execution' );
+					return new WP_Error( 'wp_mcp_ai_tool_error', $e->getMessage(), array( 'status' => 500 ) );
+				}
 			}
 
 			$assistant_post = $this->validate_assistant_access( $assistant_id );
@@ -3967,8 +4030,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-			$raw_tool         = $request->get_param( 'tool' );
-			$arguments        = $request->get_param( 'arguments' );
 			$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
 			$tool_candidates = $this->generate_tool_slug_candidates( $raw_tool );
