@@ -15,6 +15,48 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Helper method to create a test audio attachment.
+	 *
+	 * @return array Array with 'attachment_id' and 'file_path' keys.
+	 */
+	protected function create_test_audio_attachment() {
+		// Create a fake audio attachment.
+		$attachment_id = self::factory()->attachment->create_upload_object(
+			__DIR__ . '/fixtures/test-audio.mp3'
+		);
+
+		// Create a minimal test audio file.
+		$upload_dir  = wp_upload_dir();
+		$test_file   = $upload_dir['basedir'] . '/test-audio-' . time() . '.mp3';
+		$file_handle = fopen( $test_file, 'w' );
+
+		if ( false === $file_handle ) {
+			$this->fail( 'Failed to create test audio file' );
+		}
+
+		if ( false === fwrite( $file_handle, 'FAKEAUDIODATA' ) ) {
+			fclose( $file_handle );
+			$this->fail( 'Failed to write test audio data' );
+		}
+
+		fclose( $file_handle );
+
+		// Update the attachment to point to our test file.
+		update_attached_file( $attachment_id, $test_file );
+		wp_update_post(
+			array(
+				'ID'             => $attachment_id,
+				'post_mime_type' => 'audio/mpeg',
+			)
+		);
+
+		return array(
+			'attachment_id' => $attachment_id,
+			'file_path'     => $test_file,
+		);
+	}
+
+	/**
 	 * The tool requires an authenticated user or token context.
 	 */
 	public function test_execute_requires_authentication() {
@@ -50,26 +92,9 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		// Create a fake audio attachment.
-		$attachment_id = self::factory()->attachment->create_upload_object(
-			__DIR__ . '/fixtures/test-audio.mp3'
-		);
-
-		// Create a minimal test audio file if it doesn't exist.
-		$upload_dir  = wp_upload_dir();
-		$test_file   = $upload_dir['basedir'] . '/test-audio-' . time() . '.mp3';
-		$file_handle = fopen( $test_file, 'w' );
-		fwrite( $file_handle, 'FAKEAUDIODATA' );
-		fclose( $file_handle );
-
-		// Update the attachment to point to our test file.
-		update_attached_file( $attachment_id, $test_file );
-		wp_update_post(
-			array(
-				'ID'             => $attachment_id,
-				'post_mime_type' => 'audio/mpeg',
-			)
-		);
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
 
 		$tool             = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
 		$captured_request = null;
@@ -138,26 +163,9 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		// Create a fake audio attachment.
-		$attachment_id = self::factory()->attachment->create_upload_object(
-			__DIR__ . '/fixtures/test-audio.mp3'
-		);
-
-		// Create a minimal test audio file.
-		$upload_dir  = wp_upload_dir();
-		$test_file   = $upload_dir['basedir'] . '/test-audio-' . time() . '.mp3';
-		$file_handle = fopen( $test_file, 'w' );
-		fwrite( $file_handle, 'FAKEAUDIODATA' );
-		fclose( $file_handle );
-
-		// Update the attachment to point to our test file.
-		update_attached_file( $attachment_id, $test_file );
-		wp_update_post(
-			array(
-				'ID'             => $attachment_id,
-				'post_mime_type' => 'audio/mpeg',
-			)
-		);
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
 
 		$tool             = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
 		$captured_request = null;
@@ -226,26 +234,9 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		// Create a fake audio attachment.
-		$attachment_id = self::factory()->attachment->create_upload_object(
-			__DIR__ . '/fixtures/test-audio.mp3'
-		);
-
-		// Create a minimal test audio file.
-		$upload_dir  = wp_upload_dir();
-		$test_file   = $upload_dir['basedir'] . '/test-audio-' . time() . '.mp3';
-		$file_handle = fopen( $test_file, 'w' );
-		fwrite( $file_handle, 'FAKEAUDIODATA' );
-		fclose( $file_handle );
-
-		// Update the attachment to point to our test file.
-		update_attached_file( $attachment_id, $test_file );
-		wp_update_post(
-			array(
-				'ID'             => $attachment_id,
-				'post_mime_type' => 'audio/mpeg',
-			)
-		);
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
 
 		$tool             = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
 		$captured_request = null;
