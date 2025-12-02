@@ -7,6 +7,7 @@
         filesEndpoint: '',
         transcriptsEndpoint: '',
         toolsEndpoint: '',
+        audioEndpoint: '',
         nonce: '',
         historyPerPage: 20,
         asyncToolTimeout: 300000,
@@ -15,7 +16,7 @@
 
     const globalConfig = Object.assign({}, defaultGlobalConfig, window.wpMcpAiChat || {});
 
-    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'toolsEndpoint', 'nonce'].filter(
+    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'toolsEndpoint', 'audioEndpoint', 'nonce'].filter(
         function (key) {
             return !globalConfig[key];
         }
@@ -3125,48 +3126,31 @@
             return Promise.reject(new Error('Missing attachment id'));
         }
 
-        if (!state.config || !state.config.toolsEndpoint) {
+        if (!state.config || !state.config.audioEndpoint) {
             if (window.console && console.error) {
-                console.error('[WP oOS] Transcription request failed: Missing config or endpoint', {
+                console.error('[WP oOS] Transcription request failed: Missing config or audio endpoint', {
                     hasConfig: !!state.config,
-                    hasEndpoint: !!(state.config && state.config.toolsEndpoint)
+                    hasEndpoint: !!(state.config && state.config.audioEndpoint)
                 });
             }
-            return Promise.reject(new Error('Tools endpoint unavailable'));
-        }
-
-        // Validate assistant_id is present and non-zero
-        if (!state.config.assistantId || state.config.assistantId === 0) {
-            if (window.console && console.error) {
-                console.error('[WP oOS] Transcription request failed: Missing or invalid assistant_id', {
-                    assistantId: state.config.assistantId,
-                    config: state.config
-                });
-            }
-            return Promise.reject(new Error('Assistant ID is required but not configured'));
+            return Promise.reject(new Error('Audio endpoint unavailable'));
         }
 
         const payload = {
-            assistant_id: state.config.assistantId,
-            tool: TRANSCRIBE_TOOL_NAME,
-            arguments: {
-                attachment_id: record.id,
-                translate: false,
-            },
+            attachment_id: record.id,
+            translate: false,
         };
 
         // Log the transcription request details
         if (window.console && console.log) {
             console.log('[WP oOS] Requesting transcription:', {
-                endpoint: state.config.toolsEndpoint,
-                assistant_id: state.config.assistantId,
+                endpoint: state.config.audioEndpoint,
                 attachment_id: record.id,
-                tool: TRANSCRIBE_TOOL_NAME,
                 payload: payload
             });
         }
 
-        return fetch(state.config.toolsEndpoint, {
+        return fetch(state.config.audioEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
