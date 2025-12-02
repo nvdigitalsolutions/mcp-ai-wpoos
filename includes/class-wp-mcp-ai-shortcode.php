@@ -77,8 +77,8 @@ class WP_MCP_AI_Shortcode {
 		// Get the REST URL prefix (usually 'wp-json' but can be filtered).
 		$rest_prefix = rest_get_url_prefix();
 
-		// Build the relative path.
-		$relative_path = '/' . $rest_prefix . '/' . ltrim( $path, '/' );
+		// Build the relative path using WordPress path functions for consistency.
+		$relative_path = '/' . trailingslashit( $rest_prefix ) . ltrim( $path, '/' );
 
 		return $relative_path;
 	}
