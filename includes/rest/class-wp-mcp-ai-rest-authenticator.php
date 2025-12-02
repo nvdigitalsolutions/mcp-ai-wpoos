@@ -188,6 +188,7 @@ class WP_MCP_AI_REST_Authenticator {
 			// Guest token validation happens in permissions_check context.
 			// Store it in auth context for later use.
 			$this->auth_context['guest_token'] = $guest_token;
+			$this->auth_context['is_guest']    = true;
 			return $this->get_auth_context();
 		}
 
