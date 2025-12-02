@@ -109,6 +109,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 		// This provides clear feedback to the LLM and prevents breaking the agentic flow.
 		if ( empty( $results ) ) {
 			// Get the post type label for a more user-friendly message.
+			// Note: $post_type_object->labels->name is the plural form (e.g., "Posts", "Pages").
 			$post_type_object = get_post_type_object( $post_type );
 			$post_type_label  = $post_type_object && isset( $post_type_object->labels->name )
 				? strtolower( $post_type_object->labels->name )
