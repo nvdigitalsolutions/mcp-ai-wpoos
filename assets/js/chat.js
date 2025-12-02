@@ -3115,11 +3115,35 @@
 
     function requestTranscription(state, record) {
         if (!state || !record || typeof record.id === 'undefined') {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Transcription request failed: Missing state or record', {
+                    hasState: !!state,
+                    hasRecord: !!record,
+                    recordId: record ? record.id : undefined
+                });
+            }
             return Promise.reject(new Error('Missing attachment id'));
         }
 
         if (!state.config || !state.config.toolsEndpoint) {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Transcription request failed: Missing config or endpoint', {
+                    hasConfig: !!state.config,
+                    hasEndpoint: !!(state.config && state.config.toolsEndpoint)
+                });
+            }
             return Promise.reject(new Error('Tools endpoint unavailable'));
+        }
+
+        // Validate assistant_id is present and non-zero
+        if (!state.config.assistantId || state.config.assistantId === 0) {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Transcription request failed: Missing or invalid assistant_id', {
+                    assistantId: state.config.assistantId,
+                    config: state.config
+                });
+            }
+            return Promise.reject(new Error('Assistant ID is required but not configured'));
         }
 
         const payload = {
@@ -3131,21 +3155,61 @@
             },
         };
 
+        // Log the transcription request details
+        if (window.console && console.log) {
+            console.log('[WP oOS] Requesting transcription:', {
+                endpoint: state.config.toolsEndpoint,
+                assistant_id: state.config.assistantId,
+                attachment_id: record.id,
+                tool: TRANSCRIBE_TOOL_NAME,
+                payload: payload
+            });
+        }
+
         return fetch(state.config.toolsEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
             body: JSON.stringify(payload),
         }).then(function (response) {
+            // Log response status
+            if (window.console && console.log) {
+                console.log('[WP oOS] Transcription response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    url: response.url
+                });
+            }
+
             return response
                 .json()
-                .catch(function () {
+                .catch(function (parseError) {
+                    if (window.console && console.error) {
+                        console.error('[WP oOS] Failed to parse transcription response JSON:', parseError);
+                    }
                     return null;
                 })
                 .then(function (data) {
                     if (!response.ok) {
+                        if (window.console && console.error) {
+                            console.error('[WP oOS] Transcription request failed:', {
+                                status: response.status,
+                                statusText: response.statusText,
+                                responseData: data,
+                                payload: payload
+                            });
+                        }
                         throw response;
                     }
+
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Transcription completed successfully:', {
+                            hasData: !!data,
+                            dataKeys: data ? Object.keys(data) : []
+                        });
+                    }
+
                     return data;
                 });
         });
