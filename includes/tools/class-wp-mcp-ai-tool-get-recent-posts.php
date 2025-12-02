@@ -108,11 +108,17 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Return a helpful message when no posts are found instead of an empty array.
 		// This provides clear feedback to the LLM and prevents breaking the agentic flow.
 		if ( empty( $results ) ) {
+			// Get the post type label for a more user-friendly message.
+			$post_type_object = get_post_type_object( $post_type );
+			$post_type_label  = $post_type_object && isset( $post_type_object->labels->name )
+				? strtolower( $post_type_object->labels->name )
+				: $post_type;
+
 			return array(
 				'message' => sprintf(
-					/* translators: %s: post type */
+					/* translators: %s: post type label (plural, lowercase) */
 					__( 'No published %s were found.', 'wp-mcp-ai' ),
-					$post_type
+					$post_type_label
 				),
 				'count'   => 0,
 			);
