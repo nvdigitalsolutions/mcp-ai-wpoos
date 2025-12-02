@@ -74,14 +74,23 @@ class WP_MCP_AI_Shortcode {
 	 * the widget was accessed from domains other than the WordPress installation,
 	 * as the relative path would resolve to the wrong domain.
 	 *
+	 * Uses WP_MCP_AI_Request_Context::normalise_rest_url() to handle loopback
+	 * addresses and proxy configurations correctly.
+	 *
 	 * @param string $path REST API path (e.g., 'mcp-ai/v1/tools').
 	 * @return string Absolute REST URL (e.g., 'https://example.com/wp-json/mcp-ai/v1/tools').
 	 */
 	protected function get_rest_url_path( $path ) {
-		// Use WordPress's rest_url() function to get the absolute URL.
-		// This ensures the API endpoints work correctly even when the widget
-		// is embedded on external domains or accessed cross-origin.
-		return rest_url( $path );
+		// Use WordPress's rest_url() function to get the absolute URL,
+		// then normalize it for loopback addresses and proxy configurations.
+		$url = rest_url( $path );
+
+		// Normalize the URL to handle localhost/proxy scenarios.
+		if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'normalise_rest_url' ) ) {
+			$url = WP_MCP_AI_Request_Context::normalise_rest_url( $url );
+		}
+
+		return $url;
 	}
 
 	/**
