@@ -120,6 +120,82 @@ class WP_MCP_AI_REST_Authenticator {
 	}
 
 	/**
+	 * Authenticate a REST API request.
+	 *
+	 * Handles multiple authentication methods in order of precedence:
+	 * 1. Mesh network API keys (X-WP-MCP-AI-Mesh-Key header)
+	 * 2. Bearer tokens (Authorization: Bearer header) - local credentials or Auth0
+	 * 3. WordPress nonces (X-WP-Nonce header)
+	 * 4. Guest tokens (X-WP-MCP-AI-Guest header)
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return array|WP_Error Authentication context or error.
+	 */
+	public function authenticate( WP_REST_Request $request ) {
+		$this->reset_auth_context();
+
+		// Check for mesh API key authentication.
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) ) {
+			$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+			if ( true === $mesh_validated ) {
+				$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $mesh_validated ) ) {
+				return $mesh_validated;
+			}
+		}
+
+		// Check for bearer token authentication (local credentials or Auth0).
+		$bearer = $request->get_header( 'Authorization' );
+		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+			$token = trim( $matches[1] );
+
+			// Try local token first.
+			$assistant_id = $request->get_param( 'assistant_id' );
+			$assistant_hint = $assistant_id ? absint( $assistant_id ) : 0;
+			$local = $this->validate_local_token( $token, $request, $assistant_hint );
+
+			if ( true === $local ) {
+				return $this->get_auth_context();
+			} elseif ( $local instanceof WP_Error ) {
+				return $local;
+			}
+
+			// Local token validation returned null (not a local token format).
+			// Try bearer token (Auth0) validation.
+			$validated = $this->validate_bearer_token( $token, $request );
+
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+
+			// Bearer token validation successful.
+			return $this->get_auth_context();
+		}
+
+		// Check for WordPress nonce.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			$this->set_authenticated_user_id( get_current_user_id() );
+			return $this->get_auth_context();
+		}
+
+		// Check for guest token.
+		$guest_token = $this->extract_guest_token( $request );
+		if ( $guest_token ) {
+			// Guest token validation happens in permissions_check context.
+			// Store it in auth context for later use.
+			$this->auth_context['guest_token'] = $guest_token;
+			return $this->get_auth_context();
+		}
+
+		// No authentication provided - return context with user_id 0.
+		return $this->get_auth_context();
+	}
+
+	/**
 	 * Validate a local assistant credential token.
 	 *
 	 * @param string          $token   Bearer token.
