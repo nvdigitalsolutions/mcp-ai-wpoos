@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Extracts frames from videos at specific timestamps or intervals for analysis.
@@ -575,9 +576,12 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 				wp_update_attachment_metadata( $attachment_id, $attach_data );
 
+				// Get local WordPress URL using utility class for SoC compliance.
+				$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
+
 				$attachments[] = array(
 					'id'  => $attachment_id,
-					'url' => wp_get_attachment_url( $attachment_id ),
+					'url' => $local_url,
 				);
 			}
 		}
