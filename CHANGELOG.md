@@ -4,6 +4,14 @@
 
 ### Fixed
 
+#### Audio Transcription & Translation (December 2, 2025)
+- **Translation Endpoint Response Format Fix (PR #1908)**: Fixed OpenAI translation endpoint incompatibility with verbose_json format
+  - Translation endpoint now defaults to 'json' format instead of 'verbose_json'
+  - Transcription endpoint continues to use 'verbose_json' by default
+  - Added automatic downgrade from 'verbose_json' to 'json' when using translation endpoint
+  - Fixes API error: "response_format 'verbose_json' is not compatible with model 'gpt-4o-mini-transcribe-api-ev3'"
+  - Added comprehensive tests for response format handling in both modes
+
 #### Async Tool Execution & VEO Video Generation (November 26-27, 2025)
 - **Async Tool Result Display Fix (PR #1739, #1755)**: Fixed async tool results (VEO video generation) not appearing in chat interface
   - Dynamically create assistant message when `tool_results` present but no LLM message exists
