@@ -1394,7 +1394,7 @@
      * @return {*} Cleaned object
      */
     // Keys that typically contain large binary data to be stripped
-    var LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
+    const LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
 
     function stripLargeContentFromObject(obj, depth) {
         if (depth === undefined) {
@@ -1430,7 +1430,7 @@
                 // Check length first to avoid expensive regex on small strings
                 if (obj.length > 5000) {
                     // Sample first 100 chars to check if it looks like base64
-                    var sample = obj.substring(0, 100);
+                    const sample = obj.substring(0, 100);
                     if (/^[A-Za-z0-9+/=]+$/.test(sample)) {
                         return '[base64 data stripped]';
                     }
@@ -1442,12 +1442,12 @@
         // Handle objects - create clean copy
         const cleaned = {};
         
-        for (var key in obj) {
+        for (const key in obj) {
             if (!Object.prototype.hasOwnProperty.call(obj, key)) {
                 continue;
             }
 
-            var value = obj[key];
+            const value = obj[key];
 
             // Skip keys that typically contain large binary data
             if (LARGE_CONTENT_KEYS.indexOf(key) !== -1) {
@@ -7476,14 +7476,14 @@
         // For video generation jobs, show a placeholder video element that will become active
         // when the video file is created (typically within 5 minutes).
         // Use a generic property-based check (expected_url + .mp4 filename) to avoid tight coupling.
-        var isVideoPending = parsedContent.expected_url && 
+        const isVideoPending = parsedContent.expected_url && 
                              parsedContent.expected_filename && 
                              parsedContent.expected_filename.indexOf('.mp4') !== -1;
         
         if (isVideoPending) {
             // Create a message payload with the video placeholder as an attachment
             // This uses the standard attachment rendering which includes video player support
-            var videoPlaceholderPayload = {
+            const videoPlaceholderPayload = {
                 text: parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.'),
                 attachments: [{
                     url: parsedContent.expected_url,
@@ -11121,7 +11121,7 @@
             // This handles the case where the server closes the connection after sending [DONE]
             // but before the browser's reader.read() returns {done: true}.
             // The network error is benign in this case - we have all the data we need.
-            var hasContent = typeof fullContent === 'string' && fullContent.length > 0;
+            const hasContent = typeof fullContent === 'string' && fullContent.length > 0;
             if (capturedFinalData || hasContent) {
                 if (window.console && console.log) {
                     console.log('[WP oOS] Stream read error after final data received, treating as successful completion:', {
@@ -11707,10 +11707,10 @@
             // By setting "Tool completed successfully" here instead of clearing immediately,
             // the calling code's delayed clearStatus (after 1.5s) will work properly,
             // giving users time to see the completion message.
-            var hasAsyncPendingTools = false;
+            let hasAsyncPendingTools = false;
             data.tool_results.forEach(function(toolResult) {
                 if (toolResult && toolResult.content) {
-                    var parsedContent = parseToolResultContent(toolResult.content);
+                    const parsedContent = parseToolResultContent(toolResult.content);
                     if (isAsyncPendingToolResult(parsedContent)) {
                         hasAsyncPendingTools = true;
                     }
@@ -12286,7 +12286,7 @@
             }
             
             // Find or create the attachments list
-            var list = bubbleElement.querySelector('.wp-mcp-ai-chat__bubble-attachments');
+            let list = bubbleElement.querySelector('.wp-mcp-ai-chat__bubble-attachments');
             if (!list) {
                 list = document.createElement('ul');
                 list.className = 'wp-mcp-ai-chat__bubble-attachments';
@@ -12334,7 +12334,7 @@
             videoContainer.appendChild(video);
             
             // Add download link below video
-            var downloadLink = document.createElement('a');
+            const downloadLink = document.createElement('a');
             downloadLink.href = attachment.url;
             downloadLink.download = attachment.downloadName || 'video.mp4';
             downloadLink.className = 'wp-mcp-ai-chat__video-download';
@@ -12345,7 +12345,7 @@
             
             // Add metadata if present
             if (attachment.meta) {
-                var meta = document.createElement('div');
+                const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
                 meta.textContent = attachment.meta;
                 item.appendChild(meta);
@@ -12741,14 +12741,14 @@
         // If so, set "Tool completed successfully" status instead of clearing
         // This allows the calling code's delayed clearStatus to work properly
         // hasToolResults was already declared at the start of this function
-        var hasAsyncPending = false;
+        let hasAsyncPending = false;
         
         if (hasToolResults) {
             // Check if any tool results are async pending
-            for (var i = 0; i < data.tool_results.length; i++) {
-                var toolResult = data.tool_results[i];
+            for (let i = 0; i < data.tool_results.length; i++) {
+                const toolResult = data.tool_results[i];
                 if (toolResult && toolResult.content) {
-                    var parsedContent = parseToolResultContent(toolResult.content);
+                    const parsedContent = parseToolResultContent(toolResult.content);
                     if (isAsyncPendingToolResult(parsedContent)) {
                         hasAsyncPending = true;
                         break;
