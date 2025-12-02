@@ -395,6 +395,9 @@
 
 		const text = normalizeSpeechText(button.dataset.speechText || '');
 		if (!text) {
+			if (window.console && console.warn) {
+				console.warn('[WP oOS] Speech button clicked but no text to speak');
+			}
 			return;
 		}
 
@@ -404,6 +407,10 @@
 		}
 
 		if (currentState === 'playing') {
+			// Log speech stop
+			if (window.console && console.log) {
+				console.log('[WP oOS] Speech playback stopped by user');
+			}
 			stopSpeechPlayback(state, button);
 			return;
 		}
@@ -414,8 +421,23 @@
 
 		const cache = state.speechCache[text];
 		if (cache && cache.url) {
+			// Log speech playback from cache
+			if (window.console && console.log) {
+				console.log('[WP oOS] Playing speech from cache:', {
+					textLength: text.length,
+					textPreview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
+				});
+			}
 			ensureSpeechAudio(state, button, cache.url, text);
 			return;
+		}
+
+		// Log speech request
+		if (window.console && console.log) {
+			console.log('[WP oOS] Requesting speech generation:', {
+				textLength: text.length,
+				textPreview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
+			});
 		}
 
 		updateSpeechButtonIcon(button, 'loading');
@@ -427,10 +449,19 @@
 					throw new Error('Invalid speech response');
 				}
 
+				// Log successful speech generation
+				if (window.console && console.log) {
+					console.log('[WP oOS] Speech generated successfully');
+				}
+
 				state.speechCache[text] = { url: info.url };
 				ensureSpeechAudio(state, button, info.url, text);
 			})
-			.catch(function () {
+			.catch(function (error) {
+				// Log speech generation error
+				if (window.console && console.error) {
+					console.error('[WP oOS] Speech generation failed:', error);
+				}
 				setSpeechButtonErrorState(state, button, text);
 			})
 			.finally(function () {

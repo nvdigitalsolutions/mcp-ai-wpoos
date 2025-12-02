@@ -209,6 +209,9 @@
 
 			const currentText = resolveCopyText(bubble, button.dataset.copyText || text);
 			if (!currentText) {
+				if (window.console && console.warn) {
+					console.warn('[WP oOS] Copy button clicked but no text to copy');
+				}
 				updateCopyButtonState(button, 'error');
 				setTimeout(function () {
 					domUpdateBatcher.schedule(function() {
@@ -218,14 +221,30 @@
 				return;
 			}
 
+			// Log copy button click
+			if (window.console && console.log) {
+				console.log('[WP oOS] Copy button clicked:', {
+					textLength: currentText.length,
+					textPreview: currentText.substring(0, 50) + (currentText.length > 50 ? '...' : '')
+				});
+			}
+
 			button.disabled = true;
 
 			copyTextToClipboard(currentText)
 				.then(function (success) {
 					if (success) {
 						updateCopyButtonState(button, 'copied');
+						// Log successful copy
+						if (window.console && console.log) {
+							console.log('[WP oOS] Text copied to clipboard successfully');
+						}
 					} else {
 						updateCopyButtonState(button, 'error');
+						// Log copy failure
+						if (window.console && console.warn) {
+							console.warn('[WP oOS] Failed to copy text to clipboard');
+						}
 					}
 
 					setTimeout(function () {
@@ -235,8 +254,12 @@
 						});
 					}, 2000);
 				})
-				.catch(function () {
+				.catch(function (error) {
 					updateCopyButtonState(button, 'error');
+					// Log copy error
+					if (window.console && console.error) {
+						console.error('[WP oOS] Error copying to clipboard:', error);
+					}
 					setTimeout(function () {
 						domUpdateBatcher.schedule(function() {
 							updateCopyButtonState(button, 'idle');
