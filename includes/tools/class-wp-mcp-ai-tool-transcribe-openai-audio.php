@@ -154,7 +154,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			return $audio;
 		}
 
-		$translate = true;
+		$translate = false;
 		if ( isset( $arguments['translate'] ) ) {
 			$translate = (bool) $arguments['translate'];
 		}
