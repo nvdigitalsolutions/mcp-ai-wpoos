@@ -1183,6 +1183,18 @@
             hasMetadata = true;
         }
 
+        // Extract speechText and copyText from data attributes for button persistence
+        // These contain the markdown text used for speech synthesis and clipboard copy
+        if (messageElement.dataset && messageElement.dataset.speechText) {
+            metadata.speechText = messageElement.dataset.speechText;
+            hasMetadata = true;
+        }
+        
+        if (messageElement.dataset && messageElement.dataset.copyText) {
+            metadata.copyText = messageElement.dataset.copyText;
+            hasMetadata = true;
+        }
+
         return hasMetadata ? metadata : null;
     }
 
@@ -9787,6 +9799,13 @@
                     if (display.bubbleType) {
                         displayPayload.bubbleType = display.bubbleType;
                     }
+                    
+                    // Preserve chart HTML for Chart.js visualizations
+                    if (display.chartHtml) {
+                        displayPayload.chartHtml = display.chartHtml;
+                        displayPayload.chartWidth = display.chartWidth || 800;
+                        displayPayload.chartHeight = display.chartHeight || 400;
+                    }
                 } else {
                     // Fallback: build display payload from content
                     displayPayload = { text: '', attachments: [] };
@@ -9873,6 +9892,13 @@
                         assistantPayload.bubbleType = display.bubbleType;
                     }
                     
+                    // Preserve chart HTML for Chart.js visualizations
+                    if (display.chartHtml) {
+                        assistantPayload.chartHtml = display.chartHtml;
+                        assistantPayload.chartWidth = display.chartWidth || 800;
+                        assistantPayload.chartHeight = display.chartHeight || 400;
+                    }
+                    
                     // Preserve tool_calls in display for rendering context
                     if (display.tool_calls) {
                         assistantPayload.tool_calls = display.tool_calls;
@@ -9889,12 +9915,17 @@
                 // For speech, combine message and text if both present
                 let textForSpeech = '';
                 if (display) {
-                    const messageStr = display.message || '';
-                    const textStr = display.text || '';
-                    if (messageStr && textStr && messageStr !== textStr) {
-                        textForSpeech = messageStr + '\n\n' + textStr;
+                    // Use preserved speechText if available (preferred for accuracy)
+                    if (display.speechText) {
+                        textForSpeech = display.speechText;
                     } else {
-                        textForSpeech = messageStr || textStr;
+                        const messageStr = display.message || '';
+                        const textStr = display.text || '';
+                        if (messageStr && textStr && messageStr !== textStr) {
+                            textForSpeech = messageStr + '\n\n' + textStr;
+                        } else {
+                            textForSpeech = messageStr || textStr;
+                        }
                     }
                 }
                 if (!textForSpeech) {
