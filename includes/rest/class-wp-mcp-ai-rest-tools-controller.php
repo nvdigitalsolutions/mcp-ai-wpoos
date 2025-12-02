@@ -479,8 +479,15 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
+		// UI helper tools that should always be available for chat interfaces.
+		// These are client-side features, not AI-callable tools.
+		$always_allowed_tools = array(
+			'transcribe_openai_audio', // Voice input transcription.
+			'generate_openai_speech',  // Text-to-speech audio generation.
+		);
+
 		// Check if tool is allowed for this assistant.
-		if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+		if ( ! in_array( $tool_slug, $allowed_tools, true ) && ! in_array( $tool_slug, $always_allowed_tools, true ) ) {
 			return $this->error(
 				'wp_mcp_ai_tool_forbidden',
 				__( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ),

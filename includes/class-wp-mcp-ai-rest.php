@@ -3982,7 +3982,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
-			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+			// UI helper tools that should always be available for chat interfaces.
+			// These are client-side features, not AI-callable tools.
+			$always_allowed_tools = array(
+				'transcribe_openai_audio', // Voice input transcription.
+				'generate_openai_speech',  // Text-to-speech audio generation.
+			);
+
+			if ( ! in_array( $tool_slug, $allowed_tools, true ) && ! in_array( $tool_slug, $always_allowed_tools, true ) ) {
 				return new WP_Error( 'wp_mcp_ai_tool_forbidden', __( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
 			}
 
@@ -8014,7 +8021,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
-			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+			// UI helper tools that should always be available for chat interfaces.
+			// These are client-side features, not AI-callable tools.
+			$always_allowed_tools = array(
+				'transcribe_openai_audio', // Voice input transcription.
+				'generate_openai_speech',  // Text-to-speech audio generation.
+			);
+
+			if ( ! in_array( $tool_slug, $allowed_tools, true ) && ! in_array( $tool_slug, $always_allowed_tools, true ) ) {
 				/* translators: %s: tool name */
 				return new WP_Error( 'wp_mcp_ai_tool_forbidden', sprintf( __( 'Tool "%s" is not allowed for this assistant.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 403 ) );
 			}
