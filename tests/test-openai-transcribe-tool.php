@@ -304,4 +304,246 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 			unlink( $test_file );
 		}
 	}
+
+	/**
+	 * When using translation mode, response format should be 'json' not 'verbose_json'.
+	 * The translation endpoint doesn't support verbose_json format.
+	 */
+	public function test_translation_uses_json_response_format() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
+
+		$tool                    = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+		$captured_request        = null;
+		$captured_request_fields = null;
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, &$captured_request_fields ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			// Parse the multipart body to extract the response_format field.
+			if ( isset( $args['body'] ) ) {
+				// Extract response_format from multipart body.
+				if ( preg_match( '/name="response_format"[^\r\n]*\r?\n\r?\n([^\r\n]+)/i', $args['body'], $matches ) ) {
+					$captured_request_fields['response_format'] = trim( $matches[1] );
+				}
+			}
+
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'text'     => 'This is a translation',
+						'language' => 'en',
+						'duration' => 5.5,
+					)
+				),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+				'translate'     => true, // Request translation mode.
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request, 'HTTP request should have been made' );
+
+		// Verify it used the translations endpoint.
+		$this->assertSame(
+			WP_MCP_AI_OpenAI_Client::AUDIO_TRANSLATIONS_ENDPOINT,
+			$captured_request['url'],
+			'Should use translations endpoint when translate is true'
+		);
+
+		// Verify response_format is 'json', not 'verbose_json'.
+		$this->assertNotNull( $captured_request_fields, 'Should have captured request fields' );
+		$this->assertArrayHasKey( 'response_format', $captured_request_fields, 'Request should include response_format field' );
+		$this->assertSame( 'json', $captured_request_fields['response_format'], 'Translation endpoint should use json format, not verbose_json' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'text', $result );
+		$this->assertArrayHasKey( 'translated', $result );
+		$this->assertTrue( $result['translated'], 'Translated flag should be true' );
+
+		// Clean up.
+		wp_delete_attachment( $attachment_id, true );
+		if ( file_exists( $test_file ) ) {
+			unlink( $test_file );
+		}
+	}
+
+	/**
+	 * When using transcription mode, response format should default to 'verbose_json'.
+	 */
+	public function test_transcription_uses_verbose_json_response_format() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
+
+		$tool                    = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+		$captured_request        = null;
+		$captured_request_fields = null;
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, &$captured_request_fields ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			// Parse the multipart body to extract the response_format field.
+			if ( isset( $args['body'] ) ) {
+				// Extract response_format from multipart body.
+				if ( preg_match( '/name="response_format"[^\r\n]*\r?\n\r?\n([^\r\n]+)/i', $args['body'], $matches ) ) {
+					$captured_request_fields['response_format'] = trim( $matches[1] );
+				}
+			}
+
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'text'     => 'This is a transcription',
+						'language' => 'en',
+						'duration' => 5.5,
+					)
+				),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+				'translate'     => false, // Request transcription mode.
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request, 'HTTP request should have been made' );
+
+		// Verify it used the transcriptions endpoint.
+		$this->assertSame(
+			WP_MCP_AI_OpenAI_Client::AUDIO_TRANSCRIPTIONS_ENDPOINT,
+			$captured_request['url'],
+			'Should use transcriptions endpoint when translate is false'
+		);
+
+		// Verify response_format is 'verbose_json'.
+		$this->assertNotNull( $captured_request_fields, 'Should have captured request fields' );
+		$this->assertArrayHasKey( 'response_format', $captured_request_fields, 'Request should include response_format field' );
+		$this->assertSame( 'verbose_json', $captured_request_fields['response_format'], 'Transcription endpoint should use verbose_json format by default' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'text', $result );
+		$this->assertArrayHasKey( 'translated', $result );
+		$this->assertFalse( $result['translated'], 'Translated flag should be false' );
+
+		// Clean up.
+		wp_delete_attachment( $attachment_id, true );
+		if ( file_exists( $test_file ) ) {
+			unlink( $test_file );
+		}
+	}
+
+	/**
+	 * When using translation with verbose_json explicitly requested, it should be downgraded to json.
+	 */
+	public function test_translation_downgrades_verbose_json_to_json() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
+
+		$tool                    = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+		$captured_request        = null;
+		$captured_request_fields = null;
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, &$captured_request_fields ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			// Parse the multipart body to extract the response_format field.
+			if ( isset( $args['body'] ) ) {
+				// Extract response_format from multipart body.
+				if ( preg_match( '/name="response_format"[^\r\n]*\r?\n\r?\n([^\r\n]+)/i', $args['body'], $matches ) ) {
+					$captured_request_fields['response_format'] = trim( $matches[1] );
+				}
+			}
+
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'text'     => 'This is a translation',
+						'language' => 'en',
+						'duration' => 5.5,
+					)
+				),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'attachment_id'   => $attachment_id,
+				'translate'       => true, // Request translation mode.
+				'response_format' => 'verbose_json', // Explicitly request verbose_json (should be downgraded).
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request, 'HTTP request should have been made' );
+
+		// Verify response_format was downgraded from verbose_json to json.
+		$this->assertNotNull( $captured_request_fields, 'Should have captured request fields' );
+		$this->assertArrayHasKey( 'response_format', $captured_request_fields, 'Request should include response_format field' );
+		$this->assertSame( 'json', $captured_request_fields['response_format'], 'Translation endpoint should downgrade verbose_json to json' );
+
+		// Clean up.
+		wp_delete_attachment( $attachment_id, true );
+		if ( file_exists( $test_file ) ) {
+			unlink( $test_file );
+		}
+	}
 }
