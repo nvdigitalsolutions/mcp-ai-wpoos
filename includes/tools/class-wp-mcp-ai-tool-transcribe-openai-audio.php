@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 				'translate'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true the audio will be translated into English instead of a raw transcription.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'default'     => false,
 				),
 				'model'           => array(
 					'type'        => 'string',

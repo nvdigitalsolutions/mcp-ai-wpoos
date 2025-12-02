@@ -3057,6 +3057,7 @@
             tool: TRANSCRIBE_TOOL_NAME,
             arguments: {
                 attachment_id: record.id,
+                translate: false,
             },
         };
 
