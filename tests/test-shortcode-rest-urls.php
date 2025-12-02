@@ -85,6 +85,10 @@ class Test_Shortcode_Rest_URLs extends WP_UnitTestCase {
 		$inline_scripts = wp_scripts()->get_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'before' );
 
 		if ( ! empty( $inline_scripts ) ) {
+			// Ensure $inline_scripts is an array before using implode.
+			if ( ! is_array( $inline_scripts ) ) {
+				$inline_scripts = array( $inline_scripts );
+			}
 			$script_content = implode( "\n", $inline_scripts );
 
 			// Extract toolsEndpoint from the inline script.
@@ -122,6 +126,10 @@ class Test_Shortcode_Rest_URLs extends WP_UnitTestCase {
 		$inline_scripts = wp_scripts()->get_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'before' );
 
 		if ( ! empty( $inline_scripts ) ) {
+			// Ensure $inline_scripts is an array before using implode.
+			if ( ! is_array( $inline_scripts ) ) {
+				$inline_scripts = array( $inline_scripts );
+			}
 			$script_content = implode( "\n", $inline_scripts );
 
 			// List of endpoints that should be absolute URLs.
