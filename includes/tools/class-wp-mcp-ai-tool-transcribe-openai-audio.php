@@ -388,7 +388,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'read-only',            // Does not modify WordPress state (only reads attachment).
 			'async',                // May take significant time for large audio files.
 			'rate-limited',         // Subject to OpenAI rate limits.
-			'requires-model',       // Requires transcription model specification.
+			'requires-model',       // Uses AI model (has default).
 			'consumes-tokens',      // Uses AI credits/tokens.
 		);
 	}

@@ -6,6 +6,11 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-op
 class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 
 	/**
+	 * Test audio data for fake audio files.
+	 */
+	const TEST_AUDIO_DATA = 'FAKEAUDIODATA';
+
+	/**
 	 * Clean up global state after each test.
 	 */
 	public function tearDown(): void {
@@ -17,7 +22,16 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 	/**
 	 * Helper method to create a test audio attachment.
 	 *
-	 * @return array Array with 'attachment_id' and 'file_path' keys.
+	 * Creates a fake audio file with test data and an associated WordPress
+	 * attachment post. The caller is responsible for cleaning up both the
+	 * attachment and the file using wp_delete_attachment() and unlink().
+	 *
+	 * @return array {
+	 *     Array containing attachment and file information.
+	 *
+	 *     @type int    $attachment_id The WordPress attachment post ID.
+	 *     @type string $file_path     Absolute path to the created test file.
+	 * }
 	 */
 	protected function create_test_audio_attachment() {
 		// Create a minimal test audio file.
@@ -29,7 +43,7 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 			$this->fail( 'Failed to create test audio file' );
 		}
 
-		if ( false === fwrite( $file_handle, 'FAKEAUDIODATA' ) ) {
+		if ( false === fwrite( $file_handle, self::TEST_AUDIO_DATA ) ) {
 			fclose( $file_handle );
 			$this->fail( 'Failed to write test audio data' );
 		}
