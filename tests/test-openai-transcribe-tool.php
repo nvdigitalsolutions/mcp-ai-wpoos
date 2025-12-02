@@ -716,4 +716,87 @@ class WP_MCP_AI_OpenAI_Transcribe_Tool_Test extends WP_UnitTestCase {
 			unlink( $test_file );
 		}
 	}
+
+	/**
+	 * Test that transcription uses the configured settings for model and response format.
+	 */
+	public function test_uses_configured_transcription_settings() {
+		$settings                                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']                      = 'sk-test';
+		$settings['openai_transcription_model']          = 'gpt-4o-mini-transcribe-api-ev3';
+		$settings['openai_transcription_response_format'] = 'json';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$test_data     = $this->create_test_audio_attachment();
+		$attachment_id = $test_data['attachment_id'];
+		$test_file     = $test_data['file_path'];
+
+		$tool                    = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+		$captured_request        = null;
+		$captured_request_fields = null;
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, &$captured_request_fields ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			// Parse the multipart body to extract fields.
+			if ( isset( $args['body'] ) ) {
+				if ( preg_match( '/name="response_format"[^\r\n]*\r?\n\r?\n([^\r\n]+)/i', $args['body'], $matches ) ) {
+					$captured_request_fields['response_format'] = trim( $matches[1] );
+				}
+				if ( preg_match( '/name="model"[^\r\n]*\r?\n\r?\n([^\r\n]+)/i', $args['body'], $matches ) ) {
+					$captured_request_fields['model'] = trim( $matches[1] );
+				}
+			}
+
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'text'     => 'This is a transcription',
+						'language' => 'en',
+						'duration' => 5.5,
+					)
+				),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Execute tool without specifying model or format - should use configured settings.
+		$result = $tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request, 'HTTP request should have been made' );
+
+		// Verify it used the configured model from settings.
+		$this->assertNotNull( $captured_request_fields, 'Should have captured request fields' );
+		$this->assertArrayHasKey( 'model', $captured_request_fields, 'Request should include model field' );
+		$this->assertSame( 'gpt-4o-mini-transcribe-api-ev3', $captured_request_fields['model'], 'Should use configured model from settings' );
+
+		// Verify it used the configured response format from settings.
+		$this->assertArrayHasKey( 'response_format', $captured_request_fields, 'Request should include response_format field' );
+		$this->assertSame( 'json', $captured_request_fields['response_format'], 'Should use configured response format from settings' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'text', $result );
+
+		// Clean up.
+		wp_delete_attachment( $attachment_id, true );
+		if ( file_exists( $test_file ) ) {
+			unlink( $test_file );
+		}
+	}
 }

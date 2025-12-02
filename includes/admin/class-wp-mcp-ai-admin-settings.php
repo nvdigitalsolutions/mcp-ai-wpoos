@@ -2413,6 +2413,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				}
 			}
 
+			if ( isset( $settings['openai_transcription_model'] ) ) {
+				$model = sanitize_text_field( $settings['openai_transcription_model'] );
+				if ( '' !== $model ) {
+					$clean['openai_transcription_model'] = $model;
+				}
+			}
+
+			if ( isset( $settings['openai_transcription_response_format'] ) ) {
+				$format  = sanitize_key( $settings['openai_transcription_response_format'] );
+				$formats = array( 'json', 'verbose_json' );
+
+				if ( in_array( $format, $formats, true ) ) {
+					$clean['openai_transcription_response_format'] = $format;
+				}
+			}
+
 			if ( isset( $settings['openai_speech_model'] ) ) {
 				$clean['openai_speech_model'] = sanitize_text_field( $settings['openai_speech_model'] );
 			}
