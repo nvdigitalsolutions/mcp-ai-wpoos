@@ -77,6 +77,11 @@ class WP_MCP_AI_Shortcode {
 		// Get the REST URL prefix (usually 'wp-json' but can be filtered).
 		$rest_prefix = rest_get_url_prefix();
 
+		// Validate that we have a REST prefix (should never be empty in WordPress).
+		if ( empty( $rest_prefix ) ) {
+			$rest_prefix = 'wp-json'; // Fallback to default.
+		}
+
 		// Build the relative path using WordPress path functions for consistency.
 		$relative_path = '/' . trailingslashit( $rest_prefix ) . ltrim( $path, '/' );
 
@@ -512,6 +517,7 @@ class WP_MCP_AI_Shortcode {
 				'restUrl'               => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE ),
 				'messagesEndpoint'      => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ),
 				'toolsEndpoint'         => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ),
+				// filesEndpoint and crawl4aiTaskEndpoint need trailing slashes as they are base paths for file operations.
 				'filesEndpoint'         => trailingslashit( $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ),
 				'transcriptsEndpoint'   => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ),
 				'crawl4aiTaskEndpoint'  => trailingslashit( $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ),
