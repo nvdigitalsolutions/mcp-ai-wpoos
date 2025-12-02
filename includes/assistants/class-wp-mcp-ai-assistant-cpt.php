@@ -3618,7 +3618,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} catch ( Exception $e ) {
 				// Log error but don't block the save process.
 				if ( function_exists( 'error_log' ) ) {
-					error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
+					error_log( '[WP oOS] CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
 				}
 			} finally {
 				// Always release the lock.

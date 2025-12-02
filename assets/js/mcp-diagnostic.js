@@ -14,7 +14,7 @@
 	$( document ).ready( function() {
 		// Check if localized script data is available.
 		if ( typeof wpMcpAiMcpDiagnostic === 'undefined' ) {
-			console.error( 'WP MCP AI: wpMcpAiMcpDiagnostic is not defined. The script may not be properly localized.' );
+			console.error( '[WP oOS] wpMcpAiMcpDiagnostic is not defined. The script may not be properly localized.' );
 			return;
 		}
 

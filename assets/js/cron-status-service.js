@@ -88,7 +88,7 @@
 				})
 				.catch(function (error) {
 					if (window.console && console.error) {
-						console.error('[WP MCP AI] Cron status REST fetch error:', error);
+						console.error('[WP oOS] Cron status REST fetch error:', error);
 					}
 					return null;
 				});
@@ -173,7 +173,7 @@
 						},
 						onOpen: function () {
 							if (window.console && console.log) {
-								console.log('[WP MCP AI] SSE cron status connection established for', containerId);
+								console.log('[WP oOS] SSE cron status connection established for', containerId);
 							}
 						}
 					});
@@ -361,14 +361,14 @@
 		// Legacy API compatibility - deprecated, use startMonitoring/stopMonitoring
 		startPolling: function (containerId, endpoint, nonce, callback, assistantId) {
 			if (window.console && console.warn) {
-				console.warn('[WP MCP AI] CronStatusService.startPolling is deprecated, use startMonitoring instead');
+				console.warn('[WP oOS] CronStatusService.startPolling is deprecated, use startMonitoring instead');
 			}
 			return this.startMonitoring(containerId, endpoint, nonce, callback, assistantId);
 		},
 
 		stopPolling: function (containerId) {
 			if (window.console && console.warn) {
-				console.warn('[WP MCP AI] CronStatusService.stopPolling is deprecated, use stopMonitoring instead');
+				console.warn('[WP oOS] CronStatusService.stopPolling is deprecated, use stopMonitoring instead');
 			}
 			return this.stopMonitoring(containerId);
 		}
