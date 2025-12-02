@@ -4010,7 +4010,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) ) {
+			// Allow guest requests (authenticated via guest token).
+			$is_guest = isset( $auth_context['is_guest'] ) && $auth_context['is_guest'];
+
+			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) && ! $is_guest ) {
 				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
 			}
 
