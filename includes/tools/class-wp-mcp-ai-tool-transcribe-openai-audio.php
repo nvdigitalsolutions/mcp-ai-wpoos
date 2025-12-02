@@ -160,10 +160,10 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		}
 
 		$options = array(
-			'model'           => isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : self::DEFAULT_MODEL,
+			'model'           => isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : '',
 			'translate'       => $translate,
 			'prompt'          => isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '',
-			'response_format' => isset( $arguments['response_format'] ) && '' !== $arguments['response_format'] ? strtolower( sanitize_key( $arguments['response_format'] ) ) : self::DEFAULT_FORMAT,
+			'response_format' => isset( $arguments['response_format'] ) && '' !== $arguments['response_format'] ? strtolower( sanitize_key( $arguments['response_format'] ) ) : '',
 			'timeout'         => isset( $arguments['timeout'] ) && '' !== $arguments['timeout'] ? absint( $arguments['timeout'] ) : '',
 			'language'        => isset( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : '',
 			'filename'        => $audio['file_name'],
@@ -174,12 +174,14 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			$options['temperature'] = $arguments['temperature'];
 		}
 
+		// If model not specified, let the client use the setting or its default.
 		if ( '' === $options['model'] ) {
-			$options['model'] = self::DEFAULT_MODEL;
+			unset( $options['model'] );
 		}
 
+		// If response_format not specified, let the client use the setting or its default.
 		if ( '' === $options['response_format'] ) {
-			$options['response_format'] = self::DEFAULT_FORMAT;
+			unset( $options['response_format'] );
 		}
 
 		if ( '' === $options['prompt'] ) {

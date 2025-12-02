@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'openai_image_response_format' => array(
+				'openai_image_response_format'         => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Response Format', 'wp-mcp-ai' ),
 					'description' => __( 'Format for receiving generated images from OpenAI. b64_json returns base64-encoded data directly (recommended). URL provides a hosted image link (expires after 1 hour).', 'wp-mcp-ai' ),
@@ -188,6 +188,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'url'      => 'URL (Expires in 1 hour)',
 					),
 					'default'     => 'b64_json',
+				),
+				'openai_transcription_model'           => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Transcription Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for audio transcription and translation via OpenAI Whisper. Models with -api- in the name are API-versioned and only support json format.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'gpt-4o-mini-transcribe'        => 'gpt-4o-mini-transcribe',
+						'gpt-4o-mini-transcribe-api-ev3' => 'gpt-4o-mini-transcribe-api-ev3 (API versioned)',
+						'whisper-1'                     => 'whisper-1',
+					),
+					'default'     => 'gpt-4o-mini-transcribe',
+				),
+				'openai_transcription_response_format' => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Transcription Response Format', 'wp-mcp-ai' ),
+					'description' => __( 'Default response format for audio transcription. json is compatible with all models. verbose_json provides additional metadata but only works with non-API-versioned models.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'json'         => 'json (Compatible with all models)',
+						'verbose_json' => 'verbose_json (Includes metadata, not for -api- models)',
+					),
+					'default'     => 'json',
 				),
 
 				// Anthropic Settings.
@@ -424,7 +445,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcription_model', 'openai_transcription_response_format' ),
 				),
 				'anthropic' => array(
 					'id'     => 'anthropic',
