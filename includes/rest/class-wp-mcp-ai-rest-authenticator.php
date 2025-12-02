@@ -163,13 +163,15 @@ class WP_MCP_AI_REST_Authenticator {
 				return $local;
 			}
 
-			// Try bearer token (Auth0).
+			// Local token validation returned null (not a local token format).
+			// Try bearer token (Auth0) validation.
 			$validated = $this->validate_bearer_token( $token, $request );
 
 			if ( is_wp_error( $validated ) ) {
 				return $validated;
 			}
 
+			// Bearer token validation successful.
 			return $this->get_auth_context();
 		}
 
