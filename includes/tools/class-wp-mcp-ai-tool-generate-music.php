@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Provides a tool for generating music via Google Gemini Lyria.
@@ -380,11 +381,14 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
+		// Get local WordPress URL using utility class for SoC compliance.
+		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
+
 		return array(
 			'attachment_id'      => (int) $attachment_id,
 			'file'               => $file_path,
 			'file_name'          => wp_basename( $file_path ),
-			'url'                => isset( $upload['url'] ) ? $upload['url'] : '',
+			'url'                => $local_url,
 			'mime_type'          => $mime_type,
 			'bytes'              => $bytes ? (int) $bytes : 0,
 			'duration'           => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
