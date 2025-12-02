@@ -1327,9 +1327,31 @@
 			lastModified: Date.now(),
 		});
 
+		// Log voice chat processing start
+		if (window.console && console.log) {
+			console.log('[WP oOS] Starting voice chat processing:', {
+				blobSize: blob.size,
+				blobType: blob.type,
+				fileName: file.name,
+				hasState: !!state,
+				hasConfig: !!(state && state.config),
+				assistantId: state && state.config ? state.config.assistantId : undefined,
+				hasHelpers: !!helpers,
+				hasUploadFunction: !!(helpers && helpers.uploadAudioForTranscription),
+				hasTranscriptionFunction: !!(helpers && helpers.requestTranscription)
+			});
+		}
+
 		let uploadedRecord = null;
 
 		if (!helpers || !helpers.uploadAudioForTranscription || !helpers.requestTranscription) {
+			if (window.console && console.error) {
+				console.error('[WP oOS] Voice chat failed: Missing required helper functions', {
+					hasHelpers: !!helpers,
+					hasUpload: !!(helpers && helpers.uploadAudioForTranscription),
+					hasTranscription: !!(helpers && helpers.requestTranscription)
+				});
+			}
 			state.voiceChatProcessing = false;
 			updateVoiceChatButtonState(state);
 			if (button && button.classList) {
