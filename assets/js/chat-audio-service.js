@@ -346,7 +346,7 @@
 		return fetch(state.config.toolsEndpoint, {
 			method: 'POST',
 			headers: buildJsonHeaders(state),
-			credentials: 'same-origin',
+			credentials: 'omit',
 			body: JSON.stringify(payload),
 		})
 			.then(function (response) {
