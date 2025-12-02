@@ -64,6 +64,31 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * Get a relative REST URL path instead of an absolute URL.
+	 *
+	 * This method converts WordPress rest_url() absolute URLs to relative paths,
+	 * which ensures that fetch requests with credentials: 'same-origin' work correctly
+	 * across different domains and protocols without CORS issues.
+	 *
+	 * @param string $path REST API path (e.g., 'mcp-ai/v1/tools').
+	 * @return string Relative URL path (e.g., '/wp-json/mcp-ai/v1/tools').
+	 */
+	protected function get_rest_url_path( $path ) {
+		// Get the REST URL prefix (usually 'wp-json' but can be filtered).
+		$rest_prefix = rest_get_url_prefix();
+
+		// Validate that we have a REST prefix (should never be empty in WordPress).
+		if ( empty( $rest_prefix ) ) {
+			$rest_prefix = 'wp-json'; // Fallback to default.
+		}
+
+		// Build the relative path using WordPress path functions for consistency.
+		$relative_path = '/' . trailingslashit( $rest_prefix ) . ltrim( $path, '/' );
+
+		return $relative_path;
+	}
+
+	/**
 	 * Register assets used by the shortcode.
 	 *
 	 * Uses a bundled JavaScript file (chat-bundle.js) that combines all chat-related
@@ -489,12 +514,13 @@ class WP_MCP_AI_Shortcode {
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id,
 				'userId'                => get_current_user_id(),
-				'restUrl'               => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
-				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
-				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
-				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
-				'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-				'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
+				'restUrl'               => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE ),
+				'messagesEndpoint'      => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ),
+				'toolsEndpoint'         => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ),
+				// filesEndpoint and crawl4aiTaskEndpoint need trailing slashes as they are base paths for file operations.
+				'filesEndpoint'         => trailingslashit( $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ),
+				'transcriptsEndpoint'   => $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ),
+				'crawl4aiTaskEndpoint'  => trailingslashit( $this->get_rest_url_path( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ),
 				'crawl4aiDefaultPollMs' => 5000,
 				'requiredCapability'    => $capability ? $capability : '',
 				'allowGuests'           => (bool) $allow_guests,
