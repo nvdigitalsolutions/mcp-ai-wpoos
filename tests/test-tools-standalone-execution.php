@@ -232,12 +232,12 @@ class WP_MCP_AI_Tools_Standalone_Execution_Test extends WP_UnitTestCase {
 		);
 
 		$response = rest_get_server()->dispatch( $request );
+		$status   = $response->get_status();
 
 		// Should get 401 or 403 error for unauthenticated request.
-		$this->assertContains(
-			$response->get_status(),
-			array( 401, 403 ),
-			'Expected 401 or 403 status for unauthenticated request'
+		$this->assertTrue(
+			401 === $status || 403 === $status,
+			sprintf( 'Expected 401 or 403 status for unauthenticated request, got %d', $status )
 		);
 	}
 

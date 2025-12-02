@@ -3964,9 +3964,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $assistant_id ) {
 				$tool_candidates = $this->generate_tool_slug_candidates( $raw_tool );
 				$tool_slug       = reset( $tool_candidates ); // Use first candidate when no assistant context.
-				
+
 				if ( ! $tool_slug ) {
-					return new WP_Error( 'wp_mcp_ai_missing_tool', __( 'Tool slug is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Invalid tool slug provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 				}
 
 				$tool = $this->registry->get_tool( $tool_slug );
