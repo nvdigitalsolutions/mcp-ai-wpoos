@@ -12163,8 +12163,18 @@
             
             var video = document.createElement('video');
             video.controls = true;
-            video.preload = 'metadata';
+            
+            // Check if this is a pending video (not yet generated)
+            // Pending videos should use preload="none" to avoid 404 errors when browser
+            // tries to fetch metadata from a file that doesn't exist yet
+            var isPending = isPendingVideo(attachment);
+            video.preload = isPending ? 'none' : 'metadata';
             video.className = 'wp-mcp-ai-chat__video-player';
+            
+            // Add data attribute to mark pending videos for potential polling/refresh
+            if (isPending) {
+                video.setAttribute('data-pending', 'true');
+            }
             
             var source = document.createElement('source');
             source.src = attachment.url;
@@ -13283,8 +13293,18 @@
                     
                     const video = document.createElement('video');
                     video.controls = true;
-                    video.preload = 'metadata';
+                    
+                    // Check if this is a pending video (not yet generated)
+                    // Pending videos should use preload="none" to avoid 404 errors when browser
+                    // tries to fetch metadata from a file that doesn't exist yet
+                    const isPending = isPendingVideo(attachment);
+                    video.preload = isPending ? 'none' : 'metadata';
                     video.className = 'wp-mcp-ai-chat__video-player';
+                    
+                    // Add data attribute to mark pending videos for potential polling/refresh
+                    if (isPending) {
+                        video.setAttribute('data-pending', 'true');
+                    }
                     
                     const source = document.createElement('source');
                     source.src = attachment.url;
@@ -14073,6 +14093,32 @@
             if (lowerLabel.indexOf('veo') !== -1 || 
                 lowerLabel.indexOf('video') === 0 || // "video" at start
                 lowerLabel.indexOf(' video') !== -1) { // " video" anywhere
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a video attachment is pending (not yet generated).
+     * Pending videos should use preload="none" to avoid 404 errors.
+     * 
+     * @param {Object} attachment - Attachment object with meta property
+     * @return {boolean} True if video is pending generation
+     */
+    function isPendingVideo(attachment) {
+        if (!attachment || typeof attachment !== 'object') {
+            return false;
+        }
+
+        const meta = attachment.meta || '';
+        
+        // Check if meta contains "Pending" indicator
+        if (meta && typeof meta === 'string') {
+            const lowerMeta = meta.toLowerCase();
+            // Check for "pending" keyword in meta (e.g., "Pending • ~5 min")
+            if (lowerMeta.indexOf('pending') !== -1) {
                 return true;
             }
         }
