@@ -427,10 +427,10 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$localised_data = array( $localised_data );
 		}
 		$localised = implode( "\n", $localised_data );
-		
+
 		// Verify toolsEndpoint is present in global config.
 		$this->assertMatchesRegularExpression( '/"toolsEndpoint":"[^"]+"/', $localised, 'Global config should include toolsEndpoint.' );
-		
+
 		// Parse and validate the toolsEndpoint URL.
 		if ( preg_match( '/var wpMcpAiChat\s*=\s*({.*?});/', $localised, $matches ) ) {
 			$global_config = json_decode( $matches[1], true );
