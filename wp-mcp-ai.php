@@ -122,7 +122,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 		}
 
 		// Log the issue.
-		error_log( 'WP_MCP_AI: Development dependencies detected in production with putenv() disabled. Run: composer install --no-dev' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( '[WP oOS] Development dependencies detected in production with putenv() disabled. Run: composer install --no-dev' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 		// We can't safely load the autoloader, so we'll manually load critical production dependencies.
 		// This allows the plugin to function (degraded) until the deployment is fixed.

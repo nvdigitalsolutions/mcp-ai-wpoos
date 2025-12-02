@@ -10507,7 +10507,7 @@
                             } else {
                                 // Fallback: keep original content as escaped text if rendering fails
                                 if (window.console && console.warn) {
-                                    console.warn('[WP MCP AI] Markdown rendering returned empty, preserving original content');
+                                    console.warn('[WP oOS] Markdown rendering returned empty, preserving original content');
                                 }
                                 // Convert textContent to escaped HTML to preserve the content
                                 streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');

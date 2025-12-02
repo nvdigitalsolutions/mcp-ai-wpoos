@@ -259,7 +259,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				// Log the error but don't fail the entire operation.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-					error_log( 'WP MCP AI: Background removal failed: ' . $removed_bg_path->get_error_message() );
+					error_log( '[WP oOS] Background removal failed: ' . $removed_bg_path->get_error_message() );
 				}
 			} else {
 				// Clean up old working file.
@@ -502,7 +502,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 					// Fall through to GD check.
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-						error_log( 'WP MCP AI: Imagick transparency check failed: ' . $e->getMessage() );
+						error_log( '[WP oOS] Imagick transparency check failed: ' . $e->getMessage() );
 					}
 				}
 			}
