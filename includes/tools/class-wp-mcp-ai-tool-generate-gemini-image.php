@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Provides a tool for generating images via Gemini and storing them as attachments.
@@ -393,44 +394,19 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
-		$attachment_url = wp_get_attachment_url( $attachment_id );
-		if ( ! $attachment_url && isset( $upload['url'] ) && '' !== $upload['url'] ) {
-			$attachment_url = $upload['url'];
-		}
-
-		$download_url = $this->prepare_attachment_download_url( $attachment_id, $attachment_url );
+		// Get local WordPress URL using utility class for SoC compliance.
+		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
-			'url'           => $attachment_url ? $attachment_url : ( isset( $upload['url'] ) ? $upload['url'] : '' ),
-			'download_url'  => $download_url,
+			'url'           => $local_url,
+			'download_url'  => $local_url,
 			'mime_type'     => $resolved_mime,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
 		);
-	}
-
-	/**
-	 * Build a download URL for the stored attachment.
-	 *
-	 * @param int    $attachment_id  Attachment ID.
-	 * @param string $fallback       Fallback URL if a specific download link cannot be generated.
-	 * @return string
-	 */
-	protected function prepare_attachment_download_url( $attachment_id, $fallback ) {
-		$attachment_id = absint( $attachment_id );
-
-		if ( $attachment_id ) {
-			$download_url = wp_get_attachment_url( $attachment_id );
-
-			if ( $download_url ) {
-				return $download_url;
-			}
-		}
-
-		return (string) $fallback;
 	}
 
 	/**
