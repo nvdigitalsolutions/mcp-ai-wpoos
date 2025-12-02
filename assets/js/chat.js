@@ -6,6 +6,7 @@
         uploadEndpoint: '',
         filesEndpoint: '',
         transcriptsEndpoint: '',
+        toolsEndpoint: '',
         nonce: '',
         historyPerPage: 20,
         asyncToolTimeout: 300000,
@@ -9385,6 +9386,12 @@
 
             if (!instanceConfig.transcriptsEndpoint) {
                 instanceConfig.transcriptsEndpoint = globalConfig.transcriptsEndpoint || '';
+            }
+
+            if (!instanceConfig.toolsEndpoint) {
+                // Construct toolsEndpoint from restUrl if not provided
+                const restUrl = instanceConfig.restUrl || globalConfig.restUrl || '';
+                instanceConfig.toolsEndpoint = restUrl ? restUrl + '/tools' : '';
             }
 
             if (!instanceConfig.historyPerPage) {
