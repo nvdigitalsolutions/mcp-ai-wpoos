@@ -12102,7 +12102,7 @@
          */
         function addVideoPendingAttachment(assistantDisplay, parsedContent, bubbleElement) {
             // Check if this is a pending video generation
-            var isVideoPending = parsedContent.expected_url && 
+            const isVideoPending = parsedContent.expected_url && 
                                  parsedContent.expected_filename && 
                                  parsedContent.expected_filename.indexOf('.mp4') !== -1;
             
@@ -12111,7 +12111,7 @@
             }
             
             // Add text to assistant display if not already present
-            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+            const videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
             if (!assistantDisplay.text) {
                 assistantDisplay.text = videoText;
             } else if (assistantDisplay.text.indexOf(videoText) === -1) {
@@ -12119,7 +12119,7 @@
             }
             
             // Add video placeholder attachment to assistant display
-            var videoAttachment = {
+            const videoAttachment = {
                 url: parsedContent.expected_url,
                 label: parsedContent.expected_filename || 'Video (generating...)',
                 downloadName: parsedContent.expected_filename || 'video.mp4',
@@ -12154,29 +12154,39 @@
             }
             
             // Create the video attachment item
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__bubble-attachment';
             
             // Render video player
-            var videoContainer = document.createElement('div');
+            const videoContainer = document.createElement('div');
             videoContainer.className = 'wp-mcp-ai-chat__video-container';
             
-            var video = document.createElement('video');
+            const video = document.createElement('video');
             video.controls = true;
-            video.preload = 'metadata';
+            
+            // Check if this is a pending video (not yet generated)
+            // Pending videos should use preload="none" to avoid 404 errors when browser
+            // tries to fetch metadata from a file that doesn't exist yet
+            const isPending = isPendingVideo(attachment);
+            video.preload = isPending ? 'none' : 'metadata';
             video.className = 'wp-mcp-ai-chat__video-player';
             
-            var source = document.createElement('source');
+            // Add data attribute to mark pending videos for potential polling/refresh
+            if (isPending) {
+                video.setAttribute('data-pending', 'true');
+            }
+            
+            const source = document.createElement('source');
             source.src = attachment.url;
             
             // Determine MIME type based on URL
-            var mimeType = getVideoMimeType(attachment.url);
+            const mimeType = getVideoMimeType(attachment.url);
             source.type = mimeType;
             
             video.appendChild(source);
             
             // Add fallback text
-            var fallbackText = document.createTextNode(
+            const fallbackText = document.createTextNode(
                 getString('videoNotSupported', 'Your browser does not support video playback.')
             );
             video.appendChild(fallbackText);
@@ -13283,8 +13293,18 @@
                     
                     const video = document.createElement('video');
                     video.controls = true;
-                    video.preload = 'metadata';
+                    
+                    // Check if this is a pending video (not yet generated)
+                    // Pending videos should use preload="none" to avoid 404 errors when browser
+                    // tries to fetch metadata from a file that doesn't exist yet
+                    const isPending = isPendingVideo(attachment);
+                    video.preload = isPending ? 'none' : 'metadata';
                     video.className = 'wp-mcp-ai-chat__video-player';
+                    
+                    // Add data attribute to mark pending videos for potential polling/refresh
+                    if (isPending) {
+                        video.setAttribute('data-pending', 'true');
+                    }
                     
                     const source = document.createElement('source');
                     source.src = attachment.url;
@@ -14073,6 +14093,32 @@
             if (lowerLabel.indexOf('veo') !== -1 || 
                 lowerLabel.indexOf('video') === 0 || // "video" at start
                 lowerLabel.indexOf(' video') !== -1) { // " video" anywhere
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a video attachment is pending (not yet generated).
+     * Pending videos should use preload="none" to avoid 404 errors.
+     * 
+     * @param {Object} attachment - Attachment object with meta property
+     * @return {boolean} True if video is pending generation
+     */
+    function isPendingVideo(attachment) {
+        if (!attachment || typeof attachment !== 'object') {
+            return false;
+        }
+
+        const meta = attachment.meta || '';
+        
+        // Check if meta contains "Pending" indicator
+        if (meta && typeof meta === 'string') {
+            const lowerMeta = meta.toLowerCase();
+            // Check for "pending" keyword in meta (e.g., "Pending • ~5 min")
+            if (lowerMeta.indexOf('pending') !== -1) {
                 return true;
             }
         }
