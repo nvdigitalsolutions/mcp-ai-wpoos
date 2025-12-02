@@ -2760,11 +2760,18 @@
         }
 
         if (state.isRecording) {
+            // Log transcribe recording stop
+            if (window.console && console.log) {
+                console.log('[WP oOS] Transcribe recording stopped by user');
+            }
             stopTranscribeRecording(state);
             return;
         }
 
         if (!state.canUploadAttachments) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Transcribe button clicked but attachments are not allowed');
+            }
             return;
         }
 
@@ -2783,9 +2790,18 @@
             }
 
             if (shouldRecord) {
+                // Log transcribe recording start
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Starting transcribe recording');
+                }
                 startTranscribeRecording(state);
                 return;
             }
+        }
+
+        // Log file selection
+        if (window.console && console.log) {
+            console.log('[WP oOS] Transcribe file selection opened');
         }
 
         if (state.transcribeInput && !state.transcribeInput.disabled) {
@@ -3300,17 +3316,31 @@
         }
 
         if (state.isVoiceChatRecording) {
+            // Log voice chat recording stop
+            if (window.console && console.log) {
+                console.log('[WP oOS] Voice chat recording stopped by user');
+            }
             stopVoiceChatRecording(state);
             return;
         }
 
         if (!state.canUploadAttachments) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Voice chat button clicked but attachments are not allowed');
+            }
             return;
         }
 
         if (supportsAudioRecording()) {
+            // Log voice chat recording start
+            if (window.console && console.log) {
+                console.log('[WP oOS] Starting voice chat recording');
+            }
             startVoiceChatRecording(state);
         } else {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Voice chat not available - browser does not support audio recording');
+            }
             setStatus(
                 state.container,
                 getString('voiceChatUnavailable', 'Voice chat is not available in your browser.')

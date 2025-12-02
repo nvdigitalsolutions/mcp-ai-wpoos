@@ -680,11 +680,18 @@
 		}
 
 		if (state.isRecording) {
+			// Log transcribe recording stop
+			if (window.console && console.log) {
+				console.log('[WP oOS] Transcribe recording stopped by user');
+			}
 			stopTranscribeRecording(state, helpers);
 			return;
 		}
 
 		if (!state.canUploadAttachments) {
+			if (window.console && console.warn) {
+				console.warn('[WP oOS] Transcribe button clicked but attachments are not allowed');
+			}
 			return;
 		}
 
@@ -703,9 +710,18 @@
 			}
 
 			if (shouldRecord) {
+				// Log transcribe recording start
+				if (window.console && console.log) {
+					console.log('[WP oOS] Starting transcribe recording');
+				}
 				startTranscribeRecording(state, helpers);
 				return;
 			}
+		}
+
+		// Log file selection
+		if (window.console && console.log) {
+			console.log('[WP oOS] Transcribe file selection opened');
 		}
 
 		if (state.transcribeInput && !state.transcribeInput.disabled) {
@@ -975,6 +991,14 @@
 					label = file.name;
 				}
 
+				// Log successful transcription
+				if (window.console && console.log) {
+					console.log('[WP oOS] Transcription completed successfully:', {
+						fileName: label || 'recording',
+						textLength: result && result.text ? result.text.length : 0
+					});
+				}
+
 				if (helpers && helpers.setStatus && helpers.getString) {
 					const messageLabel = label || helpers.getString('transcribeAudio', 'Transcribe audio');
 					const formatString = function(template, value) {
@@ -996,7 +1020,7 @@
 				}
 
 				if (window.console && console.error) {
-					console.error('Transcription failed', error);
+					console.error('[WP oOS] Transcription failed:', error);
 				}
 			})
 			.finally(function () {
@@ -1039,17 +1063,31 @@
 		}
 
 		if (state.isVoiceChatRecording) {
+			// Log voice chat recording stop
+			if (window.console && console.log) {
+				console.log('[WP oOS] Voice chat recording stopped by user');
+			}
 			stopVoiceChatRecording(state, helpers);
 			return;
 		}
 
 		if (!state.canUploadAttachments) {
+			if (window.console && console.warn) {
+				console.warn('[WP oOS] Voice chat button clicked but attachments are not allowed');
+			}
 			return;
 		}
 
 		if (supportsAudioRecording()) {
+			// Log voice chat recording start
+			if (window.console && console.log) {
+				console.log('[WP oOS] Starting voice chat recording');
+			}
 			startVoiceChatRecording(state, helpers);
 		} else if (helpers && helpers.setStatus && helpers.getString) {
+			if (window.console && console.warn) {
+				console.warn('[WP oOS] Voice chat not available - browser does not support audio recording');
+			}
 			helpers.setStatus(
 				state.container,
 				helpers.getString('voiceChatUnavailable', 'Voice chat is not available in your browser.')
@@ -1322,6 +1360,14 @@
 
 				const transcribedText = result.text.trim();
 				
+				// Log successful voice chat transcription
+				if (window.console && console.log) {
+					console.log('[WP oOS] Voice chat transcription completed:', {
+						textLength: transcribedText.length,
+						textPreview: transcribedText.substring(0, 50) + (transcribedText.length > 50 ? '...' : '')
+					});
+				}
+				
 				if (state.textarea) {
 					state.textarea.value = transcribedText;
 				}
@@ -1343,7 +1389,7 @@
 				}
 
 				if (window.console && console.error) {
-					console.error('Voice chat failed', error);
+					console.error('[WP oOS] Voice chat failed:', error);
 				}
 			})
 			.finally(function () {

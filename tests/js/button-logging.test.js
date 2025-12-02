@@ -1,7 +1,7 @@
 /**
  * Tests for button logging functionality in chat UI
  * 
- * Verifies that all chat UI buttons (copy, speech, delete, save) 
+ * Verifies that all chat UI buttons (copy, speech, delete, save, transcribe, voice chat) 
  * properly log their actions to the console.
  *
  * @package WP_MCP_AI
@@ -196,6 +196,126 @@ describe( 'Button Logging', () => {
 		} );
 	} );
 
+	describe( 'Transcribe Button Logging', () => {
+		it( 'should log when starting transcribe recording', () => {
+			console.log( '[WP oOS] Starting transcribe recording' );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Starting transcribe recording'
+			);
+		} );
+
+		it( 'should log when stopping transcribe recording', () => {
+			console.log( '[WP oOS] Transcribe recording stopped by user' );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Transcribe recording stopped by user'
+			);
+		} );
+
+		it( 'should log when transcribe file selection is opened', () => {
+			console.log( '[WP oOS] Transcribe file selection opened' );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Transcribe file selection opened'
+			);
+		} );
+
+		it( 'should log successful transcription', () => {
+			console.log( '[WP oOS] Transcription completed successfully:', {
+				fileName: 'recording',
+				textLength: 150,
+			} );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Transcription completed successfully:',
+				{
+					fileName: 'recording',
+					textLength: 150,
+				}
+			);
+		} );
+
+		it( 'should log transcription error', () => {
+			const error = new Error( 'Transcription API failed' );
+			console.error( '[WP oOS] Transcription failed:', error );
+
+			expect( consoleErrorSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Transcription failed:',
+				error
+			);
+		} );
+
+		it( 'should log warning when attachments not allowed', () => {
+			console.warn( '[WP oOS] Transcribe button clicked but attachments are not allowed' );
+
+			expect( consoleWarnSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Transcribe button clicked but attachments are not allowed'
+			);
+		} );
+	} );
+
+	describe( 'Voice Chat Button Logging', () => {
+		it( 'should log when starting voice chat recording', () => {
+			console.log( '[WP oOS] Starting voice chat recording' );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Starting voice chat recording'
+			);
+		} );
+
+		it( 'should log when stopping voice chat recording', () => {
+			console.log( '[WP oOS] Voice chat recording stopped by user' );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Voice chat recording stopped by user'
+			);
+		} );
+
+		it( 'should log successful voice chat transcription', () => {
+			const transcribedText = 'Hello, this is a voice message';
+			
+			console.log( '[WP oOS] Voice chat transcription completed:', {
+				textLength: transcribedText.length,
+				textPreview: transcribedText.substring( 0, 50 ) + ( transcribedText.length > 50 ? '...' : '' ),
+			} );
+
+			expect( consoleLogSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Voice chat transcription completed:',
+				{
+					textLength: transcribedText.length,
+					textPreview: transcribedText,
+				}
+			);
+		} );
+
+		it( 'should log voice chat error', () => {
+			const error = new Error( 'Voice chat API failed' );
+			console.error( '[WP oOS] Voice chat failed:', error );
+
+			expect( consoleErrorSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Voice chat failed:',
+				error
+			);
+		} );
+
+		it( 'should log warning when voice chat not available', () => {
+			console.warn( '[WP oOS] Voice chat not available - browser does not support audio recording' );
+
+			expect( consoleWarnSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Voice chat not available - browser does not support audio recording'
+			);
+		} );
+
+		it( 'should log warning when attachments not allowed', () => {
+			console.warn( '[WP oOS] Voice chat button clicked but attachments are not allowed' );
+
+			expect( consoleWarnSpy ).toHaveBeenCalledWith(
+				'[WP oOS] Voice chat button clicked but attachments are not allowed'
+			);
+		} );
+	} );
+
 	describe( 'Logging Format Consistency', () => {
 		it( 'should use [WP oOS] prefix for all logs', () => {
 			const logMessages = [
@@ -203,6 +323,8 @@ describe( 'Button Logging', () => {
 				'[WP oOS] Speech button clicked but no text to speak',
 				'[WP oOS] Message deleted:',
 				'[WP oOS] Message saved:',
+				'[WP oOS] Starting transcribe recording',
+				'[WP oOS] Voice chat transcription completed:',
 			];
 
 			logMessages.forEach( ( message ) => {
