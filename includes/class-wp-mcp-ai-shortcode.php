@@ -64,28 +64,33 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
-	 * Get a relative REST URL path instead of an absolute URL.
+	 * Get REST API URL for the given path.
 	 *
-	 * This method converts WordPress rest_url() absolute URLs to relative paths,
-	 * which ensures that fetch requests with credentials: 'same-origin' work correctly
-	 * across different domains and protocols without CORS issues.
+	 * Returns an absolute URL to ensure compatibility with cross-domain embeds
+	 * (e.g., when the chat widget is embedded on a different domain via iframe
+	 * or when accessed from external sites).
+	 *
+	 * Previously this returned relative paths, but that caused 404 errors when
+	 * the widget was accessed from domains other than the WordPress installation,
+	 * as the relative path would resolve to the wrong domain.
+	 *
+	 * Uses WP_MCP_AI_Request_Context::normalise_rest_url() to handle loopback
+	 * addresses and proxy configurations correctly.
 	 *
 	 * @param string $path REST API path (e.g., 'mcp-ai/v1/tools').
-	 * @return string Relative URL path (e.g., '/wp-json/mcp-ai/v1/tools').
+	 * @return string Absolute REST URL (e.g., 'https://example.com/wp-json/mcp-ai/v1/tools').
 	 */
 	protected function get_rest_url_path( $path ) {
-		// Get the REST URL prefix (usually 'wp-json' but can be filtered).
-		$rest_prefix = rest_get_url_prefix();
+		// Use WordPress's rest_url() function to get the absolute URL,
+		// then normalize it for loopback addresses and proxy configurations.
+		$url = rest_url( $path );
 
-		// Validate that we have a REST prefix (should never be empty in WordPress).
-		if ( empty( $rest_prefix ) ) {
-			$rest_prefix = 'wp-json'; // Fallback to default.
+		// Normalize the URL to handle localhost/proxy scenarios.
+		if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'normalise_rest_url' ) ) {
+			$url = WP_MCP_AI_Request_Context::normalise_rest_url( $url );
 		}
 
-		// Build the relative path using WordPress path functions for consistency.
-		$relative_path = '/' . trailingslashit( $rest_prefix ) . ltrim( $path, '/' );
-
-		return $relative_path;
+		return $url;
 	}
 
 	/**
