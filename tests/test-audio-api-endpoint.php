@@ -13,20 +13,31 @@ class WP_MCP_AI_Audio_API_Endpoint_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the audio API endpoint is registered.
+	 * Test that the audio transcribe endpoint is registered.
 	 */
-	public function test_audio_api_endpoint_is_registered() {
+	public function test_audio_transcribe_endpoint_is_registered() {
 		$routes = rest_get_server()->get_routes();
 		$namespace = WP_MCP_AI_REST::REST_NAMESPACE;
 		$route = '/' . $namespace . '/audio/transcribe';
 
-		$this->assertArrayHasKey( $route, $routes, 'Audio API endpoint should be registered' );
+		$this->assertArrayHasKey( $route, $routes, 'Audio transcribe endpoint should be registered' );
 	}
 
 	/**
-	 * Test that the audio API endpoint requires authentication.
+	 * Test that the audio speech endpoint is registered.
 	 */
-	public function test_audio_api_endpoint_requires_authentication() {
+	public function test_audio_speech_endpoint_is_registered() {
+		$routes = rest_get_server()->get_routes();
+		$namespace = WP_MCP_AI_REST::REST_NAMESPACE;
+		$route = '/' . $namespace . '/audio/speech';
+
+		$this->assertArrayHasKey( $route, $routes, 'Audio speech endpoint should be registered' );
+	}
+
+	/**
+	 * Test that the audio transcribe endpoint requires authentication.
+	 */
+	public function test_audio_transcribe_endpoint_requires_authentication() {
 		// Ensure user is not authenticated.
 		wp_set_current_user( 0 );
 
@@ -39,9 +50,24 @@ class WP_MCP_AI_Audio_API_Endpoint_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the audio API endpoint validates attachment_id parameter.
+	 * Test that the audio speech endpoint requires authentication.
 	 */
-	public function test_audio_api_endpoint_validates_attachment_id() {
+	public function test_audio_speech_endpoint_requires_authentication() {
+		// Ensure user is not authenticated.
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'POST', '/' . WP_MCP_AI_REST::REST_NAMESPACE . '/audio/speech' );
+		$request->set_param( 'text', 'Hello world' );
+
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 401, $response->get_status(), 'Should return 401 for unauthenticated requests' );
+	}
+
+	/**
+	 * Test that the audio transcribe endpoint validates attachment_id parameter.
+	 */
+	public function test_audio_transcribe_endpoint_validates_attachment_id() {
 		// Create a test user.
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
@@ -54,6 +80,24 @@ class WP_MCP_AI_Audio_API_Endpoint_Test extends WP_UnitTestCase {
 		$this->assertSame( 400, $response->get_status(), 'Should return 400 when attachment_id is missing' );
 		$data = $response->get_data();
 		$this->assertSame( 'wp_mcp_ai_missing_attachment', $data['code'], 'Should return correct error code' );
+	}
+
+	/**
+	 * Test that the audio speech endpoint validates text parameter.
+	 */
+	public function test_audio_speech_endpoint_validates_text() {
+		// Create a test user.
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/' . WP_MCP_AI_REST::REST_NAMESPACE . '/audio/speech' );
+		// No text parameter provided.
+
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 400, $response->get_status(), 'Should return 400 when text is missing' );
+		$data = $response->get_data();
+		$this->assertSame( 'wp_mcp_ai_missing_text', $data['code'], 'Should return correct error code' );
 	}
 
 	/**

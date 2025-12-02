@@ -8,6 +8,7 @@
         transcriptsEndpoint: '',
         toolsEndpoint: '',
         audioEndpoint: '',
+        speechEndpoint: '',
         nonce: '',
         historyPerPage: 20,
         asyncToolTimeout: 300000,
@@ -16,7 +17,7 @@
 
     const globalConfig = Object.assign({}, defaultGlobalConfig, window.wpMcpAiChat || {});
 
-    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'toolsEndpoint', 'audioEndpoint', 'nonce'].filter(
+    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'toolsEndpoint', 'audioEndpoint', 'speechEndpoint', 'nonce'].filter(
         function (key) {
             return !globalConfig[key];
         }
@@ -1928,19 +1929,15 @@
     }
 
     function requestSpeechAudio(state, text) {
-        if (!state || !state.config || !state.config.toolsEndpoint) {
-            return Promise.reject(new Error('Speech tool unavailable.'));
+        if (!state || !state.config || !state.config.speechEndpoint) {
+            return Promise.reject(new Error('Speech endpoint unavailable.'));
         }
 
         const payload = {
-            assistant_id: state.config.assistantId,
-            tool: SPEECH_TOOL_NAME,
-            arguments: {
-                text: text,
-            },
+            text: text,
         };
 
-        return fetch(state.config.toolsEndpoint, {
+        return fetch(state.config.speechEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
