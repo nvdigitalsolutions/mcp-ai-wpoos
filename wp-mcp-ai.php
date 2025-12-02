@@ -440,6 +440,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-audio-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
@@ -705,6 +706,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $crawl4ai_local_api;
 
 		/**
+		 * Audio API instance.
+		 *
+		 * @var WP_MCP_AI_Audio_API
+		 */
+		public $audio_api;
+
+		/**
 		 * REST controller instance.
 		 *
 		 * @var WP_MCP_AI_REST
@@ -802,6 +810,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Initialize core components through container.
 			$this->assistant_cpt      = $container->get( 'assistant_cpt' );
 			$this->crawl4ai_local_api = $container->get( 'crawl4ai_local_api' );
+			$this->audio_api          = $container->get( 'audio_api' );
 			$this->rest_controller    = $container->get( 'rest_controller' );
 			$this->shortcodes         = $container->get( 'shortcodes' );
 			$this->federation         = $container->get( 'federation' );
@@ -815,6 +824,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
+			$GLOBALS['wp_mcp_ai_audio_api']          = $this->audio_api;
 			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
 			$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
 

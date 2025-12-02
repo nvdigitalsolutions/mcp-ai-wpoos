@@ -337,6 +337,14 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// Audio API.
+		$this->singleton(
+			'audio_api',
+			function () {
+				return new WP_MCP_AI_Audio_API();
+			}
+		);
+
 		// REST API components.
 		$this->singleton(
 			'rest.authenticator',
