@@ -19,7 +19,7 @@ composer.phar
 /build/wp-mcp-ai-pro/
 
 # Allow release ZIP files in build directory
-!build/*.zip
+!/build/*.zip
 
 # Ignore all vendor by default
 /vendor/*
