@@ -180,6 +180,7 @@ This document provides a comprehensive index of all documentation available for 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
+| [voice-chat-troubleshooting.md](voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
 | [console-testing.md](console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
 | [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
@@ -225,7 +226,7 @@ This document provides a comprehensive index of all documentation available for 
 - **Performance & Optimization:** 6 documents
 - **MCP Protocol:** 3 documents
 - **Development:** 6 documents
-- **Troubleshooting:** 3 documents
+- **Troubleshooting:** 4 documents
 - **Technical Details:** 2 documents
 
 ### Completeness Score
