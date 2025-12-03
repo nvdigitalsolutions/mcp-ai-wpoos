@@ -346,7 +346,7 @@
 		return fetch(state.config.toolsEndpoint, {
 			method: 'POST',
 			headers: buildJsonHeaders(state),
-			credentials: 'same-origin',
+			credentials: 'omit',
 			body: JSON.stringify(payload),
 		})
 			.then(function (response) {
@@ -357,7 +357,15 @@
 					})
 					.then(function (body) {
 						if (!response.ok) {
-							throw response;
+							// Extract error message from response body for better error reporting
+							const errorMessage = body && body.message ? body.message : 
+								(body && body.error ? body.error : 'Speech generation failed');
+							const error = new Error(errorMessage);
+							error.response = response;
+							error.status = response.status;
+							error.statusText = response.statusText;
+							error.body = body;
+							throw error;
 						}
 						if (!body || typeof body !== 'object') {
 							return Promise.reject(new Error('Invalid response.'));
@@ -458,9 +466,21 @@
 				ensureSpeechAudio(state, button, info.url, text);
 			})
 			.catch(function (error) {
-				// Log speech generation error
+				// Log speech generation error with details
 				if (window.console && console.error) {
-					console.error('[WP oOS] Speech generation failed:', error);
+					const errorDetails = {
+						message: error && error.message ? error.message : 'Unknown error',
+						status: error && error.status ? error.status : undefined,
+						statusText: error && error.statusText ? error.statusText : undefined,
+						endpoint: state && state.config ? state.config.toolsEndpoint : undefined
+					};
+					
+					// Include response body if available for debugging
+					if (error && error.body) {
+						errorDetails.body = error.body;
+					}
+					
+					console.error('[WP oOS] Speech generation failed:', errorDetails);
 				}
 				setSpeechButtonErrorState(state, button, text);
 			})
