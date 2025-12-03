@@ -17,6 +17,7 @@
 
 ### Getting Started
 - [🧩 Overview](#-overview)
+- [🎯 Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🏗 System Architecture](#system-architecture)
 - [🚀 Features](#features)
 - [📦 Installation](#installation)
