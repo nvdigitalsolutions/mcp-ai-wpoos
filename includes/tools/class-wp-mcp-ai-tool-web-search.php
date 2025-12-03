@@ -219,12 +219,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return WP_Error Error object with pending status and retry information.
 	 */
 	protected function handle_pending_response( $response ) {
-		// Validate response is an array before attempting to extract headers.
-		if ( ! is_array( $response ) ) {
-			$response = array();
-		}
+		// Extract retry-after header if present.
+		// wp_remote_retrieve_header returns empty string when header is not found, not null.
+		$retry_after = is_array( $response ) ? wp_remote_retrieve_header( $response, 'retry-after' ) : '';
 
-		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 		return new WP_Error(
 			'wp_mcp_ai_search_pending',
 			__(
@@ -235,7 +233,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'status'       => 202,
 				'is_pending'   => true,
 				'should_wait'  => false,
-				'retry_after'  => $retry_after ? (string) $retry_after : null,
+				'retry_after'  => '' !== $retry_after ? (string) $retry_after : null,
 			)
 		);
 	}
