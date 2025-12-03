@@ -22,7 +22,7 @@
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
-- [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
