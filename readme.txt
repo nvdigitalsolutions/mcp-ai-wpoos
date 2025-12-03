@@ -22,7 +22,7 @@ The plugin works standalone with 35+ core tools and can be extended with optiona
 Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** designed for modern WordPress sites:
 
 * **35+ Core Tools** - Content management, media generation, research, site operations (base version)
-* **65+ Tools with Integrations** - Add WooCommerce, JetEngine, Elementor for advanced features (full version)
+* **30+ Additional Tools** - Available with optional third-party plugins (WooCommerce, JetEngine, Elementor)
 * **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
