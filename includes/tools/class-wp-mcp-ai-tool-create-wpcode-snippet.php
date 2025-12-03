@@ -377,6 +377,7 @@ class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'write',                // Creates or modifies data.
 			'state-changing',       // Modifies database or site state.
 			'local-only',           // No external API calls.
