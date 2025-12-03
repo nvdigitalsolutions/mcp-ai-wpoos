@@ -2,7 +2,7 @@
 /**
  * Tool for installing and activating WordPress themes.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,7 +14,19 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Installs themes from the WordPress.org repository and activates them.
  */
-class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -26,14 +38,14 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Install and Activate Theme', 'wp-mcp-ai' );
+		return __( 'Install and Activate Theme', 'wp-mcp-ai-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Installs a theme from the WordPress.org repository and activates it. Requires the theme slug.', 'wp-mcp-ai' );
+		return __( 'Installs a theme from the WordPress.org repository and activates it. Requires the theme slug.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -45,11 +57,11 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 			'properties'           => array(
 				'slug'    => array(
 					'type'        => 'string',
-					'description' => __( 'The slug of the theme from the WordPress.org repository (e.g., "astra").', 'wp-mcp-ai' ),
+					'description' => __( 'The slug of the theme from the WordPress.org repository (e.g., "astra").', 'wp-mcp-ai-pro' ),
 				),
 				'version' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional specific version to install (e.g., "3.0.0"). Leave empty for latest.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional specific version to install (e.g., "3.0.0"). Leave empty for latest.', 'wp-mcp-ai-pro' ),
 				),
 			),
 			'required'             => array( 'slug' ),
@@ -70,7 +82,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_theme_install'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The install_and_activate_theme tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+				__( 'The install_and_activate_theme tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai-pro' )
 			);
 		}
 
@@ -79,14 +91,14 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		if ( ! $user_id || ! user_can( $user_id, 'install_themes' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to install themes.', 'wp-mcp-ai' )
+				__( 'You do not have permission to install themes.', 'wp-mcp-ai-pro' )
 			);
 		}
 
 		if ( ! user_can( $user_id, 'switch_themes' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to activate themes.', 'wp-mcp-ai' )
+				__( 'You do not have permission to activate themes.', 'wp-mcp-ai-pro' )
 			);
 		}
 
@@ -96,7 +108,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		if ( empty( $slug ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_slug',
-				__( 'Theme slug not provided.', 'wp-mcp-ai' )
+				__( 'Theme slug not provided.', 'wp-mcp-ai-pro' )
 			);
 		}
 
@@ -110,7 +122,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 				'already_active' => true,
 				'message'        => sprintf(
 					/* translators: %s: theme name */
-					__( 'Theme "%s" is already active.', 'wp-mcp-ai' ),
+					__( 'Theme "%s" is already active.', 'wp-mcp-ai-pro' ),
 					$current_theme->get( 'Name' )
 				),
 			);
@@ -147,7 +159,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 			'version'    => $new_theme->get( 'Version' ),
 			'message'    => sprintf(
 				/* translators: %s: theme name */
-				__( 'Theme "%s" has been activated.', 'wp-mcp-ai' ),
+				__( 'Theme "%s" has been activated.', 'wp-mcp-ai-pro' ),
 				$new_theme->get( 'Name' )
 			),
 		);
@@ -208,7 +220,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 				'wp_mcp_ai_theme_api_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Could not retrieve theme information: %s', 'wp-mcp-ai' ),
+					__( 'Could not retrieve theme information: %s', 'wp-mcp-ai-pro' ),
 					$api->get_error_message()
 				)
 			);
@@ -230,7 +242,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 				'wp_mcp_ai_install_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Theme installation failed: %s', 'wp-mcp-ai' ),
+					__( 'Theme installation failed: %s', 'wp-mcp-ai-pro' ),
 					$result->get_error_message()
 				)
 			);
@@ -239,7 +251,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		if ( ! $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_install_failed',
-				__( 'Theme installation failed for an unknown reason.', 'wp-mcp-ai' )
+				__( 'Theme installation failed for an unknown reason.', 'wp-mcp-ai-pro' )
 			);
 		}
 
@@ -263,7 +275,7 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 				'wp_mcp_ai_activation_failed',
 				sprintf(
 					/* translators: %s: theme slug */
-					__( 'Failed to activate theme "%s".', 'wp-mcp-ai' ),
+					__( 'Failed to activate theme "%s".', 'wp-mcp-ai-pro' ),
 					$slug
 				)
 			);

@@ -1594,6 +1594,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'get_google_business_insights',
 				// Messaging tools.
 				'send_whatsapp_message',
+				// Site Creator and related tools.
+				'site_creator',
+				'install_and_activate_plugin',
+				'install_and_activate_theme',
+				'update_option',
 			);
 
 			return in_array( $slug, $pro_tools, true );

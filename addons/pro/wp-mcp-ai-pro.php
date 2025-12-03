@@ -178,6 +178,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-business-insights.php',
 			// Messaging tools.
 			'WP_MCP_AI_Pro_Tool_Send_Whatsapp_Message' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php',
+			// Site Creator and related tools.
+			'WP_MCP_AI_Pro_Tool_Site_Creator'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-site-creator.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
+			'WP_MCP_AI_Pro_Tool_Update_Option'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-update-option.php',
 		);
 
 		/**
@@ -376,6 +381,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'get_google_business_insights'    => 'external-tools',
 			// Messaging tools - Require external API credentials.
 			'send_whatsapp_message'           => 'external-tools',
+			// Site Creator and related tools.
+			'site_creator'                    => 'wordpress-core',
+			'install_and_activate_plugin'     => 'wordpress-core',
+			'install_and_activate_theme'      => 'wordpress-core',
+			'update_option'                   => 'wordpress-core',
 		);
 
 		/**

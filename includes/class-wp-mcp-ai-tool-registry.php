@@ -420,12 +420,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'save_profession'                 => 'wordpress-core',
 				'get_profession_stats'            => 'wordpress-core',
 
-				// Site management and configuration.
-				'update_option'                   => 'wordpress-core',
-				'install_and_activate_plugin'     => 'wordpress-core',
-				'install_and_activate_theme'      => 'wordpress-core',
-				'site_creator'                    => 'wordpress-core',
-
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'         => 'wordpress-plugins',
 				'get_woo_recent_orders'           => 'wordpress-plugins',
@@ -815,10 +809,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Video_Metadata'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
 				'WP_MCP_AI_Tool_Create_Chart'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart.php',
-				'WP_MCP_AI_Tool_Update_Option'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-option.php',
-				'WP_MCP_AI_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-install-and-activate-plugin.php',
-				'WP_MCP_AI_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-install-and-activate-theme.php',
-				'WP_MCP_AI_Tool_Site_Creator'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-site-creator.php',
 				// Profession management tools.
 				'WP_MCP_AI_Tool_List_Professions'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-professions.php',
 				'WP_MCP_AI_Tool_Get_Profession'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
