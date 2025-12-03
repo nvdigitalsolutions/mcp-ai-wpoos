@@ -160,8 +160,10 @@ if [ "$BUILD_BASE" = true ]; then
     BASE_SLUG="wp-mcp-ai-base"
     mkdir -p "build/${BASE_SLUG}"
     
-    # Copy full plugin files EXCEPT pro addons
+    # Copy full plugin files EXCEPT pro addons and base entry point
     # This creates a fully functional standalone plugin
+    # Note: wp-mcp-ai-base.php is excluded because it's only needed for the combined version
+    # to set WP_MCP_AI_BASE_VERSION constant. The base version uses wp-mcp-ai.php directly.
     rsync -av --quiet . "build/${BASE_SLUG}/" \
         --exclude '.git' \
         --exclude '.git-branch-info' \
@@ -197,6 +199,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
+        --exclude 'wp-mcp-ai-base.php' \
         --exclude 'addons/pro'
     
     # Create ZIP
