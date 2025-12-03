@@ -816,85 +816,11 @@ Consult [`docs/chatkit-integration.md`](docs/chatkit-integration.md) for a full 
 
 ## 🌐 Crawl4AI Integration
 
-### v0.7.7 Compatibility
-
-WP oOS supports **Crawl4AI v0.7.7** with enhanced monitoring, browser pool configuration, and real-time job tracking.
-
-**New in v0.7.7:**
-- **Monitoring Dashboard**: Real-time job monitoring at **Settings → Crawl4AI Manager**
-- **Browser Pool Support**: Configure browser tier (permanent, hot, cold) in crawl options
-- **Monitor API**: Exposes `/crawl4ai/monitor` and `/crawl4ai/health` endpoints
-- **JetEngine CCT**: Optional persistent job history storage with cleanup automation
-
-### Modes of Operation
-
-Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool in two modes:
-
-**1. Local Mode** (default when no endpoint configured):
-- Crawls directly on WordPress server using built-in HTTP client
-- Extracts headings and text as Markdown
-- Records raw HTML and response metadata
-- No external dependencies required
-
-**2. Remote Mode** (when Crawl4AI base URL configured):
-- Proxies jobs to remote Crawl4AI REST API (v0.7.7 compatible)
-- Returns immediately with task token
-- WP-Cron powered background polling retrieves results
-- Full support for browser pools and advanced features
+Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context. When a remote Crawl4AI endpoint is configured the request now returns immediately with a task token while WP-Cron powered background polling captures the final payload and makes it available to the assistant UI once the crawl finishes.【F:includes/crawler/class-wp-mcp-ai-crawler.php†L1-L214】【F:assets/js/chat.js†L1-L2200】
 
 Configure remote endpoints or API keys under **Settings → WP oOS → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
 
-### Crawl4AI Manager
-
-The **Crawl4AI Manager** (Settings → Crawl4AI Manager) provides:
-- Active job monitoring with status tracking
-- Cached task results (24h retention)
-- Statistics dashboard (jobs, cache size, URLs crawled)
-- Manual job cancellation and cache clearing
-- Configuration status (local vs remote mode)
-
-### Browser Pool Configuration (v0.7.7)
-
-When using remote Crawl4AI v0.7.7+, configure browser pool tier in options:
-
-```json
-{
-  "urls": ["https://example.com"],
-  "options": {
-    "browser_pool": "hot"
-  }
-}
-```
-
-**Pool Tiers:**
-- `permanent`: Long-lived browsers for frequent crawls
-- `hot`: Pre-warmed browsers for fast response
-- `cold`: On-demand browsers for occasional crawls
-
-### JetEngine Integration
-
-When JetEngine is active, crawl job history is automatically stored in the `crawl4ai_jobs` CCT:
-
-**Stored Fields:**
-- Task ID, status, timestamps
-- Target URLs and result count
-- Error messages for failed jobs
-- User ID and poll interval
-- Full result data and metadata
-
-**Automatic Cleanup:**
-- Completed jobs older than 30 days are automatically purged
-- Configure retention via `wp_mcp_ai_crawl4ai_job_retention_days` filter
-
-### Environment Variables
-
-Local environments can override the Crawl4AI endpoint via environment variables:
-
-```php
-define( 'WP_MCP_AI_CRAWL4AI_BASE_URL', 'http://localhost:11235' );
-// or
-putenv( 'CRAWL4AI_BASE_URL=http://localhost:11235' );
-```
+Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
 ## 📡 Job Notification System
 
