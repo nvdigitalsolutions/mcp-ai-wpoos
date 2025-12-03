@@ -7,18 +7,17 @@
 .env.local
 *.bak
 opcache-reset.php
-*.zip
 *.tar.gz
 *.rar
 composer.phar
 
 # Build output - keep only ZIP files, ignore extracted directories
-!/build/
 /build/wp-mcp-ai/
 /build/wp-mcp-ai-base/
 /build/wp-mcp-ai-pro/
 
-# Allow release ZIP files in build directory
+# Ignore ZIP files everywhere except in build directory
+*.zip
 !/build/*.zip
 
 # Ignore all vendor by default

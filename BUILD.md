@@ -360,6 +360,8 @@ WP oOS is available in three distribution formats:
 
 See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature comparison.
 
+**Note:** The terms "base" and "core" are used interchangeably throughout the documentation and refer to the same plugin. See [BUILD-ARTIFACTS-CLARIFICATION.md](docs/BUILD-ARTIFACTS-CLARIFICATION.md) for detailed explanation.
+
 ### Where to Find ZIP Files
 
 Plugin ZIP files are created in several ways:
