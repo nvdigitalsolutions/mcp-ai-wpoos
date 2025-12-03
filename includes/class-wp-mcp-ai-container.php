@@ -494,6 +494,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'admin.crawl4ai_monitor',
+			function () {
+				return new WP_MCP_AI_Admin_Crawl4AI_Monitor();
+			}
+		);
+
 		// Settings sections.
 		$this->singleton(
 			'section.overview',
