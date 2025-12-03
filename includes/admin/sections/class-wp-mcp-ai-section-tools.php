@@ -404,7 +404,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
-			return array(
+			$subtab_groups = array(
 				'tools_manager'  => array(
 					'id'     => 'tools_manager',
 					'label'  => __( 'Tools Manager', 'wp-mcp-ai' ),
@@ -472,13 +472,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
 				),
-				'site_creator'   => array(
+			);
+
+			// Site Creator is a Pro feature - only show in full version.
+			if ( ! wp_mcp_ai_is_base_version() ) {
+				$subtab_groups['site_creator'] = array(
 					'id'     => 'site_creator',
 					'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-site',
 					'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
-				),
-			);
+				);
+			}
+
+			return $subtab_groups;
 		}
 
 		/**
