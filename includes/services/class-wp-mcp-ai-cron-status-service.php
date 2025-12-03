@@ -803,9 +803,10 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		$user_id = absint( $user_id );
 
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
-		}
+		// Note: user_id can be 0 for guest users authenticated with guest tokens.
+		// The REST endpoint (handle_cron_job_details_request) already resolves the user_id
+		// from auth context or get_current_user_id(), so we don't need to re-resolve it here.
+		// Allowing user_id = 0 enables guest users to view their own async jobs.
 
 		$is_admin = user_can( $user_id, 'manage_options' );
 
