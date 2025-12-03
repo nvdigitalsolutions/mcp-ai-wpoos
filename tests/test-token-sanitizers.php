@@ -36,7 +36,7 @@ class WP_MCP_AI_Token_Sanitizer_Test extends WP_UnitTestCase {
 	 * Ensure the Telegram token sanitizer retains valid characters.
 	 */
 	public function test_telegram_token_sanitizer_preserves_token_characters() {
-		$tool   = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_token' );
 		$method->setAccessible( true );
 
@@ -50,7 +50,7 @@ class WP_MCP_AI_Token_Sanitizer_Test extends WP_UnitTestCase {
 	 * Ensure the Telegram token sanitizer rejects non-scalar inputs.
 	 */
 	public function test_telegram_token_sanitizer_rejects_non_scalar_input() {
-		$tool   = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_token' );
 		$method->setAccessible( true );
 

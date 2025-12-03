@@ -19,7 +19,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		$tool   = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool   = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 		$result = $tool->execute(
 			array(
 				'summary'     => 'Unauthorized attempt',
@@ -41,7 +41,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$tool = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 
 		$access_token_filter = function ( $token ) {
 			return 'test-token';
@@ -111,7 +111,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$tool = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 
 		$key_resource = openssl_pkey_new(
 			array(

@@ -35,7 +35,7 @@ class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	 * Ensure Telegram bot tokens are not rewritten by sanitization.
 	 */
 	public function test_telegram_token_preserves_base64_characters() {
-		$tool   = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_token' );
 		$method->setAccessible( true );
 
@@ -48,7 +48,7 @@ class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	 * Ensure Telegram bot tokens are URL-encoded before building the request endpoint.
 	 */
 	public function test_telegram_token_is_url_encoded_in_endpoint() {
-		$tool     = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool     = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$token    = '123456:ABC+/=.-_~';
 		$captured = null;
 

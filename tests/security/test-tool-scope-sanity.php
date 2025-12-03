@@ -37,15 +37,15 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Goal: review OAuth scopes used by search-gmail.
 	 */
 	public function test_search_gmail_oauth_scopes() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Search_Gmail' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Search_Gmail class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Search_Gmail' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Search_Gmail class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 
 		// Verify tool is properly instantiated.
 		$this->assertInstanceOf(
-			'WP_MCP_AI_Tool_Search_Gmail',
+			'WP_MCP_AI_Pro_Tool_Search_Gmail',
 			$tool,
 			'Gmail search tool should be instantiable'
 		);
@@ -79,11 +79,11 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Goal: run as low-priv WP user to confirm capability checks.
 	 */
 	public function test_search_gmail_enforces_capability_checks() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Search_Gmail' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Search_Gmail class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Search_Gmail' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Search_Gmail class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 
 		// Create a low-privilege user (subscriber).
 		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -112,11 +112,11 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Test that search-gmail tool allows execution for admin users.
 	 */
 	public function test_search_gmail_allows_admin_execution() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Search_Gmail' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Search_Gmail class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Search_Gmail' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Search_Gmail class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 
 		// Create an admin user.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -153,15 +153,15 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Goal: review OAuth scopes used by create-google-calendar-event.
 	 */
 	public function test_google_calendar_oauth_scopes() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 
 		// Verify tool is properly instantiated.
 		$this->assertInstanceOf(
-			'WP_MCP_AI_Tool_Create_Google_Calendar_Event',
+			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event',
 			$tool,
 			'Google Calendar tool should be instantiable'
 		);
@@ -190,11 +190,11 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Goal: run as low-priv WP user to confirm capability checks.
 	 */
 	public function test_google_calendar_enforces_capability_checks() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 
 		// Create a low-privilege user (subscriber).
 		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -229,11 +229,11 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Test that create-google-calendar-event tool has default capability requirement.
 	 */
 	public function test_google_calendar_has_default_capability() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Google_Calendar_Event class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event class not available' );
 		}
 
-		$tool       = new WP_MCP_AI_Tool_Create_Google_Calendar_Event();
+		$tool       = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 		$reflection = new ReflectionClass( $tool );
 		$constants  = $reflection->getConstants();
 
@@ -254,8 +254,8 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 * Test that capability requirements can be filtered.
 	 */
 	public function test_tool_capability_can_be_filtered() {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Search_Gmail' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Search_Gmail class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Search_Gmail' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Search_Gmail class not available' );
 		}
 
 		// Add filter to change capability requirement.
@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 			}
 		);
 
-		$tool = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 
 		// Create subscriber user.
 		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -314,11 +314,11 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Multisite tests require multisite installation' );
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Search_Gmail' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Tool_Search_Gmail class not available' );
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Search_Gmail' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Search_Gmail class not available' );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 
 		// Create user on different site.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );

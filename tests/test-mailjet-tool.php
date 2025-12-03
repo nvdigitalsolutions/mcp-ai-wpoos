@@ -32,7 +32,7 @@ class WP_MCP_AI_Send_Mailjet_Email_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$tool   = new WP_MCP_AI_Tool_Send_Mailjet_Email();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Mailjet_Email();
 		$result = $tool->execute(
 			array(
 				'subject' => 'Hello',
@@ -61,7 +61,7 @@ class WP_MCP_AI_Send_Mailjet_Email_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		$tool   = new WP_MCP_AI_Tool_Send_Mailjet_Email();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Mailjet_Email();
 		$result = $tool->execute(
 			array(
 				'subject' => 'Hello',
@@ -128,7 +128,7 @@ class WP_MCP_AI_Send_Mailjet_Email_Tool_Test extends WP_UnitTestCase {
 			3
 		);
 
-		$tool   = new WP_MCP_AI_Tool_Send_Mailjet_Email();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Mailjet_Email();
 		$result = $tool->execute(
 			array(
 				'subject'   => 'Hello',
@@ -172,7 +172,7 @@ class WP_MCP_AI_Send_Mailjet_Email_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$tool   = new WP_MCP_AI_Tool_Send_Mailjet_Email();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Mailjet_Email();
 		$result = $tool->execute(
 			array(
 				'subject' => 'Hello',
