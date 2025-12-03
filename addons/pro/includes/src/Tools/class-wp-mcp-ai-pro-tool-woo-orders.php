@@ -123,6 +123,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',              // Pro tier tool.
 			'read-only',        // Only read operations.
 			'requires-plugin',  // Requires WooCommerce.
 			'local-only',       // No external API calls.

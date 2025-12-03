@@ -167,6 +167,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',              // Pro tier tool.
 			'read-only',        // list/get/search operations.
 			'write',            // create/update operations.
 			'requires-plugin',  // Requires WooCommerce.

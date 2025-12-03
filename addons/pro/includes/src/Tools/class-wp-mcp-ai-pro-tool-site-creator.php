@@ -402,6 +402,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'write',                // Creates and modifies data.
 			'external-api',         // May call external APIs via delegated tools.
 			'network-dependent',    // Requires internet for plugin/theme installation.

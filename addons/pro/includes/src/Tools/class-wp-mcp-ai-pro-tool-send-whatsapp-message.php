@@ -331,6 +331,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'read-only',            // Only reads data, does not modify state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.

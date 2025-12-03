@@ -1322,6 +1322,7 @@ If no line items are found, return an empty array [].';
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'read-only',            // Only reads data from external sources.
 			'external-api',         // Makes external API calls (Vision, Crawl4AI).
 			'requires-capability',  // Requires read capability.
