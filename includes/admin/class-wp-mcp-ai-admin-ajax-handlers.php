@@ -646,6 +646,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
+			// This is still a valid response indicating the API key works.
+			if ( 202 === $response_code ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully connected to Brave Search API! (Search processing asynchronously)', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
 			if ( 200 !== $response_code ) {
 				$error_message = __( 'Invalid API key or connection failed.', 'wp-mcp-ai' );
 				if ( isset( $data['message'] ) ) {
