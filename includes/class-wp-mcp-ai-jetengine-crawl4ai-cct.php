@@ -19,8 +19,11 @@ class WP_MCP_AI_JetEngine_Crawl4AI_CCT {
 	 * Hook into JetEngine to provision the Crawl4AI job content type.
 	 */
 	public static function bootstrap() {
+		// Ensure data stores module is enabled first.
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), -1 );
+		
+		// Then register the CCT.
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
-		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
 
 		// Hook into crawl job lifecycle events.
 		add_action( 'wp_mcp_ai_crawl4ai_job_completed', array( __CLASS__, 'log_completed_job' ), 10, 3 );
@@ -400,8 +403,13 @@ class WP_MCP_AI_JetEngine_Crawl4AI_CCT {
 
 		if ( ! empty( $existing ) ) {
 			// Update existing record.
-			$item_id = is_array( $existing ) ? reset( $existing )->_ID : $existing->_ID;
-			$handler->update_item( $item_id, $data );
+			// Safely extract item ID from the result.
+			$first_item = is_array( $existing ) && count( $existing ) > 0 ? reset( $existing ) : null;
+			
+			if ( $first_item && isset( $first_item->_ID ) ) {
+				$item_id = $first_item->_ID;
+				$handler->update_item( $item_id, $data );
+			}
 		} else {
 			// Create new record.
 			$handler->insert_item( $data );

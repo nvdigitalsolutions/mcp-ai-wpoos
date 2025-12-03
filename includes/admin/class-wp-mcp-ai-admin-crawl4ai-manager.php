@@ -195,15 +195,34 @@ class WP_MCP_AI_Admin_Crawl4AI_Manager {
 	 * @param string $task_id Task identifier.
 	 */
 	private function cancel_crawler_job( $task_id ) {
-		// Use reflection to access protected delete_job method.
-		if ( ! class_exists( 'WP_MCP_AI_Crawler' ) ) {
-			return;
-		}
+		// Delete the job storage to prevent further polling.
+		// Note: We cannot directly access WP_MCP_AI_Crawler::delete_job as it's protected.
+		// Instead, we manually delete the transient to achieve the same effect.
+		global $wpdb;
 
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Crawler' );
-		$method     = $reflection->getMethod( 'delete_job' );
-		$method->setAccessible( true );
-		$method->invoke( null, $task_id );
+		$prefix = 'wp_mcp_ai_crawl4ai_job_';
+		$hash   = md5( $task_id );
+
+		if ( is_multisite() ) {
+			$blog_id = get_current_blog_id();
+			$key     = sprintf( '%s%s_%s', $prefix, $blog_id, $hash );
+			delete_site_transient( $key );
+
+			// Also unschedule the cron event.
+			$next = wp_next_scheduled( 'wp_mcp_ai_crawl4ai_poll_task', array( $task_id ) );
+			if ( $next ) {
+				wp_unschedule_event( $next, 'wp_mcp_ai_crawl4ai_poll_task', array( $task_id ) );
+			}
+		} else {
+			$key = $prefix . $hash;
+			delete_transient( $key );
+
+			// Also unschedule the cron event.
+			$next = wp_next_scheduled( 'wp_mcp_ai_crawl4ai_poll_task', array( $task_id ) );
+			if ( $next ) {
+				wp_unschedule_event( $next, 'wp_mcp_ai_crawl4ai_poll_task', array( $task_id ) );
+			}
+		}
 	}
 
 	/**
