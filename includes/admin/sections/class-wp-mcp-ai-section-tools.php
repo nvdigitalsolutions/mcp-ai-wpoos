@@ -1576,32 +1576,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		/**
 		 * Check if a tool is a Pro tool.
 		 *
+		 * Dynamically checks if tool has 'pro' capability flag instead of maintaining a hardcoded list.
+		 *
 		 * @param string $slug Tool slug.
 		 * @return bool True if tool is a Pro tool, false otherwise.
 		 */
 		private function is_pro_tool( $slug ) {
-			// List of Pro tool slugs.
-			$pro_tools = array(
-				// Social media publishing tools.
-				'post_facebook_instagram',
-				'post_tiktok_video',
-				'post_linkedin_update',
-				'post_google_business_update',
-				// Social media insights/reporting tools.
-				'get_facebook_instagram_insights',
-				'get_tiktok_insights',
-				'get_linkedin_insights',
-				'get_google_business_insights',
-				// Messaging tools.
-				'send_whatsapp_message',
-				// Site Creator and related tools.
-				'site_creator',
-				'install_and_activate_plugin',
-				'install_and_activate_theme',
-				'update_option',
-			);
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$tool     = $registry->get_tool( $slug );
 
-			return in_array( $slug, $pro_tools, true );
+			if ( ! $tool ) {
+				return false;
+			}
+
+			// Check if tool implements capability flags interface.
+			if ( ! ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) ) {
+				return false;
+			}
+
+			$flags = $tool->get_capability_flags();
+
+			// Check if 'pro' flag is present.
+			return in_array( 'pro', $flags, true );
 		}
 
 		/**

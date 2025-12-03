@@ -424,6 +424,15 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array();
+		return array(
+			'read-only',            // For list_branches and get_file actions.
+			'write',                // For create_branch and update_file actions.
+			'state-changing',       // Creates branches and modifies repository content.
+			'requires-credentials', // Requires GitHub OAuth authentication.
+			'requires-capability',  // Requires appropriate user capabilities.
+			'external-api',         // Makes external API calls to GitHub.
+			'network-dependent',    // Requires internet connectivity.
+			'reversible',           // Git operations can be reverted.
+		);
 	}
 }

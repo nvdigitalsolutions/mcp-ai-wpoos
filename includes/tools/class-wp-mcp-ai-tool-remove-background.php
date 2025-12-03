@@ -69,9 +69,12 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		// Only declare external-api flag when using paid mode.
-		// The tool can work without external APIs using the free method.
-		return array();
+		return array(
+			'requires-capability',  // Requires upload_files capability.
+			'write',                // Creates/modifies media files.
+			'performance-impact',   // Image processing can be resource-intensive.
+			'consumes-tokens',      // May use external API credits (paid mode).
+		);
 	}
 
 	/**
