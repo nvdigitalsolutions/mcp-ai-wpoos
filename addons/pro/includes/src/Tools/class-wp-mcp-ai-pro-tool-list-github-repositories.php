@@ -2,7 +2,7 @@
 /**
  * Tool that lists GitHub repositories for the authenticated user.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
 /**
  * Provides an assistant tool for listing GitHub repositories.
  */
-class WP_MCP_AI_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */

@@ -172,9 +172,15 @@ class Test_Cron_Spawn_Triggers extends WP_UnitTestCase {
 	 * Test that schedule notify SMS tool triggers spawn_cron().
 	 */
 	public function test_schedule_notify_sms_tool_triggers_spawn_cron() {
-		$file_content = file_get_contents(
-			WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php'
-		);
+		// Tool is now in pro addon.
+		$pro_file_path = WP_MCP_AI_PATH . '../addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php';
+		
+		if ( ! file_exists( $pro_file_path ) ) {
+			$this->markTestSkipped( 'Schedule Notify SMS tool is now a pro addon tool and pro addon is not available.' );
+			return;
+		}
+
+		$file_content = file_get_contents( $pro_file_path );
 
 		$this->assertStringContainsString(
 			'spawn_cron()',

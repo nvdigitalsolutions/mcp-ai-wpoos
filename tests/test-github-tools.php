@@ -13,14 +13,14 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that list repositories tool exists.
 	 */
 	public function test_list_repositories_tool_exists() {
-		$this->assertTrue( class_exists( 'WP_MCP_AI_Tool_List_Github_Repositories' ) );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_List_Github_Repositories' ) );
 	}
 
 	/**
 	 * Test that list repositories tool implements required interface.
 	 */
 	public function test_list_repositories_tool_implements_interface() {
-		$tool = new WP_MCP_AI_Tool_List_Github_Repositories();
+		$tool = new WP_MCP_AI_Pro_Tool_List_Github_Repositories();
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Interface', $tool );
 	}
 
@@ -28,7 +28,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that list repositories tool has correct slug.
 	 */
 	public function test_list_repositories_tool_slug() {
-		$tool = new WP_MCP_AI_Tool_List_Github_Repositories();
+		$tool = new WP_MCP_AI_Pro_Tool_List_Github_Repositories();
 		$this->assertEquals( 'list_github_repositories', $tool->get_slug() );
 	}
 
@@ -36,7 +36,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that list repositories tool requires capability.
 	 */
 	public function test_list_repositories_requires_capability() {
-		$tool = new WP_MCP_AI_Tool_List_Github_Repositories();
+		$tool = new WP_MCP_AI_Pro_Tool_List_Github_Repositories();
 
 		// Create user without capability.
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -54,14 +54,14 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that manage codespace tool exists.
 	 */
 	public function test_manage_codespace_tool_exists() {
-		$this->assertTrue( class_exists( 'WP_MCP_AI_Tool_Manage_Github_Codespace' ) );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Github_Codespace' ) );
 	}
 
 	/**
 	 * Test that manage codespace tool implements required interface.
 	 */
 	public function test_manage_codespace_tool_implements_interface() {
-		$tool = new WP_MCP_AI_Tool_Manage_Github_Codespace();
+		$tool = new WP_MCP_AI_Pro_Tool_Manage_Github_Codespace();
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Interface', $tool );
 	}
 
@@ -69,7 +69,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that manage codespace tool has correct slug.
 	 */
 	public function test_manage_codespace_tool_slug() {
-		$tool = new WP_MCP_AI_Tool_Manage_Github_Codespace();
+		$tool = new WP_MCP_AI_Pro_Tool_Manage_Github_Codespace();
 		$this->assertEquals( 'manage_github_codespace', $tool->get_slug() );
 	}
 
@@ -77,7 +77,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that manage codespace tool requires action parameter.
 	 */
 	public function test_manage_codespace_requires_action() {
-		$tool = new WP_MCP_AI_Tool_Manage_Github_Codespace();
+		$tool = new WP_MCP_AI_Pro_Tool_Manage_Github_Codespace();
 
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -95,14 +95,14 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that repository operations tool exists.
 	 */
 	public function test_repository_operations_tool_exists() {
-		$this->assertTrue( class_exists( 'WP_MCP_AI_Tool_Github_Repository_Operations' ) );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_Github_Repository_Operations' ) );
 	}
 
 	/**
 	 * Test that repository operations tool implements required interface.
 	 */
 	public function test_repository_operations_tool_implements_interface() {
-		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
+		$tool = new WP_MCP_AI_Pro_Tool_Github_Repository_Operations();
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Interface', $tool );
 	}
 
@@ -110,7 +110,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that repository operations tool has correct slug.
 	 */
 	public function test_repository_operations_tool_slug() {
-		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
+		$tool = new WP_MCP_AI_Pro_Tool_Github_Repository_Operations();
 		$this->assertEquals( 'github_repository_operations', $tool->get_slug() );
 	}
 
@@ -118,7 +118,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that repository operations only allows safe paths.
 	 */
 	public function test_repository_operations_safe_path_restriction() {
-		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
+		$tool = new WP_MCP_AI_Pro_Tool_Github_Repository_Operations();
 
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -142,7 +142,7 @@ class Test_Github_Tools extends WP_UnitTestCase {
 	 * Test that repository operations allows custom-tools paths.
 	 */
 	public function test_repository_operations_allows_custom_tools_path() {
-		$tool = new WP_MCP_AI_Tool_Github_Repository_Operations();
+		$tool = new WP_MCP_AI_Pro_Tool_Github_Repository_Operations();
 
 		// Create admin user.
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );

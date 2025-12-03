@@ -1,8 +1,10 @@
 <?php
 /**
- * Tests for WP_MCP_AI_Tool_Generic_REST class.
+ * Tests for WP_MCP_AI_Pro_Tool_Generic_REST class.
  *
- * @package WP_MCP_AI
+ * Note: This tool is now part of the Pro addon.
+ *
+ * @package WP_MCP_AI_Pro
  */
 
 /**
@@ -10,13 +12,14 @@
  *
  * @group tools
  * @group generic-rest
+ * @group pro-tools
  */
-class WP_MCP_AI_Tool_Generic_REST_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Pro_Tool_Generic_REST_Test extends WP_UnitTestCase {
 
 	/**
 	 * Tool instance.
 	 *
-	 * @var WP_MCP_AI_Tool_Generic_REST
+	 * @var WP_MCP_AI_Pro_Tool_Generic_REST
 	 */
 	protected $tool;
 
@@ -40,9 +43,16 @@ class WP_MCP_AI_Tool_Generic_REST_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generic-rest.php';
+		// Load the pro tool file.
+		$pro_tool_path = WP_MCP_AI_PATH . '../addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php';
+		if ( ! file_exists( $pro_tool_path ) ) {
+			$this->markTestSkipped( 'Pro addon not available. Generic REST tool is now a pro tool.' );
+			return;
+		}
 
-		$this->tool = new WP_MCP_AI_Tool_Generic_REST();
+		require_once $pro_tool_path;
+
+		$this->tool = new WP_MCP_AI_Pro_Tool_Generic_REST();
 
 		$this->admin_id      = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$this->subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -642,7 +652,7 @@ class WP_MCP_AI_Tool_Generic_REST_Test extends WP_UnitTestCase {
 		$tool = $registry->get_tool( 'generic_rest' );
 
 		$this->assertNotNull( $tool );
-		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Generic_REST', $tool );
+		$this->assertInstanceOf( 'WP_MCP_AI_Pro_Tool_Generic_REST', $tool );
 	}
 
 	/**

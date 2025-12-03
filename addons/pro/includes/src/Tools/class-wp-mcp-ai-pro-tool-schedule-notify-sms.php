@@ -2,7 +2,7 @@
 /**
  * Tool that schedules a Notify.lk SMS using the official PHP SDK.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,7 +19,7 @@ use NotifyLk\ApiException;
 /**
  * Provides a tool for scheduling Notify.lk SMS messages.
  */
-class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const CRON_HOOK = 'wp_mcp_ai_notifylk_send_scheduled_sms';
 
 	/**
@@ -504,8 +504,11 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'pro',                  // Tool is part of the Pro tier.
+			'write',                // Creates or modifies data.
+			'state-changing',       // Modifies database or site state (cron jobs).
+			'external-api',         // Makes external API calls (Notify.lk).
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

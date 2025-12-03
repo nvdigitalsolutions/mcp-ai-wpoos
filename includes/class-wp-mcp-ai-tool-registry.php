@@ -789,7 +789,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Purge_Cloudflare_Cache'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php',
 				'WP_MCP_AI_Tool_Purge_Varnish_Cache'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php',
 				'WP_MCP_AI_Tool_Purge_Cache'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cache.php',
-				'WP_MCP_AI_Tool_Get_Import_Duty'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-import-duty.php',
 				'WP_MCP_AI_Tool_ReliefWeb_Reports'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
 				'WP_MCP_AI_Tool_Check_WP_CLI'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
 				'WP_MCP_AI_Tool_Query_Remote_Site'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
@@ -821,12 +820,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Rotate_Image'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
 				'WP_MCP_AI_Tool_Remove_Background'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
-				// GitHub integration tools.
-				'WP_MCP_AI_Tool_List_Github_Repositories' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-github-repositories.php',
-				'WP_MCP_AI_Tool_Github_Repository_Operations' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-github-repository-operations.php',
-				'WP_MCP_AI_Tool_Manage_Github_Codespace'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-github-codespace.php',
-				// Generic REST API tool for plugins not explicitly integrated.
-				'WP_MCP_AI_Tool_Generic_REST'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generic-rest.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
@@ -843,8 +836,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Invoke_JetEngine_Route'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
 				'WP_MCP_AI_Tool_Get_RankMath_SEO'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php',
 				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
-				'WP_MCP_AI_Tool_Schedule_Notify_SMS'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php',
-				'WP_MCP_AI_Tool_Create_WPCode_Snippet'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php',
 				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
 				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
 			);
