@@ -5,7 +5,7 @@
  * Enables AI assistants to integrate with plugins and services
  * that haven't been explicitly integrated into WP oOS.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a generic REST API client tool for AI assistants.
  */
-class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Allowed HTTP methods.
 	 *
