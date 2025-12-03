@@ -219,6 +219,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return WP_Error Error object with pending status and retry information.
 	 */
 	protected function handle_pending_response( $response ) {
+		// Validate response is an array before attempting to extract headers.
+		if ( ! is_array( $response ) ) {
+			$response = array();
+		}
+
 		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 		return new WP_Error(
 			'wp_mcp_ai_search_pending',
