@@ -350,6 +350,108 @@
 		setStatus(container, '');
 	}
 
+	/**
+	 * Toggle a CSS class on a button element.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} className - CSS class name to toggle
+	 * @param {boolean} force - Optional force parameter (true=add, false=remove)
+	 */
+	function toggleButtonClass(button, className, force) {
+		if (!button || !button.classList || !className) {
+			return;
+		}
+
+		if (typeof force === 'boolean') {
+			if (force) {
+				button.classList.add(className);
+			} else {
+				button.classList.remove(className);
+			}
+		} else {
+			button.classList.toggle(className);
+		}
+	}
+
+	/**
+	 * Set button state (enabled/disabled) with optional class toggling.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {Object} options - State options
+	 * @param {boolean} options.disabled - Whether button should be disabled
+	 * @param {boolean} options.hidden - Whether button should be hidden
+	 * @param {string} options.addClass - CSS class to add
+	 * @param {string} options.removeClass - CSS class to remove
+	 */
+	function setButtonState(button, options) {
+		if (!button) {
+			return;
+		}
+
+		const opts = options || {};
+
+		// Set disabled state
+		if (typeof opts.disabled === 'boolean') {
+			button.disabled = opts.disabled;
+		}
+
+		// Set hidden state
+		if (typeof opts.hidden === 'boolean') {
+			button.hidden = opts.hidden;
+		}
+
+		// Add CSS class
+		if (opts.addClass && button.classList) {
+			button.classList.add(opts.addClass);
+		}
+
+		// Remove CSS class
+		if (opts.removeClass && button.classList) {
+			button.classList.remove(opts.removeClass);
+		}
+	}
+
+	/**
+	 * Update button icon/content.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} iconHTML - HTML content for the icon
+	 * @param {string} selector - Optional selector for icon element within button (defaults to first child)
+	 */
+	function setButtonIcon(button, iconHTML, selector) {
+		if (!button || typeof iconHTML !== 'string') {
+			return;
+		}
+
+		let iconElement;
+		
+		if (selector) {
+			iconElement = button.querySelector(selector);
+		} else {
+			// Default to first child element
+			iconElement = button.firstElementChild;
+		}
+
+		if (iconElement) {
+			iconElement.innerHTML = iconHTML;
+		}
+	}
+
+	/**
+	 * Update button accessibility labels (aria-label and title).
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} label - Label text for aria-label and title
+	 */
+	function updateButtonLabel(button, label) {
+		if (!button || typeof label !== 'string') {
+			return;
+		}
+
+		button.setAttribute('aria-label', label);
+		button.setAttribute('title', label);
+	}
+
 	// Export public API
 	window.wpMcpAiChatUIUtils = {
 		domUpdateBatcher: domUpdateBatcher,
@@ -359,7 +461,11 @@
 		formatDuration: formatDuration,
 		formatElapsedTime: formatElapsedTime,
 		setStatus: setStatus,
-		clearStatus: clearStatus
+		clearStatus: clearStatus,
+		toggleButtonClass: toggleButtonClass,
+		setButtonState: setButtonState,
+		setButtonIcon: setButtonIcon,
+		updateButtonLabel: updateButtonLabel
 	};
 
 })(window);
