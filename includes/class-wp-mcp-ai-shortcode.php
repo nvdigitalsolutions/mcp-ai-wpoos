@@ -138,17 +138,37 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
-		// Skip localization in Elementor editor to prevent JavaScript conflicts.
-		if ( $is_elementor_editor ) {
-			return;
-		}
-
 		// Get plugin settings for cost display configuration.
 		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
 		// Allow filtering of cost display setting.
 		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+
+		// Provide minimal localization data in Elementor editor to prevent console warnings.
+		// Full functionality is disabled in editor mode, but we need to satisfy JavaScript validation.
+		if ( $is_elementor_editor ) {
+			wp_localize_script(
+				self::SCRIPT_HANDLE,
+				'wpMcpAiChat',
+				array(
+					'restUrl'             => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ),
+					'uploadEndpoint'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+					'filesEndpoint'       => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
+					'transcriptsEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ),
+					'nonce'               => wp_create_nonce( 'wp_rest' ),
+					'historyPerPage'      => 20,
+					'currentUserId'       => get_current_user_id(),
+					'showUsageCosts'      => false,
+					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'isElementorEditor'   => true,
+					'strings'             => array(
+						'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+					),
+				)
+			);
+			return;
+		}
 
 		wp_localize_script(
 			self::SCRIPT_HANDLE,
