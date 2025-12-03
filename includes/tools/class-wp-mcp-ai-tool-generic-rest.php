@@ -589,6 +589,7 @@ class WP_MCP_AI_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'requires-capability',  // Requires manage_options capability.
 			'external-api',         // Makes external HTTP requests.
 			'network-dependent',    // Requires internet connectivity.

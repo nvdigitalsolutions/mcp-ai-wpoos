@@ -321,6 +321,7 @@ class WP_MCP_AI_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'read-only',            // For list and get actions.
 			'write',                // For create action.
 			'state-changing',       // Creates, starts, stops, and deletes codespaces.

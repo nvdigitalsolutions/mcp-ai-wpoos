@@ -135,6 +135,7 @@ class WP_MCP_AI_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'read-only',            // Only lists repositories, no modifications.
 			'requires-credentials', // Requires GitHub OAuth authentication.
 			'external-api',         // Makes external API calls to GitHub.

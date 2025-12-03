@@ -366,8 +366,10 @@ class WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes external API calls to ITA Tariff Rates API.
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

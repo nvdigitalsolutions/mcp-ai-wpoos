@@ -425,6 +425,7 @@ class WP_MCP_AI_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Tool is part of the Pro tier.
 			'read-only',            // For list_branches and get_file actions.
 			'write',                // For create_branch and update_file actions.
 			'state-changing',       // Creates branches and modifies repository content.
