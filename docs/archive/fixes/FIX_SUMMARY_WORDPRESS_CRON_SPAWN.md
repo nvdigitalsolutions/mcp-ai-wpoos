@@ -119,7 +119,7 @@ return array( 'status' => 'scheduled' );
    - Added after scheduling user-defined cron jobs
 
 3. **Schedule Notify SMS Tool** (+4 lines)
-   - `includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php`
+   - `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php`
    - Added after scheduling SMS notifications
 
 ### Tests & Documentation (2 files, +425 lines)
