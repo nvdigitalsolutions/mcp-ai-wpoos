@@ -1,6 +1,6 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 18, 2025  
+**Last Updated:** December 3, 2025  
 **Plugin Version:** 1.0.0  
 **MCP Version:** 2024-11-05
 
@@ -18,7 +18,8 @@ This document provides a comprehensive index of all documentation available for 
   - [features/](archive/#features) - Feature specifications
   - [code-reviews/](archive/#code-reviews) - Historical code reviews
   - [testing/](archive/#testing) - Test infrastructure documentation
-- New consolidated report: [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
+- **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
+- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
 
 ---
 
@@ -31,14 +32,15 @@ This document provides a comprehensive index of all documentation available for 
 4. [BEST_PRACTICES.md](BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
-1. **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** - **NEW:** Complete testing and quality analysis (2,106 tests, code quality, security audit)
-2. [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
-3. [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
-4. [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
-5. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
-6. [tool-reference.md](tool-reference.md) - Complete tool catalog
-7. [tool-grouping.md](tool-grouping.md) - Tool categorization system
-8. [rest-api.md](rest-api.md) - REST API reference
+1. **[CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
+2. **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
+3. [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
+4. [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
+5. [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
+6. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
+7. [tool-reference.md](tool-reference.md) - Complete tool catalog
+8. [tool-grouping.md](tool-grouping.md) - Tool categorization system
+9. [rest-api.md](rest-api.md) - REST API reference
 
 ### For System Administrators
 1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
@@ -60,7 +62,9 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** | **NEW:** Comprehensive testing and quality analysis - test suite results, code quality, security audit, recommendations | Developers |
+| **[CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md)** | **NEW (Dec 2025):** Comprehensive bugs and fixes report - Pro addon loading, async execution, SSE streaming, code quality (521 lines) | Developers/QA |
+| **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing and quality analysis - test suite results, code quality, security audit, recommendations | Developers |
+| [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Active code quality issues tracking (variable naming, parameter docs, style issues) | Developers |
 | [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) | Consolidated chronological development history and milestones | Developers |
 | [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) | Consolidated technical documentation for fixes and implementations | Developers |
 | [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |

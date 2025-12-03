@@ -2,7 +2,9 @@
 
 This document tracks code quality issues that need manual review or cannot be automatically fixed.
 
-**Last Updated:** December 1, 2025 (Post-CodeSniffer cleanup)
+**Last Updated:** December 3, 2025 (Post-CodeSniffer cleanup)
+
+> **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
 
 ## Recent Progress (December 2025)
 
