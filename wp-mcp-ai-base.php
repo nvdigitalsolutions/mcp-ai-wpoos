@@ -1,16 +1,26 @@
 <?php
 /**
- * Base Version Entry Point
+ * Base Version Explicit Mode Entry Point (Optional)
  *
- * This file serves as the entry point for the Base version of the plugin
- * when packaged as a standalone distribution (wp-mcp-ai-base-X.Y.Z.zip).
+ * IMPORTANT: This file is NOT included in standalone base distributions
+ * (wp-mcp-ai-base-X.Y.Z.zip) to prevent WordPress from detecting two plugins.
  *
- * It sets the WP_MCP_AI_BASE_VERSION constant to exclude Pro features,
- * then includes the main plugin file (wp-mcp-ai.php) which contains the
- * full plugin implementation and WordPress plugin headers.
+ * This file can be used in custom deployments where you want to explicitly
+ * enable "base version mode" which disables optional third-party plugin
+ * integrations (JetEngine, Elementor, etc.) even when those plugins are
+ * installed.
  *
- * The Base version is identical to the full version except it excludes
- * the Pro add-ons directory (addons/pro).
+ * The standalone base distribution (wp-mcp-ai-base-X.Y.Z.zip) works without
+ * this file - it uses wp-mcp-ai.php directly. The base distribution excludes
+ * addons/pro but includes optional integration code that activates only when
+ * the third-party plugins are present.
+ *
+ * To use this file:
+ * 1. Place it in your custom deployment
+ * 2. It will set WP_MCP_AI_BASE_VERSION=true
+ * 3. This disables optional integrations even if third-party plugins exist
+ *
+ * For most users, this file is not needed. Use wp-mcp-ai.php directly.
  *
  * Note: This file intentionally does NOT contain WordPress plugin headers
  * to prevent it from being registered as a separate plugin. The actual
