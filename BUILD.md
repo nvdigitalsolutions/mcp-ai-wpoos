@@ -364,6 +364,12 @@ See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature co
 
 Plugin ZIP files are created in several ways:
 
+**Note:** Release ZIP files in the `build/` directory can be committed to the repository. The `.gitignore` file is configured to:
+- Allow `build/*.zip` files to be tracked
+- Ignore build subdirectories (`build/wp-mcp-ai/`, `build/wp-mcp-ai-base/`, `build/wp-mcp-ai-pro/`)
+
+This allows you to commit release builds directly to the repository for distribution.
+
 #### 1. GitHub Releases (Recommended for Production)
 
 When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workflow automatically:
