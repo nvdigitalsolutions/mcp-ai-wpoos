@@ -219,9 +219,28 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return WP_Error Error object with pending status and retry information.
 	 */
 	protected function handle_pending_response( $response ) {
+		// Validate response is an array before proceeding.
+		if ( ! is_array( $response ) ) {
+			// Return error without retry_after if response is invalid.
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__(
+					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+					'wp-mcp-ai'
+				),
+				array(
+					'status'       => 202,
+					'is_pending'   => true,
+					'should_wait'  => false,
+					'retry_after'  => null,
+				)
+			);
+		}
+
 		// Extract retry-after header if present.
 		// wp_remote_retrieve_header returns empty string when header is not found, not null.
-		$retry_after = is_array( $response ) ? wp_remote_retrieve_header( $response, 'retry-after' ) : '';
+		// Note: retry_after is kept as string to match HTTP header format and test expectations.
+		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 
 		return new WP_Error(
 			'wp_mcp_ai_search_pending',
