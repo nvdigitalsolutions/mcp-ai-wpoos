@@ -239,8 +239,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
-		if ( 200 !== $status_code && 202 !== $status_code ) {
+		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
+		if ( 202 === $status_code ) {
+			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__(
+					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+					'wp-mcp-ai'
+				),
+				array(
+					'status'       => 202,
+					'is_pending'   => true,
+					'should_wait'  => false,
+					'retry_after'  => $retry_after ? (string) $retry_after : null,
+				)
+			);
+		}
+
+		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
@@ -348,8 +365,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
-		if ( 200 !== $status_code && 202 !== $status_code ) {
+		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
+		if ( 202 === $status_code ) {
+			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__(
+					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+					'wp-mcp-ai'
+				),
+				array(
+					'status'       => 202,
+					'is_pending'   => true,
+					'should_wait'  => false,
+					'retry_after'  => $retry_after ? (string) $retry_after : null,
+				)
+			);
+		}
+
+		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
