@@ -298,4 +298,27 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'messages', $schema['properties'] );
 		$this->assertArrayHasKey( 'model', $schema['properties'] );
 	}
+
+	/**
+	 * Test that the tool implements capability flags interface.
+	 */
+	public function test_count_tokens_has_capability_flags() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'count_tokens' );
+
+		$this->assertInstanceOf( WP_MCP_AI_Tool_Capability_Flags_Interface::class, $tool, 'Count tokens tool should implement capability flags interface.' );
+
+		$flags = $tool->get_capability_flags();
+		$this->assertIsArray( $flags, 'Capability flags should be an array.' );
+		$this->assertNotEmpty( $flags, 'Capability flags should not be empty.' );
+
+		// Verify expected flags.
+		$this->assertContains( 'read-only', $flags, 'Should have read-only flag.' );
+		$this->assertContains( 'local-only', $flags, 'Should have local-only flag.' );
+		$this->assertContains( 'requires-capability', $flags, 'Should have requires-capability flag.' );
+		$this->assertContains( 'cacheable', $flags, 'Should have cacheable flag.' );
+		$this->assertContains( 'idempotent', $flags, 'Should have idempotent flag.' );
+	}
 }
