@@ -617,7 +617,7 @@
         setStatus(state, getString(state, 'loadingIntoChat', 'Loading into chat…'));
 
         fetch(url, {
-            credentials: 'omit',
+            credentials: 'same-origin',
             headers: buildHeaders()
         })
             .then(function (response) {
@@ -703,7 +703,7 @@
         setStatus(state, getString(state, 'loadingConversation', 'Loading chat…'));
 
         fetch(url, {
-            credentials: 'omit',
+            credentials: 'same-origin',
             headers: buildHeaders()
         })
             .then(function (response) {
@@ -766,7 +766,7 @@
         setStatus(state, getString(state, 'loadingList', 'Loading chats…'));
 
         fetch(url, {
-            credentials: 'omit',
+            credentials: 'same-origin',
             headers: buildHeaders()
         })
             .then(function (response) {
