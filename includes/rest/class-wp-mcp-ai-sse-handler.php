@@ -93,7 +93,42 @@ class WP_MCP_AI_SSE_Handler {
 	 */
 	public function send_sse_event( $event, $data ) {
 		echo 'event: ' . esc_html( $event ) . "\n";
-		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
+		
+		// Attempt to JSON encode the data.
+		// If encoding fails (e.g., invalid UTF-8, circular references, or non-serializable objects),
+		// send an error event instead of corrupting the SSE stream with invalid JSON.
+		$json_data = wp_json_encode( $data );
+		
+		if ( false === $json_data ) {
+			// JSON encoding failed - log the error and send a simplified error event.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_json_encode_failed',
+					'Failed to JSON encode SSE event data',
+					array(
+						'event'      => $event,
+						'data_type'  => gettype( $data ),
+						'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown error',
+					)
+				);
+			}
+			
+			// Send a simplified error response that can be JSON encoded.
+			$error_data = array(
+				'error'   => true,
+				'message' => __( 'Failed to encode response data. The data may contain invalid characters or unsupported types.', 'wp-mcp-ai' ),
+				'event'   => $event,
+			);
+			
+			$json_data = wp_json_encode( $error_data );
+			
+			// If even the error response can't be encoded, use a hardcoded JSON string.
+			if ( false === $json_data ) {
+				$json_data = '{"error":true,"message":"JSON encoding failed"}';
+			}
+		}
+		
+		echo 'data: ' . $json_data . "\n\n";
 
 		// Force flush to send data immediately.
 		// ob_flush() must be called before flush() to ensure PHP output buffers

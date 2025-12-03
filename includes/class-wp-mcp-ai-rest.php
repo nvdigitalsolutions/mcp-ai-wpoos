@@ -8598,36 +8598,86 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Recursively normalize data structures to ensure JSON serializability.
 		 *
 		 * Walks through arrays and objects to convert any WP_Error instances
-		 * to serializable array format. This prevents JSON encoding failures
-		 * when sending data through SSE streams or REST API responses.
+		 * and WordPress objects (WP_Post, WP_Query, etc.) to serializable array format.
+		 * This prevents JSON encoding failures when sending data through SSE streams
+		 * or REST API responses.
 		 *
 		 * @since 1.1.0
 		 *
 		 * @param mixed $data Data to normalize, can be any type.
-		 * @return mixed Normalized data with all WP_Error objects converted to arrays.
+		 * @param int   $depth Current recursion depth (internal parameter for preventing infinite loops).
+		 * @return mixed Normalized data with all non-serializable objects converted to arrays.
 		 */
-		protected function normalize_data_recursive( $data ) {
+		protected function normalize_data_recursive( $data, $depth = 0 ) {
+			// Prevent infinite recursion - limit depth to 20 levels.
+			if ( $depth > 20 ) {
+				return '[max recursion depth reached]';
+			}
+
 			// Handle WP_Error directly.
 			if ( is_wp_error( $data ) ) {
-				return $this->normalize_tool_result( $data );
+				$normalized_error = $this->normalize_tool_result( $data );
+				// Recursively normalize error data in case it contains objects.
+				if ( isset( $normalized_error['data'] ) ) {
+					$normalized_error['data'] = $this->normalize_data_recursive( $normalized_error['data'], $depth + 1 );
+				}
+				return $normalized_error;
 			}
 
 			// Handle arrays - recursively process each element.
 			if ( is_array( $data ) ) {
 				$normalized = array();
 				foreach ( $data as $key => $value ) {
-					$normalized[ $key ] = $this->normalize_data_recursive( $value );
+					$normalized[ $key ] = $this->normalize_data_recursive( $value, $depth + 1 );
 				}
 				return $normalized;
 			}
 
-			// Handle objects - convert to array and recurse.
-			// Note: WP_Error is already handled above via is_wp_error() check.
-			if ( is_object( $data ) ) {
-				return $this->normalize_data_recursive( (array) $data );
+			// Handle resources (file handles, database connections, etc.).
+			// Resources cannot be JSON encoded and should be excluded.
+			if ( is_resource( $data ) ) {
+				return '[resource]';
 			}
 
-			// Scalars pass through unchanged.
+			// Handle objects - special handling for common WordPress types.
+			if ( is_object( $data ) ) {
+				// Handle WP_Post objects - extract only essential data.
+				if ( $data instanceof WP_Post ) {
+					return array(
+						'ID'          => $data->ID,
+						'post_title'  => $data->post_title,
+						'post_type'   => $data->post_type,
+						'post_status' => $data->post_status,
+					);
+				}
+
+				// Handle WP_Query objects - don't serialize the entire query, just reference it.
+				if ( $data instanceof WP_Query ) {
+					return array(
+						'query_type' => 'WP_Query',
+						'post_count' => isset( $data->post_count ) ? $data->post_count : 0,
+					);
+				}
+
+				// Handle WP_User objects.
+				if ( $data instanceof WP_User ) {
+					return array(
+						'ID'           => $data->ID,
+						'user_login'   => $data->user_login,
+						'display_name' => $data->display_name,
+					);
+				}
+
+				// For other objects, use get_object_vars() to avoid exposing private/protected properties.
+				// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'
+				// that can occur when casting objects with private/protected properties to arrays.
+				// For stdClass and simple objects, this works well. For complex objects with magic methods
+				// or ArrayAccess, they should be handled in specific cases above.
+				$object_vars = get_object_vars( $data );
+				return $this->normalize_data_recursive( $object_vars, $depth + 1 );
+			}
+
+			// Scalars pass through unchanged (strings, ints, floats, booleans, null).
 			return $data;
 		}
 
