@@ -1,8 +1,10 @@
 # WP oOS Testing and Quality Assurance Report
 
-**Last Updated:** November 18, 2025  
+**Last Updated:** December 3, 2025  
 **Plugin Version:** 1.0.0  
 **Repository:** nvdigitalsolutions/wp-mcp-ai
+
+> **Note**: For a comprehensive consolidated bugs and fixes report including recent fixes (November-December 2025), see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
 
 ---
 
