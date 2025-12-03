@@ -21,9 +21,6 @@ composer.phar
 # Allow release ZIP files in build directory
 !build/*.zip
 
-# Allow release ZIP files in build directory
-!build/*.zip
-
 # Ignore all vendor by default
 /vendor/*
 
@@ -68,4 +65,3 @@ test-transcript-routes.php
 
 # SVN working copies (for WordPress.org deployment)
 /svn-*/
-build/
