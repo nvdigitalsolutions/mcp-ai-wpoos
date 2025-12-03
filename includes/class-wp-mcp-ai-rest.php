@@ -8668,11 +8668,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 
-				// For other objects, convert to array and recurse.
-				// This handles stdClass and custom objects.
-				// Note: Casting to array can create issues with circular references,
-				// but the depth limit above prevents infinite loops.
-				return $this->normalize_data_recursive( (array) $data, $depth + 1 );
+				// For other objects, use get_object_vars() to avoid exposing private/protected properties.
+				// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'
+				// that can occur when casting objects with private/protected properties to arrays.
+				// For stdClass and simple objects, this works well. For complex objects with magic methods
+				// or ArrayAccess, they should be handled in specific cases above.
+				$object_vars = get_object_vars( $data );
+				return $this->normalize_data_recursive( $object_vars, $depth + 1 );
 			}
 
 			// Scalars pass through unchanged (strings, ints, floats, booleans, null).
