@@ -2,7 +2,7 @@
 /**
  * Tool that fetches reporting data from QuickBooks Online.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves QuickBooks Online reports using the configured credentials.
  */
-class WP_MCP_AI_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Base URL for the QuickBooks Online reports API.
 	 */

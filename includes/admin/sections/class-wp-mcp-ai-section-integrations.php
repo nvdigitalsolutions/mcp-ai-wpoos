@@ -67,21 +67,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$pro_notice = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'wp-mcp-ai' );
+			
 			return array(
 				// Gmail OAuth.
 				'gmail_client_id'              => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
 				),
 				'gmail_client_secret'          => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
 				),
 
 				// Crawl4AI.
@@ -147,28 +152,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'mailjet_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
 				),
 				'mailjet_api_secret'           => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ),
+					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
 				),
 				'mailjet_from_email'           => array(
 					'type'        => 'email',
 					'label'       => __( 'Mailjet From Email', 'wp-mcp-ai' ),
-					'description' => __( 'Default "from" email address for Mailjet messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Default "from" email address for Mailjet messages.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => 'noreply@example.com',
+					'disabled'     => ! $is_pro_active,
 				),
 				'mailjet_from_name'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Mailjet From Name', 'wp-mcp-ai' ),
-					'description' => __( 'Default "from" name for Mailjet messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Default "from" name for Mailjet messages.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => 'My Site',
+					'disabled'     => ! $is_pro_active,
 				),
 
 				// remove.bg API.
@@ -188,42 +197,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'quickbooks_api_key'           => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
 				),
 				'quickbooks_company_id'        => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Company ID', 'wp-mcp-ai' ),
-					'description' => __( 'Your QuickBooks company (realm) ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Your QuickBooks company (realm) ID.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '',
+					'disabled'     => ! $is_pro_active,
 				),
 				'quickbooks_client_id'         => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Client ID', 'wp-mcp-ai' ),
-					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '',
+					'disabled'     => ! $is_pro_active,
 				),
 				'quickbooks_client_secret'     => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks Client Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
 				),
 
 				// Google Analytics.
 				'google_analytics_property_id' => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
-					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ),
+					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '123456789',
+					'disabled'     => ! $is_pro_active,
 				),
 				'google_analytics_credentials' => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Google Analytics Service Account JSON', 'wp-mcp-ai' ),
-					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ),
+					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '{"type": "service_account", ...}',
+					'disabled'     => ! $is_pro_active,
 				),
 
 				// Meta.
@@ -284,12 +299,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+			
 			return array(
 				'gmail'            => array(
 					'id'     => 'gmail',
-					'label'  => __( 'Gmail', 'wp-mcp-ai' ),
+					'label'  => $is_pro_active ? __( 'Gmail', 'wp-mcp-ai' ) : __( 'Gmail (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
+					'pro'    => true,
 				),
 				'crawl4ai'         => array(
 					'id'     => 'crawl4ai',
@@ -317,21 +335,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 				'mailjet'          => array(
 					'id'     => 'mailjet',
-					'label'  => __( 'Mailjet', 'wp-mcp-ai' ),
+					'label'  => $is_pro_active ? __( 'Mailjet', 'wp-mcp-ai' ) : __( 'Mailjet (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-email-alt',
 					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name' ),
+					'pro'    => true,
 				),
 				'quickbooks'       => array(
 					'id'     => 'quickbooks',
-					'label'  => __( 'QuickBooks', 'wp-mcp-ai' ),
+					'label'  => $is_pro_active ? __( 'QuickBooks', 'wp-mcp-ai' ) : __( 'QuickBooks (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-money-alt',
 					'fields' => array( 'quickbooks_api_key', 'quickbooks_company_id', 'quickbooks_client_id', 'quickbooks_client_secret' ),
+					'pro'    => true,
 				),
 				'google_analytics' => array(
 					'id'     => 'google_analytics',
-					'label'  => __( 'Google Analytics', 'wp-mcp-ai' ),
+					'label'  => $is_pro_active ? __( 'Google Analytics', 'wp-mcp-ai' ) : __( 'Google Analytics (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-chart-bar',
 					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials' ),
+					'pro'    => true,
 				),
 				'meta'             => array(
 					'id'     => 'meta',
