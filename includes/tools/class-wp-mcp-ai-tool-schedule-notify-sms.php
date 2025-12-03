@@ -504,8 +504,11 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'pro',                  // Tool is part of the Pro tier.
+			'write',                // Creates or modifies data.
+			'state-changing',       // Modifies database or site state (cron jobs).
+			'external-api',         // Makes external API calls (Notify.lk).
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
