@@ -151,4 +151,31 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 		// Clean up.
 		set_current_screen( 'front' );
 	}
+
+	/**
+	 * Test that REST API requests can initialize even when key is required.
+	 *
+	 * This ensures that REST API endpoints remain accessible for authentication checks.
+	 * Permission callbacks on individual endpoints will enforce access control.
+	 */
+	public function test_rest_api_can_initialize_with_key_required() {
+		// Simulate key being required.
+		update_option(
+			WP_MCP_AI_Root_Security_Key::OPTION_KEY_REQUIRED,
+			array(
+				'enabled_at' => current_time( 'mysql', true ),
+				'enabled_by' => 1,
+				'reason'     => 'Test',
+			)
+		);
+
+		// Simulate REST API context by defining REST_REQUEST constant.
+		if ( ! defined( 'REST_REQUEST' ) ) {
+			define( 'REST_REQUEST', true );
+		}
+
+		// REST API requests should be able to initialize even when key is required.
+		// This allows endpoints to be registered and handle their own authentication.
+		$this->assertTrue( $this->security_key->can_initialize() );
+	}
 }

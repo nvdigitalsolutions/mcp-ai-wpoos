@@ -234,6 +234,12 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 				return true;
 			}
 
+			// Allow REST API requests to proceed so endpoints can handle their own authentication.
+			// REST API permission callbacks will enforce appropriate access control.
+			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+				return true;
+			}
+
 			// Block initialization for non-admin contexts when key is required.
 			return false;
 		}
