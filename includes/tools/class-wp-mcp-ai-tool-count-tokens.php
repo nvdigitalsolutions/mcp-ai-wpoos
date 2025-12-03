@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads/analyzes data, does not modify state.
-			'local-only',           // No external API calls (uses local heuristics or bundled tiktoken).
+			'local-only',           // No external API calls - uses local heuristics and bundled tiktoken encodings.
 			'requires-capability',  // Requires user to be logged in.
 			'cacheable',            // Results are deterministic for same inputs with same method.
 			'idempotent',           // Can be called multiple times safely with same result.
