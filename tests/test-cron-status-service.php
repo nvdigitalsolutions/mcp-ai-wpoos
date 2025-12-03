@@ -282,6 +282,107 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_job_details with guest user (user_id = 0).
+	 *
+	 * Guest users authenticated with guest tokens should be able to
+	 * view their own async jobs (created with user_id = 0).
+	 */
+	public function test_get_job_details_guest_user_access() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+
+		// Create a video generation job owned by guest user (user_id = 0).
+		$job_id   = 'veo_guest_test';
+		$metadata = array(
+			'job_id'         => $job_id,
+			'operation_name' => 'operations/guest',
+			'args'           => array(
+				'prompt'  => 'Guest video prompt',
+				'user_id' => 0, // Guest user.
+			),
+			'status'         => 'completed',
+			'queued_at'      => time() - 60,
+			'poll_attempt'   => 5,
+			'max_attempts'   => 60,
+			'result'         => array(
+				'attachment_id' => 456,
+				'url'           => 'https://example.com/guest-video.mp4',
+			),
+		);
+
+		set_transient( 'wp_mcp_ai_veo_async_' . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Guest user (user_id = 0) should be able to access their own job.
+		$details = $this->service->get_job_details( $job_id, 0 );
+
+		$this->assertIsArray( $details );
+		$this->assertNotInstanceOf( 'WP_Error', $details );
+		$this->assertEquals( 'completed', $details['status'] );
+		$this->assertArrayHasKey( 'result', $details );
+
+		// Logged-in user should NOT be able to access guest user's job.
+		$other_user_details = $this->service->get_job_details( $job_id, $this->user_id );
+		$this->assertInstanceOf( 'WP_Error', $other_user_details );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $other_user_details->get_error_code() );
+
+		// Admin should still be able to access guest user's job.
+		$admin_details = $this->service->get_job_details( $job_id, $this->admin_id );
+		$this->assertIsArray( $admin_details );
+		$this->assertNotInstanceOf( 'WP_Error', $admin_details );
+
+		// Clean up transient.
+		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
+	}
+
+	/**
+	 * Test get_job_details with async tool job owned by guest user.
+	 *
+	 * Guest users should be able to view their own async tool jobs.
+	 */
+	public function test_get_job_details_async_tool_guest_user() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		// Create an async tool job owned by guest user (user_id = 0).
+		$job_id = 'async_guest_test';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id,
+			array(
+				'job_id'    => $job_id,
+				'tool_slug' => 'test_tool',
+				'status'    => 'completed',
+				'context'   => array(
+					'user_id' => 0, // Guest user.
+				),
+				'result'    => array(
+					'success' => true,
+					'message' => 'Guest tool completed',
+				),
+			),
+			DAY_IN_SECONDS
+		);
+
+		// Guest user (user_id = 0) should be able to access their own job.
+		$details = $this->service->get_job_details( $job_id, 0 );
+
+		$this->assertIsArray( $details );
+		$this->assertNotInstanceOf( 'WP_Error', $details );
+		$this->assertEquals( 'completed', $details['status'] );
+		$this->assertArrayHasKey( 'result', $details );
+
+		// Logged-in user should NOT be able to access guest user's job.
+		$other_user_details = $this->service->get_job_details( $job_id, $this->user_id );
+		$this->assertInstanceOf( 'WP_Error', $other_user_details );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $other_user_details->get_error_code() );
+
+		// Admin should still be able to access guest user's job.
+		$admin_details = $this->service->get_job_details( $job_id, $this->admin_id );
+		$this->assertIsArray( $admin_details );
+		$this->assertNotInstanceOf( 'WP_Error', $admin_details );
+
+		// Clean up transient.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id );
+	}
+
+	/**
 	 * Test get_status_summary includes video generation jobs.
 	 */
 	public function test_get_status_summary_includes_video_jobs() {
