@@ -79,7 +79,7 @@
 
 ---
 
-## Overview 🧩
+## 🧩 Overview
 
 **WP oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, and Ollama.
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
