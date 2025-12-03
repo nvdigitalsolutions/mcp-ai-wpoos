@@ -16,7 +16,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🧩 Overview](#overview-)
+- [🧩 Overview](#-overview)
 - [🏗 System Architecture](#system-architecture)
 - [🚀 Features](#features)
 - [📦 Installation](#installation)
