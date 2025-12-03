@@ -19,13 +19,6 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	const DEFAULT_POLL_INTERVAL = 3;
 
 	/**
-	 * Crawl4AI v0.7.7 constants for browser pool configuration.
-	 */
-	const BROWSER_POOL_PERMANENT = 'permanent';
-	const BROWSER_POOL_HOT       = 'hot';
-	const BROWSER_POOL_COLD      = 'cold';
-
-	/**
 	 * Determine whether the Crawl4AI integration is available.
 	 *
 	 * @return bool
@@ -152,15 +145,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'options'             => array(
 					'type'                 => 'object',
-					'description'          => __( 'Additional Crawl4AI options (for example, crawler configuration or hook overrides). In v0.7.7+, supports browser_pool settings.', 'wp-mcp-ai' ),
+					'description'          => __( 'Additional Crawl4AI options (for example, crawler configuration or hook overrides).', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
-					'properties'           => array(
-						'browser_pool' => array(
-							'type'        => 'string',
-							'description' => __( 'Browser pool tier for Crawl4AI v0.7.7+: permanent, hot, or cold.', 'wp-mcp-ai' ),
-							'enum'        => array( self::BROWSER_POOL_PERMANENT, self::BROWSER_POOL_HOT, self::BROWSER_POOL_COLD ),
-						),
-					),
 				),
 				'wait_for_completion' => array(
 					'type'        => 'boolean',
