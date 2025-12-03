@@ -216,7 +216,7 @@ The `save_video_to_media()` method is intentionally duplicated in both:
 This maintains separation of concerns and avoids tight coupling between layers.
 
 ### Cron Manager Integration
-All cron jobs are automatically recorded in the WP MCP AI Cron Manager for visibility and management through the admin interface.
+All cron jobs are automatically recorded in the WP oOS Cron Manager for visibility and management through the admin interface.
 
 ### Transient Cleanup
 Transients expire after 24 hours automatically. Completed jobs should be retrieved by clients within this window.

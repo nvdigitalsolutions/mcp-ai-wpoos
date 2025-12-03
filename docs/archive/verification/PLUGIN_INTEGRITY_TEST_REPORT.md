@@ -83,7 +83,7 @@ Success Rate: 100%
 
 **Test Suite Configuration:**
 ```xml
-<testsuite name="WP MCP AI Plugin Test Suite">
+<testsuite name="WP oOS Plugin Test Suite">
     <directory suffix=".php">tests</directory>
 </testsuite>
 ```

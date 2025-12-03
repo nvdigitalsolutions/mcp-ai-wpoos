@@ -1,4 +1,4 @@
-# WP MCP AI - Feature Matrix (Core vs Pro)
+# WP oOS - Feature Matrix (Core vs Pro)
 
 This document outlines the features available in the free Core plugin versus the commercial Pro add-on.
 
@@ -126,7 +126,7 @@ add_filter( 'wp_mcp_ai_rate_limit_allow', function( $allow, $slug, $user, $conte
 
 - WordPress 6.0+
 - PHP 7.4+
-- WP MCP AI Core plugin (required)
+- WP oOS Core plugin (required)
 - Optional: WooCommerce, JetEngine, Elementor (for respective tools)
 
 ## Pricing
@@ -137,13 +137,13 @@ Core is free forever. Pro pricing is available at [nvdigitalsolutions.com](https
 
 ### Existing Single Plugin Users
 
-1. Install WP MCP AI Core (new free plugin)
-2. Install WP MCP AI Pro (for advanced features)
+1. Install WP oOS Core (new free plugin)
+2. Install WP oOS Pro (for advanced features)
 3. Settings and data migrate automatically
 
 ### New Users
 
-1. Start with WP MCP AI Core
+1. Start with WP oOS Core
 2. Upgrade to Pro when you need advanced features
 
 ## Support

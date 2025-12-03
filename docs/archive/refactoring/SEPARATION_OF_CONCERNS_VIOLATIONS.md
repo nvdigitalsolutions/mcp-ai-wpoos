@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document identifies significant separation of concerns (SoC) violations across the WP MCP AI plugin codebase. While the plugin has made progress with service and repository layers, several critical architectural issues remain that violate SOLID principles and make the codebase difficult to maintain, test, and extend.
+This document identifies significant separation of concerns (SoC) violations across the WP oOS plugin codebase. While the plugin has made progress with service and repository layers, several critical architectural issues remain that violate SOLID principles and make the codebase difficult to maintain, test, and extend.
 
 **Severity**: HIGH - Immediate refactoring recommended
 
@@ -524,7 +524,7 @@ Service layer formatting display strings.
 
 ## Conclusion
 
-The WP MCP AI plugin has made significant progress with service and repository layers, but substantial separation of concerns violations remain. The most critical issues are:
+The WP oOS plugin has made significant progress with service and repository layers, but substantial separation of concerns violations remain. The most critical issues are:
 
 1. **God objects** (REST controller, admin settings)
 2. **Data access in wrong layers**

@@ -1,10 +1,10 @@
-# WP MCP AI Core
+# WP oOS Core
 
 Core MCP (Model Context Protocol) server framework for WordPress. Provides a stable API for AI tool integration.
 
 ## Overview
 
-WP MCP AI Core is an open-source MCP server implementation for WordPress. It allows WordPress sites to act as MCP servers, exposing tools that AI assistants can use to interact with your site's content and functionality.
+WP oOS Core is an open-source MCP server implementation for WordPress. It allows WordPress sites to act as MCP servers, exposing tools that AI assistants can use to interact with your site's content and functionality.
 
 ## Features
 
@@ -179,7 +179,7 @@ Operations for taxonomies and terms.
 
 Commercial add-ons are available for advanced features:
 
-- **WP MCP AI Pro** - WooCommerce, JetEngine, advanced permissions, rate limiting, analytics
+- **WP oOS Pro** - WooCommerce, JetEngine, advanced permissions, rate limiting, analytics
 
 See [nvdigitalsolutions.com](https://nvdigitalsolutions.com) for details.
 

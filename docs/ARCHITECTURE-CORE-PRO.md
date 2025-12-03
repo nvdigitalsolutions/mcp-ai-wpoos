@@ -1,6 +1,6 @@
-# WP MCP AI - Core/Pro Architecture
+# WP oOS - Core/Pro Architecture
 
-This document describes the architecture split between WP MCP AI Core and WP MCP AI Pro.
+This document describes the architecture split between WP oOS Core and WP oOS Pro.
 
 ## Repository Structure
 
@@ -44,8 +44,8 @@ wp-mcp-ai/
 ## Plugin Dependencies
 
 ```
-WP MCP AI Pro
-    └── requires: WP MCP AI Core
+WP oOS Pro
+    └── requires: WP oOS Core
 ```
 
 Pro checks for Core on activation and initialization:

@@ -4,7 +4,7 @@
 
 ## Overview
 
-The GitHub integration feature allows WordPress administrators to connect their GitHub account and develop custom tools for WP MCP AI directly from GitHub Codespaces, without risk of breaking the live site.
+The GitHub integration feature allows WordPress administrators to connect their GitHub account and develop custom tools for WP oOS directly from GitHub Codespaces, without risk of breaking the live site.
 
 ## Key Features
 
@@ -29,15 +29,15 @@ The GitHub integration feature allows WordPress administrators to connect their 
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click "New OAuth App"
 3. Fill in the application details:
-   - **Application name**: WP MCP AI - Your Site Name
+   - **Application name**: WP oOS - Your Site Name
    - **Homepage URL**: `https://yoursite.com`
    - **Authorization callback URL**: `https://yoursite.com/wp-admin/admin-post.php?action=wp_mcp_ai_github_oauth_callback`
 4. Click "Register application"
 5. Copy the **Client ID** and generate a **Client Secret**
 
-### 2. Configure WP MCP AI Settings
+### 2. Configure WP oOS Settings
 
-1. In WordPress admin, go to **Settings → WP oOS** (or **Settings → WP MCP AI**)
+1. In WordPress admin, go to **Settings → WP oOS**
 2. Navigate to the **Tools** tab
 3. Click on the **External Tools** sub-tab
 4. Scroll down to the **GitHub Integration** section
@@ -405,7 +405,7 @@ A: Only users with `manage_options` capability can create and manage custom tool
 A: Yes, all properly formatted tools in the `custom-tools/` directory are automatically loaded and registered.
 
 **Q: Can I use Composer packages in custom tools?**
-A: Custom tools can only use WordPress core functions and the WP MCP AI plugin APIs. External dependencies should be included via the main plugin.
+A: Custom tools can only use WordPress core functions and the WP oOS plugin APIs. External dependencies should be included via the main plugin.
 
 **Q: How do I share custom tools with other sites?**
 A: Custom tools are just PHP files, so you can copy them to other sites' `custom-tools/` directories or use GitHub to share them.
