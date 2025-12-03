@@ -537,8 +537,10 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'pro',                  // Pro tier tool.
+			'write',                // Sends emails.
+			'external-api',         // Calls Mailjet API.
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

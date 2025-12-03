@@ -282,8 +282,10 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Calls QuickBooks API.
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
