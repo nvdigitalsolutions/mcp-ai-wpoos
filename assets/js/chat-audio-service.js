@@ -957,15 +957,31 @@
 				}
 			})
 			.catch(function (error) {
-				if (helpers && helpers.setStatus && helpers.getString) {
-					helpers.setStatus(
-						state.container,
-						helpers.getString('transcriptionError', 'The transcription request failed. Please try again.')
+				// Provide more specific error messages based on error type
+				let errorMessage = helpers.getString('transcriptionError', 'The transcription request failed. Please try again.');
+				
+				if (error && error.status === 404) {
+					errorMessage = helpers.getString(
+						'transcriptionEndpointNotFound',
+						'Transcription service is temporarily unavailable. Please try again later.'
+					);
+				} else if (error && error.message === 'Tools endpoint unavailable') {
+					errorMessage = helpers.getString(
+						'transcriptionNotConfigured',
+						'Transcription is not properly configured. Please contact support.'
 					);
 				}
 
+				if (helpers && helpers.setStatus) {
+					helpers.setStatus(state.container, errorMessage);
+				}
+
 				if (window.console && console.error) {
-					console.error('Transcription failed', error);
+					console.error('Transcription failed', {
+						error: error,
+						message: error ? error.message : 'Unknown error',
+						status: error ? error.status : undefined
+					});
 				}
 			})
 			.finally(function () {
@@ -1304,15 +1320,32 @@
 				}
 			})
 			.catch(function (error) {
-				if (helpers && helpers.setStatus && helpers.getString) {
-					helpers.setStatus(
-						state.container,
-						helpers.getString('voiceChatError', 'Voice chat failed. Please try again or type your message.')
+				// Provide more specific error messages based on error type
+				let errorMessage = helpers.getString('voiceChatError', 'Voice chat failed. Please try again or type your message.');
+				
+				if (error && error.status === 404) {
+					errorMessage = helpers.getString(
+						'voiceChatEndpointNotFound',
+						'Voice chat service is temporarily unavailable. Please type your message instead.'
+					);
+				} else if (error && error.message === 'Tools endpoint unavailable') {
+					errorMessage = helpers.getString(
+						'voiceChatNotConfigured',
+						'Voice chat is not properly configured. Please type your message instead.'
 					);
 				}
 
+				if (helpers && helpers.setStatus) {
+					helpers.setStatus(state.container, errorMessage);
+				}
+
 				if (window.console && console.error) {
-					console.error('Voice chat failed', error);
+					console.error('Voice chat failed', {
+						error: error,
+						message: error ? error.message : 'Unknown error',
+						status: error ? error.status : undefined,
+						endpoint: state.config ? state.config.toolsEndpoint : 'not configured'
+					});
 				}
 			})
 			.finally(function () {

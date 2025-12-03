@@ -140,6 +140,28 @@ class WP_MCP_AI_Shortcode {
 
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
+			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			wp_localize_script(
+				self::SCRIPT_HANDLE,
+				'wpMcpAiChat',
+				array(
+					'restUrl'             => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+					'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+					'historyPerPage'      => 20,
+					'currentUserId'       => get_current_user_id(),
+					'nonce'               => wp_create_nonce( 'wp_rest' ),
+					'showUsageCosts'      => false,
+					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'isElementorEditor'   => true,
+					'strings'             => array(
+						'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+					),
+				)
+			);
 			return;
 		}
 
@@ -203,6 +225,15 @@ class WP_MCP_AI_Shortcode {
 																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'wp-mcp-ai' ),
 					'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'wp-mcp-ai' ),
 					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'wp-mcp-ai' ),
+					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'wp-mcp-ai' ),
+					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'wp-mcp-ai' ),
+					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'wp-mcp-ai' ),
+					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'wp-mcp-ai' ),
+					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'wp-mcp-ai' ),
+					'voiceChatProcessing'           => __( 'Processing your voice message…', 'wp-mcp-ai' ),
+					'voiceChatNoData'               => __( 'No audio was recorded.', 'wp-mcp-ai' ),
+					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'wp-mcp-ai' ),
+					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'wp-mcp-ai' ),
 					'attachmentsLabel'              => __( 'Attachments', 'wp-mcp-ai' ),
 					'removeAttachment'              => __( 'Remove', 'wp-mcp-ai' ),
 					/* translators: %s: file name being uploaded */

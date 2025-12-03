@@ -3000,7 +3000,24 @@
 
     function uploadAudioForTranscription(state, file) {
         if (!state || !file || !state.config || !state.config.uploadEndpoint) {
+            if (window.console && console.error) {
+                console.error('Voice chat: Upload configuration missing', {
+                    hasState: !!state,
+                    hasFile: !!file,
+                    hasConfig: !!(state && state.config),
+                    uploadEndpoint: state && state.config ? state.config.uploadEndpoint : 'undefined'
+                });
+            }
             return Promise.reject(new Error('Upload unavailable'));
+        }
+
+        if (window.console && console.log) {
+            console.log('Voice chat: Uploading audio file', {
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                endpoint: state.config.uploadEndpoint
+            });
         }
 
         const headers = {
@@ -3027,22 +3044,50 @@
             credentials: 'same-origin',
         })
             .then(function (response) {
+                if (window.console && console.log) {
+                    console.log('Voice chat: Upload response received', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+                }
+
                 return response
                     .json()
-                    .catch(function () {
+                    .catch(function (parseError) {
+                        if (window.console && console.error) {
+                            console.error('Voice chat: Failed to parse upload response JSON', parseError);
+                        }
                         return null;
                     })
                     .then(function (data) {
                         if (!response.ok) {
+                            if (window.console && console.error) {
+                                console.error('Voice chat: Upload failed', {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    data: data
+                                });
+                            }
                             const error = new Error('Upload failed');
                             error.response = response;
+                            error.status = response.status;
+                            error.data = data;
                             throw error;
                         }
                         return data;
                     });
             })
             .then(function (data) {
-                return normaliseUploadResponse(data, file);
+                const record = normaliseUploadResponse(data, file);
+                if (window.console && console.log) {
+                    console.log('Voice chat: Media file created successfully', {
+                        id: record ? record.id : 'none',
+                        fileId: record ? record.fileId : 'none',
+                        name: record ? record.name : 'none'
+                    });
+                }
+                return record;
             });
     }
 
@@ -3052,6 +3097,12 @@
         }
 
         if (!state.config || !state.config.toolsEndpoint) {
+            if (window.console && console.error) {
+                console.error('Voice chat: Tools endpoint not configured', {
+                    hasConfig: !!state.config,
+                    toolsEndpoint: state.config ? state.config.toolsEndpoint : 'undefined'
+                });
+            }
             return Promise.reject(new Error('Tools endpoint unavailable'));
         }
 
@@ -3063,20 +3114,47 @@
             },
         };
 
+        if (window.console && console.log) {
+            console.log('Voice chat: Requesting transcription', {
+                endpoint: state.config.toolsEndpoint,
+                attachmentId: record.id,
+                tool: TRANSCRIBE_TOOL_NAME
+            });
+        }
+
         return fetch(state.config.toolsEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
             body: JSON.stringify(payload),
         }).then(function (response) {
+            if (!response.ok) {
+                if (window.console && console.error) {
+                    console.error('Voice chat: Transcription request failed', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: response.url,
+                        endpoint: state.config.toolsEndpoint,
+                        attachmentId: record.id
+                    });
+                }
+            }
+
             return response
                 .json()
-                .catch(function () {
+                .catch(function (parseError) {
+                    if (window.console && console.error) {
+                        console.error('Voice chat: Failed to parse response JSON', parseError);
+                    }
                     return null;
                 })
                 .then(function (data) {
                     if (!response.ok) {
-                        throw response;
+                        const error = new Error('Transcription request failed');
+                        error.response = response;
+                        error.status = response.status;
+                        error.data = data;
+                        throw error;
                     }
                     return data;
                 });
