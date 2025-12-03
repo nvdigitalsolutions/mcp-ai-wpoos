@@ -2695,6 +2695,9 @@
             const helpers = {
                 getString: getString,
                 setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+                insertTranscriptionResult: insertTranscriptionResult,
             };
             return audioService.handleTranscribeButtonClick(state, helpers);
         }
