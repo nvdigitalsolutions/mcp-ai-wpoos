@@ -504,20 +504,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return new WP_Error(
 						'rest_invalid_nonce',
 						__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
-						array( 'status' => 403 )
+						array(
+							'status'  => rest_authorization_required_code(),
+							'actions' => array(
+								'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+							),
+						)
 					);
 				}
 			}
 
 			if ( $user_id && $current_user && $user_id === $current_user ) {
-				if ( ! is_user_logged_in() ) {
-					return new WP_Error(
-						'wp_mcp_ai_forbidden',
-						__( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
-						array( 'status' => 403 )
-					);
-				}
-
 				return true;
 			}
 
