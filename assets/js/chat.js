@@ -1622,7 +1622,7 @@
             return fetch(state.config.transcriptsEndpoint, {
                 method: 'POST',
                 headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
+                credentials: 'omit',
                 body: JSON.stringify(payload),
                 signal: controller.signal
             })
@@ -1940,7 +1940,7 @@
         return fetch(state.config.speechEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
             body: JSON.stringify(payload),
         })
             .then(function (response) {
@@ -3089,7 +3089,7 @@
             method: 'POST',
             headers: headers,
             body: file,
-            credentials: 'same-origin',
+            credentials: 'omit',
         })
             .then(function (response) {
                 return response
@@ -3150,7 +3150,7 @@
         return fetch(state.config.audioEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
             body: JSON.stringify(payload),
         }).then(function (response) {
             // Log response status
@@ -4762,7 +4762,7 @@
         fetch(deleteUrl, {
             method: 'DELETE',
             headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         })
             .then(function (response) {
                 return response
@@ -5024,7 +5024,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         }).then(function (response) {
             return response
                 .json()
@@ -5097,7 +5097,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         }).then(function (response) {
             // Log response status for debugging
             if (window.console && console.log) {
@@ -5512,7 +5512,7 @@
             method: 'POST',
             headers: headers,
             body: file,
-            credentials: 'same-origin',
+            credentials: 'omit',
         })
             .then(function (response) {
                 return response
@@ -8015,7 +8015,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         }).then(function (response) {
             // 404 means task not found yet - this is expected early in async execution
             if (response.status === 404) {
@@ -8877,7 +8877,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         }).then(function (response) {
             if (!response.ok) {
                 return null;
@@ -8938,7 +8938,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
         }).then(function (response) {
             // 404 means job not found yet - this is expected early in async execution
             // Return null to signal "not ready yet" rather than an error
@@ -9279,7 +9279,7 @@
             return fetch(url, {
                 method: 'GET',
                 headers: headers,
-                credentials: 'same-origin'
+                credentials: 'omit'
             }).then(function(response) {
                 console.log('[wpMcpAiTestGetTranscript] Response status:', response.status, response.statusText);
                 
@@ -10364,7 +10364,7 @@
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
+            credentials: 'omit',
             body: JSON.stringify(payload),
         })
             .then(function (response) {
@@ -10512,7 +10512,7 @@
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: headers,
-            credentials: 'same-origin',
+            credentials: 'omit',
             body: JSON.stringify(payload),
         })
             .then(function (response) {
@@ -14736,7 +14736,7 @@
             return fetch(state.config.toolsEndpoint, {
                 method: 'POST',
                 headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
+                credentials: 'omit',
                 body: JSON.stringify(payload),
                 signal: controller.signal,
             })
