@@ -5,6 +5,7 @@
         restUrl: '',
         uploadEndpoint: '',
         filesEndpoint: '',
+        toolsEndpoint: '',
         transcriptsEndpoint: '',
         nonce: '',
         historyPerPage: 20,
@@ -14,7 +15,7 @@
 
     const globalConfig = Object.assign({}, defaultGlobalConfig, window.wpMcpAiChat || {});
 
-    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'nonce'].filter(
+    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'toolsEndpoint', 'transcriptsEndpoint', 'nonce'].filter(
         function (key) {
             return !globalConfig[key];
         }
@@ -9376,6 +9377,10 @@
 
             if (!instanceConfig.filesEndpoint) {
                 instanceConfig.filesEndpoint = globalConfig.filesEndpoint || '';
+            }
+
+            if (!instanceConfig.toolsEndpoint) {
+                instanceConfig.toolsEndpoint = globalConfig.toolsEndpoint || '';
             }
 
             if (!instanceConfig.restUrl) {
