@@ -4,7 +4,7 @@
  */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php';
 
 class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	/**
