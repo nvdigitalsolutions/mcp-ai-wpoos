@@ -494,6 +494,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'read-only',            // Only reads data, does not modify state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.

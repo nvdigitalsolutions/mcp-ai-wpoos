@@ -133,6 +133,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'write',                // Modifies data.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires manage_options capability.

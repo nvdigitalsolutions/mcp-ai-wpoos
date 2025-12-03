@@ -122,6 +122,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',              // Pro tier tool.
 			'read-only',        // list/get operations.
 			'write',            // create/update operations.
 			'requires-plugin',  // Requires JetEngine.

@@ -302,6 +302,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 					);
 				}
 			);
+			$tier_flags        = array_filter(
+				$capability_flags,
+				function ( $flag ) {
+					return in_array(
+						$flag,
+						array( 'pro' ),
+						true
+					);
+				}
+			);
 
 			return array(
 				'requirements' => array(
@@ -323,6 +333,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 					'label' => __( 'Data', 'wp-mcp-ai' ),
 					'flags' => array_values( $data_flags ),
 					'color' => '#46b450',
+				),
+				'tier'         => array(
+					'label' => __( 'Tier', 'wp-mcp-ai' ),
+					'flags' => array_values( $tier_flags ),
+					'color' => '#9b51e0',
 				),
 			);
 		}

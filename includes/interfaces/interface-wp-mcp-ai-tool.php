@@ -99,6 +99,9 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * Capability flags help orchestrate agentic workflows by providing
 	 * metadata about tool requirements and characteristics.
 	 *
+	 * Standard flags (Tier):
+	 * - 'pro': Tool is part of the Pro tier/addon
+	 *
 	 * Standard flags (Requirement Flags):
 	 * - 'requires-credentials': Tool requires external API credentials
 	 * - 'requires-plugin': Tool requires a specific WordPress plugin

@@ -1105,6 +1105,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                   // Pro tier tool.
 			'requires-credentials',  // Requires OpenAI API credentials for scene generation.
 			'requires-capability',   // Requires upload_files capability.
 			'write',                 // Creates media files.

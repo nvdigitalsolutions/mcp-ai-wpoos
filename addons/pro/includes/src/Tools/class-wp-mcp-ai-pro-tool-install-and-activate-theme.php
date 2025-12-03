@@ -289,6 +289,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_In
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro tier tool.
 			'write',                // Installs and activates themes.
 			'external-api',         // Calls WordPress.org API.
 			'network-dependent',    // Requires internet connectivity.
