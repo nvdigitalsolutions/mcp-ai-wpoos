@@ -164,10 +164,10 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Use argument values if provided, otherwise fall back to admin settings, then constants.
-		$default_model           = isset( $settings['openai_transcribe_model'] ) && '' !== $settings['openai_transcribe_model'] ? $settings['openai_transcribe_model'] : self::DEFAULT_MODEL;
-		$default_response_format = isset( $settings['openai_transcribe_response_format'] ) && '' !== $settings['openai_transcribe_response_format'] ? $settings['openai_transcribe_response_format'] : self::DEFAULT_FORMAT;
-		$default_language        = isset( $settings['openai_transcribe_language'] ) && '' !== $settings['openai_transcribe_language'] ? $settings['openai_transcribe_language'] : '';
-		$default_temperature     = isset( $settings['openai_transcribe_temperature'] ) && '' !== $settings['openai_transcribe_temperature'] ? $settings['openai_transcribe_temperature'] : '';
+		$default_model           = $this->get_setting_or_fallback( $settings, 'openai_transcribe_model', self::DEFAULT_MODEL );
+		$default_response_format = $this->get_setting_or_fallback( $settings, 'openai_transcribe_response_format', self::DEFAULT_FORMAT );
+		$default_language        = $this->get_setting_or_fallback( $settings, 'openai_transcribe_language', '' );
+		$default_temperature     = $this->get_setting_or_fallback( $settings, 'openai_transcribe_temperature', '' );
 
 		$options = array(
 			'model'           => isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : $default_model,
@@ -399,5 +399,17 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * Get setting value with fallback.
+	 *
+	 * @param array  $settings  Settings array.
+	 * @param string $key       Setting key.
+	 * @param mixed  $fallback  Fallback value if setting is empty.
+	 * @return mixed Setting value or fallback.
+	 */
+	private function get_setting_or_fallback( $settings, $key, $fallback = '' ) {
+		return isset( $settings[ $key ] ) && '' !== $settings[ $key ] ? $settings[ $key ] : $fallback;
 	}
 }
