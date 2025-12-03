@@ -33,11 +33,13 @@ class Test_Pro_Tools_Capability_Flag extends WP_UnitTestCase {
 	 */
 	private function get_pro_tool_slugs() {
 		return array(
+			'create_google_calendar_event',
 			'elementor',
 			'get_facebook_instagram_insights',
 			'get_google_business_insights',
 			'get_linkedin_insights',
 			'get_tiktok_insights',
+			'google_analytics_report',
 			'install_and_activate_plugin',
 			'install_and_activate_theme',
 			'jetengine',
@@ -47,6 +49,10 @@ class Test_Pro_Tools_Capability_Flag extends WP_UnitTestCase {
 			'post_linkedin_update',
 			'post_tiktok_video',
 			'product_actualization',
+			'quickbooks_report',
+			'search_gmail',
+			'send_mailjet_email',
+			'send_telegram_message',
 			'send_whatsapp_message',
 			'site_creator',
 			'update_option',

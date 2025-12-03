@@ -743,8 +743,10 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'pro',                  // Pro tier tool.
+			'write',                // Creates calendar events.
+			'external-api',         // Calls Google Calendar API.
+			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
