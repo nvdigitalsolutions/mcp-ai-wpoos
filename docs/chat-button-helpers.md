@@ -2,6 +2,55 @@
 
 This document describes the helper functions available in the `chat-ui-utilities-service.js` for managing chat buttons (voice chat, transcribe, etc.).
 
+## Prerequisites
+
+### Transcribe and Voice Chat Buttons
+
+The transcribe and voice chat buttons require the following:
+
+1. **User Permission**: The current user must have the `upload_files` capability
+   - This is checked server-side in `WP_MCP_AI_Shortcode::render_shortcode()`
+   - If the user lacks this capability, buttons are rendered with `disabled` and `hidden` attributes
+   - To test: ensure you're logged in as an Administrator or Editor
+
+2. **Browser Support**: The browser must support:
+   - `navigator.mediaDevices.getUserMedia()` for microphone access
+   - `MediaRecorder` API for audio recording
+   - Modern browsers (Chrome 49+, Firefox 25+, Safari 14+) support these APIs
+
+3. **Microphone Permission**: The user must grant microphone access when prompted
+   - This is requested when the user first clicks the transcribe or voice chat button
+   - If denied, the button will show an error message
+
+### Troubleshooting
+
+If the transcribe button is not responding:
+
+1. **Check User Capability**: 
+   ```php
+   // In WordPress, check if current user can upload files
+   $can_upload = current_user_can( 'upload_files' );
+   ```
+
+2. **Check Browser Console**: 
+   ```javascript
+   // Use the diagnostic script to check button state
+   // See docs/chat-button-diagnostic.js
+   ```
+
+3. **Verify Button State**:
+   ```javascript
+   const button = document.querySelector('.wp-mcp-ai-chat__transcribe');
+   console.log('Disabled:', button.disabled);
+   console.log('Hidden:', button.hidden);
+   ```
+
+4. **Check Service Loading**:
+   ```javascript
+   console.log('Audio Service:', typeof window.wpMcpAiChatAudio);
+   console.log('UI Utils:', typeof window.wpMcpAiChatUIUtils);
+   ```
+
 ## Overview
 
 The chat UI utilities service provides a set of helper functions specifically designed for managing button states, classes, icons, and labels in a consistent and accessible manner.

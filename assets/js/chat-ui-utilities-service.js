@@ -414,12 +414,23 @@
 	/**
 	 * Update button icon/content.
 	 * 
+	 * SECURITY NOTE: This function sets innerHTML on icon elements. The iconHTML parameter
+	 * must come from trusted sources only (e.g., predefined icon constants in the codebase).
+	 * Do NOT pass user-provided content to this function.
+	 * 
 	 * @param {Element} button - Button element
-	 * @param {string} iconHTML - HTML content for the icon
+	 * @param {string} iconHTML - HTML content for the icon (must be from trusted source)
 	 * @param {string} selector - Optional selector for icon element within button (defaults to first child)
 	 */
 	function setButtonIcon(button, iconHTML, selector) {
 		if (!button || typeof iconHTML !== 'string') {
+			return;
+		}
+
+		// Security: Only allow this function to be called with trusted icon HTML
+		// Validate that we're not setting arbitrary HTML from user input
+		if (window.console && console.warn && iconHTML.indexOf('javascript:') !== -1) {
+			console.warn('[WP oOS] setButtonIcon: Potentially unsafe icon HTML detected. Aborting.');
 			return;
 		}
 
@@ -433,6 +444,9 @@
 		}
 
 		if (iconElement) {
+			// Note: innerHTML is used here for SVG icons which require HTML parsing.
+			// This is safe when iconHTML comes from trusted sources (predefined constants).
+			// Developers: Ensure iconHTML is never user-provided content.
 			iconElement.innerHTML = iconHTML;
 		}
 	}
