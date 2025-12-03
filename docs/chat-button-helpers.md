@@ -200,6 +200,98 @@ uiUtils.updateButtonLabel(button, 'Stop recording');
 uiUtils.updateButtonLabel(button, 'Transcribe audio');
 ```
 
+## Cross-Chat Communication
+
+The helper functions also support communication between multiple chat instances on the same page.
+
+### broadcastMessage(eventType, data)
+
+Broadcast a message to all chat instances on the page.
+
+**Parameters:**
+- `eventType` (string): Event type (will be prefixed with 'chat:')
+- `data` (*): Event data to broadcast
+
+**Example:**
+```javascript
+const uiUtils = window.wpMcpAiChatUIUtils;
+
+// Broadcast attachment upload event
+uiUtils.broadcastMessage('attachment:uploaded', {
+    fileId: 'file_123',
+    fileName: 'document.pdf',
+    url: 'https://example.com/file.pdf'
+});
+```
+
+### listenToChatEvents(eventType, handler)
+
+Listen for messages from other chat instances.
+
+**Parameters:**
+- `eventType` (string): Event type to listen for
+- `handler` (Function): Event handler function
+- **Returns**: Cleanup function to remove the listener
+
+**Example:**
+```javascript
+const uiUtils = window.wpMcpAiChatUIUtils;
+
+// Listen for attachment uploads
+const cleanup = uiUtils.listenToChatEvents('attachment:uploaded', function(data) {
+    console.log('File uploaded:', data.fileName);
+    // Add to local attachment library
+    state.attachmentLibrary[data.fileId] = data;
+});
+
+// Later, remove listener
+cleanup();
+```
+
+### getOtherChatInstances(currentInstanceId)
+
+Get all other chat instances on the page (excluding the current one).
+
+**Parameters:**
+- `currentInstanceId` (string): Current chat instance ID to exclude
+- **Returns**: Array of chat instance objects
+
+**Example:**
+```javascript
+const uiUtils = window.wpMcpAiChatUIUtils;
+
+const otherChats = uiUtils.getOtherChatInstances(state.config.id);
+
+otherChats.forEach(function(chat) {
+    console.log('Chat ID:', chat.id);
+    console.log('Assistant:', chat.config.assistantId);
+    console.log('Messages:', chat.state.conversation.length);
+});
+```
+
+### copyMessageToClipboard(message)
+
+Copy a message to clipboard for pasting in another chat.
+
+**Parameters:**
+- `message` (Object): Message object to copy
+- **Returns**: Promise that resolves when copy is complete
+
+**Example:**
+```javascript
+const uiUtils = window.wpMcpAiChatUIUtils;
+
+const message = state.conversation[5];
+
+uiUtils.copyMessageToClipboard(message)
+    .then(function() {
+        uiUtils.setStatus(container, 'Message copied to clipboard');
+    })
+    .catch(function(err) {
+        console.error('Copy failed:', err);
+    });
+```
+
 ## Common Usage Patterns
 
 ### Voice Chat Button State Management
