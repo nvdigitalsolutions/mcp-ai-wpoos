@@ -37,6 +37,22 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure defaults include transcription settings.
+	 */
+	public function test_default_settings_define_transcription_defaults() {
+		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+		$this->assertArrayHasKey( 'openai_transcribe_model', $defaults );
+		$this->assertSame( 'gpt-4o-mini-transcribe', $defaults['openai_transcribe_model'] );
+		$this->assertArrayHasKey( 'openai_transcribe_response_format', $defaults );
+		$this->assertSame( 'verbose_json', $defaults['openai_transcribe_response_format'] );
+		$this->assertArrayHasKey( 'openai_transcribe_language', $defaults );
+		$this->assertSame( '', $defaults['openai_transcribe_language'] );
+		$this->assertArrayHasKey( 'openai_transcribe_temperature', $defaults );
+		$this->assertSame( '', $defaults['openai_transcribe_temperature'] );
+	}
+
+	/**
 	 * Ensure the default model field suggests popular OpenAI chat models.
 	 */
 	public function test_render_default_model_field_outputs_datalist() {

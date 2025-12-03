@@ -189,6 +189,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'b64_json',
 				),
+				'openai_transcribe_model'              => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Transcription Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for audio transcription and translation. gpt-4o-mini-transcribe is optimized for transcription tasks.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'gpt-4o-mini-transcribe' => 'gpt-4o-mini-transcribe (Recommended)',
+						'whisper-1'              => 'Whisper-1',
+					),
+					'default'     => 'gpt-4o-mini-transcribe',
+				),
+				'openai_transcribe_response_format'    => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Transcription Response Format', 'wp-mcp-ai' ),
+					'description' => __( 'Default format for transcription responses. verbose_json includes timestamps and metadata, json returns text only.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'verbose_json' => 'Verbose JSON (With timestamps)',
+						'json'         => 'JSON (Text only)',
+					),
+					'default'     => 'verbose_json',
+				),
+				'openai_transcribe_language'           => array(
+					'type'        => 'text',
+					'label'       => __( 'OpenAI Transcription Language (Optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO-639-1 language code (e.g., "en" for English, "es" for Spanish) to hint the language of the audio. Leave empty for automatic detection.', 'wp-mcp-ai' ),
+					'placeholder' => 'en',
+				),
+				'openai_transcribe_temperature'        => array(
+					'type'        => 'text',
+					'label'       => __( 'OpenAI Transcription Temperature (Optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Optional sampling temperature between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. Leave empty to use default.', 'wp-mcp-ai' ),
+					'placeholder' => '0',
+				),
 
 				// Anthropic Settings.
 				'enable_anthropic'             => array(
@@ -424,7 +456,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature' ),
 				),
 				'anthropic' => array(
 					'id'     => 'anthropic',

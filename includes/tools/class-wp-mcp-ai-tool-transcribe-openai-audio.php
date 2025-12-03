@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**
  * Provides a tool for transcribing or translating audio attachments via OpenAI.
@@ -154,24 +155,35 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			return $audio;
 		}
 
+		// Get default settings from admin.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
 		$translate = true;
 		if ( isset( $arguments['translate'] ) ) {
 			$translate = (bool) $arguments['translate'];
 		}
 
+		// Use argument values if provided, otherwise fall back to admin settings, then constants.
+		$default_model           = $this->get_non_empty_setting( $settings, 'openai_transcribe_model', self::DEFAULT_MODEL );
+		$default_response_format = $this->get_non_empty_setting( $settings, 'openai_transcribe_response_format', self::DEFAULT_FORMAT );
+		$default_language        = $this->get_non_empty_setting( $settings, 'openai_transcribe_language', '' );
+		$default_temperature     = $this->get_non_empty_setting( $settings, 'openai_transcribe_temperature', '' );
+
 		$options = array(
-			'model'           => isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : self::DEFAULT_MODEL,
+			'model'           => isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : $default_model,
 			'translate'       => $translate,
 			'prompt'          => isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '',
-			'response_format' => isset( $arguments['response_format'] ) && '' !== $arguments['response_format'] ? strtolower( sanitize_key( $arguments['response_format'] ) ) : self::DEFAULT_FORMAT,
+			'response_format' => isset( $arguments['response_format'] ) && '' !== $arguments['response_format'] ? strtolower( sanitize_key( $arguments['response_format'] ) ) : $default_response_format,
 			'timeout'         => isset( $arguments['timeout'] ) && '' !== $arguments['timeout'] ? absint( $arguments['timeout'] ) : '',
-			'language'        => isset( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : '',
+			'language'        => isset( $arguments['language'] ) && '' !== $arguments['language'] ? sanitize_text_field( $arguments['language'] ) : $default_language,
 			'filename'        => $audio['file_name'],
 			'mime_type'       => $audio['mime_type'],
 		);
 
 		if ( isset( $arguments['temperature'] ) && '' !== $arguments['temperature'] ) {
 			$options['temperature'] = $arguments['temperature'];
+		} elseif ( '' !== $default_temperature ) {
+			$options['temperature'] = $default_temperature;
 		}
 
 		if ( '' === $options['model'] ) {
@@ -387,5 +399,19 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * Get non-empty setting value with fallback.
+	 *
+	 * Returns the setting value if it exists and is not empty, otherwise returns the fallback.
+	 *
+	 * @param array  $settings  Settings array.
+	 * @param string $key       Setting key.
+	 * @param mixed  $fallback  Fallback value if setting is empty or not set.
+	 * @return mixed Setting value or fallback.
+	 */
+	private function get_non_empty_setting( $settings, $key, $fallback = '' ) {
+		return isset( $settings[ $key ] ) && '' !== $settings[ $key ] ? $settings[ $key ] : $fallback;
 	}
 }
