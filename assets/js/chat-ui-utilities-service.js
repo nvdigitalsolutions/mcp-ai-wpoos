@@ -415,8 +415,11 @@
 	 * Update button icon/content.
 	 * 
 	 * SECURITY NOTE: This function sets innerHTML on icon elements. The iconHTML parameter
-	 * must come from trusted sources only (e.g., predefined icon constants in the codebase).
+	 * MUST come from trusted sources only (e.g., predefined icon constants in the codebase).
 	 * Do NOT pass user-provided content to this function.
+	 * 
+	 * This function is designed for updating SVG icons which require HTML parsing.
+	 * For security, it validates against common XSS vectors and logs warnings.
 	 * 
 	 * @param {Element} button - Button element
 	 * @param {string} iconHTML - HTML content for the icon (must be from trusted source)
@@ -427,11 +430,30 @@
 			return;
 		}
 
-		// Security: Only allow this function to be called with trusted icon HTML
-		// Validate that we're not setting arbitrary HTML from user input
-		if (window.console && console.warn && iconHTML.indexOf('javascript:') !== -1) {
-			console.warn('[WP oOS] setButtonIcon: Potentially unsafe icon HTML detected. Aborting.');
-			return;
+		// Security: Validate against common XSS vectors
+		// This is a defense-in-depth measure - developers should only pass trusted constants
+		const lowerHTML = iconHTML.toLowerCase();
+		const dangerousPatterns = [
+			'javascript:',
+			'data:text/html',
+			'vbscript:',
+			'<script',
+			'onerror=',
+			'onload=',
+			'onclick=',
+			'onmouseover='
+		];
+		
+		for (let i = 0; i < dangerousPatterns.length; i++) {
+			if (lowerHTML.indexOf(dangerousPatterns[i]) !== -1) {
+				if (window.console && console.error) {
+					console.error(
+						'[WP oOS] setButtonIcon: Potentially unsafe icon HTML detected and blocked.',
+						{ pattern: dangerousPatterns[i], button: button }
+					);
+				}
+				return;
+			}
 		}
 
 		let iconElement;
@@ -447,6 +469,7 @@
 			// Note: innerHTML is used here for SVG icons which require HTML parsing.
 			// This is safe when iconHTML comes from trusted sources (predefined constants).
 			// Developers: Ensure iconHTML is never user-provided content.
+			// The validation above provides defense-in-depth protection.
 			iconElement.innerHTML = iconHTML;
 		}
 	}
