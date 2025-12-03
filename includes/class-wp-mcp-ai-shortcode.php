@@ -140,6 +140,28 @@ class WP_MCP_AI_Shortcode {
 
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
+			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			wp_localize_script(
+				self::SCRIPT_HANDLE,
+				'wpMcpAiChat',
+				array(
+					'restUrl'             => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+					'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+					'historyPerPage'      => 20,
+					'currentUserId'       => get_current_user_id(),
+					'nonce'               => wp_create_nonce( 'wp_rest' ),
+					'showUsageCosts'      => false,
+					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'isElementorEditor'   => true,
+					'strings'             => array(
+						'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+					),
+				)
+			);
 			return;
 		}
 
