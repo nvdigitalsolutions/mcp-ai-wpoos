@@ -1,19 +1,23 @@
 <?php
 /**
- * Plugin Name: WP Open Operator System (Base)
- * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ core tools. Standalone version without Pro add-ons.
- * Version: 1.0.0
- * Requires at least: 6.0
- * Requires PHP: 7.4
- * Author: NV Digital Solutions
- * Author URI: https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * Text Domain: wp-mcp-ai
- * Domain Path: /languages
- * Network: true
+ * Base Version Entry Point
+ *
+ * This file serves as the entry point for the Base version of the plugin
+ * when packaged as a standalone distribution (wp-mcp-ai-base-X.Y.Z.zip).
+ *
+ * It sets the WP_MCP_AI_BASE_VERSION constant to exclude Pro features,
+ * then includes the main plugin file (wp-mcp-ai.php) which contains the
+ * full plugin implementation and WordPress plugin headers.
+ *
+ * The Base version is identical to the full version except it excludes
+ * the Pro add-ons directory (addons/pro).
+ *
+ * Note: This file intentionally does NOT contain WordPress plugin headers
+ * to prevent it from being registered as a separate plugin. The actual
+ * plugin registration happens in wp-mcp-ai.php.
  *
  * @package WP_MCP_AI
+ * @since 1.0.0
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
@@ -22,17 +26,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-/**
- * Base Version Entry Point
- *
- * This file serves as the entry point for the Base version of the plugin.
- * It simply includes the main plugin file (wp-mcp-ai.php) which contains
- * the full plugin implementation.
- *
- * The Base version is identical to the full version except it excludes
- * the Pro add-ons directory (addons/pro).
- */
 
 // Define the base version constant to exclude Pro features.
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
