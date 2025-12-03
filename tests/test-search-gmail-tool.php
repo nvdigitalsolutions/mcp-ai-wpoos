@@ -1,6 +1,6 @@
 <?php
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**
@@ -33,7 +33,7 @@ class WP_MCP_AI_Search_Gmail_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		$tool   = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool   = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 		$result = $tool->execute(
 			array(
 				'query' => 'subject:test',
@@ -54,7 +54,7 @@ class WP_MCP_AI_Search_Gmail_Tool_Test extends WP_UnitTestCase {
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		$tool   = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool   = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 		$result = $tool->execute(
 			array(
 				'query' => 'from:test@example.com',
@@ -201,7 +201,7 @@ class WP_MCP_AI_Search_Gmail_Tool_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
-		$tool   = new WP_MCP_AI_Tool_Search_Gmail();
+		$tool   = new WP_MCP_AI_Pro_Tool_Search_Gmail();
 		$result = $tool->execute(
 			array(
 				'query'       => 'from:sender@example.com',

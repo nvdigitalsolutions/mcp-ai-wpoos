@@ -2,7 +2,7 @@
 /**
  * Tool that searches Gmail messages using stored OAuth credentials.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
  */
-class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
 

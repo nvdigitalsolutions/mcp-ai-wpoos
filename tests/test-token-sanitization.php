@@ -4,7 +4,7 @@
  */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php';
 
 class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	/**
@@ -35,7 +35,7 @@ class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	 * Ensure Telegram bot tokens are not rewritten by sanitization.
 	 */
 	public function test_telegram_token_preserves_base64_characters() {
-		$tool   = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_token' );
 		$method->setAccessible( true );
 
@@ -48,7 +48,7 @@ class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	 * Ensure Telegram bot tokens are URL-encoded before building the request endpoint.
 	 */
 	public function test_telegram_token_is_url_encoded_in_endpoint() {
-		$tool     = new WP_MCP_AI_Tool_Send_Telegram_Message();
+		$tool     = new WP_MCP_AI_Pro_Tool_Send_Telegram_Message();
 		$token    = '123456:ABC+/=.-_~';
 		$captured = null;
 

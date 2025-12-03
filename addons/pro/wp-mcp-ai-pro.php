@@ -178,6 +178,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-business-insights.php',
 			// Messaging tools.
 			'WP_MCP_AI_Pro_Tool_Send_Whatsapp_Message' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php',
+			'WP_MCP_AI_Pro_Tool_Send_Telegram_Message' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php',
+			// Email and communication tools.
+			'WP_MCP_AI_Pro_Tool_Search_Gmail'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
+			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
+			// Google Workspace tools.
+			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
+			// Business and accounting tools.
+			'WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php',
 			// Site Creator and related tools.
 			'WP_MCP_AI_Pro_Tool_Site_Creator'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-site-creator.php',
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
@@ -381,6 +390,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'get_google_business_insights'    => 'external-tools',
 			// Messaging tools - Require external API credentials.
 			'send_whatsapp_message'           => 'external-tools',
+			'send_telegram_message'           => 'external-tools',
+			// Email and communication tools - Require external API credentials.
+			'search_gmail'                    => 'external-tools',
+			'send_mailjet_email'              => 'external-tools',
+			// Google Workspace tools - Require external API credentials.
+			'create_google_calendar_event'    => 'external-tools',
+			'google_analytics_report'         => 'external-tools',
+			// Business and accounting tools - Require external API credentials.
+			'quickbooks_report'               => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',

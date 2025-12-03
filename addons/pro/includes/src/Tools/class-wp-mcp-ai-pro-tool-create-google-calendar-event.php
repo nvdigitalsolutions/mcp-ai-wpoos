@@ -2,7 +2,7 @@
 /**
  * Tool for creating Google Calendar events.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,7 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Provides an assistant tool that creates events in Google Calendar.
  */
-class WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const TOKEN_GRANT_TYPE            = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
 	const DEFAULT_SCOPE               = 'https://www.googleapis.com/auth/calendar.events';
