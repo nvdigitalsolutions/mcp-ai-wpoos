@@ -190,9 +190,55 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
 
+			add_filter( 'rest_authentication_errors', array( $this, 'bypass_cookie_check_for_plugin_endpoints' ), 5 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
+		}
+
+		/**
+		 * Bypass WordPress's default cookie check for plugin endpoints.
+		 *
+		 * WordPress's REST API includes a default cookie authentication handler that
+		 * checks for cookies when an X-WP-Nonce header is present. This causes issues
+		 * when using `credentials: 'omit'` in fetch requests (no cookies sent) but
+		 * including the nonce header for authentication.
+		 *
+		 * Since we handle authentication ourselves via WP_MCP_AI_REST_Authenticator,
+		 * we need to bypass WordPress's default cookie check for our endpoints.
+		 *
+		 * This filter runs at priority 5, before WordPress's default cookie check
+		 * (priority 100), allowing us to indicate that authentication is already
+		 * handled for our endpoints.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param WP_Error|null|bool $result  WP_Error if authentication error, null if not checked yet, true if authenticated.
+		 * @return WP_Error|null|bool Modified result - true to bypass cookie check for our endpoints.
+		 */
+		public function bypass_cookie_check_for_plugin_endpoints( $result ) {
+			// If authentication already failed with an error, don't interfere.
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Only process requests to our REST namespace.
+			$rest_prefix = rest_get_url_prefix();
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+
+			// Parse and validate URI safely.
+			$parsed_uri = wp_parse_url( $request_uri, PHP_URL_PATH );
+			if ( ! $parsed_uri || false === strpos( $parsed_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
+				// Not our endpoint, let WordPress handle it normally.
+				return $result;
+			}
+
+			// This is our endpoint - return true to indicate authentication is handled.
+			// This prevents WordPress's default cookie check from running and throwing
+			// the "rest_cookie_invalid_nonce" error when cookies aren't present.
+			// Our actual authentication happens in the permission_callback via
+			// WP_MCP_AI_REST_Authenticator::authenticate().
+			return true;
 		}
 
 		/**
