@@ -368,7 +368,12 @@ class WP_MCP_AI_REST_Token_Manager {
 				return new WP_Error(
 					'rest_invalid_nonce',
 					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
-					array( 'status' => 403 )
+					array(
+						'status'  => rest_authorization_required_code(),
+						'actions' => array(
+							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+						),
+					)
 				);
 			}
 		}
@@ -410,7 +415,12 @@ class WP_MCP_AI_REST_Token_Manager {
 				return new WP_Error(
 					'rest_invalid_nonce',
 					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
-					array( 'status' => 403 )
+					array(
+						'status'  => rest_authorization_required_code(),
+						'actions' => array(
+							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+						),
+					)
 				);
 			}
 		}
