@@ -213,6 +213,29 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Handle HTTP 202 (Accepted) response - search is being processed asynchronously.
+	 *
+	 * @param array $response The HTTP response array from wp_remote_get.
+	 * @return WP_Error Error object with pending status and retry information.
+	 */
+	protected function handle_pending_response( $response ) {
+		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+		return new WP_Error(
+			'wp_mcp_ai_search_pending',
+			__(
+				'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+				'wp-mcp-ai'
+			),
+			array(
+				'status'       => 202,
+				'is_pending'   => true,
+				'should_wait'  => false,
+				'retry_after'  => $retry_after ? (string) $retry_after : null,
+			)
+		);
+	}
+
+	/**
 	 * Perform a DuckDuckGo Instant Answer search.
 	 *
 	 * Uses the DuckDuckGo Instant Answer API following patterns from the
@@ -259,20 +282,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
 		if ( 202 === $status_code ) {
-			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-			return new WP_Error(
-				'wp_mcp_ai_search_pending',
-				__(
-					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
-					'wp-mcp-ai'
-				),
-				array(
-					'status'       => 202,
-					'is_pending'   => true,
-					'should_wait'  => false,
-					'retry_after'  => $retry_after ? (string) $retry_after : null,
-				)
-			);
+			return $this->handle_pending_response( $response );
 		}
 
 		if ( 200 !== $status_code ) {
@@ -391,20 +401,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
 		if ( 202 === $status_code ) {
-			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-			return new WP_Error(
-				'wp_mcp_ai_search_pending',
-				__(
-					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
-					'wp-mcp-ai'
-				),
-				array(
-					'status'       => 202,
-					'is_pending'   => true,
-					'should_wait'  => false,
-					'retry_after'  => $retry_after ? (string) $retry_after : null,
-				)
-			);
+			return $this->handle_pending_response( $response );
 		}
 
 		if ( 200 !== $status_code ) {
