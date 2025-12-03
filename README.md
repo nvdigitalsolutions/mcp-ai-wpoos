@@ -33,7 +33,7 @@
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama-lm-studio)
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama--lm-studio)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
