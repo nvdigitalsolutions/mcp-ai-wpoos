@@ -1325,7 +1325,7 @@
 				
 				if (error && error.status === 404) {
 					errorMessage = helpers.getString(
-						'voiceChatEndpointNotFound', 
+						'voiceChatEndpointNotFound',
 						'Voice chat service is temporarily unavailable. Please type your message instead.'
 					);
 				} else if (error && error.message === 'Tools endpoint unavailable') {
