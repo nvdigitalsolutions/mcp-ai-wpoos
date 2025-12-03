@@ -350,16 +350,450 @@
 		setStatus(container, '');
 	}
 
+	// ========================================
+	// Cross-Chat Communication Helpers
+	// ========================================
+
+	/**
+	 * Broadcast a message to all chat instances on the page.
+	 * Uses the job event bus for cross-instance communication.
+	 * 
+	 * @param {string} eventType - Event type (will be prefixed with 'chat:')
+	 * @param {*} data - Event data to broadcast
+	 */
+	function broadcastMessage(eventType, data) {
+		if (!window.wpMcpAiJobBus || typeof eventType !== 'string') {
+			return;
+		}
+		
+		window.wpMcpAiJobBus.emit('chat:' + eventType, data);
+	}
+
+	/**
+	 * Listen for messages from other chat instances.
+	 * 
+	 * @param {string} eventType - Event type to listen for (will be prefixed with 'chat:')
+	 * @param {Function} handler - Event handler function
+	 * @return {Function} Cleanup function to remove the listener
+	 */
+	function listenToChatEvents(eventType, handler) {
+		if (!window.wpMcpAiJobBus || typeof eventType !== 'string' || typeof handler !== 'function') {
+			return function() {}; // Return noop cleanup function
+		}
+		
+		const fullEventType = 'chat:' + eventType;
+		window.wpMcpAiJobBus.on(fullEventType, handler);
+		
+		// Return cleanup function
+		return function() {
+			window.wpMcpAiJobBus.off(fullEventType, handler);
+		};
+	}
+
+	/**
+	 * Get all other chat instances on the page (excluding the current one).
+	 * 
+	 * @param {string} currentInstanceId - Current chat instance ID to exclude
+	 * @return {Array} Array of other chat instance objects
+	 */
+	function getOtherChatInstances(currentInstanceId) {
+		if (!window.wpMcpAiChatInstances) {
+			return [];
+		}
+		
+		const instances = [];
+		for (const id in window.wpMcpAiChatInstances) {
+			if (Object.prototype.hasOwnProperty.call(window.wpMcpAiChatInstances, id) && id !== currentInstanceId) {
+				const container = document.getElementById(id);
+				if (container && container.__wpMcpAiChatState) {
+					instances.push({
+						id: id,
+						config: window.wpMcpAiChatInstances[id],
+						state: container.__wpMcpAiChatState,
+						container: container
+					});
+				}
+			}
+		}
+		
+		return instances;
+	}
+
+	/**
+	 * Copy a message to clipboard for pasting in another chat.
+	 * 
+	 * @param {Object} message - Message object to copy
+	 * @return {Promise} Promise that resolves when copy is complete
+	 */
+	function copyMessageToClipboard(message) {
+		if (!message || !message.content) {
+			return Promise.reject(new Error('Invalid message'));
+		}
+		
+		const text = typeof message.content === 'string' 
+			? message.content 
+			: JSON.stringify(message.content);
+		
+		// Use modern clipboard API if available
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			return navigator.clipboard.writeText(text);
+		}
+		
+		// Fallback for older browsers
+		const textarea = document.createElement('textarea');
+		textarea.value = text;
+		textarea.style.position = 'fixed';
+		textarea.style.opacity = '0';
+		document.body.appendChild(textarea);
+		textarea.select();
+		
+		try {
+			document.execCommand('copy');
+			document.body.removeChild(textarea);
+			return Promise.resolve();
+		} catch (err) {
+			document.body.removeChild(textarea);
+			return Promise.reject(err);
+		}
+	}
+
+	// ========================================
+	// File Management Helpers
+	// ========================================
+
+	/**
+	 * Validate file before upload.
+	 * Checks file size, type, and other constraints.
+	 * 
+	 * @param {File} file - File to validate
+	 * @param {Object} constraints - Validation constraints
+	 * @param {number} constraints.maxSize - Maximum file size in bytes
+	 * @param {Array<string>} constraints.allowedTypes - Allowed MIME types
+	 * @param {Array<string>} constraints.allowedExtensions - Allowed file extensions
+	 * @return {Object} Validation result with valid boolean and error array
+	 */
+	function validateAttachment(file, constraints) {
+		const result = {
+			valid: true,
+			errors: [],
+			warnings: []
+		};
+
+		if (!file) {
+			result.valid = false;
+			result.errors.push('No file provided');
+			return result;
+		}
+
+		// Check file size
+		if (constraints && constraints.maxSize && file.size > constraints.maxSize) {
+			result.valid = false;
+			result.errors.push('File size exceeds maximum allowed (' + formatBytes(constraints.maxSize) + ')');
+		}
+
+		// Check MIME type
+		if (constraints && constraints.allowedTypes && constraints.allowedTypes.length > 0) {
+			const fileType = file.type || '';
+			let typeAllowed = false;
+			
+			for (let i = 0; i < constraints.allowedTypes.length; i++) {
+				if (fileType === constraints.allowedTypes[i] || 
+				    (constraints.allowedTypes[i].indexOf('*') > -1 && fileType.indexOf(constraints.allowedTypes[i].replace('*', '')) === 0)) {
+					typeAllowed = true;
+					break;
+				}
+			}
+			
+			if (!typeAllowed) {
+				result.valid = false;
+				result.errors.push('File type not allowed: ' + fileType);
+			}
+		}
+
+		// Check file extension
+		if (constraints && constraints.allowedExtensions && constraints.allowedExtensions.length > 0) {
+			const fileName = file.name || '';
+			const extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+			
+			if (extension && constraints.allowedExtensions.indexOf(extension) === -1) {
+				result.valid = false;
+				result.errors.push('File extension not allowed: .' + extension);
+			}
+		}
+
+		// Warnings for large files
+		if (file.size > 10 * 1024 * 1024) { // 10MB
+			result.warnings.push('Large file may take time to process');
+		}
+
+		return result;
+	}
+
+	/**
+	 * Add attachment to library with deduplication check.
+	 * 
+	 * @param {Object} attachmentLibrary - Attachment library object
+	 * @param {Object} attachment - Attachment record to add
+	 * @return {string} File ID of the added attachment
+	 */
+	function addToAttachmentLibrary(attachmentLibrary, attachment) {
+		if (!attachmentLibrary || !attachment || !attachment.fileId) {
+			return null;
+		}
+
+		// Check for duplicate by fileId
+		if (attachmentLibrary[attachment.fileId]) {
+			// Already exists, return existing
+			return attachment.fileId;
+		}
+
+		// Add to library
+		attachmentLibrary[attachment.fileId] = attachment;
+
+		return attachment.fileId;
+	}
+
+	/**
+	 * Get attachment from library by file ID.
+	 * 
+	 * @param {Object} attachmentLibrary - Attachment library object
+	 * @param {string} fileId - File identifier
+	 * @return {Object|null} Attachment record or null if not found
+	 */
+	function getFromAttachmentLibrary(attachmentLibrary, fileId) {
+		if (!attachmentLibrary || !fileId) {
+			return null;
+		}
+
+		return attachmentLibrary[fileId] || null;
+	}
+
+	/**
+	 * Remove attachment from library.
+	 * 
+	 * @param {Object} attachmentLibrary - Attachment library object
+	 * @param {string} fileId - File identifier to remove
+	 * @return {boolean} True if removed, false if not found
+	 */
+	function removeFromAttachmentLibrary(attachmentLibrary, fileId) {
+		if (!attachmentLibrary || !fileId) {
+			return false;
+		}
+
+		if (attachmentLibrary[fileId]) {
+			delete attachmentLibrary[fileId];
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Display recording timer in an element.
+	 * Updates the element with elapsed time in MM:SS format.
+	 * 
+	 * @param {Element} element - Element to update with timer
+	 * @param {number} startTime - Recording start timestamp (Date.now())
+	 * @return {Function} Cleanup function to stop the timer
+	 */
+	function displayRecordingTimer(element, startTime) {
+		if (!element || typeof startTime !== 'number') {
+			return function() {};
+		}
+
+		const interval = setInterval(function() {
+			if (!element.parentNode) {
+				// Element removed from DOM, stop timer
+				clearInterval(interval);
+				return;
+			}
+
+			const elapsed = Date.now() - startTime;
+			const totalSeconds = Math.floor(elapsed / 1000);
+			const minutes = Math.floor(totalSeconds / 60);
+			const seconds = totalSeconds % 60;
+			
+			element.textContent = minutes + ':' + String(seconds).padStart(2, '0');
+		}, 1000);
+
+		return function() {
+			clearInterval(interval);
+		};
+	}
+
+	/**
+	 * Toggle a CSS class on a button element.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} className - CSS class name to toggle
+	 * @param {boolean} force - Optional force parameter (true=add, false=remove)
+	 */
+	function toggleButtonClass(button, className, force) {
+		if (!button || !button.classList || !className) {
+			return;
+		}
+
+		if (typeof force === 'boolean') {
+			if (force) {
+				button.classList.add(className);
+			} else {
+				button.classList.remove(className);
+			}
+		} else {
+			button.classList.toggle(className);
+		}
+	}
+
+	/**
+	 * Set button state (enabled/disabled) with optional class toggling.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {Object} options - State options
+	 * @param {boolean} options.disabled - Whether button should be disabled
+	 * @param {boolean} options.hidden - Whether button should be hidden
+	 * @param {string} options.addClass - CSS class to add
+	 * @param {string} options.removeClass - CSS class to remove
+	 */
+	function setButtonState(button, options) {
+		if (!button) {
+			return;
+		}
+
+		const opts = options || {};
+
+		// Set disabled state
+		if (typeof opts.disabled === 'boolean') {
+			button.disabled = opts.disabled;
+		}
+
+		// Set hidden state
+		if (typeof opts.hidden === 'boolean') {
+			button.hidden = opts.hidden;
+		}
+
+		// Add CSS class
+		if (opts.addClass && button.classList) {
+			button.classList.add(opts.addClass);
+		}
+
+		// Remove CSS class
+		if (opts.removeClass && button.classList) {
+			button.classList.remove(opts.removeClass);
+		}
+	}
+
+	/**
+	 * Update button icon/content.
+	 * 
+	 * SECURITY NOTE: This function sets innerHTML on icon elements. The iconHTML parameter
+	 * MUST come from trusted sources only (e.g., predefined icon constants in the codebase).
+	 * Do NOT pass user-provided content to this function.
+	 * 
+	 * This function is designed for updating SVG icons which require HTML parsing.
+	 * For security, it validates against common XSS vectors and logs warnings.
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} iconHTML - HTML content for the icon (must be from trusted source)
+	 * @param {string} selector - Optional selector for icon element within button (defaults to first child)
+	 */
+	function setButtonIcon(button, iconHTML, selector) {
+		if (!button || typeof iconHTML !== 'string') {
+			return;
+		}
+
+		// Security: Validate against common XSS vectors
+		// This is a defense-in-depth measure - developers should only pass trusted constants
+		const lowerHTML = iconHTML.toLowerCase();
+		const dangerousPatterns = [
+			'javascript:',
+			'data:text/html',
+			'vbscript:',
+			'<script',
+			'onerror=',
+			'onload=',
+			'onclick=',
+			'onmouseover='
+		];
+		
+		for (let i = 0; i < dangerousPatterns.length; i++) {
+			if (lowerHTML.indexOf(dangerousPatterns[i]) !== -1) {
+				if (window.console && console.error) {
+					console.error(
+						'[WP oOS] setButtonIcon: Potentially unsafe icon HTML detected and blocked.',
+						{ pattern: dangerousPatterns[i], button: button }
+					);
+				}
+				return;
+			}
+		}
+
+		let iconElement;
+		
+		if (selector) {
+			iconElement = button.querySelector(selector);
+		} else {
+			// Default to first child element
+			iconElement = button.firstElementChild;
+		}
+
+		if (iconElement) {
+			// Note: innerHTML is used here for SVG icons which require HTML parsing.
+			// This is safe when iconHTML comes from trusted sources (predefined constants).
+			// Developers: Ensure iconHTML is never user-provided content.
+			// The validation above provides defense-in-depth protection.
+			iconElement.innerHTML = iconHTML;
+		}
+	}
+
+	/**
+	 * Update button accessibility labels (aria-label and title).
+	 * 
+	 * @param {Element} button - Button element
+	 * @param {string} label - Label text for aria-label and title
+	 */
+	function updateButtonLabel(button, label) {
+		if (!button || typeof label !== 'string') {
+			return;
+		}
+
+		button.setAttribute('aria-label', label);
+		button.setAttribute('title', label);
+	}
+
 	// Export public API
 	window.wpMcpAiChatUIUtils = {
+		// DOM manipulation
 		domUpdateBatcher: domUpdateBatcher,
 		scrollBatcher: scrollBatcher,
+		
+		// Formatting
 		escapeHtml: escapeHtml,
 		formatBytes: formatBytes,
 		formatDuration: formatDuration,
 		formatElapsedTime: formatElapsedTime,
+		
+		// Status management
 		setStatus: setStatus,
-		clearStatus: clearStatus
+		clearStatus: clearStatus,
+		
+		// Button management
+		toggleButtonClass: toggleButtonClass,
+		setButtonState: setButtonState,
+		setButtonIcon: setButtonIcon,
+		updateButtonLabel: updateButtonLabel,
+		
+		// Cross-chat communication
+		broadcastMessage: broadcastMessage,
+		listenToChatEvents: listenToChatEvents,
+		getOtherChatInstances: getOtherChatInstances,
+		copyMessageToClipboard: copyMessageToClipboard,
+		
+		// File management
+		validateAttachment: validateAttachment,
+		addToAttachmentLibrary: addToAttachmentLibrary,
+		getFromAttachmentLibrary: getFromAttachmentLibrary,
+		removeFromAttachmentLibrary: removeFromAttachmentLibrary,
+		displayRecordingTimer: displayRecordingTimer
 	};
 
 })(window);

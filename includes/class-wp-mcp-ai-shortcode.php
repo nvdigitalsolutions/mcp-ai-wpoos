@@ -478,7 +478,11 @@ class WP_MCP_AI_Shortcode {
 
 			$session_key = sanitize_key( $session_key );
 
-			$can_upload_attachments = current_user_can( 'upload_files' );
+			// Allow attachments (including voice chat and transcription) if:
+			// 1. User has upload_files capability, OR
+			// 2. Guest access is enabled for this widget
+			// This ensures that if users have access to the widget, they have access to its built-in tools.
+			$can_upload_attachments = current_user_can( 'upload_files' ) || $allow_guests;
 
 			$assistant_content = get_post_field( 'post_content', $assistant_id );
 			if ( $assistant_content ) {
