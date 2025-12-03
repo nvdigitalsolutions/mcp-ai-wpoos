@@ -8,10 +8,11 @@ This document describes the helper functions available in the `chat-ui-utilities
 
 The transcribe and voice chat buttons require the following:
 
-1. **User Permission**: The current user must have the `upload_files` capability
+1. **User Permission**: The current user must have the `upload_files` capability OR guest access must be enabled
    - This is checked server-side in `WP_MCP_AI_Shortcode::render_shortcode()`
-   - If the user lacks this capability, buttons are rendered with `disabled` and `hidden` attributes
-   - To test: ensure you're logged in as an Administrator or Editor
+   - The logic: `$can_upload_attachments = current_user_can( 'upload_files' ) || $allow_guests;`
+   - If neither condition is met, buttons are rendered with `disabled` and `hidden` attributes
+   - **Fixed**: Previously only checked `upload_files` capability, now also allows if guest access is enabled
 
 2. **Browser Support**: The browser must support:
    - `navigator.mediaDevices.getUserMedia()` for microphone access
@@ -21,6 +22,46 @@ The transcribe and voice chat buttons require the following:
 3. **Microphone Permission**: The user must grant microphone access when prompted
    - This is requested when the user first clicks the transcribe or voice chat button
    - If denied, the button will show an error message
+
+### Tool-to-Tool Execution
+
+**Question: What about if it's tool to tool?**
+
+**Answer**: Tool-to-tool execution in the agentic workflow is designed to work seamlessly:
+
+1. **Context Inheritance**: When tools call other tools during the agentic workflow, they inherit the execution context including:
+   - `endpoint` - The original REST endpoint (e.g., `/chat-client`)
+   - `allow_sensitive_tools` - Permission flag for sensitive operations
+   - `agentic_loop` - Flag indicating execution within agentic workflow
+   - `user_id`, `assistant_id`, `iteration`, etc.
+
+2. **No Restrictions for Upload/Transcription Tools**: 
+   - Upload and transcription tools do NOT use the `WP_MCP_AI_Tool_Restrict_From_Chat_Client` trait
+   - They are freely available for tool-to-tool calls without restrictions
+   - Only sensitive tools like `create_wpcode_snippet` use the restriction trait
+
+3. **Sensitive Tools**: Tools that use the restriction trait check:
+   ```php
+   // From trait-wp-mcp-ai-tool-restrict-from-chat-client.php
+   $allow_sensitive_tools = isset( $context['allow_sensitive_tools'] ) && $context['allow_sensitive_tools'] === true;
+   ```
+   - If `allow_sensitive_tools` is true in the shortcode, it passes through the entire agentic workflow
+   - This means if the assistant is allowed to use sensitive tools, all tools in the chain can use them
+
+4. **Example Workflow**:
+   ```
+   User (chat client) 
+     → Assistant decides to create a video
+       → Calls generate_veo_video tool (not restricted)
+         → Internally may process audio/files (not restricted)
+           → Returns video URL to assistant
+             → Assistant responds to user with video
+   ```
+
+**Best Practice**: If your assistant needs to use tool chains that include sensitive operations, set `allow_sensitive_tools="true"` in the shortcode:
+```php
+[mcp_ai_chat assistant_id="123" allow_sensitive_tools="true"]
+```
 
 ### Troubleshooting
 
