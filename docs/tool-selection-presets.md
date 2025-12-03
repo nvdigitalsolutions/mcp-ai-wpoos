@@ -51,9 +51,9 @@ The preset section appears under the "Disable pre-built prompt shortcuts from se
 **Tools included:**
 - get_rankmath_seo
 - web_search
-- post_facebook_instagram
-- post_linkedin_update
-- get_facebook_instagram_insights
+- post_facebook_instagram *(Pro)*
+- post_linkedin_update *(Pro)*
+- get_facebook_instagram_insights *(Pro)*
 - google_analytics_report
 - create_google_calendar_event
 

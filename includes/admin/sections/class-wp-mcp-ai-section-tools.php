@@ -1468,6 +1468,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>">
 										<td>
 											<strong><?php echo esc_html( $name ); ?></strong>
+											<?php if ( $this->is_pro_tool( $slug ) ) : ?>
+												<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
+												</span>
+											<?php endif; ?>
 										</td>
 										<td>
 											<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
@@ -1566,6 +1571,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Convert slug to title case.
 			$name = str_replace( '_', ' ', $slug );
 			return ucwords( $name );
+		}
+
+		/**
+		 * Check if a tool is a Pro tool.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return bool True if tool is a Pro tool, false otherwise.
+		 */
+		private function is_pro_tool( $slug ) {
+			// List of Pro tool slugs.
+			$pro_tools = array(
+				// Social media publishing tools.
+				'post_facebook_instagram',
+				'post_tiktok_video',
+				'post_linkedin_update',
+				'post_google_business_update',
+				// Social media insights/reporting tools.
+				'get_facebook_instagram_insights',
+				'get_tiktok_insights',
+				'get_linkedin_insights',
+				'get_google_business_insights',
+				// Messaging tools.
+				'send_whatsapp_message',
+			);
+
+			return in_array( $slug, $pro_tools, true );
 		}
 
 		/**
