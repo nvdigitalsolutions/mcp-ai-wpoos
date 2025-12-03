@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the optimization and modernization strategy for `assets/js/chat.js`, the core chat interface component of the WP MCP AI plugin.
+This document outlines the optimization and modernization strategy for `assets/js/chat.js`, the core chat interface component of the WP oOS plugin.
 
 ## Current State Analysis
 

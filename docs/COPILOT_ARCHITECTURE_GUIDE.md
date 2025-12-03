@@ -4654,4 +4654,4 @@ This guide should enable Copilot to:
 
 **Document Version**: 1.0.0  
 **Last Updated**: 2025-11-11  
-**Maintained By**: WP MCP AI Development Team
+**Maintained By**: WP oOS Development Team
