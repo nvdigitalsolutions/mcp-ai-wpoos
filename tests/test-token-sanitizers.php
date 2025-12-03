@@ -1,6 +1,6 @@
 <?php
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-whatsapp-message.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php';
 
 /**
@@ -11,7 +11,7 @@ class WP_MCP_AI_Token_Sanitizer_Test extends WP_UnitTestCase {
 	 * Ensure the WhatsApp token sanitizer only trims whitespace and keeps token characters intact.
 	 */
 	public function test_whatsapp_token_sanitizer_preserves_token_characters() {
-		$tool   = new WP_MCP_AI_Tool_Send_WhatsApp_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_access_token' );
 		$method->setAccessible( true );
 
@@ -25,7 +25,7 @@ class WP_MCP_AI_Token_Sanitizer_Test extends WP_UnitTestCase {
 	 * Ensure the WhatsApp token sanitizer rejects non-scalar inputs.
 	 */
 	public function test_whatsapp_token_sanitizer_rejects_non_scalar_input() {
-		$tool   = new WP_MCP_AI_Tool_Send_WhatsApp_Message();
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_WhatsApp_Message();
 		$method = new ReflectionMethod( $tool, 'sanitize_access_token' );
 		$method->setAccessible( true );
 

@@ -113,34 +113,38 @@ The WP oOS plugin organizes its 65+ tools into 3 high-level categories based on 
 - `open_openai_logs` - API logs
 - `run_openai_external_action` - OpenAI Actions
 
-#### Google/Gemini Tools (8)
+#### Google/Gemini Tools (6)
 - `generate_gemini_image` - Gemini image generation
 - `edit_gemini_image` - Gemini image editing
 - `create_google_calendar_event` - Calendar integration
 - `google_analytics_report` - Analytics data
 - `vision_product_search` - Google Vision API product search
 - `vision_object_localization` - Google Vision API object detection
-- `post_google_business_update` - Google Business Profile
-- `get_google_business_insights` - Google Business analytics
 
-#### Email & Communication (5)
+#### Google/Gemini Tools - Pro (2)
+- `post_google_business_update` - Google Business Profile *(Pro)*
+- `get_google_business_insights` - Google Business analytics *(Pro)*
+
+#### Email & Communication (4)
 - `search_gmail` - Gmail API search
 - `send_mailjet_email` - Mailjet email service
 - `send_telegram_message` - Telegram bot API
 - `schedule_notify_sms` - SMS notifications
-- `send_whatsapp_message` - WhatsApp Business API
 
-#### Social Media Publishing (4)
-- `post_facebook_instagram` - Meta/Facebook API
-- `post_tiktok_video` - TikTok API
-- `post_linkedin_update` - LinkedIn API
-- `post_google_business_update` - Google Business Profile
+#### Email & Communication - Pro (1)
+- `send_whatsapp_message` - WhatsApp Business API *(Pro)*
 
-#### Social Media Analytics (4)
-- `get_facebook_instagram_insights` - Meta/Facebook insights
-- `get_tiktok_insights` - TikTok analytics
-- `get_linkedin_insights` - LinkedIn analytics
-- `get_google_business_insights` - Google Business insights
+#### Social Media Publishing - Pro (4)
+- `post_facebook_instagram` - Meta/Facebook API *(Pro)*
+- `post_tiktok_video` - TikTok API *(Pro)*
+- `post_linkedin_update` - LinkedIn API *(Pro)*
+- `post_google_business_update` - Google Business Profile *(Pro)*
+
+#### Social Media Analytics - Pro (4)
+- `get_facebook_instagram_insights` - Meta/Facebook insights *(Pro)*
+- `get_tiktok_insights` - TikTok analytics *(Pro)*
+- `get_linkedin_insights` - LinkedIn analytics *(Pro)*
+- `get_google_business_insights` - Google Business insights *(Pro)*
 
 #### Web Scraping & External Data (9)
 - `web_search` - Web search API

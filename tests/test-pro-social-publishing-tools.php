@@ -13,7 +13,7 @@ class WP_MCP_AI_Social_Publishing_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'post_facebook_instagram' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Post_Facebook_Instagram::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
@@ -66,7 +66,7 @@ class WP_MCP_AI_Social_Publishing_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'post_tiktok_video' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Post_Tiktok_Video::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Post_Tiktok_Video::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
@@ -194,7 +194,7 @@ class WP_MCP_AI_Social_Publishing_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'post_linkedin_update' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Post_Linkedin_Update::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Post_Linkedin_Update::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 

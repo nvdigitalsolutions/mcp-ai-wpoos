@@ -279,7 +279,7 @@ $assistant_config['tools'] = $profession['default_tools'];
 - **Content Writer**: `['create_post', 'search_content', 'get_elementor_templates', 'save_post']`
 - **E-commerce Manager**: `['get_woo_products', 'get_woo_recent_orders', 'create_woo_product', 'search_content']`
 - **SEO Specialist**: `['get_rankmath_seo', 'search_content', 'save_post', 'get_recent_posts']`
-- **Social Media Manager**: `['post_facebook_instagram', 'post_linkedin_update', 'create_post', 'search_attachments']`
+- **Social Media Manager**: `['post_facebook_instagram', 'post_linkedin_update', 'create_post', 'search_attachments']` *(Requires Pro for social media tools)*
 
 **Tool Selection Best Practices**:
 
