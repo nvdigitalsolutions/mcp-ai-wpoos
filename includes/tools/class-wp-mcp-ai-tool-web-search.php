@@ -19,6 +19,18 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 
 /**
  * Performs lightweight web searches and returns the top results.
+ *
+ * Supports two providers:
+ * - Brave Search API: Uses the Brave Search REST API v1 (https://api.search.brave.com/res/v1/web/search)
+ *   Integration follows patterns from: https://github.com/brave/brave-search-mcp-server
+ * - DuckDuckGo Instant Answer API: Uses the DuckDuckGo public API (https://api.duckduckgo.com/)
+ *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
+ *
+ * Both providers properly handle:
+ * - Asynchronous responses (HTTP 202) with retry-after headers
+ * - Rate limiting and caching to prevent abuse
+ * - Result deduplication to prevent infinite loops
+ * - Security controls (user capabilities, nonces, input sanitization)
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
@@ -203,6 +215,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * Perform a DuckDuckGo Instant Answer search.
 	 *
+	 * Uses the DuckDuckGo Instant Answer API following patterns from the
+	 * duckduckgo-api-haystack reference implementation for proper response parsing
+	 * and error handling.
+	 *
+	 * @link https://github.com/GivAlz/duckduckgo-api-haystack
+	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
 	 *
@@ -321,6 +339,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 	/**
 	 * Perform a Brave Search API lookup.
+	 *
+	 * Uses the Brave Search REST API v1 following patterns from the
+	 * brave-search-mcp-server reference implementation for proper authentication,
+	 * response parsing, and error handling including async (HTTP 202) responses.
+	 *
+	 * @link https://github.com/brave/brave-search-mcp-server
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
