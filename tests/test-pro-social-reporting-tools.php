@@ -13,7 +13,7 @@ class WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'get_facebook_instagram_insights' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
@@ -82,7 +82,7 @@ class WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'get_tiktok_insights' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Get_Tiktok_Insights::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
@@ -213,7 +213,7 @@ class WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'get_linkedin_insights' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Get_Linkedin_Insights::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 

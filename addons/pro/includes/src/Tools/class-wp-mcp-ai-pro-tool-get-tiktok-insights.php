@@ -2,20 +2,30 @@
 /**
  * Tool that retrieves TikTok account insights.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
  * Provides a tool for querying TikTok Open API insight endpoints.
  */
-class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
 	/**
 	 * Default timeout for TikTok API calls.
 	 */
@@ -37,14 +47,14 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Retrieve TikTok Insights', 'wp-mcp-ai' );
+		return __( 'Retrieve TikTok Insights', 'wp-mcp-ai-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Fetches TikTok account performance metrics using the TikTok Open API.', 'wp-mcp-ai' );
+		return __( 'Fetches TikTok account performance metrics using the TikTok Open API.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -56,14 +66,14 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'TikTok Open API access token with insights permissions.', 'wp-mcp-ai' ),
+					'description' => __( 'TikTok Open API access token with insights permissions.', 'wp-mcp-ai-pro' ),
 				),
 				'open_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'The TikTok Open ID representing the target account.', 'wp-mcp-ai' ),
+					'description' => __( 'The TikTok Open ID representing the target account.', 'wp-mcp-ai-pro' ),
 				),
 				'metrics'      => array(
-					'description' => __( 'One or more metric names to request. Comma separated strings are accepted.', 'wp-mcp-ai' ),
+					'description' => __( 'One or more metric names to request. Comma separated strings are accepted.', 'wp-mcp-ai-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -78,15 +88,15 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'start_time'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO 8601 start boundary for the report.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO 8601 start boundary for the report.', 'wp-mcp-ai-pro' ),
 				),
 				'end_time'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO 8601 end boundary for the report.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO 8601 end boundary for the report.', 'wp-mcp-ai-pro' ),
 				),
 				'granularity'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional aggregation granularity (for example, day or hour).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional aggregation granularity (for example, day or hour).', 'wp-mcp-ai-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'open_id', 'metrics' ),
@@ -107,29 +117,29 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 		$required_capability = apply_filters( 'wp_mcp_ai_get_tiktok_insights_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_insights_forbidden', __( 'You do not have permission to request TikTok insights.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_insights_forbidden', __( 'You do not have permission to request TikTok insights.', 'wp-mcp-ai-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_token', __( 'A TikTok access token is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_token', __( 'A TikTok access token is required.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$open_id = isset( $arguments['open_id'] ) ? $this->sanitize_open_id( $arguments['open_id'] ) : '';
 
 		if ( '' === $open_id ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_open_id', __( 'A valid Open ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_open_id', __( 'A valid Open ID is required.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$metrics = $this->normalise_metrics( isset( $arguments['metrics'] ) ? $arguments['metrics'] : array() );
 
 		if ( empty( $metrics ) ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$start_time  = isset( $arguments['start_time'] ) ? $this->sanitize_time( $arguments['start_time'] ) : '';
@@ -179,7 +189,7 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 
 			return new WP_Error(
 				'wp_mcp_ai_tiktok_insights_http_error',
-				__( 'The TikTok insights request failed to send.', 'wp-mcp-ai' ),
+				__( 'The TikTok insights request failed to send.', 'wp-mcp-ai-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -193,7 +203,7 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( 200 !== $code || empty( $decoded['data'] ) ) {
-			$message = __( 'TikTok insights API returned an error.', 'wp-mcp-ai' );
+			$message = __( 'TikTok insights API returned an error.', 'wp-mcp-ai-pro' );
 
 			if ( ! empty( $decoded['message'] ) ) {
 				$message = $decoded['message'];

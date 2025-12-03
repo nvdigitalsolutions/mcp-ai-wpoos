@@ -2,20 +2,30 @@
 /**
  * Tool that retrieves insights for Facebook Pages and Instagram business accounts.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
  * Provides a tool for querying Meta Graph API insights endpoints.
  */
-class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
 	/**
 	 * Graph API version used for requests.
 	 */
@@ -37,14 +47,14 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Retrieve Meta Social Insights', 'wp-mcp-ai' );
+		return __( 'Retrieve Meta Social Insights', 'wp-mcp-ai-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Fetches insights for Facebook Pages or Instagram business accounts using the Meta Graph API.', 'wp-mcp-ai' );
+		return __( 'Fetches insights for Facebook Pages or Instagram business accounts using the Meta Graph API.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -57,18 +67,18 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 				'platform'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'facebook', 'instagram' ),
-					'description' => __( 'Target platform for the insights request.', 'wp-mcp-ai' ),
+					'description' => __( 'Target platform for the insights request.', 'wp-mcp-ai-pro' ),
 				),
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'Meta Graph API access token with insights permissions.', 'wp-mcp-ai' ),
+					'description' => __( 'Meta Graph API access token with insights permissions.', 'wp-mcp-ai-pro' ),
 				),
 				'target_id'    => array(
 					'type'        => 'string',
-					'description' => __( 'Facebook Page ID or Instagram business account ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Facebook Page ID or Instagram business account ID.', 'wp-mcp-ai-pro' ),
 				),
 				'metrics'      => array(
-					'description' => __( 'One or more insight metric names. Comma separated strings are accepted.', 'wp-mcp-ai' ),
+					'description' => __( 'One or more insight metric names. Comma separated strings are accepted.', 'wp-mcp-ai-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -83,15 +93,15 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 				),
 				'period'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional aggregation period such as day, week or month.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional aggregation period such as day, week or month.', 'wp-mcp-ai-pro' ),
 				),
 				'since'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO 8601 or Unix timestamp start boundary.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO 8601 or Unix timestamp start boundary.', 'wp-mcp-ai-pro' ),
 				),
 				'until'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO 8601 or Unix timestamp end boundary.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO 8601 or Unix timestamp end boundary.', 'wp-mcp-ai-pro' ),
 				),
 			),
 			'required'             => array( 'platform', 'access_token', 'target_id', 'metrics' ),
@@ -112,35 +122,35 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 		$required_capability = apply_filters( 'wp_mcp_ai_get_meta_insights_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_forbidden', __( 'You do not have permission to request social insights.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_forbidden', __( 'You do not have permission to request social insights.', 'wp-mcp-ai-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$platform = isset( $arguments['platform'] ) ? sanitize_key( $arguments['platform'] ) : '';
 
 		if ( ! in_array( $platform, array( 'facebook', 'instagram' ), true ) ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_invalid_platform', __( 'A valid target platform must be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_invalid_platform', __( 'A valid target platform must be provided.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_token', __( 'An access token is required to request insights.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_token', __( 'An access token is required to request insights.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$target_id = isset( $arguments['target_id'] ) ? $this->sanitize_target_id( $arguments['target_id'] ) : '';
 
 		if ( '' === $target_id ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_target', __( 'A valid target identifier is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_target', __( 'A valid target identifier is required.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$metrics = $this->normalise_metrics( isset( $arguments['metrics'] ) ? $arguments['metrics'] : array() );
 
 		if ( empty( $metrics ) ) {
-			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_meta_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$period = isset( $arguments['period'] ) ? $this->sanitize_period( $arguments['period'] ) : '';
@@ -190,7 +200,7 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 
 			return new WP_Error(
 				'wp_mcp_ai_meta_insights_http_error',
-				__( 'The Meta insights request failed to send.', 'wp-mcp-ai' ),
+				__( 'The Meta insights request failed to send.', 'wp-mcp-ai-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -204,7 +214,7 @@ class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_I
 		}
 
 		if ( 200 !== $code || empty( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
-			$message = __( 'Meta insights API returned an error.', 'wp-mcp-ai' );
+			$message = __( 'Meta insights API returned an error.', 'wp-mcp-ai-pro' );
 
 			if ( ! empty( $decoded['error']['message'] ) ) {
 				$message = $decoded['error']['message'];

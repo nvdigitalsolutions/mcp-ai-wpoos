@@ -2,20 +2,30 @@
 /**
  * Tool that retrieves Google Business Profile insights.
  *
- * @package WP_MCP_AI
+ * @package WP_MCP_AI_Pro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
  * Provides a tool for querying Google Business Profile insights.
  */
-class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
 	/**
 	 * Default timeout for Google Business API calls.
 	 */
@@ -37,14 +47,14 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Retrieve Google Business Insights', 'wp-mcp-ai' );
+		return __( 'Retrieve Google Business Insights', 'wp-mcp-ai-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Fetches performance metrics for a Google Business Profile location.', 'wp-mcp-ai' );
+		return __( 'Fetches performance metrics for a Google Business Profile location.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -56,14 +66,14 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 			'properties'           => array(
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'OAuth access token with Business Profile insights scope.', 'wp-mcp-ai' ),
+					'description' => __( 'OAuth access token with Business Profile insights scope.', 'wp-mcp-ai-pro' ),
 				),
 				'location'     => array(
 					'type'        => 'string',
-					'description' => __( 'The location resource name, e.g. accounts/123/locations/456.', 'wp-mcp-ai' ),
+					'description' => __( 'The location resource name, e.g. accounts/123/locations/456.', 'wp-mcp-ai-pro' ),
 				),
 				'metrics'      => array(
-					'description' => __( 'One or more metric identifiers such as BUSINESS_IMPRESSIONS_SEARCH.', 'wp-mcp-ai' ),
+					'description' => __( 'One or more metric identifiers such as BUSINESS_IMPRESSIONS_SEARCH.', 'wp-mcp-ai-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -78,15 +88,15 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 				),
 				'start_time'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional RFC3339 start time for the requested range.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional RFC3339 start time for the requested range.', 'wp-mcp-ai-pro' ),
 				),
 				'end_time'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional RFC3339 end time for the requested range.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional RFC3339 end time for the requested range.', 'wp-mcp-ai-pro' ),
 				),
 				'time_zone'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional IANA time zone used for the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional IANA time zone used for the request.', 'wp-mcp-ai-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'location', 'metrics' ),
@@ -107,29 +117,29 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 		$required_capability = apply_filters( 'wp_mcp_ai_get_google_business_insights_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_insights_forbidden', __( 'You do not have permission to request Google Business insights.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_insights_forbidden', __( 'You do not have permission to request Google Business insights.', 'wp-mcp-ai-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_token', __( 'An OAuth access token is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_token', __( 'An OAuth access token is required.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$location = isset( $arguments['location'] ) ? $this->sanitize_location_name( $arguments['location'] ) : '';
 
 		if ( '' === $location ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_location', __( 'A valid location resource name is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_location', __( 'A valid location resource name is required.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$metrics = $this->normalise_metrics( isset( $arguments['metrics'] ) ? $arguments['metrics'] : array() );
 
 		if ( empty( $metrics ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_insights_missing_metrics', __( 'At least one insight metric must be requested.', 'wp-mcp-ai-pro' ) );
 		}
 
 		$start_time = isset( $arguments['start_time'] ) ? $this->sanitize_time( $arguments['start_time'] ) : '';
@@ -195,7 +205,7 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 
 			return new WP_Error(
 				'wp_mcp_ai_google_business_insights_http_error',
-				__( 'The Google Business insights request failed to send.', 'wp-mcp-ai' ),
+				__( 'The Google Business insights request failed to send.', 'wp-mcp-ai-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -209,7 +219,7 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 		}
 
 		if ( 200 !== $code ) {
-			$message = __( 'Google Business insights API returned an error.', 'wp-mcp-ai' );
+			$message = __( 'Google Business insights API returned an error.', 'wp-mcp-ai-pro' );
 
 			if ( ! empty( $decoded['error']['message'] ) ) {
 				$message = $decoded['error']['message'];
