@@ -78,7 +78,7 @@
 			return fetch(url, {
 				method: 'GET',
 				headers: headers,
-				credentials: 'same-origin',
+				credentials: 'omit',
 			})
 				.then(function (response) {
 					if (!response.ok) {
