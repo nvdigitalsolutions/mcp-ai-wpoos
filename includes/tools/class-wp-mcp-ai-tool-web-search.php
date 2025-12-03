@@ -19,6 +19,18 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 
 /**
  * Performs lightweight web searches and returns the top results.
+ *
+ * Supports two providers:
+ * - Brave Search API: Uses the Brave Search REST API v1 (https://api.search.brave.com/res/v1/web/search)
+ *   Integration follows patterns from: https://github.com/brave/brave-search-mcp-server
+ * - DuckDuckGo Instant Answer API: Uses the DuckDuckGo public API (https://api.duckduckgo.com/)
+ *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
+ *
+ * Both providers properly handle:
+ * - Asynchronous responses (HTTP 202) with retry-after headers
+ * - Rate limiting and caching to prevent abuse
+ * - Result deduplication to prevent infinite loops
+ * - Security controls (user capabilities, nonces, input sanitization)
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
@@ -201,7 +213,58 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Handle HTTP 202 (Accepted) response - search is being processed asynchronously.
+	 *
+	 * @param array $response The HTTP response array from wp_remote_get.
+	 * @return WP_Error Error object with pending status and retry information.
+	 */
+	protected function handle_pending_response( $response ) {
+		// Validate response is an array before proceeding.
+		if ( ! is_array( $response ) ) {
+			// Return error without retry_after if response is invalid.
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__(
+					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+					'wp-mcp-ai'
+				),
+				array(
+					'status'       => 202,
+					'is_pending'   => true,
+					'should_wait'  => false,
+					'retry_after'  => null,
+				)
+			);
+		}
+
+		// Extract retry-after header if present.
+		// wp_remote_retrieve_header returns empty string when header is not found, not null.
+		// Note: retry_after is kept as string to match HTTP header format and test expectations.
+		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+
+		return new WP_Error(
+			'wp_mcp_ai_search_pending',
+			__(
+				'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
+				'wp-mcp-ai'
+			),
+			array(
+				'status'       => 202,
+				'is_pending'   => true,
+				'should_wait'  => false,
+				'retry_after'  => '' !== $retry_after ? (string) $retry_after : null,
+			)
+		);
+	}
+
+	/**
 	 * Perform a DuckDuckGo Instant Answer search.
+	 *
+	 * Uses the DuckDuckGo Instant Answer API following patterns from the
+	 * duckduckgo-api-haystack reference implementation for proper response parsing
+	 * and error handling.
+	 *
+	 * @link https://github.com/GivAlz/duckduckgo-api-haystack
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
@@ -239,8 +302,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
-		if ( 200 !== $status_code && 202 !== $status_code ) {
+		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
+		if ( 202 === $status_code ) {
+			return $this->handle_pending_response( $response );
+		}
+
+		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
@@ -305,6 +372,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * Perform a Brave Search API lookup.
 	 *
+	 * Uses the Brave Search REST API v1 following patterns from the
+	 * brave-search-mcp-server reference implementation for proper authentication,
+	 * response parsing, and error handling including async (HTTP 202) responses.
+	 *
+	 * @link https://github.com/brave/brave-search-mcp-server
+	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
 	 * @param array  $settings    Cached plugin settings.
@@ -348,8 +421,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
-		if ( 200 !== $status_code && 202 !== $status_code ) {
+		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
+		if ( 202 === $status_code ) {
+			return $this->handle_pending_response( $response );
+		}
+
+		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
