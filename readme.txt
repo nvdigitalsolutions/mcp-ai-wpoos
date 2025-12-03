@@ -9,17 +9,20 @@ Stable tag: 1.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-A powerful AI Assistant framework for WordPress with 74+ built-in tools, supporting OpenAI, Gemini, and Ollama models.
+AI Assistant framework for WordPress with 35+ core tools, supporting OpenAI, Gemini, and Ollama. Optional third-party integrations available.
 
 == Description ==
 
 **WP Open Operator System (WP oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
+The plugin works standalone with 35+ core tools and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
+
 = Why WP oOS? =
 
 Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** designed for modern WordPress sites:
 
-* **74+ Built-in Tools** - Content management, media generation, research, site operations, and more
+* **35+ Core Tools** - Content management, media generation, research, site operations (base version)
+* **65+ Tools with Integrations** - Add WooCommerce, JetEngine, Elementor for advanced features (full version)
 * **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
@@ -40,7 +43,7 @@ Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** 
 * LM Studio integration with function calling support
 * Automatic provider fallback for maximum uptime
 
-**74+ Built-in Tools Including:**
+**35+ Core Tools (Base Version):**
 * **Content Tools** - Search posts, save drafts, manage attachments
 * **Media Generation** - OpenAI images, Gemini images, text-to-speech
 * **Research Tools** - Web search, weather, disaster alerts

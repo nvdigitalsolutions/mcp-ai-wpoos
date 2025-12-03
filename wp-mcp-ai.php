@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Open Operator System
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
+ * Description: AI Assistant framework for WordPress with OpenAI, Gemini, and Ollama integration. Includes 35+ core tools with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor).
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
