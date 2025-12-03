@@ -17,7 +17,8 @@
 
 ### Getting Started
 - [🧩 Overview](#-overview)
-- [🎯 Mission](#-mission-modernizing-small-to-medium-business-websites)
+- [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
+- [🛡️ Active Security Monitoring](#%EF%B8%8F-active-security-monitoring)
 - [🏗 System Architecture](#system-architecture)
 - [🚀 Features](#features)
 - [📦 Installation](#installation)
