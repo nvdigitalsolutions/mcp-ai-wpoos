@@ -320,6 +320,16 @@ class WP_MCP_AI_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array();
+		return array(
+			'read-only',            // For list and get actions.
+			'write',                // For create action.
+			'state-changing',       // Creates, starts, stops, and deletes codespaces.
+			'requires-credentials', // Requires GitHub OAuth authentication.
+			'requires-capability',  // Requires appropriate user capabilities.
+			'external-api',         // Makes external API calls to GitHub.
+			'network-dependent',    // Requires internet connectivity.
+			'long-running',         // Codespace creation can take time.
+			'consumes-tokens',      // GitHub Codespaces may incur costs.
+		);
 	}
 }

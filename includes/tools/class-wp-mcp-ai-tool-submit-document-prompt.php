@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 /**
  * Provides a tool for forwarding an attachment and prompt to the model.
  */
-class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -416,5 +416,19 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface 
 		}
 
 		return '';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-capability', // Requires upload_files capability for attachments.
+			'requires-credentials', // Requires AI provider API credentials.
+			'external-api',        // Makes external API calls to AI providers.
+			'consumes-tokens',     // Uses AI model tokens/credits.
+			'model-dependent',     // Behavior depends on AI model capabilities.
+			'large-response',      // Document analysis can produce lengthy responses.
+		);
 	}
 }
