@@ -95,6 +95,7 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 
 /**
  * Manually load the plugin being tested.
