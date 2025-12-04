@@ -130,6 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					}
 					?>
 				</div>
+				<?php $this->render_pro_banner(); ?>
 			</div>
 			<?php
 		}
@@ -1329,6 +1330,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
 				<?php endif; ?>
 				<?php $this->render(); ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Pro addon promotional banner for base version.
+		 */
+		private function render_pro_banner() {
+			if ( ! wp_mcp_ai_is_base_version() ) {
+				return;
+			}
+			?>
+			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
+				<p style="margin: 0 0 10px 0; font-size: 14px;">
+					<strong><?php esc_html_e( 'Site Creator is a Premium Feature', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<p style="margin: 0 0 10px 0;">
+					<?php
+					echo wp_kses_post(
+						__(
+							'Site Creator tools enable AI assistants to automatically install themes, plugins, update options, and create content. This powerful feature is available in the Pro addon.',
+							'wp-mcp-ai'
+						)
+					);
+					?>
+				</p>
+				<p style="margin: 0;">
+					<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button button-primary" style="margin-right: 10px;">
+						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
+					</a>
+					<a href="https://nvdigital.solutions/wp-oos-pro/#site-creator" target="_blank" class="button">
+						<?php esc_html_e( 'Learn More About Site Creator', 'wp-mcp-ai' ); ?>
+					</a>
+				</p>
 			</div>
 			<?php
 		}
