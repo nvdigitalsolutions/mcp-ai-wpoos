@@ -401,6 +401,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
 
