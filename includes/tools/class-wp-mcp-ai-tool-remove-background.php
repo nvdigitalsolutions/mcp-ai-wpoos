@@ -78,7 +78,11 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
@@ -347,7 +351,10 @@ PYTHON;
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Sanitize the tool result for LLM consumption.
+	 *
+	 * @param array|WP_Error $result The result to sanitize.
+	 * @return array Sanitized result.
 	 */
 	public function sanitize_for_llm( $result ) {
 		// If result is an error, return sanitized error.

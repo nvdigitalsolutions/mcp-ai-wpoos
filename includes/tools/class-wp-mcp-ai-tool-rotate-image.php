@@ -71,7 +71,11 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
