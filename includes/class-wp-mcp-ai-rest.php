@@ -8246,8 +8246,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
 					// Check if this is a pending status (e.g., HTTP 202 from web search)
-					// rather than a hard error. Pending statuses should be returned as-is
-					// without the "execution failed" prefix since they're informational.
+					// rather than a hard error. Pending statuses should be handled differently
+					// to allow the LLM to gracefully respond using alternative sources.
 					$error_data   = $result->get_error_data();
 					$is_pending   = is_array( $error_data ) && ! empty( $error_data['is_pending'] );
 					$error_code   = $result->get_error_code();
@@ -8257,9 +8257,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// provide helpful error message instead of returning WP_Error object
 					// which would break the conversation flow.
 					if ( ! empty( $context['agentic_loop'] ) ) {
-						// For pending statuses, return just the message without "execution failed" prefix
+						// For pending statuses, return an informational message that guides the LLM
+						// to use alternative sources rather than treating it as a hard failure.
+						// This prevents the LLM from telling users "the search isn't working."
 						if ( $is_pending ) {
-							return $result->get_error_message();
+							return __( 'This information source is temporarily unavailable. Please use your general knowledge and other available information to assist the user.', 'wp-mcp-ai' );
 						}
 
 						return sprintf(
