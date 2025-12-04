@@ -877,13 +877,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<td>
 						<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 10px 0;">
 							<p style="margin: 0 0 10px 0; font-size: 14px;">
-								<strong><?php esc_html_e( 'Site Creator is a Premium Feature', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'Get Wp oOS Pro for Premium Feature', 'wp-mcp-ai' ); ?></strong>
 							</p>
 							<p style="margin: 0 0 10px 0;">
 								<?php
 								echo wp_kses_post(
 									__(
-										'Site Creator tools enable AI assistants to automatically install themes, plugins, update options, and create content. This powerful feature is available in the Pro addon.',
+										'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful feature available in the Pro addon.',
 										'wp-mcp-ai'
 									)
 								);
@@ -894,7 +894,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
 								</a>
 								<a href="https://nvdigital.solutions/wp-oos-pro/#site-creator" target="_blank" class="button">
-									<?php esc_html_e( 'Learn More About Site Creator', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
 								</a>
 							</p>
 						</div>
@@ -1930,13 +1930,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Site Creator is a Premium Feature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get Wp oOS Pro for Premium Feature', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
 					echo wp_kses_post(
 						__(
-							'Site Creator tools enable AI assistants to automatically install themes, plugins, update options, and create content. This powerful feature is available in the Pro addon.',
+							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful feature available in the Pro addon.',
 							'wp-mcp-ai'
 						)
 					);
@@ -1947,7 +1947,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
 					</a>
 					<a href="https://nvdigital.solutions/wp-oos-pro/#site-creator" target="_blank" class="button">
-						<?php esc_html_e( 'Learn More About Site Creator', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
 					</a>
 				</p>
 			</div>
