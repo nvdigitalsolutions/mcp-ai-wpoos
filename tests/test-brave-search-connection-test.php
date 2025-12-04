@@ -54,13 +54,13 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 
 		// Start output buffering.
 		ob_start();
-		
+
 		// Simulate being on the brave_search connection page.
 		$_GET['connection'] = 'brave_search';
-		
+
 		// Render the section.
 		$section->render_wrapper();
-		
+
 		$output = ob_get_clean();
 
 		// Check that the test button is present.
@@ -107,13 +107,13 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 
 		// Start output buffering.
 		ob_start();
-		
+
 		// Simulate being on the brave_search connection page.
 		$_GET['connection'] = 'brave_search';
-		
+
 		// Render the section.
 		$section->render_wrapper();
-		
+
 		$output = ob_get_clean();
 
 		// Check that the test button is present.
