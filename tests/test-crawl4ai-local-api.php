@@ -371,17 +371,22 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 
 		add_filter( 'pre_http_request', $filter, 10, 3 );
 
-		// Create multiple tasks.
+		// Create multiple tasks and manually set different timestamps.
 		$task_ids = array();
 		for ( $i = 1; $i <= 5; $i++ ) {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
 			$request->set_header( 'Content-Type', 'application/json' );
 			$request->set_body( wp_json_encode( array( 'urls' => array( "https://example.com/page{$i}" ) ) ) );
-			$response     = rest_get_server()->dispatch( $request );
-			$data         = $response->get_data();
-			$task_ids[]   = $data['task_id'];
-			// Small delay to ensure different stored_at timestamps.
-			sleep( 1 );
+			$response = rest_get_server()->dispatch( $request );
+			$data     = $response->get_data();
+			$task_id  = $data['task_id'];
+
+			// Manually update the stored_at timestamp to ensure different ordering.
+			$cached_result                = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( $task_id );
+			$cached_result['stored_at']   = gmdate( 'Y-m-d H:i:s', time() - ( 10 - $i ) );
+			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $cached_result );
+
+			$task_ids[] = $task_id;
 		}
 
 		remove_filter( 'pre_http_request', $filter, 10 );
@@ -392,7 +397,7 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 		$this->assertIsArray( $jobs );
 		$this->assertCount( 5, $jobs );
 
-		// Verify first job is the most recent.
+		// Verify first job is the most recent (highest index).
 		$this->assertSame( $task_ids[4], $jobs[0]['id'] );
 
 		// Verify jobs have expected fields.
