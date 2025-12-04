@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error(
 				'wp_mcp_ai_search_pending',
 				__(
-					'The web search service is still processing your request after multiple attempts. Please try using alternative information sources or retry your search in a few moments.',
+					'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
 					'wp-mcp-ai'
 				),
 				array(
@@ -246,16 +246,16 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Note: retry_after is kept as string to match HTTP header format and test expectations.
 		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 
-		// Build a more informative message
+		// Build an informative message that maintains backward compatibility with tests
 		$message = __(
-			'The web search service is still processing your request after multiple attempts. Please try using alternative information sources or retry your search in a few moments.',
+			'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
 			'wp-mcp-ai'
 		);
 
 		if ( '' !== $retry_after ) {
 			$message = sprintf(
 				/* translators: %s: number of seconds to wait before retrying */
-				__( 'The web search service is still processing your request after multiple attempts. The service suggests waiting %s seconds before retrying, or you can try using alternative information sources.', 'wp-mcp-ai' ),
+				__( 'The web search service is temporarily processing your request. The service suggests waiting %s seconds before retrying, or you can try alternative information sources.', 'wp-mcp-ai' ),
 				$retry_after
 			);
 		}
@@ -645,9 +645,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					$delay = min( $delay, 5 );
 				}
 
-				// Sleep before next retry
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- Intentional sleep for retry logic
-				sleep( $delay );
+				// Sleep before next retry (unless disabled for testing)
+				/**
+				 * Filter whether to sleep between retry attempts.
+				 *
+				 * Set to false in tests to avoid delays.
+				 *
+				 * @param bool $should_sleep Whether to sleep (default: true).
+				 */
+				$should_sleep = apply_filters( 'wp_mcp_ai_web_search_retry_sleep', true );
+				if ( $should_sleep ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- Intentional sleep for retry logic
+					sleep( $delay );
+				}
 
 				$attempt++;
 				continue;

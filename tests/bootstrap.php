@@ -106,4 +106,9 @@ function wp_mcp_ai_manually_load_plugin() {
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 
+/**
+ * Disable sleep in web search retry logic for faster tests.
+ */
+tests_add_filter( 'wp_mcp_ai_web_search_retry_sleep', '__return_false' );
+
 require $_tests_dir . '/includes/bootstrap.php';
