@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: WP MCP AI Pro
+ * Plugin Name: WP oOS Pro
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
  * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more.
  * Version: 1.0.0
@@ -12,8 +12,6 @@
  * Text Domain: wp-mcp-ai-pro
  * Domain Path: /languages
  * Network: true
- *
- * Requires Plugins: wp-mcp-ai-core
  *
  * @package WP_MCP_AI_Pro
  *
@@ -82,8 +80,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
 	 */
 	function wp_mcp_ai_pro_missing_core_notice() {
 		$message = sprintf(
-			'<strong>WP MCP AI Pro</strong> requires <strong>WP MCP AI Core</strong> to be installed and activated. Please <a href="%s">install and activate WP MCP AI Core</a> first.',
-			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) )
+			'<strong>WP oOS Pro</strong> requires either <strong>WP MCP AI Core</strong> or <strong>WP Open Operator System</strong> to be installed and activated. Please <a href="%s">install WP MCP AI Core</a> or <a href="%s">WP Open Operator System</a> first.',
+			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) ),
+			esc_url( admin_url( 'plugin-install.php?s=wp-open-operator-system&tab=search&type=term' ) )
 		);
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',
@@ -100,7 +99,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
-	 * Initialize WP MCP AI Pro.
+	 * Initialize WP oOS Pro.
 	 *
 	 * Called after Core has initialized. Registers Pro tools and features.
 	 *
@@ -133,7 +132,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		add_filter( 'wp_mcp_ai_tool_categories', 'wp_mcp_ai_pro_tool_categories', 20 );
 
 		/**
-		 * Fires after WP MCP AI Pro has completed initialization.
+		 * Fires after WP oOS Pro has completed initialization.
 		 *
 		 * @since 1.0.0
 		 */
@@ -500,7 +499,7 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) {
 		// Deactivate self and show error.
 		deactivate_plugins( plugin_basename( WP_MCP_AI_PRO_FILE ) );
 		wp_die(
-			esc_html__( 'WP MCP AI Pro requires WP MCP AI Core to be installed and activated first.', 'wp-mcp-ai-pro' ),
+			esc_html__( 'WP oOS Pro requires WP MCP AI Core to be installed and activated first.', 'wp-mcp-ai-pro' ),
 			esc_html__( 'Plugin Activation Error', 'wp-mcp-ai-pro' ),
 			array( 'back_link' => true )
 		);

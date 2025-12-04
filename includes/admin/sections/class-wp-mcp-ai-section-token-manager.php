@@ -1357,10 +1357,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					?>
 				</p>
 				<p style="margin: 0;">
-					<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
 						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
 					</a>
-					<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
 						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
 					</a>
 				</p>
