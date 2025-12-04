@@ -48,6 +48,16 @@ class WP_MCP_AI_Chat_Service {
 	const ASYNC_WAIT_TIME_BUFFER = 60;
 
 	/**
+	 * Message sent to LLM when a tool returns a pending/unavailable status.
+	 *
+	 * This message guides the LLM to use alternative information sources
+	 * rather than treating temporary unavailability as a hard failure.
+	 *
+	 * @var string
+	 */
+	const PENDING_TOOL_MESSAGE = 'This information source is temporarily unavailable. Please use your general knowledge and other available information to assist the user.';
+
+	/**
 	 * Progress logging frequency for async tool waiting (every N polls)
 	 *
 	 * @var int
@@ -519,7 +529,7 @@ class WP_MCP_AI_Chat_Service {
 					$result_content = wp_json_encode(
 						array(
 							'status'  => 'unavailable',
-							'message' => __( 'This information source is temporarily unavailable. Please use your general knowledge and other available information to assist the user.', 'wp-mcp-ai' ),
+							'message' => self::PENDING_TOOL_MESSAGE,
 							'note'    => $tool_result->get_error_message(),
 						)
 					);

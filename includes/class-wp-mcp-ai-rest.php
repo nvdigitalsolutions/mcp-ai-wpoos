@@ -8261,7 +8261,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						// to use alternative sources rather than treating it as a hard failure.
 						// This prevents the LLM from telling users "the search isn't working."
 						if ( $is_pending ) {
-							return __( 'This information source is temporarily unavailable. Please use your general knowledge and other available information to assist the user.', 'wp-mcp-ai' );
+							// Load chat service class to access the constant.
+							if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
+								require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
+							}
+							return WP_MCP_AI_Chat_Service::PENDING_TOOL_MESSAGE;
 						}
 
 						return sprintf(
