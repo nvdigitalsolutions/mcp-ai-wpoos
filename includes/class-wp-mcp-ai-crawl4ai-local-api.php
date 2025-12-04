@@ -414,19 +414,13 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					continue;
 				}
 
-				// Extract task_id from the stored data or generate from option_name.
+				// Extract task_id from the stored data.
 				$task_id = isset( $value['task_id'] ) ? $value['task_id'] : '';
 
 				if ( empty( $task_id ) ) {
-					// Try to derive task_id from the option name if not stored.
-					$option_name = $row->option_name;
-					if ( is_multisite() ) {
-						$option_name = str_replace( '_site_transient_', '', $option_name );
-					} else {
-						$option_name = str_replace( '_transient_', '', $option_name );
-					}
-					// The option name format is: prefix + [blog_id_] + hash
-					// We can't reliably reverse the hash, so we'll use the option name.
+					// Task was stored without task_id (shouldn't happen but be defensive).
+					// We can't reliably reverse the MD5 hash in the option name to get the original task_id.
+					// Skip tasks without task_id to avoid returning incomplete data.
 					continue;
 				}
 
