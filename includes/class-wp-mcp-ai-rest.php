@@ -6190,6 +6190,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					break;
 				}
 
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHP XMLReader API property.
 				switch ( $reader->nodeType ) {
 					case XMLReader::ELEMENT:
 						switch ( $reader->name ) {

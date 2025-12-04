@@ -138,9 +138,11 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 					$update_data = isset( $plugin->update ) && is_object( $plugin->update ) ? $plugin->update : $plugin;
 
 					$plugin_updates[] = array(
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WordPress core plugin object properties.
 						'name'            => isset( $plugin->Name ) ? $plugin->Name : ( isset( $update_data->name ) ? $update_data->name : $plugin_file ),
 						'slug'            => isset( $plugin->slug ) ? $plugin->slug : ( isset( $update_data->slug ) ? $update_data->slug : '' ),
 						'plugin_file'     => $plugin_file,
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WordPress core plugin object properties.
 						'current_version' => isset( $plugin->Version ) ? $plugin->Version : ( isset( $plugin->version ) ? $plugin->version : '' ),
 						'new_version'     => isset( $plugin->new_version ) ? $plugin->new_version : ( isset( $update_data->new_version ) ? $update_data->new_version : '' ),
 						'homepage'        => isset( $plugin->url ) ? $plugin->url : ( isset( $update_data->url ) ? $update_data->url : '' ),
@@ -165,6 +167,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 						'name'            => isset( $theme->display_name ) ? $theme->display_name : ( isset( $update_data->name ) ? $update_data->name : $stylesheet ),
 						'slug'            => isset( $theme->theme ) ? $theme->theme : $stylesheet,
 						'stylesheet'      => $stylesheet,
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WordPress core theme object properties.
 						'current_version' => isset( $theme->Version ) ? $theme->Version : ( isset( $theme->version ) ? $theme->version : '' ),
 						'new_version'     => isset( $update_data->new_version ) ? $update_data->new_version : '',
 						'homepage'        => isset( $update_data->url ) ? $update_data->url : '',

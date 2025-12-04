@@ -669,6 +669,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 					$links[] = array(
 						'url'   => esc_url_raw( $href ),
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHP DOM API property.
 						'label' => $this->normalise_text( $anchor->textContent ),
 					);
 				}
