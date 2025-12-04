@@ -137,6 +137,19 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		}
 
 		/**
+		 * Log an encryption event safely.
+		 *
+		 * @param string $type    Event type.
+		 * @param string $message Event message.
+		 * @param array  $context Event context.
+		 */
+		private static function log_event( $type, $message, $context = array() ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( $type, $message, $context );
+			}
+		}
+
+		/**
 		 * Rotate the master encryption key and re-encrypt all secrets.
 		 *
 		 * This function handles the rotation of the master encryption key, re-encrypting
@@ -168,7 +181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				// No secrets to rotate, just update the key.
 				update_option( self::MASTER_KEY_OPTION, $new_key, false );
 
-				WP_MCP_AI_Logger::log_event(
+				self::log_event(
 					'master_key_rotated',
 					'Master encryption key rotated successfully (no secrets to re-encrypt)',
 					array( 'secret_count' => 0 )
@@ -266,7 +279,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			// Clear any caches.
 			wp_cache_flush();
 
-			WP_MCP_AI_Logger::log_event(
+			self::log_event(
 				'master_key_rotated',
 				'Master encryption key rotated successfully',
 				array(
@@ -325,13 +338,13 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				$log_data['rollback_failures'] = $rollback_failures;
 				$log_data['failure_count']     = count( $rollback_failures );
 
-				WP_MCP_AI_Logger::log_event(
+				self::log_event(
 					'master_key_rotation_rollback',
 					'Master key rotation failed and was partially rolled back with errors',
 					$log_data
 				);
 			} else {
-				WP_MCP_AI_Logger::log_event(
+				self::log_event(
 					'master_key_rotation_rollback',
 					'Master key rotation failed and was rolled back successfully',
 					$log_data
