@@ -216,6 +216,67 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Get profession role presets for common use cases.
+		 *
+		 * Returns arrays of profession IDs that should be auto-assigned to assistants
+		 * created with specific presets. Includes safety guardrails by default.
+		 *
+		 * @todo Integrate with UI preset buttons in assistant builder.
+		 * @todo Add role-specific profession IDs to each preset category.
+		 *
+		 * @return array Array of presets with name, description, and profession_ids.
+		 */
+		protected function get_profession_role_presets() {
+			// Get safety guardrail profession IDs (always included).
+			$safety_guardrails = self::get_safety_guardrail_profession_ids();
+
+			$presets = array(
+				'content_writing'     => array(
+					'name'           => __( 'Content Writing', 'wp-mcp-ai' ),
+					'description'    => __( 'Roles for content creation with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'ecommerce'           => array(
+					'name'           => __( 'E-commerce Support', 'wp-mcp-ai' ),
+					'description'    => __( 'E-commerce roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'site_management'     => array(
+					'name'           => __( 'Site Management', 'wp-mcp-ai' ),
+					'description'    => __( 'Site administration roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'seo_marketing'       => array(
+					'name'           => __( 'SEO & Marketing', 'wp-mcp-ai' ),
+					'description'    => __( 'Marketing roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'development'         => array(
+					'name'           => __( 'Development', 'wp-mcp-ai' ),
+					'description'    => __( 'Development roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'data_analytics'      => array(
+					'name'           => __( 'Data & Analytics', 'wp-mcp-ai' ),
+					'description'    => __( 'Data and analytics roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+				'design_professional' => array(
+					'name'           => __( 'Design Professional', 'wp-mcp-ai' ),
+					'description'    => __( 'Design roles with safety guardrails', 'wp-mcp-ai' ),
+					'profession_ids' => $safety_guardrails,
+				),
+			);
+
+			/**
+			 * Filter the profession role presets.
+			 *
+			 * @param array $presets Array of presets with name, description, and profession_ids.
+			 */
+			return apply_filters( 'wp_mcp_ai_profession_role_presets', $presets );
+		}
+
+		/**
 		 * Render tool selection preset buttons.
 		 *
 		 * @param array $selected_tools Currently selected tool slugs.
@@ -3707,6 +3768,38 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$prompt .= implode( "\n\n---\n\n", $prompt_parts );
 
 			return $prompt;
+		}
+
+		/**
+		 * Get safety guardrail profession IDs.
+		 *
+		 * Retrieves profession post IDs for the safety guardrails category.
+		 * These roles provide cross-cutting safety and compliance guardrails.
+		 *
+		 * @return array Array of profession post IDs.
+		 */
+		public static function get_safety_guardrail_profession_ids() {
+			// Query for professions in the safety-guardrails category.
+			$args = array(
+				'post_type'      => 'mcp_ai_profession',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'meta_query'     => array(
+					array(
+						'key'   => '_wp_mcp_ai_profession_category',
+						'value' => 'safety',
+					),
+				),
+				'fields'         => 'ids',
+			);
+
+			$profession_ids = get_posts( $args );
+
+			if ( empty( $profession_ids ) || ! is_array( $profession_ids ) ) {
+				return array();
+			}
+
+			return array_map( 'absint', $profession_ids );
 		}
 
 		/**

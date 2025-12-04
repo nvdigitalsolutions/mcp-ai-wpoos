@@ -497,6 +497,24 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $tools );
 		}
 
+		// Automatically add safety guardrail profession roles to the assistant.
+		// This ensures all assistants inherit baseline safety and compliance guidance.
+		// Merges with any existing primary roles to avoid overwriting user selections.
+		if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$safety_guardrails = WP_MCP_AI_Assistant_CPT::get_safety_guardrail_profession_ids();
+			if ( ! empty( $safety_guardrails ) ) {
+				// Get any existing primary roles (e.g., from profession templates).
+				$existing_roles = get_post_meta( $assistant_id, '_wp_mcp_ai_primary_roles', true );
+				if ( ! is_array( $existing_roles ) ) {
+					$existing_roles = array();
+				}
+
+				// Merge safety guardrails with existing roles, ensuring safety guardrails come first.
+				$merged_roles = array_unique( array_merge( $safety_guardrails, $existing_roles ) );
+				update_post_meta( $assistant_id, '_wp_mcp_ai_primary_roles', $merged_roles );
+			}
+		}
+
 		// Collect all document IDs (from generated docs and user-provided attachments).
 		$all_document_ids = array();
 
