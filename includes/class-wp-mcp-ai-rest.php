@@ -8245,10 +8245,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
+					// Check if this is a pending status (e.g., HTTP 202 from web search)
+					// rather than a hard error. Pending statuses should be returned as-is
+					// without the "execution failed" prefix since they're informational.
+					$error_data   = $result->get_error_data();
+					$is_pending   = is_array( $error_data ) && ! empty( $error_data['is_pending'] );
+					$error_code   = $result->get_error_code();
+					$is_pending   = $is_pending || 'wp_mcp_ai_search_pending' === $error_code;
+
 					// In agentic loop, if sync execution failed and tool supports async,
 					// provide helpful error message instead of returning WP_Error object
 					// which would break the conversation flow.
 					if ( ! empty( $context['agentic_loop'] ) ) {
+						// For pending statuses, return just the message without "execution failed" prefix
+						if ( $is_pending ) {
+							return $result->get_error_message();
+						}
+
 						return sprintf(
 							/* translators: 1: tool name, 2: error message */
 							__( 'Tool "%1$s" execution failed: %2$s', 'wp-mcp-ai' ),
