@@ -26,6 +26,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_fetch_lm_studio_models',
 		'wp_ajax_wp_mcp_ai_fetch_cloudways_data',
 		'wp_ajax_wp_mcp_ai_test_cloudflare_connection',
+		'wp_ajax_wp_mcp_ai_test_brave_search_connection',
 		'wp_ajax_wp_mcp_ai_reset_user_token_usage',
 		'wp_ajax_wp_mcp_ai_reset_all_token_usage',
 		'wp_ajax_wp_mcp_ai_save_tool_limits',
