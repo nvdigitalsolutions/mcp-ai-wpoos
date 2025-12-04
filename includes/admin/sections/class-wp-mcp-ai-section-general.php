@@ -258,9 +258,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'max_history_messages', 'request_timeout' ),
 				),
-				'data'           => array(
-					'id'     => 'data',
-					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
+				'logs'           => array(
+					'id'     => 'logs',
+					'label'  => __( 'Log Management', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-database',
 					'fields' => array(
 						'enable_logging',
@@ -376,8 +376,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				}
 			}
 
-			// Render logging table if we're on the data management sub-tab.
-			if ( 'data' === $active_subtab ) {
+			// Render logging table if we're on the log management sub-tab.
+			if ( 'logs' === $active_subtab ) {
 				echo '</table>'; // Close the form table.
 				$this->render_logging_table();
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
