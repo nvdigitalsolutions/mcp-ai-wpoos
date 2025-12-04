@@ -15,7 +15,7 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 	/**
 	 * Test that saving General → custom_filters doesn't affect other subtabs.
 	 */
-	public function test_general_custom_filters_doesnt_affect_data_subtab() {
+	public function test_general_custom_filters_doesnt_affect_logs_subtab() {
 		$section = new WP_MCP_AI_Section_General();
 
 		// Simulate saving custom_filters subtab with filter values.
@@ -34,7 +34,7 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'filter_default_light_model', $sanitized );
 		$this->assertEquals( 'gpt-4o-mini', $sanitized['filter_default_light_model'] );
 
-		// Verify data subtab fields (checkboxes) are NOT included.
+		// Verify logs subtab fields (checkboxes) are NOT included.
 		// If they were, they'd all be false, which would clear logging settings.
 		$this->assertArrayNotHasKey( 'enable_logging', $sanitized );
 		$this->assertArrayNotHasKey( 'enable_extended_logging', $sanitized );
@@ -45,13 +45,13 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that saving General → data doesn't affect custom_filters subtab.
+	 * Test that saving General → logs doesn't affect custom_filters subtab.
 	 */
-	public function test_general_data_doesnt_affect_custom_filters_subtab() {
+	public function test_general_logs_doesnt_affect_custom_filters_subtab() {
 		$section = new WP_MCP_AI_Section_General();
 
-		// Simulate saving data subtab with logging checkboxes.
-		$_POST['subtab'] = 'data';
+		// Simulate saving logs subtab with logging checkboxes.
+		$_POST['subtab'] = 'logs';
 		$submitted       = array(
 			'enable_logging'                  => '1',
 			'enable_extended_logging'         => '0',
