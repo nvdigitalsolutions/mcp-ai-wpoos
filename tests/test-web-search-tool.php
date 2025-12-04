@@ -626,4 +626,61 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Call count should still be 1 (cached result, no second API call).
 		$this->assertSame( 1, $call_count );
 	}
+
+	/**
+	 * Verify that web search executes synchronously without internal retries.
+	 * When receiving HTTP 202, it should return immediately without sleep() calls.
+	 */
+	public function test_execute_returns_202_immediately_without_retry() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$request_count = 0;
+		$start_time    = microtime( true );
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( &$request_count ) {
+			++$request_count;
+			return array(
+				'response' => array(
+					'code' => 202,
+				),
+				'headers'  => array(
+					'retry-after' => '5',
+				),
+				'body'     => '',
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'query' => 'test synchronous execution',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		$elapsed_time = microtime( true ) - $start_time;
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		// Should receive WP_Error with pending status
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
+
+		// Should only make ONE request (no retries)
+		$this->assertSame( 1, $request_count, 'Should only make one HTTP request without retries' );
+
+		// Should return immediately without sleeping (elapsed time should be under 1 second)
+		$this->assertLessThan( 1.0, $elapsed_time, 'Should return immediately without sleep() delays' );
+
+		// Verify retry_after is passed through for orchestration layer
+		$data = $result->get_error_data();
+		$this->assertIsArray( $data );
+		$this->assertSame( '5', $data['retry_after'] );
+	}
 }
