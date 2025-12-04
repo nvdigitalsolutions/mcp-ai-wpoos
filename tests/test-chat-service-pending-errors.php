@@ -11,6 +11,31 @@
 class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 
 	/**
+	 * Tool registry instance.
+	 *
+	 * @var WP_MCP_AI_Tool_Registry
+	 */
+	protected $registry;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Load required classes if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
+		}
+
+		// Create a fresh registry for each test.
+		$this->registry = new WP_MCP_AI_Tool_Registry();
+	}
+
+	/**
 	 * Test that pending errors are converted to informational results for the LLM.
 	 *
 	 * When a tool returns a WP_Error with is_pending=true, the chat service should
@@ -55,19 +80,10 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		};
 
 		// Register the mock tool.
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
-		}
-		$registry = new WP_MCP_AI_Tool_Registry();
-		$registry->register_tool( $mock_tool );
-
-		// Create chat service with our registry.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
-		}
+		$this->registry->register_tool( $mock_tool );
 
 		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $registry );
+		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
 		$reflection = new ReflectionClass( $service );
 		$method     = $reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );
@@ -164,19 +180,10 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		};
 
 		// Register the mock tool.
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
-		}
-		$registry = new WP_MCP_AI_Tool_Registry();
-		$registry->register_tool( $mock_tool );
-
-		// Create chat service with our registry.
-		if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
-		}
+		$this->registry->register_tool( $mock_tool );
 
 		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $registry );
+		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
 		$reflection = new ReflectionClass( $service );
 		$method     = $reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );

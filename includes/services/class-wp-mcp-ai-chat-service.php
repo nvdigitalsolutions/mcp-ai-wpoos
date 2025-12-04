@@ -513,7 +513,7 @@ class WP_MCP_AI_Chat_Service {
 				$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] ) && true === $error_data['is_pending'];
 
 				if ( $is_pending ) {
-					// Convert pending error to a informational result for the LLM.
+					// Convert pending error to an informational result for the LLM.
 					// This allows the LLM to gracefully handle temporary unavailability
 					// by using alternative information sources or general knowledge.
 					$result_content = wp_json_encode(
