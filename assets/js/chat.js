@@ -7139,6 +7139,85 @@
     }
 
     /**
+     * Check if a result object has the structure of a web search response.
+     * 
+     * Web search responses have a 'query' string, a 'results' array, and a 'provider' string.
+     * 
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a web search response
+     */
+    function isWebSearchStructure(result) {
+        return result && 
+               typeof result === 'object' &&
+               typeof result.query === 'string' &&
+               Array.isArray(result.results) &&
+               typeof result.provider === 'string';
+    }
+
+    /**
+     * Extract web search summary from web_search tool result.
+     * 
+     * Formats the search results into a readable summary with links.
+     * Example: "Found 3 results for 'example query' (via DuckDuckGo)" with clickable links
+     * 
+     * @param {Object} result - Tool result object with query, results, and provider properties
+     * @return {Object|null} Object with text and attachments (links) or null if structure is invalid
+     */
+    function extractWebSearchSummary(result) {
+        if (!isWebSearchStructure(result)) {
+            return null;
+        }
+
+        const query = result.query || '';
+        const results = result.results || [];
+        const provider = result.provider || 'search engine';
+        const resultCount = results.length;
+
+        let text = '';
+        const links = [];
+
+        // Build summary text
+        if (resultCount === 0) {
+            if (result.note && typeof result.note === 'string') {
+                text = result.note;
+            } else {
+                text = 'No web search results found for "' + query + '"';
+            }
+        } else {
+            // Format provider name nicely
+            let providerName = provider;
+            if (provider === 'duckduckgo') {
+                providerName = 'DuckDuckGo';
+            } else if (provider === 'brave') {
+                providerName = 'Brave Search';
+            }
+            
+            text = 'Found ' + resultCount + ' result' + (resultCount !== 1 ? 's' : '') + 
+                   ' for "' + query + '" (via ' + providerName + ')';
+
+            // Add top results as links
+            results.forEach(function(item, index) {
+                if (item && typeof item.url === 'string' && item.url.trim()) {
+                    const linkLabel = item.title && typeof item.title === 'string' && item.title.trim() 
+                        ? item.title.trim() 
+                        : 'Result ' + (index + 1);
+                    
+                    links.push({
+                        url: item.url.trim(),
+                        label: linkLabel,
+                        snippet: item.snippet && typeof item.snippet === 'string' ? item.snippet.trim() : ''
+                    });
+                }
+            });
+        }
+
+        return {
+            text: text,
+            links: links
+        };
+    }
+
+    /**
      * Extract displayable content from generic tool responses that don't have downloadable assets.
      * Looks for common fields like message, text, links, IDs, and status information.
      *
@@ -7201,6 +7280,23 @@
             const environmentText = extractEnvironmentStatusSummary(result);
             if (environmentText) {
                 text = environmentText;
+            }
+        } else if (isWebSearchStructure(result)) {
+            // Handle web_search tool result structure with query, results array, and provider
+            const webSearchData = extractWebSearchSummary(result);
+            if (webSearchData) {
+                text = webSearchData.text;
+                // Add search result links to the links array
+                if (webSearchData.links && Array.isArray(webSearchData.links)) {
+                    webSearchData.links.forEach(function(link) {
+                        links.push({
+                            url: link.url,
+                            label: link.label,
+                            type: 'search_result',
+                            snippet: link.snippet || ''
+                        });
+                    });
+                }
             }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
