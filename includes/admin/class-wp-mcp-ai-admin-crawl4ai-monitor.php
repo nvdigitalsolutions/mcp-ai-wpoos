@@ -99,9 +99,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		// Get statistics from Crawl4AI API if available.
 		if ( class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			try {
-				$api = new WP_MCP_AI_Crawl4AI_Local_API();
-				// TODO: Implement API calls to get actual statistics
-				// For now, return empty stats.
+				$stats = WP_MCP_AI_Crawl4AI_Local_API::get_statistics();
 			} catch ( Exception $e ) {
 				// Log error but continue with empty stats.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -127,9 +125,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		// Get jobs from Crawl4AI API if available.
 		if ( class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			try {
-				$api = new WP_MCP_AI_Crawl4AI_Local_API();
-				// TODO: Implement API calls to get job history
-				// For now, return empty array.
+				$jobs = WP_MCP_AI_Crawl4AI_Local_API::get_recent_jobs( array( 'limit' => 50 ) );
 			} catch ( Exception $e ) {
 				// Log error but continue with empty jobs.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
