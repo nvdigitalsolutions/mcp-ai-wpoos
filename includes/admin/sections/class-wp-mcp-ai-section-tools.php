@@ -354,57 +354,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - show but disable fields in base version.
+			// Site Creator is a Pro feature - show promotional notice in base version.
 			$is_base_version = wp_mcp_ai_is_base_version();
-			$pro_notice      = $is_base_version ? ' ' . __( '<strong>(Requires Pro addon)</strong>', 'wp-mcp-ai' ) : '';
 
 			$fields['enable_site_creator']                     = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
-				'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 			$fields['site_creator_allow_plugin_install']       = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 			$fields['site_creator_allow_theme_install']        = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 			$fields['site_creator_allow_option_updates']       = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 			$fields['site_creator_allow_wp_cli_tools']         = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 			$fields['site_creator_allow_elementor_kit_import'] = array(
 				'type'           => 'checkbox',
 				'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
 				'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ) . $pro_notice,
+				'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
 				'default'        => false,
-				'disabled'       => $is_base_version,
 			);
 
 			return $fields;
