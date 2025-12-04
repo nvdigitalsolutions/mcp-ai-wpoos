@@ -2,7 +2,7 @@
 
 This document tracks code quality issues that need manual review or cannot be automatically fixed.
 
-**Last Updated:** December 3, 2025 (Post-CodeSniffer cleanup)
+**Last Updated:** December 4, 2025 (External API property phpcs:ignore comments added)
 
 > **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
 
@@ -18,16 +18,16 @@ See [CODESNIFFER_CLEANUP_SUMMARY.md](CODESNIFFER_CLEANUP_SUMMARY.md) for complet
 ## Variable Naming Convention Issues
 
 ### External Library Properties
-Some errors are from external library object properties (e.g., DOMNode, plugin headers) that cannot be renamed as they come from WordPress core or PHP extensions:
+**Status:** ✅ **RESOLVED**
 
-**Files Affected:**
-- `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164) - WordPress plugin header properties (`$plugin->Name`, `$plugin->Version`)
-- `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452) - DOM API property (`$anchor->textContent`)
-- `includes/class-wp-mcp-ai-rest.php` (line 4716) - DOM API property (`$reader->nodeType`)
+All external library object properties now have proper phpcs:ignore comments with explanations:
 
-**Status:** ⚠️ **STILL AN ISSUE**
+**Files Fixed:**
+- ✅ `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 141, 144, 169) - WordPress plugin/theme header properties (`$plugin->Name`, `$plugin->Version`, `$theme->Version`)
+- ✅ `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 672) - DOM API property (`$anchor->textContent`)
+- ✅ `includes/class-wp-mcp-ai-rest.php` (line 6193) - DOM API property (`$reader->nodeType`)
 
-**Action Required:** Add phpcs:ignore comments with explanations for external API requirements. These properties cannot be renamed as they come from WordPress core or PHP DOM extensions.
+**Action Taken:** Added phpcs:ignore comments with explanations for external API requirements. These properties cannot be renamed as they come from WordPress core or PHP DOM extensions.
 
 ### Internal Variable Naming
 **Status:** ✅ **RESOLVED**
@@ -97,7 +97,7 @@ Some violations are intentional or required by external APIs:
 ## Summary of Current Issues
 
 ### High Priority (Remaining)
-- [ ] Add phpcs:ignore comments for external API properties in 3 files (30-40 minutes)
+- ~~Add phpcs:ignore comments for external API properties in 3 files~~ ✅ COMPLETED (December 4, 2025)
 
 ### Medium Priority (Remaining)
 - [ ] Add missing parameter documentation to ~60 files with execute() methods (4-6 hours)
@@ -121,13 +121,11 @@ Some violations are intentional or required by external APIs:
 - [x] Add @package tags to tests/bootstrap.php
 - [x] Add @package tags to tests/wp-tests-config.php
 - [x] Add @package tags to tests/test-jetengine-assistants-cct.php
+- [x] Add phpcs:ignore comments for external API properties (December 4, 2025)
 
 ## Recommendations
 
-1. **Add phpcs:ignore selectively** for external API properties with explanation in:
-   - `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164)
-   - `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452)
-   - `includes/class-wp-mcp-ai-rest.php` (line 4716)
+1. ~~**Add phpcs:ignore selectively** for external API properties with explanation~~ ✅ COMPLETED (December 4, 2025)
 
 2. ~~**Refactor internal variables** to use snake_case consistently~~ ✅ COMPLETED
 
