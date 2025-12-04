@@ -251,6 +251,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$placeholder  = isset( $field['placeholder'] ) ? $field['placeholder'] : '';
 			$required     = isset( $field['required'] ) ? $field['required'] : false;
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
+			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 
 			?>
 			<tr>
@@ -322,6 +323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 									name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 									value="1"
 									<?php checked( $value, true ); ?>
+									<?php disabled( $disabled ); ?>
 								/>
 								<?php echo isset( $field['checkbox_label'] ) ? esc_html( $field['checkbox_label'] ) : ''; ?>
 							</label>
