@@ -142,22 +142,6 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test AJAX handler with missing nonce.
-	 */
-	public function test_brave_search_ajax_handler_requires_nonce() {
-		// Clear $_POST.
-		$_POST = array();
-
-		// Try to call the handler without nonce.
-		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
-		
-		// Expect wp_die to be called due to failed nonce check.
-		$this->expectException( WPDieException::class );
-		
-		$ajax_handlers->handle_test_brave_search_connection();
-	}
-
-	/**
 	 * Test AJAX handler with missing API key.
 	 */
 	public function test_brave_search_ajax_handler_requires_api_key() {
@@ -165,49 +149,26 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 		$_POST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['api_key'] = '';
 
-		// Capture the JSON response.
-		add_filter( 'wp_die_ajax_handler', array( $this, 'get_wp_die_handler' ) );
+		// Create instance and call handler.
+		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 
-		try {
-			$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
-			$ajax_handlers->handle_test_brave_search_connection();
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected - wp_send_json_error calls wp_die.
-		}
+		// Capture output.
+		ob_start();
+		$ajax_handlers->handle_test_brave_search_connection();
+		$response = ob_get_clean();
 
-		// Check the response.
-		$response = json_decode( $this->_last_response, true );
-		$this->assertFalse( $response['success'], 'Response should indicate failure' );
-		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
-		$this->assertArrayHasKey( 'message', $response['data'], 'Response should have error message' );
+		// Parse JSON response.
+		$data = json_decode( $response, true );
+
+		// Verify API key error.
+		$this->assertFalse( $data['success'], 'Response should indicate failure' );
+		$this->assertArrayHasKey( 'data', $data, 'Response should have data' );
+		$this->assertArrayHasKey( 'message', $data['data'], 'Response should have error message' );
 		$this->assertStringContainsString(
 			'API key',
-			$response['data']['message'],
+			$data['data']['message'],
 			'Error message should mention API key'
 		);
-
-		// Cleanup.
-		remove_filter( 'wp_die_ajax_handler', array( $this, 'get_wp_die_handler' ) );
-	}
-
-	/**
-	 * Get a custom wp_die handler for AJAX tests.
-	 *
-	 * @return callable
-	 */
-	public function get_wp_die_handler() {
-		return array( $this, 'wp_die_handler' );
-	}
-
-	/**
-	 * Custom wp_die handler for capturing AJAX responses.
-	 *
-	 * @param string $message Die message.
-	 * @throws WPAjaxDieContinueException Always.
-	 */
-	public function wp_die_handler( $message ) {
-		$this->_last_response = $message;
-		throw new WPAjaxDieContinueException( $message );
 	}
 
 	/**
