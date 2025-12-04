@@ -526,10 +526,11 @@ class WP_MCP_AI_Chat_Service {
 					// Convert pending error to an informational result for the LLM.
 					// This allows the LLM to gracefully handle temporary unavailability
 					// by using alternative information sources or general knowledge.
-					// Status is "success" (not "unavailable") to prevent LLM from reporting tool failure.
+					// Status is "processing" to accurately represent pending state while
+					// preventing LLM from reporting this as a tool failure.
 					$result_content = wp_json_encode(
 						array(
-							'status'  => 'success',
+							'status'  => 'processing',
 							'message' => self::PENDING_TOOL_MESSAGE,
 							'note'    => $tool_result->get_error_message(),
 						)
