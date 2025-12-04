@@ -1344,13 +1344,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get Wp oOS Pro for Premium Feature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get WP oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
 					echo wp_kses_post(
 						__(
-							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful feature available in the Pro addon.',
+							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
 							'wp-mcp-ai'
 						)
 					);
