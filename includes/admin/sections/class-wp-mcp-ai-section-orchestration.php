@@ -1052,7 +1052,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Render Pro addon promotional banner for base version.
 		 */
 		private function render_pro_banner() {
-			if ( ! wp_mcp_ai_is_base_version() ) {
+			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				return;
 			}
 			?>
