@@ -111,14 +111,14 @@ class WP_MCP_AI_Crawler {
 		$base_url = isset( $job_args['base_url'] ) ? esc_url_raw( (string) $job_args['base_url'] ) : '';
 
 		$job = array(
-			'task_id'    => $task_id,
-			'base_url'   => $base_url,
-			'status'     => isset( $job_args['status'] ) ? sanitize_key( $job_args['status'] ) : 'completed',
-			'created_at' => time(),
-			'updated_at' => time(),
-			'arguments'  => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
-			'context'    => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
-			'completed'  => true, // Flag to indicate no polling needed
+			'task_id'       => $task_id,
+			'base_url'      => $base_url,
+			'status'        => isset( $job_args['status'] ) ? sanitize_key( $job_args['status'] ) : 'completed',
+			'created_at'    => time(),
+			'updated_at'    => time(),
+			'arguments'     => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
+			'context'       => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
+			'skip_polling'  => true, // Flag to indicate no polling needed
 		);
 
 		if ( isset( $job_args['raw_response'] ) ) {
@@ -133,11 +133,17 @@ class WP_MCP_AI_Crawler {
 			$result            = $job_args['result'];
 			$result['task_id'] = $task_id;
 
+			// Store when this job was registered for tracking purposes
+			// This is kept separate from crawl metadata to avoid confusion
 			if ( ! isset( $result['metadata'] ) || ! is_array( $result['metadata'] ) ) {
 				$result['metadata'] = array();
 			}
 
-			$result['metadata']['tracked_at'] = current_time( 'mysql', true );
+			if ( ! isset( $result['metadata']['tracking'] ) || ! is_array( $result['metadata']['tracking'] ) ) {
+				$result['metadata']['tracking'] = array();
+			}
+
+			$result['metadata']['tracking']['registered_at'] = current_time( 'mysql', true );
 
 			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $result );
 		}
@@ -194,7 +200,7 @@ class WP_MCP_AI_Crawler {
 		}
 
 		// Skip polling for jobs marked as completed
-		if ( ! empty( $job['completed'] ) ) {
+		if ( ! empty( $job['skip_polling'] ) ) {
 			return;
 		}
 

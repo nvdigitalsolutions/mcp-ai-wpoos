@@ -64,7 +64,8 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 		$cached = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( 'sync-task-123' );
 		$this->assertIsArray( $cached );
 		$this->assertSame( 'completed', $cached['status'] );
-		$this->assertArrayHasKey( 'tracked_at', $cached['metadata'] );
+		$this->assertArrayHasKey( 'tracking', $cached['metadata'] );
+		$this->assertArrayHasKey( 'registered_at', $cached['metadata']['tracking'] );
 
 		// Verify job was registered with the manager
 		$job_status = WP_MCP_AI_Crawler::get_job_status( 'sync-task-123' );
@@ -106,7 +107,8 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 		$cached = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( $task_id );
 		$this->assertIsArray( $cached );
 		$this->assertSame( 'completed', $cached['status'] );
-		$this->assertArrayHasKey( 'tracked_at', $cached['metadata'] );
+		$this->assertArrayHasKey( 'tracking', $cached['metadata'] );
+		$this->assertArrayHasKey( 'registered_at', $cached['metadata']['tracking'] );
 
 		// Verify job was registered with the manager
 		$job_status = WP_MCP_AI_Crawler::get_job_status( $task_id );

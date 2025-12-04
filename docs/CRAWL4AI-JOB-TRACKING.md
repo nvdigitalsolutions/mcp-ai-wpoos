@@ -25,7 +25,7 @@ public static function register_completed_job( $task_id, array $job_args )
 **Features:**
 - Saves job metadata to transients for tracking
 - Caches results via `WP_MCP_AI_Crawl4AI_Local_API::cache_task_result()`
-- Marks jobs with `'completed' => true` flag to prevent polling
+- Marks jobs with `'skip_polling' => true` flag to prevent polling
 - Triggers `wp_mcp_ai_crawl4ai_job_registered` action hook
 - Optional `base_url` parameter (empty string for local jobs)
 
@@ -144,18 +144,20 @@ Comprehensive test coverage added in `tests/crawler/test-crawl4ai-all-jobs-track
 
 ### Task ID Generation
 
-Local jobs use URL-safe alphanumeric task IDs:
+Local jobs use URL-safe alphanumeric task IDs with timestamps for better uniqueness:
 
 ```php
 protected function generate_task_id() {
-    // Generate a unique ID with only alphanumeric characters (URL-safe)
-    $unique = wp_generate_password( 12, false, false );
-    return 'local-' . strtolower( $unique );
+    // Generate a unique ID with timestamp and random component for better uniqueness
+    $timestamp = time();
+    $random    = wp_generate_password( 8, false, false );
+    
+    return 'local-' . $timestamp . '-' . strtolower( $random );
 }
 ```
 
-Format: `local-{12 lowercase alphanumeric chars}`  
-Example: `local-a1b2c3d4e5f6`
+Format: `local-{timestamp}-{8 lowercase alphanumeric chars}`  
+Example: `local-1701709200-a1b2c3d4`
 
 ### Storage
 
@@ -167,13 +169,13 @@ Jobs are stored in WordPress transients with a 24-hour TTL:
 
 ### Metadata
 
-Completed jobs include tracking metadata:
+Completed jobs include tracking metadata in a separate namespace to avoid mixing with crawl data:
 
 ```php
-$result['metadata']['tracked_at'] = current_time( 'mysql', true );
+$result['metadata']['tracking']['registered_at'] = current_time( 'mysql', true );
 ```
 
-This timestamp indicates when the job was registered with the tracker.
+This timestamp indicates when the job was registered with the tracker, stored under `metadata.tracking.registered_at` to keep tracking data separate from crawl results.
 
 ## Backward Compatibility
 
