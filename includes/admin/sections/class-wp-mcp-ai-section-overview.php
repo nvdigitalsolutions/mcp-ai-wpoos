@@ -153,6 +153,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				</div>
 			</div>
 
+			<?php $this->render_pro_banner(); ?>
+
 			<style>
 				.wp-mcp-ai-overview-dashboard {
 					max-width: 1200px;
@@ -452,5 +454,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		public function validate( $input ) {
 			return true;
 		}
+
+	/**
+	 * Render Pro addon promotional banner for base version.
+	 */
+	private function render_pro_banner() {
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return;
+		}
+		?>
+		<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
+			<p style="margin: 0 0 10px 0; font-size: 14px;">
+				<strong><?php esc_html_e( 'Get WP oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+			</p>
+			<p style="margin: 0 0 10px 0;">
+				<?php
+				echo wp_kses_post(
+					__(
+						'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
+						'wp-mcp-ai'
+					)
+				);
+				?>
+			</p>
+			<p style="margin: 0;">
+				<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
+				</a>
+				<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button">
+					<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
+	}
 	}
 }
