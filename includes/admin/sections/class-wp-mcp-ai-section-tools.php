@@ -354,51 +354,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - only add fields in full version.
-			if ( ! wp_mcp_ai_is_base_version() ) {
-				$fields['enable_site_creator']                     = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-				$fields['site_creator_allow_plugin_install']       = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-				$fields['site_creator_allow_theme_install']        = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-				$fields['site_creator_allow_option_updates']       = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-				$fields['site_creator_allow_wp_cli_tools']         = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-				$fields['site_creator_allow_elementor_kit_import'] = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
-					'default'        => false,
-				);
-			}
+			// Site Creator is a Pro feature - show promotional notice in base version.
+			$is_base_version = wp_mcp_ai_is_base_version();
+
+			$fields['enable_site_creator']                     = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
+				'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
+			$fields['site_creator_allow_plugin_install']       = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
+				'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
+			$fields['site_creator_allow_theme_install']        = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
+				'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
+			$fields['site_creator_allow_option_updates']       = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
+				'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
+			$fields['site_creator_allow_wp_cli_tools']         = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
+				'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
+			$fields['site_creator_allow_elementor_kit_import'] = array(
+				'type'           => 'checkbox',
+				'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
+				'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
+				'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
+				'default'        => false,
+			);
 
 			return $fields;
 		}
@@ -479,15 +479,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - only show in full version.
-			if ( ! wp_mcp_ai_is_base_version() ) {
-				$subtab_groups['site_creator'] = array(
-					'id'     => 'site_creator',
-					'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
-					'icon'   => 'dashicons-admin-site',
-					'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
-				);
-			}
+			// Site Creator is a Pro feature - always show tab.
+			$subtab_groups['site_creator'] = array(
+				'id'     => 'site_creator',
+				'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
+				'icon'   => 'dashicons-admin-site',
+				'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
+			);
 
 			return $subtab_groups;
 		}
@@ -871,34 +869,66 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render Site Creator footer content.
 		 */
 		private function render_site_creator_footer() {
+			$is_base_version = wp_mcp_ai_is_base_version();
 			?>
-			<tr>
-				<th scope="row"></th>
-				<td>
-					<p class="description">
-						<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
-						<?php
-						echo wp_kses_post(
-							__(
-								'Site creator tools require administrative capabilities (manage_options, install_plugins, install_themes). Only users with these capabilities can execute site creator operations. All plugins and themes are installed exclusively from the official WordPress.org repository.',
-								'wp-mcp-ai'
-							)
-						);
-						?>
-					</p>
-					<p class="description">
-						<strong><?php esc_html_e( 'Performance Consideration:', 'wp-mcp-ai' ); ?></strong>
-						<?php
-						echo wp_kses_post(
-							__(
-								'Site creation operations (especially plugin/theme installation) can take several minutes to complete and may temporarily impact site performance. These operations are marked as long-running and should be executed with appropriate timeouts.',
-								'wp-mcp-ai'
-							)
-						);
-						?>
-					</p>
-				</td>
-			</tr>
+			<?php if ( $is_base_version ) : ?>
+				<tr>
+					<th scope="row"></th>
+					<td>
+						<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 10px 0;">
+							<p style="margin: 0 0 10px 0; font-size: 14px;">
+								<strong><?php esc_html_e( 'Site Creator is a Premium Feature', 'wp-mcp-ai' ); ?></strong>
+							</p>
+							<p style="margin: 0 0 10px 0;">
+								<?php
+								echo wp_kses_post(
+									__(
+										'Site Creator tools enable AI assistants to automatically install themes, plugins, update options, and create content. This powerful feature is available in the Pro addon.',
+										'wp-mcp-ai'
+									)
+								);
+								?>
+							</p>
+							<p style="margin: 0;">
+								<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button button-primary" style="margin-right: 10px;">
+									<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
+								</a>
+								<a href="https://nvdigital.solutions/wp-oos-pro/#site-creator" target="_blank" class="button">
+									<?php esc_html_e( 'Learn More About Site Creator', 'wp-mcp-ai' ); ?>
+								</a>
+							</p>
+						</div>
+					</td>
+				</tr>
+			<?php else : ?>
+				<tr>
+					<th scope="row"></th>
+					<td>
+						<p class="description">
+							<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+							<?php
+							echo wp_kses_post(
+								__(
+									'Site creator tools require administrative capabilities (manage_options, install_plugins, install_themes). Only users with these capabilities can execute site creator operations. All plugins and themes are installed exclusively from the official WordPress.org repository.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Performance Consideration:', 'wp-mcp-ai' ); ?></strong>
+							<?php
+							echo wp_kses_post(
+								__(
+									'Site creation operations (especially plugin/theme installation) can take several minutes to complete and may temporarily impact site performance. These operations are marked as long-running and should be executed with appropriate timeouts.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					</td>
+				</tr>
+			<?php endif; ?>
 			<?php
 
 			// Render Elementor Template Kit Import section.
@@ -1568,6 +1598,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						?>
 					</p>
 				</div>
+				<?php $this->render_pro_banner(); ?>
 			</div>
 			<?php
 		}
@@ -1887,6 +1918,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			);
 			wp_safe_redirect( $redirect_url );
 			exit;
+		}
+
+		/**
+		 * Render Pro addon promotional banner for base version.
+		 */
+		private function render_pro_banner() {
+			if ( ! wp_mcp_ai_is_base_version() ) {
+				return;
+			}
+			?>
+			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
+				<p style="margin: 0 0 10px 0; font-size: 14px;">
+					<strong><?php esc_html_e( 'Site Creator is a Premium Feature', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<p style="margin: 0 0 10px 0;">
+					<?php
+					echo wp_kses_post(
+						__(
+							'Site Creator tools enable AI assistants to automatically install themes, plugins, update options, and create content. This powerful feature is available in the Pro addon.',
+							'wp-mcp-ai'
+						)
+					);
+					?>
+				</p>
+				<p style="margin: 0;">
+					<a href="https://nvdigital.solutions/wp-oos-pro/" target="_blank" class="button button-primary" style="margin-right: 10px;">
+						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
+					</a>
+					<a href="https://nvdigital.solutions/wp-oos-pro/#site-creator" target="_blank" class="button">
+						<?php esc_html_e( 'Learn More About Site Creator', 'wp-mcp-ai' ); ?>
+					</a>
+				</p>
+			</div>
+			<?php
 		}
 	}
 }
