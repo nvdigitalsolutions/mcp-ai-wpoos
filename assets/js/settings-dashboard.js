@@ -819,10 +819,237 @@
 		}
 	};
 
+	/**
+	 * Initialize Brave Search connection test handlers.
+	 */
+	function initBraveSearchHandlers() {
+		// Test Brave Search connection
+		$('#wp-mcp-ai-test-brave-search-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-brave-search-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[brave_search_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Brave Search...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_brave_search_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Cloudflare connection test handlers.
+	 */
+	function initCloudflareHandlers() {
+		$('#wp-mcp-ai-test-cloudflare-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-cloudflare-test-result');
+			const $zoneInfo = $('#wp-mcp-ai-cloudflare-zone-info');
+			const zoneId = $('input[name="wp_mcp_ai_settings[cloudflare_zone_id]"]').val();
+			const apiToken = $('input[name="wp_mcp_ai_settings[cloudflare_api_token]"]').val();
+
+			if (!zoneId || !apiToken) {
+				$result.html('<span style="color: #d63638;">Please enter both Zone ID and API Token first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Cloudflare...</span>');
+			$zoneInfo.html('');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_cloudflare_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					zone_id: zoneId,
+					api_token: apiToken
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						if (response.data.zone_info) {
+							const zoneData = response.data.zone_info;
+							let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+							html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
+							html += '<ul style="margin: 0; padding-left: 20px;">';
+							if (zoneData.name) {
+								html += '<li><strong>Domain:</strong> ' + zoneData.name + '</li>';
+							}
+							if (zoneData.status) {
+								html += '<li><strong>Status:</strong> ' + zoneData.status + '</li>';
+							}
+							if (zoneData.plan) {
+								html += '<li><strong>Plan:</strong> ' + zoneData.plan + '</li>';
+							}
+							html += '</ul></div>';
+							$zoneInfo.html(html);
+						}
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$zoneInfo.html('');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$zoneInfo.html('');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Cloudways connection test handlers.
+	 */
+	function initCloudwaysHandlers() {
+		$('#wp-mcp-ai-fetch-cloudways-data').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-cloudways-fetch-result');
+			const $serversList = $('#wp-mcp-ai-cloudways-servers-list');
+			const $appsList = $('#wp-mcp-ai-cloudways-apps-list');
+			const email = $('input[name="wp_mcp_ai_settings[cloudways_email]"]').val();
+			const apiKey = $('input[name="wp_mcp_ai_settings[cloudways_api_key]"]').val();
+
+			if (!email || !apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter both email and API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Fetching...');
+			$result.html('<span style="color: #3c434a;">Connecting to Cloudways...</span>');
+			$serversList.html('');
+			$appsList.html('');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_fetch_cloudways_data',
+					nonce: wpMcpAiAdmin.nonce,
+					email: email,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ Successfully fetched Cloudways data</span>');
+						
+						// Display servers
+						if (response.data.servers && response.data.servers.length > 0) {
+							const $list = $('#wp-mcp-ai-cloudways-servers-list');
+							$list.empty();
+							const $title = $('<p><strong>Select a server:</strong></p>');
+							const $ul = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+							response.data.servers.forEach(function (server) {
+								const $li = $('<li style="margin-bottom: 5px;"></li>');
+								const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
+								$link.attr('data-server-id', server.id);
+								$link.text(server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')');
+								$li.append($link);
+								$ul.append($li);
+							});
+							$list.append($title).append($ul);
+						}
+						
+						// Display apps
+						if (response.data.apps && response.data.apps.length > 0) {
+							const $list = $('#wp-mcp-ai-cloudways-apps-list');
+							$list.empty();
+							const $title = $('<p><strong>Select an application:</strong></p>');
+							const $ul = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+							response.data.apps.forEach(function (app) {
+								const $li = $('<li style="margin-bottom: 5px;"></li>');
+								const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
+								$link.attr('data-app-id', app.id);
+								$link.attr('data-server-id', app.server_id);
+								$link.text(app.label + ' (ID: ' + app.id + ')');
+								$li.append($link);
+								$ul.append($li);
+							});
+							$list.append($title).append($ul);
+						}
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Failed to connect to Cloudways') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Fetch Cloudways Data');
+				}
+			});
+		});
+		
+		// Handle server selection
+		$(document).on('click', '.wp-mcp-ai-select-cloudways-server', function (e) {
+			e.preventDefault();
+			const serverId = $(this).data('server-id');
+			$('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
+			const $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+			$message.text('Selected Server ID: ' + serverId);
+			$('#wp-mcp-ai-cloudways-servers-list').prepend($message);
+		});
+		
+		// Handle app selection
+		$(document).on('click', '.wp-mcp-ai-select-cloudways-app', function (e) {
+			e.preventDefault();
+			const appId = $(this).data('app-id');
+			const serverId = $(this).data('server-id');
+			$('input[name="wp_mcp_ai_settings[cloudways_app_id]"]').val(appId);
+			$('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
+			const $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+			$message.text('Selected App ID: ' + appId + ' (Server ID: ' + serverId + ')');
+			$('#wp-mcp-ai-cloudways-apps-list').prepend($message);
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
 		WP_MCP_AI_Dashboard.init();
+		
+		// Initialize connection test handlers if wpMcpAiAdmin is available
+		if (typeof wpMcpAiAdmin !== 'undefined') {
+			initBraveSearchHandlers();
+			initCloudflareHandlers();
+			initCloudwaysHandlers();
+		}
 	});
 
 	// Expose to global scope if needed.
