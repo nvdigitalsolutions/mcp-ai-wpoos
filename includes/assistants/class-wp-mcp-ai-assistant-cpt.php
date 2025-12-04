@@ -221,6 +221,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * Returns arrays of profession IDs that should be auto-assigned to assistants
 		 * created with specific presets. Includes safety guardrails by default.
 		 *
+		 * @todo Integrate with UI preset buttons in assistant builder.
+		 * @todo Add role-specific profession IDs to each preset category.
+		 *
 		 * @return array Array of presets with name, description, and profession_ids.
 		 */
 		protected function get_profession_role_presets() {
