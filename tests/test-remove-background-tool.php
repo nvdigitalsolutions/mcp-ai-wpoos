@@ -459,4 +459,46 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
 		$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
 	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background rejects similar directory name bypass.
+	 *
+	 * This tests for a bypass where an attacker creates a directory like /uploads_malicious/
+	 * that starts with "uploads" but is not the uploads directory.
+	 */
+	public function test_remove_background_rejects_similar_directory_bypass() {
+		// Create a temporary directory that starts with similar name to uploads.
+		$upload_dir = wp_upload_dir();
+		$uploads_basedir = $upload_dir['basedir'];
+		
+		// Try a path that starts with uploads basedir but has extra characters.
+		// For example, if uploads is /var/www/uploads, try /var/www/uploads_malicious/file.txt.
+		$malicious_dir = dirname( $uploads_basedir ) . '/' . basename( $uploads_basedir ) . '_malicious';
+		$malicious_file = $malicious_dir . '/test.txt';
+
+		// Create the directory and file temporarily.
+		if ( ! is_dir( $malicious_dir ) ) {
+			if ( ! mkdir( $malicious_dir, 0777, true ) ) {
+				$this->markTestSkipped( 'Unable to create test directory' );
+			}
+		}
+
+		file_put_contents( $malicious_file, 'test content' );
+
+		try {
+			$result = wp_mcp_ai_remove_image_background( $malicious_file );
+
+			$this->assertWPError( $result );
+			$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+			$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
+		} finally {
+			// Clean up.
+			if ( file_exists( $malicious_file ) ) {
+				unlink( $malicious_file );
+			}
+			if ( is_dir( $malicious_dir ) ) {
+				rmdir( $malicious_dir );
+			}
+		}
+	}
 }

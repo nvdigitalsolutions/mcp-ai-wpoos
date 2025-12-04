@@ -87,9 +87,15 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 
 	$normalized_realpath = wp_normalize_path( $realpath );
 
+	// Normalize paths by removing trailing slashes for consistent comparison.
+	$uploads_basedir     = rtrim( $uploads_basedir, '/' );
+	$normalized_realpath = rtrim( $normalized_realpath, '/' );
+
 	// Check if the file is within the uploads directory.
-	// Use strpos to check if the real path starts with the uploads base directory.
-	if ( 0 !== strpos( $normalized_realpath, $uploads_basedir ) ) {
+	// Add trailing slash to uploads_basedir to prevent bypass via paths like /uploads_malicious/.
+	// The file path must start with uploads directory followed by a slash or be exactly the uploads directory.
+	if ( 0 !== strpos( $normalized_realpath . '/', $uploads_basedir . '/' ) &&
+		$normalized_realpath !== $uploads_basedir ) {
 		return new WP_Error(
 			'wp_mcp_ai_invalid_image_path',
 			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'wp-mcp-ai' ),
