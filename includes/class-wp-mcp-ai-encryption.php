@@ -1,6 +1,6 @@
 <?php
 /**
- * Encryption Helper for WP oOS
+ * Encryption Helper for WP MCP AI
  *
  * Provides encryption/decryption for sensitive data with master key rotation support.
  *
@@ -20,6 +20,11 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		 * Option key for storing the master key.
 		 */
 		const MASTER_KEY_OPTION = 'wp_mcp_ai_master_key';
+
+		/**
+		 * Meta key for storing encrypted secrets.
+		 */
+		const ENCRYPTED_SECRET_META_KEY = 'wp_mcp_ai_encrypted_secret';
 
 		/**
 		 * Encryption method.
@@ -150,12 +155,11 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			$new_key = self::generate_key();
 
 			// Get all posts with encrypted meta data.
-			$meta_key = 'wp_mcp_ai_encrypted_secret';
-			$query    = $wpdb->prepare(
+			$query = $wpdb->prepare(
 				"SELECT post_id, meta_id, meta_value 
 				FROM {$wpdb->postmeta} 
 				WHERE meta_key = %s",
-				$meta_key
+				self::ENCRYPTED_SECRET_META_KEY
 			);
 
 			$results = $wpdb->get_results( $query );
@@ -285,16 +289,23 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		private static function rollback_rotation( $original_values, $re_encrypted, $old_key ) {
 			global $wpdb;
 
+			$rollback_failures = array();
+
 			// Restore all updated secrets to their original values.
 			foreach ( $re_encrypted as $meta_id => $new_encrypted ) {
 				if ( isset( $original_values[ $meta_id ] ) ) {
-					$wpdb->update(
+					$result = $wpdb->update(
 						$wpdb->postmeta,
 						array( 'meta_value' => $original_values[ $meta_id ] ),
 						array( 'meta_id' => $meta_id ),
 						array( '%s' ),
 						array( '%d' )
 					);
+
+					// Track rollback failures.
+					if ( false === $result ) {
+						$rollback_failures[] = $meta_id;
+					}
 				}
 			}
 
@@ -304,14 +315,28 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			// Clear caches.
 			wp_cache_flush();
 
-			WP_MCP_AI_Logger::log_event(
-				'master_key_rotation_rollback',
-				'Master key rotation failed and was rolled back',
-				array(
-					'rolled_back_count' => count( $re_encrypted ),
-					'rollback_at'       => current_time( 'mysql', true ),
-				)
+			// Log rollback with failure information if any.
+			$log_data = array(
+				'rolled_back_count' => count( $re_encrypted ),
+				'rollback_at'       => current_time( 'mysql', true ),
 			);
+
+			if ( ! empty( $rollback_failures ) ) {
+				$log_data['rollback_failures'] = $rollback_failures;
+				$log_data['failure_count']     = count( $rollback_failures );
+
+				WP_MCP_AI_Logger::log_event(
+					'master_key_rotation_rollback',
+					'Master key rotation failed and was partially rolled back with errors',
+					$log_data
+				);
+			} else {
+				WP_MCP_AI_Logger::log_event(
+					'master_key_rotation_rollback',
+					'Master key rotation failed and was rolled back successfully',
+					$log_data
+				);
+			}
 		}
 
 		/**

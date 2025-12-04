@@ -129,12 +129,12 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$encrypted1 = WP_MCP_AI_Encryption::encrypt( $secret1 );
 		$encrypted2 = WP_MCP_AI_Encryption::encrypt( $secret2 );
 
-		update_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', $encrypted1 );
+		update_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, $encrypted1 );
 
 		// Create another post with encrypted secret.
 		$post_id2           = $this->factory->post->create();
 		$this->test_posts[] = $post_id2;
-		update_post_meta( $post_id2, 'wp_mcp_ai_encrypted_secret', $encrypted2 );
+		update_post_meta( $post_id2, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, $encrypted2 );
 
 		$old_key = WP_MCP_AI_Encryption::get_master_key();
 
@@ -147,8 +147,8 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$this->assertNotEquals( $old_key, $new_key );
 
 		// Verify secrets can still be decrypted with new key.
-		$new_encrypted1 = get_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', true );
-		$new_encrypted2 = get_post_meta( $post_id2, 'wp_mcp_ai_encrypted_secret', true );
+		$new_encrypted1 = get_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
+		$new_encrypted2 = get_post_meta( $post_id2, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
 
 		$this->assertNotEmpty( $new_encrypted1 );
 		$this->assertNotEmpty( $new_encrypted2 );
@@ -178,7 +178,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$this->test_posts[] = $post_id;
 
 		// Store invalid encrypted data that will fail to decrypt.
-		update_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', 'invalid-encrypted-data' );
+		update_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, 'invalid-encrypted-data' );
 
 		$old_key = WP_MCP_AI_Encryption::get_master_key();
 
@@ -203,17 +203,17 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 
 		$secret1    = 'valid-secret-1';
 		$encrypted1 = WP_MCP_AI_Encryption::encrypt( $secret1 );
-		update_post_meta( $post_id1, 'wp_mcp_ai_encrypted_secret', $encrypted1 );
+		update_post_meta( $post_id1, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, $encrypted1 );
 
 		// Create second post with invalid encrypted data.
 		$post_id2           = $this->factory->post->create();
 		$this->test_posts[] = $post_id2;
-		update_post_meta( $post_id2, 'wp_mcp_ai_encrypted_secret', 'corrupted-data' );
+		update_post_meta( $post_id2, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, 'corrupted-data' );
 
 		$old_key = WP_MCP_AI_Encryption::get_master_key();
 
 		// Store original encrypted value for verification.
-		$original_encrypted1 = get_post_meta( $post_id1, 'wp_mcp_ai_encrypted_secret', true );
+		$original_encrypted1 = get_post_meta( $post_id1, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
 
 		// Attempt rotation - should fail on second secret.
 		$result = WP_MCP_AI_Encryption::rotate_master_key();
@@ -225,7 +225,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$this->assertEquals( $old_key, $current_key );
 
 		// Verify first secret was NOT re-encrypted (rollback occurred).
-		$current_encrypted1 = get_post_meta( $post_id1, 'wp_mcp_ai_encrypted_secret', true );
+		$current_encrypted1 = get_post_meta( $post_id1, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
 
 		// First secret should still be decryptable with old key.
 		$decrypted1 = WP_MCP_AI_Encryption::decrypt( $current_encrypted1 );
@@ -246,7 +246,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 
 		// This will fail to decrypt.
 		$corrupted = base64_encode( 'too-short' );
-		update_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', $corrupted );
+		update_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, $corrupted );
 
 		$old_key = WP_MCP_AI_Encryption::get_master_key();
 
@@ -261,7 +261,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$this->assertEquals( $old_key, WP_MCP_AI_Encryption::get_master_key() );
 
 		// Original corrupted data should be unchanged.
-		$current_value = get_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', true );
+		$current_value = get_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
 		$this->assertEquals( $corrupted, $current_value );
 	}
 
@@ -276,7 +276,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 			$this->test_posts[]  = $post_id;
 			$secrets[ $post_id ] = "secret-value-$i";
 			$encrypted           = WP_MCP_AI_Encryption::encrypt( $secrets[ $post_id ] );
-			update_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', $encrypted );
+			update_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, $encrypted );
 		}
 
 		// Rotate successfully.
@@ -285,7 +285,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 
 		// All secrets should be decryptable with new key.
 		foreach ( $secrets as $post_id => $original_secret ) {
-			$encrypted = get_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', true );
+			$encrypted = get_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, true );
 			$decrypted = WP_MCP_AI_Encryption::decrypt( $encrypted );
 			$this->assertEquals( $original_secret, $decrypted, "Secret for post $post_id should match" );
 		}

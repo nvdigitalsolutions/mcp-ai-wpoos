@@ -122,7 +122,7 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 	public function test_failed_rotation_sets_error_transient() {
 		// Create corrupted encrypted data that will fail rotation.
 		$post_id = $this->factory->post->create();
-		update_post_meta( $post_id, 'wp_mcp_ai_encrypted_secret', 'corrupted-data' );
+		update_post_meta( $post_id, WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY, 'corrupted-data' );
 
 		// Set current user to admin.
 		wp_set_current_user( $this->admin_user_id );

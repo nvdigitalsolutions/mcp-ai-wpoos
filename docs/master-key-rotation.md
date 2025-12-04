@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin includes a secure master key rotation mechanism for re-encrypting sensitive data. This feature ensures that when the master encryption key is rotated, all stored secrets are properly re-encrypted with the new key, with full rollback support in case of any failures.
+The WP MCP AI plugin includes a secure master key rotation mechanism for re-encrypting sensitive data. This feature ensures that when the master encryption key is rotated, all stored secrets are properly re-encrypted with the new key, with full rollback support in case of any failures.
 
 ## Key Features
 

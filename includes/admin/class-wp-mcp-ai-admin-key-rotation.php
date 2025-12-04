@@ -177,7 +177,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			$count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s",
-					'wp_mcp_ai_encrypted_secret'
+					WP_MCP_AI_Encryption::ENCRYPTED_SECRET_META_KEY
 				)
 			);
 
