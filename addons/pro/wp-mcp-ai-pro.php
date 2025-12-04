@@ -13,8 +13,6 @@
  * Domain Path: /languages
  * Network: true
  *
- * Requires Plugins: wp-mcp-ai-core
- *
  * @package WP_MCP_AI_Pro
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
@@ -82,8 +80,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
 	 */
 	function wp_mcp_ai_pro_missing_core_notice() {
 		$message = sprintf(
-			'<strong>WP MCP AI Pro</strong> requires <strong>WP MCP AI Core</strong> to be installed and activated. Please <a href="%s">install and activate WP MCP AI Core</a> first.',
-			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) )
+			'<strong>WP MCP AI Pro</strong> requires either <strong>WP MCP AI Core</strong> or <strong>WP Open Operator System</strong> to be installed and activated. Please <a href="%s">install WP MCP AI Core</a> or <a href="%s">WP Open Operator System</a> first.',
+			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) ),
+			esc_url( admin_url( 'plugin-install.php?s=wp-open-operator-system&tab=search&type=term' ) )
 		);
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',
