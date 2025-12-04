@@ -239,4 +239,220 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 
 		return 'wp_mcp_ai_crawl4ai_task_' . $hash;
 	}
+
+	/**
+	 * Test get_all_tasks returns empty array when no tasks exist.
+	 */
+	public function test_get_all_tasks_returns_empty_array_when_no_tasks() {
+		$tasks = WP_MCP_AI_Crawl4AI_Local_API::get_all_tasks();
+
+		$this->assertIsArray( $tasks );
+		$this->assertEmpty( $tasks );
+	}
+
+	/**
+	 * Test get_all_tasks retrieves cached tasks.
+	 */
+	public function test_get_all_tasks_retrieves_cached_tasks() {
+		wp_set_current_user( $this->admin_id );
+
+		$filter = function ( $pre, $args, $url ) {
+			if ( false === strpos( $url, 'https://example.com' ) ) {
+				return $pre;
+			}
+
+			return array(
+				'body'     => '<html><body><h1>Example</h1><p>Content</p></body></html>',
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		// Create first task.
+		$request1 = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
+		$request1->set_header( 'Content-Type', 'application/json' );
+		$request1->set_body( wp_json_encode( array( 'urls' => array( 'https://example.com/page1' ) ) ) );
+		$response1 = rest_get_server()->dispatch( $request1 );
+		$data1     = $response1->get_data();
+
+		// Create second task.
+		$request2 = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
+		$request2->set_header( 'Content-Type', 'application/json' );
+		$request2->set_body( wp_json_encode( array( 'urls' => array( 'https://example.com/page2' ) ) ) );
+		$response2 = rest_get_server()->dispatch( $request2 );
+		$data2     = $response2->get_data();
+
+		remove_filter( 'pre_http_request', $filter, 10 );
+
+		$this->assertSame( 200, $response1->get_status() );
+		$this->assertSame( 200, $response2->get_status() );
+
+		// Retrieve all tasks.
+		$tasks = WP_MCP_AI_Crawl4AI_Local_API::get_all_tasks();
+
+		$this->assertIsArray( $tasks );
+		$this->assertCount( 2, $tasks );
+		$this->assertArrayHasKey( $data1['task_id'], $tasks );
+		$this->assertArrayHasKey( $data2['task_id'], $tasks );
+
+		// Cleanup.
+		$this->cleanup_task_cache( $data1['task_id'] );
+		$this->cleanup_task_cache( $data2['task_id'] );
+	}
+
+	/**
+	 * Test get_statistics calculates correct statistics.
+	 */
+	public function test_get_statistics_calculates_correctly() {
+		wp_set_current_user( $this->admin_id );
+
+		$filter = function ( $pre, $args, $url ) {
+			if ( false === strpos( $url, 'https://example.com' ) ) {
+				return $pre;
+			}
+
+			return array(
+				'body'     => '<html><body><h1>Example</h1><p>Content</p></body></html>',
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		// Create multiple tasks.
+		$task_ids = array();
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
+			$request->set_header( 'Content-Type', 'application/json' );
+			$request->set_body( wp_json_encode( array( 'urls' => array( "https://example.com/page{$i}" ) ) ) );
+			$response     = rest_get_server()->dispatch( $request );
+			$data         = $response->get_data();
+			$task_ids[]   = $data['task_id'];
+		}
+
+		remove_filter( 'pre_http_request', $filter, 10 );
+
+		// Get statistics.
+		$stats = WP_MCP_AI_Crawl4AI_Local_API::get_statistics();
+
+		$this->assertIsArray( $stats );
+		$this->assertSame( 3, $stats['total_jobs'] );
+		$this->assertSame( 3, $stats['completed_jobs'] );
+		$this->assertSame( 0, $stats['running_jobs'] );
+		$this->assertSame( 0, $stats['failed_jobs'] );
+		$this->assertSame( 0, $stats['browser_pools'] );
+
+		// Cleanup.
+		foreach ( $task_ids as $task_id ) {
+			$this->cleanup_task_cache( $task_id );
+		}
+	}
+
+	/**
+	 * Test get_recent_jobs returns jobs sorted by date.
+	 */
+	public function test_get_recent_jobs_returns_sorted_jobs() {
+		wp_set_current_user( $this->admin_id );
+
+		$filter = function ( $pre, $args, $url ) {
+			if ( false === strpos( $url, 'https://example.com' ) ) {
+				return $pre;
+			}
+
+			return array(
+				'body'     => '<html><body><h1>Example</h1><p>Content</p></body></html>',
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		// Create multiple tasks.
+		$task_ids = array();
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
+			$request->set_header( 'Content-Type', 'application/json' );
+			$request->set_body( wp_json_encode( array( 'urls' => array( "https://example.com/page{$i}" ) ) ) );
+			$response     = rest_get_server()->dispatch( $request );
+			$data         = $response->get_data();
+			$task_ids[]   = $data['task_id'];
+			// Small delay to ensure different stored_at timestamps.
+			sleep( 1 );
+		}
+
+		remove_filter( 'pre_http_request', $filter, 10 );
+
+		// Get recent jobs.
+		$jobs = WP_MCP_AI_Crawl4AI_Local_API::get_recent_jobs( 10 );
+
+		$this->assertIsArray( $jobs );
+		$this->assertCount( 5, $jobs );
+
+		// Verify first job is the most recent.
+		$this->assertSame( $task_ids[4], $jobs[0]['id'] );
+
+		// Verify jobs have expected fields.
+		foreach ( $jobs as $job ) {
+			$this->assertArrayHasKey( 'id', $job );
+			$this->assertArrayHasKey( 'url', $job );
+			$this->assertArrayHasKey( 'status', $job );
+			$this->assertArrayHasKey( 'started', $job );
+			$this->assertArrayHasKey( 'duration', $job );
+			$this->assertArrayHasKey( 'browser_pool', $job );
+		}
+
+		// Cleanup.
+		foreach ( $task_ids as $task_id ) {
+			$this->cleanup_task_cache( $task_id );
+		}
+	}
+
+	/**
+	 * Test get_recent_jobs respects limit parameter.
+	 */
+	public function test_get_recent_jobs_respects_limit() {
+		wp_set_current_user( $this->admin_id );
+
+		$filter = function ( $pre, $args, $url ) {
+			if ( false === strpos( $url, 'https://example.com' ) ) {
+				return $pre;
+			}
+
+			return array(
+				'body'     => '<html><body><h1>Example</h1><p>Content</p></body></html>',
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		// Create multiple tasks.
+		$task_ids = array();
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/crawl4ai/crawl' );
+			$request->set_header( 'Content-Type', 'application/json' );
+			$request->set_body( wp_json_encode( array( 'urls' => array( "https://example.com/page{$i}" ) ) ) );
+			$response     = rest_get_server()->dispatch( $request );
+			$data         = $response->get_data();
+			$task_ids[]   = $data['task_id'];
+		}
+
+		remove_filter( 'pre_http_request', $filter, 10 );
+
+		// Get limited jobs.
+		$jobs = WP_MCP_AI_Crawl4AI_Local_API::get_recent_jobs( 3 );
+
+		$this->assertIsArray( $jobs );
+		$this->assertCount( 3, $jobs );
+
+		// Cleanup.
+		foreach ( $task_ids as $task_id ) {
+			$this->cleanup_task_cache( $task_id );
+		}
+	}
 }

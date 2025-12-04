@@ -371,5 +371,184 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 		public static function retrieve_task_result( $task_id ) {
 			return self::get_task_result( $task_id );
 		}
+
+		/**
+		 * Retrieve all cached task results.
+		 *
+		 * @return array Array of task results with task_id as keys.
+		 */
+		public static function get_all_tasks() {
+			global $wpdb;
+
+			$tasks  = array();
+			$prefix = self::TASK_STORAGE_PREFIX;
+
+			if ( is_multisite() ) {
+				$blog_id = absint( get_current_blog_id() );
+				$pattern = $wpdb->esc_like( '_site_transient_' . $prefix . $blog_id . '_' ) . '%';
+				$query   = $wpdb->prepare(
+					"SELECT option_name, option_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s",
+					$pattern
+				);
+			} else {
+				$pattern = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
+				$query   = $wpdb->prepare(
+					"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+					$pattern
+				);
+			}
+
+			$results = $wpdb->get_results( $query );
+
+			if ( empty( $results ) ) {
+				return $tasks;
+			}
+
+			foreach ( $results as $row ) {
+				$value = maybe_unserialize( $row->option_value );
+
+				if ( ! is_array( $value ) ) {
+					continue;
+				}
+
+				// Extract task_id from the stored data or generate from option_name.
+				$task_id = isset( $value['task_id'] ) ? $value['task_id'] : '';
+
+				if ( empty( $task_id ) ) {
+					// Try to derive task_id from the option name if not stored.
+					$option_name = $row->option_name;
+					if ( is_multisite() ) {
+						$option_name = str_replace( '_site_transient_', '', $option_name );
+					} else {
+						$option_name = str_replace( '_transient_', '', $option_name );
+					}
+					// The option name format is: prefix + [blog_id_] + hash
+					// We can't reliably reverse the hash, so we'll use the option name.
+					continue;
+				}
+
+				$tasks[ $task_id ] = $value;
+			}
+
+			return $tasks;
+		}
+
+		/**
+		 * Get statistics about all cached Crawl4AI tasks.
+		 *
+		 * @return array Statistics array with counts.
+		 */
+		public static function get_statistics() {
+			$tasks = self::get_all_tasks();
+
+			$stats = array(
+				'total_jobs'     => count( $tasks ),
+				'running_jobs'   => 0,
+				'completed_jobs' => 0,
+				'failed_jobs'    => 0,
+				'browser_pools'  => 0,
+			);
+
+			foreach ( $tasks as $task ) {
+				$status = isset( $task['status'] ) ? $task['status'] : 'unknown';
+
+				switch ( $status ) {
+					case 'running':
+					case 'in_progress':
+						++$stats['running_jobs'];
+						break;
+					case 'completed':
+					case 'success':
+						++$stats['completed_jobs'];
+						break;
+					case 'failed':
+					case 'error':
+						++$stats['failed_jobs'];
+						break;
+				}
+			}
+
+			// Browser pools is not applicable for local API (no browser pools).
+			// This could be extended in the future if needed.
+			$stats['browser_pools'] = 0;
+
+			return $stats;
+		}
+
+		/**
+		 * Get recent Crawl4AI jobs for display.
+		 *
+		 * @param int $limit Maximum number of jobs to return. Default 20.
+		 * @return array Array of job data sorted by stored_at descending.
+		 */
+		public static function get_recent_jobs( $limit = 20 ) {
+			$tasks = self::get_all_tasks();
+			$jobs  = array();
+
+			foreach ( $tasks as $task_id => $task ) {
+				$status     = isset( $task['status'] ) ? $task['status'] : 'unknown';
+				$stored_at  = isset( $task['stored_at'] ) ? $task['stored_at'] : '';
+				$results    = isset( $task['results'] ) ? $task['results'] : array();
+				$metadata   = isset( $task['metadata'] ) ? $task['metadata'] : array();
+				$fetched_at = isset( $metadata['fetched_at'] ) ? $metadata['fetched_at'] : $stored_at;
+
+				// Extract URL from first result.
+				$url = 'N/A';
+				if ( ! empty( $results ) && is_array( $results ) ) {
+					$first_result = reset( $results );
+					if ( isset( $first_result['url'] ) ) {
+						$url = $first_result['url'];
+					}
+				}
+
+				// Calculate duration if possible.
+				$duration = 'N/A';
+				if ( ! empty( $fetched_at ) && ! empty( $stored_at ) ) {
+					try {
+						$start = new DateTime( $fetched_at );
+						$end   = new DateTime( $stored_at );
+						$diff  = $start->diff( $end );
+
+						if ( $diff->days > 0 ) {
+							$duration = $diff->format( '%d days' );
+						} elseif ( $diff->h > 0 ) {
+							$duration = $diff->format( '%h hours' );
+						} elseif ( $diff->i > 0 ) {
+							$duration = $diff->format( '%i min' );
+						} else {
+							$duration = $diff->format( '%s sec' );
+						}
+					} catch ( Exception $e ) {
+						$duration = 'N/A';
+					}
+				}
+
+				$jobs[] = array(
+					'id'           => $task_id,
+					'url'          => $url,
+					'status'       => $status,
+					'started'      => ! empty( $fetched_at ) ? $fetched_at : $stored_at,
+					'duration'     => $duration,
+					'browser_pool' => 'N/A',
+					'stored_at'    => $stored_at,
+				);
+			}
+
+			// Sort by stored_at descending (most recent first).
+			usort(
+				$jobs,
+				function ( $a, $b ) {
+					return strcmp( $b['stored_at'], $a['stored_at'] );
+				}
+			);
+
+			// Limit the results.
+			$limit = absint( $limit );
+			if ( $limit > 0 && count( $jobs ) > $limit ) {
+				$jobs = array_slice( $jobs, 0, $limit );
+			}
+
+			return $jobs;
+		}
 	}
 }
