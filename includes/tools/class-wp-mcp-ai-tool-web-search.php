@@ -27,7 +27,8 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
  *
  * Both providers properly handle:
- * - Asynchronous responses (HTTP 202) with retry-after headers
+ * - Synchronous execution with single HTTP request per tool invocation
+ * - Asynchronous responses (HTTP 202) returned to orchestration layer for retry management
  * - Rate limiting and caching to prevent abuse
  * - Result deduplication to prevent infinite loops
  * - Security controls (user capabilities, nonces, input sanitization)
@@ -215,9 +216,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * Handle HTTP 202 (Accepted) response - search is being processed asynchronously.
 	 *
-	 * This method is called after automatic retries have been exhausted. It returns
-	 * an informational status (not a hard error) indicating the search service is
-	 * still processing the request.
+	 * Returns an informational status (not a hard error) indicating the search service
+	 * is still processing the request. The orchestration layer can use the retry_after
+	 * value to determine appropriate timing for retry attempts.
 	 *
 	 * @param array $response The HTTP response array from wp_remote_get.
 	 * @return WP_Error Error object with pending status and retry information.
@@ -279,8 +280,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * duckduckgo-api-haystack reference implementation for proper response parsing
 	 * and error handling.
 	 *
-	 * Implements automatic retry with exponential backoff for HTTP 202 responses
-	 * following industry best practices for handling asynchronous operations.
+	 * Executes a single synchronous HTTP request. If the service returns HTTP 202
+	 * (Accepted), a pending error is returned immediately to allow the orchestration
+	 * layer to handle retry timing and strategy.
 	 *
 	 * @link https://github.com/GivAlz/duckduckgo-api-haystack
 	 *
@@ -311,7 +313,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response after retries, return it as-is
+			// If it's a pending response, return it as-is for orchestration layer
 			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
 				return $response;
 			}
@@ -326,7 +328,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
 		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
-		// This should only happen if max retries are exhausted.
+		// Return immediately to allow orchestration layer to manage retries.
 		if ( 202 === $status_code ) {
 			return $this->handle_pending_response( $response );
 		}
@@ -400,8 +402,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * brave-search-mcp-server reference implementation for proper authentication,
 	 * response parsing, and error handling including async (HTTP 202) responses.
 	 *
-	 * Implements automatic retry with exponential backoff for HTTP 202 responses
-	 * following industry best practices for handling asynchronous operations.
+	 * Executes a single synchronous HTTP request. If the service returns HTTP 202
+	 * (Accepted), a pending error is returned immediately to allow the orchestration
+	 * layer to handle retry timing and strategy.
 	 *
 	 * @link https://github.com/brave/brave-search-mcp-server
 	 *
@@ -439,7 +442,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response after retries, return it as-is
+			// If it's a pending response, return it as-is for orchestration layer
 			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
 				return $response;
 			}
@@ -454,7 +457,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
 		// Handle HTTP 202 (Accepted) - search is being processed asynchronously.
-		// This should only happen if max retries are exhausted.
+		// Return immediately to allow orchestration layer to manage retries.
 		if ( 202 === $status_code ) {
 			return $this->handle_pending_response( $response );
 		}
@@ -575,99 +578,45 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
-	 * Perform a search request with automatic retry for HTTP 202 responses.
+	 * Perform a synchronous search request without automatic retries.
 	 *
-	 * Implements exponential backoff retry logic following industry best practices
-	 * for handling asynchronous HTTP operations. When a server returns HTTP 202
-	 * (Accepted), indicating the request is being processed asynchronously, this
-	 * method will automatically retry with increasing delays.
+	 * Executes a single HTTP request and returns the response immediately.
+	 * When the server returns HTTP 202 (Accepted), indicating the request
+	 * is being processed asynchronously, this method returns a pending error
+	 * that allows the orchestration layer to handle retries.
 	 *
-	 * The retry logic respects the server's Retry-After header when present,
-	 * ensuring compliance with rate limiting and server load management.
+	 * This approach prevents blocking execution with sleep() calls and allows
+	 * the orchestration layer to manage retry timing and strategy based on
+	 * the overall workflow context.
 	 *
 	 * @param string $url  Request URL.
 	 * @param array  $args Request arguments for wp_remote_get.
 	 *
-	 * @return array|WP_Error HTTP response array or WP_Error.
+	 * @return array|WP_Error HTTP response array or WP_Error for pending requests.
 	 */
 	protected function perform_search_with_retry( $url, $args = array() ) {
-		/**
-		 * Filter the maximum number of retry attempts for pending search responses.
-		 *
-		 * @param int $max_retries Maximum retry attempts (default: 2).
-		 */
-		$max_retries = apply_filters( 'wp_mcp_ai_web_search_max_retries', 2 );
-		$max_retries = max( 0, absint( $max_retries ) );
+		// Execute single synchronous request
+		$response = wp_remote_get( $url, $args );
 
-		/**
-		 * Filter the base delay between retry attempts in seconds.
-		 *
-		 * @param int $base_delay Base delay in seconds (default: 1).
-		 */
-		$base_delay = apply_filters( 'wp_mcp_ai_web_search_retry_base_delay', 1 );
-		$base_delay = max( 1, absint( $base_delay ) );
-
-		$attempt = 0;
-
-		while ( $attempt <= $max_retries ) {
-			$response = wp_remote_get( $url, $args );
-
-			// Network or WordPress errors should be returned immediately
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			$status_code = (int) wp_remote_retrieve_response_code( $response );
-
-			// Success - return the response
-			if ( 200 === $status_code ) {
-				return $response;
-			}
-
-			// HTTP 202 (Accepted) - request is being processed asynchronously
-			if ( 202 === $status_code ) {
-				// If we've exhausted retries, return pending error
-				if ( $attempt >= $max_retries ) {
-					return $this->handle_pending_response( $response );
-				}
-
-				// Calculate retry delay with exponential backoff
-				$retry_after_header = wp_remote_retrieve_header( $response, 'retry-after' );
-				if ( '' !== $retry_after_header ) {
-					// Server provided a retry-after value - respect it
-					$delay = absint( $retry_after_header );
-					// Cap the delay to prevent excessive waits (max 5 seconds per retry)
-					$delay = min( $delay, 5 );
-				} else {
-					// Use exponential backoff: 1s, 2s, 4s, etc.
-					$delay = $base_delay * pow( 2, $attempt );
-					// Cap at 5 seconds to keep total wait time reasonable
-					$delay = min( $delay, 5 );
-				}
-
-				// Sleep before next retry (unless disabled for testing)
-				/**
-				 * Filter whether to sleep between retry attempts.
-				 *
-				 * Set to false in tests to avoid delays.
-				 *
-				 * @param bool $should_sleep Whether to sleep (default: true).
-				 */
-				$should_sleep = apply_filters( 'wp_mcp_ai_web_search_retry_sleep', true );
-				if ( $should_sleep ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- Intentional sleep for retry logic
-					sleep( $delay );
-				}
-
-				$attempt++;
-				continue;
-			}
-
-			// Other HTTP status codes (errors) - return the response for handling
+		// Network or WordPress errors should be returned immediately
+		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		// This should never be reached, but return last response as fallback
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		// Success - return the response
+		if ( 200 === $status_code ) {
+			return $response;
+		}
+
+		// HTTP 202 (Accepted) - request is being processed asynchronously
+		// Return pending error immediately to allow orchestration layer to handle retries
+		if ( 202 === $status_code ) {
+			return $this->handle_pending_response( $response );
+		}
+
+		// Other HTTP status codes (errors) - return the response for handling
 		return $response;
 	}
 
