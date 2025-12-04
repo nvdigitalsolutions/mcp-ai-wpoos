@@ -387,7 +387,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 				$blog_id = absint( get_current_blog_id() );
 				$pattern = $wpdb->esc_like( '_site_transient_' . $prefix . $blog_id . '_' ) . '%';
 				$query   = $wpdb->prepare(
-					"SELECT option_name, option_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s",
+					"SELECT meta_key AS option_name, meta_value AS option_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s",
 					$pattern
 				);
 			} else {
