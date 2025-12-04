@@ -336,13 +336,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				)
 			);
 
-			// Add admin nonce for tools manager.
+			// Add admin nonce for tools manager and connection tests.
+			// Using 'wp-mcp-ai-settings' nonce to match AJAX handler expectations.
 			wp_localize_script(
 				'wp-mcp-ai-dashboard',
 				'wpMcpAiAdmin',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'wp_mcp_ai_admin' ),
+					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 					'i18n'    => array(
 						'enabled'  => __( 'Enabled', 'wp-mcp-ai' ),
 						'disabled' => __( 'Disabled', 'wp-mcp-ai' ),
