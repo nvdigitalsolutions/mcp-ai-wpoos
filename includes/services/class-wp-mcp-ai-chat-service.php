@@ -48,6 +48,16 @@ class WP_MCP_AI_Chat_Service {
 	const ASYNC_WAIT_TIME_BUFFER = 60;
 
 	/**
+	 * Message sent to LLM when a tool returns a pending/unavailable status.
+	 *
+	 * This message guides the LLM to use alternative information sources
+	 * rather than treating temporary unavailability as a hard failure.
+	 *
+	 * @var string
+	 */
+	const PENDING_TOOL_MESSAGE = 'This information source is temporarily unavailable. Please use your general knowledge and other available information to assist the user.';
+
+	/**
 	 * Progress logging frequency for async tool waiting (every N polls)
 	 *
 	 * @var int
@@ -506,18 +516,37 @@ class WP_MCP_AI_Chat_Service {
 
 			// Format result.
 			if ( is_wp_error( $tool_result ) ) {
-				$error_payload = array(
-					'error_code'    => $tool_result->get_error_code(),
-					'error_message' => $tool_result->get_error_message(),
-				);
-
-				// Include error data if available (helps AI understand error context).
+				// Check if this is a pending/temporary error (e.g., HTTP 202 from web search).
+				// These should be handled differently - the LLM should know to use alternative sources
+				// rather than treating it as a hard failure.
 				$error_data = $tool_result->get_error_data();
-				if ( is_array( $error_data ) && ! empty( $error_data ) ) {
-					$error_payload['error_data'] = $error_data;
-				}
+				$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] ) && true === $error_data['is_pending'];
 
-				$result_content = wp_json_encode( $error_payload );
+				if ( $is_pending ) {
+					// Convert pending error to an informational result for the LLM.
+					// This allows the LLM to gracefully handle temporary unavailability
+					// by using alternative information sources or general knowledge.
+					$result_content = wp_json_encode(
+						array(
+							'status'  => 'unavailable',
+							'message' => self::PENDING_TOOL_MESSAGE,
+							'note'    => $tool_result->get_error_message(),
+						)
+					);
+				} else {
+					// Regular error - include full error details for the LLM.
+					$error_payload = array(
+						'error_code'    => $tool_result->get_error_code(),
+						'error_message' => $tool_result->get_error_message(),
+					);
+
+					// Include error data if available (helps AI understand error context).
+					if ( is_array( $error_data ) && ! empty( $error_data ) ) {
+						$error_payload['error_data'] = $error_data;
+					}
+
+					$result_content = wp_json_encode( $error_payload );
+				}
 			} else {
 				$result_content = wp_json_encode( $tool_result );
 			}
