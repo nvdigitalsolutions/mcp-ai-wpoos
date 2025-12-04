@@ -371,5 +371,232 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 		public static function retrieve_task_result( $task_id ) {
 			return self::get_task_result( $task_id );
 		}
+
+	/**
+	 * Get all cached Crawl4AI tasks with their data.
+	 *
+	 * @param int $limit Maximum number of tasks to retrieve.
+	 * @return array Array of task data.
+	 */
+	public static function get_all_tasks( $limit = 100 ) {
+		global $wpdb;
+
+		$tasks  = array();
+		$prefix = self::TASK_STORAGE_PREFIX;
+		$limit  = absint( $limit );
+
+		if ( $limit <= 0 ) {
+			$limit = 100;
+		}
+
+		if ( is_multisite() ) {
+			$blog_id = absint( get_current_blog_id() );
+			$pattern = $wpdb->esc_like( sprintf( '%s%s_', $prefix, $blog_id ) ) . '%';
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s ORDER BY meta_id DESC LIMIT %d",
+					$pattern,
+					$limit
+				)
+			);
+
+			if ( ! empty( $results ) ) {
+				foreach ( $results as $row ) {
+					$data = maybe_unserialize( $row->meta_value );
+
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+
+					$tasks[] = $data;
+				}
+			}
+		} else {
+			$transient_pattern = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
+			$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%';
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name NOT LIKE %s ORDER BY option_id DESC LIMIT %d",
+					$transient_pattern,
+					$timeout_pattern,
+					$limit
+				)
+			);
+
+			if ( ! empty( $results ) ) {
+				foreach ( $results as $row ) {
+					$data = maybe_unserialize( $row->option_value );
+
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+
+					$tasks[] = $data;
+				}
+			}
+		}
+
+		return $tasks;
+	}
+
+	/**
+	 * Calculate statistics from all cached Crawl4AI tasks.
+	 *
+	 * @return array Statistics array.
+	 */
+	public static function get_statistics() {
+		$tasks = self::get_all_tasks( 1000 );
+
+		$stats = array(
+			'total_jobs'     => 0,
+			'running_jobs'   => 0,
+			'completed_jobs' => 0,
+			'failed_jobs'    => 0,
+			'browser_pools'  => 0,
+		);
+
+		if ( empty( $tasks ) ) {
+			return $stats;
+		}
+
+		$browser_pools = array();
+
+		foreach ( $tasks as $task ) {
+			$stats['total_jobs']++;
+
+			$status = isset( $task['status'] ) ? $task['status'] : 'unknown';
+
+			switch ( $status ) {
+				case 'completed':
+					$stats['completed_jobs']++;
+					break;
+				case 'running':
+				case 'pending':
+					$stats['running_jobs']++;
+					break;
+				case 'failed':
+				case 'error':
+					$stats['failed_jobs']++;
+					break;
+			}
+
+			// Track browser pools if metadata exists.
+			if ( isset( $task['metadata']['browser_pool'] ) ) {
+				$pool                       = $task['metadata']['browser_pool'];
+				$browser_pools[ $pool ] = true;
+			}
+		}
+
+		$stats['browser_pools'] = count( $browser_pools );
+
+		return $stats;
+	}
+
+	/**
+	 * Get recent Crawl4AI jobs with optional filtering and pagination.
+	 *
+	 * @param array $args {
+	 *     Optional. Arguments for filtering and pagination.
+	 *
+	 *     @type int    $limit  Maximum number of jobs to return. Default 20.
+	 *     @type int    $offset Offset for pagination. Default 0.
+	 *     @type string $status Filter by status. Default empty (all).
+	 * }
+	 * @return array Array of job data.
+	 */
+	public static function get_recent_jobs( $args = array() ) {
+		$defaults = array(
+			'limit'  => 20,
+			'offset' => 0,
+			'status' => '',
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$limit  = absint( $args['limit'] );
+		$offset = absint( $args['offset'] );
+		$status = sanitize_text_field( $args['status'] );
+
+		// Get more tasks than needed to account for filtering.
+		$fetch_limit = $limit + $offset + 100;
+		$tasks       = self::get_all_tasks( $fetch_limit );
+
+		if ( empty( $tasks ) ) {
+			return array();
+		}
+
+		// Filter by status if specified.
+		if ( '' !== $status ) {
+			$tasks = array_filter(
+				$tasks,
+				function ( $task ) use ( $status ) {
+					$task_status = isset( $task['status'] ) ? $task['status'] : '';
+					return $task_status === $status;
+				}
+			);
+		}
+
+		// Sort by stored_at timestamp (newest first).
+		usort(
+			$tasks,
+			function ( $a, $b ) {
+				$time_a = isset( $a['stored_at'] ) ? strtotime( $a['stored_at'] ) : 0;
+				$time_b = isset( $b['stored_at'] ) ? strtotime( $b['stored_at'] ) : 0;
+				return $time_b - $time_a;
+			}
+		);
+
+		// Apply pagination.
+		$tasks = array_slice( $tasks, $offset, $limit );
+
+		// Format jobs for display.
+		$jobs = array();
+
+		foreach ( $tasks as $task ) {
+			$job = array(
+				'id'           => isset( $task['task_id'] ) ? $task['task_id'] : 'unknown',
+				'status'       => isset( $task['status'] ) ? $task['status'] : 'unknown',
+				'url'          => '',
+				'started'      => '',
+				'duration'     => 'N/A',
+				'browser_pool' => 'N/A',
+			);
+
+			// Extract URL from results.
+			if ( isset( $task['results'][0]['url'] ) ) {
+				$job['url'] = $task['results'][0]['url'];
+			} elseif ( isset( $task['metadata']['urls'][0] ) ) {
+				$job['url'] = $task['metadata']['urls'][0];
+			}
+
+			// Format timestamps.
+			if ( isset( $task['stored_at'] ) ) {
+				$job['started'] = mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $task['stored_at'], true );
+			} elseif ( isset( $task['metadata']['fetched_at'] ) ) {
+				$job['started'] = mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $task['metadata']['fetched_at'], true );
+			}
+
+			// Calculate duration if available.
+			if ( isset( $task['metadata']['duration'] ) ) {
+				$duration        = floatval( $task['metadata']['duration'] );
+				$job['duration'] = sprintf( '%.2fs', $duration );
+			}
+
+			// Get browser pool info.
+			if ( isset( $task['metadata']['browser_pool'] ) ) {
+				$job['browser_pool'] = $task['metadata']['browser_pool'];
+			} elseif ( isset( $task['metadata']['mode'] ) ) {
+				$job['browser_pool'] = ucfirst( $task['metadata']['mode'] );
+			}
+
+			$jobs[] = $job;
+		}
+
+		return $jobs;
+	}
 	}
 }

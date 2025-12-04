@@ -239,4 +239,208 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 
 		return 'wp_mcp_ai_crawl4ai_task_' . $hash;
 	}
+
+	/**
+	 * Test get_all_tasks retrieves cached tasks.
+	 */
+	public function test_get_all_tasks_retrieves_cached_tasks() {
+		wp_set_current_user( $this->admin_id );
+
+		// Create several test tasks.
+		$tasks = array();
+		for ( $i = 0; $i < 5; $i++ ) {
+			$task_id = 'test-task-' . $i;
+			$result  = array(
+				'task_id'   => $task_id,
+				'status'    => $i % 2 === 0 ? 'completed' : 'failed',
+				'results'   => array(
+					array(
+						'url'     => 'https://example.com/page' . $i,
+						'content' => 'Test content ' . $i,
+					),
+				),
+				'metadata'  => array(
+					'mode'         => 'local',
+					'browser_pool' => 'default',
+				),
+				'stored_at' => current_time( 'mysql', true ),
+			);
+
+			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $result );
+			$tasks[] = $result;
+		}
+
+		// Retrieve all tasks.
+		$retrieved_tasks = WP_MCP_AI_Crawl4AI_Local_API::get_all_tasks( 10 );
+
+		$this->assertNotEmpty( $retrieved_tasks );
+		$this->assertGreaterThanOrEqual( 5, count( $retrieved_tasks ) );
+
+		// Verify task data structure.
+		foreach ( $retrieved_tasks as $task ) {
+			$this->assertArrayHasKey( 'task_id', $task );
+			$this->assertArrayHasKey( 'status', $task );
+			$this->assertArrayHasKey( 'stored_at', $task );
+		}
+
+		// Cleanup.
+		foreach ( $tasks as $task ) {
+			$this->cleanup_task_cache( $task['task_id'] );
+		}
+	}
+
+	/**
+	 * Test get_statistics calculates correct statistics.
+	 */
+	public function test_get_statistics_calculates_correctly() {
+		wp_set_current_user( $this->admin_id );
+
+		// Create test tasks with different statuses.
+		$test_data = array(
+			array( 'task_id' => 'test-completed-1', 'status' => 'completed' ),
+			array( 'task_id' => 'test-completed-2', 'status' => 'completed' ),
+			array( 'task_id' => 'test-failed-1', 'status' => 'failed' ),
+			array( 'task_id' => 'test-running-1', 'status' => 'running' ),
+		);
+
+		foreach ( $test_data as $data ) {
+			$result = array(
+				'task_id'   => $data['task_id'],
+				'status'    => $data['status'],
+				'results'   => array(),
+				'metadata'  => array(
+					'mode'         => 'local',
+					'browser_pool' => 'default',
+				),
+				'stored_at' => current_time( 'mysql', true ),
+			);
+
+			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $data['task_id'], $result );
+		}
+
+		// Get statistics.
+		$stats = WP_MCP_AI_Crawl4AI_Local_API::get_statistics();
+
+		// Verify statistics.
+		$this->assertArrayHasKey( 'total_jobs', $stats );
+		$this->assertArrayHasKey( 'completed_jobs', $stats );
+		$this->assertArrayHasKey( 'failed_jobs', $stats );
+		$this->assertArrayHasKey( 'running_jobs', $stats );
+		$this->assertArrayHasKey( 'browser_pools', $stats );
+
+		$this->assertGreaterThanOrEqual( 4, $stats['total_jobs'] );
+		$this->assertGreaterThanOrEqual( 2, $stats['completed_jobs'] );
+		$this->assertGreaterThanOrEqual( 1, $stats['failed_jobs'] );
+		$this->assertGreaterThanOrEqual( 1, $stats['running_jobs'] );
+
+		// Cleanup.
+		foreach ( $test_data as $data ) {
+			$this->cleanup_task_cache( $data['task_id'] );
+		}
+	}
+
+	/**
+	 * Test get_recent_jobs retrieves and formats jobs correctly.
+	 */
+	public function test_get_recent_jobs_formats_correctly() {
+		wp_set_current_user( $this->admin_id );
+
+		// Create test tasks.
+		$task_id = 'test-job-formatted';
+		$result  = array(
+			'task_id'   => $task_id,
+			'status'    => 'completed',
+			'results'   => array(
+				array(
+					'url'     => 'https://example.com/test',
+					'content' => 'Test content',
+				),
+			),
+			'metadata'  => array(
+				'mode'         => 'local',
+				'browser_pool' => 'premium',
+				'duration'     => 1.5,
+				'fetched_at'   => current_time( 'mysql', true ),
+			),
+			'stored_at' => current_time( 'mysql', true ),
+		);
+
+		WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $result );
+
+		// Get recent jobs.
+		$jobs = WP_MCP_AI_Crawl4AI_Local_API::get_recent_jobs( array( 'limit' => 10 ) );
+
+		$this->assertNotEmpty( $jobs );
+
+		// Find our test job.
+		$found = false;
+		foreach ( $jobs as $job ) {
+			if ( $job['id'] === $task_id ) {
+				$found = true;
+				$this->assertEquals( 'completed', $job['status'] );
+				$this->assertEquals( 'https://example.com/test', $job['url'] );
+				$this->assertEquals( '1.50s', $job['duration'] );
+				$this->assertEquals( 'premium', $job['browser_pool'] );
+				$this->assertNotEmpty( $job['started'] );
+				break;
+			}
+		}
+
+		$this->assertTrue( $found, 'Test job should be in recent jobs list' );
+
+		// Cleanup.
+		$this->cleanup_task_cache( $task_id );
+	}
+
+	/**
+	 * Test get_recent_jobs filtering by status.
+	 */
+	public function test_get_recent_jobs_filters_by_status() {
+		wp_set_current_user( $this->admin_id );
+
+		// Create tasks with different statuses.
+		$completed_id = 'test-filter-completed';
+		$failed_id    = 'test-filter-failed';
+
+		WP_MCP_AI_Crawl4AI_Local_API::cache_task_result(
+			$completed_id,
+			array(
+				'task_id'   => $completed_id,
+				'status'    => 'completed',
+				'results'   => array(),
+				'metadata'  => array( 'mode' => 'local' ),
+				'stored_at' => current_time( 'mysql', true ),
+			)
+		);
+
+		WP_MCP_AI_Crawl4AI_Local_API::cache_task_result(
+			$failed_id,
+			array(
+				'task_id'   => $failed_id,
+				'status'    => 'failed',
+				'results'   => array(),
+				'metadata'  => array( 'mode' => 'local' ),
+				'stored_at' => current_time( 'mysql', true ),
+			)
+		);
+
+		// Get only completed jobs.
+		$completed_jobs = WP_MCP_AI_Crawl4AI_Local_API::get_recent_jobs(
+			array(
+				'status' => 'completed',
+				'limit'  => 100,
+			)
+		);
+
+		// All returned jobs should be completed.
+		foreach ( $completed_jobs as $job ) {
+			if ( $job['id'] === $completed_id || $job['id'] === $failed_id ) {
+				$this->assertEquals( 'completed', $job['status'], 'Filtered jobs should only be completed' );
+			}
+		}
+
+		// Cleanup.
+		$this->cleanup_task_cache( $completed_id );
+		$this->cleanup_task_cache( $failed_id );
+	}
 }
