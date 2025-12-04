@@ -92,6 +92,74 @@ class WP_MCP_AI_Crawler {
 	}
 
 	/**
+	 * Register a completed Crawl4AI job for tracking without scheduling polling.
+	 *
+	 * This method is used for jobs that complete synchronously or for local crawls.
+	 * The job is saved to the manager for tracking purposes but no polling is scheduled.
+	 *
+	 * @param string $task_id Remote or local task identifier.
+	 * @param array  $job_args Contextual arguments (base_url, arguments, context, status, result).
+	 * @return bool True when the job was registered.
+	 */
+	public static function register_completed_job( $task_id, array $job_args ) {
+		$task_id = sanitize_text_field( (string) $task_id );
+		if ( '' === $task_id ) {
+			return false;
+		}
+
+		// base_url is optional for local jobs
+		$base_url = isset( $job_args['base_url'] ) ? esc_url_raw( (string) $job_args['base_url'] ) : '';
+
+		$job = array(
+			'task_id'       => $task_id,
+			'base_url'      => $base_url,
+			'status'        => isset( $job_args['status'] ) ? sanitize_key( $job_args['status'] ) : 'completed',
+			'created_at'    => time(),
+			'updated_at'    => time(),
+			'arguments'     => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
+			'context'       => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
+			'skip_polling'  => true, // Flag to indicate no polling needed
+		);
+
+		if ( isset( $job_args['raw_response'] ) ) {
+			$job['raw_response'] = $job_args['raw_response'];
+		}
+
+		// Save job metadata for tracking
+		self::save_job( $job );
+
+		// Cache the result if provided
+		if ( isset( $job_args['result'] ) && is_array( $job_args['result'] ) ) {
+			$result            = $job_args['result'];
+			$result['task_id'] = $task_id;
+
+			// Store when this job was registered for tracking purposes
+			// This is kept separate from crawl metadata to avoid confusion
+			if ( ! isset( $result['metadata'] ) || ! is_array( $result['metadata'] ) ) {
+				$result['metadata'] = array();
+			}
+
+			if ( ! isset( $result['metadata']['tracking'] ) || ! is_array( $result['metadata']['tracking'] ) ) {
+				$result['metadata']['tracking'] = array();
+			}
+
+			$result['metadata']['tracking']['registered_at'] = current_time( 'mysql', true );
+
+			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $result );
+		}
+
+		/**
+		 * Fires when a Crawl4AI job is registered as completed.
+		 *
+		 * @param string $task_id Task identifier.
+		 * @param array  $job     Job metadata.
+		 */
+		do_action( 'wp_mcp_ai_crawl4ai_job_registered', $task_id, $job );
+
+		return true;
+	}
+
+	/**
 	 * Retrieve details for a queued job.
 	 *
 	 * @param string $task_id Task identifier.
@@ -128,6 +196,11 @@ class WP_MCP_AI_Crawler {
 
 		$job = self::get_job( $task_id );
 		if ( ! $job ) {
+			return;
+		}
+
+		// Skip polling for jobs marked as completed
+		if ( ! empty( $job['skip_polling'] ) ) {
 			return;
 		}
 

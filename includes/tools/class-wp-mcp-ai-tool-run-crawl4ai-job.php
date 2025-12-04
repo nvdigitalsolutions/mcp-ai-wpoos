@@ -1522,7 +1522,18 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( $has_results || 'completed' === $filtered['status'] ) {
-			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $filtered['task_id'], $filtered );
+			// Register the completed job with the manager for tracking
+			WP_MCP_AI_Crawler::register_completed_job(
+				$filtered['task_id'],
+				array(
+					'base_url'     => $base_url,
+					'arguments'    => $arguments,
+					'context'      => $context,
+					'status'       => $filtered['status'],
+					'result'       => $filtered,
+					'raw_response' => $decoded,
+				)
+			);
 
 			WP_MCP_AI_Logger::log_event(
 				'crawl4ai_response',
@@ -1677,15 +1688,30 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$metadata = apply_filters( 'wp_mcp_ai_crawl4ai_local_metadata', $metadata, $payload, $context, $settings );
 
+		// Generate a task ID for local jobs to enable tracking
+		$task_id = $this->generate_task_id();
+
 		$response = array(
 			'status'   => 'completed',
-			'task_id'  => '',
+			'task_id'  => $task_id,
 			'results'  => $results,
 			'metadata' => $metadata,
 			'raw'      => array(
 				'results'  => $results,
 				'metadata' => $metadata,
 			),
+		);
+
+		// Register the completed local job with the manager for tracking
+		WP_MCP_AI_Crawler::register_completed_job(
+			$task_id,
+			array(
+				'base_url'  => '', // Empty for local jobs
+				'arguments' => $arguments,
+				'context'   => $context,
+				'status'    => 'completed',
+				'result'    => $response,
+			)
 		);
 
 		WP_MCP_AI_Logger::log_event(
@@ -1757,6 +1783,19 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return $message;
+	}
+
+	/**
+	 * Generate a unique identifier for local Crawl4AI tasks.
+	 *
+	 * @return string
+	 */
+	protected function generate_task_id() {
+		// Generate a unique ID with timestamp and random component for better uniqueness
+		$timestamp = time();
+		$random    = wp_generate_password( 8, false, false );
+
+		return 'local-' . $timestamp . '-' . strtolower( $random );
 	}
 
 	/**
