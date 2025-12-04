@@ -584,6 +584,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-media-library-columns.php';
 	WP_MCP_AI_Admin_Media_Library_Columns::init();
 
+	// Load master key rotation admin interface.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
+	WP_MCP_AI_Admin_Key_Rotation::init();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
