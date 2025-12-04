@@ -130,15 +130,15 @@ class WP_MCP_AI_Crawler {
 
 		// Cache the result if provided
 		if ( isset( $job_args['result'] ) && is_array( $job_args['result'] ) ) {
-			$result             = $job_args['result'];
-			$result['task_id']  = $task_id;
-			
+			$result            = $job_args['result'];
+			$result['task_id'] = $task_id;
+
 			if ( ! isset( $result['metadata'] ) || ! is_array( $result['metadata'] ) ) {
 				$result['metadata'] = array();
 			}
-			
+
 			$result['metadata']['tracked_at'] = current_time( 'mysql', true );
-			
+
 			WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $task_id, $result );
 		}
 

@@ -1791,6 +1791,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	protected function generate_task_id() {
+		// Generate a unique ID with only alphanumeric characters (URL-safe)
 		$unique = wp_generate_password( 12, false, false );
 
 		return 'local-' . strtolower( $unique );
