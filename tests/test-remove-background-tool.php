@@ -326,4 +326,137 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 	public function test_helper_function_exists() {
 		$this->assertTrue( function_exists( 'wp_mcp_ai_remove_image_background' ) );
 	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background rejects files outside uploads directory.
+	 *
+	 * This is a critical security test to prevent arbitrary file exfiltration.
+	 */
+	public function test_remove_background_rejects_files_outside_uploads() {
+		// Try to access wp-config.php which is typically outside uploads.
+		$wp_config_path = ABSPATH . 'wp-config.php';
+
+		// Skip if wp-config.php doesn't exist (some test environments).
+		if ( ! file_exists( $wp_config_path ) ) {
+			$this->markTestSkipped( 'wp-config.php not found in test environment' );
+		}
+
+		$result = wp_mcp_ai_remove_image_background( $wp_config_path );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+		$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background rejects files outside uploads via symlink.
+	 */
+	public function test_remove_background_rejects_symlink_outside_uploads() {
+		$upload_dir = wp_upload_dir();
+		$uploads_path = $upload_dir['path'];
+
+		// Create a symlink to a file outside uploads.
+		$target_file = ABSPATH . 'wp-config.php';
+		if ( ! file_exists( $target_file ) ) {
+			$this->markTestSkipped( 'wp-config.php not found in test environment' );
+		}
+
+		$symlink_path = $uploads_path . '/test-symlink-' . time() . '.php';
+
+		// Try to create symlink - may fail in restricted environments.
+		if ( ! @symlink( $target_file, $symlink_path ) ) {
+			$this->markTestSkipped( 'Unable to create symlinks in test environment' );
+		}
+
+		// Make sure to clean up.
+		$cleanup = function () use ( $symlink_path ) {
+			if ( file_exists( $symlink_path ) || is_link( $symlink_path ) ) {
+				@unlink( $symlink_path );
+			}
+		};
+
+		try {
+			$result = wp_mcp_ai_remove_image_background( $symlink_path );
+
+			$this->assertWPError( $result );
+			$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+			$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
+		} finally {
+			$cleanup();
+		}
+	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background rejects files with path traversal.
+	 */
+	public function test_remove_background_rejects_path_traversal() {
+		$upload_dir = wp_upload_dir();
+		$uploads_path = $upload_dir['path'];
+
+		// Try path traversal to access wp-config.php.
+		$malicious_path = $uploads_path . '/../../../wp-config.php';
+
+		$result = wp_mcp_ai_remove_image_background( $malicious_path );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+		$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background accepts files in uploads directory.
+	 */
+	public function test_remove_background_accepts_files_in_uploads() {
+		$upload_dir = wp_upload_dir();
+		$uploads_path = $upload_dir['path'];
+
+		// Create a test file in uploads directory.
+		$test_file = $uploads_path . '/test-image-' . time() . '.png';
+
+		// Create a simple test image.
+		$image = imagecreate( 10, 10 );
+		if ( ! $image ) {
+			$this->fail( 'Failed to create test image' );
+		}
+
+		$red = imagecolorallocate( $image, 255, 0, 0 );
+		imagefill( $image, 0, 0, $red );
+		imagepng( $image, $test_file );
+		imagedestroy( $image );
+
+		// Test with no API key configured (will fail for that reason, not path validation).
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['removebg_api_key'] = '';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$result = wp_mcp_ai_remove_image_background( $test_file );
+
+		// Clean up.
+		if ( file_exists( $test_file ) ) {
+			wp_delete_file( $test_file );
+		}
+
+		// Should fail due to missing API key, NOT due to path validation.
+		$this->assertWPError( $result );
+		$this->assertNotSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_removebg_api_key_missing', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that wp_mcp_ai_remove_image_background rejects /etc/passwd.
+	 */
+	public function test_remove_background_rejects_system_files() {
+		// Try to access /etc/passwd (common system file).
+		$system_file = '/etc/passwd';
+
+		if ( ! file_exists( $system_file ) ) {
+			$this->markTestSkipped( '/etc/passwd not found (Windows or restricted environment)' );
+		}
+
+		$result = wp_mcp_ai_remove_image_background( $system_file );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_image_path', $result->get_error_code() );
+		$this->assertStringContainsString( 'Access denied', $result->get_error_message() );
+	}
 }

@@ -66,6 +66,37 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 		);
 	}
 
+	// Security: Verify the file is within the WordPress uploads directory.
+	// This prevents arbitrary file exfiltration by ensuring only files in the
+	// uploads directory can be sent to the remove.bg API.
+	$upload_dir = wp_upload_dir();
+	if ( isset( $upload_dir['error'] ) && false !== $upload_dir['error'] ) {
+		return new WP_Error(
+			'wp_mcp_ai_upload_dir_error',
+			$upload_dir['error']
+		);
+	}
+
+	$uploads_basedir = isset( $upload_dir['basedir'] ) ? wp_normalize_path( $upload_dir['basedir'] ) : '';
+	if ( empty( $uploads_basedir ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_upload_dir_error',
+			__( 'Unable to determine uploads directory.', 'wp-mcp-ai' )
+		);
+	}
+
+	$normalized_realpath = wp_normalize_path( $realpath );
+
+	// Check if the file is within the uploads directory.
+	// Use strpos to check if the real path starts with the uploads base directory.
+	if ( 0 !== strpos( $normalized_realpath, $uploads_basedir ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_invalid_image_path',
+			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'wp-mcp-ai' ),
+			array( 'status' => 403 )
+		);
+	}
+
 	// Read image file.
 	$image_data = file_get_contents( $realpath );
 	if ( false === $image_data ) {
