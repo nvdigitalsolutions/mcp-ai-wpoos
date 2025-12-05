@@ -85,6 +85,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
 			add_action( 'init', array( $this, 'register_admin_notices' ) );
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
+			// Clean up CCT items when post status changes from publish to something else.
+			add_action( 'transition_post_status', array( $this, 'handle_post_status_transition' ), 10, 3 );
 		}
 
 		/**
@@ -3281,14 +3283,127 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
 			if ( ! $handler ) {
+				// Remove the meta link even if we can't delete the CCT item.
+				// The item might already be deleted, so we don't want to keep a broken link.
+				delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
 				return;
 			}
 
 			// Delete the CCT item.
+			// We don't check the return value because the item might already be deleted,
+			// and we want to clean up the meta link regardless.
 			$handler->delete_item( absint( $cct_item_id ) );
 
 			// Remove the meta link.
 			delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+		}
+
+		/**
+		 * Handle post status transitions to maintain CCT sync integrity.
+		 *
+		 * When an assistant post transitions from published to any other status,
+		 * remove its CCT item to keep the CCT clean and showing only published assistants.
+		 *
+		 * @param string  $new_status New post status.
+		 * @param string  $old_status Old post status.
+		 * @param WP_Post $post       Post object.
+		 */
+		public function handle_post_status_transition( $new_status, $old_status, $post ) {
+			// Only handle our post type.
+			if ( self::POST_TYPE !== $post->post_type ) {
+				return;
+			}
+
+			// If transitioning from publish to any other status, remove the CCT item.
+			if ( 'publish' === $old_status && 'publish' !== $new_status ) {
+				$this->delete_cct_item( $post->ID );
+			}
+		}
+
+		/**
+		 * Clean up orphaned CCT items for non-published assistants.
+		 *
+		 * This static method can be called to remove CCT items that are linked
+		 * to auto-drafts, drafts, or other non-published assistant posts.
+		 * Useful for cleaning up after the fix is deployed.
+		 *
+		 * @return array Array with 'cleaned' (count) and 'errors' (array of error messages).
+		 */
+		public static function cleanup_orphaned_cct_items() {
+			// Only run in Full Version when JetEngine is available.
+			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+				return array(
+					'cleaned' => 0,
+					'errors'  => array( 'Cleanup not available in Base Version.' ),
+				);
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
+				return array(
+					'cleaned' => 0,
+					'errors'  => array( 'JetEngine CCT not available.' ),
+				);
+			}
+
+			$cleaned = 0;
+			$errors  = array();
+
+			// Get all assistant posts with CCT item links.
+			$args = array(
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'meta_query'     => array(
+					array(
+						'key'     => '_wp_mcp_ai_cct_item_id',
+						'compare' => 'EXISTS',
+					),
+				),
+				'fields'         => 'ids',
+			);
+
+			$posts = get_posts( $args );
+
+			foreach ( $posts as $post_id ) {
+				$post = get_post( $post_id );
+
+				if ( ! $post ) {
+					continue;
+				}
+
+				// If post is not published, remove its CCT item.
+				if ( 'publish' !== $post->post_status ) {
+					$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', true );
+
+					if ( ! $cct_item_id ) {
+						continue;
+					}
+
+					$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
+
+					if ( ! $handler ) {
+						// Even if we can't get the handler, remove the meta link to clean up orphaned references.
+						delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+						++$cleaned;
+						continue;
+					}
+
+					// Delete the CCT item.
+					// We attempt deletion but don't stop if it fails - the item might already be gone.
+					$handler->delete_item( absint( $cct_item_id ) );
+
+					// Remove the meta link regardless of deletion result.
+					// This ensures we don't keep orphaned references.
+					delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+
+					++$cleaned;
+				}
+			}
+
+			return array(
+				'cleaned' => $cleaned,
+				'errors'  => $errors,
+			);
 		}
 
 		/**
@@ -3545,6 +3660,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
+				return;
+			}
+
+			// Only sync published assistants to CCT. Auto-drafts, drafts, and other statuses should not be synced.
+			if ( 'publish' !== $post->post_status ) {
+				// If the post is not published but has a CCT item, delete it to keep CCT clean.
+				$this->delete_cct_item( $post_id );
 				return;
 			}
 
