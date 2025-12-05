@@ -17,6 +17,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 }
 
+if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
+}
+
 /**
  * Performs lightweight web searches and returns the top results.
  *
@@ -33,7 +37,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  * - Result deduplication to prevent infinite loops
  * - Security controls (user capabilities, nonces, input sanitization)
  */
-class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+	/**
+	 * Maximum number of results to include in LLM payload.
+	 *
+	 * Chat client receives all results, but LLM only gets this many to reduce token usage.
+	 *
+	 * @var int
+	 */
+	const MAX_LLM_RESULTS = 3;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -130,6 +143,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result = $this->perform_brave_search( $query, $max_results );
 		} else {
 			$result = $this->perform_duckduckgo_search( $query, $max_results );
+		}
+
+		// Validate and normalize the result before caching and returning.
+		// This ensures consistent structure and prevents corrupted data from being cached.
+		if ( ! is_wp_error( $result ) ) {
+			$result = $this->validate_and_normalize_result( $result, $query, $provider );
 		}
 
 		// Cache successful results to reduce redundant API calls.
@@ -366,9 +385,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( ! empty( $data['AbstractText'] ) && ! empty( $data['AbstractURL'] ) ) {
 			$results[] = array(
-				'title'   => isset( $data['Heading'] ) ? sanitize_text_field( $data['Heading'] ) : sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ),
+				'title'   => isset( $data['Heading'] ) ? $this->sanitize_utf8( sanitize_text_field( $data['Heading'] ) ) : $this->sanitize_utf8( sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ) ),
 				'url'     => esc_url_raw( $data['AbstractURL'] ),
-				'snippet' => sanitize_text_field( $data['AbstractText'] ),
+				'snippet' => $this->sanitize_utf8( sanitize_text_field( $data['AbstractText'] ) ),
 				'source'  => 'duckduckgo',
 				'type'    => 'abstract',
 			);
@@ -393,6 +412,34 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
 				'cached'   => false,
 				'provider' => 'duckduckgo',
+				'text'     => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_parts = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'wp-mcp-ai'
+			),
+			count( $results ),
+			$query
+		);
+
+		// Add brief summary of top results for chat UI visibility.
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'wp-mcp-ai' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
 			);
 		}
 
@@ -403,6 +450,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cached'       => false,
 			'provider'     => 'duckduckgo',
 			'timestamp'    => time(),
+			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
@@ -498,13 +546,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					continue;
 				}
 
-				$title   = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
+				$title   = isset( $item['title'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['title'] ) ) : '';
 				$snippet = '';
 
 				if ( ! empty( $item['description'] ) ) {
-					$snippet = sanitize_text_field( $item['description'] );
+					$snippet = $this->sanitize_utf8( sanitize_text_field( $item['description'] ) );
 				} elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
-					$snippet = sanitize_text_field( implode( ' ', $item['extra_snippets'] ) );
+					$snippet = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
 				}
 
 				$results[] = array(
@@ -531,6 +579,34 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
 				'cached'   => false,
 				'provider' => 'brave',
+				'text'     => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_parts = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'wp-mcp-ai'
+			),
+			count( $results ),
+			$query
+		);
+
+		// Add brief summary of top results for chat UI visibility.
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'wp-mcp-ai' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
 			);
 		}
 
@@ -541,6 +617,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cached'       => false,
 			'provider'     => 'brave',
 			'timestamp'    => time(),
+			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
@@ -577,9 +654,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		$results[] = array(
-			'title'   => isset( $topic['Text'] ) ? sanitize_text_field( $topic['Text'] ) : '',
+			'title'   => isset( $topic['Text'] ) ? $this->sanitize_utf8( sanitize_text_field( $topic['Text'] ) ) : '',
 			'url'     => esc_url_raw( $topic['FirstURL'] ),
-			'snippet' => isset( $topic['Result'] ) ? wp_strip_all_tags( $topic['Result'] ) : '',
+			'snippet' => isset( $topic['Result'] ) ? $this->sanitize_utf8( wp_strip_all_tags( $topic['Result'] ) ) : '',
 			'source'  => 'duckduckgo',
 			'type'    => 'result',
 		);
@@ -728,5 +805,251 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			// and completes quickly in normal conditions. When external search APIs return
 			// HTTP 202 (pending), the error is returned to the caller for handling.
 		);
+	}
+
+	/**
+	 * Sanitize web search results for LLM consumption.
+	 *
+	 * Web searches can return large result sets with long URLs and snippets that
+	 * consume many tokens. The LLM doesn't need the full dataset - it only needs
+	 * enough information to understand what was found and provide a response.
+	 *
+	 * This method keeps essential metadata (query, result_count, text summary) and
+	 * provides a condensed version of results that's sufficient for the LLM while
+	 * the chat client receives the full result set.
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with condensed data for LLM.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Keep only essential fields for the LLM.
+		$keep_fields = array(
+			'query',        // The search query (essential context).
+			'result_count', // How many results were found.
+			'text',         // Descriptive message about the search.
+			'note',         // Any notes (e.g., "no results found").
+			'provider',     // Which search provider was used.
+			'cached',       // Whether results were cached.
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		// Include a condensed version of results (just titles and URLs, no snippets).
+		// This gives the LLM enough context to reference specific results if needed
+		// while dramatically reducing token usage.
+		if ( ! empty( $result['results'] ) && is_array( $result['results'] ) ) {
+			$condensed_results = array();
+			
+			// Only include top results for LLM (chat client gets all results).
+			$count = 0;
+
+			foreach ( $result['results'] as $item ) {
+				if ( $count >= self::MAX_LLM_RESULTS ) {
+					break;
+				}
+
+				// Only include title and URL, skip snippets to save tokens.
+				$condensed_results[] = array(
+					'title' => isset( $item['title'] ) ? $item['title'] : '',
+					'url'   => isset( $item['url'] ) ? $item['url'] : '',
+				);
+
+				$count++;
+			}
+
+			if ( ! empty( $condensed_results ) ) {
+				$sanitized['results'] = $condensed_results;
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * Sanitize a string to ensure it contains only valid UTF-8 characters.
+	 *
+	 * Search results from external APIs may contain invalid UTF-8 sequences
+	 * that can cause wp_json_encode() to fail, corrupting SSE streams and
+	 * causing HTTP2 protocol errors. This method removes or replaces invalid
+	 * sequences to ensure the string is safe for JSON encoding.
+	 *
+	 * @param string $string String to sanitize.
+	 * @return string Sanitized string with only valid UTF-8 characters.
+	 */
+	protected function sanitize_utf8( $string ) {
+		// Return early for non-strings.
+		if ( ! is_string( $string ) ) {
+			return $string;
+		}
+
+		// Remove invalid UTF-8 sequences from the source string.
+		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),
+		// effectively removing malformed UTF-8 sequences while preserving valid characters.
+		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
+
+		// If iconv failed (returned false), fall back to mb_convert_encoding.
+		if ( false === $sanitized && function_exists( 'mb_convert_encoding' ) ) {
+			$sanitized = mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
+		}
+
+		// If both methods failed, use preg_replace to remove common problematic control characters.
+		// This targets specific control characters (null bytes, form feed, etc.) that often cause issues.
+		// Note: Not using 'u' modifier since we're dealing with potentially invalid UTF-8.
+		if ( false === $sanitized ) {
+			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $string );
+		}
+
+		// Final fallback: if still invalid, return empty string.
+		if ( false === $sanitized ) {
+			return '';
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Validate and normalize search results to ensure consistent structure.
+	 *
+	 * This method ensures that all search results have the expected structure
+	 * and all required fields are present. It also validates that the data can
+	 * be JSON-encoded without errors, which is critical for SSE streaming.
+	 *
+	 * @param array  $result   Raw search result from provider.
+	 * @param string $query    Original search query.
+	 * @param string $provider Provider name.
+	 * @return array Validated and normalized result.
+	 */
+	protected function validate_and_normalize_result( array $result, $query, $provider ) {
+		// Ensure required top-level fields are present.
+		$normalized = array(
+			'query'        => isset( $result['query'] ) ? $this->sanitize_utf8( $result['query'] ) : $query,
+			'provider'     => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : $provider,
+			'cached'       => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+			'results'      => isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array(),
+			'result_count' => isset( $result['result_count'] ) ? absint( $result['result_count'] ) : 0,
+		);
+
+		// Add optional fields if present.
+		if ( isset( $result['note'] ) ) {
+			$normalized['note'] = $this->sanitize_utf8( $result['note'] );
+		}
+
+		if ( isset( $result['text'] ) ) {
+			$normalized['text'] = $this->sanitize_utf8( $result['text'] );
+		}
+
+		if ( isset( $result['timestamp'] ) ) {
+			$normalized['timestamp'] = absint( $result['timestamp'] );
+		}
+
+		// Validate each result item to ensure it can be JSON-encoded.
+		$validated_results = array();
+		foreach ( $normalized['results'] as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			// Ensure each result has required fields with safe values.
+			$validated_item = array(
+				'title'   => isset( $item['title'] ) ? $this->sanitize_utf8( $item['title'] ) : '',
+				'url'     => isset( $item['url'] ) ? esc_url_raw( $item['url'] ) : '',
+				'snippet' => isset( $item['snippet'] ) ? $this->sanitize_utf8( $item['snippet'] ) : '',
+				'source'  => isset( $item['source'] ) ? sanitize_key( $item['source'] ) : $provider,
+				'type'    => isset( $item['type'] ) ? sanitize_key( $item['type'] ) : 'result',
+			);
+
+			// Skip items with no title and no URL (invalid results).
+			if ( '' === $validated_item['title'] && '' === $validated_item['url'] ) {
+				continue;
+			}
+
+			// Verify this item can be JSON-encoded before including it.
+			$test_encode = wp_json_encode( $validated_item );
+			if ( false !== $test_encode ) {
+				$validated_results[] = $validated_item;
+			} else {
+				// Log the problematic item for debugging.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'web_search_result_json_encode_failed',
+						'Failed to JSON encode search result item',
+						array(
+							'query'      => $query,
+							'provider'   => $provider,
+							'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+						)
+					);
+				}
+			}
+		}
+
+		$normalized['results']      = $validated_results;
+		$normalized['result_count'] = count( $validated_results );
+
+		// Update text field if result count changed due to validation.
+		if ( isset( $normalized['text'] ) && count( $validated_results ) !== count( $result['results'] ) ) {
+			$normalized['text'] = sprintf(
+				/* translators: 1: result count, 2: search query */
+				_n(
+					'Found %1$d web search result for "%2$s"',
+					'Found %1$d web search results for "%2$s"',
+					count( $validated_results ),
+					'wp-mcp-ai'
+				),
+				count( $validated_results ),
+				$query
+			);
+
+			if ( ! empty( $validated_results[0]['title'] ) ) {
+				$normalized['text'] .= ' ' . sprintf(
+					/* translators: %s: title of first search result */
+					__( 'Top result: %s', 'wp-mcp-ai' ),
+					wp_trim_words( $validated_results[0]['title'], 10, '...' )
+				);
+			}
+		}
+
+		// Final validation: ensure the entire result can be JSON-encoded.
+		$final_encode = wp_json_encode( $normalized );
+		if ( false === $final_encode ) {
+			// If even the normalized result fails encoding, return a safe minimal result.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'web_search_complete_result_json_encode_failed',
+					'Failed to JSON encode complete search result',
+					array(
+						'query'      => $query,
+						'provider'   => $provider,
+						'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+					)
+				);
+			}
+
+			// Return minimal safe result.
+			return array(
+				'query'        => $query,
+				'provider'     => $provider,
+				'cached'       => false,
+				'results'      => array(),
+				'result_count' => 0,
+				'note'         => __( 'Search completed but results could not be properly encoded for transmission.', 'wp-mcp-ai' ),
+				'text'         => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search for "%s" completed but encountered data encoding issues.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		return $normalized;
 	}
 }

@@ -760,4 +760,285 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertGreaterThan( 5.5, $elapsed_time, 'Should have waited through partial retry sequence' );
 		$this->assertLessThan( 8.0, $elapsed_time, 'Should not exceed expected wait time by much' );
 	}
+
+	/**
+	 * Test that web_search tool includes a 'text' field in results for chat client visibility.
+	 */
+	public function test_execute_includes_text_field_in_results() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'RelatedTopics' => array(
+							array(
+								'FirstURL' => 'https://example.com/result1',
+								'Text'     => 'First Result Title',
+								'Result'   => 'First result snippet',
+							),
+							array(
+								'FirstURL' => 'https://example.com/result2',
+								'Text'     => 'Second Result Title',
+								'Result'   => 'Second result snippet',
+							),
+						),
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'query' => 'test query',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'text', $result, 'Result should include text field' );
+		$this->assertStringContainsString( 'Found 2 web search results', $result['text'] );
+		$this->assertStringContainsString( 'test query', $result['text'] );
+		$this->assertStringContainsString( 'Top result: First Result Title', $result['text'] );
+	}
+
+	/**
+	 * Test that web_search tool includes text field even when no results found.
+	 */
+	public function test_execute_includes_text_field_when_no_results() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode( array() ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'query' => 'no results query',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'text', $result, 'Result should include text field' );
+		$this->assertStringContainsString( 'Web search completed for "no results query"', $result['text'] );
+		$this->assertStringContainsString( 'no results were found', $result['text'] );
+	}
+
+	/**
+	 * Test that sanitize_for_llm reduces token usage by condensing results.
+	 */
+	public function test_sanitize_for_llm_condenses_results() {
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Simulate a full search result with 5 results including snippets.
+		$full_result = array(
+			'query'        => 'test query',
+			'result_count' => 5,
+			'text'         => 'Found 5 web search results for "test query"',
+			'provider'     => 'duckduckgo',
+			'cached'       => false,
+			'timestamp'    => time(),
+			'results'      => array(
+				array(
+					'title'   => 'First Result',
+					'url'     => 'https://example.com/1',
+					'snippet' => 'This is a long snippet with lots of text that would consume tokens unnecessarily for the LLM context.',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Second Result',
+					'url'     => 'https://example.com/2',
+					'snippet' => 'Another long snippet with detailed information that is not needed by the LLM.',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Third Result',
+					'url'     => 'https://example.com/3',
+					'snippet' => 'Yet another snippet with more content.',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Fourth Result',
+					'url'     => 'https://example.com/4',
+					'snippet' => 'Fourth snippet.',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Fifth Result',
+					'url'     => 'https://example.com/5',
+					'snippet' => 'Fifth snippet.',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+			),
+		);
+
+		$sanitized = $tool->sanitize_for_llm( $full_result );
+
+		// Should preserve essential fields.
+		$this->assertArrayHasKey( 'query', $sanitized );
+		$this->assertArrayHasKey( 'result_count', $sanitized );
+		$this->assertArrayHasKey( 'text', $sanitized );
+		$this->assertArrayHasKey( 'provider', $sanitized );
+
+		// Should have condensed results array.
+		$this->assertArrayHasKey( 'results', $sanitized );
+		
+		// Should only include top 3 results (not all 5).
+		$this->assertCount( 3, $sanitized['results'], 'Should condense to top 3 results for LLM' );
+
+		// Each result should only have title and URL, no snippets.
+		foreach ( $sanitized['results'] as $result ) {
+			$this->assertArrayHasKey( 'title', $result );
+			$this->assertArrayHasKey( 'url', $result );
+			$this->assertArrayNotHasKey( 'snippet', $result, 'Snippets should be removed to save tokens' );
+			$this->assertArrayNotHasKey( 'source', $result );
+			$this->assertArrayNotHasKey( 'type', $result );
+		}
+
+		// Should not include timestamp (not essential for LLM).
+		$this->assertArrayNotHasKey( 'timestamp', $sanitized );
+	}
+
+	/**
+	 * Test that validate_and_normalize_result ensures data integrity.
+	 */
+	public function test_validate_and_normalize_result_handles_invalid_utf8() {
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'validate_and_normalize_result' );
+		$method->setAccessible( true );
+
+		// Simulate a result with potentially problematic UTF-8 sequences.
+		$raw_result = array(
+			'query'        => 'test query',
+			'provider'     => 'duckduckgo',
+			'cached'       => false,
+			'result_count' => 2,
+			'results'      => array(
+				array(
+					'title'   => 'Normal Title',
+					'url'     => 'https://example.com/1',
+					'snippet' => 'Normal snippet text',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Title with special chars: café résumé',
+					'url'     => 'https://example.com/2',
+					'snippet' => 'Snippet with UTF-8: 中文 日本語 한국어',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+			),
+		);
+
+		$normalized = $method->invoke( $tool, $raw_result, 'test query', 'duckduckgo' );
+
+		// Should preserve valid structure.
+		$this->assertIsArray( $normalized );
+		$this->assertArrayHasKey( 'query', $normalized );
+		$this->assertArrayHasKey( 'results', $normalized );
+		$this->assertArrayHasKey( 'result_count', $normalized );
+
+		// Should have 2 valid results.
+		$this->assertCount( 2, $normalized['results'] );
+
+		// The entire result should be JSON-encodable.
+		$encoded = wp_json_encode( $normalized );
+		$this->assertNotFalse( $encoded, 'Normalized result should be JSON-encodable' );
+
+		// Decoded result should match the structure.
+		$decoded = json_decode( $encoded, true );
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'test query', $decoded['query'] );
+	}
+
+	/**
+	 * Test that validate_and_normalize_result filters out invalid items.
+	 */
+	public function test_validate_and_normalize_result_filters_invalid_items() {
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'validate_and_normalize_result' );
+		$method->setAccessible( true );
+
+		// Simulate a result with invalid items (no title, no URL).
+		$raw_result = array(
+			'query'        => 'test query',
+			'provider'     => 'duckduckgo',
+			'cached'       => false,
+			'result_count' => 3,
+			'results'      => array(
+				array(
+					'title'   => 'Valid Result',
+					'url'     => 'https://example.com/valid',
+					'snippet' => 'Valid snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					// Invalid: no title, no URL.
+					'snippet' => 'Orphan snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					// Valid: has URL even without title.
+					'url'     => 'https://example.com/no-title',
+					'snippet' => 'No title snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+			),
+		);
+
+		$normalized = $method->invoke( $tool, $raw_result, 'test query', 'duckduckgo' );
+
+		// Should only have 2 valid results (invalid one filtered out).
+		$this->assertCount( 2, $normalized['results'], 'Invalid items should be filtered out' );
+		$this->assertSame( 2, $normalized['result_count'], 'Result count should reflect validated items' );
+
+		// First result should be the valid one.
+		$this->assertSame( 'Valid Result', $normalized['results'][0]['title'] );
+
+		// Second result should be the one with URL but no title.
+		$this->assertSame( 'https://example.com/no-title', $normalized['results'][1]['url'] );
+	}
 }
+

@@ -553,6 +553,38 @@ class WP_MCP_AI_Chat_Service {
 				$result_content = wp_json_encode( $tool_result );
 			}
 
+			// Handle JSON encoding failures to prevent corrupting SSE streams.
+			// If encoding fails (e.g., invalid UTF-8 in search results), create a safe fallback.
+			if ( false === $result_content ) {
+				WP_MCP_AI_Logger::log_error(
+					'tool_result_json_encode_failed',
+					sprintf( 'Failed to JSON encode tool result for %s', sanitize_key( $tool_name ) ),
+					array(
+						'tool_name'  => sanitize_key( $tool_name ),
+						'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown error',
+					)
+				);
+
+				// Create a safe error message that can be JSON encoded.
+				// Sanitize tool name to prevent any potential issues in the message.
+				$safe_tool_name = sanitize_key( $tool_name );
+				$result_content = wp_json_encode(
+					array(
+						'error'   => true,
+						'message' => sprintf(
+							/* translators: %s: tool name */
+							__( 'Tool "%s" completed but the result could not be encoded for transmission. This may indicate invalid characters in the data.', 'wp-mcp-ai' ),
+							$safe_tool_name
+						),
+					)
+				);
+
+				// If even the error message fails to encode, use a hardcoded fallback.
+				if ( false === $result_content ) {
+					$result_content = '{"error":true,"message":"Tool result encoding failed"}';
+				}
+			}
+
 			$results[] = array(
 				'role'         => 'tool',
 				'tool_call_id' => $tool_id,

@@ -788,20 +788,51 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		if ( $this->should_treat_as_html( $content_type ) ) {
-			$result['html']     = $body;
-			$result['markdown'] = $this->convert_html_to_markdown( $body );
-			$result['text']     = $this->convert_html_to_text( $body );
+			// Sanitize HTML content for valid UTF-8 to prevent JSON encoding failures.
+			$result['html']     = $this->sanitize_utf8( $body );
+			$result['markdown'] = $this->sanitize_utf8( $this->convert_html_to_markdown( $body ) );
+			$result['text']     = $this->sanitize_utf8( $this->convert_html_to_text( $body ) );
 		} elseif ( $this->should_treat_as_json( $content_type, $body ) ) {
 			$decoded = json_decode( $body, true );
 			if ( null !== $decoded ) {
 				$result['markdown'] = "```json\n" . wp_json_encode( $decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n```";
 				$result['text']     = wp_json_encode( $decoded );
 			} else {
-				$result['text'] = trim( (string) $body );
+				$result['text'] = $this->sanitize_utf8( trim( (string) $body ) );
 			}
 		} elseif ( $this->should_treat_as_text( $content_type ) ) {
-			$result['text']     = trim( (string) $body );
+			$result['text']     = $this->sanitize_utf8( trim( (string) $body ) );
 			$result['markdown'] = $result['text'];
+		}
+
+		// Validate that the result can be JSON-encoded before returning.
+		// This prevents SSE stream corruption from invalid UTF-8 in scraped content.
+		$test_encode = wp_json_encode( $result );
+		if ( false === $test_encode ) {
+			// Log the encoding failure for debugging.
+			WP_MCP_AI_Logger::log_error(
+				'crawl4ai_result_json_encode_failed',
+				'Failed to JSON encode Crawl4AI result',
+				array(
+					'url'        => $url,
+					'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+				)
+			);
+
+			// Return a safe minimal result instead of corrupting the stream.
+			return array(
+				'url'            => $url,
+				'status_code'    => $status_code,
+				'content_type'   => $content_type,
+				'content_length' => 0,
+				'retrieved_at'   => current_time( 'mysql', true ),
+				'html'           => '',
+				'markdown'       => '',
+				'text'           => __( 'Content could not be properly encoded for transmission. This may indicate invalid characters in the scraped data.', 'wp-mcp-ai' ),
+				'metadata'       => array(
+					'error' => 'json_encode_failed',
+				),
+			);
 		}
 
 		return $result;
@@ -1871,6 +1902,53 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				},
 				$sanitized['results']
 			);
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitize a string to ensure it contains only valid UTF-8 characters.
+	 *
+	 * Scraped content from external websites may contain invalid UTF-8 sequences
+	 * that can cause wp_json_encode() to fail, corrupting SSE streams and
+	 * causing HTTP2 protocol errors. This method removes or replaces invalid
+	 * sequences to ensure the string is safe for JSON encoding.
+	 *
+	 * @param string $string String to sanitize.
+	 * @return string Sanitized string with only valid UTF-8 characters.
+	 */
+	protected function sanitize_utf8( $string ) {
+		// Return early for non-strings.
+		if ( ! is_string( $string ) ) {
+			return $string;
+		}
+
+		// Empty strings are always valid.
+		if ( '' === $string ) {
+			return '';
+		}
+
+		// Remove invalid UTF-8 sequences from the source string.
+		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),
+		// effectively removing malformed UTF-8 sequences while preserving valid characters.
+		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
+
+		// If iconv failed (returned false), fall back to mb_convert_encoding.
+		if ( false === $sanitized && function_exists( 'mb_convert_encoding' ) ) {
+			$sanitized = mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
+		}
+
+		// If both methods failed, use preg_replace to remove common problematic control characters.
+		// This targets specific control characters (null bytes, form feed, etc.) that often cause issues.
+		// Note: Not using 'u' modifier since we're dealing with potentially invalid UTF-8.
+		if ( false === $sanitized ) {
+			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $string );
+		}
+
+		// Final fallback: if still invalid, return empty string.
+		if ( false === $sanitized ) {
+			return '';
 		}
 
 		return $sanitized;
