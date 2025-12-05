@@ -36,7 +36,10 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
  * - Rate limiting and caching to prevent abuse
  * - Result deduplication to prevent infinite loops
  * - Security controls (user capabilities, nonces, input sanitization)
- * - SSE streaming integration via wp_mcp_ai_web_search_completed action hook
+ *
+ * In agentic loop contexts, results are returned synchronously to the orchestration layer
+ * which handles SSE streaming via tool_result events. The wp_mcp_ai_web_search_completed
+ * action only fires for standalone API calls outside of chat flows.
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
@@ -169,15 +172,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			WP_MCP_AI_Cache_Helper::set( $cache_key, $result, $cache_ttl );
 		}
 
-		// Fire action hook to send complete search results back to chat client via SSE.
-		// This allows the orchestration layer to stream results in real-time.
-		// Only fire if we're in a chat context where streaming is potentially active.
-		if ( ! is_wp_error( $result ) && ! empty( $context['agentic_loop'] ) ) {
+		// Fire action hook for non-agentic contexts (e.g., standalone tool API calls).
+		// In agentic loop contexts, the result is already handled by the orchestration layer
+		// which sends it as a tool_result SSE event and adds it to the conversation.
+		// Firing this action in agentic contexts would cause duplicate/conflicting events.
+		if ( ! is_wp_error( $result ) && empty( $context['agentic_loop'] ) ) {
 			/**
-			 * Fires when a web search completes successfully in chat context.
+			 * Fires when a web search completes successfully outside of agentic loop.
 			 *
-			 * This hook allows the orchestration layer to stream search results
-			 * back to the chat client via SSE for real-time user feedback.
+			 * This hook allows extensions to react to search completions when the
+			 * tool is called directly via REST API rather than through the chat flow.
+			 *
+			 * Note: This action does NOT fire during agentic loop execution to avoid
+			 * sending duplicate/conflicting events that could confuse the chat client.
 			 *
 			 * @param array $result    Search results array.
 			 * @param array $arguments Original search arguments.
