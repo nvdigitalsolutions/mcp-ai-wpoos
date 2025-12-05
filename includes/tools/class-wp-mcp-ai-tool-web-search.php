@@ -17,6 +17,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 }
 
+if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
+}
+
 /**
  * Performs lightweight web searches and returns the top results.
  *
@@ -33,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  * - Result deduplication to prevent infinite loops
  * - Security controls (user capabilities, nonces, input sanitization)
  */
-class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -393,6 +397,34 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
 				'cached'   => false,
 				'provider' => 'duckduckgo',
+				'text'     => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_parts = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'wp-mcp-ai'
+			),
+			count( $results ),
+			$query
+		);
+
+		// Add brief summary of top results for chat UI visibility.
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'wp-mcp-ai' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
 			);
 		}
 
@@ -403,6 +435,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cached'       => false,
 			'provider'     => 'duckduckgo',
 			'timestamp'    => time(),
+			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
@@ -531,6 +564,34 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
 				'cached'   => false,
 				'provider' => 'brave',
+				'text'     => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		// Build descriptive text message for the LLM and chat UI.
+		$text_parts = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'wp-mcp-ai'
+			),
+			count( $results ),
+			$query
+		);
+
+		// Add brief summary of top results for chat UI visibility.
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'wp-mcp-ai' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
 			);
 		}
 
@@ -541,6 +602,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cached'       => false,
 			'provider'     => 'brave',
 			'timestamp'    => time(),
+			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 		);
 	}
 
@@ -728,5 +790,73 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			// and completes quickly in normal conditions. When external search APIs return
 			// HTTP 202 (pending), the error is returned to the caller for handling.
 		);
+	}
+
+	/**
+	 * Sanitize web search results for LLM consumption.
+	 *
+	 * Web searches can return large result sets with long URLs and snippets that
+	 * consume many tokens. The LLM doesn't need the full dataset - it only needs
+	 * enough information to understand what was found and provide a response.
+	 *
+	 * This method keeps essential metadata (query, result_count, text summary) and
+	 * provides a condensed version of results that's sufficient for the LLM while
+	 * the chat client receives the full result set.
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with condensed data for LLM.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Keep only essential fields for the LLM.
+		$keep_fields = array(
+			'query',        // The search query (essential context).
+			'result_count', // How many results were found.
+			'text',         // Descriptive message about the search.
+			'note',         // Any notes (e.g., "no results found").
+			'provider',     // Which search provider was used.
+			'cached',       // Whether results were cached.
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		// Include a condensed version of results (just titles and URLs, no snippets).
+		// This gives the LLM enough context to reference specific results if needed
+		// while dramatically reducing token usage.
+		if ( ! empty( $result['results'] ) && is_array( $result['results'] ) ) {
+			$condensed_results = array();
+			
+			// Only include top 3 results for LLM (chat client gets all results).
+			$max_results_for_llm = 3;
+			$count = 0;
+
+			foreach ( $result['results'] as $item ) {
+				if ( $count >= $max_results_for_llm ) {
+					break;
+				}
+
+				// Only include title and URL, skip snippets to save tokens.
+				$condensed_results[] = array(
+					'title' => isset( $item['title'] ) ? $item['title'] : '',
+					'url'   => isset( $item['url'] ) ? $item['url'] : '',
+				);
+
+				$count++;
+			}
+
+			if ( ! empty( $condensed_results ) ) {
+				$sanitized['results'] = $condensed_results;
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }
