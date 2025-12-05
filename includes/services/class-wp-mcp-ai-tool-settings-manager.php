@@ -84,6 +84,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
 		 */
 		public static function update_capability_flags( $tool_slug, $flags ) {
 			$all_custom_flags = get_option( self::CAPABILITY_FLAGS_OPTION, array() );
+			$old_custom_flags = $all_custom_flags;
 
 			if ( empty( $flags ) ) {
 				// Remove custom flags if empty (revert to default).
@@ -91,6 +92,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
 			} else {
 				// Sanitize and store flags.
 				$all_custom_flags[ $tool_slug ] = array_map( 'sanitize_key', $flags );
+			}
+
+			// Check if the value actually changed.
+			// If it didn't change, consider it a success (no need to update).
+			if ( $all_custom_flags === $old_custom_flags ) {
+				return true;
 			}
 
 			return update_option( self::CAPABILITY_FLAGS_OPTION, $all_custom_flags );
@@ -117,11 +124,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
 		 */
 		public static function set_force_sync( $tool_slug, $force_sync ) {
 			$force_sync_tools = get_option( self::FORCE_SYNC_OPTION, array() );
+			$old_force_sync_tools = $force_sync_tools;
 
 			if ( $force_sync ) {
 				$force_sync_tools[ $tool_slug ] = true;
 			} else {
 				unset( $force_sync_tools[ $tool_slug ] );
+			}
+
+			// Check if the value actually changed.
+			// If it didn't change, consider it a success (no need to update).
+			if ( $force_sync_tools === $old_force_sync_tools ) {
+				return true;
 			}
 
 			return update_option( self::FORCE_SYNC_OPTION, $force_sync_tools );
