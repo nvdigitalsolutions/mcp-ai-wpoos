@@ -27,7 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
  *
  * Both providers properly handle:
- * - Synchronous execution with automatic retry for HTTP 202 responses (up to 3 retries with exponential backoff)
+ * - Synchronous execution with automatic retry for HTTP 202 responses (up to 6 retries, 90 seconds total wait)
  * - Asynchronous responses (HTTP 202) returned to orchestration layer only after retry attempts exhausted
  * - Rate limiting and caching to prevent abuse
  * - Result deduplication to prevent infinite loops
@@ -606,12 +606,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	protected function perform_search_with_retry( $url, $args = array() ) {
 		// Maximum number of retry attempts for HTTP 202 responses.
-		// With exponential backoff (1s, 2s, 4s), this gives the external API
-		// up to 7 seconds to process before we give up.
-		$max_retries = 3;
+		// With exponential backoff starting at 2s (2s, 4s, 8s, 16s, 30s, 30s),
+		// this gives the external API up to 90 seconds to process before we give up.
+		// Retry sequence: attempt 0 (immediate), wait 2s, attempt 1, wait 4s, attempt 2,
+		// wait 8s, attempt 3, wait 16s, attempt 4, wait 30s, attempt 5, wait 30s, attempt 6.
+		// Total wait time: 2 + 4 + 8 + 16 + 30 + 30 = 90 seconds.
+		$max_retries = 6;
 		
 		// Initial delay between retries (will be doubled each time if no Retry-After header).
-		$retry_delay = 1;
+		// Start at 2 seconds to allow API time to process.
+		$retry_delay = 2;
+		
+		// Maximum delay cap to prevent excessively long waits on individual retries.
+		$max_delay = 30;
 
 		for ( $attempt = 0; $attempt <= $max_retries; $attempt++ ) {
 			// Execute HTTP request.
@@ -642,18 +649,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$wait_time   = $retry_delay;
 				
 				if ( '' !== $retry_after && is_numeric( $retry_after ) ) {
-					// Use server's suggestion, but cap at 5 seconds to avoid excessive waiting.
-					$wait_time = min( (int) $retry_after, 5 );
+					// Use server's suggestion, but cap at max_delay to avoid excessive waiting.
+					$wait_time = min( (int) $retry_after, $max_delay );
 				}
 				
 				// Use sleep() to wait before next attempt. This is acceptable here because:
 				// 1. We're in a tool execution context, not a user-facing request handler.
-				// 2. The total wait time is bounded (max ~7-10 seconds across all retries).
+				// 2. The total wait time is bounded (max 90 seconds across all retries).
 				// 3. This maximizes chance of success before falling back to LLM alternatives.
 				sleep( $wait_time );
 				
 				// Exponential backoff for next retry if no Retry-After header.
-				$retry_delay *= 2;
+				// Cap at max_delay to prevent excessively long individual waits.
+				$retry_delay = min( $retry_delay * 2, $max_delay );
 				
 				continue;
 			}
