@@ -1022,5 +1022,235 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Second result should be the one with URL but no title.
 		$this->assertSame( 'https://example.com/no-title', $normalized['results'][1]['url'] );
 	}
+
+	/**
+	 * Test that wp_mcp_ai_web_search_completed action fires outside of agentic loop.
+	 *
+	 * @since 1.0.0
+	 */
+	public function test_action_fires_outside_agentic_loop() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Mock HTTP request.
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'AbstractText' => 'Test abstract',
+						'AbstractURL'  => 'https://example.com',
+						'Heading'      => 'Test heading',
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Track if action fired.
+		$action_fired = false;
+		$action_data  = array();
+
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired, &$action_data ) {
+			$action_fired = true;
+			$action_data  = array(
+				'result'    => $result,
+				'arguments' => $arguments,
+				'context'   => $context,
+			);
+		};
+
+		add_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10, 3 );
+
+		// Execute without agentic_loop flag (standalone API call).
+		$result = $tool->execute(
+			array(
+				'query' => 'test query',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10 );
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertTrue( $action_fired, 'Action should fire outside of agentic loop' );
+		$this->assertIsArray( $action_data['result'] );
+		$this->assertSame( 'test query', $action_data['arguments']['query'] );
+	}
+
+	/**
+	 * Test that wp_mcp_ai_web_search_completed action does NOT fire inside agentic loop.
+	 *
+	 * @since 1.0.0
+	 */
+	public function test_action_does_not_fire_inside_agentic_loop() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Mock HTTP request.
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'AbstractText' => 'Test abstract',
+						'AbstractURL'  => 'https://example.com',
+						'Heading'      => 'Test heading',
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Track if action fired.
+		$action_fired = false;
+
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
+			$action_fired = true;
+		};
+
+		add_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10, 3 );
+
+		// Execute WITH agentic_loop flag (chat flow).
+		$result = $tool->execute(
+			array(
+				'query' => 'test query',
+			),
+			array(
+				'user_id'      => $user_id,
+				'agentic_loop' => true,
+			)
+		);
+
+		remove_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10 );
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertFalse( $action_fired, 'Action should NOT fire inside agentic loop' );
+		$this->assertIsArray( $result, 'Tool should still return results' );
+	}
+
+	/**
+	 * Test that the filter can override action firing behavior.
+	 *
+	 * @since 1.0.0
+	 */
+	public function test_filter_can_override_action_firing() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Mock HTTP request.
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'AbstractText' => 'Test abstract',
+						'AbstractURL'  => 'https://example.com',
+						'Heading'      => 'Test heading',
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Override filter to force action to fire even in agentic loop.
+		add_filter(
+			'wp_mcp_ai_web_search_should_fire_completed_action',
+			function ( $should_fire, $result, $arguments, $context, $is_agentic_loop ) {
+				// Always fire for testing purposes.
+				return true;
+			},
+			10,
+			5
+		);
+
+		// Track if action fired.
+		$action_fired = false;
+
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
+			$action_fired = true;
+		};
+
+		add_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10, 3 );
+
+		// Execute WITH agentic_loop flag but filter overrides.
+		$result = $tool->execute(
+			array(
+				'query' => 'test query',
+			),
+			array(
+				'user_id'      => $user_id,
+				'agentic_loop' => true,
+			)
+		);
+
+		remove_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10 );
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_all_filters( 'wp_mcp_ai_web_search_should_fire_completed_action' );
+
+		$this->assertTrue( $action_fired, 'Filter should allow overriding default behavior' );
+		$this->assertIsArray( $result );
+	}
+
+	/**
+	 * Test that action does not fire for WP_Error results.
+	 *
+	 * @since 1.0.0
+	 */
+	public function test_action_does_not_fire_for_errors() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Mock HTTP request to fail.
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return new WP_Error( 'http_request_failed', 'Network error' );
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Track if action fired.
+		$action_fired = false;
+
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
+			$action_fired = true;
+		};
+
+		add_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10, 3 );
+
+		// Execute without agentic_loop flag.
+		$result = $tool->execute(
+			array(
+				'query' => 'test query',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_action( 'wp_mcp_ai_web_search_completed', $action_callback, 10 );
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertFalse( $action_fired, 'Action should NOT fire for error results' );
+		$this->assertWPError( $result );
+	}
 }
 

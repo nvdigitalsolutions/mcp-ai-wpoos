@@ -24,19 +24,56 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
 /**
  * Performs lightweight web searches and returns the top results.
  *
- * Supports two providers:
+ * This implementation follows industry best practices:
+ *
+ * **Architecture Patterns**:
+ * - Single Responsibility: Tool focuses solely on web search, delegating SSE streaming
+ *   to the orchestration layer (Separation of Concerns pattern)
+ * - Strategy Pattern: Supports multiple search providers (Brave, DuckDuckGo) via
+ *   configurable strategy without changing tool interface
+ * - Context-Aware Execution: Adapts behavior based on execution context (agentic loop
+ *   vs standalone API call) following Context pattern
+ *
+ * **WordPress Standards**:
+ * - Implements core tool interfaces (WP_MCP_AI_Tool_Interface)
+ * - Uses WordPress coding standards (WPCS)
+ * - Follows WordPress hook patterns (actions, filters with proper documentation)
+ * - Respects capability checks and user permissions
+ * - Uses WordPress HTTP API (wp_remote_get) instead of cURL
+ *
+ * **API Integration Best Practices**:
  * - Brave Search API: Uses the Brave Search REST API v1 (https://api.search.brave.com/res/v1/web/search)
  *   Integration follows patterns from: https://github.com/brave/brave-search-mcp-server
  * - DuckDuckGo Instant Answer API: Uses the DuckDuckGo public API (https://api.duckduckgo.com/)
  *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
  *
- * Both providers properly handle:
+ * **Reliability & Performance**:
  * - Synchronous execution with single HTTP request (10-second timeout, returns quickly)
  * - HTTP 202 (Accepted) responses returned immediately to orchestration layer for async handling
- * - Rate limiting and caching to prevent abuse
+ * - Rate limiting to prevent abuse (configurable via filter)
+ * - Result caching to reduce redundant API calls (configurable TTL)
  * - Result deduplication to prevent infinite loops
- * - Security controls (user capabilities, nonces, input sanitization)
- * - SSE streaming integration via wp_mcp_ai_web_search_completed action hook
+ *
+ * **Security Controls**:
+ * - User capability checks (requires 'read' capability minimum)
+ * - Input sanitization (esc_url_raw, sanitize_text_field)
+ * - Output escaping for safe data transmission
+ * - Rate limiting per user to prevent abuse
+ * - UTF-8 sanitization to prevent JSON encoding failures
+ *
+ * **Observability**:
+ * - Detailed logging when agentic loop logging is enabled
+ * - Action hooks for extensibility and monitoring
+ * - Filter hooks for behavior customization
+ *
+ * **Agentic Loop Integration**:
+ * In agentic loop contexts, results are returned synchronously to the orchestration layer
+ * which handles SSE streaming via tool_result events. The wp_mcp_ai_web_search_completed
+ * action only fires for standalone API calls outside of chat flows, preventing duplicate
+ * events that could confuse the chat client (avoiding "double response" anti-pattern).
+ *
+ * @since 1.0.0
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
@@ -44,9 +81,18 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 *
 	 * Chat client receives all results, but LLM only gets this many to reduce token usage.
 	 *
+	 * @since 1.0.0
 	 * @var int
 	 */
 	const MAX_LLM_RESULTS = 3;
+
+	/**
+	 * Context flag indicating execution within an agentic loop.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const CONTEXT_AGENTIC_LOOP = 'agentic_loop';
 
 	/**
 	 * {@inheritdoc}
@@ -96,8 +142,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * Execute the tool.
 	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context including user_id.
+	 * @since 1.0.0
+	 *
+	 * @param array $arguments Tool arguments containing 'query' and optional 'max_results'.
+	 * @param array $context   Execution context including user_id and agentic_loop flag.
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
@@ -169,19 +217,66 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			WP_MCP_AI_Cache_Helper::set( $cache_key, $result, $cache_ttl );
 		}
 
-		// Fire action hook to send complete search results back to chat client via SSE.
-		// This allows the orchestration layer to stream results in real-time.
-		// Only fire if we're in a chat context where streaming is potentially active.
-		if ( ! is_wp_error( $result ) && ! empty( $context['agentic_loop'] ) ) {
+		// Fire action hook for non-agentic contexts (e.g., standalone tool API calls).
+		// In agentic loop contexts, the result is already handled by the orchestration layer
+		// which sends it as a tool_result SSE event and adds it to the conversation.
+		// Firing this action in agentic contexts would cause duplicate/conflicting events.
+		$is_agentic_loop = ! empty( $context[ self::CONTEXT_AGENTIC_LOOP ] );
+
+		/**
+		 * Filter whether to fire the web_search_completed action.
+		 *
+		 * This allows advanced users to override the default behavior of skipping
+		 * the action during agentic loops.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $should_fire   Whether to fire the action. Default false for agentic loops, true otherwise.
+		 * @param array $result        Search results array.
+		 * @param array $arguments     Original search arguments.
+		 * @param array $context       Execution context.
+		 * @param bool  $is_agentic_loop Whether executing within an agentic loop.
+		 */
+		$should_fire_action = apply_filters(
+			'wp_mcp_ai_web_search_should_fire_completed_action',
+			! $is_agentic_loop,
+			$result,
+			$arguments,
+			$context,
+			$is_agentic_loop
+		);
+
+		if ( ! is_wp_error( $result ) && $should_fire_action ) {
+			// Log action firing for debugging (respects agentic loop logging setting).
+			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Firing wp_mcp_ai_web_search_completed action',
+					array(
+						'query'           => $arguments['query'] ?? '',
+						'result_count'    => $result['result_count'] ?? 0,
+						'provider'        => $result['provider'] ?? 'unknown',
+						'cached'          => $result['cached'] ?? false,
+						'is_agentic_loop' => $is_agentic_loop,
+					)
+				);
+			}
+
 			/**
-			 * Fires when a web search completes successfully in chat context.
+			 * Fires when a web search completes successfully outside of agentic loop.
 			 *
-			 * This hook allows the orchestration layer to stream search results
-			 * back to the chat client via SSE for real-time user feedback.
+			 * This hook allows extensions to react to search completions when the
+			 * tool is called directly via REST API rather than through the chat flow.
 			 *
-			 * @param array $result    Search results array.
-			 * @param array $arguments Original search arguments.
-			 * @param array $context   Execution context.
+			 * Note: By default, this action does NOT fire during agentic loop execution
+			 * to avoid sending duplicate/conflicting events that could confuse the chat
+			 * client. The orchestration layer handles result streaming in that context.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $result    Search results array with query, results, provider, etc.
+			 * @param array $arguments Original search arguments (query, max_results).
+			 * @param array $context   Execution context (user_id, agentic_loop flag, etc.).
 			 */
 			do_action( 'wp_mcp_ai_web_search_completed', $result, $arguments, $context );
 		}
