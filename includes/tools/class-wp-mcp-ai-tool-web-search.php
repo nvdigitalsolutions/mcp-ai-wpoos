@@ -504,13 +504,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( empty( $results ) ) {
 			$task_id = $this->generate_task_id( $query, 'duckduckgo' );
 			return array(
-				'task_id'  => $task_id,
-				'query'    => $query,
-				'results'  => array(),
-				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
-				'cached'   => false,
-				'provider' => 'duckduckgo',
-				'text'     => sprintf(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => array(),
+				'note'           => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'cached'         => false,
+				'provider'       => 'duckduckgo',
+				'system_message' => sprintf(
 					/* translators: %s: search query */
 					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
 					$query
@@ -518,7 +518,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
-		// Build descriptive text message for the LLM and chat UI.
+		// Build descriptive text message for the LLM (removed from base result to prevent SSE streaming extraction).
+		// The text will be added by sanitize_for_llm() for LLM consumption only.
+		// Include system_message for chat client display without treating it as assistant content.
 		$text_parts = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: result count, 2: search query */
@@ -543,14 +545,14 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$task_id = $this->generate_task_id( $query, 'duckduckgo' );
 		return array(
-			'task_id'      => $task_id,
-			'query'        => $query,
-			'results'      => $results,
-			'result_count' => count( $results ),
-			'cached'       => false,
-			'provider'     => 'duckduckgo',
-			'timestamp'    => time(),
-			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'task_id'        => $task_id,
+			'query'          => $query,
+			'results'        => $results,
+			'result_count'   => count( $results ),
+			'cached'         => false,
+			'provider'       => 'duckduckgo',
+			'timestamp'      => time(),
+			'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
 		);
 	}
 
@@ -675,13 +677,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( empty( $results ) ) {
 			$task_id = $this->generate_task_id( $query, 'brave' );
 			return array(
-				'task_id'  => $task_id,
-				'query'    => $query,
-				'results'  => array(),
-				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
-				'cached'   => false,
-				'provider' => 'brave',
-				'text'     => sprintf(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => array(),
+				'note'           => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'cached'         => false,
+				'provider'       => 'brave',
+				'system_message' => sprintf(
 					/* translators: %s: search query */
 					__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
 					$query
@@ -714,14 +716,14 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$task_id = $this->generate_task_id( $query, 'brave' );
 		return array(
-			'task_id'      => $task_id,
-			'query'        => $query,
-			'results'      => $results,
-			'result_count' => count( $results ),
-			'cached'       => false,
-			'provider'     => 'brave',
-			'timestamp'    => time(),
-			'text'         => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'task_id'        => $task_id,
+			'query'          => $query,
+			'results'        => $results,
+			'result_count'   => count( $results ),
+			'cached'         => false,
+			'provider'       => 'brave',
+			'timestamp'      => time(),
+			'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
 		);
 	}
 
@@ -892,6 +894,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * provides a condensed version of results that's sufficient for the LLM while
 	 * the chat client receives the full result set.
 	 *
+	 * Note: The 'text' field is generated here for LLM consumption and is NOT included
+	 * in the base tool result to prevent it from being extracted and streamed as
+	 * assistant content during SSE streaming (which would break the chat client connection).
+	 *
 	 * @param mixed $result Tool execution result.
 	 * @return mixed Sanitized result with condensed data for LLM.
 	 */
@@ -904,7 +910,6 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$keep_fields = array(
 			'query',        // The search query (essential context).
 			'result_count', // How many results were found.
-			'text',         // Descriptive message about the search.
 			'note',         // Any notes (e.g., "no results found").
 			'provider',     // Which search provider was used.
 			'cached',       // Whether results were cached.
@@ -915,6 +920,14 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			if ( isset( $result[ $key ] ) ) {
 				$sanitized[ $key ] = $result[ $key ];
 			}
+		}
+		
+		// Generate descriptive text for the LLM.
+		// This is created here rather than in the base result to prevent
+		// it from being extracted during SSE streaming fallback text extraction.
+		$text = $this->generate_result_text( $result );
+		if ( '' !== $text ) {
+			$sanitized['text'] = $text;
 		}
 
 		// Include a condensed version of results (just titles and URLs, no snippets).
@@ -946,6 +959,56 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * Generate descriptive text for search results.
+	 *
+	 * Creates a human-readable summary of the search operation for LLM consumption.
+	 * This text is only included in the LLM-sanitized version to prevent it from
+	 * being extracted and streamed as assistant content during SSE streaming.
+	 *
+	 * @param array $result Tool execution result.
+	 * @return string Descriptive text about the search results.
+	 */
+	protected function generate_result_text( array $result ) {
+		$query = isset( $result['query'] ) ? $result['query'] : '';
+		
+		// Handle empty results case.
+		if ( empty( $result['results'] ) || 0 === $result['result_count'] ) {
+			return sprintf(
+				/* translators: %s: search query */
+				__( 'Web search completed for "%s" but no results were found.', 'wp-mcp-ai' ),
+				$query
+			);
+		}
+		
+		// Build descriptive text for successful search.
+		$result_count = isset( $result['result_count'] ) ? absint( $result['result_count'] ) : 0;
+		$text_parts = array();
+		
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				$result_count,
+				'wp-mcp-ai'
+			),
+			$result_count,
+			$query
+		);
+		
+		// Add brief summary of top result if available.
+		if ( ! empty( $result['results'][0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'wp-mcp-ai' ),
+				wp_trim_words( $result['results'][0]['title'], 10, '...' )
+			);
+		}
+		
+		return implode( ' ', $text_parts );
 	}
 
 	/**
@@ -1022,8 +1085,8 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$normalized['note'] = $this->sanitize_utf8( $result['note'] );
 		}
 
-		if ( isset( $result['text'] ) ) {
-			$normalized['text'] = $this->sanitize_utf8( $result['text'] );
+		if ( isset( $result['system_message'] ) ) {
+			$normalized['system_message'] = $this->sanitize_utf8( $result['system_message'] );
 		}
 
 		if ( isset( $result['timestamp'] ) ) {
@@ -1074,9 +1137,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$normalized['results']      = $validated_results;
 		$normalized['result_count'] = count( $validated_results );
 
-		// Update text field if result count changed due to validation.
-		if ( isset( $normalized['text'] ) && count( $validated_results ) !== count( $result['results'] ) ) {
-			$normalized['text'] = sprintf(
+		// Update system_message field if result count changed due to validation.
+		if ( isset( $normalized['system_message'] ) && count( $validated_results ) !== count( $result['results'] ) ) {
+			$normalized['system_message'] = sprintf(
 				/* translators: 1: result count, 2: search query */
 				_n(
 					'Found %1$d web search result for "%2$s"',
@@ -1089,7 +1152,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 
 			if ( ! empty( $validated_results[0]['title'] ) ) {
-				$normalized['text'] .= ' ' . sprintf(
+				$normalized['system_message'] .= ' ' . sprintf(
 					/* translators: %s: title of first search result */
 					__( 'Top result: %s', 'wp-mcp-ai' ),
 					wp_trim_words( $validated_results[0]['title'], 10, '...' )
@@ -1115,13 +1178,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 			// Return minimal safe result.
 			return array(
-				'query'        => $query,
-				'provider'     => $provider,
-				'cached'       => false,
-				'results'      => array(),
-				'result_count' => 0,
-				'note'         => __( 'Search completed but results could not be properly encoded for transmission.', 'wp-mcp-ai' ),
-				'text'         => sprintf(
+				'query'          => $query,
+				'provider'       => $provider,
+				'cached'         => false,
+				'results'        => array(),
+				'result_count'   => 0,
+				'note'           => __( 'Search completed but results could not be properly encoded for transmission.', 'wp-mcp-ai' ),
+				'system_message' => sprintf(
 					/* translators: %s: search query */
 					__( 'Web search for "%s" completed but encountered data encoding issues.', 'wp-mcp-ai' ),
 					$query

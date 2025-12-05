@@ -744,7 +744,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that web_search tool includes a 'text' field in results for chat client visibility.
+	 * Test that web_search tool includes a 'system_message' field in results for chat client visibility.
 	 */
 	public function test_execute_includes_text_field_in_results() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -790,14 +790,14 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'text', $result, 'Result should include text field' );
-		$this->assertStringContainsString( 'Found 2 web search results', $result['text'] );
-		$this->assertStringContainsString( 'test query', $result['text'] );
-		$this->assertStringContainsString( 'Top result: First Result Title', $result['text'] );
+		$this->assertArrayHasKey( 'system_message', $result, 'Result should include system_message field' );
+		$this->assertStringContainsString( 'Found 2 web search results', $result['system_message'] );
+		$this->assertStringContainsString( 'test query', $result['system_message'] );
+		$this->assertStringContainsString( 'Top result: First Result Title', $result['system_message'] );
 	}
 
 	/**
-	 * Test that web_search tool includes text field even when no results found.
+	 * Test that web_search tool includes system_message field even when no results found.
 	 */
 	public function test_execute_includes_text_field_when_no_results() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -828,9 +828,9 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'text', $result, 'Result should include text field' );
-		$this->assertStringContainsString( 'Web search completed for "no results query"', $result['text'] );
-		$this->assertStringContainsString( 'no results were found', $result['text'] );
+		$this->assertArrayHasKey( 'system_message', $result, 'Result should include system_message field' );
+		$this->assertStringContainsString( 'Web search completed for "no results query"', $result['system_message'] );
+		$this->assertStringContainsString( 'no results were found', $result['system_message'] );
 	}
 
 	/**
