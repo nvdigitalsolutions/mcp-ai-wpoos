@@ -37,6 +37,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 */
 		public static function render_tools_view() {
 			try {
+				// Load filter bar renderer if not already loaded.
+				if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-tools-filter-bar-renderer.php';
+				}
+
 				// Get all registered tools from the registry.
 				$registry = WP_MCP_AI_Tool_Registry::get_instance();
 				if ( ! $registry ) {
@@ -149,8 +154,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $all_tools as $tool_slug => $tool ) : ?>
+						<?php
+						// Defensive programming: validate each tool implements the required interface
+						// since get_tools() returns a numeric array (not associative with slugs as keys).
+						// This ensures we can safely call get_slug() and prevents numeric indices
+						// from being used as tool slugs (which caused data-tool-slug="10" bug).
+						foreach ( $all_tools as $tool ) :
+							?>
 							<?php
+							// Validate tool implements the required interface.
+							if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
+								continue;
+							}
+							$tool_slug = $tool->get_slug();
+							if ( empty( $tool_slug ) ) {
+								continue;
+							}
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_tool_row method.
 							echo self::render_tool_row( $tool_slug, $tool );
 							?>
