@@ -8020,10 +8020,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( false !== strpos( $endpoint, '/chat-client' ) ) {
 				// Define read-only tools essential for agentic workflow.
 				$auto_enable_tools = array(
-					'web_search',                // Real-time information retrieval.
-					'get_recent_posts',          // Access site content for context.
-					'get_jetengine_items',       // Access JetEngine data (if available).
-					'list_jetengine_rest_routes', // Discover JetEngine routes (if available).
+					'web_search',                  // Real-time information retrieval.
+					'get_recent_posts',            // Access site content for context.
+					'search_attachments',          // Access media library files.
+					'get_jetengine_items',         // Access JetEngine CCT data (if available).
+					'list_jetengine_rest_routes',  // Discover JetEngine routes (if available).
+					'get_jetformbuilder_forms',    // Access JetFormBuilder forms (if available).
+					'get_jetformbuilder_submissions', // Access form submissions (if available).
 				);
 
 				foreach ( $auto_enable_tools as $auto_tool ) {
