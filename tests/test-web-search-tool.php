@@ -628,10 +628,11 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Verify that web search executes synchronously without internal retries.
-	 * When receiving HTTP 202, it should return immediately without sleep() calls.
+	 * Verify that web search executes with automatic retry logic for HTTP 202 responses.
+	 * When receiving HTTP 202 repeatedly, it should retry up to 13 times (14 total requests)
+	 * with exponential backoff before returning pending error to orchestration layer.
 	 */
-	public function test_execute_returns_202_immediately_without_retry() {
+	public function test_execute_retries_on_202_with_exponential_backoff() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -657,7 +658,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		$result = $tool->execute(
 			array(
-				'query' => 'test synchronous execution',
+				'query' => 'test retry with exponential backoff',
 			),
 			array(
 				'user_id' => $user_id,
@@ -668,19 +669,95 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
-		// Should receive WP_Error with pending status
+		// Should receive WP_Error with pending status after all retries exhausted
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
 
-		// Should only make ONE request (no retries)
-		$this->assertSame( 1, $request_count, 'Should only make one HTTP request without retries' );
+		// Should make 14 requests total (initial + 13 retries)
+		$this->assertSame( 14, $request_count, 'Should make 14 HTTP requests (initial + 13 retries)' );
 
-		// Should return immediately without sleeping (elapsed time should be under 1 second)
-		$this->assertLessThan( 1.0, $elapsed_time, 'Should return immediately without sleep() delays' );
+		// Should have taken approximately 300 seconds (5 minutes) based on retry sequence
+		// Allow some tolerance for test execution overhead
+		$this->assertGreaterThan( 295.0, $elapsed_time, 'Should have waited through retry sequence (~300 seconds)' );
+		$this->assertLessThan( 310.0, $elapsed_time, 'Should not exceed expected wait time by much' );
 
 		// Verify retry_after is passed through for orchestration layer
 		$data = $result->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( '5', $data['retry_after'] );
+	}
+
+	/**
+	 * Verify that web search succeeds when HTTP 200 is returned after some retries.
+	 * The tool should stop retrying once it receives a successful response.
+	 */
+	public function test_execute_succeeds_after_few_retries() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$request_count = 0;
+		$start_time    = microtime( true );
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( &$request_count ) {
+			++$request_count;
+			
+			// Return 202 for first 3 attempts, then 200 on 4th attempt
+			if ( $request_count <= 3 ) {
+				return array(
+					'response' => array(
+						'code' => 202,
+					),
+					'headers'  => array(
+						'retry-after' => '2',
+					),
+					'body'     => '',
+				);
+			}
+			
+			// Return success on 4th attempt
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'Heading'      => 'Test Result',
+						'AbstractText' => 'Test abstract text.',
+						'AbstractURL'  => 'https://example.com/test',
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'query' => 'test successful retry',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		$elapsed_time = microtime( true ) - $start_time;
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		// Should succeed with results
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'results', $result );
+		$this->assertArrayHasKey( 'query', $result );
+		$this->assertSame( 'test successful retry', $result['query'] );
+
+		// Should have made exactly 4 requests (initial + 3 retries, then success)
+		$this->assertSame( 4, $request_count, 'Should make 4 HTTP requests before succeeding' );
+
+		// Should have taken approximately 2 + 2 + 2 = 6 seconds (using retry-after header)
+		// Allow some tolerance for test execution overhead
+		$this->assertGreaterThan( 5.5, $elapsed_time, 'Should have waited through partial retry sequence' );
+		$this->assertLessThan( 8.0, $elapsed_time, 'Should not exceed expected wait time by much' );
 	}
 }
