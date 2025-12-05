@@ -250,7 +250,7 @@ describe('Array Tool Result Handling', () => {
 				{
 					id: 123,
 					title: 'Image without URL',
-					mime_type: 'image/jpeg'
+					mime_type: 'image/jpeg',
 					// No download_url or url field
 				}
 			];
