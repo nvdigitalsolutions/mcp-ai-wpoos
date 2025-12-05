@@ -341,9 +341,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			// Get all available tools.
 			$all_tools = $this->get_all_available_tools();
 
+			// Get search and filter parameters.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
+			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+
 			?>
 		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
 		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
+
+		<?php
+		// Render filter bar if component is available.
+		if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
+			echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
+				array(
+					'tab'          => 'token_manager',
+					'view'         => 'per_tool',
+					'search'       => $search,
+					'filter_group' => $filter_group,
+					'clear_url'    => admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ),
+				)
+			);
+		}
+		?>
 
 		<!-- Recommendations Notice -->
 			<?php
@@ -470,6 +492,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</thead>
 			<tbody>
 				<?php
+				// Apply search filter if provided.
+				if ( ! empty( $search ) ) {
+					$all_tools = array_filter(
+						$all_tools,
+						function ( $tool_name, $tool_slug ) use ( $search ) {
+							$search_term = strtolower( trim( $search ) );
+							return false !== stripos( $tool_slug, $search_term ) ||
+								   false !== stripos( $tool_name, $search_term );
+						},
+						ARRAY_FILTER_USE_BOTH
+					);
+				}
+
 				foreach ( $all_tools as $tool_slug => $tool_name ) :
 					$tool_limit       = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
 					$tool_stats       = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );

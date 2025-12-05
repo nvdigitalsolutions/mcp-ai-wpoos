@@ -60,6 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
+				'wp_ajax_wp_mcp_ai_save_tool_settings'     => 'handle_save_tool_settings',
 				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
 				'wp_ajax_wp_mcp_ai_export_token_usage_csv' => 'handle_export_token_usage_csv',
 				'wp_ajax_wp_mcp_ai_bulk_assign_tier'       => 'handle_bulk_assign_tier',
@@ -2008,6 +2009,78 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				);
 			} else {
 				wp_send_json_error( __( 'Failed to save model configuration.', 'wp-mcp-ai' ) );
+			}
+		}
+
+		/**
+		 * Handle AJAX request to save tool settings (capability flags and force-sync).
+		 *
+		 * @since 1.0.0
+		 */
+		private function handle_save_tool_settings() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get tool slug from request.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$tool_slug = isset( $_POST['tool_slug'] ) ? sanitize_key( wp_unslash( $_POST['tool_slug'] ) ) : '';
+
+			if ( empty( $tool_slug ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid tool slug.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify tool exists.
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			if ( ! $registry->is_tool_registered( $tool_slug ) ) {
+				wp_send_json_error( array( 'message' => __( 'Tool not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Load tool settings manager.
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-settings-manager.php';
+			}
+
+			// Get capability flags from request.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with array_map.
+			$flags = isset( $_POST['capability_flags'] ) && is_array( $_POST['capability_flags'] )
+				? array_map( 'sanitize_key', wp_unslash( $_POST['capability_flags'] ) )
+				: array();
+
+			// Get force-sync setting from request.
+			$force_sync = isset( $_POST['force_sync'] ) && 'true' === $_POST['force_sync'];
+
+			// Save settings.
+			$flags_saved = WP_MCP_AI_Tool_Settings_Manager::update_capability_flags( $tool_slug, $flags );
+			$sync_saved  = WP_MCP_AI_Tool_Settings_Manager::set_force_sync( $tool_slug, $force_sync );
+
+			if ( $flags_saved && $sync_saved ) {
+				// Clear orchestration caches.
+				if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+					WP_MCP_AI_Cache_Helper::invalidate_orchestration_caches();
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Tool settings saved successfully.', 'wp-mcp-ai' ),
+					)
+				);
+			} else {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Failed to save tool settings.', 'wp-mcp-ai' ),
+					)
+				);
 			}
 		}
 	}
