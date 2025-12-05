@@ -297,6 +297,10 @@ class WP_MCP_AI_Shortcode {
 					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'wp-mcp-ai' ),
 					/* translators: %s: cost in USD */
 					'costAmount'                    => __( '$%s', 'wp-mcp-ai' ),
+					/* translators: %s: tool name that is processing */
+					'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'wp-mcp-ai' ),
+					/* translators: %s: tool name that is temporarily unavailable */
+					'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'wp-mcp-ai' ),
 					'roleLabels'                    => array(
 						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
 						'user'      => __( 'You', 'wp-mcp-ai' ),
