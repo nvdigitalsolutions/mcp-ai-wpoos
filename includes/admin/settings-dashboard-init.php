@@ -34,6 +34,7 @@ spl_autoload_register(
 		$section_files = array(
 			'WP_MCP_AI_Section_Overview'            => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
 			'WP_MCP_AI_Section_General'             => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
+			'WP_MCP_AI_Section_Chat_Client'         => 'includes/admin/sections/class-wp-mcp-ai-section-chat-client.php',
 			'WP_MCP_AI_Section_Custom_Filters'      => 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php',
 			'WP_MCP_AI_Section_Providers'           => 'includes/admin/sections/class-wp-mcp-ai-section-providers.php',
 			'WP_MCP_AI_Section_Authentication'      => 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php',
@@ -92,6 +93,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Register all sections with the registry using container.
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.chat_client' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.custom_filters' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.providers' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );

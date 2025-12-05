@@ -1049,8 +1049,231 @@
 			initBraveSearchHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
+			initChatClientPresetsHandlers();
 		}
 	});
+
+	/**
+	 * Initialize Chat Client preset handlers
+	 */
+	function initChatClientPresetsHandlers() {
+		// Handle preset application
+		jQuery('.wp-mcp-ai-apply-preset').on('click', function (e) {
+			e.preventDefault();
+			const preset = jQuery(this).data('preset');
+			const presetSettings = getChatClientPresetSettings(preset);
+
+			if (!presetSettings) {
+				return;
+			}
+
+			// Apply the preset settings to form fields
+			Object.keys(presetSettings).forEach(function (fieldName) {
+				const fieldValue = presetSettings[fieldName];
+				const $field = jQuery('[name="wp_mcp_ai_settings[' + fieldName + ']"]');
+
+				if ($field.length) {
+					if ($field.attr('type') === 'checkbox') {
+						$field.prop('checked', fieldValue);
+					} else {
+						$field.val(fieldValue);
+					}
+				}
+			});
+
+			// Show confirmation notice
+			jQuery('.wp-mcp-ai-preset-notice').slideDown();
+
+			// Scroll to top
+			jQuery('html, body').animate({
+				scrollTop: jQuery('.wp-mcp-ai-chat-presets').offset().top - 100
+			}, 500);
+
+			// Auto-hide notice after 5 seconds
+			setTimeout(function () {
+				jQuery('.wp-mcp-ai-preset-notice').slideUp();
+			}, 5000);
+		});
+	}
+
+	/**
+	 * Get preset settings for Chat Client
+	 *
+	 * @param {string} preset Preset name
+	 * @return {Object|null} Preset settings object
+	 */
+	function getChatClientPresetSettings(preset) {
+		const presets = {
+			minimal: {
+				// Appearance
+				chat_theme: 'light',
+				chat_primary_color: '',
+				chat_user_bubble_color: '',
+				chat_assistant_bubble_color: '',
+				chat_border_radius: 12,
+				chat_font_size: 14,
+				chat_show_timestamps: false,
+				chat_show_avatars: false,
+				chat_compact_mode: true,
+				// Behavior
+				chat_max_history_display: 30,
+				chat_message_delay: 0,
+				chat_enable_typing_indicator: true,
+				chat_auto_scroll: true,
+				chat_enable_markdown: true,
+				chat_enable_code_highlighting: false,
+				chat_persist_history: true,
+				chat_welcome_message: '',
+				chat_placeholder_text: '',
+				chat_send_button_text: '',
+				// Features
+				chat_enable_copy_button: true,
+				chat_enable_save_button: false,
+				chat_enable_delete_button: false,
+				chat_enable_speech_button: false,
+				chat_enable_transcribe_button: false,
+				chat_enable_file_upload: false,
+				chat_enable_tool_shortcuts: false,
+				chat_enable_search: false,
+				chat_enable_export: false,
+				chat_enable_regenerate: false,
+				chat_allowed_file_types: '',
+				chat_max_file_size_mb: 0,
+				// LLM Sanitization
+				chat_llm_sanitize_level: 'moderate',
+				chat_llm_max_response_length: 0,
+				chat_llm_show_3_results_buttons: false
+			},
+			full_featured: {
+				// Appearance
+				chat_theme: 'auto',
+				chat_primary_color: '#0073aa',
+				chat_user_bubble_color: '#E3F2FD',
+				chat_assistant_bubble_color: '#F5F5F5',
+				chat_border_radius: 12,
+				chat_font_size: 14,
+				chat_show_timestamps: true,
+				chat_show_avatars: true,
+				chat_compact_mode: false,
+				// Behavior
+				chat_max_history_display: 100,
+				chat_message_delay: 300,
+				chat_enable_typing_indicator: true,
+				chat_auto_scroll: true,
+				chat_enable_markdown: true,
+				chat_enable_code_highlighting: true,
+				chat_persist_history: true,
+				chat_welcome_message: 'Hello! How can I help you today?',
+				chat_placeholder_text: 'Type your message...',
+				chat_send_button_text: 'Send',
+				// Features
+				chat_enable_copy_button: true,
+				chat_enable_save_button: true,
+				chat_enable_delete_button: true,
+				chat_enable_speech_button: true,
+				chat_enable_transcribe_button: true,
+				chat_enable_file_upload: true,
+				chat_enable_tool_shortcuts: true,
+				chat_enable_search: true,
+				chat_enable_export: true,
+				chat_enable_regenerate: true,
+				chat_allowed_file_types: 'jpg,png,pdf,docx,txt',
+				chat_max_file_size_mb: 10,
+				// LLM Sanitization
+				chat_llm_sanitize_level: 'moderate',
+				chat_llm_max_response_length: 0,
+				chat_llm_show_3_results_buttons: true,
+				chat_llm_result_button_1_label: 'Refine',
+				chat_llm_result_button_1_prompt: 'Please refine your previous response: {original_response}',
+				chat_llm_result_button_2_label: 'Alternative',
+				chat_llm_result_button_2_prompt: 'Please provide an alternative approach to: {original_response}',
+				chat_llm_result_button_3_label: 'Expand',
+				chat_llm_result_button_3_prompt: 'Please expand on your previous response with more detail: {original_response}'
+			},
+			professional: {
+				// Appearance
+				chat_theme: 'light',
+				chat_primary_color: '#2C3E50',
+				chat_user_bubble_color: '#3498DB',
+				chat_assistant_bubble_color: '#ECF0F1',
+				chat_border_radius: 8,
+				chat_font_size: 14,
+				chat_show_timestamps: true,
+				chat_show_avatars: true,
+				chat_compact_mode: false,
+				// Behavior
+				chat_max_history_display: 75,
+				chat_message_delay: 200,
+				chat_enable_typing_indicator: true,
+				chat_auto_scroll: true,
+				chat_enable_markdown: true,
+				chat_enable_code_highlighting: true,
+				chat_persist_history: true,
+				chat_welcome_message: 'Welcome to our professional assistant. How may I assist you?',
+				chat_placeholder_text: 'Enter your message...',
+				chat_send_button_text: 'Send',
+				// Features
+				chat_enable_copy_button: true,
+				chat_enable_save_button: true,
+				chat_enable_delete_button: true,
+				chat_enable_speech_button: false,
+				chat_enable_transcribe_button: false,
+				chat_enable_file_upload: true,
+				chat_enable_tool_shortcuts: false,
+				chat_enable_search: true,
+				chat_enable_export: true,
+				chat_enable_regenerate: true,
+				chat_allowed_file_types: 'pdf,docx,xlsx,txt,csv',
+				chat_max_file_size_mb: 20,
+				// LLM Sanitization
+				chat_llm_sanitize_level: 'strict',
+				chat_llm_max_response_length: 0,
+				chat_llm_show_3_results_buttons: false
+			},
+			accessible: {
+				// Appearance
+				chat_theme: 'light',
+				chat_primary_color: '#000000',
+				chat_user_bubble_color: '#0066CC',
+				chat_assistant_bubble_color: '#FFFFFF',
+				chat_border_radius: 4,
+				chat_font_size: 18,
+				chat_show_timestamps: true,
+				chat_show_avatars: true,
+				chat_compact_mode: false,
+				// Behavior
+				chat_max_history_display: 50,
+				chat_message_delay: 500,
+				chat_enable_typing_indicator: true,
+				chat_auto_scroll: true,
+				chat_enable_markdown: true,
+				chat_enable_code_highlighting: true,
+				chat_persist_history: true,
+				chat_welcome_message: 'Hello! I am here to help you. You can type or use voice input.',
+				chat_placeholder_text: 'Type or speak your message...',
+				chat_send_button_text: 'Send Message',
+				// Features
+				chat_enable_copy_button: true,
+				chat_enable_save_button: true,
+				chat_enable_delete_button: true,
+				chat_enable_speech_button: true,
+				chat_enable_transcribe_button: true,
+				chat_enable_file_upload: true,
+				chat_enable_tool_shortcuts: true,
+				chat_enable_search: true,
+				chat_enable_export: true,
+				chat_enable_regenerate: true,
+				chat_allowed_file_types: 'jpg,png,pdf,docx,txt',
+				chat_max_file_size_mb: 10,
+				// LLM Sanitization
+				chat_llm_sanitize_level: 'moderate',
+				chat_llm_max_response_length: 0,
+				chat_llm_show_3_results_buttons: false
+			}
+		};
+
+		return presets[preset] || null;
+	}
 
 	// Expose to global scope if needed.
 	// eslint-disable-next-line camelcase
