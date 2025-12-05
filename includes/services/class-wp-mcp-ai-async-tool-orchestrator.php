@@ -50,12 +50,13 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 *
 	 * Decision hierarchy (Separation of Concerns):
 	 * 1. Background-only flag - HIGHEST PRIORITY (system requirement, prevents HTTP timeouts)
-	 * 2. Explicit user parameter (async=true/false) - User preference
-	 * 3. Legacy compatibility (wait_for_completion=false) - Backwards compatibility
-	 * 4. Agentic loop context - FORCE SYNC (LLM needs complete results, except background-only)
-	 * 5. Global async setting disabled - FORCE SYNC
-	 * 6. No timeout risk flags - FORCE SYNC (tools without async flags run sync)
-	 * 7. Background preference flag - RUN ASYNC
+	 * 2. Force-sync setting - FORCE SYNC (admin override for specific tools)
+	 * 3. Explicit user parameter (async=true/false) - User preference
+	 * 4. Legacy compatibility (wait_for_completion=false) - Backwards compatibility
+	 * 5. Agentic loop context - FORCE SYNC (LLM needs complete results, except background-only)
+	 * 6. Global async setting disabled - FORCE SYNC
+	 * 7. No timeout risk flags - FORCE SYNC (tools without async flags run sync)
+	 * 8. Background preference flag - RUN ASYNC
 	 *
 	 * @param object $tool Tool instance implementing WP_MCP_AI_Tool_Interface.
 	 * @param array  $arguments Tool arguments.
@@ -71,13 +72,20 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 			return true;
 		}
 
-		// Priority 2: Explicit async parameter from user/LLM.
+		// Priority 2: Force-sync setting - admin can override tool to always execute synchronously.
+
+		// Check if this specific tool has force-sync enabled in settings.
+		if ( $this->is_force_sync_enabled( $tool ) ) {
+			return false;
+		}
+
+		// Priority 3: Explicit async parameter from user/LLM.
 
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
 		}
 
-		// Priority 3: Legacy compatibility - respect wait_for_completion parameter.
+		// Priority 4: Legacy compatibility - respect wait_for_completion parameter.
 
 		// If wait_for_completion=false, tool wants async (don't wait).
 
@@ -87,7 +95,7 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 			return ! (bool) $arguments['wait_for_completion'];
 		}
 
-		// Priority 4: Agentic loop context - force synchronous execution.
+		// Priority 5: Agentic loop context - force synchronous execution.
 
 		// When executing in an agentic loop, tools MUST complete synchronously so the LLM.
 
@@ -98,19 +106,19 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 			return false;
 		}
 
-		// Priority 5: System intelligence - check global setting.
+		// Priority 6: System intelligence - check global setting.
 
 		if ( ! $this->is_async_execution_enabled() ) {
 			return false;
 		}
 
-		// Priority 6: Check tool capability flags for timeout risk.
+		// Priority 7: Check tool capability flags for timeout risk.
 
 		if ( ! $this->has_timeout_risk( $tool ) ) {
 			return false;
 		}
 
-		// Priority 7: Check if tool prefers background execution.
+		// Priority 8: Check if tool prefers background execution.
 
 		if ( $this->prefers_background( $tool ) ) {
 			return true;
@@ -139,6 +147,27 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 		 * @param bool $enabled Default: true.
 		 */
 		return apply_filters( 'wp_mcp_ai_async_execution_enabled', true );
+	}
+
+	/**
+	 * Check if force-sync is enabled for a specific tool.
+	 *
+	 * @param object $tool Tool instance.
+	 * @return bool True if force-sync is enabled for this tool.
+	 */
+	protected function is_force_sync_enabled( $tool ) {
+		if ( ! method_exists( $tool, 'get_slug' ) ) {
+			return false;
+		}
+
+		$tool_slug = $tool->get_slug();
+
+		// Load tool settings manager.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-settings-manager.php';
+		}
+
+		return WP_MCP_AI_Tool_Settings_Manager::is_force_sync_enabled( $tool_slug );
 	}
 
 
