@@ -8013,6 +8013,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Auto-enable web_search tool for chat-client endpoint.
+			// The chat client should have access to web search regardless of assistant settings
+			// since it's a core chat client feature for real-time information retrieval.
+			$endpoint = $request->get_route();
+			if ( false !== strpos( $endpoint, '/chat-client' ) &&
+				$this->candidates_include_slug( $tool_candidates, 'web_search' ) &&
+				! in_array( 'web_search', $allowed_tools, true ) ) {
+				$assistant_config = $this->ensure_tool_in_config( $assistant_config, 'web_search' );
+				$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			}
+
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
 			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
