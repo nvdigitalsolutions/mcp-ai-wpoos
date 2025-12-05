@@ -3283,10 +3283,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
 			if ( ! $handler ) {
+				// Remove the meta link even if we can't delete the CCT item.
+				// The item might already be deleted, so we don't want to keep a broken link.
+				delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
 				return;
 			}
 
 			// Delete the CCT item.
+			// We don't check the return value because the item might already be deleted,
+			// and we want to clean up the meta link regardless.
 			$handler->delete_item( absint( $cct_item_id ) );
 
 			// Remove the meta link.
@@ -3377,19 +3382,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
 					if ( ! $handler ) {
-						$errors[] = "Failed to get CCT handler for post $post_id";
+						// Even if we can't get the handler, remove the meta link to clean up orphaned references.
+						delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+						++$cleaned;
 						continue;
 					}
 
 					// Delete the CCT item.
-					$result = $handler->delete_item( absint( $cct_item_id ) );
+					// We attempt deletion but don't stop if it fails - the item might already be gone.
+					$handler->delete_item( absint( $cct_item_id ) );
 
-					if ( false === $result ) {
-						$errors[] = "Failed to delete CCT item $cct_item_id for post $post_id";
-						continue;
-					}
-
-					// Remove the meta link.
+					// Remove the meta link regardless of deletion result.
+					// This ensures we don't keep orphaned references.
 					delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
 
 					++$cleaned;

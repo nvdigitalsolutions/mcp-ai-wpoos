@@ -181,6 +181,25 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 * @param array $args       Positional arguments.
 			 * @param array $assoc_args Associative arguments.
 			 */
+			/**
+			 * Clean up orphaned CCT items for non-published assistants.
+			 *
+			 * Removes JetEngine CCT items that are linked to auto-drafts, drafts,
+			 * or other non-published assistant posts. This is useful for cleaning
+			 * up after the auto-draft sync fix is deployed.
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     # Clean up orphaned CCT items.
+			 *     $ wp mcp-ai cleanup-cct
+			 *     Cleaning up orphaned CCT items for non-published assistants...
+			 *     Success: Cleaned up 5 orphaned CCT item(s).
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 */
 			public function cleanup_cct( $args, $assoc_args ) {
 				// Ensure the assistant CPT class is loaded.
 				if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
