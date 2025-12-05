@@ -245,7 +245,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ### Performance & reliability
 - ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/message-bundling-feature.md†L1-L80】
-- 🎯 Intelligent token overflow handling with automatic model switching (gpt-4o-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
+- 🎯 Intelligent token overflow handling with automatic model switching (gpt-4.1-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
 - 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
 - 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
@@ -745,7 +745,7 @@ Complete these after installation to unlock every integration point:
 
 - [ ] **Add your OpenAI API key** in **Settings → WP oOS → OpenAI API Key** so API calls are authorised.
 - [ ] **Add your Gemini API key** in **Settings → WP oOS → Gemini API Key** if you plan to route assistants through Gemini.
-- [ ] **Confirm or override the default model** via **Settings → WP oOS → Default Model** (`gpt-4o-mini` ships as the default).
+- [ ] **Confirm or override the default model** via **Settings → WP oOS → Default Model** (`gpt-4.1` ships as the default).
 - [ ] **Set a default Gemini model** under **Settings → WP oOS → Default Gemini Model** when Gemini is enabled.
 - [ ] **Choose the default provider** from **Settings → WP oOS → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
 - [ ] **Adjust the request timeout** under **Settings → WP oOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
@@ -812,10 +812,10 @@ The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio
 
 | Capability | Model | Max context tokens | Max output tokens | Notes |
 | --- | --- | --- | --- | --- |
-| Responses (general) | `gpt-4o` | 128,000 | 16,384 | Flagship multimodal model that balances quality and latency for production chat, tool, and multimodal calls. |
-| Responses (cost optimised) | `gpt-4o-mini` | 128,000 | 16,384 | Budget-friendly 4o variant recommended for day-to-day assistants and background automations. |
-| Responses (advanced) | `gpt-4.1` | 128,000 | 16,384 | Highest quality text model with stronger reasoning depth; ideal for complex editorial or engineering tasks. |
-| Responses (lightweight) | `gpt-4.1-mini` | 128,000 | 16,384 | Lower-latency 4.1 tier that keeps the larger context window while reducing cost for iterative workflows. |
+| Responses (general) | `gpt-4.1` | 128,000 | 16,384 | Flagship multimodal model that balances quality and latency for production chat, tool, and multimodal calls. |
+| Responses (cost optimised) | `gpt-4.1-mini` | 128,000 | 16,384 | Budget-friendly 4.1 variant recommended for day-to-day assistants and background automations. |
+| Responses (advanced) | `gpt-4o` | 128,000 | 16,384 | Previous generation multimodal model with strong reasoning capabilities. |
+| Responses (legacy) | `gpt-4o-mini` | 128,000 | 16,384 | Lower-latency 4o tier that keeps the larger context window while reducing cost for iterative workflows. |
 | Reasoning | `o1-preview` | 128,000 | 32,768 | Deliberate reasoning model suited to multi-step planning and analysis; expect slower responses while it “thinks”. |
 | Reasoning (fast) | `o1-mini` | 128,000 | 32,768 | Lighter o1 variant that trades some reasoning depth for responsiveness in operational assistants. |
 
@@ -938,7 +938,7 @@ Administrators with `manage_options` capability can view comprehensive token usa
 
 **Detailed Breakdown:**
 - Usage by provider (OpenAI, Gemini, Ollama, LM Studio)
-- Usage by specific model (e.g., `gpt-4o-mini`, `gemini-2.0-flash`)
+- Usage by specific model (e.g., `gpt-4.1-mini`, `gemini-2.0-flash`)
 - Request counts per provider/model combination
 - Last used timestamp for each model
 - Comprehensive table view with all metrics
@@ -993,7 +993,7 @@ WP oOS includes intelligent handling for tools that return large responses, prev
 
 ### The Problem
 
-Tools like `run_crawl4ai_job` can return 100,000+ tokens of content. In agentic loops, each API call includes all previous messages, causing token counts to grow rapidly and exceed model limits (e.g., gpt-4o-mini's 200k TPM limit).
+Tools like `run_crawl4ai_job` can return 100,000+ tokens of content. In agentic loops, each API call includes all previous messages, causing token counts to grow rapidly and exceed model limits (e.g., gpt-4.1-mini's 200k TPM limit).
 
 ### The Solution: Three-Tier Strategy
 

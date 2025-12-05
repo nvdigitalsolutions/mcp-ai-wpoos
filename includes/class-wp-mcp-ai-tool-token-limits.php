@@ -541,6 +541,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 				$openai_models['gpt-5-codex-mini'] = 'GPT-5 Codex Mini';
 			}
 
+			// GPT-4.1 series (multimodal - vision capable).
+			$openai_models['gpt-4.1']            = 'GPT-4.1';
+			$openai_models['gpt-4.1-mini']       = 'GPT-4.1 Mini';
+			$openai_models['gpt-4.1-nano']       = 'GPT-4.1 Nano';
+			$openai_models['gpt-4.1-turbo']      = 'GPT-4.1 Turbo';
+			$openai_models['gpt-4.1-2025-04-14'] = 'GPT-4.1 (Apr 2025)';
+
 			// GPT-4o series (multimodal - vision capable).
 			$openai_models['gpt-4o']            = 'GPT-4o';
 			$openai_models['gpt-4o-mini']       = 'GPT-4o Mini';

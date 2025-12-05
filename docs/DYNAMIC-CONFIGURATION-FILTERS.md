@@ -69,7 +69,7 @@ This allows non-developers to customize AI behavior without touching code, while
 
 Filter the default AI model used for simple tasks.
 
-**Default:** `gpt-4o-mini`  
+**Default:** `gpt-4.1-mini`  
 **Since:** 1.0.0  
 **Admin UI:** Yes (Custom AI Settings tab)
 
@@ -90,7 +90,7 @@ add_filter( 'wp_mcp_ai_default_light_model', function( $model ) {
 
 Filter the default AI model used for complex tasks.
 
-**Default:** `gpt-4o`  
+**Default:** `gpt-4.1`  
 **Since:** 1.0.0  
 **Admin UI:** Yes (Custom AI Settings tab)
 

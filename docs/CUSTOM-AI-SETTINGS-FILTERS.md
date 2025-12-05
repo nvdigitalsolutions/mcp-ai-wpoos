@@ -49,12 +49,12 @@ Plugin Behavior (model selection, retries, timeouts, etc.)
 
 ### AI Model Selection
 - **Default Light Model** (`filter_default_light_model`)
-  - Default: `gpt-4o-mini`
+  - Default: `gpt-4.1-mini`
   - Filter: `wp_mcp_ai_default_light_model`
   - Used by: `class-wp-mcp-ai-model-selector.php`
 
 - **Default Advanced Model** (`filter_default_advanced_model`)
-  - Default: `gpt-4o`
+  - Default: `gpt-4.1`
   - Filter: `wp_mcp_ai_default_advanced_model`
   - Used by: `class-wp-mcp-ai-model-selector.php`
 
