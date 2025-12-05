@@ -7552,6 +7552,118 @@
         });
     }
 
+    /**
+     * Normalise array tool results for display (e.g., from search_attachments).
+     * Converts an array of attachment objects into a formatted display with downloadable links.
+     * 
+     * @param {Array} resultArray - Array of attachment objects
+     * @param {string} toolName - Name of the tool that returned the array
+     * @return {Object|null} Normalized result with text and attachments, or null if empty
+     */
+    function normaliseArrayToolResult(resultArray, toolName) {
+        if (!Array.isArray(resultArray) || resultArray.length === 0) {
+            return null;
+        }
+
+        // Handle search_attachments results specifically
+        // Each attachment has: id, title, mime_type, download_url, permalink, filesize_human, uploaded_at
+        if (toolName === 'search_attachments') {
+            const attachments = [];
+            const attachmentTitles = [];
+
+            resultArray.forEach(function(item, index) {
+                if (!item || typeof item !== 'object') {
+                    return;
+                }
+
+                const title = item.title || 'Untitled';
+                const downloadUrl = item.download_url || item.url || '';
+                const permalink = item.permalink || '';
+                const mimeType = item.mime_type || '';
+                const filesize = item.filesize_human || '';
+                const uploadedAt = item.uploaded_at || '';
+
+                // Build metadata string
+                const metaParts = [];
+                if (mimeType) {
+                    const mimeTypeParts = mimeType.split('/');
+                    if (mimeTypeParts.length > 0) {
+                        metaParts.push(mimeTypeParts[mimeTypeParts.length - 1].toUpperCase());
+                    }
+                }
+                if (filesize) {
+                    metaParts.push(filesize);
+                }
+                if (uploadedAt) {
+                    const uploadDate = new Date(uploadedAt);
+                    if (!isNaN(uploadDate.getTime())) {
+                        metaParts.push('Uploaded: ' + uploadDate.toISOString().split('T')[0]);
+                    }
+                }
+
+                const meta = metaParts.join(' • ');
+
+                // Add to attachments list if we have a download URL
+                if (downloadUrl) {
+                    attachments.push({
+                        url: downloadUrl,
+                        label: title,
+                        downloadName: '',
+                        meta: meta
+                    });
+                    attachmentTitles.push(title);
+                }
+
+                // Also add permalink if different from download URL
+                if (permalink && permalink !== downloadUrl) {
+                    attachments.push({
+                        url: permalink,
+                        label: 'View Details',
+                        downloadName: '',
+                        meta: ''
+                    });
+                }
+            });
+
+            if (attachments.length === 0) {
+                return {
+                    text: 'No attachments found.',
+                    attachments: []
+                };
+            }
+
+            const text = 'Here are the last ' + resultArray.length + ' attachments from the media library:';
+
+            return {
+                text: text,
+                attachments: attachments
+            };
+        }
+
+        // Generic array handling for other tools
+        // Build a simple list from the array
+        const items = resultArray.map(function(item, index) {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (item && typeof item === 'object') {
+                return item.title || item.name || item.message || item.text || JSON.stringify(item);
+            }
+            return String(item);
+        }).filter(function(item) {
+            return item && item.trim();
+        });
+
+        if (items.length === 0) {
+            return null;
+        }
+
+        return {
+            text: items.join('\n'),
+            attachments: []
+        };
+    }
+
     function normaliseToolResultForDisplay(toolName, result) {
         // Handle string results (e.g., truncated tool results from orchestration layer)
         // When a tool result is too large, the orchestration layer converts it to a truncated
@@ -7573,6 +7685,12 @@
         // shown after the video generation has already completed.
         if (isAsyncPendingToolResult(result)) {
             return null;
+        }
+
+        // Handle array results (e.g., from search_attachments tool)
+        // Arrays of attachment objects should be formatted as downloadable links
+        if (Array.isArray(result)) {
+            return normaliseArrayToolResult(result, toolName);
         }
 
         // Special handling for chart output format (e.g., get_open_meteo_forecast with output_format: 'chart')
