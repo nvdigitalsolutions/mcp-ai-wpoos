@@ -45,6 +45,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 		// Check for known 2025 models.
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
 		$this->assertArrayHasKey( 'gpt-5', $configs );
+		$this->assertArrayHasKey( 'gpt-4.1', $configs );
+		$this->assertArrayHasKey( 'gpt-4.1-mini', $configs );
 		$this->assertArrayHasKey( 'gpt-4o', $configs );
 		$this->assertArrayHasKey( 'claude-sonnet-4.5', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
