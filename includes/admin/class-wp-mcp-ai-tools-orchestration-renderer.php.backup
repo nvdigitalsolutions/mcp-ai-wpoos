@@ -48,39 +48,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 					$all_tools = array();
 				}
 
-				// Get search and filter parameters.
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
-				$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
-				$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
-
-				// Apply filters to tools if filter bar component is available.
-				if ( ! empty( $search ) && class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-					$all_tools = WP_MCP_AI_Tools_Filter_Bar_Renderer::filter_by_search( $all_tools, $search );
-				}
-
 				ob_start();
 				?>
 				<h3><?php esc_html_e( 'Tool Orchestration Settings', 'wp-mcp-ai' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'View and manage orchestration settings for each tool. Click "Edit" to customize capability flags and force synchronous execution for specific tools. Custom settings override default tool behavior.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'View and manage orchestration settings for each tool. This includes capability flags, model requirements, execution rules, and other metadata that helps the orchestration layer make intelligent decisions about tool usage.', 'wp-mcp-ai' ); ?>
 				</p>
-
-				<?php
-				// Render filter bar if component is available.
-				if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
-					echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
-						array(
-							'tab'          => 'orchestration',
-							'view'         => 'tools',
-							'search'       => $search,
-							'filter_group' => $filter_group,
-							'clear_url'    => admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=orchestration&view=tools' ),
-						)
-					);
-				}
-				?>
 
 				<?php if ( empty( $all_tools ) ) : ?>
 					<div class="notice notice-warning inline">
@@ -140,12 +113,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 13%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 28%;"><?php esc_html_e( 'Capability Flags', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 13%;"><?php esc_html_e( 'Model Requirements', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 18%;"><?php esc_html_e( 'Orchestration Info', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 10%;"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 15%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 30%;"><?php esc_html_e( 'Capability Flags', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 15%;"><?php esc_html_e( 'Model Requirements', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 20%;"><?php esc_html_e( 'Orchestration Info', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
