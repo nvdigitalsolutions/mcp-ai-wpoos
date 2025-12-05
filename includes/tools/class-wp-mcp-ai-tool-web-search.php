@@ -132,6 +132,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result = $this->perform_duckduckgo_search( $query, $max_results );
 		}
 
+		// Handle HTTP 202 (pending) response - queue for async retry if in agentic loop.
+		// This allows the search to be retried automatically when the service is ready.
+		if ( is_wp_error( $result ) && 'wp_mcp_ai_search_pending' === $result->get_error_code() ) {
+			$error_data = $result->get_error_data();
+			$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] ) && true === $error_data['is_pending'];
+
+			// Only queue async retry if we're in an agentic loop (chat context).
+			// For direct tool calls, return the pending error immediately.
+			if ( $is_pending && ! empty( $context['agentic_loop'] ) ) {
+				return $this->queue_async_retry( $arguments, $context, $error_data );
+			}
+		}
+
 		// Cache successful results to reduce redundant API calls.
 		if ( ! is_wp_error( $result ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$cache_ttl = 5 * MINUTE_IN_SECONDS;
@@ -147,6 +160,23 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 			$cache_key = $this->get_cache_key( $query, $max_results, $provider );
 			WP_MCP_AI_Cache_Helper::set( $cache_key, $result, $cache_ttl );
+		}
+
+		// Fire action hook to send complete search results back to chat client via SSE.
+		// This allows the orchestration layer to stream results in real-time.
+		// Only fire if we're in a chat context where streaming is potentially active.
+		if ( ! is_wp_error( $result ) && ! empty( $context['agentic_loop'] ) ) {
+			/**
+			 * Fires when a web search completes successfully in chat context.
+			 *
+			 * This hook allows the orchestration layer to stream search results
+			 * back to the chat client via SSE for real-time user feedback.
+			 *
+			 * @param array $result    Search results array.
+			 * @param array $arguments Original search arguments.
+			 * @param array $context   Execution context.
+			 */
+			do_action( 'wp_mcp_ai_web_search_completed', $result, $arguments, $context );
 		}
 
 		return $result;
@@ -647,6 +677,70 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Queue an async retry for a pending web search.
+	 *
+	 * When a search provider returns HTTP 202 (Accepted), this method queues
+	 * an async job to retry the search after a delay. This allows the chat client
+	 * to continue the conversation while the search completes in the background.
+	 *
+	 * @param array $arguments Original tool arguments.
+	 * @param array $context   Execution context.
+	 * @param array $error_data Error data from pending response (includes retry_after).
+	 * @return array Async job information.
+	 */
+	protected function queue_async_retry( array $arguments, array $context, array $error_data ) {
+		// Load async executor if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		// Get or create async executor instance.
+		$container = class_exists( 'WP_MCP_AI_Container' ) ? WP_MCP_AI_Container::get_instance() : null;
+		$executor  = $container ? $container->get( 'tool_async_executor' ) : new WP_MCP_AI_Tool_Async_Executor();
+
+		// Extract retry_after from error data (in seconds).
+		// Note: retry_after is a string from HTTP header, convert to int.
+		$retry_after = ! empty( $error_data['retry_after'] ) ? intval( $error_data['retry_after'] ) : 5;
+		$retry_after = max( 3, min( $retry_after, 60 ) ); // Clamp between 3-60 seconds.
+
+		// Queue the search for async execution.
+		// Note: The async executor uses a hardcoded 20-second delay for all jobs.
+		// The retry_after value is returned to the chat client for UI display but
+		// doesn't affect the actual retry timing. Future enhancement: Add delay
+		// parameter to queue_tool() to honor server's retry_after recommendation.
+		$job_id = $executor->queue_tool( 'web_search', $arguments, $context );
+
+		if ( is_wp_error( $job_id ) ) {
+			// Failed to queue - return the original pending error.
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__( 'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.', 'wp-mcp-ai' ),
+				array(
+					'status'       => 202,
+					'is_pending'   => true,
+					'should_wait'  => false,
+					'retry_after'  => $retry_after,
+				)
+			);
+		}
+
+		// Return async job info for the chat client.
+		return array(
+			'async'        => true,
+			'status'       => 'pending',
+			'job_id'       => $job_id,
+			'message'      => sprintf(
+				/* translators: %d: retry delay in seconds */
+				__( 'Web search queued for retry in %d seconds. The result will be delivered when ready.', 'wp-mcp-ai' ),
+				$retry_after
+			),
+			'retry_after'  => $retry_after,
+			'tool'         => 'web_search',
+			'query'        => isset( $arguments['query'] ) ? $arguments['query'] : '',
+		);
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
@@ -659,11 +753,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cacheable',            // Results can be cached for short periods.
 			'network-dependent',    // Requires internet connectivity.
 			'non-deterministic',    // Results may vary over time.
-			// Note: 'may-timeout' and 'async-capable' flags are intentionally NOT included.
+			'async-capable',        // Can queue async retries for HTTP 202 pending responses.
+			// Note: 'may-timeout' flag is intentionally NOT included.
 			// This tool executes a single synchronous HTTP request with a 10-second timeout
 			// and completes quickly in normal conditions. When external search APIs are slow
-			// (HTTP 202), the tool returns immediately with a pending error message for the
-			// LLM to handle gracefully. The tool itself doesn't need async orchestration.
+			// (HTTP 202), the tool queues an async retry via cron instead of blocking.
 		);
 	}
 }

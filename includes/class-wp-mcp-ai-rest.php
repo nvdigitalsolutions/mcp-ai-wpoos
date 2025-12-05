@@ -8013,6 +8013,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Auto-enable essential read-only tools for chat-client endpoint.
+			// These tools are needed to maintain agentic workflows in chat context.
+			// Only read-only, safe tools are auto-enabled; write operations require explicit config.
+			$endpoint = $request->get_route();
+			if ( false !== strpos( $endpoint, '/chat-client' ) ) {
+				// Define read-only tools essential for agentic workflow.
+				$auto_enable_tools = array(
+					'web_search',                  // Real-time information retrieval.
+					'get_recent_posts',            // Access site content for context.
+					'search_attachments',          // Access media library files.
+					'get_jetengine_items',         // Access JetEngine CCT data (if available).
+					'list_jetengine_rest_routes',  // Discover JetEngine routes (if available).
+					'get_jetformbuilder_forms',    // Access JetFormBuilder forms (if available).
+					'get_jetformbuilder_submissions', // Access form submissions (if available).
+				);
+
+				foreach ( $auto_enable_tools as $auto_tool ) {
+					if ( $this->candidates_include_slug( $tool_candidates, $auto_tool ) &&
+						! in_array( $auto_tool, $allowed_tools, true ) ) {
+						$assistant_config = $this->ensure_tool_in_config( $assistant_config, $auto_tool );
+						$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					}
+				}
+			}
+
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
 			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
