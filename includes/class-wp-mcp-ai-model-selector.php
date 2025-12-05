@@ -485,7 +485,7 @@ class WP_MCP_AI_Model_Selector {
 		 *
 		 * @param string $model Default light model identifier.
 		 */
-		return apply_filters( 'wp_mcp_ai_default_light_model', 'gpt-4o-mini' );
+		return apply_filters( 'wp_mcp_ai_default_light_model', 'gpt-4.1-mini' );
 	}
 
 	/**
@@ -499,6 +499,6 @@ class WP_MCP_AI_Model_Selector {
 		 *
 		 * @param string $model Default advanced model identifier.
 		 */
-		return apply_filters( 'wp_mcp_ai_default_advanced_model', 'gpt-4o' );
+		return apply_filters( 'wp_mcp_ai_default_advanced_model', 'gpt-4.1' );
 	}
 }
