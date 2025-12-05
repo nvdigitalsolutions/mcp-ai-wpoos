@@ -67,7 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 		public function get_fields() {
 			return array(
 				// Settings subtab fields.
-				'chat_theme'                     => array(
+				'chat_theme'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Chat Theme', 'wp-mcp-ai' ),
 					'description' => __( 'Select the visual theme for the chat interface.', 'wp-mcp-ai' ),
@@ -78,28 +78,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					),
 					'default'     => 'light',
 				),
-				'chat_primary_color'             => array(
+				'chat_primary_color'              => array(
 					'type'        => 'text',
 					'label'       => __( 'Primary Color', 'wp-mcp-ai' ),
 					'description' => __( 'HEX color code for primary UI elements (e.g., #0073aa). Leave empty for default.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => '#0073aa',
 				),
-				'chat_user_bubble_color'         => array(
+				'chat_user_bubble_color'          => array(
 					'type'        => 'text',
 					'label'       => __( 'User Message Bubble Color', 'wp-mcp-ai' ),
 					'description' => __( 'HEX color code for user message bubbles. Leave empty for default.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => '#E3F2FD',
 				),
-				'chat_assistant_bubble_color'    => array(
+				'chat_assistant_bubble_color'     => array(
 					'type'        => 'text',
 					'label'       => __( 'Assistant Message Bubble Color', 'wp-mcp-ai' ),
 					'description' => __( 'HEX color code for assistant message bubbles. Leave empty for default.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => '#F5F5F5',
 				),
-				'chat_border_radius'             => array(
+				'chat_border_radius'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Border Radius (px)', 'wp-mcp-ai' ),
 					'description' => __( 'Border radius for chat bubbles in pixels. Higher values create more rounded corners.', 'wp-mcp-ai' ),
@@ -108,7 +108,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'min'         => 0,
 					'max'         => 50,
 				),
-				'chat_font_size'                 => array(
+				'chat_font_size'                  => array(
 					'type'        => 'number',
 					'label'       => __( 'Font Size (px)', 'wp-mcp-ai' ),
 					'description' => __( 'Base font size for chat messages in pixels. Leave empty for default (14px).', 'wp-mcp-ai' ),
@@ -117,21 +117,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'min'         => 10,
 					'max'         => 24,
 				),
-				'chat_show_timestamps'           => array(
+				'chat_show_timestamps'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Show Timestamps', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Display timestamps on messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Shows the time each message was sent below the message bubble.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_show_avatars'              => array(
+				'chat_show_avatars'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Show Avatars', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Display user and assistant avatars', 'wp-mcp-ai' ),
 					'description'    => __( 'Shows avatar images next to messages in the chat interface.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_compact_mode'              => array(
+				'chat_compact_mode'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Compact Mode', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Use compact message spacing', 'wp-mcp-ai' ),
@@ -139,7 +139,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'default'        => false,
 				),
 				// Behavior subtab fields.
-				'chat_max_history_display'       => array(
+				'chat_max_history_display'        => array(
 					'type'        => 'number',
 					'label'       => __( 'Max History Messages to Display', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of messages to display in the chat history. Older messages will be collapsed.', 'wp-mcp-ai' ),
@@ -148,7 +148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'min'         => 10,
 					'max'         => 200,
 				),
-				'chat_message_delay'             => array(
+				'chat_message_delay'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Message Animation Delay (ms)', 'wp-mcp-ai' ),
 					'description' => __( 'Delay in milliseconds for message appearance animation. Set to 0 to disable.', 'wp-mcp-ai' ),
@@ -157,42 +157,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'min'         => 0,
 					'max'         => 2000,
 				),
-				'chat_enable_typing_indicator'   => array(
+				'chat_enable_typing_indicator'    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Typing Indicator', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Show typing indicator while assistant is responding', 'wp-mcp-ai' ),
 					'description'    => __( 'Displays animated "..." indicator when the assistant is processing a response.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_auto_scroll'               => array(
+				'chat_auto_scroll'                => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Auto-Scroll', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically scroll to newest messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Automatically scrolls the chat window to show the latest message when new messages arrive.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_markdown'           => array(
+				'chat_enable_markdown'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Markdown Rendering', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable markdown formatting in messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows rendering of markdown syntax (bold, italic, links, code blocks) in messages.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_code_highlighting'  => array(
+				'chat_enable_code_highlighting'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Code Syntax Highlighting', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable syntax highlighting for code blocks', 'wp-mcp-ai' ),
 					'description'    => __( 'Applies syntax highlighting to code blocks in messages for better readability.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_persist_history'           => array(
+				'chat_persist_history'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Persist Chat History', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Save chat history to browser localStorage', 'wp-mcp-ai' ),
 					'description'    => __( 'Automatically saves conversation history locally so users can resume their chats. History expires after 24 hours.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_welcome_message'           => array(
+				'chat_welcome_message'            => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Welcome Message', 'wp-mcp-ai' ),
 					'description' => __( 'Initial message displayed when chat loads. Leave empty to disable welcome message.', 'wp-mcp-ai' ),
@@ -200,14 +200,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'placeholder' => __( 'Hello! How can I help you today?', 'wp-mcp-ai' ),
 					'rows'        => 3,
 				),
-				'chat_placeholder_text'          => array(
+				'chat_placeholder_text'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Input Placeholder Text', 'wp-mcp-ai' ),
 					'description' => __( 'Placeholder text shown in the message input field.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => __( 'Type your message...', 'wp-mcp-ai' ),
 				),
-				'chat_send_button_text'          => array(
+				'chat_send_button_text'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Send Button Text', 'wp-mcp-ai' ),
 					'description' => __( 'Text shown on the send button. Leave empty to use icon only.', 'wp-mcp-ai' ),
@@ -215,84 +215,84 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'placeholder' => __( 'Send', 'wp-mcp-ai' ),
 				),
 				// Features subtab fields.
-				'chat_enable_copy_button'        => array(
+				'chat_enable_copy_button'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Copy Button', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable copy-to-clipboard button for messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Adds a copy button to each message, allowing users to copy message content to their clipboard.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_save_button'        => array(
+				'chat_enable_save_button'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Save Button', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable save button for individual messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to save individual messages to their local storage for later reference.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_delete_button'      => array(
+				'chat_enable_delete_button'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Delete Button', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable delete button for messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to delete messages from their chat history.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_speech_button'      => array(
+				'chat_enable_speech_button'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Text-to-Speech Button', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable text-to-speech audio playback for messages', 'wp-mcp-ai' ),
 					'description'    => __( 'Adds a speech button to messages, allowing users to listen to assistant responses. Requires OpenAI TTS tool to be enabled.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_transcribe_button'  => array(
+				'chat_enable_transcribe_button'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Voice Input (Transcription)', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable voice-to-text transcription for user input', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to record voice messages that are transcribed to text. Requires OpenAI Whisper tool to be enabled.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_file_upload'        => array(
+				'chat_enable_file_upload'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'File Upload', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable file attachment uploads in chat', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to upload files (images, documents) as attachments to their messages.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_tool_shortcuts'     => array(
+				'chat_enable_tool_shortcuts'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Tool Shortcuts', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable quick access tool shortcut buttons', 'wp-mcp-ai' ),
 					'description'    => __( 'Displays quick access buttons for frequently used tools in the chat interface.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_search'             => array(
+				'chat_enable_search'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Message Search', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable search functionality for chat history', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to search through their chat history to find specific messages or topics.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_export'             => array(
+				'chat_enable_export'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Export Conversation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable export conversation to text/PDF', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to export their conversation history to a downloadable file.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_enable_regenerate'         => array(
+				'chat_enable_regenerate'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Regenerate Response', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable regenerate button for assistant responses', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows users to request a new response from the assistant for the same query.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'chat_allowed_file_types'        => array(
+				'chat_allowed_file_types'         => array(
 					'type'        => 'text',
 					'label'       => __( 'Allowed File Types', 'wp-mcp-ai' ),
 					'description' => __( 'Comma-separated list of allowed file extensions (e.g., jpg,png,pdf,docx). Leave empty for default allowed types.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'jpg,png,pdf,docx',
 				),
-				'chat_max_file_size_mb'          => array(
+				'chat_max_file_size_mb'           => array(
 					'type'        => 'number',
 					'label'       => __( 'Max File Size (MB)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum file size for uploads in megabytes. Set to 0 to use server default.', 'wp-mcp-ai' ),
@@ -302,13 +302,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'max'         => 100,
 				),
 				// Presets subtab (no form fields, handled via custom rendering).
-				'chat_preset_applied'            => array(
+				'chat_preset_applied'             => array(
 					'type'    => 'hidden',
 					'label'   => '',
 					'default' => '',
 				),
 				// LLM Sanitization subtab fields.
-				'chat_llm_sanitize_level'        => array(
+				'chat_llm_sanitize_level'         => array(
 					'type'        => 'select',
 					'label'       => __( 'LLM Response Sanitization Level', 'wp-mcp-ai' ),
 					'description' => __( 'Controls how strictly LLM responses are sanitized before display in the chat client.', 'wp-mcp-ai' ),
@@ -320,7 +320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					),
 					'default'     => 'moderate',
 				),
-				'chat_llm_max_response_length'   => array(
+				'chat_llm_max_response_length'    => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Response Length (characters)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of characters to display in a single LLM response. Longer responses will be truncated. Set to 0 for unlimited.', 'wp-mcp-ai' ),
@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'description'    => __( 'When enabled, shows 3 action buttons (e.g., Refine, Alternative, Expand) for each assistant response, allowing users to request variations of the answer.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'chat_llm_result_button_1_label' => array(
+				'chat_llm_result_button_1_label'  => array(
 					'type'        => 'text',
 					'label'       => __( 'Result Button 1 Label', 'wp-mcp-ai' ),
 					'description' => __( 'Label for the first result action button. Default: "Refine"', 'wp-mcp-ai' ),
@@ -350,7 +350,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'default'     => '',
 					'placeholder' => __( 'Please refine your previous response: {original_response}', 'wp-mcp-ai' ),
 				),
-				'chat_llm_result_button_2_label' => array(
+				'chat_llm_result_button_2_label'  => array(
 					'type'        => 'text',
 					'label'       => __( 'Result Button 2 Label', 'wp-mcp-ai' ),
 					'description' => __( 'Label for the second result action button. Default: "Alternative"', 'wp-mcp-ai' ),
@@ -364,7 +364,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'default'     => '',
 					'placeholder' => __( 'Please provide an alternative approach to: {original_response}', 'wp-mcp-ai' ),
 				),
-				'chat_llm_result_button_3_label' => array(
+				'chat_llm_result_button_3_label'  => array(
 					'type'        => 'text',
 					'label'       => __( 'Result Button 3 Label', 'wp-mcp-ai' ),
 					'description' => __( 'Label for the third result action button. Default: "Expand"', 'wp-mcp-ai' ),
@@ -388,7 +388,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'appearance'       => array(
+				'appearance'           => array(
 					'id'     => 'appearance',
 					'label'  => __( 'Appearance', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-appearance',
@@ -404,8 +404,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_compact_mode',
 					),
 				),
-				'behavior'         => array(
-					'id'     => 'behavior',
+				'behavior-chat-client' => array(
+					'id'     => 'behavior-chat-client',
 					'label'  => __( 'Behavior', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array(
@@ -421,7 +421,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_send_button_text',
 					),
 				),
-				'features'         => array(
+				'features'             => array(
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
@@ -440,7 +440,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_max_file_size_mb',
 					),
 				),
-				'llm_sanitization' => array(
+				'llm_sanitization'     => array(
 					'id'     => 'llm_sanitization',
 					'label'  => __( 'LLM Sanitization', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-shield',
@@ -456,7 +456,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_llm_result_button_3_prompt',
 					),
 				),
-				'presets'          => array(
+				'presets'              => array(
 					'id'     => 'presets',
 					'label'  => __( 'Presets', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-list-view',
