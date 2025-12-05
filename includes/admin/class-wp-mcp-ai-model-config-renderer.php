@@ -484,6 +484,13 @@ class WP_MCP_AI_Model_Config_Renderer {
 				return $capability_flags; // Text-only, no special flags.
 			}
 
+			// GPT-4.1 series (multimodal - vision capable).
+			if ( strpos( $model_id, 'gpt-4.1' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
 			// GPT-4o series (multimodal - vision capable).
 			if ( strpos( $model_id, 'gpt-4o' ) !== false || strpos( $model_id, 'chatgpt-4o' ) !== false ) {
 				$capability_flags[] = 'vision';

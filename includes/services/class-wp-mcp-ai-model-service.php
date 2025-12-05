@@ -137,6 +137,13 @@ class WP_MCP_AI_Model_Service {
 			$models['gpt-5-codex-mini'] = 'GPT-5 Codex Mini';
 		}
 
+		// GPT-4.1 series (multimodal - vision capable).
+		$models['gpt-4.1']            = 'GPT-4.1';
+		$models['gpt-4.1-mini']       = 'GPT-4.1 Mini';
+		$models['gpt-4.1-nano']       = 'GPT-4.1 Nano';
+		$models['gpt-4.1-turbo']      = 'GPT-4.1 Turbo';
+		$models['gpt-4.1-2025-04-14'] = 'GPT-4.1 (Apr 2025)';
+
 		// GPT-4o series (multimodal - vision capable).
 		$models['gpt-4o']            = 'GPT-4o';
 		$models['gpt-4o-mini']       = 'GPT-4o Mini';
@@ -409,7 +416,7 @@ class WP_MCP_AI_Model_Service {
 	 */
 	public function get_default_model_for_provider( $provider ) {
 		$defaults = array(
-			'openai'    => 'gpt-5.1',
+			'openai'    => 'gpt-4.1',
 			'anthropic' => 'claude-sonnet-4.5',
 			'gemini'    => 'gemini-2.5-flash',
 			'ollama'    => 'llama3.2',
