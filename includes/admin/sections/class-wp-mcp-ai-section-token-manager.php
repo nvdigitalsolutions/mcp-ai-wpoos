@@ -331,9 +331,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		/**
 		 * Render per-tool token limits view.
 		 */
-		/**
-		 * Render per-tool token limits view.
-		 */
 		private function render_per_tool_view() {
 			// Load filter bar renderer if not already loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
