@@ -7,8 +7,63 @@
 describe('Array Tool Result Handling', () => {
 	let normaliseArrayToolResult;
 	let normaliseToolResultForDisplay;
+	let normaliseJetEngineRoutesResult;
 
 	beforeEach(() => {
+		// Mock normaliseJetEngineRoutesResult function
+		normaliseJetEngineRoutesResult = function(result) {
+			if (!result || typeof result !== 'object') {
+				return null;
+			}
+
+			const routes = result.routes;
+			if (!Array.isArray(routes) || routes.length === 0) {
+				return {
+					text: 'No JetEngine REST routes found.',
+					attachments: []
+				};
+			}
+
+			const namespace = result.namespace || 'jet-engine/v2';
+			const lines = ['Available JetEngine REST API Routes (' + namespace + '):'];
+			lines.push('');
+
+			routes.forEach(function(route, index) {
+				if (!route || typeof route !== 'object') {
+					return;
+				}
+
+				const path = route.path || '';
+				const methods = Array.isArray(route.methods) ? route.methods.join(', ') : '';
+				const description = route.description || '';
+
+				// Format: 1. GET /search-posts/
+				lines.push((index + 1) + '. ' + methods + ' ' + path);
+				
+				// Add description if available
+				if (description) {
+					lines.push('   ' + description);
+				}
+
+				// Add additional requirements if available
+				if (Array.isArray(route.additional_requirements) && route.additional_requirements.length > 0) {
+					route.additional_requirements.forEach(function(req) {
+						lines.push('   • ' + req);
+					});
+				}
+
+				// Add spacing between routes
+				if (index < routes.length - 1) {
+					lines.push('');
+				}
+			});
+
+			return {
+				text: lines.join('\n'),
+				attachments: []
+			};
+		};
+
 		// Mock normaliseArrayToolResult function
 		normaliseArrayToolResult = function(resultArray, toolName) {
 			if (!Array.isArray(resultArray) || resultArray.length === 0) {
@@ -123,6 +178,11 @@ describe('Array Tool Result Handling', () => {
 
 			if (!result || typeof result !== 'object') {
 				return null;
+			}
+
+			// Special handling for list_jetengine_rest_routes tool
+			if (toolName === 'list_jetengine_rest_routes') {
+				return normaliseJetEngineRoutesResult(result);
 			}
 
 			// Handle array results
@@ -362,6 +422,206 @@ describe('Array Tool Result Handling', () => {
 			expect(result.attachments[0].meta).toContain('PNG');
 			expect(result.attachments[0].meta).toContain('1 MB');
 			expect(result.attachments[0].meta).toContain('2025-12-05');
+		});
+	});
+
+	describe('JetEngine Routes Tool Result Handling', () => {
+		it('should return null for non-object results', () => {
+			const result = normaliseJetEngineRoutesResult(null);
+			expect(result).toBeNull();
+		});
+
+		it('should return "No routes found" for empty routes array', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: []
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toBe('No JetEngine REST routes found.');
+			expect(result.attachments).toHaveLength(0);
+		});
+
+		it('should format a single route with all properties', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/search-posts/',
+						methods: ['GET'],
+						description: 'Searches published posts or taxonomy terms.',
+						additional_requirements: [
+							'Requires a user who can manage options.'
+						]
+					}
+				]
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('Available JetEngine REST API Routes (jet-engine/v2)');
+			expect(result.text).toContain('1. GET /search-posts/');
+			expect(result.text).toContain('Searches published posts or taxonomy terms.');
+			expect(result.text).toContain('• Requires a user who can manage options.');
+			expect(result.attachments).toHaveLength(0);
+		});
+
+		it('should format multiple routes correctly', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/search-posts/',
+						methods: ['GET'],
+						description: 'Searches published posts.',
+						additional_requirements: []
+					},
+					{
+						path: '/add-item/',
+						methods: ['POST'],
+						description: 'Creates a new item.',
+						additional_requirements: [
+							'Requests must provide an "instance" parameter.',
+							'Requires a user who can manage options.'
+						]
+					}
+				]
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('1. GET /search-posts/');
+			expect(result.text).toContain('2. POST /add-item/');
+			expect(result.text).toContain('Searches published posts.');
+			expect(result.text).toContain('Creates a new item.');
+			expect(result.text).toContain('• Requests must provide an "instance" parameter.');
+		});
+
+		it('should handle routes with multiple HTTP methods', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/items/',
+						methods: ['GET', 'POST', 'DELETE'],
+						description: 'Manage items'
+					}
+				]
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('GET, POST, DELETE /items/');
+		});
+
+		it('should use default namespace if not provided', () => {
+			const jetEngineResult = {
+				routes: [
+					{
+						path: '/test/',
+						methods: ['GET'],
+						description: 'Test route'
+					}
+				]
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('jet-engine/v2');
+		});
+
+		it('should handle routes without descriptions', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/simple/',
+						methods: ['GET']
+					}
+				]
+			};
+
+			const result = normaliseJetEngineRoutesResult(jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('1. GET /simple/');
+			// Should not crash without description
+		});
+
+		it('should be called by normaliseToolResultForDisplay for list_jetengine_rest_routes', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/get-items/',
+						methods: ['GET'],
+						description: 'Retrieves JetEngine items.',
+						additional_requirements: [
+							'Requests must include an "instance" parameter.'
+						]
+					}
+				]
+			};
+
+			const result = normaliseToolResultForDisplay('list_jetengine_rest_routes', jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('Available JetEngine REST API Routes');
+			expect(result.text).toContain('1. GET /get-items/');
+			expect(result.text).toContain('Retrieves JetEngine items.');
+			expect(result.attachments).toHaveLength(0);
+		});
+
+		it('should properly format the complete JetEngine routes from the tool', () => {
+			const jetEngineResult = {
+				namespace: 'jet-engine/v2',
+				routes: [
+					{
+						path: '/search-posts/',
+						methods: ['GET'],
+						description: 'Searches published posts or taxonomy terms registered with JetEngine.',
+						additional_requirements: [
+							'Requires a user who can manage options.'
+						]
+					},
+					{
+						path: '/add-item/',
+						methods: ['POST'],
+						description: 'Creates a new JetEngine item.',
+						additional_requirements: [
+							'Requests must provide an "instance" parameter.',
+							'Requires a user who can manage options.'
+						]
+					},
+					{
+						path: '/edit-item/(?P<id>[a-z\\-\\d]+)/',
+						methods: ['POST'],
+						description: 'Updates an existing JetEngine item.',
+						additional_requirements: [
+							'Provide the item ID in the request URL.',
+							'Requests must include an "instance" parameter.'
+						]
+					}
+				]
+			};
+
+			const result = normaliseToolResultForDisplay('list_jetengine_rest_routes', jetEngineResult);
+
+			expect(result).not.toBeNull();
+			expect(result.text).toContain('Available JetEngine REST API Routes (jet-engine/v2)');
+			expect(result.text).toContain('1. GET /search-posts/');
+			expect(result.text).toContain('2. POST /add-item/');
+			expect(result.text).toContain('3. POST /edit-item/');
+			expect(result.text).toContain('Searches published posts');
+			expect(result.text).toContain('Creates a new JetEngine item');
+			expect(result.text).toContain('Updates an existing JetEngine item');
+			expect(result.attachments).toHaveLength(0);
 		});
 	});
 });

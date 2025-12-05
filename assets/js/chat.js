@@ -7553,6 +7553,66 @@
     }
 
     /**
+     * Normalise list_jetengine_rest_routes tool result for display.
+     * Converts the routes array into a formatted list with descriptions.
+     * 
+     * @param {Object} result - Result object with namespace and routes array
+     * @return {Object|null} Normalized result with text, or null if empty
+     */
+    function normaliseJetEngineRoutesResult(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        const routes = result.routes;
+        if (!Array.isArray(routes) || routes.length === 0) {
+            return {
+                text: 'No JetEngine REST routes found.',
+                attachments: []
+            };
+        }
+
+        const namespace = result.namespace || 'jet-engine/v2';
+        const lines = ['Available JetEngine REST API Routes (' + namespace + '):'];
+        lines.push('');
+
+        routes.forEach(function(route, index) {
+            if (!route || typeof route !== 'object') {
+                return;
+            }
+
+            const path = route.path || '';
+            const methods = Array.isArray(route.methods) ? route.methods.join(', ') : '';
+            const description = route.description || '';
+
+            // Format: 1. GET /search-posts/
+            lines.push((index + 1) + '. ' + methods + ' ' + path);
+            
+            // Add description if available
+            if (description) {
+                lines.push('   ' + description);
+            }
+
+            // Add additional requirements if available
+            if (Array.isArray(route.additional_requirements) && route.additional_requirements.length > 0) {
+                route.additional_requirements.forEach(function(req) {
+                    lines.push('   • ' + req);
+                });
+            }
+
+            // Add spacing between routes
+            if (index < routes.length - 1) {
+                lines.push('');
+            }
+        });
+
+        return {
+            text: lines.join('\n'),
+            attachments: []
+        };
+    }
+
+    /**
      * Normalise array tool results for display (e.g., from search_attachments).
      * Converts an array of attachment objects into a formatted display with downloadable links.
      * 
@@ -7702,6 +7762,12 @@
         // Special handling for run_crawl4ai_job tool
         if (toolName === 'run_crawl4ai_job') {
             return normaliseCrawl4aiResult(result);
+        }
+
+        // Special handling for list_jetengine_rest_routes tool
+        // This tool returns an object with a 'routes' array that needs formatting
+        if (toolName === 'list_jetengine_rest_routes') {
+            return normaliseJetEngineRoutesResult(result);
         }
 
         const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
