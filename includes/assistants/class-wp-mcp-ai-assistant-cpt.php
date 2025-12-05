@@ -85,6 +85,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
 			add_action( 'init', array( $this, 'register_admin_notices' ) );
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
+			// Clean up CCT items when post status changes from publish to something else.
+			add_action( 'transition_post_status', array( $this, 'handle_post_status_transition' ), 10, 3 );
 		}
 
 		/**
@@ -3292,6 +3294,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Handle post status transitions to maintain CCT sync integrity.
+		 *
+		 * When an assistant post transitions from published to any other status,
+		 * remove its CCT item to keep the CCT clean and showing only published assistants.
+		 *
+		 * @param string  $new_status New post status.
+		 * @param string  $old_status Old post status.
+		 * @param WP_Post $post       Post object.
+		 */
+		public function handle_post_status_transition( $new_status, $old_status, $post ) {
+			// Only handle our post type.
+			if ( self::POST_TYPE !== $post->post_type ) {
+				return;
+			}
+
+			// If transitioning from publish to any other status, remove the CCT item.
+			if ( 'publish' === $old_status && 'publish' !== $new_status ) {
+				$this->delete_cct_item( $post->ID );
+			}
+		}
+
+		/**
 		 * Persist assistant meta fields.
 		 *
 		 * @param int     $post_id Post ID.
@@ -3545,6 +3569,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
+				return;
+			}
+
+			// Only sync published assistants to CCT. Auto-drafts, drafts, and other statuses should not be synced.
+			if ( 'publish' !== $post->post_status ) {
+				// If the post is not published but has a CCT item, delete it to keep CCT clean.
+				$this->delete_cct_item( $post_id );
 				return;
 			}
 
