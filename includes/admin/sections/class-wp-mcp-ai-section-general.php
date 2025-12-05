@@ -169,16 +169,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
+					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4.1-mini', 'wp-mcp-ai' ),
 					'default'     => '',
-					'placeholder' => 'gpt-4o-mini',
+					'placeholder' => 'gpt-4.1-mini',
 				),
 				'filter_default_advanced_model'         => array(
 					'type'        => 'text',
 					'label'       => __( 'Default Advanced Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4o', 'wp-mcp-ai' ),
+					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'wp-mcp-ai' ),
 					'default'     => '',
-					'placeholder' => 'gpt-4o',
+					'placeholder' => 'gpt-4.1',
 				),
 				'filter_max_agentic_iterations'         => array(
 					'type'        => 'number',
