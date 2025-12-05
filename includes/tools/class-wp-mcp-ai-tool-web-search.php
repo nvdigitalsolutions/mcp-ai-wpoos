@@ -9,8 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
 }
 
 if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
@@ -106,13 +106,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		$max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
 
-		$settings = array();
-
-		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		}
-
-		$provider = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
+		$provider = WP_MCP_AI_Settings_Registry::get_setting( 'web_search_provider', 'duckduckgo' );
 
 		// Check cache first to avoid unnecessary API calls.
 		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
@@ -133,7 +127,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Perform the search.
 		if ( 'brave' === $provider ) {
-			$result = $this->perform_brave_search( $query, $max_results, $settings );
+			$result = $this->perform_brave_search( $query, $max_results );
 		} else {
 			$result = $this->perform_duckduckgo_search( $query, $max_results );
 		}
@@ -410,12 +404,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
-	 * @param array  $settings    Cached plugin settings.
 	 *
 	 * @return array|WP_Error Search response payload or WP_Error on failure.
 	 */
-	protected function perform_brave_search( $query, $max_results, $settings ) {
-		$api_key = isset( $settings['brave_search_api_key'] ) ? trim( (string) $settings['brave_search_api_key'] ) : '';
+	protected function perform_brave_search( $query, $max_results ) {
+		$api_key = WP_MCP_AI_Settings_Registry::get_setting( 'brave_search_api_key', '' );
 
 		if ( '' === $api_key ) {
 			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Brave Search API key is required to perform searches.', 'wp-mcp-ai' ) );
