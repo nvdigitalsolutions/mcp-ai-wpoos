@@ -1789,6 +1789,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$response['args'] = $metadata['args'];
 		}
 
+		// Include context for permission checking when job reuses parent ID.
+		// When use_parent_job is true, the metadata includes the async executor's context
+		// field which contains user_id, assistant_id, etc. This is needed for permission
+		// checks in the cron-status service.
+		if ( isset( $metadata['context'] ) ) {
+			$response['context'] = $metadata['context'];
+		}
+
 		return $response;
 	}
 

@@ -823,10 +823,14 @@ class WP_MCP_AI_Cron_Status_Service {
 				return $result;
 			}
 
-			// Check permissions - video jobs store user_id in args.
+			// Check permissions - video jobs store user_id in args or context.
+			// When a job reuses parent ID (async_xxx), the context field from async executor
+			// contains the user_id. Otherwise, the args field contains the user_id.
 			$job_user_id = 0;
 			if ( isset( $result['args']['user_id'] ) ) {
 				$job_user_id = absint( $result['args']['user_id'] );
+			} elseif ( isset( $result['context']['user_id'] ) ) {
+				$job_user_id = absint( $result['context']['user_id'] );
 			}
 
 			if ( ! $is_admin && $job_user_id !== $user_id ) {
