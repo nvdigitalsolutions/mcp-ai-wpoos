@@ -31,6 +31,10 @@
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
+ *
+ * Patent Pending: This software is the subject of a pending patent application
+ * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
+ * Layer with Real-Time Capability Gating and Resource Budgeting."
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

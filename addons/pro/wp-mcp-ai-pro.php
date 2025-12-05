@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP oOS Pro
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
- * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more.
+ * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -17,6 +17,10 @@
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * All rights reserved. This is proprietary software.
+ *
+ * Patent Pending: This software is the subject of a pending patent application
+ * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
+ * Layer with Real-Time Capability Gating and Resource Budgeting."
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
