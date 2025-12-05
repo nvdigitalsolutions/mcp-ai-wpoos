@@ -311,7 +311,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				$result['aspect_ratio']
 			);
 
-			return array(
+			$final_result = array(
 				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
 				'url'           => $save_result['url'],
@@ -332,13 +332,31 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'text'          => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 			);
+
+			// Fire completion action for video generation (only when in chat/agentic context).
+			// This allows orchestration layer to track and stream video generation results via SSE.
+			if ( ! empty( $context['agentic_loop'] ) ) {
+				/**
+				 * Fires when a Veo video generation completes successfully in chat context.
+				 *
+				 * This hook allows the orchestration layer to track video generation
+				 * completions and stream results back to the chat client via SSE.
+				 *
+				 * @param array $final_result Video generation result with attachment info.
+				 * @param array $arguments    Original generation arguments.
+				 * @param array $context      Execution context.
+				 */
+				do_action( 'wp_mcp_ai_veo_video_completed', $final_result, $arguments, $context );
+			}
+
+			return $final_result;
 		}
 
 		// Return video data URL.
 		$video_base64 = base64_encode( $result['video_data'] );
 		$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
-		return array(
+		$final_result = array(
 			'success'      => true,
 			'video_url'    => $data_url,
 			'prompt'       => $result['prompt'],
@@ -357,6 +375,24 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				$result['aspect_ratio']
 			),
 		);
+
+		// Fire completion action for video generation (only when in chat/agentic context).
+		// This allows orchestration layer to track and stream video generation results via SSE.
+		if ( ! empty( $context['agentic_loop'] ) ) {
+			/**
+			 * Fires when a Veo video generation completes successfully in chat context.
+			 *
+			 * This hook allows the orchestration layer to track video generation
+			 * completions and stream results back to the chat client via SSE.
+			 *
+			 * @param array $final_result Video generation result with data URL.
+			 * @param array $arguments    Original generation arguments.
+			 * @param array $context      Execution context.
+			 */
+			do_action( 'wp_mcp_ai_veo_video_completed', $final_result, $arguments, $context );
+		}
+
+		return $final_result;
 	}
 
 	/**
