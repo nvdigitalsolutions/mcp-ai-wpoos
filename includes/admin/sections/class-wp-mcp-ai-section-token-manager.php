@@ -335,6 +335,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Render per-tool token limits view.
 		 */
 		private function render_per_tool_view() {
+			// Load filter bar renderer if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-tools-filter-bar-renderer.php';
+			}
+
 			$current_user_id = get_current_user_id();
 			$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
 
