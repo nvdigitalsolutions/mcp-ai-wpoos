@@ -1117,7 +1117,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Track if action fired.
 		$action_fired = false;
 
-		$action_callback = function () use ( &$action_fired ) {
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
 			$action_fired = true;
 		};
 
@@ -1184,7 +1184,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Track if action fired.
 		$action_fired = false;
 
-		$action_callback = function () use ( &$action_fired ) {
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
 			$action_fired = true;
 		};
 
@@ -1230,7 +1230,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Track if action fired.
 		$action_fired = false;
 
-		$action_callback = function () use ( &$action_fired ) {
+		$action_callback = function ( $result, $arguments, $context ) use ( &$action_fired ) {
 			$action_fired = true;
 		};
 

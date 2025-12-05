@@ -248,20 +248,18 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( ! is_wp_error( $result ) && $should_fire_action ) {
 			// Log action firing for debugging (respects agentic loop logging setting).
-			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'is_agentic_loop_logging_enabled' ) ) {
-				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
-					WP_MCP_AI_Logger::log_event(
-						'debug',
-						'Firing wp_mcp_ai_web_search_completed action',
-						array(
-							'query'           => $arguments['query'] ?? '',
-							'result_count'    => $result['result_count'] ?? 0,
-							'provider'        => $result['provider'] ?? 'unknown',
-							'cached'          => $result['cached'] ?? false,
-							'is_agentic_loop' => $is_agentic_loop,
-						)
-					);
-				}
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Firing wp_mcp_ai_web_search_completed action',
+					array(
+						'query'           => $arguments['query'] ?? '',
+						'result_count'    => $result['result_count'] ?? 0,
+						'provider'        => $result['provider'] ?? 'unknown',
+						'cached'          => $result['cached'] ?? false,
+						'is_agentic_loop' => $is_agentic_loop,
+					)
+				);
 			}
 
 			/**
