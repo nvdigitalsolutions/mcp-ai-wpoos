@@ -528,4 +528,93 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 	}
+
+	/**
+	 * Test that scraped content with invalid UTF-8 is properly sanitized.
+	 */
+	public function test_local_crawl_sanitizes_invalid_utf8() {
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+
+		// Create HTML content with potentially problematic characters.
+		$html_with_special_chars = '<html><body><h1>Café Résumé</h1><p>中文 日本語 한국어</p></body></html>';
+
+		$callback = function ( $preempt, $args, $url ) use ( $html_with_special_chars ) {
+			return array(
+				'body'     => $html_with_special_chars,
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'text/html; charset=utf-8' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $callback, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'url' => 'https://example.com/special-chars',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $callback, 10 );
+
+		// Should succeed (not WP_Error).
+		$this->assertIsArray( $result );
+		$this->assertSame( 'completed', $result['status'] );
+
+		// The entire result should be JSON-encodable.
+		$encoded = wp_json_encode( $result );
+		$this->assertNotFalse( $encoded, 'Crawl4AI result should be JSON-encodable' );
+
+		// Decoded result should preserve the structure.
+		$decoded = json_decode( $encoded, true );
+		$this->assertIsArray( $decoded );
+		$this->assertArrayHasKey( 'results', $decoded );
+		$this->assertNotEmpty( $decoded['results'] );
+	}
+
+	/**
+	 * Test that crawl4ai returns safe fallback when content cannot be encoded.
+	 */
+	public function test_local_crawl_handles_json_encoding_failure() {
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+
+		// Use reflection to test the sanitize_utf8 method directly.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'sanitize_utf8' );
+		$method->setAccessible( true );
+
+		// Test various problematic inputs.
+		$test_cases = array(
+			'Normal text'                                  => 'Normal text',
+			'Café résumé'                                  => 'Café résumé',
+			'中文 日本語 한국어'                                  => '中文 日本語 한국어',
+			''                                             => '',
+			'Text with null bytes: ' . "\x00" . 'removed' => 'Text with null bytes: removed',
+		);
+
+		foreach ( $test_cases as $input => $expected_pattern ) {
+			$sanitized = $method->invoke( $tool, $input );
+
+			// Should always return a string.
+			$this->assertIsString( $sanitized, "Input: {$input}" );
+
+			// Should be JSON-encodable.
+			$encoded = wp_json_encode( $sanitized );
+			$this->assertNotFalse( $encoded, "Input: {$input}" );
+		}
+
+		// Non-string input should be returned as-is.
+		$this->assertSame( 123, $method->invoke( $tool, 123 ) );
+		$this->assertSame( true, $method->invoke( $tool, true ) );
+	}
 }
