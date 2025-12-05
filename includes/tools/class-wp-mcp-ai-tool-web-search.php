@@ -164,7 +164,18 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Fire action hook to send complete search results back to chat client via SSE.
 		// This allows the orchestration layer to stream results in real-time.
+		// Only fire if we're in a chat context where streaming is potentially active.
 		if ( ! is_wp_error( $result ) && ! empty( $context['agentic_loop'] ) ) {
+			/**
+			 * Fires when a web search completes successfully in chat context.
+			 *
+			 * This hook allows the orchestration layer to stream search results
+			 * back to the chat client via SSE for real-time user feedback.
+			 *
+			 * @param array $result    Search results array.
+			 * @param array $arguments Original search arguments.
+			 * @param array $context   Execution context.
+			 */
 			do_action( 'wp_mcp_ai_web_search_completed', $result, $arguments, $context );
 		}
 
@@ -688,9 +699,15 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$executor  = $container ? $container->get( 'tool_async_executor' ) : new WP_MCP_AI_Tool_Async_Executor();
 
 		// Extract retry_after from error data (in seconds).
-		$retry_after = ! empty( $error_data['retry_after'] ) ? absint( $error_data['retry_after'] ) : 5;
+		// Note: retry_after is a string from HTTP header, convert to int.
+		$retry_after = ! empty( $error_data['retry_after'] ) ? intval( $error_data['retry_after'] ) : 5;
+		$retry_after = max( 3, min( $retry_after, 60 ) ); // Clamp between 3-60 seconds.
 
-		// Queue the search for async execution with retry delay.
+		// Queue the search for async execution.
+		// Note: The async executor uses a hardcoded 20-second delay for all jobs.
+		// The retry_after value is returned to the chat client for UI display but
+		// doesn't affect the actual retry timing. Future enhancement: Add delay
+		// parameter to queue_tool() to honor server's retry_after recommendation.
 		$job_id = $executor->queue_tool( 'web_search', $arguments, $context );
 
 		if ( is_wp_error( $job_id ) ) {
