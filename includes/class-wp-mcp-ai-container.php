@@ -517,6 +517,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'section.chat_client',
+			function () {
+				return new WP_MCP_AI_Section_Chat_Client();
+			}
+		);
+
+		$this->singleton(
 			'section.custom_filters',
 			function () {
 				return new WP_MCP_AI_Section_Custom_Filters();
