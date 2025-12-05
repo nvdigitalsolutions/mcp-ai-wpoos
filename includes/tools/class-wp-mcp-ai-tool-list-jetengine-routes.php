@@ -98,10 +98,65 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
+		// Format routes into human-readable text for display
+		$namespace = 'jet-engine/v2';
+		$message   = $this->format_routes_as_text( $routes, $namespace );
+
 		return array(
-			'namespace' => 'jet-engine/v2',
+			'namespace' => $namespace,
 			'routes'    => array_values( $routes ),
+			'message'   => $message,
 		);
+	}
+
+	/**
+	 * Format routes array into human-readable text.
+	 *
+	 * @param array  $routes    Array of route definitions.
+	 * @param string $namespace API namespace.
+	 * @return string Formatted text representation.
+	 */
+	private function format_routes_as_text( array $routes, $namespace ) {
+		if ( empty( $routes ) ) {
+			return __( 'No JetEngine REST routes found.', 'wp-mcp-ai' );
+		}
+
+		$lines = array();
+		/* translators: %s: API namespace */
+		$lines[] = sprintf( __( 'Available JetEngine REST API Routes (%s):', 'wp-mcp-ai' ), $namespace );
+		$lines[] = '';
+
+		foreach ( $routes as $index => $route ) {
+			if ( ! is_array( $route ) ) {
+				continue;
+			}
+
+			$path        = isset( $route['path'] ) ? $route['path'] : '';
+			$methods     = isset( $route['methods'] ) && is_array( $route['methods'] ) ? implode( ', ', $route['methods'] ) : '';
+			$description = isset( $route['description'] ) ? $route['description'] : '';
+
+			// Format: 1. GET /search-posts/
+			$lines[] = ( $index + 1 ) . '. ' . $methods . ' ' . $path;
+
+			// Add description if available
+			if ( $description ) {
+				$lines[] = '   ' . $description;
+			}
+
+			// Add additional requirements if available
+			if ( isset( $route['additional_requirements'] ) && is_array( $route['additional_requirements'] ) ) {
+				foreach ( $route['additional_requirements'] as $req ) {
+					$lines[] = '   • ' . $req;
+				}
+			}
+
+			// Add spacing between routes (except for the last one)
+			if ( $index < count( $routes ) - 1 ) {
+				$lines[] = '';
+			}
+		}
+
+		return implode( "\n", $lines );
 	}
 
 	/**
