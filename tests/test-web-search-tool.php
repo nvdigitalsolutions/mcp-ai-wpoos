@@ -930,5 +930,115 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Should not include timestamp (not essential for LLM).
 		$this->assertArrayNotHasKey( 'timestamp', $sanitized );
 	}
+
+	/**
+	 * Test that validate_and_normalize_result ensures data integrity.
+	 */
+	public function test_validate_and_normalize_result_handles_invalid_utf8() {
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'validate_and_normalize_result' );
+		$method->setAccessible( true );
+
+		// Simulate a result with potentially problematic UTF-8 sequences.
+		$raw_result = array(
+			'query'        => 'test query',
+			'provider'     => 'duckduckgo',
+			'cached'       => false,
+			'result_count' => 2,
+			'results'      => array(
+				array(
+					'title'   => 'Normal Title',
+					'url'     => 'https://example.com/1',
+					'snippet' => 'Normal snippet text',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					'title'   => 'Title with special chars: café résumé',
+					'url'     => 'https://example.com/2',
+					'snippet' => 'Snippet with UTF-8: 中文 日本語 한국어',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+			),
+		);
+
+		$normalized = $method->invoke( $tool, $raw_result, 'test query', 'duckduckgo' );
+
+		// Should preserve valid structure.
+		$this->assertIsArray( $normalized );
+		$this->assertArrayHasKey( 'query', $normalized );
+		$this->assertArrayHasKey( 'results', $normalized );
+		$this->assertArrayHasKey( 'result_count', $normalized );
+
+		// Should have 2 valid results.
+		$this->assertCount( 2, $normalized['results'] );
+
+		// The entire result should be JSON-encodable.
+		$encoded = wp_json_encode( $normalized );
+		$this->assertNotFalse( $encoded, 'Normalized result should be JSON-encodable' );
+
+		// Decoded result should match the structure.
+		$decoded = json_decode( $encoded, true );
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'test query', $decoded['query'] );
+	}
+
+	/**
+	 * Test that validate_and_normalize_result filters out invalid items.
+	 */
+	public function test_validate_and_normalize_result_filters_invalid_items() {
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'validate_and_normalize_result' );
+		$method->setAccessible( true );
+
+		// Simulate a result with invalid items (no title, no URL).
+		$raw_result = array(
+			'query'        => 'test query',
+			'provider'     => 'duckduckgo',
+			'cached'       => false,
+			'result_count' => 3,
+			'results'      => array(
+				array(
+					'title'   => 'Valid Result',
+					'url'     => 'https://example.com/valid',
+					'snippet' => 'Valid snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					// Invalid: no title, no URL.
+					'snippet' => 'Orphan snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+				array(
+					// Valid: has URL even without title.
+					'url'     => 'https://example.com/no-title',
+					'snippet' => 'No title snippet',
+					'source'  => 'duckduckgo',
+					'type'    => 'result',
+				),
+			),
+		);
+
+		$normalized = $method->invoke( $tool, $raw_result, 'test query', 'duckduckgo' );
+
+		// Should only have 2 valid results (invalid one filtered out).
+		$this->assertCount( 2, $normalized['results'], 'Invalid items should be filtered out' );
+		$this->assertSame( 2, $normalized['result_count'], 'Result count should reflect validated items' );
+
+		// First result should be the valid one.
+		$this->assertSame( 'Valid Result', $normalized['results'][0]['title'] );
+
+		// Second result should be the one with URL but no title.
+		$this->assertSame( 'https://example.com/no-title', $normalized['results'][1]['url'] );
+	}
 }
 

@@ -136,6 +136,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result = $this->perform_duckduckgo_search( $query, $max_results );
 		}
 
+		// Validate and normalize the result before caching and returning.
+		// This ensures consistent structure and prevents corrupted data from being cached.
+		if ( ! is_wp_error( $result ) ) {
+			$result = $this->validate_and_normalize_result( $result, $query, $provider );
+		}
+
 		// Cache successful results to reduce redundant API calls.
 		if ( ! is_wp_error( $result ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$cache_ttl = 5 * MINUTE_IN_SECONDS;
@@ -370,9 +376,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( ! empty( $data['AbstractText'] ) && ! empty( $data['AbstractURL'] ) ) {
 			$results[] = array(
-				'title'   => isset( $data['Heading'] ) ? sanitize_text_field( $data['Heading'] ) : sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ),
+				'title'   => isset( $data['Heading'] ) ? $this->sanitize_utf8( sanitize_text_field( $data['Heading'] ) ) : $this->sanitize_utf8( sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ) ),
 				'url'     => esc_url_raw( $data['AbstractURL'] ),
-				'snippet' => sanitize_text_field( $data['AbstractText'] ),
+				'snippet' => $this->sanitize_utf8( sanitize_text_field( $data['AbstractText'] ) ),
 				'source'  => 'duckduckgo',
 				'type'    => 'abstract',
 			);
@@ -531,13 +537,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					continue;
 				}
 
-				$title   = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
+				$title   = isset( $item['title'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['title'] ) ) : '';
 				$snippet = '';
 
 				if ( ! empty( $item['description'] ) ) {
-					$snippet = sanitize_text_field( $item['description'] );
+					$snippet = $this->sanitize_utf8( sanitize_text_field( $item['description'] ) );
 				} elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
-					$snippet = sanitize_text_field( implode( ' ', $item['extra_snippets'] ) );
+					$snippet = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
 				}
 
 				$results[] = array(
@@ -639,9 +645,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		$results[] = array(
-			'title'   => isset( $topic['Text'] ) ? sanitize_text_field( $topic['Text'] ) : '',
+			'title'   => isset( $topic['Text'] ) ? $this->sanitize_utf8( sanitize_text_field( $topic['Text'] ) ) : '',
 			'url'     => esc_url_raw( $topic['FirstURL'] ),
-			'snippet' => isset( $topic['Result'] ) ? wp_strip_all_tags( $topic['Result'] ) : '',
+			'snippet' => isset( $topic['Result'] ) ? $this->sanitize_utf8( wp_strip_all_tags( $topic['Result'] ) ) : '',
 			'source'  => 'duckduckgo',
 			'type'    => 'result',
 		);
@@ -858,5 +864,183 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * Sanitize a string to ensure it contains only valid UTF-8 characters.
+	 *
+	 * Search results from external APIs may contain invalid UTF-8 sequences
+	 * that can cause wp_json_encode() to fail, corrupting SSE streams and
+	 * causing HTTP2 protocol errors. This method removes or replaces invalid
+	 * sequences to ensure the string is safe for JSON encoding.
+	 *
+	 * @param string $string String to sanitize.
+	 * @return string Sanitized string with only valid UTF-8 characters.
+	 */
+	protected function sanitize_utf8( $string ) {
+		// Return early for non-strings.
+		if ( ! is_string( $string ) ) {
+			return $string;
+		}
+
+		// Remove invalid UTF-8 sequences.
+		// This is more aggressive than mb_check_encoding as it actually cleans the string.
+		// The //IGNORE flag skips characters that cannot be converted to valid UTF-8.
+		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
+
+		// If iconv failed (returned false), fall back to mb_convert_encoding.
+		if ( false === $sanitized && function_exists( 'mb_convert_encoding' ) ) {
+			$sanitized = mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
+		}
+
+		// If both methods failed, use preg_replace to remove non-UTF-8 bytes.
+		if ( false === $sanitized || '' === $sanitized ) {
+			// Match only valid UTF-8 sequences and replace everything else.
+			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $string );
+		}
+
+		// Final fallback: if still invalid, return empty string.
+		if ( false === $sanitized ) {
+			return '';
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Validate and normalize search results to ensure consistent structure.
+	 *
+	 * This method ensures that all search results have the expected structure
+	 * and all required fields are present. It also validates that the data can
+	 * be JSON-encoded without errors, which is critical for SSE streaming.
+	 *
+	 * @param array  $result   Raw search result from provider.
+	 * @param string $query    Original search query.
+	 * @param string $provider Provider name.
+	 * @return array Validated and normalized result.
+	 */
+	protected function validate_and_normalize_result( array $result, $query, $provider ) {
+		// Ensure required top-level fields are present.
+		$normalized = array(
+			'query'        => isset( $result['query'] ) ? $this->sanitize_utf8( $result['query'] ) : $query,
+			'provider'     => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : $provider,
+			'cached'       => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+			'results'      => isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array(),
+			'result_count' => isset( $result['result_count'] ) ? absint( $result['result_count'] ) : 0,
+		);
+
+		// Add optional fields if present.
+		if ( isset( $result['note'] ) ) {
+			$normalized['note'] = $this->sanitize_utf8( $result['note'] );
+		}
+
+		if ( isset( $result['text'] ) ) {
+			$normalized['text'] = $this->sanitize_utf8( $result['text'] );
+		}
+
+		if ( isset( $result['timestamp'] ) ) {
+			$normalized['timestamp'] = absint( $result['timestamp'] );
+		}
+
+		// Validate each result item to ensure it can be JSON-encoded.
+		$validated_results = array();
+		foreach ( $normalized['results'] as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			// Ensure each result has required fields with safe values.
+			$validated_item = array(
+				'title'   => isset( $item['title'] ) ? $this->sanitize_utf8( $item['title'] ) : '',
+				'url'     => isset( $item['url'] ) ? esc_url_raw( $item['url'] ) : '',
+				'snippet' => isset( $item['snippet'] ) ? $this->sanitize_utf8( $item['snippet'] ) : '',
+				'source'  => isset( $item['source'] ) ? sanitize_key( $item['source'] ) : $provider,
+				'type'    => isset( $item['type'] ) ? sanitize_key( $item['type'] ) : 'result',
+			);
+
+			// Skip items with no title and no URL (invalid results).
+			if ( '' === $validated_item['title'] && '' === $validated_item['url'] ) {
+				continue;
+			}
+
+			// Verify this item can be JSON-encoded before including it.
+			$test_encode = wp_json_encode( $validated_item );
+			if ( false !== $test_encode ) {
+				$validated_results[] = $validated_item;
+			} else {
+				// Log the problematic item for debugging.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'web_search_result_json_encode_failed',
+						'Failed to JSON encode search result item',
+						array(
+							'query'      => $query,
+							'provider'   => $provider,
+							'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+						)
+					);
+				}
+			}
+		}
+
+		$normalized['results']      = $validated_results;
+		$normalized['result_count'] = count( $validated_results );
+
+		// Update text field if result count changed due to validation.
+		if ( isset( $normalized['text'] ) && count( $validated_results ) !== count( $result['results'] ) ) {
+			$normalized['text'] = sprintf(
+				/* translators: 1: result count, 2: search query */
+				_n(
+					'Found %1$d web search result for "%2$s"',
+					'Found %1$d web search results for "%2$s"',
+					count( $validated_results ),
+					'wp-mcp-ai'
+				),
+				count( $validated_results ),
+				$query
+			);
+
+			if ( ! empty( $validated_results[0]['title'] ) ) {
+				$normalized['text'] .= ' ' . sprintf(
+					/* translators: %s: title of first search result */
+					__( 'Top result: %s', 'wp-mcp-ai' ),
+					wp_trim_words( $validated_results[0]['title'], 10, '...' )
+				);
+			}
+		}
+
+		// Final validation: ensure the entire result can be JSON-encoded.
+		$final_encode = wp_json_encode( $normalized );
+		if ( false === $final_encode ) {
+			// If even the normalized result fails encoding, return a safe minimal result.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'web_search_complete_result_json_encode_failed',
+					'Failed to JSON encode complete search result',
+					array(
+						'query'      => $query,
+						'provider'   => $provider,
+						'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+					)
+				);
+			}
+
+			// Return minimal safe result.
+			return array(
+				'query'        => $query,
+				'provider'     => $provider,
+				'cached'       => false,
+				'results'      => array(),
+				'result_count' => 0,
+				'note'         => __( 'Search completed but results could not be properly encoded for transmission.', 'wp-mcp-ai' ),
+				'text'         => sprintf(
+					/* translators: %s: search query */
+					__( 'Web search for "%s" completed but encountered data encoding issues.', 'wp-mcp-ai' ),
+					$query
+				),
+			);
+		}
+
+		return $normalized;
 	}
 }
