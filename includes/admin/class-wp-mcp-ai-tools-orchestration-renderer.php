@@ -180,11 +180,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				$tool_name        = $tool->get_name();
 				$tool_description = $tool->get_description();
 
-				// Get capability flags if tool implements the interface.
-				$capability_flags = array();
-				if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
-					$capability_flags = $tool->get_capability_flags();
+				// Load tool settings manager.
+				if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-settings-manager.php';
 				}
+
+				// Get capability flags (with custom overrides if set).
+				$capability_flags = WP_MCP_AI_Tool_Settings_Manager::get_capability_flags( $tool_slug, $tool );
+				$has_custom_flags = ! empty( WP_MCP_AI_Tool_Settings_Manager::get_custom_capability_flags( $tool_slug ) );
+				$force_sync       = WP_MCP_AI_Tool_Settings_Manager::is_force_sync_enabled( $tool_slug );
 
 				// Get model requirements if tool implements the interface.
 				$model_requirements = array();
@@ -210,7 +214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 
 				ob_start();
 				?>
-				<tr data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
+				<tr data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" class="wp-mcp-ai-tool-row">
 					<td>
 						<strong><?php echo esc_html( $tool_name ); ?></strong>
 						<?php if ( $tool_description ) : ?>
@@ -218,10 +222,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						<?php endif; ?>
 					</td>
 					<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
-					<td>
+					<td class="wp-mcp-ai-capability-flags-cell">
 						<?php
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_capability_flags method.
-						echo self::render_capability_flags( $capability_flags );
+						// Load editable capability flags renderer.
+						if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
+							require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-editable-capability-flags-renderer.php';
+						}
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
+						echo WP_MCP_AI_Editable_Capability_Flags_Renderer::render( $tool_slug, $capability_flags, $has_custom_flags, $force_sync );
 						?>
 					</td>
 					<td>
@@ -236,13 +244,32 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						echo self::render_orchestration_info( $flow_stages, $has_rules, $is_read_only, $is_state_changing, $requires_creds, $external_api, $long_running );
 						?>
 					</td>
+					<td class="wp-mcp-ai-tool-actions">
+						<button type="button" class="button button-small wp-mcp-ai-edit-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
+							<?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?>
+						</button>
+						<div class="wp-mcp-ai-edit-actions" style="display: none;">
+							<button type="button" class="button button-small button-primary wp-mcp-ai-save-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
+								<?php esc_html_e( 'Save', 'wp-mcp-ai' ); ?>
+							</button>
+							<button type="button" class="button button-small wp-mcp-ai-cancel-edit" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
+								<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
+							</button>
+							<?php if ( $has_custom_flags || $force_sync ) : ?>
+								<br>
+								<button type="button" class="button button-small button-link-delete wp-mcp-ai-reset-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" style="margin-top: 5px;">
+									<?php esc_html_e( 'Reset to Default', 'wp-mcp-ai' ); ?>
+								</button>
+							<?php endif; ?>
+						</div>
+					</td>
 				</tr>
 				<?php
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
 				return sprintf(
-					'<tr><td colspan="5">%s</td></tr>',
+					'<tr><td colspan="6">%s</td></tr>',
 					esc_html__( 'Error rendering tool row.', 'wp-mcp-ai' )
 				);
 			}

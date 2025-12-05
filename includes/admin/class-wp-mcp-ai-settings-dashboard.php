@@ -327,6 +327,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
+			// Enqueue tool orchestration scripts if on orchestration tab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'orchestration' === $_GET['tab'] ) {
+				$orchestration_js_path = WP_MCP_AI_PATH . 'assets/js/admin-tool-orchestration.js';
+				wp_enqueue_script(
+					'wp-mcp-ai-tool-orchestration',
+					WP_MCP_AI_URL . 'assets/js/admin-tool-orchestration.js',
+					array( 'jquery', 'wp-mcp-ai-ajax-error-service', 'wp-i18n' ),
+					file_exists( $orchestration_js_path ) ? filemtime( $orchestration_js_path ) : '1.0.0',
+					true
+				);
+				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'wp-mcp-ai' );
+			}
+
 			// Localize script with settings.
 			wp_localize_script(
 				'wp-mcp-ai-dashboard',
