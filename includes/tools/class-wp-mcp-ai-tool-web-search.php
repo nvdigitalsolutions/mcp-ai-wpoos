@@ -666,8 +666,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cacheable',            // Results can be cached for short periods.
 			'network-dependent',    // Requires internet connectivity.
 			'non-deterministic',    // Results may vary over time.
-			'may-timeout',          // May exceed typical HTTP request timeout.
-			'async-capable',        // Can execute asynchronously via cron.
+			// Note: 'may-timeout' and 'async-capable' flags are intentionally NOT included.
+			// This tool executes a single synchronous HTTP request with a 10-second timeout
+			// and completes quickly in normal conditions. When external search APIs are slow
+			// (HTTP 202), the tool returns immediately with a pending error message for the
+			// LLM to handle gracefully. The tool itself doesn't need async orchestration.
 		);
 	}
 }
