@@ -157,7 +157,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						<?php foreach ( $all_tools as $tool ) : ?>
 							<?php
 							// Get tool slug from tool object since get_tools() returns numeric array.
-							$tool_slug = is_object( $tool ) && method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+							// Validate tool implements the required interface.
+							if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
+								continue;
+							}
+							$tool_slug = $tool->get_slug();
 							if ( empty( $tool_slug ) ) {
 								continue;
 							}
