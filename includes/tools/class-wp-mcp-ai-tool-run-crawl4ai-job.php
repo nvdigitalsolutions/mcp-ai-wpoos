@@ -1941,8 +1941,9 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// If both methods failed, use preg_replace to remove common problematic control characters.
 		// This targets specific control characters (null bytes, form feed, etc.) that often cause issues.
-		if ( false === $sanitized || '' === $sanitized ) {
-			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $string );
+		// Note: Not using 'u' modifier since we're dealing with potentially invalid UTF-8.
+		if ( false === $sanitized ) {
+			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $string );
 		}
 
 		// Final fallback: if still invalid, return empty string.
