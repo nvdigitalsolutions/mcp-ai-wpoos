@@ -14,6 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * JetEngine REST API namespace.
+	 *
+	 * @var string
+	 */
+	const JETENGINE_NAMESPACE = 'jet-engine/v2';
+
+	/**
 	 * Determine whether JetEngine is available.
 	 *
 	 * @return bool
@@ -98,12 +105,11 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Format routes into human-readable text for display
-		$namespace = 'jet-engine/v2';
-		$message   = $this->format_routes_as_text( $routes, $namespace );
+		// Format routes into human-readable text for display.
+		$message = $this->format_routes_as_text( $routes, self::JETENGINE_NAMESPACE );
 
 		return array(
-			'namespace' => $namespace,
+			'namespace' => self::JETENGINE_NAMESPACE,
 			'routes'    => array_values( $routes ),
 			'message'   => $message,
 		);
