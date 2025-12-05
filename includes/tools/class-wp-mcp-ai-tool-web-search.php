@@ -612,7 +612,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// wait 8s, attempt 3, wait 16s, attempt 4, wait 30s, attempt 5, wait 30s, attempt 6,
 		// wait 30s, attempt 7, wait 30s, attempt 8, wait 30s, attempt 9, wait 30s, attempt 10,
 		// wait 30s, attempt 11, wait 30s, attempt 12, wait 30s, attempt 13.
-		// Total wait time: 2 + 4 + 8 + 16 + (30 × 9) = 30 + 270 = 300 seconds.
+		// Total wait time: (2 + 4 + 8 + 16) + (30 × 9) = 30 + 270 = 300 seconds.
 		$max_retries = 13;
 		
 		// Initial delay between retries (will be doubled each time if no Retry-After header).
