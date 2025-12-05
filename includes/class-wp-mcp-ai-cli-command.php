@@ -181,6 +181,60 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 * @param array $args       Positional arguments.
 			 * @param array $assoc_args Associative arguments.
 			 */
+			public function cleanup_cct( $args, $assoc_args ) {
+				// Ensure the assistant CPT class is loaded.
+				if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+					WP_CLI::error( 'Assistant CPT class not found.' );
+					return;
+				}
+
+				WP_CLI::log( 'Cleaning up orphaned CCT items for non-published assistants...' );
+
+				$result = WP_MCP_AI_Assistant_CPT::cleanup_orphaned_cct_items();
+
+				if ( ! empty( $result['errors'] ) ) {
+					foreach ( $result['errors'] as $error ) {
+						WP_CLI::warning( $error );
+					}
+				}
+
+				if ( $result['cleaned'] > 0 ) {
+					WP_CLI::success( sprintf( 'Cleaned up %d orphaned CCT item(s).', $result['cleaned'] ) );
+				} else {
+					WP_CLI::log( 'No orphaned CCT items found.' );
+				}
+			}
+
+			/**
+			 * Probe a remote WP oOS instance.
+			 *
+			 * ## OPTIONS
+			 *
+			 * <url>
+			 * : The REST base URL of the remote server.
+			 *
+			 * [--token=<token>]
+			 * : An Auth0 access token for authenticated requests.
+			 *
+			 * [--format=<format>]
+			 * : Render the check output in table, json, or yaml format.
+			 * ---
+			 * default: table
+			 * options:
+			 *   - table
+			 *   - json
+			 *   - yaml
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     # Probe a remote MCP deployment with an Auth0 access token.
+			 *     $ wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=ey...
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
+			 */
 			public function remote( $args, $assoc_args ) {
 				if ( empty( $args ) || ! isset( $args[0] ) ) {
 					WP_CLI::error( __( 'Please provide the remote MCP REST base URL.', 'wp-mcp-ai' ) );

@@ -3316,6 +3316,93 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Clean up orphaned CCT items for non-published assistants.
+		 *
+		 * This static method can be called to remove CCT items that are linked
+		 * to auto-drafts, drafts, or other non-published assistant posts.
+		 * Useful for cleaning up after the fix is deployed.
+		 *
+		 * @return array Array with 'cleaned' (count) and 'errors' (array of error messages).
+		 */
+		public static function cleanup_orphaned_cct_items() {
+			// Only run in Full Version when JetEngine is available.
+			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+				return array(
+					'cleaned' => 0,
+					'errors'  => array( 'Cleanup not available in Base Version.' ),
+				);
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
+				return array(
+					'cleaned' => 0,
+					'errors'  => array( 'JetEngine CCT not available.' ),
+				);
+			}
+
+			$cleaned = 0;
+			$errors  = array();
+
+			// Get all assistant posts with CCT item links.
+			$args = array(
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'meta_query'     => array(
+					array(
+						'key'     => '_wp_mcp_ai_cct_item_id',
+						'compare' => 'EXISTS',
+					),
+				),
+				'fields'         => 'ids',
+			);
+
+			$posts = get_posts( $args );
+
+			foreach ( $posts as $post_id ) {
+				$post = get_post( $post_id );
+
+				if ( ! $post ) {
+					continue;
+				}
+
+				// If post is not published, remove its CCT item.
+				if ( 'publish' !== $post->post_status ) {
+					$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', true );
+
+					if ( ! $cct_item_id ) {
+						continue;
+					}
+
+					$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
+
+					if ( ! $handler ) {
+						$errors[] = "Failed to get CCT handler for post $post_id";
+						continue;
+					}
+
+					// Delete the CCT item.
+					$result = $handler->delete_item( absint( $cct_item_id ) );
+
+					if ( false === $result ) {
+						$errors[] = "Failed to delete CCT item $cct_item_id for post $post_id";
+						continue;
+					}
+
+					// Remove the meta link.
+					delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+
+					++$cleaned;
+				}
+			}
+
+			return array(
+				'cleaned' => $cleaned,
+				'errors'  => $errors,
+			);
+		}
+
+		/**
 		 * Persist assistant meta fields.
 		 *
 		 * @param int     $post_id Post ID.

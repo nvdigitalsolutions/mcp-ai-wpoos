@@ -244,4 +244,30 @@ class WP_MCP_AI_Assistant_CCT_Sync_AutoDraft_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( $has_hook, 'transition_post_status hook should be registered for handle_post_status_transition' );
 	}
+
+	/**
+	 * Test that cleanup_orphaned_cct_items method exists and is static.
+	 */
+	public function test_cleanup_orphaned_cct_items_method_exists() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Assistant_CPT' );
+		$this->assertTrue( $reflection->hasMethod( 'cleanup_orphaned_cct_items' ), 'cleanup_orphaned_cct_items method should exist' );
+
+		$method = $reflection->getMethod( 'cleanup_orphaned_cct_items' );
+		$this->assertTrue( $method->isStatic(), 'cleanup_orphaned_cct_items should be static' );
+		$this->assertTrue( $method->isPublic(), 'cleanup_orphaned_cct_items should be public' );
+	}
+
+	/**
+	 * Test cleanup method returns expected structure when JetEngine unavailable.
+	 */
+	public function test_cleanup_returns_structure() {
+		// Call the cleanup method (should return error since JetEngine not available).
+		$result = WP_MCP_AI_Assistant_CPT::cleanup_orphaned_cct_items();
+
+		$this->assertIsArray( $result, 'Cleanup should return an array' );
+		$this->assertArrayHasKey( 'cleaned', $result, 'Result should have cleaned key' );
+		$this->assertArrayHasKey( 'errors', $result, 'Result should have errors key' );
+		$this->assertIsInt( $result['cleaned'], 'Cleaned count should be an integer' );
+		$this->assertIsArray( $result['errors'], 'Errors should be an array' );
+	}
 }
