@@ -11353,6 +11353,7 @@
             const toolCallId = data.tool_id || '';
             
             // Check if this is an async tool execution that's still pending
+            // Async tools have: async=true, status='pending', job_id
             if (result.async === true && result.status === 'pending' && result.job_id) {
                 // Update status indicator with async tool pending message
                 const asyncMessage = result.message || formatString(
@@ -11379,6 +11380,45 @@
                         console.error('[WP oOS] Async tool polling failed:', error);
                     }
                 });
+                return;
+            }
+            
+            // Check if this is a sync tool with a pending/processing status (e.g., web_search HTTP 202)
+            // These tools have: status='processing' (NOT async=true, NO job_id)
+            // The agentic loop should continue - the LLM gets a message to use alternative sources
+            if (result.status === 'processing' && !result.job_id && !result.async) {
+                // This is a sync tool that's temporarily unavailable (e.g., web_search pending)
+                // Display the informational message for the user
+                const processingMessage = result.message || formatString(
+                    getString('toolProcessing', '%s is temporarily processing your request. The assistant will continue using available information.'),
+                    toolName
+                );
+                
+                // Show as informational system message (not an error)
+                appendMessage(state.messagesEl, 'system', {
+                    text: 'ℹ️ ' + processingMessage,
+                    attachments: []
+                }, false, { state: state });
+                
+                // Update status to indicate tool is processing
+                setStatus(state.container, {
+                    message: formatString(getString('toolTemporarilyUnavailable', '%s temporarily unavailable'), toolName),
+                    type: 'text-stream',
+                    showTime: false
+                });
+                
+                // Log the processing status for debugging
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Tool returned processing status (sync pending):', {
+                        tool_name: toolName,
+                        status: result.status,
+                        message: result.message,
+                        note: result.note
+                    });
+                }
+                
+                // DO NOT poll - this is not an async job, just a temporarily unavailable sync tool
+                // The agentic loop continues and the LLM can proceed with alternative information
                 return;
             }
             
