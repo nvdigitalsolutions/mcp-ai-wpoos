@@ -29,6 +29,9 @@ class WP_MCP_AI_Job_Notifier {
 		// Hook into existing crawl4ai completion.
 		add_action( 'wp_mcp_ai_crawl4ai_job_completed', array( __CLASS__, 'handle_job_completed' ), 10, 3 );
 
+		// Hook into web_search completion.
+		add_action( 'wp_mcp_ai_web_search_completed', array( __CLASS__, 'handle_web_search_completed' ), 10, 3 );
+
 		// Generic hooks for any async operation.
 		add_action( 'wp_mcp_ai_job_started', array( __CLASS__, 'handle_job_started' ), 10, 2 );
 		add_action( 'wp_mcp_ai_job_progress', array( __CLASS__, 'handle_job_progress' ), 10, 3 );
@@ -77,6 +80,41 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'progress', $status );
+	}
+
+	/**
+	 * Handle web search completion.
+	 *
+	 * Adapter method to convert web_search_completed action parameters
+	 * to the format expected by handle_job_completed.
+	 *
+	 * @param array $result    Search results array.
+	 * @param array $arguments Original search arguments.
+	 * @param array $context   Execution context.
+	 */
+	public static function handle_web_search_completed( $result, $arguments = array(), $context = array() ) {
+		// Extract or generate a job ID for tracking.
+		// Web search results include a task_id field for this purpose.
+		$job_id = isset( $result['task_id'] ) ? $result['task_id'] : '';
+
+		if ( '' === $job_id ) {
+			// If no task_id, generate one based on query and timestamp.
+			// This ensures we can track and cache the result.
+			$query  = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+			$job_id = 'search-' . md5( $query . microtime( true ) );
+		}
+
+		// Build metadata from context.
+		$metadata = array(
+			'tool'      => 'web_search',
+			'query'     => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
+			'provider'  => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : '',
+			'user_id'   => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
+			'cached'    => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+		);
+
+		// Delegate to the standard job completion handler.
+		self::handle_job_completed( $job_id, $result, $metadata );
 	}
 
 	/**

@@ -406,7 +406,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$results = array_slice( $results, 0, $max_results );
 
 		if ( empty( $results ) ) {
+			$task_id = $this->generate_task_id( $query, 'duckduckgo' );
 			return array(
+				'task_id'  => $task_id,
 				'query'    => $query,
 				'results'  => array(),
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
@@ -443,7 +445,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
+		$task_id = $this->generate_task_id( $query, 'duckduckgo' );
 		return array(
+			'task_id'      => $task_id,
 			'query'        => $query,
 			'results'      => $results,
 			'result_count' => count( $results ),
@@ -573,7 +577,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$results = $this->deduplicate_results( $results );
 
 		if ( empty( $results ) ) {
+			$task_id = $this->generate_task_id( $query, 'brave' );
 			return array(
+				'task_id'  => $task_id,
 				'query'    => $query,
 				'results'  => array(),
 				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
@@ -610,7 +616,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
+		$task_id = $this->generate_task_id( $query, 'brave' );
 		return array(
+			'task_id'      => $task_id,
 			'query'        => $query,
 			'results'      => $results,
 			'result_count' => count( $results ),
@@ -808,6 +816,24 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Generate a unique task ID for web search results.
+	 *
+	 * This enables tracking and caching of search results for SSE retrieval,
+	 * similar to how Crawl4AI jobs are tracked.
+	 *
+	 * @param string $query    The search query.
+	 * @param string $provider Search provider name.
+	 * @return string Unique task identifier.
+	 */
+	protected function generate_task_id( $query, $provider ) {
+		// Generate a unique ID with timestamp and query hash for better uniqueness.
+		$timestamp = time();
+		$hash      = substr( md5( $query . $provider . microtime( true ) ), 0, 8 );
+
+		return 'search-' . $provider . '-' . $timestamp . '-' . $hash;
+	}
+
+	/**
 	 * Sanitize web search results for LLM consumption.
 	 *
 	 * Web searches can return large result sets with long URLs and snippets that
@@ -937,6 +963,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'results'      => isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array(),
 			'result_count' => isset( $result['result_count'] ) ? absint( $result['result_count'] ) : 0,
 		);
+
+		// Preserve task_id if present (critical for SSE tracking).
+		if ( isset( $result['task_id'] ) ) {
+			$normalized['task_id'] = sanitize_text_field( $result['task_id'] );
+		}
 
 		// Add optional fields if present.
 		if ( isset( $result['note'] ) ) {
