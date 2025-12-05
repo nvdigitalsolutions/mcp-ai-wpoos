@@ -482,7 +482,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 				$subtab = sanitize_key( $_GET['subtab'] );
 			}
 
-			// Default to 'settings' if not set or invalid.
+			// Default to 'appearance' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 				$subtab = 'appearance';
 			}
