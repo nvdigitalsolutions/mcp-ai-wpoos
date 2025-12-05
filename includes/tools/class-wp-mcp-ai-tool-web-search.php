@@ -39,6 +39,15 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	/**
+	 * Maximum number of results to include in LLM payload.
+	 *
+	 * Chat client receives all results, but LLM only gets this many to reduce token usage.
+	 *
+	 * @var int
+	 */
+	const MAX_LLM_RESULTS = 3;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -840,12 +849,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( ! empty( $result['results'] ) && is_array( $result['results'] ) ) {
 			$condensed_results = array();
 			
-			// Only include top 3 results for LLM (chat client gets all results).
-			$max_results_for_llm = 3;
+			// Only include top results for LLM (chat client gets all results).
 			$count = 0;
 
 			foreach ( $result['results'] as $item ) {
-				if ( $count >= $max_results_for_llm ) {
+				if ( $count >= self::MAX_LLM_RESULTS ) {
 					break;
 				}
 
@@ -883,9 +891,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return $string;
 		}
 
-		// Remove invalid UTF-8 sequences.
-		// This is more aggressive than mb_check_encoding as it actually cleans the string.
-		// The //IGNORE flag skips characters that cannot be converted to valid UTF-8.
+		// Remove invalid UTF-8 sequences from the source string.
+		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),
+		// effectively removing malformed UTF-8 sequences while preserving valid characters.
 		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
 
 		// If iconv failed (returned false), fall back to mb_convert_encoding.
@@ -893,9 +901,9 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$sanitized = mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
 		}
 
-		// If both methods failed, use preg_replace to remove non-UTF-8 bytes.
+		// If both methods failed, use preg_replace to remove common problematic control characters.
+		// This targets specific control characters (null bytes, form feed, etc.) that often cause issues.
 		if ( false === $sanitized || '' === $sanitized ) {
-			// Match only valid UTF-8 sequences and replace everything else.
 			$sanitized = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $string );
 		}
 
