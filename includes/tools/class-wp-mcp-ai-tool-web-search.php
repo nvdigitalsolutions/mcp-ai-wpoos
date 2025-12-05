@@ -27,7 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
  *
  * Both providers properly handle:
- * - Synchronous execution with automatic retry for HTTP 202 responses (up to 6 retries, 90 seconds total wait)
+ * - Synchronous execution with automatic retry for HTTP 202 responses (up to 13 retries, 300 seconds total wait)
  * - Asynchronous responses (HTTP 202) returned to orchestration layer only after retry attempts exhausted
  * - Rate limiting and caching to prevent abuse
  * - Result deduplication to prevent infinite loops
@@ -606,12 +606,14 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	protected function perform_search_with_retry( $url, $args = array() ) {
 		// Maximum number of retry attempts for HTTP 202 responses.
-		// With exponential backoff starting at 2s (2s, 4s, 8s, 16s, 30s, 30s),
-		// this gives the external API up to 90 seconds to process before we give up.
+		// With exponential backoff starting at 2s (2s, 4s, 8s, 16s, then capped at 30s),
+		// this gives the external API up to 5 minutes (300 seconds) to process before we give up.
 		// Retry sequence: attempt 0 (immediate), wait 2s, attempt 1, wait 4s, attempt 2,
-		// wait 8s, attempt 3, wait 16s, attempt 4, wait 30s, attempt 5, wait 30s, attempt 6.
-		// Total wait time: 2 + 4 + 8 + 16 + 30 + 30 = 90 seconds.
-		$max_retries = 6;
+		// wait 8s, attempt 3, wait 16s, attempt 4, wait 30s, attempt 5, wait 30s, attempt 6,
+		// wait 30s, attempt 7, wait 30s, attempt 8, wait 30s, attempt 9, wait 30s, attempt 10,
+		// wait 30s, attempt 11, wait 30s, attempt 12, wait 30s, attempt 13.
+		// Total wait time: 2 + 4 + 8 + 16 + (30 × 9) = 30 + 270 = 300 seconds.
+		$max_retries = 13;
 		
 		// Initial delay between retries (will be doubled each time if no Retry-After header).
 		// Start at 2 seconds to allow API time to process.
