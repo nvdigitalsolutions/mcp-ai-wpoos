@@ -149,8 +149,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $all_tools as $tool_slug => $tool ) : ?>
+						<?php foreach ( $all_tools as $tool ) : ?>
 							<?php
+							// Get tool slug from tool object since get_tools() returns numeric array.
+							$tool_slug = is_object( $tool ) && method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+							if ( empty( $tool_slug ) ) {
+								continue;
+							}
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_tool_row method.
 							echo self::render_tool_row( $tool_slug, $tool );
 							?>
