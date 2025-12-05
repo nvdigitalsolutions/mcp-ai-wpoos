@@ -27,8 +27,8 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  *   Integration follows patterns from: https://github.com/GivAlz/duckduckgo-api-haystack
  *
  * Both providers properly handle:
- * - Synchronous execution with single HTTP request per tool invocation
- * - Asynchronous responses (HTTP 202) returned to orchestration layer for retry management
+ * - Synchronous execution with automatic retry for HTTP 202 responses (up to 3 retries with exponential backoff)
+ * - Asynchronous responses (HTTP 202) returned to orchestration layer only after retry attempts exhausted
  * - Rate limiting and caching to prevent abuse
  * - Result deduplication to prevent infinite loops
  * - Security controls (user capabilities, nonces, input sanitization)
@@ -588,16 +588,16 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
-	 * Perform a synchronous search request without automatic retries.
+	 * Perform a search request with automatic retry logic for pending responses.
 	 *
-	 * Executes a single HTTP request and returns the response immediately.
-	 * When the server returns HTTP 202 (Accepted), indicating the request
-	 * is being processed asynchronously, this method returns a pending error
-	 * that allows the orchestration layer to handle retries.
+	 * When the server returns HTTP 202 (Accepted), indicating the request is being
+	 * processed asynchronously, this method will retry up to MAX_RETRIES times with
+	 * delays based on the Retry-After header (if provided) or exponential backoff.
+	 * This maximizes the chance of getting results before handing control back to
+	 * the orchestration layer.
 	 *
-	 * This approach prevents blocking execution with sleep() calls and allows
-	 * the orchestration layer to manage retry timing and strategy based on
-	 * the overall workflow context.
+	 * Only after exhausting all retries does it return a pending error to the
+	 * orchestration layer, allowing the LLM to proceed with alternative sources.
 	 *
 	 * @param string $url  Request URL.
 	 * @param array  $args Request arguments for wp_remote_get.
@@ -605,29 +605,66 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error HTTP response array or WP_Error for pending requests.
 	 */
 	protected function perform_search_with_retry( $url, $args = array() ) {
-		// Execute single synchronous request
-		$response = wp_remote_get( $url, $args );
+		// Maximum number of retry attempts for HTTP 202 responses.
+		// With exponential backoff (1s, 2s, 4s), this gives the external API
+		// up to 7 seconds to process before we give up.
+		$max_retries = 3;
+		
+		// Initial delay between retries (will be doubled each time if no Retry-After header).
+		$retry_delay = 1;
 
-		// Network or WordPress errors should be returned immediately
-		if ( is_wp_error( $response ) ) {
+		for ( $attempt = 0; $attempt <= $max_retries; $attempt++ ) {
+			// Execute HTTP request.
+			$response = wp_remote_get( $url, $args );
+
+			// Network or WordPress errors should be returned immediately.
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+			// Success - return the response.
+			if ( 200 === $status_code ) {
+				return $response;
+			}
+
+			// HTTP 202 (Accepted) - request is being processed asynchronously.
+			if ( 202 === $status_code ) {
+				// If this is our last attempt, return pending error to orchestration layer.
+				if ( $attempt >= $max_retries ) {
+					return $this->handle_pending_response( $response );
+				}
+
+				// Otherwise, wait and retry.
+				// Check if the server provided a Retry-After header.
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				$wait_time   = $retry_delay;
+				
+				if ( '' !== $retry_after && is_numeric( $retry_after ) ) {
+					// Use server's suggestion, but cap at 5 seconds to avoid excessive waiting.
+					$wait_time = min( (int) $retry_after, 5 );
+				}
+				
+				// Use sleep() to wait before next attempt. This is acceptable here because:
+				// 1. We're in a tool execution context, not a user-facing request handler.
+				// 2. The total wait time is bounded (max ~7-10 seconds across all retries).
+				// 3. This maximizes chance of success before falling back to LLM alternatives.
+				sleep( $wait_time );
+				
+				// Exponential backoff for next retry if no Retry-After header.
+				$retry_delay *= 2;
+				
+				continue;
+			}
+
+			// Other HTTP status codes (errors) - return the response for handling.
 			return $response;
 		}
 
-		$status_code = (int) wp_remote_retrieve_response_code( $response );
-
-		// Success - return the response
-		if ( 200 === $status_code ) {
-			return $response;
-		}
-
-		// HTTP 202 (Accepted) - request is being processed asynchronously
-		// Return pending error immediately to allow orchestration layer to handle retries
-		if ( 202 === $status_code ) {
-			return $this->handle_pending_response( $response );
-		}
-
-		// Other HTTP status codes (errors) - return the response for handling
-		return $response;
+		// Fallback: if we somehow exit the loop without returning, treat as pending.
+		// This should never happen, but provides a safe default.
+		return $this->handle_pending_response( $response );
 	}
 
 	/**
