@@ -6,12 +6,14 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
+[![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai#patent-pending)
 
 **Version:** 1.0.0 (Beta)  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
-**Requires:** WordPress 6.0+, PHP 7.4+
+**Requires:** WordPress 6.0+, PHP 7.4+  
+**Patent Status:** Patent Pending (Application #19/410,504)
 
 ## 📑 Table of Contents
 
@@ -110,6 +112,23 @@ The plugin works standalone with 35+ core tools and optionally integrates with t
 - **Input Sanitization & Output Escaping** - All user input sanitized, all output escaped following WordPress security best practices
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
+
+## Patent Pending
+
+**WP oOS is the subject of a pending patent application** for its novel **System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting**.
+
+**Application Number:** 19/410,504
+
+The patent covers WP oOS's innovative approach to implementing sophisticated AI orchestration in WordPress's request-based PHP architecture—a platform not designed for real-time streaming, asynchronous operations, or persistent state management. This technical achievement enables enterprise-grade AI capabilities on WordPress by recreating event-driven behavior within PHP's synchronous execution model.
+
+**Key Innovations Covered:**
+- Dynamic resource budget allocation during streaming operations
+- Capability-based access control for AI tool execution
+- Registry-state-based scheduling in stateless environments
+- Metrics-driven budget adjustment for real-time optimization
+- Persistent-behavior illusion in request-based architectures
+
+The orchestration layer makes WP oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
 
 ## 🏗 System Architecture
 

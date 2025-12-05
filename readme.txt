@@ -17,6 +17,8 @@ AI Assistant framework for WordPress with 35+ core tools, supporting OpenAI, Gem
 
 The plugin works standalone with 35+ core tools and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
 
+**Patent Pending:** WP oOS is the subject of a pending patent application (19/410,504) for its novel System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting.
+
 = Why WP oOS? =
 
 Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** designed for modern WordPress sites:
