@@ -657,7 +657,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				
 				// Use sleep() to wait before next attempt. This is acceptable here because:
 				// 1. We're in a tool execution context, not a user-facing request handler.
-				// 2. The total wait time is bounded (max 90 seconds across all retries).
+				// 2. The total wait time is bounded (max 300 seconds / 5 minutes across all retries).
 				// 3. This maximizes chance of success before falling back to LLM alternatives.
 				sleep( $wait_time );
 				
