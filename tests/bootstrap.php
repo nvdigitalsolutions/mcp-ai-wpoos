@@ -96,6 +96,7 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
 
 /**
  * Manually load the plugin being tested.
@@ -105,5 +106,39 @@ function wp_mcp_ai_manually_load_plugin() {
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+
+/**
+ * Set up test environment with admin user and authentication.
+ */
+function wp_mcp_ai_setup_test_environment() {
+	// Create admin user for tests.
+	$admin_id = wp_create_user( 'test_admin', 'password', 'admin@example.com' );
+	$admin    = new WP_User( $admin_id );
+	$admin->set_role( 'administrator' );
+	
+	// Set as current user.
+	wp_set_current_user( $admin_id );
+	
+	// Set up REST authentication.
+	$_SERVER['HTTP_X_WP_NONCE'] = wp_create_nonce( 'wp_rest' );
+	
+	// Set auth cookie.
+	$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $admin_id, time() + HOUR_IN_SECONDS, 'logged_in' );
+	
+	// Enable all capabilities for admin user in tests.
+	add_filter(
+		'user_has_cap',
+		function ( $allcaps ) {
+			$allcaps['manage_options']    = true;
+			$allcaps['edit_posts']         = true;
+			$allcaps['upload_files']       = true;
+			$allcaps['edit_others_posts']  = true;
+			$allcaps['delete_posts']       = true;
+			return $allcaps;
+		}
+	);
+}
+
+tests_add_filter( 'wp_loaded', 'wp_mcp_ai_setup_test_environment' );
 
 require $_tests_dir . '/includes/bootstrap.php';
