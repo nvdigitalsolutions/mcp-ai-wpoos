@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Store music as WordPress attachment.
-		$file_name = isset( $arguments['file_name'] ) ? $arguments['file_name'] : '';
+		$file_name = $arguments['file_name'] ?? '';
 		$storage   = $this->store_music_attachment( $result, $file_name, $prompt, $user_id, $context );
 
 		if ( is_wp_error( $storage ) ) {
