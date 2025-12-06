@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *
  * This service provides a clean separation of concerns by handling only
  * the music generation logic without WordPress-specific concerns.
- * 
+ *
  * Note: Jukebox requires local installation and significant GPU resources.
  * See https://github.com/openai/jukebox for installation instructions.
  */
@@ -40,7 +40,7 @@ class WP_MCP_AI_Jukebox_Service {
 	/**
 	 * Default model size.
 	 */
-	const DEFAULT_MODEL = '5b_lyrics'; // Options: 1b_lyrics, 5b, 5b_lyrics
+	const DEFAULT_MODEL = '5b_lyrics'; // Options: 1b_lyrics, 5b, 5b_lyrics.
 
 	/**
 	 * Check if Jukebox is installed and available.
@@ -52,43 +52,43 @@ class WP_MCP_AI_Jukebox_Service {
 	 *               - message: string
 	 */
 	public function check_installation() {
-		$python_path = get_option( 'wp_mcp_ai_jukebox_python_path', 'python3' );
+		$python_path  = get_option( 'wp_mcp_ai_jukebox_python_path', 'python3' );
 		$jukebox_path = get_option( 'wp_mcp_ai_jukebox_install_path', '' );
 
 		// Validate Python path to prevent command injection.
 		// Only allow common Python executable names or absolute paths.
 		$allowed_python_names = array( 'python', 'python3', 'python3.7', 'python3.8', 'python3.9', 'python3.10', 'python3.11', 'python3.12' );
-		$python_basename = basename( $python_path );
-		$is_absolute = strpos( $python_path, '/' ) === 0;
+		$python_basename      = basename( $python_path );
+		$is_absolute          = strpos( $python_path, '/' ) === 0;
 
 		if ( ! in_array( $python_basename, $allowed_python_names, true ) && ! $is_absolute ) {
 			return array(
-				'installed'     => false,
-				'python_path'   => null,
-				'jukebox_path'  => null,
-				'message'       => __( 'Invalid Python path configuration. Must be a standard Python executable or absolute path.', 'wp-mcp-ai' ),
+				'installed'    => false,
+				'python_path'  => null,
+				'jukebox_path' => null,
+				'message'      => __( 'Invalid Python path configuration. Must be a standard Python executable or absolute path.', 'wp-mcp-ai' ),
 			);
 		}
 
 		// Check Python availability.
 		// Note: This uses shell_exec but with validated Python path.
-		$python_check = shell_exec( escapeshellcmd( $python_path ) . ' --version 2>&1' );
+		$python_check = shell_exec( escapeshellcmd( $python_path ) . ' --version 2>&1' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
 		if ( empty( $python_check ) || false === strpos( strtolower( $python_check ), 'python' ) ) {
 			return array(
-				'installed'     => false,
-				'python_path'   => null,
-				'jukebox_path'  => null,
-				'message'       => __( 'Python is not available at the configured path.', 'wp-mcp-ai' ),
+				'installed'    => false,
+				'python_path'  => null,
+				'jukebox_path' => null,
+				'message'      => __( 'Python is not available at the configured path.', 'wp-mcp-ai' ),
 			);
 		}
 
 		// Check if jukebox path is configured.
 		if ( empty( $jukebox_path ) || ! is_dir( $jukebox_path ) ) {
 			return array(
-				'installed'     => false,
-				'python_path'   => $python_path,
-				'jukebox_path'  => null,
-				'message'       => __( 'Jukebox installation path is not configured or does not exist.', 'wp-mcp-ai' ),
+				'installed'    => false,
+				'python_path'  => $python_path,
+				'jukebox_path' => null,
+				'message'      => __( 'Jukebox installation path is not configured or does not exist.', 'wp-mcp-ai' ),
 			);
 		}
 
@@ -96,10 +96,10 @@ class WP_MCP_AI_Jukebox_Service {
 		$sample_script = trailingslashit( $jukebox_path ) . 'jukebox/sample.py';
 		if ( ! file_exists( $sample_script ) ) {
 			return array(
-				'installed'     => false,
-				'python_path'   => $python_path,
-				'jukebox_path'  => $jukebox_path,
-				'message'       => sprintf(
+				'installed'    => false,
+				'python_path'  => $python_path,
+				'jukebox_path' => $jukebox_path,
+				'message'      => sprintf(
 					/* translators: %s: path to sample.py */
 					__( 'Jukebox sample script not found at: %s', 'wp-mcp-ai' ),
 					$sample_script
@@ -108,10 +108,10 @@ class WP_MCP_AI_Jukebox_Service {
 		}
 
 		return array(
-			'installed'     => true,
-			'python_path'   => $python_path,
-			'jukebox_path'  => $jukebox_path,
-			'message'       => __( 'Jukebox is installed and available.', 'wp-mcp-ai' ),
+			'installed'    => true,
+			'python_path'  => $python_path,
+			'jukebox_path' => $jukebox_path,
+			'message'      => __( 'Jukebox is installed and available.', 'wp-mcp-ai' ),
 		);
 	}
 
