@@ -349,9 +349,9 @@ WP oOS is available in three distribution formats:
 
 | Version | File | Description |
 |---------|------|-------------|
-| **Base** | `wp-mcp-ai-base-X.Y.Z.zip` | Standalone fully functional plugin (works without Pro) |
-| **Pro** | `wp-mcp-ai-pro-X.Y.Z.zip` | Commercial add-on with advanced features (requires Base) |
-| **Base + Pro** | `wp-mcp-ai-X.Y.Z.zip` | Combined package with both Base and Pro included |
+| **Base** | `mcp-ai-wpoos-base-X.Y.Z.zip` | Standalone fully functional plugin (works without Pro) |
+| **Pro** | `mcp-ai-wpoos-pro-X.Y.Z.zip` | Commercial add-on with advanced features (requires Base) |
+| **Base + Pro** | `mcp-ai-wpoos-X.Y.Z.zip` | Combined package with both Base and Pro included |
 
 **Usage Options:**
 1. Install **Base** alone for core functionality
@@ -368,7 +368,7 @@ Plugin ZIP files are created in several ways:
 
 **Note:** Release ZIP files in the `build/` directory can be committed to the repository. The `.gitignore` file is configured to:
 - Allow `build/*.zip` files to be tracked
-- Ignore build subdirectories (`build/wp-mcp-ai/`, `build/wp-mcp-ai-base/`, `build/wp-mcp-ai-pro/`)
+- Ignore build subdirectories (`build/mcp-ai-wpoos/`, `build/mcp-ai-wpoos-base/`, `build/mcp-ai-wpoos-pro/`)
 
 This allows you to commit release builds directly to the repository for distribution.
 
@@ -383,9 +383,9 @@ When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workfl
 1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
 2. Find the version you need
 3. Download the appropriate ZIP file:
-   - `wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
-   - `wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
-   - `wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
+   - `mcp-ai-wpoos-base-X.Y.Z.zip` - Standalone base version
+   - `mcp-ai-wpoos-pro-X.Y.Z.zip` - Pro add-on
+   - `mcp-ai-wpoos-X.Y.Z.zip` - Base + Pro combined
 
 #### 2. GitHub Actions Artifacts (For Testing/Development)
 
@@ -431,9 +431,9 @@ npm run build:zip:combined  # Base + Pro combined
 ```
 
 ZIP files will be created in the `build/` directory:
-- `build/wp-mcp-ai-base-X.Y.Z.zip` - Standalone base version
-- `build/wp-mcp-ai-pro-X.Y.Z.zip` - Pro add-on
-- `build/wp-mcp-ai-X.Y.Z.zip` - Base + Pro combined
+- `build/mcp-ai-wpoos-base-X.Y.Z.zip` - Standalone base version
+- `build/mcp-ai-wpoos-pro-X.Y.Z.zip` - Pro add-on
+- `build/mcp-ai-wpoos-X.Y.Z.zip` - Base + Pro combined
 
 **Note:** Local builds require:
 - Node.js and npm (for asset building)
