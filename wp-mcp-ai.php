@@ -146,7 +146,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 
 		// Register a simple autoloader for production dependencies only.
 		spl_autoload_register(
-			function ( $class ) {
+			function ( $class_name ) {
 				// Map of production class prefixes to their paths (from composer's autoload_psr4.php).
 				$prefix_map = array(
 					'Rahul900day\\Tiktoken\\'           => 'vendor/rahul900day/tiktoken-php/src/',
@@ -168,11 +168,11 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 
 				foreach ( $prefix_map as $prefix => $base_dir ) {
 					$len = strlen( $prefix );
-					if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+					if ( strncmp( $prefix, $class_name, $len ) !== 0 ) {
 						continue;
 					}
 
-					$relative_class = substr( $class, $len );
+					$relative_class = substr( $class_name, $len );
 					$file           = WP_MCP_AI_PATH . $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
 
 					if ( file_exists( $file ) ) {
@@ -294,7 +294,7 @@ if ( ! function_exists( 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
 	 * @param array  $context  Execution context passed to the tool.
 	 * @return string
 	 */
-	function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
+	function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Filter callback signature requires these parameters.
 		if ( ! empty( $base_url ) ) {
 			return $base_url;
 		}
@@ -350,6 +350,7 @@ $is_elementor_ajax   = false;
 $is_elementor_editor = false;
 
 // Check for Elementor AJAX requests.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
 if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
 	$request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
@@ -367,6 +368,9 @@ if ( ! $is_ajax_request && isset( $_GET['action'] ) ) {
 $skip_buffering = $is_elementor_ajax || $is_elementor_editor;
 
 if ( ! $skip_buffering ) {
+	// Suppress errors on ob_start() because some hosting environments have output buffering disabled.
+	// If error suppression fails, we fall back to unsuppressed call for better debugging.
+	// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Intentional: graceful degradation when output buffering is disabled by host.
 	if ( ! @ob_start() ) {
 		ob_start(); // Fallback without error suppression.
 	}
@@ -908,9 +912,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
 				// Suppress display_errors to prevent debug output from breaking JSON responses.
+				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors
+				// specifically for Elementor AJAX requests to prevent breaking the editor.
 				// Error suppression is intentional: some hosts disable ini_set changes,
 				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
 					@ini_set( 'display_errors', '0' );
 				}
 
@@ -995,9 +1002,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 				// Prevent debug output from breaking Elementor's JSON responses.
 				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
+				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors
+				// specifically for Elementor editor to prevent breaking the UI.
 				// Error suppression is intentional: some hosts disable ini_set changes,
 				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
 					@ini_set( 'display_errors', '0' );
 				}
 			}
@@ -1212,6 +1222,7 @@ if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
 				call_user_func( $callback );
 			} catch ( Exception $e ) {
 				// Log the error and continue with remaining sites.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Production error logging required for multisite activation/deactivation tracking.
 				error_log( sprintf( 'Open Operator System %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
 			}
 			restore_current_blog();
@@ -1238,6 +1249,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 			$blog_id = (int) $blog;
 		} else {
 			// Invalid parameter, log error and return.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Production error logging required for debugging multisite activation issues.
 			error_log( 'Open Operator System: Invalid blog parameter passed to new_site_activation' );
 			return;
 		}
@@ -1247,6 +1259,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 			wp_mcp_ai_activate_single_site();
 		} catch ( Exception $e ) {
 			// Log the error but don't break the site creation process.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Production error logging required for debugging multisite activation issues.
 			error_log( sprintf( 'Open Operator System activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
 		}
 		restore_current_blog();
@@ -1667,7 +1680,7 @@ function wp_mcp_ai_invalidate_assistant_cache_on_delete( $post_id ) {
  * @param string $meta_key   Meta key.
  * @param mixed  $meta_value Meta value.
  */
-function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_id, $meta_key, $meta_value ) {
+function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_id, $meta_key, $meta_value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Hook callback signature requires all parameters.
 	if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 		return;
 	}
