@@ -159,6 +159,7 @@ if [ "$BUILD_BASE" = true ]; then
     
     # Use wp-mcp-ai as the slug to match the Text Domain in the plugin header
     # This is required for WordPress.org plugin directory compatibility
+    # See: https://developer.wordpress.org/plugins/plugin-basics/header-requirements/
     BASE_SLUG="wp-mcp-ai"
     mkdir -p "build/${BASE_SLUG}"
     
