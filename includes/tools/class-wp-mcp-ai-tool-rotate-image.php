@@ -71,6 +71,19 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-capability',  // Requires upload_files capability.
+			'write',                // Creates new media files.
+			'local-only',           // Works locally without external APIs.
+			'idempotent',           // Can be called multiple times safely with same result.
+			'performance-impact',   // Large images may temporarily affect performance.
+		);
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -114,6 +127,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				}
 				return $result;
 			}
+			/* translators: %s: rotation angle in degrees */
 			$operations[] = sprintf( __( 'rotated %s degrees', 'wp-mcp-ai' ), $angle );
 		}
 

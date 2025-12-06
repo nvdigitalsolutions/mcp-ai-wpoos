@@ -69,12 +69,30 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array(
+		$flags = array(
 			'requires-capability',  // Requires upload_files capability.
-			'write',                // Creates/modifies media files.
-			'performance-impact',   // Image processing can be resource-intensive.
-			'consumes-tokens',      // May use external API credits (paid mode).
+			'write',                // Creates new media files.
 		);
+
+		// Check if paid method (remove.bg API) is configured.
+		$api_key = get_option( 'wp_mcp_ai_removebg_api_key', '' );
+		if ( empty( $api_key ) ) {
+			// If no API key, it's local-only (using rembg Python library).
+			$flags[] = 'local-only';        // Works locally without external APIs.
+		} else {
+			// When API key is configured, add external API flags.
+			$flags[] = 'external-api';      // May use remove.bg API.
+			$flags[] = 'requires-credentials'; // Requires API key when using paid mode.
+			$flags[] = 'network-dependent'; // Requires internet for paid mode.
+			$flags[] = 'consumes-tokens';   // Uses external API credits (paid mode).
+			$flags[] = 'rate-limited';      // Subject to API rate limits.
+		}
+
+		// Common flags for both modes.
+		$flags[] = 'idempotent';           // Can be called multiple times safely with same result.
+		$flags[] = 'performance-impact';   // Image processing can be resource-intensive.
+
+		return $flags;
 	}
 
 	/**
