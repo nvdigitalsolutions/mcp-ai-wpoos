@@ -55,7 +55,23 @@ class WP_MCP_AI_Jukebox_Service {
 		$python_path = get_option( 'wp_mcp_ai_jukebox_python_path', 'python3' );
 		$jukebox_path = get_option( 'wp_mcp_ai_jukebox_install_path', '' );
 
+		// Validate Python path to prevent command injection.
+		// Only allow common Python executable names or absolute paths.
+		$allowed_python_names = array( 'python', 'python3', 'python3.7', 'python3.8', 'python3.9', 'python3.10', 'python3.11', 'python3.12' );
+		$python_basename = basename( $python_path );
+		$is_absolute = strpos( $python_path, '/' ) === 0;
+
+		if ( ! in_array( $python_basename, $allowed_python_names, true ) && ! $is_absolute ) {
+			return array(
+				'installed'     => false,
+				'python_path'   => null,
+				'jukebox_path'  => null,
+				'message'       => __( 'Invalid Python path configuration. Must be a standard Python executable or absolute path.', 'wp-mcp-ai' ),
+			);
+		}
+
 		// Check Python availability.
+		// Note: This uses shell_exec but with validated Python path.
 		$python_check = shell_exec( escapeshellcmd( $python_path ) . ' --version 2>&1' );
 		if ( empty( $python_check ) || false === strpos( strtolower( $python_check ), 'python' ) ) {
 			return array(
@@ -226,6 +242,15 @@ class WP_MCP_AI_Jukebox_Service {
 		);
 
 		// Execute command (this will take a long time - potentially hours for longer samples).
+		// SECURITY NOTE: While exec() is used here, all parameters are properly escaped:
+		// - Paths use escapeshellarg()
+		// - Commands use escapeshellcmd()
+		// - User input is sanitized before this point
+		// - Only users with 'manage_options' can configure paths
+		//
+		// PERFORMANCE NOTE: This is a long-running operation (hours for larger samples).
+		// Consider running this in async mode or as a background job.
+		// The WordPress default execution time limit will apply unless overridden.
 		$output = array();
 		$return_var = 0;
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
@@ -273,9 +298,10 @@ class WP_MCP_AI_Jukebox_Service {
 			// Find the most recently created .wav file.
 			$files = glob( $samples_dir . '/*.wav' );
 			if ( ! empty( $files ) ) {
-				usort( $files, function( $a, $b ) {
-					return filemtime( $b ) - filemtime( $a );
-				});
+				usort(
+					$files,
+					fn( $a, $b ) => filemtime( $b ) - filemtime( $a )
+				);
 				$audio_file = $files[0];
 			}
 		}
