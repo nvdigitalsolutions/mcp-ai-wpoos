@@ -125,6 +125,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 			$description_output = $this->format_text_block( $description );
 
 			if ( '' !== $description_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-provider-links__description">' . $description_output . '</div>';
 			}
 		}
@@ -138,6 +139,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 		echo '<div class="wp-mcp-ai-provider-links__grid">';
 		foreach ( $links as $link ) {
 			$target = ! empty( $link['is_external'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $target is a safe literal string.
 			echo '<a class="wp-mcp-ai-provider-links__card" href="' . esc_url( $link['url'] ) . '"' . $target . '>';
 			echo '<span class="wp-mcp-ai-provider-links__card-title">' . esc_html( $link['label'] ) . '</span>';
 			if ( ! empty( $link['description'] ) ) {

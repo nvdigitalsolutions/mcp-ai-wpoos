@@ -153,6 +153,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 			$description_output = $this->format_text_block( $description );
 
 			if ( '' !== $description_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-activity-feed__description">' . $description_output . '</div>';
 			}
 		}
