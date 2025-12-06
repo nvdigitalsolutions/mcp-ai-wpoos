@@ -225,7 +225,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				/>
 			</td>
 			<td>
-				<?php echo number_format_i18n( $context ); ?>
+				<?php echo esc_html( number_format_i18n( $context ) ); ?>
 			</td>
 			<td>
 				<select 
@@ -256,7 +256,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				</select>
 			</td>
 			<td>
-				$<?php echo number_format( $cost, 4 ); ?>
+				$<?php echo esc_html( number_format( $cost, 4 ) ); ?>
 			</td>
 			<td>
 				<span class="wp-mcp-ai-model-status-<?php echo esc_attr( $status ); ?>">

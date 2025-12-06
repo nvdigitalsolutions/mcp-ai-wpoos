@@ -191,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 								</li>
 								<li>
 									<strong>Mode:</strong> 
-									<?php echo $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (Elementor widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (Elementor widgets enabled)'; ?>
+									<?php echo wp_kses_post( $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (Elementor widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (Elementor widgets enabled)' ); ?>
 								</li>
 							</ul>
 						</div>
