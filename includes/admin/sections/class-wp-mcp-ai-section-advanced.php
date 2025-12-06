@@ -199,7 +199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
 							<a href="<?php echo esc_url( $subtab_url ); ?>" 
-								class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
 								<?php echo esc_html( $group['label'] ); ?>

@@ -236,7 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											data-team-id="<?php echo esc_attr( $team->ID ); ?>"
 											data-team-title="<?php echo esc_attr( $team->post_title ); ?>"
 											data-member-count="<?php echo esc_attr( $member_count ); ?>"
-											<?php echo ( 0 === $member_count ) ? 'disabled' : ''; ?>
+											<?php echo esc_attr( ( 0 === $member_count ) ? 'disabled' : '' ); ?>
 										>
 											<?php echo esc_html__( 'Test', 'wp-mcp-ai' ); ?>
 										</button>
