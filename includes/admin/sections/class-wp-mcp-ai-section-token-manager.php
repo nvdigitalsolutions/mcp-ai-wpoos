@@ -1026,13 +1026,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td>
 									<strong><?php echo esc_html( $provider_name ); ?></strong>
 								</td>
-								<td><?php echo number_format_i18n( $model_data['requests'] ); ?></td>
-								<td><?php echo number_format_i18n( $model_data['total_tokens'] ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $model_data['requests'] ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $model_data['total_tokens'] ) ); ?></td>
 								<td>
 									<?php
 									$model_cost = isset( $model_data['total_cost'] ) ? $model_data['total_cost'] : 0.0;
 									if ( $model_cost > 0 ) {
-										echo '$' . number_format( $model_cost, 4 );
+										echo esc_html( '$' . number_format( $model_cost, 4 ) );
 									} else {
 										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
 									}
@@ -1077,9 +1077,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td>
 									<code><?php echo esc_html( $tool_data['tool_slug'] ); ?></code>
 								</td>
-								<td><?php echo number_format_i18n( $tool_data['total_users'] ); ?></td>
-								<td><?php echo number_format_i18n( $tool_data['requests'] ); ?></td>
-								<td><?php echo number_format_i18n( $tool_data['total_tokens'] ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $tool_data['total_users'] ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $tool_data['requests'] ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $tool_data['total_tokens'] ) ); ?></td>
 							</tr>
 							<?php
 						endforeach;
@@ -1158,15 +1158,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<tr>
 									<td><?php echo esc_html( $this->get_provider_display_name( $provider ) ); ?></td>
 									<td><code><?php echo esc_html( $model ); ?></code></td>
-									<td><?php echo number_format_i18n( $data['requests'] ); ?></td>
-									<td><?php echo number_format_i18n( $prompt_tokens ); ?></td>
-									<td><?php echo number_format_i18n( $completion_tokens ); ?></td>
-									<td><?php echo number_format_i18n( $data['total_tokens'] ); ?></td>
-									<td><?php echo number_format_i18n( $data['cached_tokens'] ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $data['requests'] ) ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $prompt_tokens ) ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $completion_tokens ) ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $data['total_tokens'] ) ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $data['cached_tokens'] ) ); ?></td>
 									<td>
 										<?php
 										if ( $cost > 0 ) {
-											echo '$' . number_format( $cost, 4 );
+											echo esc_html( '$' . number_format( $cost, 4 ) );
 										} else {
 											echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
 										}
