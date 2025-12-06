@@ -15,7 +15,9 @@ composer.phar
 /build/wp-mcp-ai/
 /build/wp-mcp-ai-base/
 /build/wp-mcp-ai-pro/
-/build/wp-mcp-ai-combined/
+/build/mcp-ai-wpoos/
+/build/mcp-ai-wpoos-base/
+/build/mcp-ai-wpoos-pro/
 
 # Ignore ZIP files everywhere except in build directory
 *.zip
