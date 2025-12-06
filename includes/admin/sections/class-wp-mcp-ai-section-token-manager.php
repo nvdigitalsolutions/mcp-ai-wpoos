@@ -670,7 +670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							foreach ( $presets as $preset_key => $preset_data ) :
 								$is_current = ( $preset_key === $current_preset );
 								?>
-								<tr <?php echo wp_kses_post( $is_current ? 'style="background-color: #e7f7e7;"' : '' ); ?>>
+								<tr <?php echo $is_current ? 'style="' . esc_attr( 'background-color: #e7f7e7;' ) . '"' : ''; ?>>
 									<td>
 										<strong><?php echo esc_html( $preset_data['name'] ); ?></strong>
 										<?php if ( $is_current ) : ?>
