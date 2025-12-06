@@ -1,5 +1,5 @@
 {
-    "name": "wp-mcp-ai/wp-mcp-ai",
+    "name": "mcp-ai-wpoos/mcp-ai-wpoos",
     "description": "WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
