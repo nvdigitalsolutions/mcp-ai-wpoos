@@ -108,6 +108,59 @@ function wp_mcp_ai_manually_load_plugin() {
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 
 /**
+ * Load optional test plugins if available.
+ * This allows integration tests to run when plugins are installed.
+ */
+function wp_mcp_ai_load_optional_test_plugins() {
+	$wordpress_path = getenv( 'WP_CORE_DIR' ) ?: dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+	$plugins_dir    = $wordpress_path . '/wp-content/plugins';
+	
+	// Track which plugins are loaded for test skipping.
+	$loaded_plugins = array();
+	
+	// Load WooCommerce if available.
+	if ( file_exists( $plugins_dir . '/woocommerce/woocommerce.php' ) ) {
+		require_once $plugins_dir . '/woocommerce/woocommerce.php';
+		$loaded_plugins[] = 'woocommerce';
+		define( 'WP_MCP_AI_TEST_WOOCOMMERCE_ACTIVE', true );
+	}
+	
+	// Load Elementor if available.
+	if ( file_exists( $plugins_dir . '/elementor/elementor.php' ) ) {
+		require_once $plugins_dir . '/elementor/elementor.php';
+		$loaded_plugins[] = 'elementor';
+		define( 'WP_MCP_AI_TEST_ELEMENTOR_ACTIVE', true );
+	}
+	
+	// Load Rank Math if available.
+	if ( file_exists( $plugins_dir . '/seo-by-rank-math/rank-math.php' ) ) {
+		require_once $plugins_dir . '/seo-by-rank-math/rank-math.php';
+		$loaded_plugins[] = 'rank-math';
+		define( 'WP_MCP_AI_TEST_RANKMATH_ACTIVE', true );
+	}
+	
+	// Load WPCode if available.
+	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php' ) ) {
+		require_once $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php';
+		$loaded_plugins[] = 'wpcode';
+		define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
+	}
+	
+	// Load Simple JWT Login if available.
+	if ( file_exists( $plugins_dir . '/simple-jwt-login/simple-jwt-login.php' ) ) {
+		require_once $plugins_dir . '/simple-jwt-login/simple-jwt-login.php';
+		$loaded_plugins[] = 'simple-jwt-login';
+		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
+	}
+	
+	if ( ! empty( $loaded_plugins ) ) {
+		fwrite( STDOUT, "\nLoaded optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
+	}
+}
+
+tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_load_optional_test_plugins', 5 );
+
+/**
  * Set up test environment with admin user and authentication.
  */
 function wp_mcp_ai_setup_test_environment() {

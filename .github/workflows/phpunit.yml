@@ -68,6 +68,12 @@ jobs:
         run: |
           bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
 
+      - name: Install optional test plugins
+        run: |
+          chmod +x bin/install-test-plugins.sh
+          bash bin/install-test-plugins.sh || echo "Some test plugins could not be installed"
+        continue-on-error: true
+
       - name: Run PHPUnit with coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
 
