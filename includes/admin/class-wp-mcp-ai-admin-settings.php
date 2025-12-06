@@ -2707,17 +2707,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<div class="wp-mcp-ai-dashboard">
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--success">
 					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Configured', 'wp-mcp-ai' ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $configured ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $configured ) ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Connectors ready', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--warning">
 					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Incomplete', 'wp-mcp-ai' ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $incomplete ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $incomplete ) ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Needs attention', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--info">
 					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Total', 'wp-mcp-ai' ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $total_connectors ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $total_connectors ) ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Available connectors', 'wp-mcp-ai' ); ?></p>
 				</div>
 			</div>
