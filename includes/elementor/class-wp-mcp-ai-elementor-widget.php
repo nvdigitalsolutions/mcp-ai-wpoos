@@ -1512,7 +1512,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 					$description_output = $this->format_text_block( $description );
 
 					if ( '' !== $description_output ) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 						echo '<div class="wp-mcp-ai-chat-widget__assistant-tools-description">' . $description_output . '</div>';
 					}
 				}
