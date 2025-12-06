@@ -712,7 +712,7 @@ class WP_MCP_AI_Profession_CPT {
 			case 'expertise_count':
 				$expertise = get_post_meta( $post_id, self::META_EXPERTISE, true );
 				if ( is_array( $expertise ) && ! empty( $expertise ) ) {
-					echo absint( count( $expertise ) );
+					echo esc_html( absint( count( $expertise ) ) );
 				} else {
 					echo '0';
 				}

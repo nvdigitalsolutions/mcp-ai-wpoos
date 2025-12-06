@@ -128,6 +128,7 @@ class WP_MCP_AI_SSE_Handler {
 			}
 		}
 		
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE data output is JSON encoded.
 		echo 'data: ' . $json_data . "\n\n";
 
 		// Force flush to send data immediately.

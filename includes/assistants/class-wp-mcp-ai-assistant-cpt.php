@@ -2202,7 +2202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$persisted_flags  = isset( $tool_role_rules_by_slug[ $slug ]['flags'] ) ? (array) $tool_role_rules_by_slug[ $slug ]['flags'] : array();
 					$select_size      = ! empty( $role_options ) ? min( max( count( $role_options ), 4 ), 8 ) : 4;
 
-					echo '<li class="wp-mcp-ai-tools__item" data-tool-selected="' . ( $is_selected ? 'true' : 'false' ) . '">';
+					echo '<li class="wp-mcp-ai-tools__item" data-tool-selected="' . esc_attr( $is_selected ? 'true' : 'false' ) . '">';
 					echo '<div class="wp-mcp-ai-tools__header">';
 					printf(
 						'<input type="checkbox" class="wp-mcp-ai-tools__checkbox" id="%1$s" name="wp_mcp_ai_tools[]" value="%2$s" %3$s aria-describedby="%4$s" />',
