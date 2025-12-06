@@ -107,14 +107,14 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 			<h2><?php esc_html_e( 'System Checks', 'wp-mcp-ai' ); ?></h2>
 
 			<!-- Pretty Permalinks -->
-			<div class="test-result <?php echo $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning'; ?>">
+			<div class="test-result <?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning' ); ?>">
 				<h3>
-					<span class="dashicons dashicons-<?php echo $diagnostics['rest_url_rewrite_enabled'] ? 'yes' : 'warning'; ?>"></span>
+					<span class="dashicons dashicons-<?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'yes' : 'warning' ); ?>"></span>
 					<?php esc_html_e( 'Pretty Permalinks', 'wp-mcp-ai' ); ?>
 				</h3>
 				<p>
 					<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
-					<span class="status-<?php echo $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning'; ?>">
+					<span class="status-<?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning' ); ?>">
 						<?php echo $diagnostics['rest_url_rewrite_enabled'] ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
 					</span>
 				</p>
@@ -137,9 +137,9 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 			</div>
 
 			<!-- Caching Plugins -->
-			<div class="test-result <?php echo empty( $diagnostics['caching_plugins'] ) ? 'ok' : 'warning'; ?>">
+			<div class="test-result <?php echo esc_attr( empty( $diagnostics['caching_plugins'] ) ? 'ok' : 'warning' ); ?>">
 				<h3>
-					<span class="dashicons dashicons-<?php echo empty( $diagnostics['caching_plugins'] ) ? 'yes' : 'warning'; ?>"></span>
+					<span class="dashicons dashicons-<?php echo esc_attr( empty( $diagnostics['caching_plugins'] ) ? 'yes' : 'warning' ); ?>"></span>
 					<?php esc_html_e( 'Caching Plugins', 'wp-mcp-ai' ); ?>
 				</h3>
 				<p>
