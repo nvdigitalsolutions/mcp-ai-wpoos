@@ -20,7 +20,7 @@ This document provides actionable, quick-win fixes for high-priority gaps identi
 **Impact:** Technical debt tracking
 
 **Current TODOs Found:**
-1. `includes/services/class-wp-mcp-ai-orchestration-health-service.php:102`
+1. `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
    ```php
    // TODO: Implement actual predictive analytics.
    ```
@@ -46,7 +46,7 @@ This document provides actionable, quick-win fixes for high-priority gaps identi
 ## Future Enhancements (Tracked TODOs)
 
 ### Predictive Analytics
-- **File:** `includes/services/class-wp-mcp-ai-orchestration-health-service.php:102`
+- **File:** `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
 - **Description:** Implement actual predictive analytics for orchestration health
 - **Priority:** Low
 - **Effort:** 8-12 hours

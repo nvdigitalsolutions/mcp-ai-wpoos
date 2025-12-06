@@ -70,7 +70,7 @@ This document identifies gaps, missing features, and areas for improvement in th
    - **Impact:** Technical debt accumulation
    - **Effort:** 1 hour to document and track
    - **Locations:**
-     - `includes/services/class-wp-mcp-ai-orchestration-health-service.php:L102`
+     - `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
      - `includes/class-wp-mcp-ai-cli-command.php`
      - `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
 
