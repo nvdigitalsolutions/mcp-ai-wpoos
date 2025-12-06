@@ -24,7 +24,7 @@ class WP_MCP_AI_I18N_Test extends WP_UnitTestCase {
 		$plugin_data = get_plugin_data( $plugin_file, false, false );
 
 		$this->assertArrayHasKey( 'TextDomain', $plugin_data, 'Plugin should have Text Domain header' );
-		$this->assertEquals( 'wp-mcp-ai', $plugin_data['TextDomain'], 'Text Domain should be wp-mcp-ai' );
+		$this->assertEquals( 'mcp-ai-wpoos', $plugin_data['TextDomain'], 'Text Domain should be mcp-ai-wpoos' );
 
 		$this->assertArrayHasKey( 'DomainPath', $plugin_data, 'Plugin should have Domain Path header' );
 		$this->assertEquals( '/languages', $plugin_data['DomainPath'], 'Domain Path should be /languages' );
@@ -38,7 +38,7 @@ class WP_MCP_AI_I18N_Test extends WP_UnitTestCase {
 	 */
 	public function test_translation_functions_work() {
 		// Call a translation function - WordPress should automatically load the textdomain.
-		$translated = __( 'Settings', 'wp-mcp-ai' );
+		$translated = __( 'Settings', 'mcp-ai-wpoos' );
 
 		// In a test environment without actual translation files, this will return the original string.
 		// The important part is that it doesn't trigger any errors or warnings.
