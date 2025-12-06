@@ -68,8 +68,54 @@ jobs:
         run: |
           bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
 
+      - name: Install optional test plugins
+        run: |
+          chmod +x bin/install-test-plugins.sh
+          bash bin/install-test-plugins.sh || echo "Some test plugins could not be installed"
+        continue-on-error: true
+
       - name: Run PHPUnit with coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
+
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from coverage.xml
+          if [ -f coverage.xml ]; then
+            COVERAGE=$(php -r "
+              \$xml = simplexml_load_file('coverage.xml');
+              if (\$xml && isset(\$xml->project->metrics)) {
+                \$metrics = \$xml->project->metrics;
+                \$statements = (int)\$metrics['statements'];
+                \$covered = (int)\$metrics['coveredstatements'];
+                if (\$statements > 0) {
+                  echo round((\$covered / \$statements) * 100, 2);
+                } else {
+                  echo '0';
+                }
+              } else {
+                echo '0';
+              }
+            ")
+            echo "Code coverage: ${COVERAGE}%"
+            
+            # Set minimum threshold (currently 70% based on gap analysis recommendation)
+            THRESHOLD=70
+            
+            # Compare coverage to threshold (using awk for portability)
+            # Note: Currently in warning-only mode. To enforce threshold and fail builds:
+            # 1. Remove the 'true ||' prefix on the 'exit 1' line below
+            # 2. Commit and test to ensure legitimate failures are acceptable
+            if awk "BEGIN {exit !($COVERAGE < $THRESHOLD)}"; then
+              echo "❌ Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+              echo "::warning::Code coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
+              # Currently warning only - remove 'true ||' to enforce
+              true || exit 1
+            else
+              echo "✅ Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
+            fi
+          else
+            echo "⚠️ No coverage.xml file found"
+          fi
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

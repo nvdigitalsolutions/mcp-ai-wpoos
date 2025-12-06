@@ -338,6 +338,39 @@ Based on the comprehensive code review, here are actionable improvements organiz
 
 ---
 
+## 🔮 Future Enhancements (Tracked TODOs)
+
+Based on the December 2025 gap analysis, the following TODOs have been identified in the codebase:
+
+### Predictive Analytics for Orchestration Health
+- **File:** `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
+- **Description:** Implement actual predictive analytics for orchestration health monitoring
+- **Current:** Placeholder comment indicating future implementation needed
+- **Priority:** Low
+- **Effort:** 8-12 hours
+- **Dependencies:** None
+- **Issue:** To be created
+
+### RabbitMQ Message Consumption Loop
+- **File:** `includes/class-wp-mcp-ai-cli-command.php`
+- **Description:** Implement actual message consumption loop when AMQPQueue::consume is available
+- **Current:** Placeholder implementation, waiting for AMQPQueue library integration
+- **Priority:** Medium
+- **Effort:** 4-6 hours
+- **Dependencies:** AMQPQueue library, RabbitMQ configuration
+- **Issue:** To be created
+
+### Gemini Video File Naming Pattern
+- **File:** `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
+- **Description:** Handle inconsistent Veo video file naming patterns (veo-video-veo_XXXXX.mp4 vs veo-video-XXXXX.mp4)
+- **Current:** Comment noting potential file naming inconsistency
+- **Priority:** Low
+- **Effort:** 1-2 hours
+- **Dependencies:** None
+- **Issue:** To be created
+
+---
+
 **Document Created:** November 2, 2024  
-**Last Updated:** November 30, 2025 (Task status review)  
+**Last Updated:** December 6, 2025 (Added Future Enhancements section from gap analysis)  
 **Next Review:** Weekly until all immediate items complete, then monthly
