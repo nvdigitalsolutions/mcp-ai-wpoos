@@ -59,7 +59,7 @@
 
 ### Assistant Management
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
-- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage--cpt-vs-cct)
+- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
 - [👔 Professional & Team Layers](#-professional--team-layers)
 - [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
