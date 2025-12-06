@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								?>
 								<tr>
 									<td><code><?php echo esc_html( $const ); ?></code></td>
-									<td><?php echo $defined ? '<span style="color: green;">✓ Defined</span>' : '<span style="color: red;">✗ Not Defined</span>'; ?></td>
+									<td><?php echo wp_kses_post( $defined ? '<span style="color: green;">✓ Defined</span>' : '<span style="color: red;">✗ Not Defined</span>' ); ?></td>
 									<td><code><?php echo esc_html( $value ); ?></code></td>
 								</tr>
 								<?php
@@ -131,7 +131,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								?>
 								<tr>
 									<td><code><?php echo esc_html( $class ); ?></code></td>
-									<td><?php echo $exists ? '<span style="color: green;">✓ Exists</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
+									<td><?php echo wp_kses_post( $exists ? '<span style="color: green;">✓ Exists</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								</tr>
 								<?php
 							}
@@ -159,7 +159,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								?>
 								<tr>
 									<td><code><?php echo esc_html( $func ); ?></code></td>
-									<td><?php echo $exists ? '<span style="color: green;">✓ Exists</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
+									<td><?php echo wp_kses_post( $exists ? '<span style="color: green;">✓ Exists</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								</tr>
 								<?php
 							}
@@ -192,9 +192,9 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<td>
 									<?php
 									if ( $dashboard_exists ) {
-										echo '<span style="color: green;">✓ Set</span>';
+										echo wp_kses_post( '<span style="color: green;">✓ Set</span>' );
 									} else {
-										echo '<span style="color: ' . ( $using_old_settings ? 'gray' : 'red' ) . ';">Not Set</span>';
+										echo wp_kses_post( '<span style="color: ' . ( $using_old_settings ? 'gray' : 'red' ) . ';">Not Set</span>' );
 									}
 									?>
 								</td>
@@ -217,9 +217,9 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<td>
 									<?php
 									if ( $admin_settings_exists ) {
-										echo '<span style="color: orange;">⚠ Set (legacy)</span>';
+										echo wp_kses_post( '<span style="color: orange;">⚠ Set (legacy)</span>' );
 									} else {
-										echo '<span style="color: gray;">Not Set</span>';
+										echo wp_kses_post( '<span style="color: gray;">Not Set</span>' );
 									}
 									?>
 								</td>
@@ -276,17 +276,17 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						<tbody>
 							<tr>
 								<td><?php esc_html_e( 'Settings Dashboard (Top-level WP oOS)', 'wp-mcp-ai' ); ?></td>
-								<td><?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
+								<td><?php echo wp_kses_post( $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								<td>Yes (Required)</td>
 							</tr>
 							<tr>
 								<td><?php esc_html_e( 'Legacy Settings Page (Under Settings)', 'wp-mcp-ai' ); ?></td>
-								<td><?php echo $found_old ? '<span style="color: orange;">⚠ Found (should not exist)</span>' : '<span style="color: green;">✓ Not Found (correct)</span>'; ?></td>
+								<td><?php echo wp_kses_post( $found_old ? '<span style="color: orange;">⚠ Found (should not exist)</span>' : '<span style="color: green;">✓ Not Found (correct)</span>' ); ?></td>
 								<td>No (Deprecated)</td>
 							</tr>
 							<tr>
 								<td><?php esc_html_e( 'Auth0 Setup (Under WP oOS)', 'wp-mcp-ai' ); ?></td>
-								<td><?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
+								<td><?php echo wp_kses_post( $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								<td>Yes</td>
 							</tr>
 						</tbody>
