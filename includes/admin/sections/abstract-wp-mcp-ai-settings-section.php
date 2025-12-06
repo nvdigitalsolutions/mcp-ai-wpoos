@@ -281,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								<?php if ( ! empty( $autocomplete ) ) : ?>
 									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
 								<?php endif; ?>
-								<?php echo $required ? 'required' : ''; ?>
+								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							/>
 							<?php
 							break;
@@ -296,7 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								class="regular-text"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
 								autocomplete="<?php echo esc_attr( ! empty( $autocomplete ) ? $autocomplete : 'new-password' ); ?>"
-								<?php echo $required ? 'required' : ''; ?>
+								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							/>
 							<?php
 							break;
@@ -309,7 +309,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								rows="5"
 								class="large-text code"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
-								<?php echo $required ? 'required' : ''; ?>
+								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							><?php echo esc_textarea( $value ); ?></textarea>
 							<?php
 							break;
@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							<select
 								id="<?php echo esc_attr( $key ); ?>"
 								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
-								<?php echo $required ? 'required' : ''; ?>
+								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							>
 								<?php foreach ( $options as $option_value => $option_label ) : ?>
 									<option value="<?php echo esc_attr( $option_value ); ?>" <?php selected( $value, $option_value ); ?>>
