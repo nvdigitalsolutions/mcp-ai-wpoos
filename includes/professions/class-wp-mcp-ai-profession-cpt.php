@@ -714,7 +714,7 @@ class WP_MCP_AI_Profession_CPT {
 				if ( is_array( $expertise ) && ! empty( $expertise ) ) {
 					echo esc_html( absint( count( $expertise ) ) );
 				} else {
-					echo '0';
+					echo esc_html( '0' );
 				}
 				break;
 		}
