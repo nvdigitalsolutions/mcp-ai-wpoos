@@ -159,12 +159,12 @@ class WP_MCP_AI_Jukebox_Service {
 		}
 
 		// Parse options.
-		$model = isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : self::DEFAULT_MODEL;
+		$model         = isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : self::DEFAULT_MODEL;
 		$sample_length = isset( $options['sample_length'] ) ? absint( $options['sample_length'] ) : self::DEFAULT_SAMPLE_LENGTH;
-		$temperature = isset( $options['temperature'] ) ? floatval( $options['temperature'] ) : self::DEFAULT_TEMPERATURE;
-		$artist = isset( $options['artist'] ) ? sanitize_text_field( $options['artist'] ) : '';
-		$genre = isset( $options['genre'] ) ? sanitize_text_field( $options['genre'] ) : '';
-		$lyrics = isset( $options['lyrics'] ) ? sanitize_textarea_field( $options['lyrics'] ) : '';
+		$temperature   = isset( $options['temperature'] ) ? floatval( $options['temperature'] ) : self::DEFAULT_TEMPERATURE;
+		$artist        = isset( $options['artist'] ) ? sanitize_text_field( $options['artist'] ) : '';
+		$genre         = isset( $options['genre'] ) ? sanitize_text_field( $options['genre'] ) : '';
+		$lyrics        = isset( $options['lyrics'] ) ? sanitize_textarea_field( $options['lyrics'] ) : '';
 
 		// Validate model.
 		$allowed_models = array( '1b_lyrics', '5b', '5b_lyrics' );
@@ -197,7 +197,7 @@ class WP_MCP_AI_Jukebox_Service {
 		}
 
 		// Create temporary metadata file.
-		$temp_dir = sys_get_temp_dir();
+		$temp_dir      = sys_get_temp_dir();
 		$metadata_file = tempnam( $temp_dir, 'jukebox_metadata_' ) . '.json';
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
 		file_put_contents( $metadata_file, wp_json_encode( $metadata ) );
@@ -213,8 +213,8 @@ class WP_MCP_AI_Jukebox_Service {
 		}
 
 		// Build command to run Jukebox.
-		$python_path = $status['python_path'];
-		$jukebox_path = $status['jukebox_path'];
+		$python_path   = $status['python_path'];
+		$jukebox_path  = $status['jukebox_path'];
 		$sample_script = trailingslashit( $jukebox_path ) . 'jukebox/sample.py';
 
 		$command = sprintf(
@@ -251,7 +251,7 @@ class WP_MCP_AI_Jukebox_Service {
 		// PERFORMANCE NOTE: This is a long-running operation (hours for larger samples).
 		// Consider running this in async mode or as a background job.
 		// The WordPress default execution time limit will apply unless overridden.
-		$output = array();
+		$output     = array();
 		$return_var = 0;
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( $command, $output, $return_var );
@@ -290,7 +290,7 @@ class WP_MCP_AI_Jukebox_Service {
 		// Parse output to find the generated audio file.
 		// Jukebox typically outputs files to a 'samples' subdirectory.
 		$output_text = implode( "\n", $output );
-		$audio_file = null;
+		$audio_file  = null;
 
 		// Try to find the generated file in the output path or jukebox samples directory.
 		$samples_dir = trailingslashit( $jukebox_path ) . 'samples';
