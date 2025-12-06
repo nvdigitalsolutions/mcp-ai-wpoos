@@ -2,11 +2,18 @@
 /**
  * Test helper functions for authenticated requests
  *
+ * This class provides static helper methods for quick test setup.
+ * For more comprehensive REST testing features, use the WP_MCP_AI_REST_Test_Helper trait.
+ *
  * @package WP_MCP_AI
+ * @see WP_MCP_AI_REST_Test_Helper For trait-based REST testing helpers
  */
 
 /**
  * Helper class for creating authenticated test requests and test data.
+ *
+ * Provides static methods for quick test setup. For use in test classes
+ * that cannot use traits or need standalone utility functions.
  */
 class WP_MCP_AI_Test_Helper {
 	/**
@@ -15,8 +22,9 @@ class WP_MCP_AI_Test_Helper {
 	 * @return int User ID.
 	 */
 	public static function create_admin_user() {
-		$admin_id = wp_create_user( 'test_admin_' . uniqid(), 'password', 'admin@example.com' );
-		$admin    = new WP_User( $admin_id );
+		$unique_id = uniqid();
+		$admin_id  = wp_create_user( 'test_admin_' . $unique_id, 'password', 'admin_' . $unique_id . '@example.com' );
+		$admin     = new WP_User( $admin_id );
 		$admin->set_role( 'administrator' );
 		
 		return $admin_id;

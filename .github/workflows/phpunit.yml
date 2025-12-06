@@ -101,8 +101,8 @@ jobs:
             # Set minimum threshold (currently 70% based on gap analysis recommendation)
             THRESHOLD=70
             
-            # Compare coverage to threshold
-            if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            # Compare coverage to threshold (using awk for portability)
+            if awk "BEGIN {exit !($COVERAGE < $THRESHOLD)}"; then
               echo "❌ Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
               echo "::warning::Code coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
               # Note: Not failing the build yet, just warning

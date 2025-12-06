@@ -164,9 +164,10 @@ tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_load_optional_test_plugins', 5 
  * Set up test environment with admin user and authentication.
  */
 function wp_mcp_ai_setup_test_environment() {
-	// Create admin user for tests.
-	$admin_id = wp_create_user( 'test_admin', 'password', 'admin@example.com' );
-	$admin    = new WP_User( $admin_id );
+	// Create unique admin user for tests to avoid conflicts.
+	$unique_id = uniqid();
+	$admin_id  = wp_create_user( 'test_admin_' . $unique_id, 'password', 'admin_' . $unique_id . '@example.com' );
+	$admin     = new WP_User( $admin_id );
 	$admin->set_role( 'administrator' );
 	
 	// Set as current user.
