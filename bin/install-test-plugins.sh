@@ -1,5 +1,8 @@
 #!/bin/bash
 # Install optional plugins for integration tests
+#
+# WARNING: This script uses --allow-root flag for WP-CLI and is intended
+# ONLY for test environments. Do NOT run in production.
 
 set -e
 

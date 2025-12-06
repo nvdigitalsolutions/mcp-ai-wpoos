@@ -102,11 +102,13 @@ jobs:
             THRESHOLD=70
             
             # Compare coverage to threshold (using awk for portability)
+            # Note: Currently in warning-only mode. To enforce threshold and fail builds:
+            # 1. Remove the 'true ||' prefix on the 'exit 1' line below
+            # 2. Commit and test to ensure legitimate failures are acceptable
             if awk "BEGIN {exit !($COVERAGE < $THRESHOLD)}"; then
               echo "❌ Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
               echo "::warning::Code coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
-              # Note: Not failing the build yet, just warning
-              # Remove 'true ||' to enforce threshold
+              # Currently warning only - remove 'true ||' to enforce
               true || exit 1
             else
               echo "✅ Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
