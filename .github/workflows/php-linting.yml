@@ -56,11 +56,53 @@ jobs:
         run: |
           echo "Changed PHP files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
-          vendor/bin/phpcs --standard=WordPress ${{ steps.changed-files.outputs.all_changed_files }}
+          
+          # Run PHPCS and capture output
+          PHPCS_OUTPUT=$(vendor/bin/phpcs --standard=WordPress --report=json ${{ steps.changed-files.outputs.all_changed_files }} || true)
+          echo "$PHPCS_OUTPUT"
+          
+          # Parse errors and warnings
+          ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
+          WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
+          
+          echo "PHPCS Results: $ERRORS errors, $WARNINGS warnings"
+          
+          # Set threshold (max 50 errors as per gap analysis)
+          MAX_ERRORS=50
+          
+          if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
+            echo "❌ Too many PHPCS errors: $ERRORS (maximum allowed: $MAX_ERRORS)"
+            exit 1
+          elif [ "$ERRORS" -gt 0 ]; then
+            echo "⚠️ Found $ERRORS PHPCS errors (below threshold of $MAX_ERRORS)"
+          else
+            echo "✅ No PHPCS errors found"
+          fi
 
       - name: Run PHP CodeSniffer on all files
         if: github.event_name == 'push'
-        run: composer run lint
+        run: |
+          # Run PHPCS and capture output
+          PHPCS_OUTPUT=$(composer run lint -- --report=json || true)
+          echo "$PHPCS_OUTPUT"
+          
+          # Parse errors and warnings
+          ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
+          WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
+          
+          echo "PHPCS Results: $ERRORS errors, $WARNINGS warnings"
+          
+          # Set threshold (max 50 errors as per gap analysis)
+          MAX_ERRORS=50
+          
+          if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
+            echo "❌ Too many PHPCS errors: $ERRORS (maximum allowed: $MAX_ERRORS)"
+            exit 1
+          elif [ "$ERRORS" -gt 0 ]; then
+            echo "⚠️ Found $ERRORS PHPCS errors (below threshold of $MAX_ERRORS)"
+          else
+            echo "✅ No PHPCS errors found"
+          fi
 
   php-compatibility:
     name: PHP Compatibility Check

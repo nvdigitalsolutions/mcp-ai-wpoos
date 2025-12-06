@@ -71,6 +71,44 @@ jobs:
       - name: Run PHPUnit with coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
 
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from coverage.xml
+          if [ -f coverage.xml ]; then
+            COVERAGE=$(php -r "
+              \$xml = simplexml_load_file('coverage.xml');
+              if (\$xml && isset(\$xml->project->metrics)) {
+                \$metrics = \$xml->project->metrics;
+                \$statements = (int)\$metrics['statements'];
+                \$covered = (int)\$metrics['coveredstatements'];
+                if (\$statements > 0) {
+                  echo round((\$covered / \$statements) * 100, 2);
+                } else {
+                  echo '0';
+                }
+              } else {
+                echo '0';
+              }
+            ")
+            echo "Code coverage: ${COVERAGE}%"
+            
+            # Set minimum threshold (currently 70% based on gap analysis recommendation)
+            THRESHOLD=70
+            
+            # Compare coverage to threshold
+            if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+              echo "❌ Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+              echo "::warning::Code coverage ${COVERAGE}% is below the ${THRESHOLD}% threshold"
+              # Note: Not failing the build yet, just warning
+              # Remove 'true ||' to enforce threshold
+              true || exit 1
+            else
+              echo "✅ Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
+            fi
+          else
+            echo "⚠️ No coverage.xml file found"
+          fi
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
