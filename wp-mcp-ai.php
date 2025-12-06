@@ -9,7 +9,7 @@
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
- * Text Domain: wp-mcp-ai
+ * Text Domain: mcp-ai-wpoos
  * Domain Path: /languages
  * Network: true
  *

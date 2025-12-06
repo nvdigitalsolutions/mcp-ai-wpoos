@@ -13,9 +13,9 @@
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
-#   build/wp-mcp-ai-base-X.Y.Z.zip       (standalone base version - works alone)
-#   build/wp-mcp-ai-pro-X.Y.Z.zip        (pro add-on - requires base)
-#   build/wp-mcp-ai-X.Y.Z.zip            (base + pro combined)
+#   build/mcp-ai-wpoos-base-X.Y.Z.zip       (standalone base version - works alone)
+#   build/mcp-ai-wpoos-pro-X.Y.Z.zip        (pro add-on - requires base)
+#   build/mcp-ai-wpoos-X.Y.Z.zip            (base + pro combined)
 #
 # Requirements:
 #   - Node.js and npm (for asset building)
@@ -108,9 +108,9 @@ echo "Building WP oOS Plugin ZIP v${VERSION}"
 echo "=========================================="
 echo ""
 echo "Build targets:"
-[ "$BUILD_BASE" = true ] && echo "  ✓ Base version (wp-mcp-ai-base) - standalone"
-[ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (wp-mcp-ai-pro)"
-[ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (wp-mcp-ai)"
+[ "$BUILD_BASE" = true ] && echo "  ✓ Base version (mcp-ai-wpoos-base) - standalone"
+[ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (mcp-ai-wpoos-pro)"
+[ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
 echo ""
 
 # Check requirements
@@ -157,7 +157,7 @@ mkdir -p build
 if [ "$BUILD_BASE" = true ]; then
     echo "Step 3a: Building Base version (standalone)..."
     
-    BASE_SLUG="wp-mcp-ai-base"
+    BASE_SLUG="mcp-ai-wpoos-base"
     mkdir -p "build/${BASE_SLUG}"
     
     # Copy full plugin files EXCEPT pro addons and base entry point
@@ -218,7 +218,7 @@ fi
 if [ "$BUILD_PRO" = true ]; then
     echo "Step 3b: Building Pro add-on..."
     
-    PRO_SLUG="wp-mcp-ai-pro"
+    PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
     # Copy pro addon files
@@ -248,7 +248,7 @@ fi
 if [ "$BUILD_COMBINED" = true ]; then
     echo "Step 3c: Building Base + Pro combined version..."
     
-    COMBINED_SLUG="wp-mcp-ai"
+    COMBINED_SLUG="mcp-ai-wpoos"
     mkdir -p "build/${COMBINED_SLUG}"
     
     # Copy all plugin files (includes both base and pro)
@@ -311,8 +311,8 @@ echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
 echo "  2. Upload the appropriate ZIP file:"
-[ "$BUILD_BASE" = true ] && echo "     - wp-mcp-ai-base-${VERSION}.zip (Standalone base plugin)"
-[ "$BUILD_PRO" = true ] && echo "     - wp-mcp-ai-pro-${VERSION}.zip (Pro add-on, requires base)"
-[ "$BUILD_COMBINED" = true ] && echo "     - wp-mcp-ai-${VERSION}.zip (Base + Pro combined)"
+[ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Standalone base plugin)"
+[ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on, requires base)"
+[ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Base + Pro combined)"
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""

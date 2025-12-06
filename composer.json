@@ -1,5 +1,5 @@
 {
-    "name": "wp-mcp-ai/wp-mcp-ai",
+    "name": "mcp-ai-wpoos/mcp-ai-wpoos",
     "description": "WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
@@ -23,7 +23,7 @@
         "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
         "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
         "format": "phpcbf --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
-        "pot": "wp i18n make-pot . languages/wp-mcp-ai.pot --exclude=vendor,node_modules",
+        "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
         "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",
         "test": "vendor/bin/phpunit"
     },
