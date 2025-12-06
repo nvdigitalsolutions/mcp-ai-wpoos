@@ -54,6 +54,19 @@ Provides WordPress/MCP-compatible interfaces for AI assistants to use Jukebox fu
 3. **Disk Space** - 20GB+ for models and temporary files
 4. **Server Access** - Ability to install Python packages and run commands
 
+### Hosting Compatibility
+
+**Cloudways Compatible:** ✅ Yes
+
+The Python path validation accepts any absolute path (starting with `/`), which works with Cloudways and other managed hosting:
+- Cloudways: `/usr/bin/python3` or `/opt/alt/python39/bin/python3`
+- Standard Linux: `/usr/bin/python3`, `/usr/local/bin/python3`
+- Custom paths: Any absolute path to Python 3.7+
+
+The validation whitelist includes:
+- Common executable names: `python`, `python3`, `python3.7` through `python3.12`
+- Any absolute path (starts with `/`)
+
 ### Installation Steps
 
 1. **Install Python Dependencies**
