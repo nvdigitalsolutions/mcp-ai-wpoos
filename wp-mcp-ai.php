@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: WP Open Operator System
+ * Plugin Name: Open Operator System (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ tools with optional plugin integrations. Patent Pending (Application #19/410,504).
  * Version: 1.0.0
@@ -41,7 +41,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	 */
 	function wp_mcp_ai_php_version_notice() {
 		$message = sprintf(
-			'<strong>WP Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.',
+			'<strong>Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.',
 			PHP_VERSION,
 			'7.4.0'
 		);
@@ -107,7 +107,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			 * Display notice about dev dependencies in production.
 			 */
 			function wp_mcp_ai_dev_deps_error_notice() {
-				$message = '<strong>WP Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.';
+				$message = '<strong>Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.';
 				printf(
 					'<div class="notice notice-error"><p>%s</p></div>',
 					wp_kses_post( $message )
@@ -1018,7 +1018,7 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 		$plugin->bootstrap();
 
 		/**
-		 * Fires after WP oOS has completed its bootstrap process.
+		 * Fires after Open Operator System has completed its bootstrap process.
 		 *
 		 * @since 1.0.0
 		 */
@@ -1212,7 +1212,7 @@ if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
 				call_user_func( $callback );
 			} catch ( Exception $e ) {
 				// Log the error and continue with remaining sites.
-				error_log( sprintf( 'WP oOS %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+				error_log( sprintf( 'Open Operator System %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
 			}
 			restore_current_blog();
 		}
@@ -1238,7 +1238,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 			$blog_id = (int) $blog;
 		} else {
 			// Invalid parameter, log error and return.
-			error_log( 'WP oOS: Invalid blog parameter passed to new_site_activation' );
+			error_log( 'Open Operator System: Invalid blog parameter passed to new_site_activation' );
 			return;
 		}
 
@@ -1247,7 +1247,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 			wp_mcp_ai_activate_single_site();
 		} catch ( Exception $e ) {
 			// Log the error but don't break the site creation process.
-			error_log( sprintf( 'WP oOS activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
+			error_log( sprintf( 'Open Operator System activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
 		}
 		restore_current_blog();
 	}
@@ -1316,7 +1316,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3><?php esc_html_e( 'WP oOS Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'wp-mcp-ai' ); ?></h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
@@ -1503,7 +1503,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		}
 
 		/**
-		 * Fires before WP oOS performs its uninstall cleanup routines.
+		 * Fires before Open Operator System performs its uninstall cleanup routines.
 		 */
 		do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
 
@@ -1527,7 +1527,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
 
 		/**
-		 * Fires after WP oOS completes its uninstall cleanup routines.
+		 * Fires after Open Operator System completes its uninstall cleanup routines.
 		 *
 		 * @param array $summary Summary of cleanup actions performed.
 		 */
