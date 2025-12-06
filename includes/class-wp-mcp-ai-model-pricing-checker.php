@@ -163,7 +163,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				$.post(ajaxurl, {
 					action: 'wp_mcp_ai_dismiss_price_notice',
 					nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_price_notice' ) ); ?>',
-					count: <?php echo count( $price_changes ); ?>
+					count: <?php echo esc_js( absint( count( $price_changes ) ) ); ?>
 				});
 			});
 		});

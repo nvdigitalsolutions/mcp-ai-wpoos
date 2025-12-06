@@ -147,7 +147,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) ) {
 	<div class="wp-block-wp-mcp-ai-tools-grid__groups">
 		<?php foreach ( $groups as $group ) : ?>
 			<?php $open_attr = $start_collapsed ? '' : ' open'; ?>
-			<details class="wp-block-wp-mcp-ai-tools-grid__group"<?php echo $open_attr; ?>>
+			<details class="wp-block-wp-mcp-ai-tools-grid__group"<?php echo esc_attr( $open_attr ); ?>>
 				<summary>
 					<span class="wp-block-wp-mcp-ai-tools-grid__group-title"><?php echo esc_html( $group['label'] ); ?></span>
 					<span class="wp-block-wp-mcp-ai-tools-grid__group-count">

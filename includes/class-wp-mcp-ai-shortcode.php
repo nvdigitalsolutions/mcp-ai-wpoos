@@ -638,8 +638,8 @@ class WP_MCP_AI_Shortcode {
 				</div>
 				<div class="wp-mcp-ai-chat__actions">
 					<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
-					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo $can_upload_attachments ? '' : ' disabled'; ?> />
-					<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="<?php echo esc_attr__( 'Voice chat', 'wp-mcp-ai' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
+					<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="<?php echo esc_attr__( 'Voice chat', 'wp-mcp-ai' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__voice-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
 							<circle cx="12" cy="12" r="1.5" fill="currentColor"/>

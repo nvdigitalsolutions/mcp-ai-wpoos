@@ -1314,6 +1314,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$title_output = $this->format_text_inline( $title );
 		if ( '' !== $title_output ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 			echo '<h3 class="wp-mcp-ai-chat-widget__assistant-defaults-title">' . $title_output . '</h3>';
 		}
 
@@ -1321,6 +1322,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-defaults-notice">' . $notice . '</p>';
 			}
 
@@ -1359,6 +1361,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			if ( '' !== $prompt_output ) {
 				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt">';
 				echo '<h4 class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-heading">' . esc_html__( 'System prompt', 'wp-mcp-ai' ) . '</h4>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-content">' . $prompt_output . '</div>';
 				echo '</div>';
 			}
@@ -1386,6 +1389,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$title_output = $this->format_text_inline( $title );
 		if ( '' !== $title_output ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 			echo '<h3 class="wp-mcp-ai-chat-widget__assistant-memory-title">' . $title_output . '</h3>';
 		}
 
@@ -1393,6 +1397,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-memory-notice">' . $notice . '</p>';
 			}
 
@@ -1406,6 +1411,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $no_files_msg );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-memory-notice">' . $notice . '</p>';
 			}
 		} else {
@@ -1460,6 +1466,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$title_output = $this->format_text_inline( $title );
 		if ( '' !== $title_output ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 			echo '<h3 class="wp-mcp-ai-chat-widget__assistant-tools-title">' . $title_output . '</h3>';
 		}
 
@@ -1467,6 +1474,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-tools-notice">' . $notice . '</p>';
 			}
 
@@ -1504,6 +1512,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 					$description_output = $this->format_text_block( $description );
 
 					if ( '' !== $description_output ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 						echo '<div class="wp-mcp-ai-chat-widget__assistant-tools-description">' . $description_output . '</div>';
 					}
 				}
@@ -1550,6 +1559,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$title_output = $this->format_text_inline( $title );
 		if ( '' !== $title_output ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 			echo '<h3 class="wp-mcp-ai-chat-widget__assistant-shortcuts-title">' . $title_output . '</h3>';
 		}
 
@@ -1557,6 +1567,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-shortcuts-notice">' . $notice . '</p>';
 			}
 
