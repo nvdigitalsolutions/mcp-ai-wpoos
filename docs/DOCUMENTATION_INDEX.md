@@ -107,6 +107,7 @@ This document provides a comprehensive index of all documentation available for 
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
 | [jetengine-api-compatibility.md](jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
+| [jukebox-integration.md](jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
 
 ### Remote Client Setup
 
