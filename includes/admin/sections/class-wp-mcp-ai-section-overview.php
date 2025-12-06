@@ -280,25 +280,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				</h3>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Domain', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $auth0_domain ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $auth0_domain ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $auth0_domain ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'API Audience', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $auth0_audience ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $auth0_audience ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $auth0_audience ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'GitHub Bridge', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $github_bridge ? 'enabled' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $github_bridge ? 'enabled' : 'not-configured' ); ?>">
 						<?php echo $github_bridge ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Management API', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $has_mgmt_creds ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_mgmt_creds ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $has_mgmt_creds ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
@@ -333,25 +333,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				</h3>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $has_openai ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_openai ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $has_openai ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $has_gemini ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_gemini ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $has_gemini ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $has_ollama ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_ollama ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $has_ollama ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $has_lm_studio ? 'configured' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_lm_studio ? 'configured' : 'not-configured' ); ?>">
 						<?php echo $has_lm_studio ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
@@ -398,19 +398,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				</h3>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Debug Logging', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $logging_enabled ? 'enabled' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $logging_enabled ? 'enabled' : 'not-configured' ); ?>">
 						<?php echo $logging_enabled ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Federation', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $federation ? 'enabled' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $federation ? 'enabled' : 'not-configured' ); ?>">
 						<?php echo $federation ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Mesh Network', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-status-badge <?php echo $mesh_enabled ? 'enabled' : 'not-configured'; ?>">
+					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $mesh_enabled ? 'enabled' : 'not-configured' ); ?>">
 						<?php echo $mesh_enabled ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
 					</span>
 				</div>

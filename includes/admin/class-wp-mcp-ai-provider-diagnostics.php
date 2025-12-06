@@ -117,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button" 
 						class="button button-primary test-provider" 
 						data-provider="openai"
-						<?php echo empty( $settings['openai_api_key'] ) ? 'disabled' : ''; ?>>
+						<?php echo esc_attr( empty( $settings['openai_api_key'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test OpenAI Connection', 'wp-mcp-ai' ); ?>
 					</button>
 
@@ -164,7 +164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button" 
 						class="button button-primary test-provider" 
 						data-provider="gemini"
-						<?php echo empty( $settings['gemini_api_key'] ) ? 'disabled' : ''; ?>>
+						<?php echo esc_attr( empty( $settings['gemini_api_key'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Gemini Connection', 'wp-mcp-ai' ); ?>
 					</button>
 
@@ -212,7 +212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button" 
 						class="button button-primary test-provider" 
 						data-provider="ollama"
-						<?php echo empty( $settings['ollama_endpoint_url'] ) ? 'disabled' : ''; ?>>
+						<?php echo esc_attr( empty( $settings['ollama_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Ollama Connection', 'wp-mcp-ai' ); ?>
 					</button>
 
@@ -264,7 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button" 
 						class="button button-primary test-provider" 
 						data-provider="lm_studio"
-						<?php echo empty( $settings['lm_studio_endpoint_url'] ) ? 'disabled' : ''; ?>>
+						<?php echo esc_attr( empty( $settings['lm_studio_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test LM Studio Connection', 'wp-mcp-ai' ); ?>
 					</button>
 
