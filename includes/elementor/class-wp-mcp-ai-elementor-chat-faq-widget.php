@@ -170,6 +170,7 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 					$answer = $this->format_text_block( $item['answer'] );
 
 					if ( '' !== $answer ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 						echo '<dd class="wp-mcp-ai-chat-faq__answer">' . $answer . '</dd>';
 					}
 				}

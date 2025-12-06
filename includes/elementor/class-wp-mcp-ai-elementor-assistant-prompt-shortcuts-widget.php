@@ -189,6 +189,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<h3 class="wp-mcp-ai-assistant-prompt-shortcuts__title">' . $title_output . '</h3>';
 			}
 		}
@@ -197,6 +198,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			$empty_output = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $empty_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $empty_output . '</p>';
 			}
 
@@ -211,6 +213,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			$no_shortcuts_output = $this->format_text_inline( $no_shortcuts_msg );
 
 			if ( '' !== $no_shortcuts_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $no_shortcuts_output . '</p>';
 			}
 
@@ -233,6 +236,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			echo '<li class="wp-mcp-ai-assistant-prompt-shortcuts__item">';
 
 			if ( '' !== $label_text ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__label">' . $label_text . '</span>';
 			}
 
@@ -248,6 +252,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 				$description_output = $this->format_text_block( $description );
 
 				if ( '' !== $description_output ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 					echo '<div class="wp-mcp-ai-assistant-prompt-shortcuts__description">' . $description_output . '</div>';
 				}
 			}

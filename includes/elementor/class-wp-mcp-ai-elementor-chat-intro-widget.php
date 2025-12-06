@@ -185,6 +185,7 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 			$description_output = $this->format_text_block( $description );
 
 			if ( '' !== $description_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-chat-intro__description">' . $description_output . '</div>';
 			}
 		}
@@ -245,6 +246,7 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 
 		printf(
 			'<a class="wp-mcp-ai-chat-intro__button" %1$s>%2$s</a>',
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- All attributes are escaped before being added to array.
 			implode( ' ', $attributes ),
 			esc_html( $button_text )
 		);

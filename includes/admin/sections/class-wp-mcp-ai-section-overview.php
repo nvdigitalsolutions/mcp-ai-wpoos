@@ -421,8 +421,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 						printf(
 							/* translators: 1: configured count, 2: total count */
 							esc_html__( '%1$d of %2$d configured', 'wp-mcp-ai' ),
-							$configured_count,
-							$total_count
+							esc_html( $configured_count ),
+							esc_html( $total_count )
 						);
 						?>
 					</strong>

@@ -150,6 +150,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 			$description_output = $this->format_text_block( $description );
 
 			if ( '' !== $description_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-user-capabilities__description">' . $description_output . '</div>';
 			}
 		}
@@ -265,7 +266,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 				sprintf(
 					/* translators: %d: maximum recipients allowed. */
 					esc_html__( 'Recipient limit: %d per request.', 'wp-mcp-ai' ),
-					$group_email_settings['limit']
+					esc_html( $group_email_settings['limit'] )
 				)
 			);
 		} else {
@@ -285,6 +286,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		}
 
 		if ( '' !== $jetengine_summary ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 			echo '<div class="wp-mcp-ai-user-capabilities__section-body">' . $jetengine_summary . '</div>';
 		}
 		if ( ! empty( $jetengine_details['capability'] ) ) {

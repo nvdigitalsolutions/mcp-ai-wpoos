@@ -1496,6 +1496,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			}
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-tools-notice">' . $notice . '</p>';
 			}
 		} else {
@@ -1579,6 +1580,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$notice = $this->format_text_inline( $none_message );
 
 			if ( '' !== $notice ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-chat-widget__assistant-shortcuts-notice">' . $notice . '</p>';
 			}
 
@@ -1605,6 +1607,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			echo '<li class="wp-mcp-ai-chat-widget__assistant-shortcuts-item">';
 
 			if ( '' !== $label_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<span class="wp-mcp-ai-chat-widget__assistant-shortcuts-label">' . $label_output . '</span>';
 			}
 
@@ -1620,6 +1623,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				$description_output = $this->format_text_block( $description );
 
 				if ( '' !== $description_output ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 					echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts-description">' . $description_output . '</div>';
 				}
 			}
