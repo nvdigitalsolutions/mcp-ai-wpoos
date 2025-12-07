@@ -32,7 +32,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-timeout-det
 
 // Load video-related services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-analysis-service.php';
-require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-frame-extractor-service.php';
+// Note: Video frame extractor service moved to Pro addon (requires shell execution via ffmpeg).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-gemini-video-generation-service.php';
 
 // Load async tool orchestration services.

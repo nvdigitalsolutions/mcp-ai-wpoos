@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		$temp_file  = $file_info['temp_file'];
 
 		// Initialize frame extractor service.
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
 		$frame_extractor = new WP_MCP_AI_Video_Frame_Extractor_Service();
 
 		// Check FFmpeg availability.

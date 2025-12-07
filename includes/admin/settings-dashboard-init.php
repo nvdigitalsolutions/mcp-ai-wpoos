@@ -44,7 +44,6 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Plugins_Integration' => 'includes/admin/sections/class-wp-mcp-ai-section-plugins-integration.php',
 			'WP_MCP_AI_Section_Token_Manager'       => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
 			'WP_MCP_AI_Section_Security'            => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
-			'WP_MCP_AI_Section_Performance'         => 'includes/admin/sections/class-wp-mcp-ai-section-performance.php',
 			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
 			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
