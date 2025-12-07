@@ -18,8 +18,8 @@
 
 ```
 mcp-ai-wpoos/
-├── mcp-ai-wpoos.php           # Entry point (main plugin file)
-├── wp-mcp-ai-base.php         # Optional base version wrapper
+├── mcp-ai-wpoos.php           # Core plugin file (loaded by base version)
+├── wp-mcp-ai-base.php         # Base version entry point (renamed to mcp-ai-wpoos-base.php in base distribution)
 ├── includes/
 │   ├── services/              # 6 business logic services
 │   ├── repositories/          # 3 data access repositories

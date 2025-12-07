@@ -1,33 +1,21 @@
 <?php
 /**
- * Base Version Explicit Mode Entry Point (Optional)
- *
- * IMPORTANT: This file is NOT included in standalone base distributions
- * (wp-mcp-ai-base-X.Y.Z.zip) to prevent WordPress from detecting two plugins.
- *
- * This file can be used in custom deployments where you want to explicitly
- * enable "base version mode" which disables optional third-party plugin
- * integrations (JetEngine, Elementor, etc.) even when those plugins are
- * installed.
- *
- * The standalone base distribution (wp-mcp-ai-base-X.Y.Z.zip) works without
- * this file - it uses mcp-ai-wpoos.php directly. The base distribution excludes
- * addons/pro but includes optional integration code that activates only when
- * the third-party plugins are present.
- *
- * To use this file:
- * 1. Place it in your custom deployment
- * 2. It will set WP_MCP_AI_BASE_VERSION=true
- * 3. This disables optional integrations even if third-party plugins exist
- *
- * For most users, this file is not needed. Use mcp-ai-wpoos.php directly.
- *
- * Note: This file intentionally does NOT contain WordPress plugin headers
- * to prevent it from being registered as a separate plugin. The actual
- * plugin registration happens in mcp-ai-wpoos.php.
+ * Plugin Name: WP Open Operator System (WP oOS) - Base
+ * Plugin URI: https://nvdigitalsolutions.com/wpoos
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ core tools. Patent Pending (Application #19/410,504).
+ * Version: 1.0.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Tested up to: 6.7.1
+ * Author: NV Digital Solutions
+ * Author URI: https://nvdigitalsolutions.com
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: mcp-ai-wpoos-base
+ * Domain Path: /languages
+ * Network: true
  *
  * @package WP_MCP_AI
- * @since 1.0.0
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
@@ -35,6 +23,15 @@
  * Patent Pending: This software is the subject of a pending patent application
  * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
  * Layer with Real-Time Capability Gating and Resource Budgeting."
+ *
+ * ---
+ *
+ * This is the main entry point for the standalone base version of WP oOS.
+ * This version includes 35+ core tools and works without any third-party
+ * plugin dependencies.
+ *
+ * When distributed as the base version (mcp-ai-wpoos-base), this file will
+ * be renamed to mcp-ai-wpoos-base.php to match WordPress.org naming conventions.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
