@@ -16,7 +16,7 @@ The issue occurred due to WordPress plugin initialization order:
 
 1. **Performance Section Location**: `WP_MCP_AI_Section_Performance` is located in `includes/admin/sections/`
 2. **Settings Dashboard Loading**: The section is loaded via `settings-dashboard-init.php`
-3. **Admin-Only Loading**: `settings-dashboard-init.php` is only loaded when `is_admin()` returns `true` (line 474-488 in wp-mcp-ai.php)
+3. **Admin-Only Loading**: `settings-dashboard-init.php` is only loaded when `is_admin()` returns `true` (line 474-488 in mcp-ai-wpoos.php)
 4. **Frontend Problem**: When viewing Elementor widgets on the frontend, `is_admin()` returns `false`
 5. **Result**: Performance section never instantiated → AJAX handlers never registered → widgets fail
 
@@ -72,7 +72,7 @@ public function __construct() {
 
 ### 2. Load Performance Section on Frontend
 
-**File**: `wp-mcp-ai.php`
+**File**: `mcp-ai-wpoos.php`
 
 **Added before `if ( is_admin() )` block:**
 ```php
@@ -167,7 +167,7 @@ To verify the fix works:
 1. **`includes/admin/sections/class-wp-mcp-ai-section-performance.php`** (+6 lines)
    - Modified constructor to conditionally register admin hooks
    
-2. **`wp-mcp-ai.php`** (+14 lines)
+2. **`mcp-ai-wpoos.php`** (+14 lines)
    - Added frontend loading of Performance section
    
 3. **`tests/test-performance-ajax-frontend-registration.php`** (+203 lines, NEW)

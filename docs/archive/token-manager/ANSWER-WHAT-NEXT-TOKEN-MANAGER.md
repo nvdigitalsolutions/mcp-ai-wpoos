@@ -113,7 +113,7 @@ After comprehensive code review, we found a significant discrepancy between **do
 
 ### ✅ Integration & Loading
 
-- Classes loaded in `wp-mcp-ai.php` (lines 343-344)
+- Classes loaded in `mcp-ai-wpoos.php` (lines 343-344)
 - REST endpoints registered in `includes/class-wp-mcp-ai-rest.php`
 - Services loaded via `includes/services-init.php`
 - AJAX actions registered in Settings Dashboard

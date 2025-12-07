@@ -26,7 +26,7 @@ All Analytics Dashboard components are properly integrated, registered, and read
 
 **Verification Points:**
 - ✅ Class exists (311 lines)
-- ✅ Loaded in main plugin file (wp-mcp-ai.php, line 344)
+- ✅ Loaded in main plugin file (mcp-ai-wpoos.php, line 344)
 - ✅ `init()` method exists and registers hooks
 - ✅ Self-initializes at bottom of file: `WP_MCP_AI_Analytics_Dashboard::init()`
 - ✅ `wp_dashboard_setup` hook registered: `add_action( 'wp_dashboard_setup', ... )`
@@ -94,7 +94,7 @@ wp_enqueue_style(
 
 **Verification Points:**
 - ✅ Class exists (741 lines)
-- ✅ Loaded in main plugin file (wp-mcp-ai.php, line 343)
+- ✅ Loaded in main plugin file (mcp-ai-wpoos.php, line 343)
 - ✅ `init()` method exists and registers hooks
 - ✅ Self-initializes: `WP_MCP_AI_Chart_JS_Helper::init()`
 - ✅ `admin_enqueue_scripts` hook registered

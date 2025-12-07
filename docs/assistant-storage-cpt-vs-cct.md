@@ -487,7 +487,7 @@ This is the **only correct endpoint for MCP clients** because:
 The CPT is always bootstrapped via the main plugin class:
 
 ```php
-// From wp-mcp-ai.php, line 144
+// From mcp-ai-wpoos.php, line 144
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 
 // Loaded in main plugin initialization
@@ -502,7 +502,7 @@ The CCT bootstraps itself when the file is loaded (Full Version only):
 // From includes/class-wp-mcp-ai-jetengine-assistants-cct.php, line 399
 WP_MCP_AI_JetEngine_Assistants_CCT::bootstrap();
 
-// Only loaded in Full Version (wp-mcp-ai.php, line 171)
+// Only loaded in Full Version (mcp-ai-wpoos.php, line 171)
 if ( ! wp_mcp_ai_is_base_version() ) {
     require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-assistants-cct.php';
 }

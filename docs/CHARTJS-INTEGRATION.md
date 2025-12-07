@@ -77,7 +77,7 @@ WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_config() // Pie chart config
 - Chart types reference
 
 ### 5. Main Plugin Integration
-**Location:** `wp-mcp-ai.php` (line 247)  
+**Location:** `mcp-ai-wpoos.php` (line 247)  
 **Change:** Added Chart.js helper class to includes
 
 ### 6. NPM Package Configuration
@@ -140,7 +140,7 @@ wp_enqueue_script(
 
 ### Loading Sequence
 
-1. **Plugin Load** (`wp-mcp-ai.php`)
+1. **Plugin Load** (`mcp-ai-wpoos.php`)
    - Includes Chart.js helper class (line 247)
    - Helper class registers hooks
 

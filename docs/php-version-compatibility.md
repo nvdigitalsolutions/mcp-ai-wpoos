@@ -6,7 +6,7 @@ This document explains the defensive PHP version checking strategy implemented i
 
 ## Problem Statement
 
-While the plugin declares `Requires PHP: 7.4` in its header and implements a main version check in `wp-mcp-ai.php`, there are edge cases where individual class files could be loaded by external systems (like WooCommerce's error logging mechanism) before the main plugin initialization runs.
+While the plugin declares `Requires PHP: 7.4` in its header and implements a main version check in `mcp-ai-wpoos.php`, there are edge cases where individual class files could be loaded by external systems (like WooCommerce's error logging mechanism) before the main plugin initialization runs.
 
 If these files contain PHP 7.4+ syntax features and are loaded on PHP < 7.4, the PHP parser will fail with errors like:
 - "Parse error: syntax error, unexpected token 'private'"
@@ -71,7 +71,7 @@ Expected output should list all 5 WooCommerce-related files.
 
 ## Best Practices
 
-1. **Main Plugin Check**: The primary version check in `wp-mcp-ai.php` (lines 33-61) is the first line of defense
+1. **Main Plugin Check**: The primary version check in `mcp-ai-wpoos.php` (lines 33-61) is the first line of defense
 2. **Defensive Guards**: Individual file checks are a safety net for edge cases
 3. **Consistent Placement**: Always place version guards:
    - After `ABSPATH` check
@@ -81,7 +81,7 @@ Expected output should list all 5 WooCommerce-related files.
 
 ## Related Documentation
 
-- Main plugin PHP version check: `wp-mcp-ai.php` lines 25-61
+- Main plugin PHP version check: `mcp-ai-wpoos.php` lines 25-61
 - Plugin requirements: `readme.txt` and plugin header
 - Deployment troubleshooting: `docs/deployment-troubleshooting.md`
 

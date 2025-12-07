@@ -126,7 +126,7 @@ Enhanced with Schema.org JSON-LD extraction for better product data capture.
 - Fixed interface mismatches
 
 **Files Modified:**
-- `wp-mcp-ai.php` - Added `wp_mcp_ai_core_loaded()` function
+- `mcp-ai-wpoos.php` - Added `wp_mcp_ai_core_loaded()` function
 - `addons/pro/wp-mcp-ai-pro.php` - Added dependency check
 - Tool registry timing improvements
 
@@ -230,7 +230,7 @@ A marker function that allows add-ons and third-party plugins to verify that the
 - Safe feature registration timing
 - Prevents errors when core is inactive
 
-**Location:** `wp-mcp-ai.php` (main plugin file)
+**Location:** `mcp-ai-wpoos.php` (main plugin file)
 
 **Usage Example:**
 ```php

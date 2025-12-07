@@ -39,7 +39,7 @@ The base/core plugin (`wp-mcp-ai-base-X.Y.Z.zip`):
 
 - ✅ **Fully functional** - Works standalone without Pro
 - ✅ **35+ tools** included by default
-- ✅ Uses `wp-mcp-ai.php` as the main entry point
+- ✅ Uses `mcp-ai-wpoos.php` as the main entry point
 - ✅ Excludes `wp-mcp-ai-base.php` (not needed for standalone base)
 - ✅ Excludes `addons/pro/` directory
 - ✅ Compatible with WordPress.org (GPL-3.0-or-later)
@@ -66,7 +66,7 @@ The `wp-mcp-ai-base.php` file is a special file that:
 - Not needed for most users
 
 From the file's own documentation:
-> "This file is NOT included in standalone base distributions to prevent WordPress from detecting two plugins. The standalone base distribution uses wp-mcp-ai.php directly."
+> "This file is NOT included in standalone base distributions to prevent WordPress from detecting two plugins. The standalone base distribution uses mcp-ai-wpoos.php directly."
 
 ## Version Constant
 

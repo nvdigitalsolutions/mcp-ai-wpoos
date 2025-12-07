@@ -72,8 +72,8 @@ wp cron event run wp_mcp_ai_async_tool_execution
 **Fix**: Verify `wp_mcp_ai_init_async_executor` is hooked to `wp_mcp_ai_bootstrapped`
 
 ```bash
-# Check in wp-mcp-ai.php around line 962-976
-grep -A 5 "wp_mcp_ai_init_async_executor" wp-mcp-ai.php
+# Check in mcp-ai-wpoos.php around line 962-976
+grep -A 5 "wp_mcp_ai_init_async_executor" mcp-ai-wpoos.php
 ```
 
 ### Issue: Job queued but never runs

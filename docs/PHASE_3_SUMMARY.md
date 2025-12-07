@@ -372,7 +372,7 @@ All deliverables completed, tested, and documented. The PR is ready for review a
 Modified:
   includes/class-wp-mcp-ai-logger.php          (+207 lines)
   includes/class-wp-mcp-ai-shortcode.php       (+54 lines)
-  wp-mcp-ai.php                                (+1 line)
+  mcp-ai-wpoos.php                                (+1 line)
   README.md                                    (+15 lines)
 
 Created:

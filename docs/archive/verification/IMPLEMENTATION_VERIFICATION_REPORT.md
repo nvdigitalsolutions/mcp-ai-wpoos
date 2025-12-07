@@ -54,7 +54,7 @@ Pull Request #885 was successfully merged on **November 9, 2025**. All component
 
 ### ✅ Plugin Integration
 
-Both new classes are properly loaded in `wp-mcp-ai.php`:
+Both new classes are properly loaded in `mcp-ai-wpoos.php`:
 ```php
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';

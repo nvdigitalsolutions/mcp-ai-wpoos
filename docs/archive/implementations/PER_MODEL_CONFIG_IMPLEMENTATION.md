@@ -196,7 +196,7 @@ Pre-configured 13 models:
 3. **includes/admin/class-wp-mcp-ai-settings-dashboard.php**
    - Registered AJAX action
 
-4. **wp-mcp-ai.php**
+4. **mcp-ai-wpoos.php**
    - Load model config class
    - Initialize model config system
 

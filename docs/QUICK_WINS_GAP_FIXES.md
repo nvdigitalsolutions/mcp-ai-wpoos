@@ -228,7 +228,7 @@ require_once $_tests_dir . '/includes/functions.php';
  */
 function _manually_load_plugin() {
 	// Load the plugin.
-	require dirname( __DIR__ ) . '/wp-mcp-ai.php';
+	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
 	
 	// Create admin user for tests.
 	$admin_id = wp_create_user( 'admin', 'password', 'admin@example.com' );

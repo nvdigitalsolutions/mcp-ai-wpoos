@@ -39,7 +39,7 @@ This document consolidates all known bugs, fixes, and code quality issues for th
 - ✅ Backward compatible with separate Pro plugin installation
 
 **Files Changed**:
-- `wp-mcp-ai.php` (lines 451-459)
+- `mcp-ai-wpoos.php` (lines 451-459)
 - `addons/pro/wp-mcp-ai-pro.php` (lines 412-423)
 
 **Verification**: Run `./verify-pro-tools-fix.sh`
@@ -61,7 +61,7 @@ This document consolidates all known bugs, fixes, and code quality issues for th
 - ✅ Maintains separation of concerns
 
 **Files Changed**:
-- `wp-mcp-ai.php` - Hook registration
+- `mcp-ai-wpoos.php` - Hook registration
 - `includes/services-init.php` - Executor getter function
 
 **Tests**: `tests/test-async-executor-initialization.php`

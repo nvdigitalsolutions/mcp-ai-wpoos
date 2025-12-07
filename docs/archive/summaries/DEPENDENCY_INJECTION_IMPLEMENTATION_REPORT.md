@@ -29,7 +29,7 @@ Extended the existing `WP_MCP_AI_Container` class to register all services and r
    - Added +280 lines of service registration code
    - All dependencies now managed centrally
 
-2. **Main Plugin File** (wp-mcp-ai.php)
+2. **Main Plugin File** (mcp-ai-wpoos.php)
    - Replaced 13 direct instantiations with container calls
    - Updated core initialization to use container
    - Used `wp_mcp_ai_make()` for activation hooks
@@ -125,7 +125,7 @@ Extended the existing `WP_MCP_AI_Container` class to register all services and r
    - Added 44 service registrations
    - Added +280 lines of code
 
-2. **wp-mcp-ai.php**
+2. **mcp-ai-wpoos.php**
    - Removed 13 direct instantiations
    - Added container-based initialization
    - Used `wp_mcp_ai_make()` for tools

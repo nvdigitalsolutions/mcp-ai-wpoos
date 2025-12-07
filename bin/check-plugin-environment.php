@@ -30,7 +30,7 @@ if ( version_compare( $current_php_version, $min_php_version, '>=' ) ) {
 	exit( 1 );
 }
 
-$plugin_file = __DIR__ . '/../wp-mcp-ai.php';
+$plugin_file = __DIR__ . '/../mcp-ai-wpoos.php';
 if ( ! is_file( $plugin_file ) ) {
 	fprintf( STDERR, "Plugin file not found at %s\n", $plugin_file );
 	exit( 1 );

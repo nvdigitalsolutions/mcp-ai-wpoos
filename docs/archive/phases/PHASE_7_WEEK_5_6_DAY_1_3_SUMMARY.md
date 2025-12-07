@@ -270,7 +270,7 @@ $stats = WP_MCP_AI_Enhanced_Token_Tracking::get_user_statistics(
 ### Production Code
 - `includes/class-wp-mcp-ai-token-tracking-database.php` (NEW - 11KB)
 - `includes/class-wp-mcp-ai-enhanced-token-tracking.php` (NEW - 11KB)
-- `wp-mcp-ai.php` (MODIFIED - Added initialization)
+- `mcp-ai-wpoos.php` (MODIFIED - Added initialization)
 
 ### Test Code
 - `tests/test-token-tracking-database.php` (NEW - 10KB, 13 tests)

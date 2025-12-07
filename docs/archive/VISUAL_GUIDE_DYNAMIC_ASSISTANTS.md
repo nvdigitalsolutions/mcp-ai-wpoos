@@ -226,7 +226,7 @@ wp-mcp-ai/
 │   └── js/
 │       ├── admin-add-assistant.js               ← AJAX
 │       └── admin-add-team.js                    ← AJAX
-└── wp-mcp-ai.php                                ← Main file
+└── mcp-ai-wpoos.php                                ← Main file
 
 Total: 12 files, 2,121 lines of new code
 ```

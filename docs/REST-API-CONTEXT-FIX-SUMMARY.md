@@ -177,7 +177,7 @@ curl -I -L "https://yoursite.com/wp-json/wp/v2/types?context=edit"
 2. `includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php` - New diagnostic page (231 lines)
 3. `tests/test-rest-api-context-fix.php` - New tests (271 lines)
 4. `docs/deployment-troubleshooting.md` - Updated with new section (247 lines added)
-5. `wp-mcp-ai.php` - Updated to load new classes (2 lines changed)
+5. `mcp-ai-wpoos.php` - Updated to load new classes (2 lines changed)
 
 Total: 1,096 lines added
 

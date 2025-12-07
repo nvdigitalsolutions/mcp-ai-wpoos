@@ -176,7 +176,7 @@ assets/
     ├── admin-add-assistant.js              # Assistant creation logic
     └── admin-add-team.js                   # Team deployment logic
 
-wp-mcp-ai.php                               # Updated to initialize new features
+mcp-ai-wpoos.php                               # Updated to initialize new features
 ```
 
 ## Admin Menu Structure

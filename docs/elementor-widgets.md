@@ -6,7 +6,7 @@ WP oOS bundles a set of Elementor widgets that cover the end-to-end assistant ex
 
 The integration only spins up once Elementor finishes loading, ensuring the additional hooks stay dormant on non-Elementor sites and keeping the plugin lightweight on installs that rely on other builders.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】 After Elementor fires `elementor/widgets/register`, the integration loads each widget class from `includes/elementor/` and registers it with the widgets manager.【F:includes/class-wp-mcp-ai-elementor-integration.php†L48-L98】
 
-**Widget Activation Control**: Widgets can be enabled or disabled via the "Enable Elementor Widgets" checkbox in **Settings → Elementor** (or **WP oOS → Elementor** in the new dashboard). This setting defaults to enabled for backward compatibility. When disabled, no Elementor widgets are registered even if Elementor is active.【F:wp-mcp-ai.php†L545-L554】 See [ELEMENTOR-WIDGET-ACTIVATION-FIX.md](ELEMENTOR-WIDGET-ACTIVATION-FIX.md) for details.
+**Widget Activation Control**: Widgets can be enabled or disabled via the "Enable Elementor Widgets" checkbox in **Settings → Elementor** (or **WP oOS → Elementor** in the new dashboard). This setting defaults to enabled for backward compatibility. When disabled, no Elementor widgets are registered even if Elementor is active.【F:mcp-ai-wpoos.php†L545-L554】 See [ELEMENTOR-WIDGET-ACTIVATION-FIX.md](ELEMENTOR-WIDGET-ACTIVATION-FIX.md) for details.
 
 ## Chat surface widgets
 

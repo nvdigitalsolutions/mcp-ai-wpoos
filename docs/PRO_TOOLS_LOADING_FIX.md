@@ -6,7 +6,7 @@ Pro tools were not appearing in the settings sections when the combined plugin w
 ## Root Cause
 The Pro addon's tools failed to register due to an action hook timing issue:
 
-1. `includes/tools-init.php` was loaded early in wp-mcp-ai.php (line 450)
+1. `includes/tools-init.php` was loaded early in mcp-ai-wpoos.php (line 450)
 2. This file registered the Tool Registry initialization at `plugins_loaded:20`
 3. The Pro addon was loaded later during `wp_mcp_ai_bootstrap()` (also at `plugins_loaded:20`)
 4. By the time the Pro addon tried to hook into `wp_mcp_ai_register_tools`, the action had already fired
@@ -31,7 +31,7 @@ Load the Pro addon BEFORE `tools-init.php` so its hooks are registered before th
 
 **Execution Flow (AFTER FIX):**
 ```
-wp-mcp-ai.php loads (during initial file loading)
+mcp-ai-wpoos.php loads (during initial file loading)
   ↓
 Tool Registry class loaded (line 447)
   ↓
@@ -60,7 +60,7 @@ Pro tools registered ✅
 
 ## Changes Made
 
-### 1. wp-mcp-ai.php (lines 451-459)
+### 1. mcp-ai-wpoos.php (lines 451-459)
 Added Pro addon loading between Tool Registry and tools-init.php:
 
 ```php
@@ -93,7 +93,7 @@ if ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) ) {
 }
 ```
 
-### 3. wp-mcp-ai.php wp_mcp_ai_bootstrap()
+### 3. mcp-ai-wpoos.php wp_mcp_ai_bootstrap()
 Updated comment to document that Pro addon is now loaded earlier:
 
 ```php
@@ -172,7 +172,7 @@ All 6 Pro tools are now properly loaded when the combined plugin is used:
 
 ## Related Files
 
-- `wp-mcp-ai.php` - Main plugin file with Pro addon loading
+- `mcp-ai-wpoos.php` - Main plugin file with Pro addon loading
 - `addons/pro/wp-mcp-ai-pro.php` - Pro addon with smart initialization
 - `includes/tools-init.php` - Tool registry initialization
 - `includes/class-wp-mcp-ai-tool-registry.php` - Tool registry class
