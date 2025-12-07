@@ -332,6 +332,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			global $wpdb;
 
 			$meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$user_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s LIMIT 100",

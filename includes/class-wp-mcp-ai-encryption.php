@@ -175,6 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				self::ENCRYPTED_SECRET_META_KEY
 			);
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$results = $wpdb->get_results( $query );
 
 			if ( empty( $results ) ) {
@@ -249,6 +250,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 
 			// Phase 2: Update all secrets with new encrypted values.
 			foreach ( $re_encrypted as $meta_id => $new_encrypted ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$updated = $wpdb->update(
 					$wpdb->postmeta,
 					array( 'meta_value' => $new_encrypted ),
@@ -307,6 +309,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			// Restore all updated secrets to their original values.
 			foreach ( $re_encrypted as $meta_id => $new_encrypted ) {
 				if ( isset( $original_values[ $meta_id ] ) ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$result = $wpdb->update(
 						$wpdb->postmeta,
 						array( 'meta_value' => $original_values[ $meta_id ] ),

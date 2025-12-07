@@ -358,6 +358,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Get all users' usage data.
 		$meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -490,6 +491,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Get all users with tool usage data.
 		$meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -716,7 +718,7 @@ class WP_MCP_AI_Analytics_Engine {
 		// Escape table name for defense-in-depth.
 		$table = esc_sql( $table );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is escaped with esc_sql(), $where is prepared above with $wpdb->prepare().
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is escaped with esc_sql(), $where is prepared above with $wpdb->prepare().
 		$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
 
 		if ( empty( $transcripts ) ) {

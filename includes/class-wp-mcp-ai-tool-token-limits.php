@@ -1476,6 +1476,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 
 		// Get all users with tool usage data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -1961,6 +1962,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$meta_key = self::USAGE_META_KEY;
 
 		// Get all users with usage data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2018,6 +2020,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Get all users with tool usage data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2151,6 +2154,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Get all users with usage data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$users = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2295,6 +2299,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$meta_key = self::USAGE_META_KEY;
 
 		// Start with all users who have usage data.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2533,6 +2538,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		global $wpdb;
 
 		// Check if indexes already exist to avoid errors.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$tier_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
@@ -2541,12 +2547,14 @@ class WP_MCP_AI_Tool_Token_Limits {
 		);
 
 		if ( ! $tier_index_exists ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta} 
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
 			);
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$usage_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
@@ -2555,6 +2563,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		);
 
 		if ( ! $usage_index_exists ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 			$wpdb->query(
 				"ALTER TABLE {$wpdb->usermeta} 
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"

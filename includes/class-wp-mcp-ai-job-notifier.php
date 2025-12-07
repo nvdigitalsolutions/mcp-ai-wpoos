@@ -393,6 +393,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		// Clean up old transients.
 		$pattern = $wpdb->esc_like( '_transient_' . self::CACHE_PREFIX ) . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
