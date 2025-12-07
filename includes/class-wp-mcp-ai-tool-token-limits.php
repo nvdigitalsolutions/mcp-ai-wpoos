@@ -1092,11 +1092,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( $enforce ) {
 				throw new Exception(
-					sprintf(
-						/* translators: 1: Session usage, 2: Session limit */
-						__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
-						$session_usage,
-						$limit
+					esc_html(
+						sprintf(
+							/* translators: 1: Session usage, 2: Session limit */
+							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
+							$session_usage,
+							$limit
+						)
 					)
 				);
 			}
@@ -1165,11 +1167,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( $enforce ) {
 				throw new Exception(
-					sprintf(
-						/* translators: 1: Session usage, 2: Session limit */
-						__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
-						$session_usage,
-						$limit
+					esc_html(
+						sprintf(
+							/* translators: 1: Session usage, 2: Session limit */
+							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
+							$session_usage,
+							$limit
+						)
 					)
 				);
 			}
@@ -1374,13 +1378,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( $enforce ) {
 				throw new Exception(
-					sprintf(
-						/* translators: 1: Tool name, 2: Daily limit, 3: Current tier, 4: Reset time */
-						__( 'Daily token limit exceeded for tool "%1$s". Your %3$s tier limit is %2$d tokens per day. Limit resets at %4$s. Consider upgrading to a higher tier for increased limits.', 'wp-mcp-ai' ),
-						$tool_slug,
-						$limit,
-						$tier,
-						$reset_time
+					esc_html(
+						sprintf(
+							/* translators: 1: Tool name, 2: Daily limit, 3: Current tier, 4: Reset time */
+							__( 'Daily token limit exceeded for tool "%1$s". Your %3$s tier limit is %2$d tokens per day. Limit resets at %4$s. Consider upgrading to a higher tier for increased limits.', 'wp-mcp-ai' ),
+							$tool_slug,
+							$limit,
+							$tier,
+							$reset_time
+						)
 					)
 				);
 			}
