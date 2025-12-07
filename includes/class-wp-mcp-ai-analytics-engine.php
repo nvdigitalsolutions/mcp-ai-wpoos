@@ -713,7 +713,10 @@ class WP_MCP_AI_Analytics_Engine {
 			$where = $wpdb->prepare( 'WHERE cct_author_id = %d', $user_id );
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is validated, $where is prepared above.
+		// Escape table name for defense-in-depth.
+		$table = esc_sql( $table );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is escaped with esc_sql(), $where is prepared above with $wpdb->prepare().
 		$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
 
 		if ( empty( $transcripts ) ) {

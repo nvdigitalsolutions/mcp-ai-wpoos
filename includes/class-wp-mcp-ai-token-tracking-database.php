@@ -273,9 +273,14 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$where_clause = implode( ' AND ', $where );
 
-		$query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY timestamp DESC";
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( $table_name );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql(), $where_clause contains only hardcoded placeholders.
+		$query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY timestamp DESC";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), WHERE clause contains only hardcoded placeholders.
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $params ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -302,8 +307,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 			);
 		}
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( $table_name );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				SUM(cost_usd) as total_cost,
@@ -315,8 +322,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp >= %s
 			AND timestamp <= %s
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$result = $wpdb->get_row( $wpdb->prepare( $query, $user_id, $start_date, $end_date ), ARRAY_A );
 
 		if ( ! $result ) {
@@ -348,8 +356,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_provider( $start_date, $end_date ) {
 		global $wpdb;
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				provider,
@@ -360,8 +370,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 			GROUP BY provider
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -379,8 +390,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_model( $start_date, $end_date ) {
 		global $wpdb;
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				provider,
@@ -392,8 +405,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 			GROUP BY provider, model
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -411,8 +425,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_tool( $start_date, $end_date ) {
 		global $wpdb;
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				tool,
@@ -423,8 +439,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			AND timestamp <= %s
 			GROUP BY tool
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -442,8 +459,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_date( $start_date, $end_date ) {
 		global $wpdb;
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				DATE(timestamp) as date,
@@ -455,8 +474,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			GROUP BY DATE(timestamp)
 			ORDER BY DATE(timestamp)
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -474,8 +494,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function get_aggregated_by_user( $start_date, $end_date ) {
 		global $wpdb;
 
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
 			SELECT 
 				user_id,
@@ -487,8 +509,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			GROUP BY user_id
 			ORDER BY total_cost DESC
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
@@ -504,17 +527,19 @@ class WP_MCP_AI_Token_Tracking_Database {
 		global $wpdb;
 
 		$days       = absint( $days );
-		$table_name = self::get_table_name();
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
 
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table_name} WHERE timestamp < %s",
 				$cutoff_date
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return intval( $deleted );
 	}
@@ -526,8 +551,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 	 */
 	public static function drop_table() {
 		global $wpdb;
-		$table_name = self::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		// Escape table name for defense-in-depth.
+		$table_name = esc_sql( self::get_table_name() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is escaped with esc_sql() and comes from controlled constant.
 		$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" );
 		delete_option( self::DB_VERSION_OPTION );
 	}

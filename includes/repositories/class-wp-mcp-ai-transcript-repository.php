@@ -288,7 +288,8 @@ class WP_MCP_AI_Transcript_Repository {
 			);
 		}
 
-		$rows = $wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), field list contains only hardcoded column names from get_select_fields().
+		$rows = $wpdb->get_results( $query, ARRAY_A );
 
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -338,7 +339,8 @@ class WP_MCP_AI_Transcript_Repository {
 				);
 			}
 
-			$rows = $wpdb->get_results( $author_query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), field list contains only hardcoded column names from get_select_fields().
+			$rows = $wpdb->get_results( $author_query, ARRAY_A );
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -380,7 +382,8 @@ class WP_MCP_AI_Transcript_Repository {
 				);
 			}
 
-			$rows = $wpdb->get_results( $simple_query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), field list contains only hardcoded column names from get_select_fields().
+			$rows = $wpdb->get_results( $simple_query, ARRAY_A );
 
 			// If still no rows, try with cct_author_id.
 			if ( empty( $rows ) ) {
@@ -394,7 +397,8 @@ class WP_MCP_AI_Transcript_Repository {
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded field names.
 				$simple_author_query = $wpdb->prepare( $simple_author_query_template, array( $session_key, $user_id ) );
 
-				$rows = $wpdb->get_results( $simple_author_query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), field list contains only hardcoded column names from get_select_fields().
+				$rows = $wpdb->get_results( $simple_author_query, ARRAY_A );
 			}
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -436,7 +440,8 @@ class WP_MCP_AI_Transcript_Repository {
 				);
 			}
 
-			$rows = $wpdb->get_results( $session_only_query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), field list contains only hardcoded column names from get_select_fields().
+			$rows = $wpdb->get_results( $session_only_query, ARRAY_A );
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -600,7 +605,8 @@ class WP_MCP_AI_Transcript_Repository {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$record_id = $wpdb->get_var( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), WHERE clause contains only hardcoded placeholders.
+		$record_id = $wpdb->get_var( $query );
 
 		if ( $record_id ) {
 			return absint( $record_id );
@@ -624,7 +630,8 @@ class WP_MCP_AI_Transcript_Repository {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$record_id = $wpdb->get_var( $author_query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), WHERE clause contains only hardcoded placeholders.
+		$record_id = $wpdb->get_var( $author_query );
 
 		if ( $record_id ) {
 			return absint( $record_id );
