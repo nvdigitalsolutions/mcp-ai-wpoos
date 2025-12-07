@@ -1,4 +1,4 @@
-=== WP Open Operator System (WP oOS) ===
+=== Open Operator System (WP oOS) ===
 Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai, chatbot, openai, assistant, automation
@@ -13,7 +13,7 @@ AI Assistant framework for WordPress with 35+ core tools, supporting OpenAI, Gem
 
 == Description ==
 
-**WP Open Operator System (WP oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
+**Open Operator System (WP oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
 The plugin works standalone with 35+ core tools and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
 
@@ -112,7 +112,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 = Automatic Installation =
 
 1. Go to Plugins → Add New in your WordPress admin
-2. Search for "WP Open Operator System"
+2. Search for "Open Operator System"
 3. Click "Install Now" and then "Activate"
 4. Navigate to Settings → WP oOS to configure your API key
 
@@ -241,11 +241,11 @@ This plugin has been in active development since October 2024. See the complete 
 == Upgrade Notice ==
 
 = 1.0.0 =
-Initial release. Welcome to WP Open Operator System!
+Initial release. Welcome to Open Operator System!
 
 == Privacy Policy ==
 
-WP Open Operator System respects your privacy:
+Open Operator System respects your privacy:
 
 * **No Tracking** - No analytics, telemetry, or tracking scripts
 * **Local Data** - All settings stored in your WordPress database
@@ -260,7 +260,7 @@ Review your AI provider's data processing policies:
 
 == Credits ==
 
-WP Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
+Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
 Special thanks to the open source community and all contributors.
 
