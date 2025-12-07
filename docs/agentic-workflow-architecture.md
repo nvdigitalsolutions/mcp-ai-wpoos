@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Last Updated:** November 9, 2024
 
-This document provides a comprehensive overview of the agentic workflow implementation in WP Open Operator System (WP oOS), including architecture, optimizations, and best practices.
+This document provides a comprehensive overview of the agentic workflow implementation in Open Operator System (WP oOS), including architecture, optimizations, and best practices.
 
 ---
 

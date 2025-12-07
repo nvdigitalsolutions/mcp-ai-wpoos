@@ -1,4 +1,4 @@
-# WP Open Operator System (WP oOS) - Architecture Guide for Copilot
+# Open Operator System (WP oOS) - Architecture Guide for Copilot
 
 **Version:** 1.0.0  
 **Last Updated:** 2025-11-11  
@@ -34,7 +34,7 @@
 
 ## Overview
 
-WP Open Operator System (WP oOS) is a sophisticated WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Gemini, Ollama, Anthropic) and implementing the Model Context Protocol (MCP).
+Open Operator System (WP oOS) is a sophisticated WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Gemini, Ollama, Anthropic) and implementing the Model Context Protocol (MCP).
 
 ### Key Architectural Principles
 
@@ -4581,7 +4581,7 @@ public function handle_my_endpoint( $request ) {
 
 ## Conclusion
 
-This architecture guide provides a comprehensive overview of the WP Open Operator System (WP oOS) plugin codebase. It covers:
+This architecture guide provides a comprehensive overview of the Open Operator System (WP oOS) plugin codebase. It covers:
 
 - Plugin entry point and initialization flow
 - Core architectural patterns (DI, Service/Repository, Singleton, Factory, Strategy)

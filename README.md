@@ -2239,6 +2239,6 @@ See [LICENSE](LICENSE) for full text.
 
 ---
 
-**Thank you for using WP Open Operator System!**
+**Thank you for using Open Operator System!**
 
 For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).

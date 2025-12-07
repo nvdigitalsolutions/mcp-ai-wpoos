@@ -3,9 +3,9 @@
  * Tests for OpenAI Jukebox integration tools.
  */
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php';
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-jukebox-service.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/services/class-wp-mcp-ai-jukebox-service.php';
 
 /**
  * Tests for Jukebox tools.

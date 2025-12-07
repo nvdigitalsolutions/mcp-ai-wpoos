@@ -402,14 +402,22 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				return 'test_tool_' . md5( wp_json_encode( $this->flags ) );
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Test Tool';
+			}
+
+			public function get_description() {
+				return 'Test tool';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'        => 'Test Tool',
-					'description' => 'Test tool',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
 
@@ -430,14 +438,27 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				return 'test_executable_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Test Executable Tool';
+			}
+
+			public function get_description() {
+				return 'Tool for testing execution';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'        => 'Test Executable Tool',
-					'description' => 'Tool for testing execution',
+					'type'       => 'object',
+					'properties' => array(
+						'input' => array(
+							'type'        => 'string',
+							'description' => 'Test input',
+						),
+					),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success' => true,
 					'message' => 'Execution completed',
@@ -465,14 +486,22 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				return 'test_' . $this->provider . '_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Test ' . ucfirst( $this->provider ) . ' Tool';
+			}
+
+			public function get_description() {
+				return 'Provider-specific test tool';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'        => 'Test ' . ucfirst( $this->provider ) . ' Tool',
-					'description' => 'Provider-specific test tool',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success'  => true,
 					'provider' => $this->provider,

@@ -1,7 +1,7 @@
 # Tools Manager Implementation Summary
 
 ## Overview
-This document summarizes the implementation of the Tools Manager feature for WP Open Operator System (WP oOS).
+This document summarizes the implementation of the Tools Manager feature for Open Operator System (WP oOS).
 
 ## Problem Statement
 The original issue asked: "should there be a tools manager in the tools & features tab of the settings"

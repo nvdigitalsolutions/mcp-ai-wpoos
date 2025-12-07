@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the security measures implemented in the WP Open Operator System (WP oOS) plugin to protect against common web vulnerabilities.
+This document describes the security measures implemented in the Open Operator System (WP oOS) plugin to protect against common web vulnerabilities.
 
 ## Security Audit Summary
 

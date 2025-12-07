@@ -1,6 +1,6 @@
-# WP Open Operator System - Build Process
+# Open Operator System - Build Process
 
-This document describes the build process for the WP Open Operator System (WP oOS) plugin, including both asset compilation and PHP dependency management.
+This document describes the build process for the Open Operator System (WP oOS) plugin, including both asset compilation and PHP dependency management.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Security Checks Implementation - WP oOS
 
-This document describes the security checks implemented for WP Open Operator System (WP oOS) as requested in the problem statement.
+This document describes the security checks implemented for Open Operator System (WP oOS) as requested in the problem statement.
 
 ## Overview
 

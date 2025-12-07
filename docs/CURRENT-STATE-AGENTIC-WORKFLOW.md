@@ -23,7 +23,7 @@
 
 ## Overview
 
-WP Open Operator System (WP oOS) implements a sophisticated **agentic workflow** where AI assistants autonomously execute tools in iterative loops until they have all information needed to respond to user queries. This document describes the **current state** of how assistants and processing components work together.
+Open Operator System (WP oOS) implements a sophisticated **agentic workflow** where AI assistants autonomously execute tools in iterative loops until they have all information needed to respond to user queries. This document describes the **current state** of how assistants and processing components work together.
 
 ### Key Concepts
 

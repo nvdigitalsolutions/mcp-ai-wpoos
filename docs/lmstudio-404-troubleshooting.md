@@ -62,7 +62,7 @@ The `/mcp` endpoint only exists when the WP oOS plugin is active.
 
 **Verify:**
 - Go to **Plugins** in WordPress admin
-- Ensure "WP Open Operator System (WP oOS)" is **Active**
+- Ensure "Open Operator System (WP oOS)" is **Active**
 
 ### 3. Test the MCP Endpoint Directly
 

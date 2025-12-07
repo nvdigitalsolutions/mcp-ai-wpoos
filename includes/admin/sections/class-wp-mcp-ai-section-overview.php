@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Quick overview of your WP Open Operator System configuration and status.', 'wp-mcp-ai' );
+			return __( 'Quick overview of your Open Operator System configuration and status.', 'wp-mcp-ai' );
 		}
 
 		/**

@@ -1,6 +1,6 @@
 # Performance Optimization Guide
 
-This document describes the performance optimizations implemented in WP Open Operator System (WP oOS) as part of Phase 1: Performance Optimization.
+This document describes the performance optimizations implemented in Open Operator System (WP oOS) as part of Phase 1: Performance Optimization.
 
 ## Table of Contents
 

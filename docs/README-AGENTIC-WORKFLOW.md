@@ -1,6 +1,6 @@
 # Understanding Agentic Workflows in WP oOS
 
-**Start Here** to understand how assistants and processing work together in WP Open Operator System!
+**Start Here** to understand how assistants and processing work together in Open Operator System!
 
 ---
 

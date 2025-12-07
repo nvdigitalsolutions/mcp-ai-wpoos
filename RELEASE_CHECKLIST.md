@@ -1,6 +1,6 @@
 # WP oOS Release Checklist
 
-This document outlines the complete process for releasing WP Open Operator System (WP oOS) to GitHub and the WordPress.org Plugin Directory.
+This document outlines the complete process for releasing Open Operator System (WP oOS) to GitHub and the WordPress.org Plugin Directory.
 
 ## Table of Contents
 

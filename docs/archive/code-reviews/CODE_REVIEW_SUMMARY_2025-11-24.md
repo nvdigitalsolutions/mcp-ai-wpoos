@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides a comprehensive review of changes made to the WP Open Operator System (WP oOS) over the last 2 days (November 23-24, 2025).
+This document provides a comprehensive review of changes made to the Open Operator System (WP oOS) over the last 2 days (November 23-24, 2025).
 
 ## Executive Summary
 

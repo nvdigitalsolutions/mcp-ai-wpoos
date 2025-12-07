@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented comprehensive JavaScript testing infrastructure for the WP Open Operator System plugin using Jest, the industry-standard JavaScript testing framework.
+Successfully implemented comprehensive JavaScript testing infrastructure for the Open Operator System plugin using Jest, the industry-standard JavaScript testing framework.
 
 ## What Was Implemented
 

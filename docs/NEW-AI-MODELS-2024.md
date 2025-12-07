@@ -1,6 +1,6 @@
 # New AI Models Support (2024 Update)
 
-This document outlines the new AI models added to WP Open Operator System in response to user requests for expanded model support.
+This document outlines the new AI models added to Open Operator System in response to user requests for expanded model support.
 
 ## Overview
 

@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Last Updated:** November 10, 2024
 
-This document explains the flow stage eligibility feature for tools in WP Open Operator System (WP oOS), which allows tools to declare when they can be invoked during an agentic workflow.
+This document explains the flow stage eligibility feature for tools in Open Operator System (WP oOS), which allows tools to declare when they can be invoked during an agentic workflow.
 
 ---
 

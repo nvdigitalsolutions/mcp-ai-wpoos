@@ -5,7 +5,7 @@
 
 ## Overview
 
-This document explains the **novel differentiators** of the WP oOS (WP Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, WP oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
+This document explains the **novel differentiators** of the WP oOS (Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, WP oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
 
 **Critical Context:** This orchestration layer exists fundamentally to **overcome PHP's architectural limitations** for real-time AI streaming — limitations that typically make Node.js the default choice for these systems. Understanding this context is essential to appreciating the technical novelty and patent-worthiness of the implementation.
 

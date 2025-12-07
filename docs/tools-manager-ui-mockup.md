@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ WP Open Operator System - Settings Dashboard                                │
+│ Open Operator System - Settings Dashboard                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Tabs: [Overview] [General] [AI Providers] [Authentication] [Tools & Features*] │
 │       [Orchestration] [Token Manager] [Security] [Advanced]                  │

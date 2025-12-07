@@ -820,4 +820,4 @@ For issues or questions:
 
 ## License
 
-This tool is part of WP Open Operator System (WP oOS) and is licensed under GPLv3 or later.
+This tool is part of Open Operator System (WP oOS) and is licensed under GPLv3 or later.

@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document outlines the repository rename from `nvdigitalsolutions/wp-mcp-ai` to `nvdigitalsolutions/mcp-ai-wpoos` to better align the repository name with the actual plugin name "WP Open Operator System (WP oOS)".
+This document outlines the repository rename from `nvdigitalsolutions/wp-mcp-ai` to `nvdigitalsolutions/mcp-ai-wpoos` to better align the repository name with the actual plugin name "Open Operator System (WP oOS)".
 
 ## Rationale
 
 **Why rename from `wp-mcp-ai` to `mcp-ai-wpoos`?**
 
-1. **Better alignment with plugin branding**: The plugin is branded as "WP oOS" (WP Open Operator System)
+1. **Better alignment with plugin branding**: The plugin is branded as "WP oOS" (Open Operator System)
 2. **Avoids WordPress-first naming**: Starting with `mcp-` instead of `wp-` emphasizes the MCP (Model Context Protocol) focus
 3. **More memorable**: `mcp-ai-wpoos` is more distinctive and easier to associate with the product name
 4. **Future-proof**: Aligns with the plugin's evolution beyond just WordPress integration

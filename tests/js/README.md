@@ -1,6 +1,6 @@
 # JavaScript Tests
 
-This directory contains the JavaScript test suite for the WP Open Operator System plugin.
+This directory contains the JavaScript test suite for the Open Operator System plugin.
 
 ## Structure
 

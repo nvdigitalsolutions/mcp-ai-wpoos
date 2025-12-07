@@ -143,24 +143,27 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 				return 'test_mock_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Test Mock Tool';
+			}
+
+			public function get_description() {
+				return 'A mock tool for testing async execution';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'               => 'Test Mock Tool',
-					'description'        => 'A mock tool for testing async execution',
-					'inputSchema'        => array(
-						'type'       => 'object',
-						'properties' => array(
-							'test_param' => array(
-								'type'        => 'string',
-								'description' => 'Test parameter',
-							),
+					'type'       => 'object',
+					'properties' => array(
+						'test_param' => array(
+							'type'        => 'string',
+							'description' => 'Test parameter',
 						),
 					),
-					'requiredCapability' => 'read',
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success'        => true,
 					'message'        => 'test_mock_tool executed successfully',
