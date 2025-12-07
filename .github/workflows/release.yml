@@ -149,6 +149,7 @@ jobs:
           mkdir -p build/${PLUGIN_SLUG}
           
           # Copy plugin files (excluding dev files)
+          # This creates a combined Base + Pro version
           rsync -av --progress . build/${PLUGIN_SLUG}/ \
             --exclude '.git' \
             --exclude '.git-branch-info' \
@@ -156,6 +157,7 @@ jobs:
             --exclude '.wordpress-org' \
             --exclude '.codex' \
             --exclude '.devcontainer' \
+            --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
             --exclude 'bin' \
@@ -165,16 +167,24 @@ jobs:
             --exclude '.eslintrc.json' \
             --exclude '.eslintignore' \
             --exclude '.gitignore' \
+            --exclude '.editorconfig' \
+            --exclude '.nvmrc' \
+            --exclude 'CODEOWNERS' \
             --exclude 'phpunit.xml.dist' \
             --exclude 'composer.json' \
             --exclude 'composer.lock' \
             --exclude 'package.json' \
             --exclude 'package-lock.json' \
+            --exclude 'patches.lock.json' \
             --exclude 'babel.config.js' \
             --exclude 'jest.config.js' \
             --exclude 'esbuild.config.js' \
             --exclude 'docker-compose.yml' \
             --exclude 'patches' \
+            --exclude 'docs' \
+            --exclude 'core' \
+            --exclude 'shared' \
+            --exclude 'ARCHITECTURE.md' \
             --exclude 'RELEASE_CHECKLIST.md' \
             --exclude 'CONTRIBUTING.md' \
             --exclude 'SECURITY.md' \
@@ -182,7 +192,10 @@ jobs:
             --exclude 'test-*.php' \
             --exclude 'verify-*.sh' \
             --exclude '*.zip' \
-            --exclude '*.tar.gz'
+            --exclude '*.tar.gz' \
+            --exclude '.distignore' \
+            --exclude 'assets/examples' \
+            --exclude 'mcp-ai-wpoos-base.php'
           
           # Include essential documentation files
           # README.md and CHANGELOG.md are optional but preferred

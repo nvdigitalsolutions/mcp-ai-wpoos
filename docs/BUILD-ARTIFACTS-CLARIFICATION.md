@@ -55,20 +55,22 @@ The base/core plugin (`mcp-ai-wpoos-base-X.Y.Z.zip`):
 # Both create: build/mcp-ai-wpoos-base-X.Y.Z.zip
 ```
 
-## The wp-mcp-ai-base.php File
+## The mcp-ai-wpoos-base.php File
 
-The `wp-mcp-ai-base.php` file is the main entry point for the base version:
+The `mcp-ai-wpoos-base.php` file is the main entry point for the base version:
 
-- **IS included** in `mcp-ai-wpoos-base-X.Y.Z.zip` (renamed to `mcp-ai-wpoos-base.php`)
-- **IS included** in `mcp-ai-wpoos-X.Y.Z.zip` (combined version)
+- **IS included** in `mcp-ai-wpoos-base-X.Y.Z.zip` (base version only)
+- **NOT included** in `mcp-ai-wpoos-X.Y.Z.zip` (combined version - to prevent duplicate plugin detection)
+- **NOT included** in `mcp-ai-wpoos-pro-X.Y.Z.zip` (pro add-on)
 - Contains full WordPress plugin headers for the base version
 - Sets the `WP_MCP_AI_BASE_VERSION` constant
 - Loads the core plugin file `mcp-ai-wpoos.php`
 
-During the build process for the base version:
-1. The file `wp-mcp-ai-base.php` is copied to the build directory
-2. It's renamed to `mcp-ai-wpoos-base.php` to match WordPress.org naming conventions
-3. This ensures the main plugin file matches the folder name (`mcp-ai-wpoos-base/mcp-ai-wpoos-base.php`)
+During the build process:
+1. **Base version**: Includes `mcp-ai-wpoos-base.php` as the main plugin file
+2. **Combined version**: Excludes `mcp-ai-wpoos-base.php` to avoid duplicate plugin detection
+3. **Combined version**: Uses `mcp-ai-wpoos.php` as the sole main plugin file
+4. This ensures WordPress only detects one plugin, not two
 
 ## Version Constant
 
@@ -84,11 +86,11 @@ For the standalone base distribution (`wp-mcp-ai-base-X.Y.Z.zip`), this constant
 
 ## Build Outputs Summary
 
-| ZIP File | Contains | Use Case |
-|----------|----------|----------|
-| `mcp-ai-wpoos-base-X.Y.Z.zip` | Base plugin only | Free WordPress.org distribution |
-| `mcp-ai-wpoos-pro-X.Y.Z.zip` | Pro add-on only | Commercial add-on (requires base) |
-| `mcp-ai-wpoos-X.Y.Z.zip` | Base + Pro + base.php | Convenience package with everything |
+| ZIP File | Contains | Main Plugin File | Use Case |
+|----------|----------|------------------|----------|
+| `mcp-ai-wpoos-base-X.Y.Z.zip` | Base plugin only | `mcp-ai-wpoos-base.php` | Free WordPress.org distribution |
+| `mcp-ai-wpoos-pro-X.Y.Z.zip` | Pro add-on only | `mcp-ai-wpoos-pro.php` | Commercial add-on (requires base) |
+| `mcp-ai-wpoos-X.Y.Z.zip` | Base + Pro combined | `mcp-ai-wpoos.php` | Convenience package with everything |
 
 ## Building All ZIP Files
 
@@ -106,6 +108,19 @@ npm run build:zip
 ```
 
 All three ZIP files are created in the `build/` directory and can be committed to the repository for distribution.
+
+### GitHub Release Workflow
+
+The GitHub Actions release workflow (`.github/workflows/release.yml`) automatically builds a **combined version** (Base + Pro) when a release tag is pushed. The workflow:
+
+1. Builds frontend assets and installs production dependencies
+2. Creates a combined ZIP with the same exclusions as the local build script
+3. Ensures pro tools from `addons/pro` are included
+4. Excludes `mcp-ai-wpoos-base.php` to prevent duplicate plugin detection
+5. Excludes dev files (`docs/`, `core/`, `shared/`, etc.) to reduce ZIP size
+6. Uploads the combined ZIP to the GitHub release
+
+The release workflow exclusions are kept in sync with `bin/build-plugin-zip.sh` to ensure consistency between local and CI builds.
 
 ## Git Configuration
 
