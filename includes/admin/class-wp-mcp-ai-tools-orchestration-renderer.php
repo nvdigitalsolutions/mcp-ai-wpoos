@@ -79,8 +79,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						array(
 							'tab'          => 'orchestration',
 							'view'         => 'tools',
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped when output in renderer (line 69).
 							'search'       => $search,
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped when output in renderer (line 79).
 							'filter_group' => $filter_group,
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped when output in renderer (line 90).
 							'clear_url'    => admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=orchestration&view=tools' ),
 						)
 					);
