@@ -159,13 +159,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			global $wpdb;
 
 			// Get all users with usage data.
-			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-			$user_ids = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
-					$meta_key
-				)
-			);
+			$meta_key  = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+			$cache_key = 'wp_mcp_ai_token_users_' . md5( $meta_key );
+			$user_ids  = wp_cache_get( $cache_key, 'wp_mcp_ai' );
+
+			if ( false === $user_ids ) {
+				$user_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+						$meta_key
+					)
+				);
+				wp_cache_set( $cache_key, $user_ids, 'wp_mcp_ai', 300 ); // Cache for 5 minutes.
+			}
 
 			// Preload tiers for all users to optimize performance.
 			if ( ! empty( $user_ids ) && class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
