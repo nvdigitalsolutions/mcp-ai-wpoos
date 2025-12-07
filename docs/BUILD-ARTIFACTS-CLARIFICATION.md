@@ -8,9 +8,9 @@ This document clarifies the terminology and build artifacts for the WP Open Oper
 
 The build process creates **three ZIP files**:
 
-1. **wp-mcp-ai-base-X.Y.Z.zip** - Base/Core Version (Standalone)
-2. **wp-mcp-ai-pro-X.Y.Z.zip** - Pro Add-on (Requires Base)
-3. **wp-mcp-ai-X.Y.Z.zip** - Combined Package (Base + Pro)
+1. **mcp-ai-wpoos-base-X.Y.Z.zip** - Base/Core Version (Standalone)
+2. **mcp-ai-wpoos-pro-X.Y.Z.zip** - Pro Add-on (Requires Base)
+3. **mcp-ai-wpoos-X.Y.Z.zip** - Combined Package (Base + Pro)
 
 ## Base vs Core - They Are the Same
 
@@ -29,18 +29,18 @@ The build process creates **three ZIP files**:
 
 | Term | Meaning | File |
 |------|---------|------|
-| **Base/Core Plugin** | Free standalone version | `wp-mcp-ai-base-X.Y.Z.zip` |
-| **Pro Add-on** | Commercial extension | `wp-mcp-ai-pro-X.Y.Z.zip` |
-| **Combined/Full** | Base + Pro together | `wp-mcp-ai-X.Y.Z.zip` |
+| **Base/Core Plugin** | Free standalone version | `mcp-ai-wpoos-base-X.Y.Z.zip` |
+| **Pro Add-on** | Commercial extension | `mcp-ai-wpoos-pro-X.Y.Z.zip` |
+| **Combined/Full** | Base + Pro together | `mcp-ai-wpoos-X.Y.Z.zip` |
 
 ## Base/Core Plugin Features
 
-The base/core plugin (`wp-mcp-ai-base-X.Y.Z.zip`):
+The base/core plugin (`mcp-ai-wpoos-base-X.Y.Z.zip`):
 
 - ✅ **Fully functional** - Works standalone without Pro
 - ✅ **35+ tools** included by default
-- ✅ Uses `mcp-ai-wpoos.php` as the main entry point
-- ✅ Excludes `wp-mcp-ai-base.php` (not needed for standalone base)
+- ✅ Uses `mcp-ai-wpoos-base.php` as the main entry point (renamed from `wp-mcp-ai-base.php` during build)
+- ✅ Includes `mcp-ai-wpoos.php` (core plugin logic)
 - ✅ Excludes `addons/pro/` directory
 - ✅ Compatible with WordPress.org (GPL-3.0-or-later)
 - ✅ Optional integrations (JetEngine, Elementor, etc.) work when those plugins are installed
@@ -52,21 +52,23 @@ The base/core plugin (`wp-mcp-ai-base-X.Y.Z.zip`):
 ./bin/build-plugin-zip.sh --base
 ./bin/build-plugin-zip.sh --core
 
-# Both create: build/wp-mcp-ai-base-X.Y.Z.zip
+# Both create: build/mcp-ai-wpoos-base-X.Y.Z.zip
 ```
 
 ## The wp-mcp-ai-base.php File
 
-The `wp-mcp-ai-base.php` file is a special file that:
+The `wp-mcp-ai-base.php` file is the main entry point for the base version:
 
-- **NOT included** in `wp-mcp-ai-base-X.Y.Z.zip` (standalone base)
-- **IS included** in `wp-mcp-ai-X.Y.Z.zip` (combined version)
+- **IS included** in `mcp-ai-wpoos-base-X.Y.Z.zip` (renamed to `mcp-ai-wpoos-base.php`)
+- **IS included** in `mcp-ai-wpoos-X.Y.Z.zip` (combined version)
+- Contains full WordPress plugin headers for the base version
 - Sets the `WP_MCP_AI_BASE_VERSION` constant
-- Used only in custom deployments where you want to explicitly disable Pro features
-- Not needed for most users
+- Loads the core plugin file `mcp-ai-wpoos.php`
 
-From the file's own documentation:
-> "This file is NOT included in standalone base distributions to prevent WordPress from detecting two plugins. The standalone base distribution uses mcp-ai-wpoos.php directly."
+During the build process for the base version:
+1. The file `wp-mcp-ai-base.php` is copied to the build directory
+2. It's renamed to `mcp-ai-wpoos-base.php` to match WordPress.org naming conventions
+3. This ensures the main plugin file matches the folder name (`mcp-ai-wpoos-base/mcp-ai-wpoos-base.php`)
 
 ## Version Constant
 
@@ -84,9 +86,9 @@ For the standalone base distribution (`wp-mcp-ai-base-X.Y.Z.zip`), this constant
 
 | ZIP File | Contains | Use Case |
 |----------|----------|----------|
-| `wp-mcp-ai-base-X.Y.Z.zip` | Base plugin only | Free WordPress.org distribution |
-| `wp-mcp-ai-pro-X.Y.Z.zip` | Pro add-on only | Commercial add-on (requires base) |
-| `wp-mcp-ai-X.Y.Z.zip` | Base + Pro + base.php | Convenience package with everything |
+| `mcp-ai-wpoos-base-X.Y.Z.zip` | Base plugin only | Free WordPress.org distribution |
+| `mcp-ai-wpoos-pro-X.Y.Z.zip` | Pro add-on only | Commercial add-on (requires base) |
+| `mcp-ai-wpoos-X.Y.Z.zip` | Base + Pro + base.php | Convenience package with everything |
 
 ## Building All ZIP Files
 
