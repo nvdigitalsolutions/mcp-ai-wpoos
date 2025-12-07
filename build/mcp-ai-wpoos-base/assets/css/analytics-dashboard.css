@@ -1,0 +1,428 @@
+/**
+ * Analytics Dashboard Styles
+ *
+ * Styles for WP oOS Analytics Dashboard widgets and charts.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Widget Container Styles */
+.wp-mcp-ai-widget-usage-overview,
+.wp-mcp-ai-widget-cost-breakdown,
+.wp-mcp-ai-widget-usage-forecast {
+	padding: 12px;
+}
+
+/* Stats Grid */
+.wp-mcp-ai-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-stat-card {
+	text-align: center;
+	padding: 15px 10px;
+	background: #f7f7f7;
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+}
+
+.wp-mcp-ai-stat-card:hover {
+	background: #e9e9e9;
+}
+
+.wp-mcp-ai-stat-value {
+	font-size: 24px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.2;
+}
+
+.wp-mcp-ai-stat-label {
+	font-size: 12px;
+	color: #646970;
+	margin-top: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Chart Container */
+.wp-mcp-ai-chart-container {
+	position: relative;
+	min-height: 200px;
+	max-height: 400px;
+	margin: 15px 0;
+}
+
+.wp-mcp-ai-chart-container canvas {
+	max-height: 300px;
+}
+
+/* Cost Summary */
+.wp-mcp-ai-cost-summary {
+	text-align: center;
+	padding: 20px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+	border-radius: 8px;
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-cost-total {
+	margin-bottom: 8px;
+}
+
+.wp-mcp-ai-cost-amount {
+	font-size: 32px;
+	font-weight: 700;
+	display: block;
+	margin-bottom: 4px;
+}
+
+.wp-mcp-ai-cost-period {
+	font-size: 14px;
+	opacity: 0.9;
+}
+
+/* Forecast Summary */
+.wp-mcp-ai-forecast-summary {
+	text-align: center;
+	padding: 20px;
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+	color: #fff;
+	border-radius: 8px;
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-forecast-value {
+	margin-bottom: 8px;
+}
+
+.wp-mcp-ai-forecast-amount {
+	font-size: 32px;
+	font-weight: 700;
+	display: inline-block;
+	margin-right: 8px;
+}
+
+.wp-mcp-ai-forecast-label {
+	font-size: 14px;
+	opacity: 0.9;
+	margin-bottom: 4px;
+}
+
+.wp-mcp-ai-forecast-confidence {
+	font-size: 12px;
+	opacity: 0.8;
+	margin-top: 4px;
+}
+
+/* Forecast Trend */
+.wp-mcp-ai-forecast-trend {
+	padding: 15px;
+	background: #f7f7f7;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-trend-label {
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-trend-status {
+	font-size: 14px;
+	color: #646970;
+	line-height: 1.5;
+}
+
+.wp-mcp-ai-trend-status .dashicons {
+	vertical-align: middle;
+	margin-right: 4px;
+}
+
+/* Widget Actions */
+.wp-mcp-ai-widget-actions {
+	margin-top: 15px;
+	text-align: right;
+}
+
+.wp-mcp-ai-widget-actions .button {
+	margin-left: 8px;
+}
+
+/* Widget Notice */
+.wp-mcp-ai-widget-notice {
+	margin-top: 20px;
+	padding: 15px;
+	background: #f7f7f7;
+	border-left: 4px solid #2271b1;
+	border-radius: 0 4px 4px 0;
+}
+
+.wp-mcp-ai-widget-notice p {
+	margin: 0;
+	color: #646970;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* Chart Loading State */
+.wp-mcp-ai-chart-loading {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: none;
+}
+
+.wp-mcp-ai-chart-loading::before {
+	content: '';
+	display: block;
+	width: 40px;
+	height: 40px;
+	border: 4px solid #f3f3f3;
+	border-top: 4px solid #2271b1;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spin 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-stats-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.wp-mcp-ai-stat-value {
+		font-size: 20px;
+	}
+
+	.wp-mcp-ai-cost-amount,
+	.wp-mcp-ai-forecast-amount {
+		font-size: 24px;
+	}
+
+	.wp-mcp-ai-chart-container {
+		min-height: 250px;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-stats-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Dashboard Widget Specific Adjustments */
+#wp_mcp_ai_token_usage_overview .inside,
+#wp_mcp_ai_cost_breakdown .inside,
+#wp_mcp_ai_usage_forecast .inside {
+	padding: 0;
+	margin: 0;
+}
+
+/* Chart Tooltips (Chart.js) */
+.chartjs-tooltip {
+	opacity: 1;
+	position: absolute;
+	background: rgba(0, 0, 0, 0.8);
+	color: white;
+	border-radius: 3px;
+	padding: 8px 12px;
+	font-size: 12px;
+	pointer-events: none;
+	transition: all 0.1s ease;
+}
+
+/* Chart Legend Customization */
+.wp-mcp-ai-chart-container .chartjs-legend {
+	padding: 10px 0;
+}
+
+.wp-mcp-ai-chart-container .chartjs-legend ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.wp-mcp-ai-chart-container .chartjs-legend li {
+	display: inline-block;
+	margin-right: 15px;
+	font-size: 12px;
+}
+
+.wp-mcp-ai-chart-container .chartjs-legend li span {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	margin-right: 5px;
+	vertical-align: middle;
+	border-radius: 2px;
+}
+
+/* Token Manager Analytics Section */
+.wp-mcp-ai-analytics-section {
+	background: #f9f9f9;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.wp-mcp-ai-analytics-section h3 {
+	margin-top: 0;
+	margin-bottom: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* Period Selector and Controls */
+.wp-mcp-ai-chart-controls {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 15px;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.wp-mcp-ai-chart-controls-right {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-chart-period-label {
+	margin: 0;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-chart-period-select {
+	min-width: 150px;
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+}
+
+#wp-mcp-ai-refresh-charts {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 32px;
+	padding: 0 12px;
+}
+
+#wp-mcp-ai-refresh-charts .dashicons {
+	font-size: 16px;
+	margin-top: 3px;
+}
+
+/* Chart Containers */
+.wp-mcp-ai-chart-container {
+	position: relative;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-chart-full {
+	margin-bottom: 30px;
+}
+
+.wp-mcp-ai-chart-full canvas {
+	width: 100%;
+	height: 300px;
+}
+
+.wp-mcp-ai-chart-half canvas {
+	width: 100%;
+	height: 300px;
+}
+
+/* Chart Grid Layout */
+.wp-mcp-ai-chart-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-chart-half {
+	min-height: 300px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-chart-row {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-analytics-section {
+		padding: 15px;
+	}
+
+	.wp-mcp-ai-chart-controls {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.wp-mcp-ai-chart-period-select {
+		width: 100%;
+	}
+
+	#wp-mcp-ai-refresh-charts {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.wp-mcp-ai-chart-container {
+		padding: 15px !important;
+	}
+
+	.wp-mcp-ai-chart-half {
+		min-height: 250px;
+	}
+}
+
+/* Chart Loading State */
+.wp-mcp-ai-chart-loading {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	z-index: 10;
+}
+
+.wp-mcp-ai-chart-loading .spinner {
+	float: none;
+	margin: 0 auto 10px;
+}
+
+/* Chart Empty State */
+.wp-mcp-ai-chart-empty {
+	padding: 40px 20px;
+	text-align: center;
+	color: #646970;
+	font-style: italic;
+}
+
+.wp-mcp-ai-chart-empty .dashicons {
+	font-size: 48px;
+	color: #c3c4c7;
+	margin-bottom: 10px;
+}
+

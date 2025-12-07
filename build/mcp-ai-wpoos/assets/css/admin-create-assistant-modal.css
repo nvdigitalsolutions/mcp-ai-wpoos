@@ -1,0 +1,315 @@
+/* Create Assistant Modal Styles */
+.wp-mcp-ai-modal {
+	position: fixed;
+	z-index: 100000;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.wp-mcp-ai-modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.7);
+}
+
+.wp-mcp-ai-modal-content {
+	position: relative;
+	background: #fff;
+	max-width: 700px;
+	margin: 50px auto;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	max-height: calc(100vh - 100px);
+	display: flex;
+	flex-direction: column;
+}
+
+.wp-mcp-ai-modal-header {
+	padding: 20px 24px;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.wp-mcp-ai-modal-header h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+}
+
+/* Modal header close button - styled as WordPress button */
+.wp-mcp-ai-modal-header .wp-mcp-ai-modal-close {
+	font-size: 20px;
+	font-weight: 300;
+	line-height: 1;
+	padding: 0;
+	min-width: 30px;
+	min-height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wp-mcp-ai-modal-body {
+	padding: 24px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.wp-mcp-ai-modal-body .form-table th {
+	width: 180px;
+	vertical-align: top;
+	padding-top: 15px;
+}
+
+.wp-mcp-ai-modal-body .form-table td {
+	padding-bottom: 20px;
+}
+
+.wp-mcp-ai-modal-body .required {
+	color: #d63638;
+}
+
+.wp-mcp-ai-modal-body select[multiple] {
+	height: 150px !important;
+	padding: 8px;
+}
+
+.wp-mcp-ai-modal-body .description {
+	margin-top: 5px;
+	color: #646970;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-modal-footer {
+	padding: 16px 24px;
+	border-top: 1px solid #ddd;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.wp-mcp-ai-modal-footer .button {
+	margin: 0 !important;
+}
+
+/* Modal footer cancel button - use WordPress link button style */
+.wp-mcp-ai-modal-footer .button-link {
+	text-decoration: none;
+	padding: 6px 12px;
+}
+
+.wp-mcp-ai-modal-footer .button-link:hover {
+	color: #d63638;
+}
+
+.wp-mcp-ai-modal-footer .button-link:focus {
+	outline: 1px dotted #2271b1;
+	outline-offset: 2px;
+}
+
+/* WordPress standard nav-tab styles for modal tabs */
+.wp-mcp-ai-modal-tabs.nav-tab-wrapper {
+	margin: 0;
+	padding: 0 24px;
+	border-bottom: 1px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.wp-mcp-ai-modal-tabs .nav-tab {
+	display: inline-block;
+	padding: 10px 20px;
+	margin-left: 0;
+	margin-bottom: -1px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: #50575e;
+	background: transparent;
+	border: 1px solid transparent;
+	border-bottom: none;
+	text-decoration: none;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.wp-mcp-ai-modal-tabs .nav-tab:hover,
+.wp-mcp-ai-modal-tabs .nav-tab:focus {
+	color: #2271b1;
+	background: #f0f0f1;
+}
+
+.wp-mcp-ai-modal-tabs .nav-tab:focus {
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: 2px solid transparent;
+}
+
+.wp-mcp-ai-modal-tabs .nav-tab-active,
+.wp-mcp-ai-modal-tabs .nav-tab-active:hover,
+.wp-mcp-ai-modal-tabs .nav-tab-active:focus {
+	color: #2271b1;
+	background: #fff;
+	border-color: #c3c4c7;
+	border-bottom-color: #fff;
+}
+
+.wp-mcp-ai-modal-tab-content {
+	display: none;
+}
+
+.wp-mcp-ai-modal-tab-content.active {
+	display: block;
+}
+
+/* Prompt tab chat container */
+.wp-mcp-ai-modal-chat-container {
+	min-height: 400px;
+	max-height: 500px;
+	display: flex;
+	flex-direction: column;
+}
+
+.wp-mcp-ai-modal-chat-container .wp-mcp-ai-chat {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 350px;
+}
+
+.wp-mcp-ai-modal-chat-container .wp-mcp-ai-chat__messages {
+	flex: 1;
+	max-height: 250px;
+	overflow-y: auto;
+}
+
+.wp-mcp-ai-modal-chat-container .wp-mcp-ai-chat__input {
+	min-height: 60px;
+}
+
+.wp-mcp-ai-modal-prompt-intro {
+	padding: 16px 0;
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.5;
+	border-bottom: 1px solid #ddd;
+	margin-bottom: 16px;
+}
+
+.wp-mcp-ai-modal-prompt-intro strong {
+	display: block;
+	color: #1d2327;
+	margin-bottom: 8px;
+}
+
+/* Attachments list for manual tab */
+.wp-mcp-ai-attachments-list {
+	margin: 10px 0 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wp-mcp-ai-attachment-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	margin: 4px 0;
+	background: #f0f0f1;
+	border-radius: 4px;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-attachment-item.uploading {
+	background: #e5e5e5;
+	opacity: 0.7;
+}
+
+.wp-mcp-ai-attachment-item.error {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.wp-mcp-ai-attachment-item .name {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-right: 10px;
+}
+
+.wp-mcp-ai-attachment-item .status {
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-attachment-item .remove-attachment {
+	background: none;
+	border: none;
+	color: #d63638;
+	font-size: 18px;
+	font-weight: bold;
+	cursor: pointer;
+	padding: 0 4px;
+	line-height: 1;
+}
+
+.wp-mcp-ai-attachment-item .remove-attachment:hover {
+	color: #a00;
+}
+
+/* No builder message */
+.wp-mcp-ai-modal-no-builder {
+	padding: 40px 20px;
+	text-align: center;
+	background: #f6f7f7;
+	border-radius: 4px;
+	color: #50575e;
+}
+
+/* Loading state */
+.wp-mcp-ai-modal.loading .wp-mcp-ai-modal-body {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.wp-mcp-ai-modal.loading #wp-mcp-ai-submit-create::after {
+	content: '';
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	margin-left: 8px;
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spin 0.6s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Error message */
+.wp-mcp-ai-error-message {
+	background: #f8d7da;
+	color: #721c24;
+	padding: 12px;
+	border: 1px solid #f5c6cb;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-success-message {
+	background: #d4edda;
+	color: #155724;
+	padding: 12px;
+	border: 1px solid #c3e6cb;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}

@@ -1,0 +1,1197 @@
+<?php
+/**
+ * Chat Controller for REST API
+ *
+ * Handles chat-related endpoints including MCP chat, browser chat,
+ * and transcript management.
+ *
+ * @package WP_MCP_AI
+ * @since 1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Chat Controller Class
+ *
+ * Manages all chat-related REST API endpoints with support for:
+ * - MCP remote clients (/chat) with 5 iteration limit
+ * - Browser clients (/chat-client) with 15 iteration limit
+ * - Chat transcript management (/chat-transcripts)
+ * - SSE streaming for real-time responses
+ */
+class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
+	/**
+	 * Allowed response metadata fields for manual transcript saves.
+	 *
+	 * These fields can be included in the response_metadata parameter when
+	 * manually saving a conversation. Only whitelisted fields are accepted
+	 * to prevent injection of arbitrary data.
+	 *
+	 * @var array
+	 */
+	const ALLOWED_RESPONSE_METADATA_FIELDS = array(
+		'usage',
+		'provider',
+		'id',
+		'object',
+		'created',
+		'service_tier',
+		'system_fingerprint',
+	);
+
+	/**
+	 * Reference to the main REST controller for shared functionality.
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	private $main_controller;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param WP_MCP_AI_REST                    $main_controller Main REST controller.
+	 * @param WP_MCP_AI_REST_Authenticator|null $authenticator   Authentication handler (optional, for DI).
+	 * @param WP_MCP_AI_REST_Validator|null     $validator       Request validator (optional, for DI).
+	 */
+	public function __construct( $main_controller = null, $authenticator = null, $validator = null ) {
+		parent::__construct( $authenticator, $validator );
+		$this->main_controller = $main_controller;
+	}
+
+	/**
+	 * Register chat routes.
+	 *
+	 * Registers all chat-related REST API endpoints:
+	 * - POST /chat: MCP remote client chat with 5 iteration limit
+	 * - GET /chat: SSE handshake for streaming chat responses
+	 * - POST /chat-client: Browser client chat with 15 iteration limit
+	 * - GET /chat-client: SSE handshake for browser chat streaming
+	 * - GET /chat-transcripts: List chat transcripts for authenticated user
+	 * - POST /chat-transcripts: Save a chat transcript to persistent storage
+	 * - GET /chat-transcripts/{session_key}: Retrieve specific transcript by session key
+	 * - DELETE /chat-transcripts/{session_key}: Delete a specific transcript
+	 *
+	 * All endpoints support multiple authentication methods:
+	 * - WordPress REST nonce (same-origin requests)
+	 * - Assistant-issued bearer tokens (scoped to specific assistant)
+	 * - Auth0 bearer tokens (enterprise integrations)
+	 * - Guest tokens (public chat surfaces with allow_guests enabled)
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_routes() {
+		// /chat - MCP remote client chat.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/chat',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_chat_request' ),
+					'args'                => $this->get_chat_endpoint_args(),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_chat_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /chat-client - Browser client chat.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/chat-client',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_chat_client_request' ),
+					'args'                => $this->get_chat_endpoint_args(),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_chat_client_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /chat-transcripts - List all transcripts.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/chat-transcripts',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_chat_transcripts' ),
+					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_chat_transcript_save' ),
+					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'args'                => array(
+						'assistant_id'      => array(
+							'description'       => __( 'ID of the assistant for this chat transcript.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+						'session_key'       => array(
+							'description'       => __( 'Session key for this conversation.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'messages'          => array(
+							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
+							'type'              => 'array',
+							'required'          => true,
+							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
+							'items'             => array(
+								'type'       => 'object',
+								'properties' => array(
+									'role'    => array(
+										'type' => 'string',
+										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+									),
+									'content' => array(
+										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
+										'oneOf'       => array(
+											array( 'type' => 'null' ),
+											array( 'type' => 'string' ),
+											array(
+												'type'  => 'array',
+												'items' => array(
+													'type' => 'object',
+												),
+											),
+										),
+									),
+									'display' => array(
+										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'wp-mcp-ai' ),
+										'type'        => 'object',
+										'required'    => false,
+									),
+								),
+							),
+						),
+						'response_metadata' => array(
+							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'wp-mcp-ai' ),
+							'type'        => 'object',
+							'required'    => false,
+						),
+					),
+				),
+			)
+		);
+
+		// /chat-transcripts/{session_key} - Individual transcript operations.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/chat-transcripts/(?P<session_key>[^/]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_chat_transcript_get' ),
+					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'args'                => array(
+						'session_key'  => array(
+							'description'       => __( 'Session key for the transcript.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+						),
+						'user_id'      => array(
+							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'assistant_id' => array(
+							'description'       => __( 'Assistant ID to filter transcripts by.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'handle_chat_transcript_delete' ),
+					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'args'                => array(
+						'session_key' => array(
+							'description'       => __( 'Session key for the transcript.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Get chat endpoint arguments.
+	 *
+	 * @return array Endpoint arguments.
+	 */
+	private function get_chat_endpoint_args() {
+		return array(
+			'assistant_id' => array(
+				'description'       => __( 'ID of the assistant to use for this chat. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+				'type'              => 'integer',
+				'required'          => false,
+				'sanitize_callback' => 'absint',
+			),
+			'messages'     => array(
+				'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
+				'type'              => 'array',
+				'required'          => true,
+				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
+				'items'             => array(
+					'type'       => 'object',
+					'properties' => array(
+						'role'    => array(
+							'type' => 'string',
+							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+						),
+						'content' => array(
+							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
+							'oneOf'       => array(
+								array( 'type' => 'null' ),
+								array( 'type' => 'string' ),
+								array(
+									'type'  => 'array',
+									'items' => array(
+										'type' => 'object',
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+			'attachments'  => array(
+				'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
+				'type'              => 'array',
+				'required'          => false,
+				'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
+				'items'             => array(
+					'type'       => 'object',
+					'properties' => array(
+						'file_id' => array(
+							'type' => 'integer',
+						),
+						'url'     => array(
+							'type'   => 'string',
+							'format' => 'uri',
+						),
+					),
+				),
+			),
+			'options'      => array(
+				'description' => __( 'Optional request options to override assistant defaults.', 'wp-mcp-ai' ),
+				'type'        => 'object',
+				'required'    => false,
+				'properties'  => array(
+					'model'           => array(
+						'type' => 'string',
+					),
+					'temperature'     => array(
+						'type'    => 'number',
+						'minimum' => 0,
+						'maximum' => 2,
+					),
+					'stream'          => array(
+						'type' => 'boolean',
+					),
+					'response_format' => array(
+						'description' => __( 'Response format configuration (e.g., for JSON mode).', 'wp-mcp-ai' ),
+						'type'        => 'object',
+						'properties'  => array(
+							'type'        => array(
+								'type' => 'string',
+								'enum' => array( 'text', 'json_object', 'json_schema' ),
+							),
+							'json_schema' => array(
+								'type' => 'object',
+							),
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Permission check for chat transcripts endpoints.
+	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
+	 */
+	public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'chat_transcripts_permissions_check' ) ) {
+			return $this->main_controller->chat_transcripts_permissions_check( $request );
+		}
+
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
+	}
+
+	/**
+	 * Permission check for chat endpoints.
+	 *
+	 * Supports multiple authentication methods:
+	 * - WordPress nonce (for same-origin requests)
+	 * - Bearer token (for API access)
+	 * - Guest token (for public chat surfaces)
+	 *
+	 * Falls back to base class authentication if main controller is unavailable.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
+	 */
+	public function permissions_check( WP_REST_Request $request ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check' ) ) {
+			return $this->main_controller->permissions_check( $request );
+		}
+
+		// Fallback: Use base class authentication.
+		return $this->permissions_check_authenticated( $request );
+	}
+
+	/**
+	 * Handle /chat request (MCP remote clients).
+	 *
+	 * Delegates to main REST controller for AI chat functionality.
+	 * Returns 503 Service Unavailable when main controller is not available,
+	 * as chat requires AI model integration that cannot be self-contained.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_request( WP_REST_Request $request ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_chat_request' ) ) {
+			return $this->main_controller->handle_chat_request( $request );
+		}
+
+		// Self-contained fallback: Chat requires AI model integration.
+		// Return 503 to indicate service is temporarily unavailable.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null',
+				array(
+					'route'   => $request->get_route(),
+					'method'  => $request->get_method(),
+					'context' => 'handle_chat_request',
+				)
+			);
+		}
+
+		return $this->error(
+			'wp_mcp_ai_chat_unavailable',
+			__( 'Chat service is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+			503
+		);
+	}
+
+	/**
+	 * Handle /chat-client request (browser clients).
+	 *
+	 * This endpoint is specifically designed for browser chat interfaces
+	 * and applies relaxed iteration limits (15) compared to the MCP protocol endpoint (1).
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_client_request( WP_REST_Request $request ) {
+		// Set higher max_iterations for browser chat UI (allows more complex multi-tool workflows).
+		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_chat_client_max_iterations' ), 10, 2 );
+
+		// Delegate to the chat handler (which delegates to main controller for now).
+		$response = $this->handle_chat_request( $request );
+
+		// Remove filter to avoid affecting other requests.
+		remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_chat_client_max_iterations' ), 10 );
+
+		return $response;
+	}
+
+	/**
+	 * Get maximum agentic loop iterations for chat client requests.
+	 *
+	 * Browser-based chat UI gets higher limits than MCP protocol clients.
+	 *
+	 * Priority order:
+	 * 1. Per-assistant config (highest priority)
+	 * 2. Admin setting (filter_max_agentic_iterations)
+	 * 3. Chat client default (15 iterations)
+	 *
+	 * @param int   $default_max      Default max iterations (may include admin setting if applied).
+	 * @param array $assistant_config Assistant configuration.
+	 * @return int Maximum iterations allowed.
+	 */
+	public function get_chat_client_max_iterations( $default_max, $assistant_config = array() ) {
+		// Allow per-assistant override.
+		if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
+			return absint( $assistant_config['max_agentic_iterations'] );
+		}
+
+		// If admin setting was applied by custom filters applicator (priority 5),.
+
+		// it will be in $default_max. Only use chat client default if $default_max.
+
+		// is still the base default (5 for /chat endpoint).
+		// This allows admin setting to override the chat client default.
+		if ( $default_max > 5 ) {
+			// Admin setting or another filter has already increased the limit.
+			return $default_max;
+		}
+
+		// Chat client default: 15 iterations (vs 5 for MCP protocol).
+		return 15;
+	}
+
+	/**
+	 * Handle list transcripts request.
+	 *
+	 * Retrieves all chat transcripts for the current user.
+	 * Supports pagination and filtering by session_key or assistant_id.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_transcripts( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcripts',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$user_id = absint( $request->get_param( 'user_id' ) );
+
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+
+		if ( ! $user_id ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcripts: No user ID available',
+				array(
+					'requested_user_id' => $request->get_param( 'user_id' ),
+					'current_user_id'   => get_current_user_id(),
+					'is_user_logged_in' => is_user_logged_in(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_user',
+				__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcripts: Request parameters',
+			array(
+				'raw_session_key'        => $request->get_param( 'session_key' ),
+				'normalized_session_key' => $session_key,
+				'user_id'                => $user_id,
+				'assistant_id'           => $assistant_id,
+			)
+		);
+
+		if ( '' !== $session_key ) {
+			$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+
+			if ( is_wp_error( $session ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'handle_chat_transcripts: Error retrieving session',
+					array(
+						'error_code'    => $session->get_error_code(),
+						'error_message' => $session->get_error_message(),
+						'session_key'   => $session_key,
+						'user_id'       => $user_id,
+					)
+				);
+
+				// Handle gracefully for unavailable transcript storage (JetEngine not active).
+
+				if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
+					return rest_ensure_response(
+						array(
+							'session' => null,
+							'message' => $session->get_error_message(),
+						)
+					);
+				}
+
+				// Return error directly for missing transcripts (will be 404).
+
+				return $session;
+			}
+
+			return rest_ensure_response( array( 'session' => $session ) );
+		}
+
+		$per_page = (int) $request->get_param( 'per_page' );
+
+		if ( $per_page <= 0 ) {
+			$per_page = 20;
+		}
+
+		$per_page = min( 100, max( 1, $per_page ) );
+
+		$page = (int) $request->get_param( 'page' );
+
+		if ( $page <= 0 ) {
+			$page = 1;
+		}
+
+		$sessions = $this->main_controller->get_transcript_sessions( $user_id, $per_page, $page, $assistant_id );
+
+		if ( is_wp_error( $sessions ) ) {
+			if ( 'wp_mcp_ai_transcripts_unavailable' === $sessions->get_error_code() ) {
+				return rest_ensure_response(
+					array(
+						'sessions' => array(),
+						'total'    => 0,
+						'per_page' => $per_page,
+						'page'     => $page,
+						'message'  => $sessions->get_error_message(),
+					)
+				);
+			}
+
+			return $sessions;
+		}
+
+		return rest_ensure_response(
+			array(
+				'sessions' => isset( $sessions['items'] ) ? $sessions['items'] : array(),
+				'total'    => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
+				'per_page' => $per_page,
+				'page'     => $page,
+			)
+		);
+	}
+
+	/**
+	 * Save a chat transcript explicitly without requiring a chat response.
+	 *
+	 * This endpoint allows the frontend to persist a conversation to CCT
+	 * before clearing it (e.g., when starting a new chat or switching conversations).
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_transcript_save( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_save',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$this->main_controller->hydrate_request_body_params( $request );
+
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$messages     = $request->get_param( 'messages' );
+
+		if ( ! $assistant_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_assistant',
+				__( 'Assistant ID is required to save a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( '' === $session_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_session',
+				__( 'Session key is required to save a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( empty( $messages ) || ! is_array( $messages ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_messages',
+				__( 'Messages array is required to save a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Validate assistant access.
+		$assistant_post = $this->main_controller->validate_assistant_access( $assistant_id );
+		if ( is_wp_error( $assistant_post ) ) {
+			return $assistant_post;
+		}
+
+		// Sanitize messages.
+		$sanitized_messages = $this->validator->sanitize_messages( $messages );
+		if ( is_wp_error( $sanitized_messages ) ) {
+			return $sanitized_messages;
+		}
+
+		$clean_messages = $sanitized_messages['messages'];
+
+		if ( empty( $clean_messages ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_invalid_messages',
+				__( 'No valid messages to save.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Get user ID.
+		$user_id = get_current_user_id();
+
+		// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
+		// The permission check already validated the guest token if present.
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcript_save: Saving transcript',
+			array(
+				'session_key'   => $session_key,
+				'assistant_id'  => $assistant_id,
+				'user_id'       => $user_id,
+				'message_count' => count( $clean_messages ),
+				'source'        => 'chat_client',
+			)
+		);
+
+		// Get assistant configuration for metadata.
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
+		$provider         = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
+
+		// Get optional response metadata (usage data, provider info, etc.) if provided.
+		$response_metadata = $request->get_param( 'response_metadata' );
+		if ( ! is_array( $response_metadata ) ) {
+			$response_metadata = array();
+		}
+
+		// Build a response payload from the conversation messages.
+		// When manually saving a conversation, we need to construct a response that includes.
+
+		// the assistant messages in the expected OpenAI format so they can be properly extracted.
+
+		// when the transcript is loaded later.
+		$response = $this->build_response_from_messages( $clean_messages, $model, $response_metadata );
+
+		// Add provider to response if available and not already set.
+		if ( '' !== $provider && ! isset( $response['provider'] ) ) {
+			$response['provider'] = $provider;
+		}
+
+		// Build context for the transcript recorder.
+		$context = array(
+			'session_key'           => $session_key,
+			'save_transcript'       => true,
+			'request_started_at'    => microtime( true ),
+			'response_completed_at' => microtime( true ),
+		);
+
+		// Use the transcript recorder to save.
+		$recorded_session_key = null;
+		if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+			$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
+				$assistant_id,
+				$clean_messages,
+				array( 'model' => $model ),
+				$response,
+				$request,
+				$user_id,
+				$context
+			);
+		}
+
+		// Check if recording failed.
+		if ( null === $recorded_session_key ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'handle_chat_transcript_save: Failed to save transcript',
+				array(
+					'session_key'   => $session_key,
+					'assistant_id'  => $assistant_id,
+					'user_id'       => $user_id,
+					'message_count' => count( $clean_messages ),
+					'reason'        => 'Recorder returned null',
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_transcript_save_failed',
+				__( 'Failed to save transcript. Please ensure JetEngine Custom Content Types is active and properly configured.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'handle_chat_transcript_save: Transcript saved successfully',
+			array(
+				'session_key'   => $session_key,
+				'assistant_id'  => $assistant_id,
+				'user_id'       => $user_id,
+				'message_count' => count( $clean_messages ),
+			)
+		);
+
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'session_key' => $recorded_session_key,
+				'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
+			)
+		);
+	}
+
+	/**
+	 * Handle retrieval of a specific chat transcript session by session key.
+	 *
+	 * This endpoint provides RESTful access to a specific transcript using the
+	 * session key in the URL path (e.g., /chat-transcripts/{session_key}).
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_transcript_get( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_get',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$user_id      = absint( $request->get_param( 'user_id' ) );
+
+		if ( '' === $session_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_invalid_session',
+				__( 'A valid session key is required to retrieve a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+
+		if ( ! $user_id ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcript_get: No user ID available',
+				array(
+					'requested_user_id' => $request->get_param( 'user_id' ),
+					'current_user_id'   => get_current_user_id(),
+					'is_user_logged_in' => is_user_logged_in(),
+					'session_key'       => $session_key,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_user',
+				__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcript_get: Request parameters',
+			array(
+				'session_key'  => $session_key,
+				'user_id'      => $user_id,
+				'assistant_id' => $assistant_id,
+			)
+		);
+
+		$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+
+		if ( is_wp_error( $session ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcript_get: Error retrieving session',
+				array(
+					'error_code'    => $session->get_error_code(),
+					'error_message' => $session->get_error_message(),
+					'session_key'   => $session_key,
+					'user_id'       => $user_id,
+				)
+			);
+
+			// Handle gracefully for unavailable transcript storage (JetEngine not active).
+
+			if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
+				return rest_ensure_response(
+					array(
+						'session' => null,
+						'message' => $session->get_error_message(),
+					)
+				);
+			}
+
+			// Return error directly for missing transcripts (will be 404).
+
+			return $session;
+		}
+
+		return rest_ensure_response( array( 'session' => $session ) );
+	}
+
+	/**
+	 * Handle deletion of a chat transcript session.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_chat_transcript_delete( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_delete',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$session_key = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+
+		if ( '' === $session_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_invalid_session',
+				__( 'A valid session key is required to delete a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$user_id = get_current_user_id();
+
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_user',
+				__( 'You must be logged in to delete a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcript_delete: Deleting transcript',
+			array(
+				'session_key' => $session_key,
+				'user_id'     => $user_id,
+				'source'      => 'chat_client',
+			)
+		);
+
+		$repository = $this->main_controller->get_transcript_repository();
+		$table      = $repository->get_table_name();
+
+		if ( '' === $table ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_unavailable',
+				__( 'Chat transcripts are not configured or available.', 'wp-mcp-ai' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		if ( ! $repository->table_exists() ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_unavailable',
+				__( 'The transcript storage table does not exist.', 'wp-mcp-ai' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		// Delete all transcript entries for this session and user.
+		$deleted = $repository->delete_transcript( $session_key, $user_id );
+
+		if ( false === $deleted ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'handle_chat_transcript_delete: Failed to delete transcript',
+				array(
+					'session_key' => $session_key,
+					'user_id'     => $user_id,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_delete_failed',
+				__( 'Failed to delete the transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'handle_chat_transcript_delete: Transcript deleted successfully',
+			array(
+				'session_key'  => $session_key,
+				'user_id'      => $user_id,
+				'deleted_rows' => $deleted,
+			)
+		);
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'deleted' => $deleted,
+				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
+			)
+		);
+	}
+
+	/**
+	 * Build a response payload from conversation messages for transcript storage.
+	 *
+	 * When manually saving a conversation (not from a live chat response), we need to
+	 * construct a response payload that matches the expected OpenAI response format.
+	 * This ensures that when the transcript is loaded later, the messages can be
+	 * properly extracted from the response_payload field.
+	 *
+	 * The response payload will include all assistant messages from the conversation
+	 * in the 'choices' array, formatted according to the OpenAI API response schema.
+	 *
+	 * Optionally accepts response metadata (usage data, provider info, etc.) that
+	 * will be merged into the response payload to preserve this information.
+	 *
+	 * @param array  $messages         Clean sanitized messages array.
+	 * @param string $model            Model identifier.
+	 * @param array  $response_metadata Optional response metadata (usage, provider, etc.).
+	 * @return array Response payload with choices containing assistant messages.
+	 */
+	private function build_response_from_messages( array $messages, $model, array $response_metadata = array() ) {
+		$choices = array();
+		$index   = 0;
+
+		// Extract all assistant messages and add them to choices array.
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
+				continue;
+			}
+
+			// Only include assistant messages in the response payload.
+			// User, system, and tool messages are stored in request_payload.
+			if ( 'assistant' === $message['role'] ) {
+				$choice = array(
+					'index'         => $index++,
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => isset( $message['content'] ) ? $message['content'] : null,
+					),
+					'finish_reason' => 'stop',
+				);
+
+				// Preserve tool_calls if present in the assistant message.
+				if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+					$choice['message']['tool_calls'] = $message['tool_calls'];
+				}
+
+				$choices[] = $choice;
+			}
+		}
+
+		// Build the base response payload in OpenAI format.
+		$response = array(
+			'model'   => $model,
+			'choices' => $choices,
+		);
+
+		// Merge in optional response metadata if provided.
+		// This allows preserving usage data, provider info, response IDs, etc.
+		if ( ! empty( $response_metadata ) && is_array( $response_metadata ) ) {
+			foreach ( self::ALLOWED_RESPONSE_METADATA_FIELDS as $field ) {
+				if ( isset( $response_metadata[ $field ] ) ) {
+					// Sanitize based on field type.
+					switch ( $field ) {
+						case 'usage':
+							// Validate and sanitize usage data structure.
+							$usage = $this->sanitize_usage_data( $response_metadata[ $field ] );
+							if ( ! empty( $usage ) ) {
+								$response[ $field ] = $usage;
+							}
+							break;
+
+						case 'provider':
+							$response[ $field ] = sanitize_key( $response_metadata[ $field ] );
+							break;
+
+						case 'id':
+						case 'object':
+						case 'service_tier':
+						case 'system_fingerprint':
+							$response[ $field ] = sanitize_text_field( $response_metadata[ $field ] );
+							break;
+
+						case 'created':
+							$response[ $field ] = absint( $response_metadata[ $field ] );
+							break;
+					}
+				}
+			}
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Sanitize and validate usage data structure.
+	 *
+	 * Validates that usage data contains the expected fields with appropriate types.
+	 * Returns a sanitized usage array or empty array if invalid.
+	 *
+	 * @param mixed $usage_data Raw usage data from request.
+	 * @return array Sanitized usage data or empty array if invalid.
+	 */
+	private function sanitize_usage_data( $usage_data ) {
+		if ( ! is_array( $usage_data ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+
+		// Sanitize top-level token counts.
+		$token_fields = array( 'prompt_tokens', 'completion_tokens', 'total_tokens' );
+		foreach ( $token_fields as $field ) {
+			if ( isset( $usage_data[ $field ] ) ) {
+				$value = absint( $usage_data[ $field ] );
+				if ( $value >= 0 ) {
+					$sanitized[ $field ] = $value;
+				}
+			}
+		}
+
+		// Sanitize prompt_tokens_details if present.
+		if ( isset( $usage_data['prompt_tokens_details'] ) && is_array( $usage_data['prompt_tokens_details'] ) ) {
+			$prompt_details = array();
+			$detail_fields  = array( 'cached_tokens', 'audio_tokens' );
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['prompt_tokens_details'][ $field ] ) ) {
+					$prompt_details[ $field ] = absint( $usage_data['prompt_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $prompt_details ) ) {
+				$sanitized['prompt_tokens_details'] = $prompt_details;
+			}
+		}
+
+		// Sanitize completion_tokens_details if present.
+		if ( isset( $usage_data['completion_tokens_details'] ) && is_array( $usage_data['completion_tokens_details'] ) ) {
+			$completion_details = array();
+			$detail_fields      = array(
+				'reasoning_tokens',
+				'audio_tokens',
+				'accepted_prediction_tokens',
+				'rejected_prediction_tokens',
+			);
+
+			foreach ( $detail_fields as $field ) {
+				if ( isset( $usage_data['completion_tokens_details'][ $field ] ) ) {
+					$completion_details[ $field ] = absint( $usage_data['completion_tokens_details'][ $field ] );
+				}
+			}
+
+			if ( ! empty( $completion_details ) ) {
+				$sanitized['completion_tokens_details'] = $completion_details;
+			}
+		}
+
+		return $sanitized;
+	}
+}
