@@ -126,10 +126,10 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           
           # Update version in main plugin file header
-          sed -i "s/Version: .*/Version: ${VERSION}/" wp-mcp-ai.php
+          sed -i "s/Version: .*/Version: ${VERSION}/" mcp-ai-wpoos.php
           
           # Update version constant
-          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" wp-mcp-ai.php
+          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" mcp-ai-wpoos.php
           
           # Update version in readme.txt
           sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
@@ -137,8 +137,8 @@ jobs:
           echo "✅ Version updated to ${VERSION}"
           
           # Verify updates
-          grep "Version:" wp-mcp-ai.php
-          grep "WP_MCP_AI_VERSION" wp-mcp-ai.php
+          grep "Version:" mcp-ai-wpoos.php
+          grep "WP_MCP_AI_VERSION" mcp-ai-wpoos.php
           grep "Stable tag:" readme.txt
 
       - name: Create plugin directory structure
@@ -401,8 +401,8 @@ jobs:
         if: steps.check_creds.outputs.has_creds == 'true'
         run: |
           VERSION="${{ needs.build.outputs.version }}"
-          sed -i "s/Version: .*/Version: ${VERSION}/" wp-mcp-ai.php
-          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" wp-mcp-ai.php
+          sed -i "s/Version: .*/Version: ${VERSION}/" mcp-ai-wpoos.php
+          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" mcp-ai-wpoos.php
           sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
 
       - name: Deploy to WordPress.org
