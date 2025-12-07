@@ -76,7 +76,7 @@ composer run test
 **Step 1:** On a machine with internet, create the package:
 ```bash
 git clone [repository]
-cd wp-mcp-ai
+cd mcp-ai-wpoos
 composer install
 ./bin/package-vendor-dev.sh
 ```
