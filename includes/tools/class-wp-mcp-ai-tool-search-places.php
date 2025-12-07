@@ -177,6 +177,29 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return $result;
 		}
 
+		// Add summary for frontend display.
+		$place_count = isset( $result['results'] ) && is_array( $result['results'] ) ? count( $result['results'] ) : 0;
+		
+		if ( ! empty( $query ) ) {
+			$summary = sprintf(
+				/* translators: 1: number of places, 2: search query */
+				__( 'Found %1$d place(s) for "%2$s"', 'wp-mcp-ai' ),
+				$place_count,
+				$query
+			);
+		} else {
+			$summary = sprintf(
+				/* translators: %d: number of places */
+				__( 'Found %d nearby place(s)', 'wp-mcp-ai' ),
+				$place_count
+			);
+		}
+
+		$result = array_merge(
+			array( 'summary' => $summary ),
+			$result
+		);
+
 		/**
 		 * Allow third parties to filter the places search result before it is returned.
 		 *

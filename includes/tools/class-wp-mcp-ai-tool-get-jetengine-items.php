@@ -140,7 +140,16 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		return $results;
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: number of items, 2: content type */
+				__( 'Found %1$d %2$s item(s)', 'wp-mcp-ai' ),
+				count( $results ),
+				$content_type
+			),
+			'items'   => $results,
+			'count'   => count( $results ),
+		);
 	}
 
 	/**

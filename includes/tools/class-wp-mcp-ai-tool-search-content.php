@@ -211,7 +211,16 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		return $results;
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: number of results, 2: search term */
+				__( 'Found %1$d result(s) for "%2$s"', 'wp-mcp-ai' ),
+				count( $results ),
+				$search_term
+			),
+			'results' => $results,
+			'count'   => count( $results ),
+		);
 	}
 
 	/**
