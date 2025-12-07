@@ -198,6 +198,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'ARCHITECTURE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -297,6 +298,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'ARCHITECTURE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
