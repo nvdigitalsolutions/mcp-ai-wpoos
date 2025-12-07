@@ -213,7 +213,7 @@ function wp_mcp_ai_get_error_tracking_service() {
  * Helper function to get performance monitor service instance.
  * Returns null if not available (e.g., when Pro addon is not present).
  *
- * Note: Pro addon availability check is performed at service loading time (line 55).
+ * Note: Pro addon availability check is performed at service loading time (line 87).
  * This function only verifies the class was successfully loaded.
  *
  * @return WP_MCP_AI_Performance_Monitor_CCT|null Performance monitor service instance or null.
