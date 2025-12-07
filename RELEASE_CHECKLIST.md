@@ -35,9 +35,10 @@ npm test
 Update the version number in these files:
 
 - [ ] `mcp-ai-wpoos.php` (Plugin header: `Version:` and `WP_MCP_AI_VERSION` constant)
-- [ ] `mcp-ai-wpoos-base.php` (Plugin header: `Version:`)
 - [ ] `readme.txt` (`Stable tag:` field)
 - [ ] `package.json` (if applicable)
+
+**Note**: `mcp-ai-wpoos-base.php` does NOT have a version in the repository - the build script adds it dynamically when creating the WordPress.org base version.
 
 ### 3. Update Changelog
 
@@ -236,12 +237,12 @@ After a successful release, immediately update the version for continued develop
 
 # Update version in these files to X.Y.Z-dev:
 # - mcp-ai-wpoos.php (Version header + WP_MCP_AI_VERSION constant)
-# - mcp-ai-wpoos-base.php (Version header)
 # - readme.txt (Stable tag)
 # - package.json (version field)
+# Note: mcp-ai-wpoos-base.php does not have a version in the repository
 
 # Commit the version update
-git add mcp-ai-wpoos.php mcp-ai-wpoos-base.php readme.txt package.json
+git add mcp-ai-wpoos.php readme.txt package.json
 git commit -m "Bump version to X.Y.Z-dev for continued development"
 git push origin main
 ```
