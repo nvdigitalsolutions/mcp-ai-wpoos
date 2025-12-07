@@ -373,7 +373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'is_admin()', 'wp-mcp-ai' ); ?></th>
-								<td><?php echo is_admin() ? 'true' : 'false'; ?></td>
+								<td><?php echo esc_html( is_admin() ? 'true' : 'false' ); ?></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Current Screen', 'wp-mcp-ai' ); ?></th>

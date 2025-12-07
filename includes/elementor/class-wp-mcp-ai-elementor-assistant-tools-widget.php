@@ -152,6 +152,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<h3 class="wp-mcp-ai-assistant-tools__title">' . $title_output . '</h3>';
 			}
 		}
@@ -174,6 +175,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 				$empty_output = $this->format_text_inline( $empty_message );
 
 				if ( '' !== $empty_output ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 					echo '<p class="wp-mcp-ai-assistant-tools__notice">' . $empty_output . '</p>';
 				}
 			}
@@ -215,6 +217,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 					$description_output = wp_kses_post( $description_output );
 
 					if ( '' !== $description_output ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped with wp_kses_post above.
 						echo '<div class="wp-mcp-ai-assistant-tools__description">' . $description_output . '</div>';
 					}
 				}
@@ -275,6 +278,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 }
 CSS;
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS is hardcoded above.
 		echo '<style>' . $style . '</style>';
 
 		$script = <<<'JS'
@@ -395,6 +399,7 @@ JS;
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is hardcoded above.
 		echo '<script>' . $script . '</script>';
 	}
 

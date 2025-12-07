@@ -59,5 +59,6 @@ if ( function_exists( 'get_block_wrapper_attributes' ) ) {
 }
 
 echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode handles escaping.
 echo do_shortcode( $shortcode );
 echo '</div>';
