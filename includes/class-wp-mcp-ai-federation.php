@@ -69,8 +69,8 @@ class WP_MCP_AI_Federation {
 		add_action( 'wp_mcp_ai_verify_peers', array( 'WP_MCP_AI_Federation_Peer_Verifier', 'verify_all_peers' ) );
 
 		// Register activation/deactivation hooks.
-		register_activation_hook( WP_MCP_AI_PATH . 'wp-mcp-ai.php', array( $this, 'on_activation' ) );
-		register_deactivation_hook( WP_MCP_AI_PATH . 'wp-mcp-ai.php', array( $this, 'on_deactivation' ) );
+		register_activation_hook( WP_MCP_AI_PATH . 'mcp-ai-wpoos.php', array( $this, 'on_activation' ) );
+		register_deactivation_hook( WP_MCP_AI_PATH . 'mcp-ai-wpoos.php', array( $this, 'on_deactivation' ) );
 	}
 
 	/**

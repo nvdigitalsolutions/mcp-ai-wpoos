@@ -24,7 +24,7 @@
         "lint:errors-only": "phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers --error-severity=1 --warning-severity=8 .",
         "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
         "format": "phpcbf --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
-        "pot": "wp i18n make-pot . languages/wp-mcp-ai.pot --exclude=vendor,node_modules",
+        "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
         "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",
         "test": "vendor/bin/phpunit",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/",

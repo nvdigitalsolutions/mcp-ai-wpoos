@@ -3193,7 +3193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			// Check if plugin was recently updated (within last 24 hours).
-			$plugin_file = WP_MCP_AI_PATH . 'wp-mcp-ai.php';
+			$plugin_file = WP_MCP_AI_PATH . 'mcp-ai-wpoos.php';
 			if ( ! file_exists( $plugin_file ) ) {
 				return;
 			}
