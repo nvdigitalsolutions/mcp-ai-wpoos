@@ -97,6 +97,7 @@ svn-*
 test-capability-flags-integration.php
 mcp-diagnostic-debug.php
 test-storage-service.html
+assets/examples
 
 # Keep these files (negation - they will be included)
 !readme.txt
