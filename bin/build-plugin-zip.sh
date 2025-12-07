@@ -160,10 +160,8 @@ if [ "$BUILD_BASE" = true ]; then
     BASE_SLUG="mcp-ai-wpoos-base"
     mkdir -p "build/${BASE_SLUG}"
     
-    # Copy full plugin files EXCEPT pro addons and base entry point
+    # Copy full plugin files EXCEPT pro addons
     # This creates a fully functional standalone plugin
-    # Note: wp-mcp-ai-base.php is excluded because it's only needed for the combined version
-    # to set WP_MCP_AI_BASE_VERSION constant. The base version uses mcp-ai-wpoos.php directly.
     rsync -av --quiet . "build/${BASE_SLUG}/" \
         --exclude '.git' \
         --exclude '.git-branch-info' \
@@ -208,9 +206,15 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'wp-mcp-ai-base.php' \
         --exclude 'addons/pro' \
         --exclude 'assets/examples'
+    
+    # Rename wp-mcp-ai-base.php to mcp-ai-wpoos-base.php for WordPress.org compliance
+    # The main plugin file should match the folder name (mcp-ai-wpoos-base)
+    if [ -f "build/${BASE_SLUG}/wp-mcp-ai-base.php" ]; then
+        mv "build/${BASE_SLUG}/wp-mcp-ai-base.php" "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
+        echo "✓ Renamed wp-mcp-ai-base.php to mcp-ai-wpoos-base.php"
+    fi
     
     # Create ZIP
     cd build
