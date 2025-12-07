@@ -144,14 +144,20 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 			$description_output = $this->format_text_block( $description );
 
 			if ( '' !== $description_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-theme-preview__description">' . $description_output . '</div>';
 			}
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $container_css is escaped in build_container_style.
 		echo '<div class="wp-mcp-ai-theme-preview__chat"' . $container_css . '>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
 		echo $this->render_sample_message( __( 'Assistant response preview', 'wp-mcp-ai' ), 'assistant', $colors );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
 		echo $this->render_sample_message( __( 'User confirmation bubble', 'wp-mcp-ai' ), 'user', $colors );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
 		echo $this->render_sample_message( __( 'Tool summary example', 'wp-mcp-ai' ), 'tool', $colors );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
 		echo $this->render_sample_message( __( 'System status notice', 'wp-mcp-ai' ), 'system', $colors );
 		echo '</div>';
 
@@ -167,6 +173,7 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 						$swatch_style = ' style="background:' . esc_attr( $token['value'] ) . ';"';
 					}
 					echo '<li class="wp-mcp-ai-theme-preview__legend-item">';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $swatch_style is escaped with esc_attr above.
 					echo '<span class="wp-mcp-ai-theme-preview__legend-swatch"' . $swatch_style . '></span>';
 					echo '<span class="wp-mcp-ai-theme-preview__legend-token"><code>' . esc_html( $token['token'] ) . '</code></span>';
 					echo '<span class="wp-mcp-ai-theme-preview__legend-label">' . esc_html( $token['label'] ) . '</span>';
