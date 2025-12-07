@@ -1,7 +1,7 @@
 === WP Open Operator System (WP oOS) ===
 Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
-Tags: ai, assistant, chatbot, openai, gpt, gemini, mcp, automation
+Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.7.1
 Requires PHP: 7.4

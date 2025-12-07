@@ -6,9 +6,11 @@
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Tested up to: 6.7.1
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: mcp-ai-wpoos
  * Domain Path: /languages
  * Network: true
