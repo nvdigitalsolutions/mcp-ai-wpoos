@@ -227,6 +227,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$response = array(
+			'summary'      => sprintf(
+				/* translators: 1: product title, 2: product ID */
+				__( 'Created WooCommerce product: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				$saved_product ? $saved_product->get_name() : $title,
+				$product_id
+			),
 			'product_id'   => $product_id,
 			'product_type' => $saved_product ? $saved_product->get_type() : $product_type,
 			'status'       => $saved_product ? $saved_product->get_status() : 'draft',
