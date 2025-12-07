@@ -174,6 +174,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			global $wpdb;
 
 			// Count encrypted secrets.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s",

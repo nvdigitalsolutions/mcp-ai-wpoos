@@ -4411,6 +4411,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$meta_key = WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY;
 			$like     = '%' . $wpdb->esc_like( $file_id ) . '%';
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$post_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
@@ -6735,6 +6736,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return false;
 			}
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 
 			return $result === $table;
@@ -6905,7 +6907,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 			$row = $wpdb->get_row( $query, ARRAY_A );
 
 			if ( empty( $row['request_payload'] ) ) {

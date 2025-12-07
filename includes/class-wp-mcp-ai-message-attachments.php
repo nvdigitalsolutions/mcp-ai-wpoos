@@ -909,6 +909,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			$serialized_pattern = sprintf( '"file_id";s:%d:"%s"', strlen( $file_id ), $file_id );
 			$serialized_like    = '%' . $wpdb->esc_like( $serialized_pattern ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$results            = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id DESC LIMIT 25",

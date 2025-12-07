@@ -733,6 +733,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
 
 			// Get all user IDs with usage data before deleting.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$user_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -741,6 +742,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			// Delete all usage data.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$deleted = $wpdb->delete(
 				$wpdb->usermeta,
 				array( 'meta_key' => $meta_key ),
@@ -759,6 +761,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Also delete tool-specific token usage data.
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->delete(
 				$wpdb->usermeta,
 				array( 'meta_key' => $tool_meta_key ),

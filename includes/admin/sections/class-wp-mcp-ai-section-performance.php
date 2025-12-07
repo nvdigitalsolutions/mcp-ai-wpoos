@@ -1268,6 +1268,7 @@ composer install</pre>
 		$queries_before = $wpdb->num_queries;
 
 		// Perform a simple query test.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->get_var( 'SELECT 1' );
 
 		$queries_after = $wpdb->num_queries;
@@ -1434,6 +1435,7 @@ composer install</pre>
 	protected function check_autoload_size() {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$autoload_size = $wpdb->get_var(
 			"SELECT SUM(LENGTH(option_value)) 
 			FROM {$wpdb->options} 
@@ -1469,6 +1471,7 @@ composer install</pre>
 	protected function check_transients() {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transient_count = $wpdb->get_var(
 			"SELECT COUNT(*) 
 			FROM {$wpdb->options} 
