@@ -207,15 +207,10 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'addons/pro' \
-        --exclude 'assets/examples' \
-        --exclude 'wp-mcp-ai-base.php'
+        --exclude 'assets/examples'
     
-    # Copy and rename wp-mcp-ai-base.php to mcp-ai-wpoos-base.php for WordPress.org compliance
-    # The main plugin file should match the folder name (mcp-ai-wpoos-base)
-    if [ -f "wp-mcp-ai-base.php" ]; then
-        cp "wp-mcp-ai-base.php" "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
-        echo "✓ Copied wp-mcp-ai-base.php as mcp-ai-wpoos-base.php"
-    fi
+    # Note: mcp-ai-wpoos-base.php is already included via rsync above.
+    # It serves as the main plugin file for the base version (matches folder name).
     
     # Create ZIP
     cd build
@@ -269,6 +264,7 @@ if [ "$BUILD_COMBINED" = true ]; then
     mkdir -p "build/${COMBINED_SLUG}"
     
     # Copy all plugin files (includes both base and pro)
+    # Exclude mcp-ai-wpoos-base.php to prevent duplicate plugin detection in WordPress
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
         --exclude '.git' \
         --exclude '.git-branch-info' \
@@ -313,7 +309,8 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'assets/examples'
+        --exclude 'assets/examples' \
+        --exclude 'mcp-ai-wpoos-base.php'
     
     # Create ZIP
     cd build
