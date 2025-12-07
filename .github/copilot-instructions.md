@@ -1,6 +1,6 @@
-# Copilot Instructions for WP Open Operator System (WP oOS)
+# Copilot Instructions for Open Operator System (WP oOS)
 
-This repository contains **WP Open Operator System (WP oOS)**, a WordPress plugin that provides an AI Assistant framework integrating with OpenAI GPT models, Gemini, Ollama, and MCP (Model Context Protocol) tools.
+This repository contains **Open Operator System (WP oOS)**, a WordPress plugin that provides an AI Assistant framework integrating with OpenAI GPT models, Gemini, Ollama, and MCP (Model Context Protocol) tools.
 
 ## Repository Structure
 
