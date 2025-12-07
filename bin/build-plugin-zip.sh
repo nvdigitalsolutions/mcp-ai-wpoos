@@ -191,6 +191,9 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
         --exclude 'patches' \
+        --exclude 'docs' \
+        --exclude 'core' \
+        --exclude 'shared' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -283,6 +286,9 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
         --exclude 'patches' \
+        --exclude 'docs' \
+        --exclude 'core' \
+        --exclude 'shared' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
