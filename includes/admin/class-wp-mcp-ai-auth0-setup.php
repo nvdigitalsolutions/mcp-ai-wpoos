@@ -208,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 							<?php
 							printf(
 								/* translators: %s: documentation URL */
-								__( 'For complete setup instructions, see the <a href="%s" target="_blank">Auth0 GitHub Bridge documentation</a>.', 'wp-mcp-ai' ),
+								wp_kses_post( __( 'For complete setup instructions, see the <a href="%s" target="_blank">Auth0 GitHub Bridge documentation</a>.', 'wp-mcp-ai' ) ),
 								esc_url( 'https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/mcp-server-authentication.md#bridging-github-identities-via-auth0' )
 							);
 							?>
