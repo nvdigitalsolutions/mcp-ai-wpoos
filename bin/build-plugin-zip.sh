@@ -97,7 +97,7 @@ fi
 
 # Get version if not specified
 if [ -z "$VERSION" ]; then
-    VERSION=$(grep -E "^\s*\*\s*Version:" wp-mcp-ai.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+    VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
     if [ -z "$VERSION" ]; then
         VERSION="dev"
     fi
@@ -163,7 +163,7 @@ if [ "$BUILD_BASE" = true ]; then
     # Copy full plugin files EXCEPT pro addons and base entry point
     # This creates a fully functional standalone plugin
     # Note: wp-mcp-ai-base.php is excluded because it's only needed for the combined version
-    # to set WP_MCP_AI_BASE_VERSION constant. The base version uses wp-mcp-ai.php directly.
+    # to set WP_MCP_AI_BASE_VERSION constant. The base version uses mcp-ai-wpoos.php directly.
     rsync -av --quiet . "build/${BASE_SLUG}/" \
         --exclude '.git' \
         --exclude '.git-branch-info' \

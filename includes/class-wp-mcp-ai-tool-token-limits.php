@@ -125,7 +125,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		add_action( 'wp_mcp_ai_user_tier_changed', array( __CLASS__, 'log_tier_change' ), 10, 4 );
 
 		// Clean up cron on plugin deactivation.
-		register_deactivation_hook( WP_MCP_AI_PATH . 'wp-mcp-ai.php', array( __CLASS__, 'deactivate' ) );
+		register_deactivation_hook( WP_MCP_AI_PATH . 'mcp-ai-wpoos.php', array( __CLASS__, 'deactivate' ) );
 	}
 
 	/**

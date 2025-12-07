@@ -461,7 +461,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 // This must happen BEFORE tools-init.php is loaded to ensure Pro tools are included
 // in the initial tool registration when wp_mcp_ai_register_tools action fires.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+	$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
 	if ( file_exists( $pro_addon_file ) ) {
 		require_once $pro_addon_file;
 	}
@@ -1061,7 +1061,7 @@ if ( ! function_exists( 'wp_mcp_ai_maybe_load_pro_addon' ) ) {
 		}
 
 		// Check if pro addon exists in the addons directory.
-		$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+		$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
 		if ( ! file_exists( $pro_addon_file ) ) {
 			return;
 		}

@@ -36,7 +36,7 @@ add_action( 'admin_post_wp_mcp_ai_github_oauth_callback', array( $github_handler
 add_filter( 'allowed_redirect_hosts', array( $github_handler, 'allow_github_oauth_redirect_host' ), 10, 2 );
 
 // Note: GitHub tools (List Repositories, Manage Codespace, Repository Operations) are now
-// part of the Pro addon and registered via addons/pro/wp-mcp-ai-pro.php
+// part of the Pro addon and registered via addons/pro/mcp-ai-wpoos-pro.php
 
 // Initialize custom tool loader and load custom tools.
 add_action(
