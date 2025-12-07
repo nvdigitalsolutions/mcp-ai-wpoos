@@ -1,32 +1,19 @@
 <?php
 /**
- * Plugin Name: Open Operator System (WP oOS)
- * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.
- * Version: 1.0.0
- * Requires at least: 6.0
- * Requires PHP: 7.4
- * Tested up to: 6.7.1
- * Author: NV Digital Solutions
- * Author URI: https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain: mcp-ai-wpoos-base
- * Domain Path: /languages
- * Network: true
+ * WP MCP AI - Base Version Entry Point
+ *
+ * This file serves as the entry point for the standalone base version
+ * when built for WordPress.org. In the repository, it does NOT have a
+ * plugin header to prevent WordPress from detecting it as a separate plugin.
+ *
+ * The build script (bin/build-plugin-zip.sh) adds the plugin header when
+ * creating the base version distribution for WordPress.org, where this file
+ * gets renamed to mcp-ai-wpoos.php.
  *
  * @package WP_MCP_AI
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
- *
- * ---
- *
- * This is the main entry point for the standalone version of WP oOS.
- * This version works with vanilla WordPress without any third-party dependencies.
- *
- * When distributed for WordPress.org, this file will be renamed to
- * mcp-ai-wpoos.php to match WordPress.org naming conventions.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -38,6 +38,8 @@ Update the version number in these files:
 - [ ] `readme.txt` (`Stable tag:` field)
 - [ ] `package.json` (if applicable)
 
+**Note**: `mcp-ai-wpoos-base.php` does NOT have a version in the repository - the build script adds it dynamically when creating the WordPress.org base version.
+
 ### 3. Update Changelog
 
 - [ ] Add release notes to `CHANGELOG.md`
@@ -223,7 +225,29 @@ svn commit -m "Update plugin assets"
 - [ ] Monitor WordPress.org support forums
 - [ ] Track error logs if applicable
 
-### 3. Update Development Branch
+### 3. Update to Development Version
+
+After a successful release, immediately update the version for continued development:
+
+```bash
+# Determine next version based on planned changes
+# - New features planned: bump MINOR (e.g., 1.0.0 → 1.1.0-dev)
+# - Only bug fixes planned: bump PATCH (e.g., 1.0.0 → 1.0.1-dev)
+# - Breaking changes planned: bump MAJOR (e.g., 1.0.0 → 2.0.0-dev)
+
+# Update version in these files to X.Y.Z-dev:
+# - mcp-ai-wpoos.php (Version header + WP_MCP_AI_VERSION constant)
+# - readme.txt (Stable tag)
+# - package.json (version field)
+# Note: mcp-ai-wpoos-base.php does not have a version in the repository
+
+# Commit the version update
+git add mcp-ai-wpoos.php readme.txt package.json
+git commit -m "Bump version to X.Y.Z-dev for continued development"
+git push origin main
+```
+
+### 4. Update Development Branch
 
 ```bash
 # Merge release back to develop (if using Git Flow)
@@ -232,7 +256,7 @@ git merge main
 git push origin develop
 ```
 
-### 4. Plan Next Release
+### 5. Plan Next Release
 
 - [ ] Review backlog for next version
 - [ ] Prioritize bug fixes and features
@@ -253,6 +277,28 @@ Pre-release versions:
 - `1.0.0-alpha.1`
 - `1.0.0-beta.1`
 - `1.0.0-rc.1`
+
+### Development Version Management
+
+To clearly indicate the development state of the repository:
+
+**After a release is published:**
+1. Immediately update the version to the next planned version with `-dev` suffix
+2. This prevents confusion when developers clone the repository
+3. Example: After releasing `1.0.0`, update to `1.1.0-dev` (for new features) or `1.0.1-dev` (for bug fixes only)
+
+**Determining the next version:**
+- Review the `[Unreleased]` section in CHANGELOG.md
+- If there are new features → bump MINOR version (e.g., `1.0.0` → `1.1.0-dev`)
+- If only bug fixes → bump PATCH version (e.g., `1.0.0` → `1.0.1-dev`)
+- If breaking changes → bump MAJOR version (e.g., `1.0.0` → `2.0.0-dev`)
+
+**When preparing for release:**
+1. Remove the `-dev` suffix from all version strings
+2. Move unreleased changes in CHANGELOG.md to a new version section
+3. Follow the complete release process above
+
+This ensures that anyone cloning the repository sees a development version number that accurately reflects the repository state.
 
 ---
 
