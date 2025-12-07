@@ -65,7 +65,7 @@ class WP_MCP_AI_Test_Multisite_Support extends WP_UnitTestCase {
 	 * Test that the plugin header includes Network: true.
 	 */
 	public function test_plugin_header_has_network_support() {
-		$plugin_file = WP_MCP_AI_PATH . 'wp-mcp-ai.php';
+		$plugin_file = WP_MCP_AI_PATH . 'mcp-ai-wpoos.php';
 		$plugin_data = get_file_data(
 			$plugin_file,
 			array(
