@@ -105,7 +105,16 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		return $results;
+		return array(
+			'summary' => sprintf(
+				/* translators: 1: number of posts, 2: post type */
+				__( 'Found %1$d recent %2$s', 'wp-mcp-ai' ),
+				count( $results ),
+				$post_type
+			),
+			'posts'   => $results,
+			'count'   => count( $results ),
+		);
 	}
 
 	/**

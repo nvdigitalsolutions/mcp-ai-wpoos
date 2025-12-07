@@ -200,6 +200,12 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		$response = array(
+			'summary'   => sprintf(
+				/* translators: 1: post ID, 2: post title */
+				__( 'Post saved: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				get_the_title( $updated_post ),
+				$updated_post->ID
+			),
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),

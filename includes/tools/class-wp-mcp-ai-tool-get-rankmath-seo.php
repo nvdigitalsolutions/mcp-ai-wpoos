@@ -185,6 +185,12 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 		$schema_data = $this->get_schema_data( $post_id );
 
 		return array(
+			'summary'   => sprintf(
+				/* translators: 1: post title, 2: SEO score */
+				__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'wp-mcp-ai' ),
+				get_the_title( $post ),
+				$seo_score ? $seo_score : 0
+			),
 			'post'      => array(
 				'ID'        => $post->ID,
 				'title'     => get_the_title( $post ),

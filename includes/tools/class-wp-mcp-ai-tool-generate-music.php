@@ -385,6 +385,11 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
+			'summary'            => sprintf(
+				/* translators: %s: music file name */
+				__( 'Generated music file: %s', 'wp-mcp-ai' ),
+				$title
+			),
 			'attachment_id'      => (int) $attachment_id,
 			'file'               => $file_path,
 			'file_name'          => wp_basename( $file_path ),

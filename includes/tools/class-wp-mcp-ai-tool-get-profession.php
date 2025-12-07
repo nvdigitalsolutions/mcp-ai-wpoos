@@ -88,6 +88,11 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return array(
+			'summary'    => sprintf(
+				/* translators: %s: profession name */
+				__( 'Profession: %s', 'wp-mcp-ai' ),
+				isset( $profession['name'] ) ? $profession['name'] : $profession_slug
+			),
 			'success'    => true,
 			'profession' => $profession,
 		);

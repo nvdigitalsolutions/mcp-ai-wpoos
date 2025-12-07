@@ -105,7 +105,16 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_nhc_invalid_json', __( 'The National Hurricane Center response could not be decoded.', 'wp-mcp-ai' ) );
 		}
 
-		return $this->sanitize_payload( $decoded );
+		$sanitized = $this->sanitize_payload( $decoded );
+		
+		return array(
+			'summary' => sprintf(
+				/* translators: %d: number of active storms */
+				__( 'Found %d active storm(s)', 'wp-mcp-ai' ),
+				is_countable( $sanitized ) ? count( $sanitized ) : 0
+			),
+			'storms'  => $sanitized,
+		);
 	}
 
 	/**

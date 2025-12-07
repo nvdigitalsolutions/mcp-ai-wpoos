@@ -114,6 +114,12 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		$result = array(
+			'summary'  => sprintf(
+				/* translators: 1: cron hook name, 2: job ID */
+				__( 'Cron job: %1$s (ID: %2$s)', 'wp-mcp-ai' ),
+				$hook,
+				$job_id
+			),
 			'job_id'   => $job_id,
 			'hook'     => $hook,
 			'schedule' => $schedule,

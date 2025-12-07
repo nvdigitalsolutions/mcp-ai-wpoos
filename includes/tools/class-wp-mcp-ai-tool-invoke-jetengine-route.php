@@ -148,7 +148,14 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			return $result;
 		}
 
-		return $result;
+		return array(
+			'summary' => sprintf(
+				/* translators: %s: JetEngine operation */
+				__( 'Executed JetEngine operation: %s', 'wp-mcp-ai' ),
+				$operation
+			),
+			'result'  => $result,
+		);
 	}
 
 	/**

@@ -188,7 +188,15 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 			}
 		} while ( $results_count < $limit );
 
-		return $results;
+		return array(
+			'summary'     => sprintf(
+				/* translators: %d: number of attachments found */
+				__( 'Found %d attachment(s)', 'wp-mcp-ai' ),
+				count( $results )
+			),
+			'attachments' => $results,
+			'count'       => count( $results ),
+		);
 	}
 
 	/**

@@ -135,7 +135,15 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		return $results;
+		return array(
+			'summary' => sprintf(
+				/* translators: %d: number of orders */
+				__( 'Found %d recent order(s)', 'wp-mcp-ai' ),
+				count( $results )
+			),
+			'orders'  => $results,
+			'count'   => count( $results ),
+		);
 	}
 
 	/**

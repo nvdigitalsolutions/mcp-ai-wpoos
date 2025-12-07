@@ -170,7 +170,15 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		return $results;
+		return array(
+			'summary'  => sprintf(
+				/* translators: %d: number of products */
+				__( 'Found %d product(s)', 'wp-mcp-ai' ),
+				count( $results )
+			),
+			'products' => $results,
+			'count'    => count( $results ),
+		);
 	}
 
 	/**

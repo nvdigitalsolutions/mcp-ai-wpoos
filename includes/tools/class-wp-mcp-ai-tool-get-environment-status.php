@@ -143,7 +143,15 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		return $summary;
+		return array(
+			'summary'     => sprintf(
+				/* translators: 1: plugin count, 2: total warnings */
+				__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'wp-mcp-ai' ),
+				count( $summary['plugin_statuses'] ),
+				count( $summary['warnings'] )
+			),
+			'environment' => $summary,
+		);
 	}
 
 	/**

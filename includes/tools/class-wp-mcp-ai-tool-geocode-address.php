@@ -149,6 +149,27 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return $result;
 		}
 
+		// Add summary for frontend display.
+		if ( ! empty( $address ) ) {
+			$summary = sprintf(
+				/* translators: %s: address */
+				__( 'Geocoded address: %s', 'wp-mcp-ai' ),
+				$address
+			);
+		} else {
+			$summary = sprintf(
+				/* translators: 1: latitude, 2: longitude */
+				__( 'Reverse geocoded coordinates: %1$s, %2$s', 'wp-mcp-ai' ),
+				$latitude,
+				$longitude
+			);
+		}
+
+		$result = array_merge(
+			array( 'summary' => $summary ),
+			$result
+		);
+
 		/**
 		 * Allow third parties to filter the geocoding result before it is returned.
 		 *

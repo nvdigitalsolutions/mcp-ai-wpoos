@@ -288,6 +288,11 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return array(
+			'summary'  => sprintf(
+				/* translators: %d: number of reports found */
+				__( 'Found %d ReliefWeb report(s)', 'wp-mcp-ai' ),
+				isset( $decoded['count'] ) ? (int) $decoded['count'] : count( $results )
+			),
 			'filters'  => array_filter(
 				array(
 					'country'       => $country,

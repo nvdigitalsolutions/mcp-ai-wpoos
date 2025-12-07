@@ -189,7 +189,15 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 			wp_reset_postdata();
 		}
 
-		return $results;
+		return array(
+			'summary'   => sprintf(
+				/* translators: %d: number of templates */
+				__( 'Found %d Elementor template(s)', 'wp-mcp-ai' ),
+				count( $results )
+			),
+			'templates' => $results,
+			'count'     => count( $results ),
+		);
 	}
 
 	/**
