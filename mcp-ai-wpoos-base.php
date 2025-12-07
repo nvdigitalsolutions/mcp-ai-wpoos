@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Open Operator System (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ core tools. Patent Pending (Application #19/410,504).
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -20,18 +20,13 @@
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  *
- * Patent Pending: This software is the subject of a pending patent application
- * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
- * Layer with Real-Time Capability Gating and Resource Budgeting."
- *
  * ---
  *
- * This is the main entry point for the standalone base version of WP oOS.
- * This version includes 35+ core tools and works without any third-party
- * plugin dependencies.
+ * This is the main entry point for the standalone version of WP oOS.
+ * This version works with vanilla WordPress without any third-party dependencies.
  *
- * When distributed as the base version (mcp-ai-wpoos-base), this file will
- * be renamed to mcp-ai-wpoos-base.php to match WordPress.org naming conventions.
+ * When distributed for WordPress.org, this file will be renamed to
+ * mcp-ai-wpoos.php to match WordPress.org naming conventions.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

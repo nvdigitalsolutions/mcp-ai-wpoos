@@ -22,7 +22,6 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
 * Ollama (self-hosted, no external data transmission)
 
-**Patent Pending:** WP oOS is the subject of a pending patent application (19/410,504) for its novel System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting.
 
 = Why WP oOS? =
 
@@ -211,6 +210,21 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 * [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
 * [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
 * [WordPress.org Forums](https://wordpress.org/support/plugin/wp-mcp-ai/) - Community support
+
+= Is this plugin patented? =
+
+Yes. WP oOS is the subject of a pending patent application (Application #19/410,504) for "System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting."
+
+**Your Rights:** The patent will not be used to restrict your GPL rights. This plugin is licensed under GPLv3 or later, and you have all the freedoms granted by that license:
+
+* Freedom to use the software for any purpose
+* Freedom to study and modify the source code
+* Freedom to redistribute copies
+* Freedom to distribute modified versions
+
+The patent protects our novel orchestration system while ensuring the open source community retains full GPL rights. We will not use the patent offensively against GPL-licensed derivative works.
+
+For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CONTRIBUTING.md) file.
 
 == Screenshots ==
 

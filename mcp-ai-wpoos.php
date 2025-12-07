@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Open Operator System Pro (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ tools with optional plugin integrations. Patent Pending (Application #19/410,504).
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes comprehensive tools with optional plugin integrations.
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -19,10 +19,6 @@
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
- *
- * Patent Pending: This software is the subject of a pending patent application
- * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
- * Layer with Real-Time Capability Gating and Resource Budgeting."
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
