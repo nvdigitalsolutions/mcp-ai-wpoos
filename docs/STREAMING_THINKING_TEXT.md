@@ -452,4 +452,4 @@ You can customize the appearance using CSS variables:
 
 ## License
 
-This feature is part of WP Open Operator System (WP oOS) and is licensed under GPLv3 or later.
+This feature is part of Open Operator System (WP oOS) and is licensed under GPLv3 or later.

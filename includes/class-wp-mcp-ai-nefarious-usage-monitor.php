@@ -573,7 +573,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			$message = sprintf(
 				/* translators: 1: Site URL, 2: Violation type, 3: Violation message */
 				__(
-					"The WP Open Operator System has been automatically shut down due to suspicious activity.\n\nSite: %1\$s\nViolation Type: %2\$s\nMessage: %3\$s\n\nPlease review the security logs and clear the shutdown from the plugin settings page if this was a false positive.",
+					"The Open Operator System has been automatically shut down due to suspicious activity.\n\nSite: %1\$s\nViolation Type: %2\$s\nMessage: %3\$s\n\nPlease review the security logs and clear the shutdown from the plugin settings page if this was a false positive.",
 					'wp-mcp-ai'
 				),
 				home_url(),
@@ -597,7 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				?>
 				<div class="notice notice-error is-dismissible">
 					<p>
-						<strong><?php esc_html_e( 'WP Open Operator System: Emergency Shutdown Active', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Open Operator System: Emergency Shutdown Active', 'wp-mcp-ai' ); ?></strong>
 					</p>
 					<p>
 						<?php
@@ -622,7 +622,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 					?>
 					<div class="notice notice-warning">
 						<p>
-							<strong><?php esc_html_e( 'WP Open Operator System: Security Violations Detected', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Open Operator System: Security Violations Detected', 'wp-mcp-ai' ); ?></strong>
 						</p>
 						<p>
 							<?php

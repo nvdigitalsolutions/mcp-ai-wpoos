@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the defensive PHP version checking strategy implemented in the WP Open Operator System (WP oOS) plugin to prevent parse errors on servers running PHP versions older than 7.4.
+This document explains the defensive PHP version checking strategy implemented in the Open Operator System (WP oOS) plugin to prevent parse errors on servers running PHP versions older than 7.4.
 
 ## Problem Statement
 

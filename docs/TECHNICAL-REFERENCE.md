@@ -22,7 +22,7 @@
 
 ## Overview
 
-This document provides technical reference material for developers working with the WP Open Operator System (WP oOS) plugin. It consolidates detailed information about:
+This document provides technical reference material for developers working with the Open Operator System (WP oOS) plugin. It consolidates detailed information about:
 
 - Architecture decisions and patterns
 - Bug fixes and their technical solutions

@@ -1,6 +1,6 @@
 # Gemini API Enhancements
 
-This document describes the enhanced Gemini API integration features available in WP Open Operator System (WP oOS).
+This document describes the enhanced Gemini API integration features available in Open Operator System (WP oOS).
 
 ## Overview
 

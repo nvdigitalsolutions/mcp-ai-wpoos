@@ -1,4 +1,4 @@
-# WP Open Operator System (WP oOS)
+# Open Operator System (WP oOS)
 
 [![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
 [![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
@@ -2239,6 +2239,6 @@ See [LICENSE](LICENSE) for full text.
 
 ---
 
-**Thank you for using WP Open Operator System!**
+**Thank you for using Open Operator System!**
 
 For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).

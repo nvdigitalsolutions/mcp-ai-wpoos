@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the session management features implemented in WP Open Operator System (WP oOS) to enhance user experience with chat conversations.
+This document describes the session management features implemented in Open Operator System (WP oOS) to enhance user experience with chat conversations.
 
 ## Implemented Features
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document clarifies the terminology and build artifacts for the WP Open Operator System (WP oOS) plugin.
+This document clarifies the terminology and build artifacts for the Open Operator System (WP oOS) plugin.
 
 ## Three Build Artifacts
 

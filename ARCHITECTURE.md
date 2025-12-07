@@ -3,7 +3,7 @@
 **Last Updated:** December 2025
 **Version:** 1.0.0
 
-This document provides a high-level architectural overview of the WP Open Operator System (WP oOS) plugin. For detailed technical documentation, see the [docs/](docs/) directory.
+This document provides a high-level architectural overview of the Open Operator System (WP oOS) plugin. For detailed technical documentation, see the [docs/](docs/) directory.
 
 ## Table of Contents
 

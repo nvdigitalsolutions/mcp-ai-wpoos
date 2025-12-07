@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation adds foundational support for video understanding capabilities to WP Open Operator System, following Separation of Concerns (SoC) principles established in the repository's Phase 1-3 refactoring.
+This implementation adds foundational support for video understanding capabilities to Open Operator System, following Separation of Concerns (SoC) principles established in the repository's Phase 1-3 refactoring.
 
 **Status:** ✅ Phase 1 Complete (Foundation & Architecture)  
 **Next:** Phase 2 - Gemini File API Integration (2-3 weeks)

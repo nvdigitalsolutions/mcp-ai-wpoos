@@ -4,7 +4,7 @@
 **Plugin Version:** 1.0.0  
 **MCP Version:** 2024-11-05
 
-This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
+This document provides a comprehensive index of all documentation available for the Open Operator System (WP oOS) plugin.
 
 **Total Documentation:** 73+ files in docs/ folder, 5 essential files in root
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation delivers Phase 1 of the AI feature implementation plan, adding two major AI-powered features to WP Open Operator System:
+This implementation delivers Phase 1 of the AI feature implementation plan, adding two major AI-powered features to Open Operator System:
 
 1. **AI-Powered Media Library** - Automatic generation of alt text and captions for uploaded images
 2. **AI-Powered Comments Moderation** - Intelligent spam and toxicity detection for comments

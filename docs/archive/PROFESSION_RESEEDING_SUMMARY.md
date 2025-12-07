@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation adds a comprehensive profession re-seeding feature to the WP oOS (WP Open Operator System) plugin, allowing administrators to update or completely refresh profession templates from the settings area.
+This implementation adds a comprehensive profession re-seeding feature to the WP oOS (Open Operator System) plugin, allowing administrators to update or completely refresh profession templates from the settings area.
 
 ## Problem Statement
 

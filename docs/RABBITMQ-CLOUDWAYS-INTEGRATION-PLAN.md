@@ -25,7 +25,7 @@
 
 ## Executive Summary
 
-This document outlines the plan to integrate RabbitMQ message queuing into WP Open Operator System (WP oOS) when deployed on Cloudways hosting. RabbitMQ provides enterprise-grade message queuing that will significantly enhance:
+This document outlines the plan to integrate RabbitMQ message queuing into Open Operator System (WP oOS) when deployed on Cloudways hosting. RabbitMQ provides enterprise-grade message queuing that will significantly enhance:
 
 1. **Agentic Workflow Processing** - Async tool execution, parallel processing, and improved resilience
 2. **Tool Management** - Decoupled tool execution, retry logic, and workload distribution

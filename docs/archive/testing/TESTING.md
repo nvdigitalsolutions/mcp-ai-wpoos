@@ -1,6 +1,6 @@
-# Testing Guide - WP Open Operator System
+# Testing Guide - Open Operator System
 
-This document describes how to set up and run tests for the WP Open Operator System (WP oOS) plugin.
+This document describes how to set up and run tests for the Open Operator System (WP oOS) plugin.
 
 ## Overview
 

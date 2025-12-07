@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Tools Manager** is a comprehensive interface for viewing and managing all 65+ AI tools available in WP Open Operator System. Located in the Tools & Features tab of the settings dashboard, it provides administrators with a centralized view of all registered tools, their availability status, and dependencies.
+The **Tools Manager** is a comprehensive interface for viewing and managing all 65+ AI tools available in Open Operator System. Located in the Tools & Features tab of the settings dashboard, it provides administrators with a centralized view of all registered tools, their availability status, and dependencies.
 
 ## Accessing the Tools Manager
 

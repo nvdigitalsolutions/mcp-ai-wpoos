@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the session management features implemented in response to the feature request for localStorage monitoring, conversation export, and session management enhancements in WP Open Operator System (WP oOS).
+This document summarizes the session management features implemented in response to the feature request for localStorage monitoring, conversation export, and session management enhancements in Open Operator System (WP oOS).
 
 ## Implementation Status
 

@@ -1,6 +1,6 @@
 # WP oOS Settings Dashboard
 
-This directory contains the modern, modular settings dashboard system for WP Open Operator System.
+This directory contains the modern, modular settings dashboard system for Open Operator System.
 
 ## Overview
 

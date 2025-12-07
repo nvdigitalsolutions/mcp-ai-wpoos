@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the localStorage quota monitoring and conversation export features added to WP Open Operator System (WP oOS).
+This document describes the localStorage quota monitoring and conversation export features added to Open Operator System (WP oOS).
 
 ## Features
 

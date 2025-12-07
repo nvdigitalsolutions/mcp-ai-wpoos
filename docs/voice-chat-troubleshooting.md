@@ -1,6 +1,6 @@
 # Voice Chat Troubleshooting Guide
 
-This document provides troubleshooting steps for voice chat issues in WP Open Operator System (WP oOS).
+This document provides troubleshooting steps for voice chat issues in Open Operator System (WP oOS).
 
 ## Common Issue: Voice Chat Returns 404 Error
 

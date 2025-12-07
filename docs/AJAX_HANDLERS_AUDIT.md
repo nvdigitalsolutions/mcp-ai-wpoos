@@ -1,7 +1,7 @@
 # AJAX Handler Registration and Security Audit Report
 
 **Date**: 2025-11-15  
-**Plugin**: WP Open Operator System (WP oOS)  
+**Plugin**: Open Operator System (WP oOS)  
 **Version**: Current HEAD
 
 ## Executive Summary

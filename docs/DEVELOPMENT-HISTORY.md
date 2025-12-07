@@ -21,7 +21,7 @@
 
 ## Overview
 
-This document tracks the evolution of the WP Open Operator System (WP oOS) plugin through its major development phases, refactoring efforts, code reviews, and security audits. It consolidates information from over 100 individual documentation files that were previously scattered in the repository root.
+This document tracks the evolution of the Open Operator System (WP oOS) plugin through its major development phases, refactoring efforts, code reviews, and security audits. It consolidates information from over 100 individual documentation files that were previously scattered in the repository root.
 
 ### Key Statistics
 - **Total consolidated documents:** 107

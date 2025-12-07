@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Last Updated:** November 6, 2024
 
-This quick reference provides fast access to the most common tasks and commands for WP Open Operator System.
+This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ---
 

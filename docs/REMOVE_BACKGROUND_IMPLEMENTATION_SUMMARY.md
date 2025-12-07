@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a complete remove background tool for the WP oOS (WP Open Operator System) plugin that supports both free and paid background removal methods, making it accessible to all users regardless of budget.
+Successfully implemented a complete remove background tool for the WP oOS (Open Operator System) plugin that supports both free and paid background removal methods, making it accessible to all users regardless of budget.
 
 ## Problem Statement
 
