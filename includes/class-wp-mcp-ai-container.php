@@ -132,7 +132,7 @@ class WP_MCP_AI_Container {
 			throw new Exception(
 				sprintf(
 					'Service "%s" not found in container.',
-					$id
+					esc_html( $id )
 				)
 			);
 		}
@@ -209,8 +209,8 @@ class WP_MCP_AI_Container {
 			throw new Exception(
 				sprintf(
 					'Cannot resolve parameter "%s" for class "%s".',
-					$param_name,
-					$class_name
+					esc_html( $param_name ),
+					esc_html( $class_name )
 				)
 			);
 		}

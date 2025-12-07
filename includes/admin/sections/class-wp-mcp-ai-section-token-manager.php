@@ -159,13 +159,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			global $wpdb;
 
 			// Get all users with usage data.
-			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-			$user_ids = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
-					$meta_key
-				)
-			);
+			$meta_key  = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+			$cache_key = 'wp_mcp_ai_token_users_' . md5( $meta_key );
+			$user_ids  = wp_cache_get( $cache_key, 'wp_mcp_ai' );
+
+			if ( false === $user_ids ) {
+				$user_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+						$meta_key
+					)
+				);
+				wp_cache_set( $cache_key, $user_ids, 'wp_mcp_ai', 300 ); // Cache for 5 minutes.
+			}
 
 			// Preload tiers for all users to optimize performance.
 			if ( ! empty( $user_ids ) && class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
@@ -353,21 +359,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
 		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
 
-		<?php
-		// Render filter bar if component is available.
-		if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
-			echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
-				array(
-					'tab'          => 'token_manager',
-					'view'         => 'per_tool',
-					'search'       => $search, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_attr() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
-					'filter_group' => $filter_group, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_attr() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
-					'clear_url'    => admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_url() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
-				)
-			);
-		}
-		?>
+			<?php
+			// Render filter bar if component is available.
+			if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
+				echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
+					array(
+						'tab'          => 'token_manager',
+						'view'         => 'per_tool',
+						'search'       => esc_attr( $search ),
+						'filter_group' => esc_attr( $filter_group ),
+						'clear_url'    => esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ) ),
+					)
+				);
+			}
+			?>
 
 		<!-- Recommendations Notice -->
 			<?php
@@ -501,7 +507,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						function ( $tool_name, $tool_slug ) use ( $search ) {
 							$search_term = strtolower( trim( $search ) );
 							return false !== stripos( $tool_slug, $search_term ) ||
-								   false !== stripos( $tool_name, $search_term );
+									false !== stripos( $tool_name, $search_term );
 						},
 						ARRAY_FILTER_USE_BOTH
 					);
