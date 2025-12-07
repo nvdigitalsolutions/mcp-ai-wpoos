@@ -207,13 +207,14 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'addons/pro' \
-        --exclude 'assets/examples'
+        --exclude 'assets/examples' \
+        --exclude 'wp-mcp-ai-base.php'
     
-    # Rename wp-mcp-ai-base.php to mcp-ai-wpoos-base.php for WordPress.org compliance
+    # Copy and rename wp-mcp-ai-base.php to mcp-ai-wpoos-base.php for WordPress.org compliance
     # The main plugin file should match the folder name (mcp-ai-wpoos-base)
-    if [ -f "build/${BASE_SLUG}/wp-mcp-ai-base.php" ]; then
-        mv "build/${BASE_SLUG}/wp-mcp-ai-base.php" "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
-        echo "✓ Renamed wp-mcp-ai-base.php to mcp-ai-wpoos-base.php"
+    if [ -f "wp-mcp-ai-base.php" ]; then
+        cp "wp-mcp-ai-base.php" "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
+        echo "✓ Copied wp-mcp-ai-base.php as mcp-ai-wpoos-base.php"
     fi
     
     # Create ZIP
