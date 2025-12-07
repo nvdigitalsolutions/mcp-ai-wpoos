@@ -481,6 +481,18 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 ## 📦 Installation
 
+### For Developers (GitHub Clone)
+
+If you're cloning from GitHub for development:
+
+1. Clone the repository: `git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git`
+2. Copy to `/wp-content/plugins/mcp-ai-wpoos/`
+3. Run `npm install && composer install` to install dependencies
+4. Activate **Open Operator System Pro (WP oOS)** from WordPress admin
+5. This automatically activates the **Pro version** with all 105+ tools
+
+**Note**: The repository includes `mcp-ai-wpoos-base.php` which is used for WordPress.org builds but does NOT appear as a separate plugin when cloning. Only the Pro version (`mcp-ai-wpoos.php`) will be visible in WordPress.
+
 ### Standard Installation
 1. Upload `mcp-ai-wpoos.zip` to `/wp-content/plugins/`
 2. Activate **WP oOS** from the WordPress admin

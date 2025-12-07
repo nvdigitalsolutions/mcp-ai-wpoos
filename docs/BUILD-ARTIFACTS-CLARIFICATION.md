@@ -59,18 +59,32 @@ The base/core plugin (`mcp-ai-wpoos-base-X.Y.Z.zip`):
 
 The `mcp-ai-wpoos-base.php` file is the main entry point for the base version:
 
-- **IS included** in `mcp-ai-wpoos-base-X.Y.Z.zip` (base version only)
+- **In the repository**: Does NOT contain a WordPress plugin header (to prevent duplicate plugin detection when cloning)
+- **During base build**: Build script ADDS the plugin header to make it the main plugin file
+- **IS included** in `mcp-ai-wpoos-base-X.Y.Z.zip` (base version only, with header added)
 - **NOT included** in `mcp-ai-wpoos-X.Y.Z.zip` (combined version - to prevent duplicate plugin detection)
 - **NOT included** in `mcp-ai-wpoos-pro-X.Y.Z.zip` (pro add-on)
-- Contains full WordPress plugin headers for the base version
-- Sets the `WP_MCP_AI_BASE_VERSION` constant
+- Sets the `WP_MCP_AI_BASE_VERSION` constant to `true`
 - Loads the core plugin file `mcp-ai-wpoos.php`
 
-During the build process:
-1. **Base version**: Includes `mcp-ai-wpoos-base.php` as the main plugin file
-2. **Combined version**: Excludes `mcp-ai-wpoos-base.php` to avoid duplicate plugin detection
-3. **Combined version**: Uses `mcp-ai-wpoos.php` as the sole main plugin file
-4. This ensures WordPress only detects one plugin, not two
+### Repository vs Distribution
+
+**In the GitHub repository:**
+- `mcp-ai-wpoos.php` - Has plugin header (Pro version - this is what gets activated)
+- `mcp-ai-wpoos-base.php` - NO plugin header (build script adds it for WordPress.org)
+- Result: Only ONE plugin appears in WordPress when cloning the repo (the Pro version)
+
+**During the build process:**
+1. **Base version build**: 
+   - Adds plugin header to `mcp-ai-wpoos-base.php`
+   - Removes plugin header from `mcp-ai-wpoos.php`
+   - Result: Only base version plugin is detected
+2. **Combined version build**: 
+   - Excludes `mcp-ai-wpoos-base.php` entirely
+   - Keeps `mcp-ai-wpoos.php` with its plugin header
+   - Result: Only one plugin is detected (Pro version with all features)
+
+This ensures WordPress only detects one plugin in both scenarios.
 
 ## Version Constant
 

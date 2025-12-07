@@ -230,6 +230,36 @@ if [ "$BUILD_BASE" = true ]; then
         echo "✓ Removed plugin header from mcp-ai-wpoos.php (prevents duplicate plugin detection)"
     fi
     
+    # Add plugin header to mcp-ai-wpoos-base.php for base version distribution
+    # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
+    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php" ]; then
+        # Replace the comment block with a full plugin header
+        sed -i '1,/\*\//c\
+<?php\
+/**\
+ * Plugin Name: Open Operator System (WP oOS)\
+ * Plugin URI: https://nvdigitalsolutions.com/wpoos\
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.\
+ * Version: '"${VERSION}"'\
+ * Requires at least: 6.0\
+ * Requires PHP: 7.4\
+ * Tested up to: 6.7.1\
+ * Author: NV Digital Solutions\
+ * Author URI: https://nvdigitalsolutions.com\
+ * License: GPLv3 or later\
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html\
+ * Text Domain: mcp-ai-wpoos\
+ * Domain Path: /languages\
+ * Network: true\
+ *\
+ * @package WP_MCP_AI\
+ *\
+ * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)\
+ * This plugin is licensed under the GNU General Public License v3 or later.\
+ */' "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
+        echo "✓ Added plugin header to mcp-ai-wpoos-base.php for base version"
+    fi
+    
     # Create ZIP
     cd build
     zip -r -q "${BASE_SLUG}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
