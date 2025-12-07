@@ -102,7 +102,7 @@ require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
  * Manually load the plugin being tested.
  */
 function wp_mcp_ai_manually_load_plugin() {
-	require dirname( __DIR__ ) . '/wp-mcp-ai.php';
+	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );

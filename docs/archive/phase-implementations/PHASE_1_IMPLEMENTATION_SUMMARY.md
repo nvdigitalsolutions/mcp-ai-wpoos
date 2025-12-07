@@ -121,7 +121,7 @@ This implementation delivers Phase 1 of the AI feature implementation plan, addi
 
 ### Modified Core Files (3 files)
 
-#### 1. `wp-mcp-ai.php`
+#### 1. `mcp-ai-wpoos.php`
 - Added integration class loading (lines 444-445)
 - Added integration initialization (lines 535-541)
 

@@ -63,9 +63,9 @@ WP Open Operator System (WP oOS) is a sophisticated WordPress plugin that provid
 
 ## Plugin Entry Point
 
-### Main File: `wp-mcp-ai.php`
+### Main File: `mcp-ai-wpoos.php`
 
-**Location**: `/wp-mcp-ai.php`
+**Location**: `/mcp-ai-wpoos.php`
 
 **Responsibilities**:
 - PHP version compatibility check (requires 7.4+)
@@ -305,7 +305,7 @@ Each tool implements the same interface but provides different execution strateg
 
 ```
 wp-mcp-ai/
-├── wp-mcp-ai.php                 # Main plugin file (entry point)
+├── mcp-ai-wpoos.php                 # Main plugin file (entry point)
 ├── includes/                      # All PHP includes
 │   ├── admin/                    # Admin dashboard components
 │   │   ├── sections/            # Modular settings sections (14 sections)
@@ -638,7 +638,7 @@ Utility Classes:
 
 ### Boot Sequence
 
-1. **PHP Version Check** (`wp-mcp-ai.php` line 33)
+1. **PHP Version Check** (`mcp-ai-wpoos.php` line 33)
    - Validates PHP >= 7.4
    - Registers admin notice if incompatible
    - Deactivates plugin if incompatible
@@ -3365,7 +3365,7 @@ apply_filters( 'wp_mcp_ai_crawl4ai_base_url', $base_url, $settings, $context );
 
 ### Plugin Constants
 
-**Core Constants** (defined in `wp-mcp-ai.php`):
+**Core Constants** (defined in `mcp-ai-wpoos.php`):
 
 ```php
 WP_MCP_AI_VERSION        // Plugin version: '1.0.0'

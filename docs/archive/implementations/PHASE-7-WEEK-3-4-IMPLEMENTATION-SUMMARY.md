@@ -214,7 +214,7 @@ Successfully implemented **Phase 7 Week 3-4: Cost Attribution & Tracking** follo
 | `cost-breakdown.php` | Widget | Updated | Presentation layer |
 | `services-init.php` | Init | Updated | Service registration |
 | `class-wp-mcp-ai-rest.php` | REST | Updated | Route registration |
-| `wp-mcp-ai.php` | Main | Updated | Load Cost Calculator |
+| `mcp-ai-wpoos.php` | Main | Updated | Load Cost Calculator |
 
 **Total:** 1,351+ lines of new code, tests, and documentation
 

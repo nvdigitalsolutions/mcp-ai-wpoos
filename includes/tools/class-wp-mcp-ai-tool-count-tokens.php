@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Token budget manager is now loaded via services-init.php - no need to require it here.
-		// The class is available globally after services-init.php is loaded in wp-mcp-ai.php.
+		// The class is available globally after services-init.php is loaded in mcp-ai-wpoos.php.
 
 		// Determine counting method.
 		$method = isset( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'auto';

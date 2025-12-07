@@ -58,7 +58,7 @@ Re-implemented the Test Assistant page with comprehensive safety checks:
 
 #### Files Modified
 
-1. **wp-mcp-ai.php** (4 lines added)
+1. **mcp-ai-wpoos.php** (4 lines added)
    - Added require and instantiation in `is_admin()` block
    - Placed after other admin classes for proper load order
 

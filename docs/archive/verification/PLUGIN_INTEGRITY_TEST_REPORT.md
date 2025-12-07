@@ -41,7 +41,7 @@ Success Rate: 100%
 ```
 
 **Directories Scanned:**
-- Main plugin file: `wp-mcp-ai.php` ✓
+- Main plugin file: `mcp-ai-wpoos.php` ✓
 - Includes directory: 243 class files ✓
 - Tests directory: 185 test files ✓
 - Admin directory: All files ✓

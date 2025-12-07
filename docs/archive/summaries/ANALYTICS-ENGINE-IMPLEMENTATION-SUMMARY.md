@@ -131,7 +131,7 @@ Successfully implemented the Advanced Analytics Engine for the WP oOS Token Mana
 ## Integration
 
 ### Files Modified
-1. **wp-mcp-ai.php**
+1. **mcp-ai-wpoos.php**
    - Added: `require_once` for Analytics Engine class
    
 2. **includes/class-wp-mcp-ai-rest.php**

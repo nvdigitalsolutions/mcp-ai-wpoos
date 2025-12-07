@@ -4,14 +4,14 @@
 The checkbox "Activate AI Chat widget for Elementor page builder" on the Settings → Elementor page was not controlling whether Elementor widgets were loaded. The widgets were always loaded regardless of the checkbox state.
 
 ## Root Cause
-The `WP_MCP_AI_Elementor_Integration::maybe_init()` method was called unconditionally in the `WP_MCP_AI::bootstrap()` method (line 546 of `wp-mcp-ai.php`) without checking the `enable_elementor_widgets` setting.
+The `WP_MCP_AI_Elementor_Integration::maybe_init()` method was called unconditionally in the `WP_MCP_AI::bootstrap()` method (line 546 of `mcp-ai-wpoos.php`) without checking the `enable_elementor_widgets` setting.
 
 ## Solution
 Modified the `WP_MCP_AI::bootstrap()` method to check the `enable_elementor_widgets` setting before initializing the Elementor integration.
 
 ### Changes Made
 
-**File: `wp-mcp-ai.php`** (lines 545-554)
+**File: `mcp-ai-wpoos.php`** (lines 545-554)
 
 ```php
 if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
@@ -66,7 +66,7 @@ wp eval-file test-elementor-setting-manual.php
 
 ## Related Files
 
-- `wp-mcp-ai.php` - Main plugin file with bootstrap logic
+- `mcp-ai-wpoos.php` - Main plugin file with bootstrap logic
 - `includes/class-wp-mcp-ai-elementor-integration.php` - Elementor integration class
 - `includes/admin/sections/class-wp-mcp-ai-section-elementor.php` - Settings section
 - `includes/admin/class-wp-mcp-ai-admin-elementor.php` - Admin page handler
@@ -82,7 +82,7 @@ Add to `wp-config.php`:
 define( 'WP_MCP_AI_BASE_VERSION', false );
 ```
 
-In base version mode, the Elementor integration class is not loaded at all (see line 277 of `wp-mcp-ai.php`).
+In base version mode, the Elementor integration class is not loaded at all (see line 277 of `mcp-ai-wpoos.php`).
 
 ### Settings Storage
 Setting is stored in the `wp_mcp_ai_settings` option with the key `enable_elementor_widgets`.

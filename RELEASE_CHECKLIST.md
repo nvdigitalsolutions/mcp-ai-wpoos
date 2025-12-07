@@ -34,7 +34,7 @@ npm test
 
 Update the version number in these files:
 
-- [ ] `wp-mcp-ai.php` (Plugin header: `Version:` and `WP_MCP_AI_VERSION` constant)
+- [ ] `mcp-ai-wpoos.php` (Plugin header: `Version:` and `WP_MCP_AI_VERSION` constant)
 - [ ] `readme.txt` (`Stable tag:` field)
 - [ ] `package.json` (if applicable)
 

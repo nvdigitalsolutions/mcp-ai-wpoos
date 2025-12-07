@@ -357,7 +357,7 @@ Possible extensions:
 ### Limits not being enforced
 
 **Check**:
-1. Is `WP_MCP_AI_Tool_Token_Limits::init()` called in `wp-mcp-ai.php`?
+1. Is `WP_MCP_AI_Tool_Token_Limits::init()` called in `mcp-ai-wpoos.php`?
 2. Are the action hooks (`wp_mcp_ai_before_tool_execution`, `wp_mcp_ai_after_tool_execution`) firing?
 3. Check logs for `tool_token_limit_exceeded` events
 

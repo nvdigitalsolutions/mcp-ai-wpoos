@@ -8,7 +8,7 @@ When ChatKit is present the integration definition advertises the `mcp-ai/v1` RE
 ## Requirements
 - **WP oOS** 1.0.0 or later.
 - The standalone [ChatKit](https://github.com/nvdigitalsolutions/chatkit) plugin installed and activated on the same WordPress site.
-- WordPress users must satisfy the capability returned by `wp_mcp_ai_chat_capability` for the `chatkit` context (defaults to `edit_posts`).【F:includes/class-wp-mcp-ai-chatkit-integration.php†L156-L226】【F:wp-mcp-ai.php†L25-L63】 Override the capability via the `wp_mcp_ai_chat_capability` filter if ChatKit access should be available to broader roles or public visitors.
+- WordPress users must satisfy the capability returned by `wp_mcp_ai_chat_capability` for the `chatkit` context (defaults to `edit_posts`).【F:includes/class-wp-mcp-ai-chatkit-integration.php†L156-L226】【F:mcp-ai-wpoos.php†L25-L63】 Override the capability via the `wp_mcp_ai_chat_capability` filter if ChatKit access should be available to broader roles or public visitors.
 
 ## Enabling the integration
 1. Activate WP oOS and ChatKit.

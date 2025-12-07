@@ -124,7 +124,7 @@ The implementation maintains strict Separation of Concerns:
 ### Existing Files (Already Implemented)
 - `includes/services/class-wp-mcp-ai-gemini-file-service.php` - Contains all caching/tracking/cleanup logic
 - `includes/services/class-wp-mcp-ai-video-analysis-service.php` - Uses file service for caching
-- `wp-mcp-ai.php` - Contains cron scheduling and handlers
+- `mcp-ai-wpoos.php` - Contains cron scheduling and handlers
 
 ## Test Coverage
 

@@ -5,7 +5,8 @@
 * @nvdigitalsolutions
 
 # Core plugin files
-/wp-mcp-ai.php @nvdigitalsolutions
+/mcp-ai-wpoos.php @nvdigitalsolutions
+/wp-mcp-ai-base.php @nvdigitalsolutions
 /includes/ @nvdigitalsolutions
 
 # Documentation

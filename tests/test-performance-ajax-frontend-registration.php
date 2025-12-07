@@ -147,7 +147,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		$container = wp_mcp_ai_container();
 
 		// Try to get the performance section from container.
-		// This simulates what happens in wp-mcp-ai.php.
+		// This simulates what happens in mcp-ai-wpoos.php.
 		try {
 			$section = $container->get( 'section.performance' );
 

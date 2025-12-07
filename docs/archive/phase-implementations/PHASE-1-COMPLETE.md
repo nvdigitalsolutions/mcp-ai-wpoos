@@ -98,7 +98,7 @@ Phase 1: Performance Optimization has been successfully completed with all plann
 - `includes/elementor/class-wp-mcp-ai-elementor-widget.php` (verified already optimized)
 
 **Core Files:**
-- `wp-mcp-ai.php` - Added REST cache loading and hooks
+- `mcp-ai-wpoos.php` - Added REST cache loading and hooks
 - `package.json` - Added build scripts and dependencies
 - `.gitignore` - Added minified files exclusion
 

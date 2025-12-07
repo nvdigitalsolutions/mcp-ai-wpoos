@@ -35,7 +35,7 @@ add_action( 'wp_ajax_wp_mcp_ai_test_mcp_method', array( __CLASS__, 'handle_test_
 ```
 
 ### ✅ Plugin Integration
-- [x] File loaded in `wp-mcp-ai.php` at line 461
+- [x] File loaded in `mcp-ai-wpoos.php` at line 461
 - [x] Class self-initializes at bottom of file (line 791)
 - [x] Follows same pattern as other diagnostic pages
 - [x] Initialization occurs during `require_once` via self-execution

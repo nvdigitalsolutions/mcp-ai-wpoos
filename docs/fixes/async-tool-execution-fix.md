@@ -27,7 +27,7 @@ When WP-Cron fired the `wp_mcp_ai_async_tool_execution` action, WordPress looked
 Initialize the async executor during plugin bootstrap by hooking to the `wp_mcp_ai_bootstrapped` action:
 
 ```php
-// In wp-mcp-ai.php
+// In mcp-ai-wpoos.php
 add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
 
 function wp_mcp_ai_init_async_executor() {
@@ -46,7 +46,7 @@ This ensures:
 The fix maintains proper SOC:
 
 - **Executor class** (`WP_MCP_AI_Tool_Async_Executor`): Responsible for tool execution logic
-- **Main plugin file** (`wp-mcp-ai.php`): Responsible for initialization timing via WordPress hooks
+- **Main plugin file** (`mcp-ai-wpoos.php`): Responsible for initialization timing via WordPress hooks
 - **Services init** (`services-init.php`): Provides getter function for executor instance
 
 No mixing of concerns between scheduling, execution, and initialization.
@@ -73,7 +73,7 @@ See `tests/test-async-executor-initialization.php`:
 
 ## Related Files
 
-- `wp-mcp-ai.php` - Hook registration
+- `mcp-ai-wpoos.php` - Hook registration
 - `includes/services-init.php` - Executor getter function
 - `includes/services/class-wp-mcp-ai-tool-async-executor.php` - Executor class
 - `includes/services/class-wp-mcp-ai-async-tool-orchestrator.php` - Routing logic

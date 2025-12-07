@@ -94,7 +94,7 @@ public function ajax_export_results() {
 ```
 
 **Why This Was Needed**:
-- `WP_MCP_AI_Performance_Reporter` is only loaded in admin context (line 497 of wp-mcp-ai.php)
+- `WP_MCP_AI_Performance_Reporter` is only loaded in admin context (line 497 of mcp-ai-wpoos.php)
 - AJAX requests from frontend Elementor widgets don't automatically load admin dependencies
 - Without this check, calling `generate_report()` would cause a fatal error
 

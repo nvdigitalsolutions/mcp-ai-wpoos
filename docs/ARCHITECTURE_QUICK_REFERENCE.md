@@ -18,7 +18,8 @@
 
 ```
 wp-mcp-ai/
-├── wp-mcp-ai.php              # Entry point
+├── mcp-ai-wpoos.php           # Entry point (main plugin file)
+├── wp-mcp-ai-base.php         # Optional base version wrapper
 ├── includes/
 │   ├── services/              # 6 business logic services
 │   ├── repositories/          # 3 data access repositories

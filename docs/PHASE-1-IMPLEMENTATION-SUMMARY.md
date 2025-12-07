@@ -75,7 +75,7 @@ This document summarizes the implementation of Phase 1: Performance Optimization
 ### Files Modified
 
 **Round 1: Caching & Repository (6 files)**
-- `wp-mcp-ai.php` - Cache integration and hooks
+- `mcp-ai-wpoos.php` - Cache integration and hooks
 - `includes/repositories/class-wp-mcp-ai-assistant-repository.php` - Caching + optimizations
 - `includes/elementor/class-wp-mcp-ai-elementor-widget.php` - Options caching
 - `includes/tools/class-wp-mcp-ai-tool-search-content.php` - Query optimizations
