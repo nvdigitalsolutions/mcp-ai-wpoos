@@ -72,7 +72,8 @@ class WP_MCP_AI_SSE_Handler {
 		}
 
 		// Send retry directive to help clients reconnect if connection drops.
-		echo 'retry: ' . self::RETRY_INTERVAL_MS . "\n\n";
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RETRY_INTERVAL_MS is a hardcoded integer constant, validated with absint() for safety.
+		echo 'retry: ' . absint( self::RETRY_INTERVAL_MS ) . "\n\n";
 
 		// Force initial flush to establish connection.
 		if ( function_exists( 'flush' ) ) {
