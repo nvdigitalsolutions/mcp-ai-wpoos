@@ -23,6 +23,9 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Initialize the database table.
+		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+
 		// Create a test admin user.
 		$this->test_user_id = $this->factory->user->create(
 			array(
@@ -38,6 +41,13 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 	 * Clean up after test.
 	 */
 	public function tearDown(): void {
+		global $wpdb;
+
+		// Clean up test data.
+		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
+
 		parent::tearDown();
 	}
 
