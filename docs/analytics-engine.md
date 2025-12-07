@@ -382,5 +382,5 @@ Test coverage:
 ## Support
 
 For questions or issues:
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: See `/docs/token-management.md`

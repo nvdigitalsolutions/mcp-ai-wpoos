@@ -213,7 +213,7 @@ If voice chat cannot be fixed immediately, users can:
 
 If none of the above solutions work:
 
-1. Check the GitHub repository for known issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+1. Check the GitHub repository for known issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 2. Open a new issue with:
    - WordPress version
    - PHP version

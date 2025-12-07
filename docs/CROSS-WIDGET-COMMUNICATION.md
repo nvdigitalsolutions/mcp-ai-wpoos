@@ -256,5 +256,5 @@ Tab 2: History [User Chat History → Target: "#active-chat"]
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
-- Documentation: https://github.com/nvdigitalsolutions/wp-mcp-ai/tree/main/docs
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
+- Documentation: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs

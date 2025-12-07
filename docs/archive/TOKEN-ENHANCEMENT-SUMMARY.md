@@ -238,14 +238,14 @@ All code examples in the enhancement plan are ready for implementation but not y
 
 - **Full Documentation:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
 - **Quick Reference:** [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](docs/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)
-- **Code Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai
-- **Issue Tracker:** https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **Code Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
+- **Issue Tracker:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 
 ## Credits
 
 **Created:** 2025-11-11  
 **Author:** GitHub Copilot Workspace  
-**Repository:** nvdigitalsolutions/wp-mcp-ai  
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos  
 **Branch:** copilot/create-new-development-plan  
 **Status:** Planning Phase - Ready for Review
 

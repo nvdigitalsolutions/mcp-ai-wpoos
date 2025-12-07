@@ -551,7 +551,7 @@ Settings → WP oOS → Chat Theme
 ### Support Channels
 1. **Documentation** - Check [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 2. **Troubleshooting** - See [deployment-troubleshooting.md](deployment-troubleshooting.md)
-3. **GitHub Issues** - https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+3. **GitHub Issues** - https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 4. **Community** - Follow contribution guidelines
 
 ### Before Asking for Help

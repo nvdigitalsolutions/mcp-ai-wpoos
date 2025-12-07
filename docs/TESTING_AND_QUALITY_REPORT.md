@@ -2,7 +2,7 @@
 
 **Last Updated:** December 3, 2025  
 **Plugin Version:** 1.0.0  
-**Repository:** nvdigitalsolutions/wp-mcp-ai
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos
 
 > **Note**: For a comprehensive consolidated bugs and fixes report including recent fixes (November-December 2025), see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
 

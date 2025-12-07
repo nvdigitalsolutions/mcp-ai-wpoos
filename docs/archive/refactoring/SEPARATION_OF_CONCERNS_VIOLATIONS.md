@@ -1,7 +1,7 @@
 # Separation of Concerns Violations - Code Review
 
 **Date**: 2025-11-13  
-**Repository**: nvdigitalsolutions/wp-mcp-ai  
+**Repository**: nvdigitalsolutions/mcp-ai-wpoos  
 **Scope**: Complete codebase analysis
 
 ## Executive Summary

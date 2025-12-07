@@ -323,15 +323,15 @@ jobs:
             
             ### 📚 Documentation
             
-            - [Quick Start Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/QUICK_REFERENCE.md)
-            - [Full Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/tree/main/docs)
-            - [REST API Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/rest-api.md)
+            - [Quick Start Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md)
+            - [Full Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs)
+            - [REST API Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/rest-api.md)
             
             ### 🔗 Links
             
             - [NV Digital Solutions](https://nvdigitalsolutions.com/)
-            - [Report Issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
-            - [Contributing Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CONTRIBUTING.md)
+            - [Report Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
+            - [Contributing Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CONTRIBUTING.md)
             
           files: |
             ${{ env.PLUGIN_SLUG }}-*.zip

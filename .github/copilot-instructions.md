@@ -343,7 +343,7 @@ The repository uses GitHub Actions:
 
 ## Getting Help
 
-- **Issues**: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **Issues**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **Troubleshooting**: See `docs/deployment-troubleshooting.md`
 - **Contributing**: See `CONTRIBUTING.md`
 - **Security**: See `SECURITY.md`

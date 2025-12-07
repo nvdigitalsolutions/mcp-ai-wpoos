@@ -534,7 +534,7 @@ The NV Digital Solutions team has built a robust, secure, and well-documented Wo
 
 ## 📞 Contact & Support
 
-**Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)  
 **License:** GPLv3 or later
 

@@ -139,7 +139,7 @@ Everything except the endpoint URL default:
 
 ## Support
 
-- **Plugin**: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **Plugin**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **LM Studio**: https://lmstudio.ai/
 
 ---

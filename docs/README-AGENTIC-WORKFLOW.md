@@ -281,7 +281,7 @@ Result: Automated site audit
 
 ## 📞 Need Help?
 
-- **Issues**: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **Issues**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **Documentation Index**: [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 - **Community**: WordPress.org support forums
 

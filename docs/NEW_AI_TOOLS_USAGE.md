@@ -728,8 +728,8 @@ update_option('ai_tool_metrics', [
 - 🔗 [WCAG Alt Text Guidelines](https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html)
 
 ### Support
-- 🐛 [Report Issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
-- 💬 [Community Support](https://github.com/nvdigitalsolutions/wp-mcp-ai/discussions)
+- 🐛 [Report Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
+- 💬 [Community Support](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/discussions)
 - 📧 Contact: support@nvdigitalsolutions.com
 
 ---

@@ -521,7 +521,7 @@ The federation system uses a **web of trust** model:
 ## Support
 
 For issues or questions:
-- **GitHub Issues:** https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **GitHub Issues:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **Documentation:** See `/docs` directory
 - **Security:** See SECURITY.md
 

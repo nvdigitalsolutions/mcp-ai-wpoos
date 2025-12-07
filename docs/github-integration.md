@@ -413,6 +413,6 @@ A: Custom tools are just PHP files, so you can copy them to other sites' `custom
 ## Support
 
 For issues or questions:
-- [GitHub Issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
-- [Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/tree/main/docs)
-- [Contributing Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CONTRIBUTING.md)
+- [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
+- [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs)
+- [Contributing Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CONTRIBUTING.md)
