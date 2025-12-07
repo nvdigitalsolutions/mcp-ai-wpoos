@@ -212,6 +212,24 @@ if [ "$BUILD_BASE" = true ]; then
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
     
+    # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
+    # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
+    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
+        # Replace the plugin header comment block with a regular comment
+        sed -i '1,/\*\//c\
+<?php\
+/**\
+ * WP MCP AI - Main Plugin File\
+ *\
+ * This file contains the core plugin functionality and is included by the\
+ * main plugin entry point (mcp-ai-wpoos-base.php for base version,\
+ * or mcp-ai-wpoos.php itself for the combined version).\
+ *\
+ * @package WP_MCP_AI\
+ */' "build/${BASE_SLUG}/mcp-ai-wpoos.php"
+        echo "✓ Removed plugin header from mcp-ai-wpoos.php (prevents duplicate plugin detection)"
+    fi
+    
     # Create ZIP
     cd build
     zip -r -q "${BASE_SLUG}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
