@@ -13,6 +13,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Check if Pro addon is available
+ *
+ * Determines whether Pro addon features should be loaded by checking:
+ * 1. If Pro version constant is defined (separate Pro plugin scenario)
+ * 2. If Pro addon file exists (combined plugin scenario)
+ *
+ * The result is cached statically to avoid repeated filesystem checks.
+ *
+ * @since 1.1.0
+ *
+ * @return bool True if Pro addon is available, false otherwise.
+ */
+function wp_mcp_ai_is_pro_addon_available() {
+	static $is_available = null;
+
+	if ( null !== $is_available ) {
+		return $is_available;
+	}
+
+	// Check if Pro version constant is defined (separate Pro plugin).
+	if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+		$is_available = true;
+		return $is_available;
+	}
+
+	// Check if Pro addon file exists (combined plugin).
+	if ( defined( 'WP_MCP_AI_PATH' ) ) {
+		$pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
+		$is_available   = file_exists( $pro_addon_file );
+		return $is_available;
+	}
+
+	$is_available = false;
+	return $is_available;
+}
+
 // Load service classes.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-chat-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-assistant-service.php';
@@ -46,10 +83,11 @@ WP_MCP_AI_Gemini_Video_Generation_Service::init();
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
 
-// Load performance monitor service only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// Load performance monitor service only when Pro addon is available.
+if ( wp_mcp_ai_is_pro_addon_available() ) {
 	require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-monitor-service.php';
 }
+
 
 /**
  * Initialize services
@@ -173,15 +211,14 @@ function wp_mcp_ai_get_error_tracking_service() {
  * Get performance monitor service instance
  *
  * Helper function to get performance monitor service instance.
- * Returns null if not available (e.g., in base version mode).
+ * Returns null if not available (e.g., when Pro addon is not present).
+ *
+ * Note: Pro addon availability check is performed at service loading time (line 87).
+ * This function only verifies the class was successfully loaded.
  *
  * @return WP_MCP_AI_Performance_Monitor_CCT|null Performance monitor service instance or null.
  */
 function wp_mcp_ai_get_performance_monitor_service() {
-	if ( wp_mcp_ai_is_base_version() ) {
-		return null;
-	}
-
 	if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
 		return null;
 	}
