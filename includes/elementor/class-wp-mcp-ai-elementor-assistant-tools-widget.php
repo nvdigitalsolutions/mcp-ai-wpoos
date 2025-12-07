@@ -229,12 +229,14 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		}
 
 		if ( ! empty( $missing ) ) {
-			$missing_list = implode( ', ', array_map( 'esc_html', $missing ) );
+			$missing_escaped = array_map( 'esc_html', $missing );
+			$missing_list    = implode( ', ', $missing_escaped );
 
 			if ( '' !== $missing_list ) {
 				echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item in $missing_list is already escaped via array_map( 'esc_html', $missing ).
-				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'wp-mcp-ai' ) . ' ' . $missing_list;
+				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'wp-mcp-ai' ) . ' ';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item already escaped via array_map('esc_html').
+				echo $missing_list;
 				echo '</p>';
 			}
 		}
