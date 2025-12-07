@@ -41,7 +41,7 @@
 
 **Files Changed**:
 - Created: `docs/CODE_REVIEW_2025-12-06.md` (21KB)
-- Created: `CODE_REVIEW_COMPLETION_SUMMARY.md`
+- Created: `archive/summaries/CODE_REVIEW_COMPLETION_SUMMARY.md`
 - Updated: `docs/CODE-REVIEW-MASTER.md`
 - Updated: `docs/DOCUMENTATION_INDEX.md`
 - Updated: `README.md`
@@ -53,7 +53,7 @@
 - ✅ JavaScript Linting: PASSED
 - ✅ PHP Compatibility: PASSED (7.4-8.3)
 
-**Reference**: `CODE_REVIEW_COMPLETION_SUMMARY.md`
+**Reference**: `archive/summaries/CODE_REVIEW_COMPLETION_SUMMARY.md`
 
 ---
 
@@ -83,7 +83,7 @@
 - ✅ Code Review: PASSED
 - ✅ CodeQL: PASSED
 
-**Reference**: `OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`, `SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md`
+**Reference**: `archive/summaries/OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`, `SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md`
 
 ---
 
@@ -109,7 +109,7 @@
 9. `includes/admin/sections/class-wp-mcp-ai-section-orchestration.php` (2 fixes)
 10. `includes/admin/sections/class-wp-mcp-ai-section-providers.php` (8 fixes - rebase)
 
-**Reference**: `OUTPUT_ESCAPING_SESSION_2_SUMMARY.md`
+**Reference**: `archive/summaries/OUTPUT_ESCAPING_SESSION_2_SUMMARY.md`
 
 ---
 
@@ -142,7 +142,7 @@
 3. HTML Attributes: `esc_attr( $value )`
 4. Render Methods: phpcs:ignore comments
 
-**Reference**: `SESSION_SUMMARY.md`, `OUTPUT_ESCAPING_SESSION_SUMMARY.md`
+**Reference**: `archive/summaries/SESSION_SUMMARY.md`, `archive/summaries/OUTPUT_ESCAPING_SESSION_SUMMARY.md`
 
 ---
 
@@ -166,7 +166,7 @@
 **Verification Script**:
 - `verify-site-creator-fix.sh`
 
-**Reference**: `SITE_CREATOR_FIX_SUMMARY.md`
+**Reference**: `archive/summaries/SITE_CREATOR_FIX_SUMMARY.md`
 
 ---
 
@@ -342,18 +342,22 @@ All historical session summaries are preserved in the archive:
 
 ## Session Documentation Index
 
-### Root Level Session Documents
-Located in repository root:
+### Archived Session Documents
+Located in docs/archive/summaries/:
 
 1. **CODE_REVIEW_COMPLETION_SUMMARY.md** - December 6, 2025 code review session
 2. **SESSION_SUMMARY.md** - Output escaping systematic review (Session 1)
 3. **SITE_CREATOR_FIX_SUMMARY.md** - Site creator protection fix
-4. **OUTPUT_ESCAPING_PROGRESS.md** - Progress tracker for escaping work
-5. **OUTPUT_ESCAPING_SESSION_SUMMARY.md** - Session 1 detailed summary
-6. **OUTPUT_ESCAPING_SESSION_2_SUMMARY.md** - Session 2 detailed summary
-7. **OUTPUT_ESCAPING_SESSION_3_SUMMARY.md** - Session 3 detailed summary
-8. **OUTPUT_ESCAPING_STRATEGY.md** - Patterns and strategy document
-9. **SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md** - Final completion report
+4. **OUTPUT_ESCAPING_SESSION_SUMMARY.md** - Session 1 detailed summary
+5. **OUTPUT_ESCAPING_SESSION_2_SUMMARY.md** - Session 2 detailed summary
+6. **OUTPUT_ESCAPING_SESSION_3_SUMMARY.md** - Session 3 detailed summary
+
+### Root Level Progress Documents
+Located in repository root:
+
+1. **OUTPUT_ESCAPING_PROGRESS.md** - Progress tracker for escaping work
+2. **OUTPUT_ESCAPING_STRATEGY.md** - Patterns and strategy document
+3. **SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md** - Final completion report
 
 ### Docs Level Session Documents
 Located in docs/:

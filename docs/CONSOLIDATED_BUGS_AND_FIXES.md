@@ -282,9 +282,9 @@ Initial grep-based count was misleading - didn't account for:
 **Documentation**: 
 - `OUTPUT_ESCAPING_PROGRESS.md`
 - `SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md`
-- `OUTPUT_ESCAPING_SESSION_SUMMARY.md`
-- `OUTPUT_ESCAPING_SESSION_2_SUMMARY.md`
-- `OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_SUMMARY.md`
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_2_SUMMARY.md`
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`
 - `OUTPUT_ESCAPING_STRATEGY.md`
 
 ---
@@ -310,7 +310,7 @@ Initial grep-based count was misleading - didn't account for:
 
 **Verification**: `verify-site-creator-fix.sh`
 
-**Documentation**: `SITE_CREATOR_FIX_SUMMARY.md`
+**Documentation**: `archive/summaries/SITE_CREATOR_FIX_SUMMARY.md`
 
 ---
 
@@ -345,7 +345,7 @@ Initial grep-based count was misleading - didn't account for:
 **Documentation**: 
 - `docs/CODE_REVIEW_2025-12-06.md` (21KB comprehensive review)
 - `docs/CODE-REVIEW-MASTER.md` (updated with latest scores)
-- `CODE_REVIEW_COMPLETION_SUMMARY.md`
+- `archive/summaries/CODE_REVIEW_COMPLETION_SUMMARY.md`
 
 ---
 
@@ -617,14 +617,14 @@ The plugin is **production-ready** with excellent overall quality (96/100 code q
 - `docs/CODE-REVIEW-MASTER.md` - Consolidated code reviews with scores
 - `docs/DOCUMENTATION_INDEX.md` - Complete documentation index
 
-### Recent Session Summaries (Root Level)
-- `CODE_REVIEW_COMPLETION_SUMMARY.md` - Dec 6 code review session
-- `SESSION_SUMMARY.md` - Output escaping systematic review
-- `SITE_CREATOR_FIX_SUMMARY.md` - Site creator protection fix
+### Recent Session Summaries (Archive)
+- `archive/summaries/CODE_REVIEW_COMPLETION_SUMMARY.md` - Dec 6 code review session
+- `archive/summaries/SESSION_SUMMARY.md` - Output escaping systematic review
+- `archive/summaries/SITE_CREATOR_FIX_SUMMARY.md` - Site creator protection fix
 - `OUTPUT_ESCAPING_PROGRESS.md` - Output escaping progress tracker
-- `OUTPUT_ESCAPING_SESSION_SUMMARY.md` - Session 1 summary
-- `OUTPUT_ESCAPING_SESSION_2_SUMMARY.md` - Session 2 summary
-- `OUTPUT_ESCAPING_SESSION_3_SUMMARY.md` - Session 3 summary
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_SUMMARY.md` - Session 1 summary
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_2_SUMMARY.md` - Session 2 summary
+- `archive/summaries/OUTPUT_ESCAPING_SESSION_3_SUMMARY.md` - Session 3 summary
 - `OUTPUT_ESCAPING_STRATEGY.md` - Escaping patterns and strategy
 - `SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md` - Final completion report
 
