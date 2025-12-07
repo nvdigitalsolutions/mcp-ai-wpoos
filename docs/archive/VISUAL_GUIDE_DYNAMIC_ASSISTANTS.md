@@ -207,7 +207,7 @@ Example Flow:
 ## File Organization
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── includes/
 │   ├── teams/
 │   │   ├── class-wp-mcp-ai-team-cpt.php        ← Team CPT

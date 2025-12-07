@@ -17,7 +17,7 @@
 ## 📁 File Structure (Quick Map)
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── mcp-ai-wpoos.php           # Entry point (main plugin file)
 ├── wp-mcp-ai-base.php         # Optional base version wrapper
 ├── includes/

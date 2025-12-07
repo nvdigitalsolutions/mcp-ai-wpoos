@@ -51,7 +51,7 @@ Server: WP oOS
 ## 3. Run Automated Tests
 
 ```bash
-cd /path/to/wp-mcp-ai
+cd /path/to/mcp-ai-wpoos
 composer test -- tests/test-mcp-diagnostic-endpoints.php
 ```
 

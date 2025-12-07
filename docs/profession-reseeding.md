@@ -72,7 +72,7 @@ A link is provided to view all professions in the WordPress admin.
 
 Professions are loaded from JSON files located in:
 ```
-wp-mcp-ai/includes/knowledge-base/professions/
+mcp-ai-wpoos/includes/knowledge-base/professions/
 ```
 
 The knowledge base includes 12 category files:

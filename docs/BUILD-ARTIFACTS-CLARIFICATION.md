@@ -110,7 +110,7 @@ All three ZIP files are created in the `build/` directory and can be committed t
 The `.gitignore` file is configured to:
 
 - ✅ Track `build/*.zip` files (release artifacts)
-- ❌ Ignore `build/wp-mcp-ai/` (extracted directory)
+- ❌ Ignore `build/mcp-ai-wpoos/` (extracted directory)
 - ❌ Ignore `build/wp-mcp-ai-base/` (extracted directory)
 - ❌ Ignore `build/wp-mcp-ai-pro/` (extracted directory)
 - ❌ Ignore `*.zip` files everywhere else

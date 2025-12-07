@@ -295,7 +295,7 @@ Located in `includes/services/`:
 
 ### Step 1: Identify Issues in File
 ```bash
-cd /home/runner/work/wp-mcp-ai/wp-mcp-ai
+cd /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos
 grep -n 'echo .*\$' includes/path/to/file.php | grep -v "esc_\|wp_kses\|phpcs:"
 ```
 

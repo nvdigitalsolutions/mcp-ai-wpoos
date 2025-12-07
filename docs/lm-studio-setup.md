@@ -37,7 +37,7 @@ This guide explains how to connect the WordPress plugin to a local or remote LM 
 ### Method 1: Command Line Test
 
 ```bash
-cd /path/to/wp-mcp-ai
+cd /path/to/mcp-ai-wpoos
 ./bin/test-lm-studio-connection.sh
 ```
 
