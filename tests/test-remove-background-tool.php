@@ -31,7 +31,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Load the tool class.
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php';
+		require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-remove-background.php';
 		$this->tool = new WP_MCP_AI_Tool_Remove_Background();
 
 		// Create a test image.
