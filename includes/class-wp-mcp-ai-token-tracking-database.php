@@ -307,6 +307,8 @@ class WP_MCP_AI_Token_Tracking_Database {
 			);
 		}
 
+		$table_name = self::get_table_name();
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( $table_name );
 
