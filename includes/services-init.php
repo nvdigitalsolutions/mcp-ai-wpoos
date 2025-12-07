@@ -46,8 +46,12 @@ WP_MCP_AI_Gemini_Video_Generation_Service::init();
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
 
-// Load performance monitor service only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// Load performance monitor service only when not in base version mode and Pro addon is available.
+// Check for Pro addon file existence or Pro version constant (for separate plugin scenario).
+$pro_addon_file = defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' : '';
+$has_pro_addon  = ( ! empty( $pro_addon_file ) && file_exists( $pro_addon_file ) ) || defined( 'WP_MCP_AI_PRO_VERSION' );
+
+if ( ! wp_mcp_ai_is_base_version() && $has_pro_addon ) {
 	require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-monitor-service.php';
 }
 
