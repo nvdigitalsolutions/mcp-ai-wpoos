@@ -14,13 +14,19 @@
 class Test_Pro_Addon_Performance_Section_Loading extends WP_UnitTestCase {
 
 	/**
-	 * Test that Performance section class is loaded when Pro addon is active
+	 * Check if Pro addon is active and skip test if not.
 	 */
-	public function test_performance_section_class_loaded_when_pro_active() {
-		// Check if Pro addon constant is defined (indicating Pro is active).
+	protected function require_pro_addon() {
 		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			$this->markTestSkipped( 'Pro addon is not active. Skipping test.' );
 		}
+	}
+
+	/**
+	 * Test that Performance section class is loaded when Pro addon is active
+	 */
+	public function test_performance_section_class_loaded_when_pro_active() {
+		$this->require_pro_addon();
 
 		// Verify that the Performance section class exists.
 		$this->assertTrue(
@@ -33,10 +39,7 @@ class Test_Pro_Addon_Performance_Section_Loading extends WP_UnitTestCase {
 	 * Test that Performance section can be instantiated
 	 */
 	public function test_performance_section_can_be_instantiated() {
-		// Check if Pro addon constant is defined.
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			$this->markTestSkipped( 'Pro addon is not active. Skipping test.' );
-		}
+		$this->require_pro_addon();
 
 		// Skip if class doesn't exist (Pro sections not loaded).
 		if ( ! class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
@@ -58,10 +61,7 @@ class Test_Pro_Addon_Performance_Section_Loading extends WP_UnitTestCase {
 	 * Test that container returns Performance section when Pro is active
 	 */
 	public function test_container_returns_performance_section_when_pro_active() {
-		// Check if Pro addon constant is defined.
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			$this->markTestSkipped( 'Pro addon is not active. Skipping test.' );
-		}
+		$this->require_pro_addon();
 
 		// Get container instance.
 		$container = wp_mcp_ai_container();
@@ -87,10 +87,7 @@ class Test_Pro_Addon_Performance_Section_Loading extends WP_UnitTestCase {
 	 * Test that Performance section has required methods
 	 */
 	public function test_performance_section_has_required_methods() {
-		// Check if Pro addon constant is defined.
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			$this->markTestSkipped( 'Pro addon is not active. Skipping test.' );
-		}
+		$this->require_pro_addon();
 
 		// Verify that the class exists.
 		$this->assertTrue(
