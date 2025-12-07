@@ -9,13 +9,18 @@ Stable tag: 1.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework for WordPress with 35+ core tools, supporting OpenAI, Gemini, and Ollama. Optional third-party integrations available.
+AI Assistant framework for WordPress supporting OpenAI, Gemini, and Ollama. Works standalone with optional third-party plugin integrations.
 
 == Description ==
 
 **Open Operator System (WP oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
-The plugin works standalone with 35+ core tools and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
+The plugin works standalone with vanilla WordPress and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
+
+**Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
+* [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
+* [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
+* Ollama (self-hosted, no external data transmission)
 
 **Patent Pending:** WP oOS is the subject of a pending patent application (19/410,504) for its novel System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting.
 
@@ -23,8 +28,8 @@ The plugin works standalone with 35+ core tools and can be extended with optiona
 
 Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** designed for modern WordPress sites:
 
-* **35+ Core Tools** - Content management, media generation, research, site operations (base version)
-* **30+ Additional Tools** - Available with optional third-party plugins (WooCommerce, JetEngine, Elementor)
+* **Comprehensive Tool Library** - Content management, media generation, research, site operations
+* **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed
 * **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
@@ -39,15 +44,15 @@ Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** 
 * One-click team deployments for coordinated AI workflows
 
 **Multi-Provider AI Routing**
-* OpenAI GPT models (GPT-4o, GPT-4, GPT-4o-mini)
-* Google Gemini (Gemini Pro, Gemini 1.5)
-* Ollama for privacy-focused local AI
-* LM Studio integration with function calling support
+* **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
+* **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy))
+* **Ollama** - Privacy-focused local AI (self-hosted, no external data)
+* **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * Automatic provider fallback for maximum uptime
 
-**35+ Core Tools (Base Version):**
+**Built-in Tools:**
 * **Content Tools** - Search posts, save drafts, manage attachments
-* **Media Generation** - OpenAI images, Gemini images, text-to-speech
+* **Media Generation** - AI images, text-to-speech
 * **Research Tools** - Web search, weather, disaster alerts
 * **Site Operations** - Cache management, cron jobs, health checks
 * **Analytics** - Token usage tracking, cost attribution
@@ -245,39 +250,107 @@ Initial release. Welcome to Open Operator System!
 
 == Privacy Policy ==
 
-Open Operator System respects your privacy:
+**Open Operator System** respects your privacy and is committed to transparency about data handling.
 
-* **No Tracking** - No analytics, telemetry, or tracking scripts
-* **Local Data** - All settings stored in your WordPress database
-* **API Communications** - Chat messages sent to your configured AI provider (OpenAI, Gemini, or Ollama)
-* **Optional Logging** - Disabled by default, controlled in settings
+= What Data Does This Plugin Collect? =
 
-When using cloud AI providers (OpenAI, Gemini), your chat messages are processed according to their privacy policies. For complete data privacy, use Ollama for local AI processing.
+**Locally Stored (Your WordPress Database):**
+* Plugin settings and configuration
+* AI assistant definitions and system prompts
+* API keys (encrypted, never transmitted except to your configured AI provider)
+* Optional: Chat transcripts (if JetEngine integration is enabled)
+* Optional: Usage logs (disabled by default, controlled in settings)
 
-Review your AI provider's data processing policies:
-* [OpenAI Privacy Policy](https://openai.com/privacy)
-* [Google AI Privacy](https://ai.google.dev/privacy)
+**No External Tracking:**
+* No analytics or telemetry sent to plugin developers
+* No tracking scripts, cookies, or beacons
+* No phone-home functionality
+* Your data stays on your server
+
+= What Data is Sent to AI Providers? =
+
+When you use AI features, data is transmitted to your configured AI provider(s):
+
+**Sent to AI Providers:**
+* Chat messages and conversation history
+* File attachments you upload (images, documents, PDFs)
+* System prompts and assistant instructions
+* Tool execution results when tools are called
+
+**OpenAI (when configured):**
+* Data sent to: https://api.openai.com
+* Processed according to: [OpenAI Privacy Policy](https://openai.com/privacy)
+* Terms of Service: [OpenAI Terms](https://openai.com/policies/terms-of-use)
+* Data Usage: OpenAI does not use API data to train models (as of March 2023)
+* Retention: API data retained for 30 days for abuse monitoring, then deleted
+
+**Google Gemini (when configured):**
+* Data sent to: https://generativelanguage.googleapis.com
+* Processed according to: [Google AI Privacy](https://ai.google.dev/privacy)
+* Terms of Service: [Google Gemini Terms](https://ai.google.dev/terms)
+* Data Usage: Google uses API data as described in their privacy policy
+* Review Google's data retention policies before use
+
+**Ollama (when configured):**
+* Data sent to: Your local server only (self-hosted)
+* No external data transmission
+* Complete data privacy and control
+* Recommended for sensitive data
+
+**LM Studio (when configured):**
+* Data sent to: Your local computer only (self-hosted)
+* No external data transmission
+* Complete data privacy and control
+* Recommended for sensitive data
+
+= GDPR Compliance =
+
+**Your Rights:**
+* **Right to Access** - Export your data from WordPress admin
+* **Right to Deletion** - Delete plugin data via uninstall (if enabled in settings)
+* **Right to Portability** - Chat transcripts stored in standard WordPress format
+* **Right to Object** - Disable AI features at any time
+
+**Data Controller:**
+* **For Plugin Data** - You (the site owner) are the data controller
+* **For AI Processing** - Your chosen AI provider is a data processor
+* **Recommendation** - Update your site's privacy policy to inform users about AI processing
+
+**Processing Basis:**
+* Legitimate interest for site operations
+* User consent when collecting personal data for AI processing
+* Review GDPR requirements for your specific use case
+
+= Recommendations for Site Owners =
+
+1. **Update Your Privacy Policy** - Inform users that AI processing is used
+2. **Review Provider Terms** - Understand each AI provider's data handling
+3. **Use Ollama for Sensitive Data** - Keep sensitive information local
+4. **Disable Logging** - Turn off optional logging for maximum privacy
+5. **Get Consent** - Obtain user consent before processing personal data with AI
+6. **Data Processing Agreements** - Review DPAs with your AI providers
+
+= Third-Party Services =
+
+This plugin may connect to the following external services based on your configuration:
+
+**Required (one must be configured):**
+* OpenAI API - [Privacy](https://openai.com/privacy) | [Terms](https://openai.com/policies/terms-of-use)
+* Google Gemini API - [Privacy](https://ai.google.dev/privacy) | [Terms](https://ai.google.dev/terms)
+* Ollama (self-hosted) - No external service
+* LM Studio (self-hosted) - No external service
+
+**Optional (for specific features):**
+* Weather data - OpenWeatherMap API
+* Web search - Brave Search API
+* Image generation - Requires OpenAI or Gemini API key
+
+For complete privacy, configure Ollama or LM Studio for fully local AI processing.
+
+Review your chosen provider's privacy policy before use.
 
 == Credits ==
 
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
 Special thanks to the open source community and all contributors.
-
-== External Services ==
-
-This plugin connects to external AI services when configured:
-
-**OpenAI API**
-* Service: [platform.openai.com](https://platform.openai.com/)
-* Privacy Policy: [openai.com/privacy](https://openai.com/privacy)
-* Terms: [openai.com/policies](https://openai.com/policies)
-
-**Google Gemini API**
-* Service: [ai.google.dev](https://ai.google.dev/)
-* Privacy Policy: [ai.google.dev/privacy](https://ai.google.dev/privacy)
-* Terms: [ai.google.dev/terms](https://ai.google.dev/terms)
-
-**Ollama (Optional, Self-Hosted)**
-* Service: Runs locally on your server
-* No data leaves your infrastructure
