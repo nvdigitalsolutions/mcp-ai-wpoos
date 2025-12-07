@@ -46,12 +46,13 @@ WP_MCP_AI_Gemini_Video_Generation_Service::init();
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
 
-// Load performance monitor service only when not in base version mode and Pro addon is available.
-// Check for Pro addon file existence or Pro version constant (for separate plugin scenario).
-$pro_addon_file = defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' : '';
-$has_pro_addon  = ( ! empty( $pro_addon_file ) && file_exists( $pro_addon_file ) ) || defined( 'WP_MCP_AI_PRO_VERSION' );
+// Load performance monitor service only when Pro addon is available.
+// Pro addon may be bundled (combined plugin) or loaded separately.
+// Check if Pro version constant is defined OR if Pro addon file exists.
+$pro_addon_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || 
+	( defined( 'WP_MCP_AI_PATH' ) && file_exists( WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' ) );
 
-if ( ! wp_mcp_ai_is_base_version() && $has_pro_addon ) {
+if ( $pro_addon_available ) {
 	require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-monitor-service.php';
 }
 
@@ -177,15 +178,11 @@ function wp_mcp_ai_get_error_tracking_service() {
  * Get performance monitor service instance
  *
  * Helper function to get performance monitor service instance.
- * Returns null if not available (e.g., in base version mode).
+ * Returns null if not available (e.g., when Pro addon is not present).
  *
  * @return WP_MCP_AI_Performance_Monitor_CCT|null Performance monitor service instance or null.
  */
 function wp_mcp_ai_get_performance_monitor_service() {
-	if ( wp_mcp_ai_is_base_version() ) {
-		return null;
-	}
-
 	if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
 		return null;
 	}
