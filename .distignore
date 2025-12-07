@@ -21,6 +21,8 @@
 .eslintignore
 .editorconfig
 .browserslistrc
+.nvmrc
+CODEOWNERS
 
 # Build tools and dependencies
 node_modules
@@ -36,6 +38,7 @@ esbuild.config.js
 # Development scripts
 bin
 patches
+patches.lock.json
 
 # Testing
 tests
@@ -49,7 +52,8 @@ coverage
 docker-compose.yml
 Dockerfile
 
-# Documentation (keep only readme.txt)
+# Documentation (keep only readme.txt and essential files)
+docs
 *.md
 !readme.txt
 
@@ -89,9 +93,12 @@ test-*.php
 verify-*.php
 verify-*.sh
 
-# Build output (not needed in SVN)
+# Build output and build-time directories (not needed in SVN)
 build
 svn-*
+addons
+core
+shared
 
 # Specific exclusions for this plugin
 test-capability-flags-integration.php
