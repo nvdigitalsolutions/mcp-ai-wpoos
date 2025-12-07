@@ -440,31 +440,43 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$gemini_tools = $provider_patterns['gemini']['tools'];
 		$placeholders = implode( ', ', array_fill( 0, count( $gemini_tools ), '%s' ) );
 
+		// Escape table name for defense-in-depth (same table name, escape once for all queries).
+		$table_name = esc_sql( $table_name );
+
 		// First, get total count of ALL Gemini tool records to provide context.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above, $placeholders contains only hardcoded %s.
 		$count_query = "
 			SELECT COUNT(*) as total
 			FROM {$table_name}
 			WHERE tool IN ({$placeholders})
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$count_prepare_args   = $gemini_tools;
 		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$total_gemini_records            = $wpdb->get_var( $count_prepared_query );
 		$results['total_gemini_records'] = intval( $total_gemini_records );
 
 		// Count misattributed records (all records that need migration, not just the limited batch).
+
+		// Escape table name for defense-in-depth (same table name, escape once for all queries).
+		$table_name = esc_sql( $table_name );
+
+		// Count misattributed records (all records that need migration, not just the limited batch).
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above, $placeholders contains only hardcoded %s.
 		$misattributed_count_query = "
 			SELECT COUNT(*) as total
 			FROM {$table_name}
 			WHERE tool IN ({$placeholders})
 			AND provider != 'gemini'
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$misattributed_count_prepared = $wpdb->prepare( $misattributed_count_query, $gemini_tools ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$total_misattributed = $wpdb->get_var( $misattributed_count_prepared );
 		$total_misattributed = intval( $total_misattributed );
 
@@ -473,6 +485,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 		// Find records that likely have provider misattributions (limited batch for processing).
 		// We look for Gemini tools that are NOT already marked with gemini provider.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above, $placeholders contains only hardcoded %s.
 		$query = "
 			SELECT id, user_id, tool, provider, model, input_tokens, output_tokens, cost_usd, is_estimated
 			FROM {$table_name}
@@ -481,11 +494,12 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			ORDER BY id ASC
 			LIMIT %d
 		";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$prepare_args   = array_merge( $gemini_tools, array( $limit ) );
 		$prepared_query = $wpdb->prepare( $query, $prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
 		$results['total_checked']           = count( $records );

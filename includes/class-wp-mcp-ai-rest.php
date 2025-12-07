@@ -6889,8 +6889,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			$table = $this->get_transcript_table_name();
+			// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
+			// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant slug.
+			$table = esc_sql( $this->get_transcript_table_name() );
 
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.
 			$query = $wpdb->prepare(
 				"SELECT request_payload
              FROM {$table}
@@ -6900,7 +6903,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$session_key,
 				absint( $user_id )
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 			$row = $wpdb->get_row( $query, ARRAY_A );
 
 			if ( empty( $row['request_payload'] ) ) {
