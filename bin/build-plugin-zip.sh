@@ -171,6 +171,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.wordpress-org' \
         --exclude '.codex' \
         --exclude '.devcontainer' \
+        --exclude '.vscode' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'bin' \
@@ -200,7 +201,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'wp-mcp-ai-base.php' \
-        --exclude 'addons/pro'
+        --exclude 'addons/pro' \
+        --exclude 'assets/examples'
     
     # Create ZIP
     cd build
@@ -225,9 +227,11 @@ if [ "$BUILD_PRO" = true ]; then
     if [ -d "addons/pro" ]; then
         rsync -av --quiet addons/pro/ "build/${PRO_SLUG}/" \
             --exclude '.git' \
+            --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
-            --exclude '*.zip'
+            --exclude '*.zip' \
+            --exclude 'assets/examples'
         
         # Create ZIP
         cd build
@@ -259,6 +263,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.wordpress-org' \
         --exclude '.codex' \
         --exclude '.devcontainer' \
+        --exclude '.vscode' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'bin' \
@@ -286,7 +291,8 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
-        --exclude '.distignore'
+        --exclude '.distignore' \
+        --exclude 'assets/examples'
     
     # Create ZIP
     cd build
