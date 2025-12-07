@@ -2202,8 +2202,20 @@ Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards and comprehensive assessment
+- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards (96/100 score)
+- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs, fixes, and improvements
+- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md) - Complete development history
 - [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
+
+### Documentation
+
+Comprehensive documentation is available:
+
+- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
+- **[CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md)** - Master bugs and fixes report
+- **[CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md)** - Master session summaries
+- **[CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md)** - Master code review (96/100)
+- **[TESTING_AND_QUALITY_REPORT.md](docs/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
 
 ### Security Vulnerabilities
 
