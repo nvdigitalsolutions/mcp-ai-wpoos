@@ -48,19 +48,6 @@ class My_Custom_Tool implements WP_MCP_AI_Core_Tool_Interface {
 }
 `
 
-= Pro Add-ons =
-
-Commercial add-ons are available for advanced features:
-
-* WooCommerce integration
-* JetEngine integration
-* Elementor widgets
-* Advanced permissions
-* Rate limiting controls
-* Analytics dashboard
-
-Visit [nvdigitalsolutions.com](https://nvdigitalsolutions.com) for more information.
-
 == Installation ==
 
 1. Upload the plugin files to `/wp-content/plugins/wp-mcp-ai-core/`
@@ -111,4 +98,31 @@ Initial release.
 
 == Privacy Policy ==
 
-This plugin does not collect or send any data externally. All data stays on your WordPress installation.
+**WP MCP AI Core** does not collect, store, or transmit any data externally.
+
+= What Data Does This Plugin Handle? =
+
+**Locally Stored (Your WordPress Database):**
+* Plugin configuration settings
+* Tool registry and definitions
+* API endpoint configurations
+
+**No External Communication:**
+* No analytics or telemetry
+* No tracking scripts or cookies
+* No phone-home functionality
+* All data remains on your WordPress installation
+
+= Integration with AI Services =
+
+This plugin provides a framework only. When you integrate AI services (like OpenAI, Google Gemini, or others) through extensions or custom code, those integrations may transmit data to external services. Review the privacy policies of any AI providers you choose to integrate.
+
+= GDPR Compliance =
+
+The core plugin:
+* Stores no personal data
+* Makes no external API calls
+* Processes only data you explicitly configure
+* Provides hooks for extensions to implement GDPR controls
+
+**You are responsible for** reviewing the privacy implications of any extensions, add-ons, or AI service integrations you configure.

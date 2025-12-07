@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Open Operator System Pro (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ tools with optional plugin integrations. Patent Pending (Application #19/410,504).
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes comprehensive tools with optional plugin integrations.
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -19,10 +19,6 @@
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
- *
- * Patent Pending: This software is the subject of a pending patent application
- * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration
- * Layer with Real-Time Capability Gating and Resource Budgeting."
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -527,19 +523,8 @@ if ( ! $skip_buffering ) {
 	ob_end_clean();
 }
 
-// Load Performance section AJAX handlers for Elementor widgets on frontend.
-// The Performance section's AJAX handlers are needed by Elementor widgets that can
-// be displayed on the frontend (Performance Test Runner and Performance Metrics widgets).
-if ( ! is_admin() ) {
-	// Load required dependencies for Performance section.
-	require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-
-	// Instantiate Performance section to register AJAX handlers.
-	// The constructor checks is_admin() and only registers admin-specific hooks when in admin context.
-	$container = wp_mcp_ai_container();
-	$container->get( 'section.performance' );
-}
+// Note: Performance section moved to Pro addon (uses exec for PHPUnit tests).
+// Frontend AJAX handlers for Performance widgets are now only available with Pro addon.
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';

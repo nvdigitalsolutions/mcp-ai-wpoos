@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-jukebox-service.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-jukebox-service.php';
 
 /**
  * Provides a tool for checking OpenAI Jukebox installation status.
