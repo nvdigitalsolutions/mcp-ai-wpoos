@@ -956,5 +956,5 @@ The inclusion of the **Cron Manager subsystem** further strengthens the patent's
 ---
 
 **Maintained by:** NV Digital Solutions  
-**Documentation Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Documentation Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **License:** GPLv3 or later

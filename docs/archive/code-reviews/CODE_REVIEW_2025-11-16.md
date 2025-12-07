@@ -3,7 +3,7 @@
 ## Executive Summary
 
 **Review Date**: November 16, 2025 (Updated)  
-**Repository**: nvdigitalsolutions/wp-mcp-ai  
+**Repository**: nvdigitalsolutions/mcp-ai-wpoos  
 **Plugin Version**: 1.0.0  
 **Code Quality Score**: 95/100 (Excellent - Maintained)
 

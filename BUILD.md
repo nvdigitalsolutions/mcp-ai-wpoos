@@ -380,7 +380,7 @@ When a version tag is pushed (e.g., `v1.0.0`), the GitHub Actions release workfl
 3. Uploads them to the GitHub Release page
 
 **To find released ZIP files:**
-1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
+1. Go to the [GitHub Releases page](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases)
 2. Find the version you need
 3. Download the appropriate ZIP file:
    - `mcp-ai-wpoos-base-X.Y.Z.zip` - Standalone base version

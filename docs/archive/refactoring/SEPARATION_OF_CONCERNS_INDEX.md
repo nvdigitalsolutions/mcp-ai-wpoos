@@ -1,6 +1,6 @@
 # Separation of Concerns Review - Documentation Index
 
-**Repository**: nvdigitalsolutions/wp-mcp-ai  
+**Repository**: nvdigitalsolutions/mcp-ai-wpoos  
 **Review Date**: 2025-11-13  
 **Review Type**: Code Quality - Separation of Concerns Analysis  
 **Status**: ✅ Analysis Complete | ✅ Phases 1-2 Complete | ⏸️ Pause & Evaluate

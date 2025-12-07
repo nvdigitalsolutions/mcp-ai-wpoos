@@ -109,7 +109,7 @@ The workflow will:
 
 If needed, create a release manually:
 
-1. Go to [GitHub Releases](https://github.com/nvdigitalsolutions/wp-mcp-ai/releases)
+1. Go to [GitHub Releases](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases)
 2. Click "Draft a new release"
 3. Create a new tag (e.g., `v1.0.0`)
 4. Add release title and notes

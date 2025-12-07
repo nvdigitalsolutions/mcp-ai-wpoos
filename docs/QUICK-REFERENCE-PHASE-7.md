@@ -381,7 +381,7 @@ Phase 7 builds on Phases 1-6, so:
 - **Full Documentation**: See `docs/PHASE-7-ANALYTICS-PLAN.md`
 - **Current Features**: See `TOKEN-USAGE-MANAGER-IMPLEMENTATION.md`
 - **Original Plan**: See `docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md`
-- **GitHub Issues**: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- **GitHub Issues**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 
 ---
 

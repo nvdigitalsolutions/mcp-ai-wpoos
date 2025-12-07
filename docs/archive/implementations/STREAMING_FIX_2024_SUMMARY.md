@@ -299,4 +299,4 @@ To disable chunking and send complete response only:
 
 - Implementation: GitHub Copilot
 - Testing: nvdigitalsolutions
-- Repository: https://github.com/nvdigitalsolutions/wp-mcp-ai
+- Repository: https://github.com/nvdigitalsolutions/mcp-ai-wpoos

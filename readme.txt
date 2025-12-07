@@ -94,18 +94,18 @@ WP oOS works perfectly standalone. Optional integrations add enhanced functional
 
 Comprehensive documentation is available in the plugin's `/docs/` directory:
 
-* [Quick Reference Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/QUICK_REFERENCE.md)
-* [REST API Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/rest-api.md)
-* [Tool Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/tool-reference.md)
-* [MCP Server Authentication](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/mcp-server-authentication.md)
+* [Quick Reference Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md)
+* [REST API Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/rest-api.md)
+* [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/tool-reference.md)
+* [MCP Server Authentication](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/mcp-server-authentication.md)
 
 = Open Source =
 
 WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
-* [GitHub Repository](https://github.com/nvdigitalsolutions/wp-mcp-ai)
-* [Issue Tracker](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
-* [Contributing Guide](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CONTRIBUTING.md)
+* [GitHub Repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
+* [Issue Tracker](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
+* [Contributing Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CONTRIBUTING.md)
 
 == Installation ==
 
@@ -178,7 +178,7 @@ WP oOS includes a full MCP server:
 2. Configure your MCP client with the credentials
 3. Use endpoint: `https://yoursite.com/wp-json/mcp-ai/v1/`
 
-See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/mcp-server-authentication.md) for detailed setup.
+See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/mcp-server-authentication.md) for detailed setup.
 
 = Is this plugin GDPR compliant? =
 
@@ -199,12 +199,12 @@ WP oOS has a developer-friendly tool registry:
     $registry->register_tool( 'My_Custom_Tool_Class' );
 } );`
 
-See our [Tool Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/tool-reference.md) for examples.
+See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/tool-reference.md) for examples.
 
 = Where can I get support? =
 
-* [GitHub Issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues) - Bug reports and feature requests
-* [Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai/tree/main/docs) - Comprehensive guides
+* [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
+* [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
 * [WordPress.org Forums](https://wordpress.org/support/plugin/wp-mcp-ai/) - Community support
 
 == Screenshots ==
@@ -236,7 +236,7 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/ma
 
 = Development History =
 
-This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/CHANGELOG.md) for detailed development history.
+This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
 

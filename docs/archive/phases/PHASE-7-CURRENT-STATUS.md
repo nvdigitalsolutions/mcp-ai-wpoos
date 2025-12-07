@@ -312,7 +312,7 @@ Phase 7 Week 1-2 **SUCCESS CRITERIA MET:**
 
 ## Contact & Support
 
-**Repository**: https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Repository**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **Branch**: `copilot/enhance-token-manager-again`  
 **Documentation**: 
 - `TOKEN-USAGE-MANAGER-IMPLEMENTATION.md` - Phases 1-6 summary

@@ -1,7 +1,7 @@
 # WP oOS - Master Code Review
 
 **Last Updated:** December 6, 2025  
-**Repository:** nvdigitalsolutions/wp-mcp-ai  
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos  
 **Status:** ✅ Production Ready
 
 ---

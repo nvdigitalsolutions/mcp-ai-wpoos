@@ -1,6 +1,6 @@
 # Separation of Concerns Violations - Executive Summary
 
-**Repository**: nvdigitalsolutions/wp-mcp-ai  
+**Repository**: nvdigitalsolutions/mcp-ai-wpoos  
 **Review Date**: 2025-11-13  
 **Status**: ⚠️ **HIGH PRIORITY - ACTION REQUIRED**
 

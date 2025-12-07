@@ -1,6 +1,6 @@
 # Code Review Summary Report
 
-**Repository:** nvdigitalsolutions/wp-mcp-ai  
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos  
 **Review Date:** November 2, 2024  
 **Version Reviewed:** 1.0.0  
 **Review Type:** Comprehensive Code Quality, Security, and Maintainability Assessment

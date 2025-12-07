@@ -1,12 +1,12 @@
 # WP Open Operator System (WP oOS)
 
-[![PHPUnit](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/phpunit.yml)
-[![JavaScript Tests](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/javascript-tests.yml)
-[![PHP Linting](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai/actions/workflows/php-linting.yml)
+[![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
+[![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
+[![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
-[![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/wp-mcp-ai#patent-pending)
+[![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 
 **Version:** 1.0.0 (Beta)  
 **MCP Specification:** 2024-11-05  
@@ -2161,7 +2161,7 @@ When encountering problems, please:
 - [ ] Check the [troubleshooting guide](docs/deployment-troubleshooting.md)
 - [ ] Enable logging in Settings → WP oOS to capture detailed errors
 - [ ] Review the [common issues section](#-common-issues) below
-- [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
+- [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 - [ ] Test with a default assistant to isolate configuration issues
 
 ### Common Issues
@@ -2195,7 +2195,7 @@ When creating a GitHub issue, please include:
 - **Expected behavior** vs actual behavior
 - **Screenshots** if applicable
 
-Create issues at: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 
 ### Contributing
 
@@ -2213,7 +2213,7 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 ### Community & Updates
 
-- **GitHub Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai
+- **GitHub Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
 - **License:** GPLv3 or later
 
@@ -2229,4 +2229,4 @@ See [LICENSE](LICENSE) for full text.
 
 **Thank you for using WP Open Operator System!**
 
-For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/wp-mcp-ai).
+For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).

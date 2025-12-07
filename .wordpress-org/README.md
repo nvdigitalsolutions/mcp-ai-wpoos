@@ -177,5 +177,5 @@ The GitHub release workflow automatically deploys assets:
 ## Links
 
 - **Product Page:** https://nvdigitalsolutions.com/wpoos
-- **GitHub:** https://github.com/nvdigitalsolutions/wp-mcp-ai
+- **GitHub:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **NV Digital Solutions:** https://nvdigitalsolutions.com/

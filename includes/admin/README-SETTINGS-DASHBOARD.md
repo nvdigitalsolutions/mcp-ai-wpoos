@@ -201,5 +201,5 @@ Planned features (as per SETTINGS-RESTRUCTURE-PLAN.md):
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: `docs/` directory

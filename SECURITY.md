@@ -196,7 +196,7 @@ Choose the authentication method appropriate for your security requirements.
 - [WordPress Security Handbook](https://developer.wordpress.org/apis/security/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OpenAI Security Best Practices](https://platform.openai.com/docs/guides/safety-best-practices)
-- [WP oOS Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai)
+- [WP oOS Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 
 ## Contact
 

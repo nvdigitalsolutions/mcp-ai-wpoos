@@ -2,7 +2,7 @@
 
 **Date:** November 10, 2024  
 **Task:** Search across all branches for orchestration dashboard markdown documentation  
-**Repository:** nvdigitalsolutions/wp-mcp-ai
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos
 
 ---
 
@@ -101,7 +101,7 @@ This report documents the search across all branches and git history for orchest
 - 27 test cases covering all new methods
 - SIEM integration for critical states
 
-**Reference:** [PR #852](https://github.com/nvdigitalsolutions/wp-mcp-ai/pull/852)
+**Reference:** [PR #852](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/852)
 
 ---
 

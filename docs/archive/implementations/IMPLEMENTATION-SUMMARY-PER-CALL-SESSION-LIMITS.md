@@ -349,7 +349,7 @@ composer run test -- tests/test-per-call-and-session-limits.php
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: `docs/DOCUMENTATION_INDEX.md`
 
 ## Summary

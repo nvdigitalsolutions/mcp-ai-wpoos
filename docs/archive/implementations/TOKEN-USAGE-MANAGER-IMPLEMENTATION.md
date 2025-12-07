@@ -728,7 +728,7 @@ For issues or questions:
 
 **Implementation Date**: 2025-11-11  
 **Based On**: TOKEN-MANAGER-ENHANCEMENT-PLAN.md  
-**Repository**: nvdigitalsolutions/wp-mcp-ai  
+**Repository**: nvdigitalsolutions/mcp-ai-wpoos  
 **Contributors**: GitHub Copilot Workspace, WP oOS Development Team
 
 ---

@@ -562,6 +562,6 @@ wrk -t4 -c100 -d30s http://example.com/wp-json/mcp-ai/v1/assistants
 
 For issues or questions:
 
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: See `docs/` directory
 - Security Issues: See SECURITY.md

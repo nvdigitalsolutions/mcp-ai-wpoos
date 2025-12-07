@@ -405,7 +405,7 @@ Number of background AI tasks currently scheduled.
 
 - **Documentation**: Check the `docs/` folder for guides
 - **Diagnostics**: Use Tools → WP oOS Diagnostic
-- **Support**: Visit https://github.com/nvdigitalsolutions/wp-mcp-ai
+- **Support**: Visit https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 
 ### Advanced Usage
 
@@ -416,5 +416,5 @@ Number of background AI tasks currently scheduled.
 ---
 
 **Maintained by:** NV Digital Solutions  
-**Documentation Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Documentation Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **License:** GPLv3 or later

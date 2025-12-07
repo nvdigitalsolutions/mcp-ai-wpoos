@@ -645,6 +645,6 @@ add_filter( 'wp_mcp_ai_mesh_router_cost_factor', function( $score, $provider ) {
 ---
 
 **Maintained by:** NV Digital Solutions  
-**Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **License:** GPLv3 or later  
 **Support:** https://nvdigitalsolutions.com/support

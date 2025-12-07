@@ -609,6 +609,6 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 ---
 
 **Maintained by:** NV Digital Solutions  
-**Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
+**Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos  
 **License:** GPLv3 or later  
 **Support:** https://nvdigitalsolutions.com/support

@@ -3,7 +3,7 @@
 **Review Date:** December 6, 2025  
 **Reviewer:** GitHub Copilot Coding Agent  
 **Plugin Version:** 1.0.0  
-**Repository:** nvdigitalsolutions/wp-mcp-ai  
+**Repository:** nvdigitalsolutions/mcp-ai-wpoos  
 **Branch:** copilot/update-readme-and-docs-again
 
 ---

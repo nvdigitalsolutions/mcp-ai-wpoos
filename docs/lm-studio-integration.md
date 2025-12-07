@@ -278,7 +278,7 @@ LM Studio's OpenAI-compatible API doesn't require authentication by default. For
 
 ### Plugin Issues
 
-- GitHub Issues: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: `/docs/` directory
 
 ### LM Studio Issues
