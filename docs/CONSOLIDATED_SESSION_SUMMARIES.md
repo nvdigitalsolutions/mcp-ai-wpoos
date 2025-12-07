@@ -83,7 +83,7 @@
 - ✅ Code Review: PASSED
 - ✅ CodeQL: PASSED
 
-**Reference**: `archive/summaries/OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`, `SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md`
+**Reference**: `archive/summaries/OUTPUT_ESCAPING_SESSION_3_SUMMARY.md`, `archive/summaries/SYSTEMATIC_OUTPUT_ESCAPING_COMPLETION.md`
 
 ---
 
@@ -134,7 +134,7 @@
 8. `includes/admin/sections/class-wp-mcp-ai-section-token-manager.php` (33 fixes)
 
 **Documentation Created**:
-- `OUTPUT_ESCAPING_PROGRESS.md` - Complete file inventory and workflow
+- `archive/summaries/OUTPUT_ESCAPING_PROGRESS.md` - Complete file inventory and workflow
 
 **Patterns Established**:
 1. Numeric Values: `esc_html( number_format_i18n( $value ) )`
@@ -353,7 +353,7 @@ Located in docs/archive/summaries/:
 6. **OUTPUT_ESCAPING_SESSION_3_SUMMARY.md** - Session 3 detailed summary
 
 ### Root Level Progress Documents
-Located in repository root:
+Located in `docs/archive/summaries/`:
 
 1. **OUTPUT_ESCAPING_PROGRESS.md** - Progress tracker for escaping work
 2. **OUTPUT_ESCAPING_STRATEGY.md** - Patterns and strategy document
