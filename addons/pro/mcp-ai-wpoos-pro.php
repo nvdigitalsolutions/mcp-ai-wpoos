@@ -101,6 +101,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
  * ============================================================================
  */
 
+if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
+	/**
+	 * Load Pro admin sections.
+	 *
+	 * Loads the Performance monitoring section and other Pro-specific admin sections.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_pro_load_admin_sections() {
+		// Load Performance section.
+		$performance_section_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		if ( file_exists( $performance_section_file ) ) {
+			require_once $performance_section_file;
+		}
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -119,6 +136,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
+
+		// Load Pro admin sections.
+		// Performance section is only loaded in admin context.
+		if ( is_admin() ) {
+			wp_mcp_ai_pro_load_admin_sections();
+		}
 
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
