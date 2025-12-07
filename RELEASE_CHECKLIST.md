@@ -140,16 +140,16 @@ If needed, create a release manually:
 #### Step 3: Set Up SVN Access
 
 After approval, you'll receive:
-- SVN repository URL: `https://plugins.svn.wordpress.org/wp-mcp-ai/`
+- SVN repository URL: `https://plugins.svn.wordpress.org/mcp-ai-wpoos/`
 - Commit access with your wordpress.org credentials
 
 #### Step 4: Initial SVN Setup
 
 ```bash
 # Check out the empty repository
-svn checkout https://plugins.svn.wordpress.org/wp-mcp-ai/ svn-wp-mcp-ai
+svn checkout https://plugins.svn.wordpress.org/mcp-ai-wpoos/ svn-mcp-ai-wpoos
 
-cd svn-wp-mcp-ai
+cd svn-mcp-ai-wpoos
 
 # Repository structure
 # /trunk/     - Development version
@@ -163,7 +163,7 @@ cd svn-wp-mcp-ai
 
 ```bash
 # Navigate to your SVN checkout
-cd svn-wp-mcp-ai
+cd svn-mcp-ai-wpoos
 
 # Update trunk with latest plugin files
 rm -rf trunk/*
@@ -196,7 +196,7 @@ Uncomment the `deploy-wporg` job in `.github/workflows/release.yml` and add secr
 Plugin assets (banner, icon, screenshots) are stored in `/assets/`:
 
 ```bash
-cd svn-wp-mcp-ai
+cd svn-mcp-ai-wpoos
 
 # Copy asset files
 cp /path/to/.wordpress-org/*.png assets/

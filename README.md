@@ -482,7 +482,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 ## 📦 Installation
 
 ### Standard Installation
-1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
+1. Upload `mcp-ai-wpoos.zip` to `/wp-content/plugins/`
 2. Activate **WP oOS** from the WordPress admin
 3. Go to **Settings → WP oOS**
 4. Enter your OpenAI API key
@@ -1823,7 +1823,7 @@ docker compose up -d
 ```
 
 - WordPress will be available at [http://localhost:8000](http://localhost:8000).
-- The plugin source in this repository is mounted to `/var/www/html/wp-content/plugins/wp-mcp-ai` inside the container, so edits on your machine are reflected immediately.
+- The plugin source in this repository is mounted to `/var/www/html/wp-content/plugins/mcp-ai-wpoos` inside the container, so edits on your machine are reflected immediately.
 - The MySQL service is provisioned with the `wordpress` database, user, and password (`wordpress` / `wordpress`).
 
 Visit the site in your browser to complete the standard WordPress installation flow, using the database credentials above when prompted. When you're finished developing, stop the stack with `docker compose down`.
@@ -1840,7 +1840,7 @@ The script performs the following steps:
 
 - Downloads WP-CLI locally (if necessary) and uses it to fetch the latest WordPress core files into `.codex-wordpress/wordpress`.
 - Installs the [SQLite Database Integration](https://wordpress.org/plugins/sqlite-database-integration/) plugin so WordPress can run without a MySQL server.
-- Symlinks this repository into the new install's `wp-content/plugins/wp-mcp-ai` directory.
+- Symlinks this repository into the new install's `wp-content/plugins/mcp-ai-wpoos` directory.
 - Installs Composer development dependencies (when available) and provisions the WordPress test suite so `composer run test` works immediately.
 - Runs `wp core install`, activates the **WP oOS** plugin, enables pretty permalinks, and sets a default site tagline.
 - Boots a development server on port `8000` via `wp server` and logs output to `.codex-wordpress/wp-server.log`.
