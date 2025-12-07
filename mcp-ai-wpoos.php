@@ -523,19 +523,8 @@ if ( ! $skip_buffering ) {
 	ob_end_clean();
 }
 
-// Load Performance section AJAX handlers for Elementor widgets on frontend.
-// The Performance section's AJAX handlers are needed by Elementor widgets that can
-// be displayed on the frontend (Performance Test Runner and Performance Metrics widgets).
-if ( ! is_admin() ) {
-	// Load required dependencies for Performance section.
-	require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-
-	// Instantiate Performance section to register AJAX handlers.
-	// The constructor checks is_admin() and only registers admin-specific hooks when in admin context.
-	$container = wp_mcp_ai_container();
-	$container->get( 'section.performance' );
-}
+// Note: Performance section moved to Pro addon (uses exec for PHPUnit tests).
+// Frontend AJAX handlers for Performance widgets are now only available with Pro addon.
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';

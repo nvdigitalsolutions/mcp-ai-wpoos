@@ -25,7 +25,7 @@ class WP_MCP_AI_Settings_Lazy_Loading_Test extends WP_UnitTestCase {
 			'WP_MCP_AI_Section_Authentication',
 			'WP_MCP_AI_Section_Tools',
 			'WP_MCP_AI_Section_Token_Manager',
-			'WP_MCP_AI_Section_Performance',
+			// Note: Performance section moved to Pro addon.
 			'WP_MCP_AI_Section_Advanced',
 		);
 

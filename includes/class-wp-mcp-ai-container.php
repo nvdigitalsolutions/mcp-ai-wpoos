@@ -586,9 +586,14 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// Performance section is only available with Pro addon.
 		$this->singleton(
 			'section.performance',
 			function () {
+				// Return null if Performance section is not available (Pro addon not active).
+				if ( ! class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
+					return null;
+				}
 				return new WP_MCP_AI_Section_Performance();
 			}
 		);

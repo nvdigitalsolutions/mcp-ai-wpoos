@@ -372,14 +372,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 			}
 
-			// Instantiate the performance section to use its rendering methods.
-			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
+			// Performance section moved to Pro addon.
+			// Check if Pro addon is active before attempting to instantiate.
+			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
 				$performance_section = new WP_MCP_AI_Section_Performance();
 				$performance_section->render();
 			} else {
 				?>
 				<div class="notice notice-info inline">
-					<p><?php esc_html_e( 'Performance monitoring features are not available. The Performance section class could not be loaded.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Performance monitoring features require WP oOS Pro addon.', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<?php
 			}

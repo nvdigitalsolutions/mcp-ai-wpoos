@@ -104,9 +104,13 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
-		// Performance section is registered to initialize hooks but hidden from main navigation.
-		// It's embedded as a sub-tab within Advanced Settings (tab = '__hidden__')..
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
+		
+		// Performance section is only available with Pro addon.
+		$performance_section = $container->get( 'section.performance' );
+		if ( null !== $performance_section ) {
+			WP_MCP_AI_Settings_Registry::register_section( $performance_section );
+		}
+		
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
