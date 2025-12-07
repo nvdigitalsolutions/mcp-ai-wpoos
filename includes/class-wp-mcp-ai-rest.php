@@ -61,6 +61,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const DOCUMENT_PROMPT_TOOL_SLUG = 'submit_document_prompt';
 
 		/**
+		 * Utility tools that are auto-enabled for all assistants.
+		 *
+		 * These tools provide essential chat client functionality (speech synthesis,
+		 * audio transcription) and don't perform sensitive operations, so they should
+		 * be automatically available without requiring explicit configuration.
+		 *
+		 * @since 1.0.0
+		 */
+		const AUTO_ENABLED_UTILITY_TOOLS = array(
+			'generate_openai_speech',
+			'transcribe_openai_audio',
+		);
+
+		/**
 		 * Tool registry instance.
 		 *
 		 * @var WP_MCP_AI_Tool_Registry
@@ -3978,6 +3992,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
 					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 				}
+			}
+
+			// Auto-enable utility tools that provide essential chat client functionality.
+			$tools_added = false;
+			foreach ( self::AUTO_ENABLED_UTILITY_TOOLS as $utility_tool_slug ) {
+				if ( $this->candidates_include_slug( $tool_candidates, $utility_tool_slug ) && ! in_array( $utility_tool_slug, $allowed_tools, true ) ) {
+					$assistant_config = $this->ensure_tool_in_config( $assistant_config, $utility_tool_slug );
+					$tools_added      = true;
+				}
+			}
+
+			// Refresh allowed_tools if any utility tools were added.
+			if ( $tools_added ) {
+				$allowed_tools = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 			}
 
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
