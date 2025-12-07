@@ -122,7 +122,7 @@
 ## File Structure
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── assets/
 │   ├── css/
 │   │   ├── admin-test-profession.css (NEW)

@@ -18,7 +18,7 @@ WP oOS Core is an open-source MCP server implementation for WordPress. It allows
 ## Installation
 
 1. Download the latest release from the [releases page](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases)
-2. Upload to `/wp-content/plugins/wp-mcp-ai-core/`
+2. Upload to `/wp-content/plugins/mcp-ai-wpoos-core/`
 3. Activate through WordPress admin
 
 ## Quick Start

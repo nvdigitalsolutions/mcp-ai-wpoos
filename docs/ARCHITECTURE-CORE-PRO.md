@@ -5,7 +5,7 @@ This document describes the architecture split between WP oOS Core and WP oOS Pr
 ## Repository Structure
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── core/                           # Core plugin (GPL-3.0+)
 │   ├── wp-mcp-ai-core.php         # Main plugin file
 │   ├── includes/

@@ -443,7 +443,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for testing guidelines.
 ## Directory Structure
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── includes/                 # Core plugin code (213 PHP files)
 │   ├── admin/               # Admin UI classes
 │   ├── assistants/          # Assistant management

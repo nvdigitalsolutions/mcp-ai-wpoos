@@ -304,7 +304,7 @@ Each tool implements the same interface but provides different execution strateg
 ## Directory Structure
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── mcp-ai-wpoos.php                 # Main plugin file (entry point)
 ├── includes/                      # All PHP includes
 │   ├── admin/                    # Admin dashboard components

@@ -117,7 +117,7 @@ The plugin automatically falls back to lightweight performance checks when `exec
 If you have command-line access (SSH):
 
 ```bash
-cd /path/to/wp-content/plugins/wp-mcp-ai
+cd /path/to/wp-content/plugins/mcp-ai-wpoos
 ./bin/run-performance-tests.sh --suite=stress
 ./bin/run-performance-tests.sh --suite=security
 ./bin/run-performance-tests.sh --suite=speed

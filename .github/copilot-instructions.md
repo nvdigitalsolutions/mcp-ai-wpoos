@@ -5,7 +5,7 @@ This repository contains **WP Open Operator System (WP oOS)**, a WordPress plugi
 ## Repository Structure
 
 ```
-wp-mcp-ai/
+mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management

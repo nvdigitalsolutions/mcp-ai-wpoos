@@ -1,6 +1,6 @@
 # WordPress.org Plugin Assets
 
-This directory contains assets for the WordPress.org plugin directory. These files are used to display your plugin's branding on wordpress.org/plugins/wp-mcp-ai/.
+This directory contains assets for the WordPress.org plugin directory. These files are used to display your plugin's branding on wordpress.org/plugins/mcp-ai-wpoos/.
 
 ## Official Brand Assets
 
@@ -114,7 +114,7 @@ These assets are deployed to WordPress.org SVN repository:
 
 ```bash
 # Check out assets directory only
-svn co https://plugins.svn.wordpress.org/wp-mcp-ai/assets/ ./svn-assets
+svn co https://plugins.svn.wordpress.org/mcp-ai-wpoos/assets/ ./svn-assets
 
 # Copy new assets
 cp .wordpress-org/*.png ./svn-assets/
