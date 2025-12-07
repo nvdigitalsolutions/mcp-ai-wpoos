@@ -181,11 +181,15 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.editorconfig' \
+        --exclude '.nvmrc' \
+        --exclude 'CODEOWNERS' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.json' \
         --exclude 'composer.lock' \
         --exclude 'package.json' \
         --exclude 'package-lock.json' \
+        --exclude 'patches.lock.json' \
         --exclude 'babel.config.js' \
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
@@ -194,6 +198,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'ARCHITECTURE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -276,11 +281,15 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.editorconfig' \
+        --exclude '.nvmrc' \
+        --exclude 'CODEOWNERS' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.json' \
         --exclude 'composer.lock' \
         --exclude 'package.json' \
         --exclude 'package-lock.json' \
+        --exclude 'patches.lock.json' \
         --exclude 'babel.config.js' \
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
@@ -289,6 +298,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'ARCHITECTURE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
