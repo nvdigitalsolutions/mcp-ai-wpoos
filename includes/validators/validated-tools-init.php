@@ -31,8 +31,9 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 
 	// Define validated tools to register.
 	$validated_tools = array(
-		'WP_MCP_AI_Tool_Save_Post_Validated'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post-validated.php',
-		'WP_MCP_AI_Tool_Create_Cron_Job_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job-validated.php',
+		'WP_MCP_AI_Tool_Save_Post_Validated'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post-validated.php',
+		'WP_MCP_AI_Tool_Create_Cron_Job_Validated'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job-validated.php',
+		'WP_MCP_AI_Tool_Search_Content_Validated'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content-validated.php',
 	);
 
 	// Register each validated tool.
