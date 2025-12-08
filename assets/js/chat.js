@@ -10614,9 +10614,7 @@
             })
             .then(function (result) {
                 saveConversationToStorage(state);
-                // handleChatResponse already saved to CCT, but we save again for consistency
-                // This is harmless and ensures persistence even if handleChatResponse changes
-                saveConversationToCCT(state, { silent: true });
+                // Note: handleChatResponse already saved to CCT at line 13047
                 finalize();
                 return result;
             }, function (error) {
@@ -10829,9 +10827,7 @@
                     // Process the final response data using standard handler
                     return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
-                        // handleChatResponse already saved to CCT, but we save again for consistency
-                        // This is harmless and ensures persistence even if handleChatResponse changes
-                        saveConversationToCCT(state, { silent: true });
+                        // Note: handleChatResponse already saved to CCT at line 13047
                         finalize();
                         // Add brief delay before clearing status to allow completion message to be visible
                         // This ensures users see "Tool completed successfully." before the status clears
