@@ -381,6 +381,26 @@ class WP_MCP_AI_Chat_Service {
 			}
 		}
 
+		// Add the final assistant response to the conversation messages.
+		// This is critical for transcript persistence - without this, the assistant's response
+		// to tool results is lost when saving to local storage or CCT.
+		if ( ! empty( $response['choices'][0]['message'] ) ) {
+			$final_message = $response['choices'][0]['message'];
+			
+			// Build the assistant message from the response.
+			$assistant_message = array(
+				'role'    => 'assistant',
+				'content' => isset( $final_message['content'] ) ? $final_message['content'] : '',
+			);
+			
+			// Include tool_calls if present (though final response typically doesn't have them).
+			if ( ! empty( $final_message['tool_calls'] ) ) {
+				$assistant_message['tool_calls'] = $final_message['tool_calls'];
+			}
+			
+			$messages[] = $assistant_message;
+		}
+
 		// Update response completion timestamp after agentic loop.
 		$transcript_context['response_completed_at'] = microtime( true );
 
