@@ -2,7 +2,49 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Settings UI Enhancements (December 8, 2025, PR #2072)
+- **27 New Settings Exposed in Admin UI**: Made previously hidden settings accessible with proper UI organization
+  - **Media**: MIME type allowlists for file and image uploads
+  - **OpenAI TTS**: Text-to-speech model, voice, and format configuration
+  - **High Token Fallback**: Auto-switch to fallback model when token limits exceeded
+  - **Tool Configuration**: Web search provider selection, group email controls, Varnish cache toggle
+  - **Cloudways**: Application and server ID fields for Cloudways integration
+  - **Google Analytics 4**: Service account JSON credentials field
+  - **Federation & Mesh Networking**: New subtab with 9 settings for distributed computing
+    - Federation directory participation toggle
+    - Regional routing configuration (geographic regions, data tags)
+    - Rate limiting controls (QPS, burst capacity)
+    - Mesh peer site configuration
+    - Auto-generated inbound API key for peer authentication
+  - Fixed naming inconsistencies between default settings and UI fields
+  - Removed duplicate integration settings from Tools section
+  - See `docs/CODE_REVIEW_2025-12-08.md` for complete details
+
+### Changed
+
+#### Pro Tool Reorganization (December 8, 2025, PR #2073)
+- **Moved 6 Exec Service Tools to Pro Addon**: Tools requiring external executables now properly designated as Pro-only
+  - `check_wp_cli` - WP-CLI environment inspection
+  - `extract_video_frames` - FFmpeg frame extraction
+  - `get_video_metadata` - FFmpeg metadata reader
+  - `remove_background` - Python rembg / remove.bg API background removal
+  - `generate_jukebox_music` - OpenAI Jukebox audio generation
+  - `check_jukebox_status` - Jukebox installation status checker
+  - Added `'pro'` capability flag to all 6 tools
+  - Registered tools in Pro addon instead of base plugin
+  - Removed from base tool registry to prevent duplicate registration
+  - **Note**: The Pro addon contains **38 total tools**, including these 6 exec-based tools plus 32 other Pro tools for social media, Google services, GitHub, WooCommerce, JetEngine, and more
+  - **Breaking Change**: Base version users no longer have access to these 6 exec-based tools
+  - Pro addon now required for exec-based media processing and WP-CLI tools
+  - See `docs/CODE_REVIEW_2025-12-08.md` for impact analysis
+
 ### Documentation
+- **Code Review December 8, 2025**: Comprehensive review of recent commits with recommendations
+  - Created `docs/CODE_REVIEW_2025-12-08.md` - Analysis of PR #2073 and PR #2072
+  - Overall grade: A - Excellent code quality, thorough testing
+  - Identified documentation updates needed for tool changes and new settings
 - **Comprehensive Documentation Consolidation (December 7, 2025)**: Consolidated ALL bug reports, fixes, code reviews, and session summaries into master documents
   - Created `docs/CONSOLIDATED_SESSION_SUMMARIES.md` - All development sessions from December 2025, November 2025, and archived sessions
   - Updated `docs/CONSOLIDATED_BUGS_AND_FIXES.md` - Added output escaping work, site creator fix, December code review

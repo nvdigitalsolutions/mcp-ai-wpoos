@@ -89,8 +89,28 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Generate Veo Video** (`generate_veo_video`) generates realistic videos from text descriptions using Google's Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached. Supports async mode for long-running video generation tasks.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php†L17-L300】
 - **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
 - **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
-- **Generate Jukebox Music** (`generate_jukebox_music`) generates music with vocals from a text description using locally-installed OpenAI Jukebox model. Supports artist style emulation, genre specification, and custom lyrics. Requires Jukebox installation on the server. Saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php†L17-L450】
-- **Check Jukebox Status** (`check_jukebox_status`) checks if OpenAI Jukebox is installed and properly configured on the server. Returns installation status, Python path, Jukebox installation path, and setup instructions if not installed.【F:includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php†L17-L130】
+
+## Pro Addon Tools (Exec-Based)
+
+The following tools require the **Pro addon** and external executables to be installed on the server. These tools are not available in the base version.
+
+### Video Processing (FFmpeg Required)
+
+- **Extract Video Frames** (`extract_video_frames`) **[PRO]** extracts individual frames from a video file using FFmpeg. Supports frame selection by time or frame number, quality control, and automatic Media Library integration. Requires FFmpeg to be installed on the server.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php†L17-L250】
+- **Get Video Metadata** (`get_video_metadata`) **[PRO]** reads comprehensive metadata from video files using FFmpeg, including duration, resolution, codec information, bitrate, and frame rate. Returns structured JSON data for further processing. Requires FFmpeg to be installed on the server.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php†L17-L150】
+
+### Audio Generation (Jukebox Required)
+
+- **Generate Jukebox Music** (`generate_jukebox_music`) **[PRO]** generates music with vocals from a text description using locally-installed OpenAI Jukebox model. Supports artist style emulation, genre specification, and custom lyrics. Requires Jukebox installation on the server. Saves the result to the Media Library.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php†L17-L450】
+- **Check Jukebox Status** (`check_jukebox_status`) **[PRO]** checks if OpenAI Jukebox is installed and properly configured on the server. Returns installation status, Python path, Jukebox installation path, and setup instructions if not installed.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php†L17-L130】
+
+### Image Processing (Python/rembg Required)
+
+- **Remove Background** (`remove_background`) **[PRO]** removes the background from an image using either the free Python rembg library (local processing) or the paid remove.bg API (cloud processing). Saves the result to the Media Library. Requires Python + rembg library for free mode, or remove.bg API key for paid mode.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-remove-background.php†L17-L250】
+
+### WordPress Management (WP-CLI Required)
+
+- **Check WP-CLI** (`check_wp_cli`) **[PRO]** inspects the WP-CLI environment, checking installation status, version, and available commands. Useful for automation and diagnostics. Requires WP-CLI to be installed on the server.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L130】
 
 
 ## Image manipulation (Graphic Editor Suite)
