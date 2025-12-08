@@ -69,10 +69,10 @@ class CreateAssistantArguments {
 		max: 3,
 		maxMessage: 'You can select up to {{ limit }} professions.'
 	)]
-	#[Assert\All([
+	#[Assert\All(array(
 		new Assert\Type('string'),
 		new Assert\Choice(
-			choices: [
+			choices: array(
 				'tax_advisor',
 				'customs_broker',
 				'compliance_officer',
@@ -104,10 +104,10 @@ class CreateAssistantArguments {
 		max: 2,
 		maxMessage: 'You can select up to {{ limit }} regions.'
 	)]
-	#[Assert\All([
+	#[Assert\All(array(
 		new Assert\Type('string'),
 		new Assert\Choice(
-			choices: [
+			choices: array(
 				'jamaica',
 				'sri_lanka',
 				'global',
@@ -147,10 +147,10 @@ class CreateAssistantArguments {
 		max: 20,
 		maxMessage: 'You can attach up to {{ limit }} files.'
 	)]
-	#[Assert\All([
+	#[Assert\All(array(
 		new Assert\Type('integer'),
 		new Assert\Positive(message: 'Attachment ID must be a positive integer.'),
-	])]
+	))]
 	public $attachment_ids = array();
 
 	/**
