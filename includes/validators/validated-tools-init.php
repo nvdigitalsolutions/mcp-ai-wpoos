@@ -35,6 +35,7 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Create_Cron_Job_Validated'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job-validated.php',
 		'WP_MCP_AI_Tool_Search_Content_Validated'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content-validated.php',
 		'WP_MCP_AI_Tool_Create_Assistant_Validated'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant-validated.php',
+		'WP_MCP_AI_Tool_Get_Recent_Posts_Validated'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts-validated.php',
 	);
 
 	// Register each validated tool.
