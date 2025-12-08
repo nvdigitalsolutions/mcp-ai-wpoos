@@ -26,7 +26,8 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		// Routes are registered by calling register_routes() directly from the main REST controller.
+		// This matches the pattern used by other REST controllers (Chat, MCP, Tools).
 	}
 
 	/**
