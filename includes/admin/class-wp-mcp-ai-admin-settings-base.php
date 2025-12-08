@@ -267,6 +267,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
+				'google_maps_api_key'                  => '',
 				'ita_tariff_api_key'                   => '',
 				'request_timeout'                      => 30,
 				'memory_max_file_bytes'                => self::DEFAULT_MEMORY_MAX_FILE_BYTES,

@@ -436,6 +436,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
+
+				// Google Maps Settings.
+				'google_maps_api_key'          => array(
+					'type'         => 'password',
+					'label'        => __( 'Google Maps API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: Google Cloud Console URL */
+						__( 'Your Google Maps Platform API key. Required for geocoding tools (address lookup, reverse geocoding, nearby places search). Get one from <a href="%s" target="_blank">Google Cloud Console</a>. You need to enable the "Geocoding API" and "Places API" for full functionality.', 'wp-mcp-ai' ),
+						'https://console.cloud.google.com/google/maps-apis/credentials'
+					),
+					'placeholder'  => 'AIza...',
+					'autocomplete' => 'new-password',
+				),
 			);
 		}
 
@@ -481,6 +494,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
+				),
+				'google_maps' => array(
+					'id'     => 'google_maps',
+					'label'  => __( 'Google Maps', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-location',
+					'fields' => array( 'google_maps_api_key' ),
 				),
 			);
 		}
