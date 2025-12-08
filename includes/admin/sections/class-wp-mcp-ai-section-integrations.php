@@ -385,7 +385,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'google_analytics',
 					'label'  => $is_pro_active ? __( 'Google Analytics', 'wp-mcp-ai' ) : __( 'Google Analytics (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-chart-bar',
-					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials' ),
+					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json', 'ita_tariff_api_key' ),
 					'pro'    => true,
 				),
 				'meta'             => array(

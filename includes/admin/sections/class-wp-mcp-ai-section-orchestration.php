@@ -69,6 +69,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
 				),
+				'orchestration_preset'            => array(
+					'type'        => 'hidden',
+					'default'     => 'auto',
+					'description' => __( 'Current orchestration configuration preset. Managed by the preset selector above.', 'wp-mcp-ai' ),
+				),
 				'enable_budget_management'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
