@@ -130,7 +130,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'label_off'    => __( 'No', 'wp-mcp-ai' ),
 				'return_value' => 'true',
 				'default'      => 'true',
-				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated.', 'wp-mcp-ai' ),
+				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated. Note: Streamable HTTP (MCP 2024-11-05) is separately available for MCP clients at the /mcp endpoint.', 'wp-mcp-ai' ),
 			)
 		);
 
