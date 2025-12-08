@@ -34,6 +34,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_MCP_AI_Validated_Tool
 	 * Constructor.
 	 */
 	public function __construct() {
+		parent::__construct();
 		$this->original_tool = new WP_MCP_AI_Tool_Get_Recent_Posts();
 	}
 

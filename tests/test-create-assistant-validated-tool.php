@@ -20,14 +20,14 @@ class Test_WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_UnitTestCase {
 	private $tool;
 
 	/**
-	 * Test user ID with edit_posts capability.
+	 * Test user ID (editor role).
 	 *
 	 * @var int
 	 */
 	private $editor_user_id;
 
 	/**
-	 * Test user ID without edit_posts capability.
+	 * Test user ID (subscriber role).
 	 *
 	 * @var int
 	 */

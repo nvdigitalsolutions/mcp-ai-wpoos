@@ -29,8 +29,6 @@ Implement Symfony next steps - Continue Phase 2 implementation by creating valid
 
 ### 2. Validation Classes Created (1 new class)
 
-### 2. Validation Classes Created (1 new class)
-
 #### GetRecentPostsArguments
 - **File:** `includes/validators/arguments/class-get-recent-posts-arguments.php`
 - **Complexity:** Low (2 simple parameters)
