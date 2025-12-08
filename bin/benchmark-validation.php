@@ -1,6 +1,6 @@
 <?php
 /**
- * Performance Benchmark: Old vs New Validation Pattern
+ * Performance Benchmark Script
  *
  * Compares performance of manual validation vs Symfony Validator.
  * This is a standalone utility script for performance testing.
@@ -14,8 +14,6 @@ define( 'WP_MCP_AI_PATH', __DIR__ . '/' );
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Mock WordPress functions for benchmark.
-if ( ! function_exists( 'sanitize_text_field' ) ) {
 /**
  * Mock sanitize_text_field.
  *
@@ -23,11 +21,19 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
  * @return string
  */
 function sanitize_text_field( $str ) {
-return trim( strip_tags( $str ) );
-}
+	return trim( wp_strip_all_tags( $str ) );
 }
 
-if ( ! function_exists( 'sanitize_key' ) ) {
+/**
+ * Mock wp_strip_all_tags.
+ *
+ * @param string $str String to strip tags from.
+ * @return string
+ */
+function wp_strip_all_tags( $str ) {
+	return strip_tags( $str );
+}
+
 /**
  * Mock sanitize_key.
  *
@@ -35,11 +41,9 @@ if ( ! function_exists( 'sanitize_key' ) ) {
  * @return string
  */
 function sanitize_key( $str ) {
-return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', $str ) );
-}
+	return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', $str ) );
 }
 
-if ( ! function_exists( 'absint' ) ) {
 /**
  * Mock absint.
  *
@@ -47,11 +51,9 @@ if ( ! function_exists( 'absint' ) ) {
  * @return int
  */
 function absint( $val ) {
-return abs( intval( $val ) );
-}
+	return abs( intval( $val ) );
 }
 
-if ( ! function_exists( '__' ) ) {
 /**
  * Mock translation function.
  *
@@ -60,32 +62,29 @@ if ( ! function_exists( '__' ) ) {
  * @return string
  */
 function __( $text, $domain = 'default' ) {
-return $text;
-}
+	return $text;
 }
 
-if ( ! class_exists( 'WP_Error' ) ) {
 /**
  * Mock WP_Error class.
  */
 class WP_Error {
-/**
- * Error storage.
- *
- * @var array
- */
-public $errors = array();
+	/**
+	 * Error storage.
+	 *
+	 * @var array
+	 */
+	public $errors = array();
 
-/**
- * Constructor.
- *
- * @param string $code    Error code.
- * @param string $message Error message.
- */
-public function __construct( $code, $message ) {
-$this->errors[ $code ] = array( $message );
-}
-}
+	/**
+	 * Constructor.
+	 *
+	 * @param string $code    Error code.
+	 * @param string $message Error message.
+	 */
+	public function __construct( $code, $message ) {
+		$this->errors[ $code ] = array( $message );
+	}
 }
 
 // Load validator service and validation class.
@@ -100,47 +99,42 @@ require_once __DIR__ . '/includes/validators/arguments/class-search-content-argu
  * @return float Time elapsed.
  */
 function benchmark_manual_validation( $arguments, $iterations = 1000 ) {
-$start = microtime( true );
+	$start = microtime( true );
 
-for ( $i = 0; $i < $iterations; $i++ ) {
-// Manual validation logic (simplified from search_content tool).
-$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
-$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
-$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-$limit       = $limit > 0 ? min( $limit, 50 ) : 10;
+	for ( $i = 0; $i < $iterations; $i++ ) {
+		$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
+		$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
+		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$limit       = $limit > 0 ? min( $limit, 50 ) : 10;
 
-// Validate search_term.
-if ( '' === $search_term && empty( $arguments['taxonomy_filters'] ) && empty( $arguments['meta_filters'] ) ) {
-$error = new WP_Error( 'wp_mcp_ai_missing_criteria', 'Provide search criteria' );
-continue;
-}
+		if ( '' === $search_term && empty( $arguments['taxonomy_filters'] ) && empty( $arguments['meta_filters'] ) ) {
+			$error = new WP_Error( 'wp_mcp_ai_missing_criteria', 'Provide search criteria' );
+			continue;
+		}
 
-// Validate limit.
-if ( $limit < 1 || $limit > 50 ) {
-$error = new WP_Error( 'wp_mcp_ai_invalid_limit', 'Limit must be between 1 and 50' );
-continue;
-}
+		if ( $limit < 1 || $limit > 50 ) {
+			$error = new WP_Error( 'wp_mcp_ai_invalid_limit', 'Limit must be between 1 and 50' );
+			continue;
+		}
 
-// Validate taxonomy filters.
-if ( isset( $arguments['taxonomy_filters'] ) && is_array( $arguments['taxonomy_filters'] ) ) {
-foreach ( $arguments['taxonomy_filters'] as $filter ) {
-if ( ! isset( $filter['taxonomy'] ) || ! isset( $filter['terms'] ) ) {
-$error = new WP_Error( 'invalid_filter', 'Invalid taxonomy filter' );
-continue 2;
-}
-if ( ! is_array( $filter['terms'] ) || empty( $filter['terms'] ) ) {
-$error = new WP_Error( 'invalid_terms', 'Invalid terms' );
-continue 2;
-}
-}
-}
+		if ( isset( $arguments['taxonomy_filters'] ) && is_array( $arguments['taxonomy_filters'] ) ) {
+			foreach ( $arguments['taxonomy_filters'] as $filter ) {
+				if ( ! isset( $filter['taxonomy'] ) || ! isset( $filter['terms'] ) ) {
+					$error = new WP_Error( 'invalid_filter', 'Invalid taxonomy filter' );
+					continue 2;
+				}
+				if ( ! is_array( $filter['terms'] ) || empty( $filter['terms'] ) ) {
+					$error = new WP_Error( 'invalid_terms', 'Invalid terms' );
+					continue 2;
+				}
+			}
+		}
 
-// Success.
-$validated = true;
-}
+		$validated = true;
+	}
 
-$end = microtime( true );
-return $end - $start;
+	$end = microtime( true );
+	return $end - $start;
 }
 
 /**
@@ -151,62 +145,56 @@ return $end - $start;
  * @return float Time elapsed.
  */
 function benchmark_symfony_validation( $arguments, $iterations = 1000 ) {
-$validator = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+	$validator = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+	$start     = microtime( true );
 
-$start = microtime( true );
+	for ( $i = 0; $i < $iterations; $i++ ) {
+		$validated = new \WP_MCP_AI\Tools\Arguments\SearchContentArguments();
 
-for ( $i = 0; $i < $iterations; $i++ ) {
-// Create validation object.
-$validated = new \WP_MCP_AI\Tools\Arguments\SearchContentArguments();
+		foreach ( $arguments as $key => $value ) {
+			if ( property_exists( $validated, $key ) ) {
+				$validated->$key = $value;
+			}
+		}
 
-// Map arguments.
-foreach ( $arguments as $key => $value ) {
-if ( property_exists( $validated, $key ) ) {
-$validated->$key = $value;
-}
-}
+		$violations = $validator->validate( $validated );
 
-// Validate.
-$violations = $validator->validate( $validated );
+		if ( ! $validator->is_valid( $violations ) ) {
+			continue;
+		}
 
-if ( ! $validator->is_valid( $violations ) ) {
-continue;
-}
+		$result = true;
+	}
 
-// Success.
-$result = true;
-}
-
-$end = microtime( true );
-return $end - $start;
+	$end = microtime( true );
+	return $end - $start;
 }
 
-// Test cases.
 $test_cases = array(
-'simple_search'  => array(
-'search_term' => 'test query',
-'post_type'   => 'post',
-'limit'       => 10,
-),
-'complex_search' => array(
-'search_term'      => 'wordpress development',
-'post_type'        => 'post',
-'limit'            => 25,
-'taxonomy_filters' => array(
-array(
-'taxonomy' => 'category',
-'terms'    => array( 'development', 'wordpress' ),
-'operator' => 'IN',
-),
-),
-'meta_filters'     => array(
-array(
-'key'     => 'featured',
-'value'   => '1',
-'compare' => '=',
-),
-),
-),
+	'simple_search'  => array(
+		'search_term' => 'test query',
+		'post_type'   => 'post',
+		'limit'       => 10,
+	),
+	'complex_search' => array(
+		'search_term'      => 'wordpress development',
+		'post_type'        => 'post',
+		'limit'            => 25,
+		'taxonomy_filters' => array(
+			array(
+				'taxonomy' => 'category',
+				'terms'    => array( 'development', 'wordpress' ),
+				'operator' => 'IN',
+			),
+		),
+		'meta_filters'     => array(
+			array(
+				'key'     => 'featured',
+				'value'   => '1',
+				'compare' => '=',
+			),
+		),
+	),
 );
 
 echo "Performance Benchmark: Manual Validation vs Symfony Validator\n";
@@ -215,33 +203,31 @@ echo "==============================================================\n\n";
 $iterations = 1000;
 
 foreach ( $test_cases as $name => $arguments ) {
-echo "Test Case: $name\n";
-echo str_repeat( '-', 60 ) . "\n";
+	echo "Test Case: $name\n";
+	echo str_repeat( '-', 60 ) . "\n";
 
-// Warm up.
-benchmark_manual_validation( $arguments, 10 );
-benchmark_symfony_validation( $arguments, 10 );
+	benchmark_manual_validation( $arguments, 10 );
+	benchmark_symfony_validation( $arguments, 10 );
 
-// Run benchmarks.
-$manual_time  = benchmark_manual_validation( $arguments, $iterations );
-$symfony_time = benchmark_symfony_validation( $arguments, $iterations );
+	$manual_time  = benchmark_manual_validation( $arguments, $iterations );
+	$symfony_time = benchmark_symfony_validation( $arguments, $iterations );
 
-$manual_per_call  = ( $manual_time / $iterations ) * 1000; // ms.
-$symfony_per_call = ( $symfony_time / $iterations ) * 1000; // ms.
+	$manual_per_call  = ( $manual_time / $iterations ) * 1000;
+	$symfony_per_call = ( $symfony_time / $iterations ) * 1000;
 
-printf( "Manual Validation:   %.4f seconds (%.4f ms per call)\n", $manual_time, $manual_per_call );
-printf( "Symfony Validation:  %.4f seconds (%.4f ms per call)\n", $symfony_time, $symfony_per_call );
+	printf( "Manual Validation:   %.4f seconds (%.4f ms per call)\n", $manual_time, $manual_per_call );
+	printf( "Symfony Validation:  %.4f seconds (%.4f ms per call)\n", $symfony_time, $symfony_per_call );
 
-$diff    = $symfony_time - $manual_time;
-$percent = ( ( $symfony_time - $manual_time ) / $manual_time ) * 100;
+	$diff    = $symfony_time - $manual_time;
+	$percent = ( ( $symfony_time - $manual_time ) / $manual_time ) * 100;
 
-if ( $diff > 0 ) {
-printf( "Difference:          +%.4f seconds (+%.1f%% slower)\n", $diff, $percent );
-} else {
-printf( "Difference:          %.4f seconds (%.1f%% faster)\n", abs( $diff ), abs( $percent ) );
-}
+	if ( $diff > 0 ) {
+		printf( "Difference:          +%.4f seconds (+%.1f%% slower)\n", $diff, $percent );
+	} else {
+		printf( "Difference:          %.4f seconds (%.1f%% faster)\n", abs( $diff ), abs( $percent ) );
+	}
 
-echo "\n";
+	echo "\n";
 }
 
 echo "Summary\n";
