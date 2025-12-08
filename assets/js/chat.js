@@ -10614,6 +10614,7 @@
             })
             .then(function (result) {
                 saveConversationToStorage(state);
+                // Note: handleChatResponse already saves to CCT internally
                 finalize();
                 return result;
             }, function (error) {
@@ -10826,6 +10827,7 @@
                     // Process the final response data using standard handler
                     return handleChatResponse(state, streamResult.finalData).then(function() {
                         saveConversationToStorage(state);
+                        // Note: handleChatResponse already saves to CCT internally
                         finalize();
                         // Add brief delay before clearing status to allow completion message to be visible
                         // This ensures users see "Tool completed successfully." before the status clears
@@ -10911,6 +10913,11 @@
                 }
 
                 saveConversationToStorage(state);
+                
+                // Also save to CCT if available (silent, non-blocking)
+                // This ensures the final assistant response persists across page reloads
+                saveConversationToCCT(state, { silent: true });
+                
                 finalize();
                 // Add brief delay before clearing status to allow completion message to be visible
                 setTimeout(function() {
@@ -13032,6 +13039,10 @@
         // Save conversation to localStorage after all messages have been added.
         // This ensures that assistant responses to tool results persist on page reload.
         saveConversationToStorage(state);
+        
+        // Also save to CCT if available (silent, non-blocking)
+        // This ensures the conversation persists across page reloads
+        saveConversationToCCT(state, { silent: true });
         
         return Promise.resolve();
     }
