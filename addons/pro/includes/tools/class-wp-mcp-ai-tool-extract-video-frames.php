@@ -594,6 +594,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro feature.
 			'requires-capability',  // Requires upload_files capability.
 			'write',                // Creates files/attachments.
 			'external-api',         // May download remote videos.

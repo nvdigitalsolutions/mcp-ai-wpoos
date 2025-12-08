@@ -132,6 +132,7 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro feature.
 			'read-only',            // Does not modify data.
 			'local-execution',      // Checks local system.
 			'requires-capability',  // Requires user capabilities.

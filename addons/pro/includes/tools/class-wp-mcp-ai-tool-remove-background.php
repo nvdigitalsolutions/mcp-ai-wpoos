@@ -70,6 +70,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	public function get_capability_flags() {
 		$flags = array(
+			'pro',                  // Pro feature.
 			'requires-capability',  // Requires upload_files capability.
 			'write',                // Creates new media files.
 		);

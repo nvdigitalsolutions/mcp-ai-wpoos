@@ -384,7 +384,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'delete_cron_job'                 => 'wordpress-core',
 				'send_group_email'                => 'wordpress-core',
 				'purge_cache'                     => 'wordpress-core',
-				'check_wp_cli'                    => 'wordpress-core',
 				'probe_chat'                      => 'wordpress-core',
 				'probe_remote_mcp'                => 'wordpress-core',
 				'query_remote_site'               => 'wordpress-core',
@@ -397,8 +396,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_image_caption'          => 'wordpress-core',
 				'analyze_video'                   => 'wordpress-core',
 				'generate_video_caption'          => 'wordpress-core',
-				'extract_video_frames'            => 'wordpress-core',
-				'get_video_metadata'              => 'wordpress-core',
 				'analyze_comment_content'         => 'wordpress-core',
 
 				// Image manipulation (Graphic Editor Suite).
@@ -406,7 +403,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'crop_image'                      => 'wordpress-core',
 				'rotate_image'                    => 'wordpress-core',
 				'convert_image_format'            => 'wordpress-core',
-				'remove_background'               => 'wordpress-core',
 
 				// Data Visualization.
 				'create_chart'                    => 'wordpress-core',
@@ -441,8 +437,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_veo_video'              => 'external-tools',
 				'check_video_status'              => 'external-tools',
 				'generate_music'                  => 'external-tools',
-				'generate_jukebox_music'          => 'external-tools',
-				'check_jukebox_status'            => 'external-tools',
 				'generate_openai_speech'          => 'external-tools',
 				'transcribe_openai_audio'         => 'external-tools',
 				'open_openai_usage'               => 'external-tools',
@@ -775,8 +769,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Veo_Video'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php',
 				'WP_MCP_AI_Tool_Check_Video_Status'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-video-status.php',
 				'WP_MCP_AI_Tool_Generate_Music'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
-				'WP_MCP_AI_Tool_Generate_Jukebox_Music'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
-				'WP_MCP_AI_Tool_Check_Jukebox_Status'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
 				'WP_MCP_AI_Tool_Save_Post'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
 				'WP_MCP_AI_Tool_Create_Assistant'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant.php',
@@ -794,7 +786,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Purge_Varnish_Cache'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php',
 				'WP_MCP_AI_Tool_Purge_Cache'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cache.php',
 				'WP_MCP_AI_Tool_ReliefWeb_Reports'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
-				'WP_MCP_AI_Tool_Check_WP_CLI'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
 				'WP_MCP_AI_Tool_Query_Remote_Site'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
 				'WP_MCP_AI_Tool_Query_Mesh_Intelligent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php',
 				'WP_MCP_AI_Tool_Check_Site_Security'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
@@ -802,8 +793,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Image_Caption'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Video'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-video.php',
 				'WP_MCP_AI_Tool_Generate_Video_Caption'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php',
-				'WP_MCP_AI_Tool_Extract_Video_Frames'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
-				'WP_MCP_AI_Tool_Get_Video_Metadata'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
 				'WP_MCP_AI_Tool_Create_Chart'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart.php',
 				// Profession management tools.
@@ -823,7 +812,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
-				'WP_MCP_AI_Tool_Remove_Background'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
