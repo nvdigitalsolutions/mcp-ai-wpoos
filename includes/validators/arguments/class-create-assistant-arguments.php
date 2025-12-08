@@ -88,10 +88,10 @@ class CreateAssistantArguments {
 				'product_certification_expert',
 				'legal_advisor',
 				'financial_advisor',
-			],
+			),
 			message: 'The profession "{{ value }}" is not valid.'
 		),
-	])]
+	))]
 	public $professions = array();
 
 	/**
@@ -119,10 +119,10 @@ class CreateAssistantArguments {
 				'middle_east',
 				'africa',
 				'asia_pacific',
-			],
+			),
 			message: 'The region "{{ value }}" is not valid.'
 		),
-	])]
+	))]
 	public $regions = array();
 
 	/**
