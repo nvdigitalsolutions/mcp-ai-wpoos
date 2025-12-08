@@ -26,10 +26,6 @@ class SearchContentArguments {
 	 * @var string
 	 */
 	#[Assert\Type(type: 'string')]
-	#[Assert\Length(
-		min: 1,
-		minMessage: 'Search term must be at least {{ limit }} character long.'
-	)]
 	public $search_term = '';
 
 	/**

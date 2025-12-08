@@ -141,7 +141,6 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 					'default'     => 'AND',
 				),
 			),
-			'required'             => array( 'search_term' ),
 			'additionalProperties' => false,
 		);
 	}
