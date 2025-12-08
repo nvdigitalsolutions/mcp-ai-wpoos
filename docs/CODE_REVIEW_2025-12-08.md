@@ -15,6 +15,12 @@ This code review analyzes the last 10 commits (as available in the repository hi
 ### Summary
 Six tools that use external execution services (FFmpeg, Python rembg, Jukebox, WP-CLI) were physically located in `addons/pro/includes/tools/` but were being registered by the base plugin. This PR correctly moved them to Pro-only registration with proper capability flags.
 
+**Important Note**: The Pro addon contains **38 total tools** (not just 6). The 6 exec-based tools are part of a larger Pro addon that also includes:
+- **24 external API tools** (social media, Google services, GitHub, business APIs, communications)
+- **8 WordPress integration tools** (WooCommerce, JetEngine, Elementor, WPCode, plugin/theme management)
+
+The PR #2073 specifically addressed only the 6 exec-based tools that needed to be moved from base to Pro registration.
+
 ### Tools Moved to Pro
 
 | Tool Name | Slug | Purpose | Requirements |
@@ -58,14 +64,42 @@ Removed from `includes/class-wp-mcp-ai-tool-registry.php`:
 - ✅ Proper capability-based access control
 
 **Breaking Changes:**
-- ⚠️ Base version users will no longer have access to these 6 tools
+- ⚠️ Base version users will no longer have access to these 6 exec-based tools
 - ⚠️ Pro addon is now required for exec-based tools
 
+**Complete Pro Addon Tool Inventory (38 tools):**
+
+The Pro addon provides 38 tools organized into three categories:
+
+1. **Exec-Based Tools (6)** - Require external executables:
+   - FFmpeg tools: `extract_video_frames`, `get_video_metadata`
+   - Background removal: `remove_background` (Python/rembg or API)
+   - Jukebox tools: `generate_jukebox_music`, `check_jukebox_status`
+   - WP-CLI: `check_wp_cli`
+
+2. **External API Tools (24)** - Require third-party API keys:
+   - **Social Media (9)**: Facebook/Instagram, LinkedIn, TikTok, Google Business posts and insights
+   - **Google Services (3)**: Calendar, Analytics, Gmail
+   - **GitHub (3)**: List repos, repo operations, Codespace management
+   - **Business (2)**: QuickBooks, import duty lookup
+   - **E-commerce (2)**: Product price lookup, product actualization
+   - **Communications (3)**: WhatsApp, Telegram, SMS (Notify.lk)
+   - **Email**: Mailjet
+   - **Other**: Generic REST API
+
+3. **WordPress Integration Tools (8)** - Require Pro addon only:
+   - WooCommerce: `woo_products`, `woo_orders`
+   - JetEngine: `jetengine`
+   - Elementor: `elementor`
+   - WPCode: `create_wpcode_snippet`
+   - WordPress: `install_and_activate_plugin`, `install_and_activate_theme`, `update_option`
+   - Site management: `site_creator`
+
 **Documentation Updates Needed:**
-- ✅ Update tool count in README (base vs Pro)
-- ✅ Update `docs/tool-reference.md` with Pro designations
-- ✅ Update `docs/base-vs-full-comparison.md`
-- ✅ Update `docs/FEATURE-MATRIX-CORE-PRO.md`
+- ✅ Update tool count in README (71 base + 38 pro = 109 total)
+- ✅ Update `docs/tool-reference.md` with all Pro tool designations
+- ✅ Update `docs/base-vs-full-comparison.md` with complete Pro tool list
+- ✅ Update `docs/FEATURE-MATRIX-CORE-PRO.md` with all 38 Pro tools
 
 ### Code Quality Assessment
 

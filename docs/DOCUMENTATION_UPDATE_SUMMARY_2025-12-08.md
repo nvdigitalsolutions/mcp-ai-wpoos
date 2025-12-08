@@ -60,9 +60,10 @@ Full review available in: `docs/CODE_REVIEW_2025-12-08.md`
 
 ### 2. README.md
 - **Changes**:
-  - Updated tool count from "35+ core, 30+ pro" to "71 core + 6 pro = 77 total"
+  - Updated tool count from "35+ core, 30+ pro" to "71 core + 38 pro = 109 total"
   - Clarified Pro addon architecture
   - Updated feature descriptions
+  - **Note**: Pro addon includes 38 tools (6 exec-based + 24 external API + 8 WordPress integration)
 
 ### 3. docs/base-vs-full-comparison.md
 - **Changes**:
@@ -107,8 +108,8 @@ Full review available in: `docs/CODE_REVIEW_2025-12-08.md`
 
 ### Tool Distribution
 - **Core Tools**: 71
-- **Pro Tools**: 6
-- **Total Tools**: 77
+- **Pro Tools**: 38 (6 exec-based + 24 external API + 8 WordPress integration)
+- **Total Tools**: 109
 
 ### Tool Breakdown by Category
 | Category | Core | Pro | Total |
@@ -130,12 +131,31 @@ Full review available in: `docs/CODE_REVIEW_2025-12-08.md`
 | Authentication | 1 | 0 | 1 |
 
 ### Pro Tools Detail
+**Exec-Based Tools (6):**
 1. **extract_video_frames** - Requires FFmpeg
 2. **get_video_metadata** - Requires FFmpeg
 3. **remove_background** - Requires Python + rembg OR remove.bg API
 4. **generate_jukebox_music** - Requires OpenAI Jukebox
 5. **check_jukebox_status** - Requires OpenAI Jukebox
 6. **check_wp_cli** - Requires WP-CLI
+
+**External API Tools (24):**
+- Social Media (9): Facebook/Instagram, LinkedIn, TikTok, Google Business
+- Google Services (3): Calendar, Analytics, Gmail
+- GitHub (3): List repos, operations, Codespaces
+- Business (2): QuickBooks, import duties
+- E-commerce (2): Price lookup, product actualization
+- Communications (3): WhatsApp, Telegram, SMS
+- Email (1): Mailjet
+- Other (1): Generic REST API
+
+**WordPress Integration Tools (8):**
+- WooCommerce (2): Products, Orders
+- JetEngine (1): CCT management
+- Elementor (1): Templates
+- WPCode (1): Code snippets
+- WordPress (3): Install plugins/themes, update options
+- Site management (1): Site creator (uses WP-CLI)
 
 ### New Settings
 - **Total Added**: 27 settings

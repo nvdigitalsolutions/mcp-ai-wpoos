@@ -8,15 +8,15 @@ This document outlines the features available in the Core plugin versus the Pro 
 |--------|-------------|-----------|
 | License | GPL-3.0-or-later | Proprietary |
 | Distribution | Included in main plugin | Separate addon plugin |
-| Tool Count | 71 tools | 6 additional tools (77 total) |
-| External Dependencies | None | FFmpeg, WP-CLI, Python/rembg, Jukebox |
+| Tool Count | 71 tools | 38 additional tools (109 total) |
+| External Dependencies | None | Optional (varies by tool) |
 | Support | GitHub issues | Email/helpdesk |
 | Updates | WordPress.org | Direct updates |
 
 ## Tool Distribution
 
 ### Core Tools (71)
-All WordPress-native tools that don't require external executables:
+All WordPress-native tools that don't require external executables or Pro addon:
 - Content management (posts, pages, attachments)
 - Media generation (OpenAI images, Gemini images, speech, video)
 - Image manipulation (14 graphic editor tools)
@@ -28,8 +28,11 @@ All WordPress-native tools that don't require external executables:
 - JetEngine integration (when JetEngine active)
 - Elementor integration (when Elementor active)
 
-### Pro Tools (6)
-Specialized tools requiring external executables (Pro addon required):
+### Pro Tools (38)
+Advanced tools requiring the Pro addon. Grouped by requirements:
+
+#### Exec-Based Tools (6)
+Require external executables on the server:
 
 | Tool | Executable Required | Purpose |
 |------|-------------------|---------|
@@ -39,6 +42,75 @@ Specialized tools requiring external executables (Pro addon required):
 | `generate_jukebox_music` | OpenAI Jukebox | Music with vocal synthesis |
 | `check_jukebox_status` | OpenAI Jukebox | Check Jukebox installation |
 | `check_wp_cli` | WP-CLI | Inspect WP-CLI environment |
+
+#### External API Tools (24)
+Require third-party API keys or services:
+
+**Social Media & Marketing (9 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `post_facebook_instagram` | Meta Graph API | Publish to Facebook/Instagram |
+| `get_facebook_instagram_insights` | Meta Graph API | Get Facebook/Instagram analytics |
+| `post_linkedin_update` | LinkedIn Marketing API | Publish LinkedIn posts |
+| `get_linkedin_insights` | LinkedIn Marketing API | Get LinkedIn analytics |
+| `post_tiktok_video` | TikTok Open API | Publish TikTok videos |
+| `get_tiktok_insights` | TikTok Open API | Get TikTok analytics |
+| `post_google_business_update` | Google Business API | Update Google Business Profile |
+| `get_google_business_insights` | Google Business API | Get Google Business analytics |
+| `send_mailjet_email` | Mailjet API | Send transactional emails |
+
+**Google Services (3 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `create_google_calendar_event` | Google Calendar API | Create calendar events |
+| `google_analytics_report` | Google Analytics 4 API | Get GA4 reports |
+| `search_gmail` | Gmail API | Search Gmail messages |
+
+**GitHub Integration (3 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `list_github_repositories` | GitHub API | List user repositories |
+| `github_repository_operations` | GitHub API | Manage repositories |
+| `manage_github_codespace` | GitHub API | Manage Codespaces |
+
+**Business & Finance (2 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `quickbooks_report` | QuickBooks Online API | Get financial reports |
+| `get_import_duty` | ITA Tariff API | Calculate import duties |
+
+**E-commerce & Products (2 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `lookup_product_price` | Multiple price APIs | Product price lookup |
+| `product_actualization` | Crawl4AI | Product data enrichment |
+
+**Communications (3 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `send_whatsapp_message` | WhatsApp Cloud API | Send WhatsApp messages |
+| `send_telegram_message` | Telegram Bot API | Send Telegram messages |
+| `schedule_notify_sms` | Notify.lk API | Send SMS notifications |
+
+**Other (2 tools)**
+| Tool | API Required | Purpose |
+|------|-------------|---------|
+| `generic_rest` | Any REST API | Generic REST API calls |
+| `site_creator` | None (uses WP-CLI internally) | Create WordPress sites |
+
+#### WordPress Integration Tools (8)
+Require Pro addon but no external APIs:
+
+| Tool | Requirements | Purpose |
+|------|-------------|---------|
+| `woo_products` | WooCommerce plugin | Manage WooCommerce products |
+| `woo_orders` | WooCommerce plugin | Manage WooCommerce orders |
+| `jetengine` | JetEngine plugin | Manage JetEngine CCT items |
+| `elementor` | Elementor plugin | Access Elementor templates |
+| `create_wpcode_snippet` | WPCode plugin | Create code snippets |
+| `install_and_activate_plugin` | WordPress | Install plugins |
+| `install_and_activate_theme` | WordPress | Install themes |
+| `update_option` | WordPress | Update WordPress options |
 
 ## MCP Server Features
 
@@ -291,13 +363,24 @@ public function get_capability_flags() {
 ### Pro Addon
 1. Obtain Pro addon plugin
 2. Install and activate Pro addon
-3. Install required executables for tools you want:
-   - FFmpeg (video tools)
-   - WP-CLI (management tools)
-   - Python + rembg (background removal)
-   - Jukebox (music generation)
-4. Configure tools in WP oOS → Tools & Features
-5. **6 additional tools available (77 total)**
+3. Configure API keys for external services you want to use:
+   - Social media APIs (Meta, LinkedIn, TikTok, Google Business)
+   - Google services (Calendar, Analytics, Gmail)
+   - GitHub API
+   - Business APIs (QuickBooks, import duty lookup)
+   - Communication APIs (Mailjet, WhatsApp, Telegram, Notify.lk)
+4. Install required executables for exec-based tools (optional):
+   - FFmpeg (video frame extraction, metadata)
+   - WP-CLI (environment inspection)
+   - Python + rembg (background removal, or use remove.bg API)
+   - OpenAI Jukebox (music generation with vocals)
+5. Install required WordPress plugins (optional):
+   - WooCommerce (for WooCommerce tools)
+   - JetEngine (for JetEngine tools)
+   - Elementor (for Elementor tools)
+   - WPCode (for code snippet tools)
+6. Configure tools in WP oOS → Tools & Features
+7. **38 additional Pro tools available (109 total)**
 
 ## Feature Comparison Summary
 
@@ -308,17 +391,42 @@ public function get_capability_flags() {
 | Image Manipulation | 14 | 1 | 15 |
 | Video Processing | 2 | 2 | 4 |
 | Audio Generation | 1 | 2 | 3 |
-| Research & Data | 7 | 0 | 7 |
+| Research & Data | 7 | 2 | 9 |
 | Automation | 6 | 0 | 6 |
 | Cache Management | 3 | 0 | 3 |
-| Communications | 1 | 0 | 1 |
+| Communications | 1 | 6 | 7 |
 | Diagnostics | 8 | 1 | 9 |
-| WooCommerce | 3 | 0 | 3 |
-| JetEngine | 5 | 0 | 5 |
-| Elementor | 1 | 0 | 1 |
-| SEO & Code | 2 | 0 | 2 |
+| WooCommerce | 3 | 2 | 5 |
+| JetEngine | 5 | 1 | 6 |
+| Elementor | 1 | 1 | 2 |
+| SEO & Code | 2 | 1 | 3 |
 | Authentication | 1 | 0 | 1 |
-| **TOTAL** | **71** | **6** | **77** |
+| Social Media | 0 | 9 | 9 |
+| Google Services | 0 | 3 | 3 |
+| GitHub Integration | 0 | 3 | 3 |
+| Business & Finance | 0 | 2 | 2 |
+| WordPress Management | 0 | 3 | 3 |
+| Other | 0 | 2 | 2 |
+| **TOTAL** | **71** | **38** | **109** |
+
+## Pro Tool Breakdown
+
+### By Requirement Type
+- **Exec-Based Tools**: 6 (require external executables)
+- **External API Tools**: 24 (require third-party APIs)
+- **WordPress Integration Tools**: 8 (require Pro addon only)
+
+### By Category
+- **Social Media & Marketing**: 9 tools
+- **WordPress Plugins**: 5 tools (WooCommerce, JetEngine, Elementor, WPCode)
+- **Google Services**: 3 tools (Calendar, Analytics, Gmail)
+- **GitHub Integration**: 3 tools
+- **Communications**: 3 tools (WhatsApp, Telegram, SMS)
+- **Video/Audio Processing**: 4 tools (FFmpeg, Jukebox)
+- **Business & Finance**: 2 tools
+- **E-commerce & Products**: 2 tools
+- **WordPress Management**: 3 tools (plugins, themes, options)
+- **Other**: 4 tools (WP-CLI, background removal, REST API, site creator)
 
 ## Performance Considerations
 

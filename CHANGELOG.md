@@ -35,8 +35,9 @@
   - Added `'pro'` capability flag to all 6 tools
   - Registered tools in Pro addon instead of base plugin
   - Removed from base tool registry to prevent duplicate registration
-  - **Breaking Change**: Base version users no longer have access to these tools
-  - Pro addon now required for exec-based media processing tools
+  - **Note**: The Pro addon contains **38 total tools**, including these 6 exec-based tools plus 32 other Pro tools for social media, Google services, GitHub, WooCommerce, JetEngine, and more
+  - **Breaking Change**: Base version users no longer have access to these 6 exec-based tools
+  - Pro addon now required for exec-based media processing and WP-CLI tools
   - See `docs/CODE_REVIEW_2025-12-08.md` for impact analysis
 
 ### Documentation

@@ -6,15 +6,15 @@ This document provides a detailed comparison between the Base Version and Full V
 
 | Feature | Base Version | Full Version (with Pro Addon) |
 |---------|-------------|-------------------------------|
-| **Setup Complexity** | Simple - WordPress only | Advanced - requires Pro addon for exec tools |
-| **Third-Party Plugins Required** | None | WooCommerce, JetEngine, etc. (optional) |
-| **External Executables Required** | None | FFmpeg, WP-CLI, Python/rembg, Jukebox (for Pro tools) |
-| **External APIs Required** | Only OpenAI/Gemini | Many (Google, Social Media, etc.) |
-| **Total Tools** | 71 | 77 |
+| **Setup Complexity** | Simple - WordPress only | Advanced - requires Pro addon |
+| **Third-Party Plugins Required** | None | Optional (WooCommerce, JetEngine, etc.) |
+| **External Executables Required** | None | Optional (FFmpeg, WP-CLI, Python/rembg, Jukebox for 6 tools) |
+| **External APIs Required** | Only OpenAI/Gemini | Many (Google, Social Media, GitHub, etc.) |
+| **Total Tools** | 71 | 109 |
 | **Core Tools** | 71 | 71 |
-| **Pro Tools** | 0 | 6 (exec-based) |
+| **Pro Tools** | 0 | 38 |
 | **Memory Footprint** | Lower | Higher |
-| **Best For** | Testing, development, simple sites | Production, video editing, advanced media |
+| **Best For** | Testing, development, simple sites | Production, advanced integrations, enterprise |
 
 ## Tool Comparison by Category
 

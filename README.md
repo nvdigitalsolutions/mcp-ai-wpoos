@@ -88,7 +88,7 @@
 **WP oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, and Ollama.
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-The plugin works standalone with **71 core tools** (base version) and optionally integrates with third-party plugins like JetEngine, WooCommerce, and Elementor through the **Pro addon**, which adds **6 additional Pro tools** requiring external executables (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **77 built-in tools**.
+The plugin works standalone with **71 core tools** (base version) and optionally extends through the **Pro addon**, which adds **38 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **109 built-in tools**.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
