@@ -7,6 +7,11 @@
  * @package WP_MCP_AI
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once __DIR__ . '/../interfaces/interface-wp-mcp-ai-tool.php';
 require_once __DIR__ . '/class-wp-mcp-ai-validator-service.php';
 
 /**
@@ -14,7 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-validator-service.php';
  *
  * Abstract base class for tools that use Symfony Validator for argument validation.
  */
-abstract class WP_MCP_AI_Validated_Tool extends WP_MCP_AI_Tool_Base {
+abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 
 	/**
 	 * Validator service instance.
