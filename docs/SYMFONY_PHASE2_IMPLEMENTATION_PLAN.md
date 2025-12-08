@@ -71,7 +71,11 @@ Phase 2 continues the Symfony enhancements by migrating existing tools to use th
 - [ ] `SendGroupEmailArguments` - For send_group_email tool
 
 ### Tools Migrated
-- [ ] None yet (validation classes being created first)
+- [x] `save_post` → `save_post_validated` (2025-12-08)
+  - File: `includes/tools/class-wp-mcp-ai-tool-save-post-validated.php`
+  - Tests: `tests/test-save-post-validated-tool.php` (11 test methods)
+  - Documentation: `docs/SAVE_POST_MIGRATION_EXAMPLE.md`
+  - Status: ✅ Complete, ready for testing
 
 ### Services Created
 - Phase 1 services already in place:
@@ -82,10 +86,12 @@ Phase 2 continues the Symfony enhancements by migrating existing tools to use th
 ## Timeline
 
 ### Week 1 (Current)
-- [x] Create validation classes for 5 high-priority tools
-- [ ] Migrate first 3 tools to validated pattern
-- [ ] Update tests for migrated tools
-- [ ] Document migration process
+- [x] Create validation classes for high-priority tools
+- [x] Migrate first tool (save_post) to validated pattern
+- [x] Create comprehensive test suite (11 tests)
+- [x] Document migration process with before/after example
+- [ ] Performance benchmark comparing old vs new
+- [ ] Migrate 2 more tools
 
 ### Week 2
 - [ ] Migrate remaining 7-10 tools
@@ -189,11 +195,15 @@ $cached = $cache->get_or_set( 'my_key', fn() => expensive_operation(), 3600 );
 
 ## Next Steps (Immediate)
 
-1. **Create validation classes** for remaining 4 target tools
-2. **Migrate save_post tool** to use SavePostArguments
-3. **Test migrated tool** with unit tests
-4. **Update documentation** with migration example
-5. **Commit progress** and gather feedback
+1. ✅ **Create validation classes** for high-priority tools (SavePostArguments complete)
+2. ✅ **Migrate save_post tool** to use SavePostArguments (save_post_validated complete)
+3. ✅ **Test migrated tool** with unit tests (11 comprehensive tests created)
+4. ✅ **Update documentation** with migration example (SAVE_POST_MIGRATION_EXAMPLE.md)
+5. **Run tests** to verify validated tool works correctly
+6. **Performance benchmark** to measure improvements
+7. **Create validation classes** for 2-3 more tools
+8. **Migrate next tools** (create_assistant, send_group_email)
+9. **Commit progress** and gather feedback
 
 ## Risks and Mitigation
 
