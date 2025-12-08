@@ -6,6 +6,8 @@
  * This is a standalone utility script for performance testing.
  *
  * @package WP_MCP_AI
+ * phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+ * phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
  */
 
 // Simulate WordPress environment.
@@ -31,6 +33,7 @@ function sanitize_text_field( $str ) {
  * @return string
  */
 function wp_strip_all_tags( $str ) {
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
 	return strip_tags( $str );
 }
 
@@ -58,10 +61,11 @@ function absint( $val ) {
  * Mock translation function.
  *
  * @param string $text   Text to translate.
- * @param string $domain Text domain.
+ * @param string $domain Text domain (unused in mock).
  * @return string
  */
 function __( $text, $domain = 'default' ) {
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	return $text;
 }
 
