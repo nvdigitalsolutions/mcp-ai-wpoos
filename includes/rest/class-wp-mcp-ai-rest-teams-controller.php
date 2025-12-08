@@ -12,6 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure Team and Profession CPT classes are loaded for constants.
+if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) && file_exists( WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php';
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) && file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+}
+
 /**
  * Teams REST controller class.
  */
@@ -124,6 +133,15 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Safety check: Ensure Team CPT class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
+			return new WP_Error(
+				'team_cpt_not_loaded',
+				__( 'Team system is not available.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		// Get team members from meta.
 		$team_members = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
 
@@ -139,6 +157,11 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 			if ( ! $member || 'mcp_ai_profession' !== $member->post_type ) {
 				continue;
+			}
+
+			// Safety check: Ensure Profession CPT class is loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				continue; // Skip this member if Profession CPT isn't available.
 			}
 
 			// Get profession metadata.
