@@ -69,18 +69,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
 				),
-				'orchestration_preset'            => array(
-					'type'        => 'select',
-					'label'       => __( 'Orchestration Configuration Preset', 'wp-mcp-ai' ),
-					'description' => __( 'Select a pre-configured orchestration profile or use custom settings below. Presets automatically adjust thresholds and budgets for different use cases. "Performance" prioritizes speed with higher limits, "Balanced" offers optimal resource usage, "Efficiency" minimizes resource consumption, "Custom" allows manual configuration.', 'wp-mcp-ai' ),
-					'options'     => array(
-						'performance' => __( 'Performance - Maximize speed and capacity', 'wp-mcp-ai' ),
-						'balanced'    => __( 'Balanced - Optimal resource usage (Recommended)', 'wp-mcp-ai' ),
-						'efficiency'  => __( 'Efficiency - Minimize resource consumption', 'wp-mcp-ai' ),
-						'custom'      => __( 'Custom - Manual configuration', 'wp-mcp-ai' ),
-					),
-					'default'     => 'custom',
-				),
 				'enable_budget_management'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
