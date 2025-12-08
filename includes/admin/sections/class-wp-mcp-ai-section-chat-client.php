@@ -138,6 +138,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'description'    => __( 'Reduces spacing between messages for a more condensed view.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'chat_colors'                     => array(
+					'type'    => 'html',
+					'content' => $this->get_chat_colors_html(),
+				),
 				// Behavior subtab fields.
 				'chat_max_history_display'        => array(
 					'type'        => 'number',
@@ -402,6 +406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_show_timestamps',
 						'chat_show_avatars',
 						'chat_compact_mode',
+						'chat_colors',
 					),
 				),
 				'behavior-chat-client' => array(
@@ -679,6 +684,74 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get chat colors HTML content.
+		 *
+		 * @return string
+		 */
+		private function get_chat_colors_html() {
+			// Delegate to the legacy settings renderer if available.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'get_chat_color_definitions' ) ) {
+				$settings    = WP_MCP_AI_Admin_Settings::get_settings();
+				$colors      = isset( $settings['chat_colors'] ) && is_array( $settings['chat_colors'] ) ? $settings['chat_colors'] : WP_MCP_AI_Admin_Settings::get_default_chat_colors();
+				$definitions = WP_MCP_AI_Admin_Settings::get_chat_color_definitions();
+				$groups      = WP_MCP_AI_Admin_Settings::get_chat_color_groups();
+
+				ob_start();
+				echo '<div class="wp-mcp-ai-chat-colors">';
+				echo '<p class="description">' . esc_html__( 'Customize the colors used throughout the chat interface. Leave fields empty to use default values.', 'wp-mcp-ai' ) . '</p>';
+
+				foreach ( $groups as $group_key => $group_label ) {
+					$group_colors = array();
+
+					foreach ( $definitions as $color_key => $definition ) {
+						if ( isset( $definition['group'] ) && $group_key === $definition['group'] ) {
+							$group_colors[ $color_key ] = $definition;
+						}
+					}
+
+					if ( empty( $group_colors ) ) {
+						continue;
+					}
+
+					echo '<fieldset class="wp-mcp-ai-chat-colors__group">';
+					echo '<legend>' . esc_html( $group_label ) . '</legend>';
+
+					foreach ( $group_colors as $color_key => $definition ) {
+						$input_id     = 'wp-mcp-ai-color-' . sanitize_html_class( $color_key );
+						$value        = isset( $colors[ $color_key ] ) ? $colors[ $color_key ] : $definition['default'];
+						$format       = isset( $definition['format'] ) ? strtolower( $definition['format'] ) : 'hex';
+						$descriptions = array();
+
+						if ( ! empty( $definition['description'] ) ) {
+							$descriptions[] = $definition['description'];
+						}
+
+						if ( 'rgba' === $format ) {
+							$descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'wp-mcp-ai' );
+						}
+
+						echo '<div class="wp-mcp-ai-chat-colors__field">';
+						echo '<label for="' . esc_attr( $input_id ) . '">' . esc_html( $definition['label'] ) . '</label>';
+						echo '<input type="text" id="' . esc_attr( $input_id ) . '" class="regular-text wp-mcp-ai-color-field" name="wp_mcp_ai_settings[chat_colors][' . esc_attr( $color_key ) . ']" value="' . esc_attr( $value ) . '" data-format="' . esc_attr( $format ) . '" data-default-color="' . esc_attr( $definition['default'] ) . '" />';
+
+						foreach ( $descriptions as $text ) {
+							echo '<p class="description">' . esc_html( $text ) . '</p>';
+						}
+
+						echo '</div>';
+					}
+
+					echo '</fieldset>';
+				}
+
+				echo '</div>';
+				return ob_get_clean();
+			}
+
+			return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Chat colors configuration is not available.', 'wp-mcp-ai' ) . '</p></div>';
 		}
 	}
 }
