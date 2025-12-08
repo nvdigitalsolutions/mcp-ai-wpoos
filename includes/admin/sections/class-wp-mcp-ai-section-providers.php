@@ -221,6 +221,58 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Optional sampling temperature between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. Leave empty to use default.', 'wp-mcp-ai' ),
 					'placeholder' => '0',
 				),
+				'openai_speech_model'                  => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Text-to-Speech Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is optimized for voice synthesis. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'gpt-4o-mini-tts' => 'gpt-4o-mini-tts (Recommended)',
+						'tts-1'           => 'TTS-1 (Standard)',
+						'tts-1-hd'        => 'TTS-1-HD (High Quality)',
+					),
+					'default'     => 'gpt-4o-mini-tts',
+				),
+				'openai_speech_voice'                  => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Text-to-Speech Voice', 'wp-mcp-ai' ),
+					'description' => __( 'Default voice for text-to-speech generation. Each voice has a distinct personality and tone. Preview voices at OpenAI documentation.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'alloy'   => 'Alloy (Neutral)',
+						'echo'    => 'Echo (Warm)',
+						'fable'   => 'Fable (Expressive)',
+						'onyx'    => 'Onyx (Deep)',
+						'nova'    => 'Nova (Energetic)',
+						'shimmer' => 'Shimmer (Soft)',
+					),
+					'default'     => 'alloy',
+				),
+				'openai_speech_format'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Text-to-Speech Format', 'wp-mcp-ai' ),
+					'description' => __( 'Audio output format for TTS. MP3 offers best compatibility. OPUS is most efficient. AAC works well on Apple devices. FLAC is lossless quality. WAV is uncompressed.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'mp3'  => 'MP3 (Most Compatible)',
+						'opus' => 'OPUS (Most Efficient)',
+						'aac'  => 'AAC (Apple Devices)',
+						'flac' => 'FLAC (Lossless)',
+						'wav'  => 'WAV (Uncompressed)',
+					),
+					'default'     => 'mp3',
+				),
+				'enable_high_token_model_switch'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable High Token Model Switch', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Automatically switch to fallback model on token overflow', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, if a request exceeds the current model\'s token limit, the system will automatically switch to the specified fallback model with higher capacity. This prevents errors and ensures requests are processed even with large contexts.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+				'high_token_fallback_model'            => array(
+					'type'        => 'text',
+					'label'       => __( 'High Token Fallback Model', 'wp-mcp-ai' ),
+					'description' => __( 'Model to use when token limit is exceeded. Should be a model with higher token capacity than your default. Examples: gemini-2.5-flash (1M tokens), gpt-4o (128k tokens). This setting works across all providers.', 'wp-mcp-ai' ),
+					'default'     => 'gemini-2.5-flash',
+					'placeholder' => 'gemini-2.5-flash',
+				),
 
 				// Anthropic Settings.
 				'enable_anthropic'             => array(
@@ -469,7 +521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model' ),
 				),
 				'anthropic' => array(
 					'id'     => 'anthropic',

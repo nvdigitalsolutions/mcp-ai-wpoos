@@ -65,6 +65,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Get WordPress allowed mime types for reference.
+			$wp_mimes = get_allowed_mime_types();
+			$default_image_mimes = implode( ', ', array_keys( array_filter( $wp_mimes, function( $mime ) {
+				return strpos( $mime, 'image/' ) === 0;
+			} ) ) );
+			$default_file_mimes = implode( ', ', array_keys( $wp_mimes ) );
+			
 			return array(
 				'enable_ai_media_library'     => array(
 					'type'           => 'checkbox',
@@ -93,6 +100,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, AI will overwrite any existing alt text or captions. When disabled, AI will only fill in missing metadata.', 'wp-mcp-ai' ),
 					'default'        => false,
+				),
+				'allowed_image_mimes'         => array(
+					'type'        => 'textarea',
+					'label'       => __( 'Allowed Image MIME Types', 'wp-mcp-ai' ),
+					'description' => sprintf(
+						/* translators: %s: Default image MIME types */
+						__( 'Comma-separated list of allowed image file extensions for AI analysis and uploads. Leave empty to use WordPress defaults. Common formats: jpg, jpeg, png, gif, webp, svg. Current WordPress defaults: %s', 'wp-mcp-ai' ),
+						'<code>' . esc_html( $default_image_mimes ) . '</code>'
+					),
+					'default'     => '',
+					'placeholder' => 'jpg, jpeg, png, gif, webp',
+					'rows'        => 3,
+				),
+				'allowed_file_mimes'          => array(
+					'type'        => 'textarea',
+					'label'       => __( 'Allowed File MIME Types', 'wp-mcp-ai' ),
+					'description' => __( 'Comma-separated list of allowed file extensions for chat uploads and AI processing. Leave empty to use WordPress defaults. This controls what file types users can upload through chat and assistant interfaces. For security, only include file types you trust.', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'jpg, jpeg, png, pdf, doc, docx, txt',
+					'rows'        => 4,
 				),
 			);
 		}

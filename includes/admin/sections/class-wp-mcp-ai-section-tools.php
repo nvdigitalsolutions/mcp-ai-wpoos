@@ -70,7 +70,52 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Get available WordPress capabilities for dropdown.
+			$wp_capabilities = array(
+				'read'               => __( 'Read (Subscriber)', 'wp-mcp-ai' ),
+				'edit_posts'         => __( 'Edit Posts (Contributor)', 'wp-mcp-ai' ),
+				'publish_posts'      => __( 'Publish Posts (Author)', 'wp-mcp-ai' ),
+				'edit_others_posts'  => __( 'Edit Others Posts (Editor)', 'wp-mcp-ai' ),
+				'manage_options'     => __( 'Manage Options (Administrator)', 'wp-mcp-ai' ),
+			);
+			
 			$fields = array(
+				// Tool Configuration.
+				'web_search_provider'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Web Search Provider', 'wp-mcp-ai' ),
+					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'duckduckgo' => 'DuckDuckGo (Free, Rate Limited)',
+						'brave'      => 'Brave Search (API Key Required)',
+					),
+					'default'     => 'duckduckgo',
+				),
+				'enable_varnish_purge'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Varnish Purge Tool', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Varnish cache purging functionality', 'wp-mcp-ai' ),
+					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'group_email_capability'                  => array(
+					'type'        => 'select',
+					'label'       => __( 'Send Group Email Capability', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress capability required to use the Send Group Email tool. Controls who can send bulk emails through AI assistants. Higher capabilities = more restricted access.', 'wp-mcp-ai' ),
+					'options'     => $wp_capabilities,
+					'default'     => 'publish_posts',
+				),
+				'group_email_max_recipients'              => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Email Recipients', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of recipients allowed in a single group email. Higher limits increase the risk of spam. Consider your server\'s email sending limits.', 'wp-mcp-ai' ),
+					'default'     => 100,
+					'min'         => 1,
+					'max'         => 1000,
+					'step'        => 10,
+					'placeholder' => '100',
+				),
+				
 				// External Tools fields.
 				'gmail_client_id'                         => array(
 					'type'         => 'text',
@@ -95,20 +140,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
-				),
-				'crawl4ai_base_url'                       => array(
-					'type'         => 'url',
-					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
-					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
-					'placeholder'  => 'http://localhost:8000',
-					'autocomplete' => 'url',
-				),
-				'crawl4ai_api_key'                        => array(
-					'type'         => 'password',
-					'label'        => __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for Crawl4AI service (if required).', 'wp-mcp-ai' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
 				),
 				'brave_search_api_key'                    => array(
 					'type'         => 'password',
@@ -268,7 +299,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Features fields.
-				'enable_mesh_computing'                   => array(
+				'enable_mesh'                             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Mesh Computing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable distributed computing features', 'wp-mcp-ai' ),
@@ -416,6 +447,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'configuration'  => array(
+					'id'     => 'configuration',
+					'label'  => __( 'Configuration', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-settings',
+					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
+				),
 				'connections'    => array(
 					'id'     => 'connections',
 					'label'  => __( 'Connections', 'wp-mcp-ai' ),
@@ -427,23 +464,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'label'  => __( 'External Tools', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-site-alt3',
 					'fields' => array(
-						'gmail_client_id',
-						'gmail_client_secret',
-						'crawl4ai_base_url',
-						'crawl4ai_api_key',
-						'brave_search_api_key',
-						'cloudflare_api_token',
-						'cloudflare_zone_id',
-						'cloudways_api_key',
-						'cloudways_email',
-						'mailjet_api_key',
-						'mailjet_api_secret',
-						'quickbooks_api_key',
-						'quickbooks_client_id',
-						'quickbooks_client_secret',
-						'google_analytics_property_id',
-						'google_analytics_credentials',
-						'removebg_api_key',
 						'github_client_id',
 						'github_client_secret',
 					),
@@ -463,7 +483,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh_computing', 'enable_federation' ),
+					'fields' => array( 'enable_mesh', 'enable_federation' ),
 				),
 				'media'          => array(
 					'id'     => 'media',

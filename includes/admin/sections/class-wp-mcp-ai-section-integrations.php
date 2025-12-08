@@ -147,6 +147,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description' => __( 'Email address associated with your Cloudways account.', 'wp-mcp-ai' ),
 					'placeholder' => 'you@example.com',
 				),
+				'cloudways_server_id'          => array(
+					'type'        => 'text',
+					'label'       => __( 'Cloudways Server ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your Cloudways server identifier for server management operations. Find this in your Cloudways dashboard under Servers.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+				'cloudways_app_id'             => array(
+					'type'        => 'text',
+					'label'       => __( 'Cloudways Application ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your Cloudways application identifier for app-specific operations. Find this in your Cloudways dashboard under Applications.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
 
 				// Mailjet.
 				'mailjet_api_key'              => array(
@@ -226,19 +238,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Google Analytics.
-				'google_analytics_property_id' => array(
+				'google_analytics_property_id'      => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
 					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '123456789',
 					'disabled'     => ! $is_pro_active,
 				),
-				'google_analytics_credentials' => array(
+				'google_analytics_credentials'      => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics Service Account JSON', 'wp-mcp-ai' ),
-					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ) . $pro_notice,
+					'label'       => __( 'Google Analytics Service Account JSON (Legacy)', 'wp-mcp-ai' ),
+					'description' => __( 'Service account credentials in JSON format from Google Cloud Console. This field is being phased out in favor of google_analytics_credentials_json.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '{"type": "service_account", ...}',
 					'disabled'     => ! $is_pro_active,
+					'rows'        => 5,
+				),
+				'google_analytics_credentials_json' => array(
+					'type'        => 'textarea',
+					'label'       => __( 'Google Analytics 4 Credentials JSON', 'wp-mcp-ai' ),
+					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields.', 'wp-mcp-ai' ) . $pro_notice,
+					'placeholder' => '{"type": "service_account", "project_id": "your-project", ...}',
+					'disabled'     => ! $is_pro_active,
+					'rows'        => 8,
+				),
+
+				// ITA Tariff Rate API.
+				'ita_tariff_api_key'                => array(
+					'type'         => 'password',
+					'label'        => __( 'ITA Tariff Rate API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to ITA API */
+						__( 'API key for International Trade Administration Tariff Rate API. Get your API key from %s. Used for import/export tariff information and trade compliance.', 'wp-mcp-ai' ),
+						'<a href="https://developer.trade.gov/" target="_blank">Trade.gov Developer Portal</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
 				),
 
 				// Meta.
@@ -331,7 +365,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'cloudways',
 					'label'  => __( 'Cloudways', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-cloud-upload',
-					'fields' => array( 'cloudways_api_key', 'cloudways_email' ),
+					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
 				'mailjet'          => array(
 					'id'     => 'mailjet',
