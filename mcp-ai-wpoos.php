@@ -468,6 +468,9 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
+// Load validated tools (Symfony Phase 2 - requires PHP 8.0+).
+require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
+
 // Container and services already loaded earlier (after rate-limit-manager, before model-selector).
 
 // Load repository layer (Phase 4 refactoring - Milestone 9).
