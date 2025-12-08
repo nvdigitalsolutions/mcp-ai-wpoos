@@ -110,14 +110,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// WordPress.com/Gravatar Bridge.
-				'enable_wpcom_gravatar_bridge'     => array(
+				'enable_wordpress_gravatar_bridge'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable WordPress.com/Gravatar Bridge', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Resolve WordPress.com/Gravatar identities', 'wp-mcp-ai' ),
 					'description'    => __( 'Maps WordPress.com/Gravatar emails to WordPress users.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'wpcom_gravatar_userinfo_endpoint' => array(
+				'wordpress_gravatar_userinfo_endpoint' => array(
 					'type'        => 'url',
 					'label'       => __( 'Userinfo Endpoint', 'wp-mcp-ai' ),
 					'description' => __( 'WordPress.com userinfo endpoint URL', 'wp-mcp-ai' ),
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'id'     => 'wpcom_gravatar',
 					'label'  => __( 'WordPress.com/Gravatar', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-wordpress',
-					'fields' => array( 'enable_wpcom_gravatar_bridge', 'wpcom_gravatar_userinfo_endpoint' ),
+					'fields' => array( 'enable_wordpress_gravatar_bridge', 'wordpress_gravatar_userinfo_endpoint' ),
 				),
 				'jwt'            => array(
 					'id'     => 'jwt',
@@ -451,8 +451,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 			$errors = array();
 
 			// Validate URLs.
-			if ( isset( $input['wpcom_gravatar_userinfo_endpoint'] ) && ! empty( $input['wpcom_gravatar_userinfo_endpoint'] ) ) {
-				$result = WP_MCP_AI_Settings_Validator::validate_url( $input['wpcom_gravatar_userinfo_endpoint'] );
+			if ( isset( $input['wordpress_gravatar_userinfo_endpoint'] ) && ! empty( $input['wordpress_gravatar_userinfo_endpoint'] ) ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_url( $input['wordpress_gravatar_userinfo_endpoint'] );
 				if ( is_wp_error( $result ) ) {
 					$errors[] = __( 'WordPress.com Userinfo Endpoint: ', 'wp-mcp-ai' ) . $result->get_error_message();
 				}
