@@ -64,10 +64,15 @@ Created comprehensive performance analysis document:
 - `docs/SYMFONY_INTEGRATION_GUIDE.md` - Usage guide
 - `docs/SAVE_POST_MIGRATION_EXAMPLE.md` - Migration example
 
-### 4. Benchmark Script Created
-- **File:** `benchmark_validation.php`
-- Ready for execution when WordPress test environment is available
-- Compares manual vs Symfony validation performance
+### 4. Benchmark Script Removed
+
+**File:** `benchmark_validation.php` (removed)
+
+**Purpose:** Performance testing utility
+
+**Status:** Removed - not needed for production, caused linting issues
+
+**Note:** Performance analysis documented in `SYMFONY_VALIDATOR_PERFORMANCE_BENCHMARK.md`
 
 ## Statistics
 
