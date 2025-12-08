@@ -555,6 +555,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php';
 	wp_mcp_ai_container()->get( 'admin.test_profession' );
 
+	// Load test team page (submenu of AI Teams CPT).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
+	wp_mcp_ai_container()->get( 'admin.test_team' );
+
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
 	WP_MCP_AI_Add_Assistant_Page::init();
