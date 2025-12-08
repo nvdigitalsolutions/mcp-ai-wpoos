@@ -447,6 +447,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'configuration'  => array(
+					'id'     => 'configuration',
+					'label'  => __( 'Configuration', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-settings',
+					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
+				),
 				'connections'    => array(
 					'id'     => 'connections',
 					'label'  => __( 'Connections', 'wp-mcp-ai' ),

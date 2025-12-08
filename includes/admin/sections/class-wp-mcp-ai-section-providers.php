@@ -521,7 +521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model' ),
 				),
 				'anthropic' => array(
 					'id'     => 'anthropic',

@@ -365,7 +365,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'cloudways',
 					'label'  => __( 'Cloudways', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-cloud-upload',
-					'fields' => array( 'cloudways_api_key', 'cloudways_email' ),
+					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
 				'mailjet'          => array(
 					'id'     => 'mailjet',
