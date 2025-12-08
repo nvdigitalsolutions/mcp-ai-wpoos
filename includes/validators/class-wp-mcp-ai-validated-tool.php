@@ -62,6 +62,23 @@ abstract class WP_MCP_AI_Validated_Tool extends WP_MCP_AI_Tool_Base {
 	 * @return array|\WP_Error Tool results or error.
 	 */
 	final public function execute( $arguments = array(), $context = array() ) {
+		// Check PHP version - attributes require PHP 8.0+.
+		if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
+			return new \WP_Error(
+				'php_version_too_old',
+				sprintf(
+					/* translators: %s: current PHP version */
+					__( 'This tool uses Symfony Validator which requires PHP 8.0 or higher for attribute support. You are running PHP %s. Please upgrade PHP or use the non-validated version of this tool.', 'mcp-ai-wpoos' ),
+					PHP_VERSION
+				),
+				array(
+					'required_php' => '8.0.0',
+					'current_php'  => PHP_VERSION,
+					'tool_slug'    => $this->get_slug(),
+				)
+			);
+		}
+
 		// Get validation class.
 		$class_name = $this->get_validation_class();
 
