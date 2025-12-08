@@ -4,14 +4,17 @@ This document provides a detailed comparison between the Base Version and Full V
 
 ## Quick Comparison
 
-| Feature | Base Version | Full Version |
-|---------|-------------|--------------|
-| **Setup Complexity** | Simple - WordPress only | Advanced - requires plugins |
-| **Third-Party Plugins Required** | None | WooCommerce, JetEngine, etc. |
+| Feature | Base Version | Full Version (with Pro Addon) |
+|---------|-------------|-------------------------------|
+| **Setup Complexity** | Simple - WordPress only | Advanced - requires Pro addon for exec tools |
+| **Third-Party Plugins Required** | None | WooCommerce, JetEngine, etc. (optional) |
+| **External Executables Required** | None | FFmpeg, WP-CLI, Python/rembg, Jukebox (for Pro tools) |
 | **External APIs Required** | Only OpenAI/Gemini | Many (Google, Social Media, etc.) |
-| **Total Tools** | 35 | 65 |
+| **Total Tools** | 71 | 77 |
+| **Core Tools** | 71 | 71 |
+| **Pro Tools** | 0 | 6 (exec-based) |
 | **Memory Footprint** | Lower | Higher |
-| **Best For** | Testing, development, simple sites | Production, ecommerce, marketing |
+| **Best For** | Testing, development, simple sites | Production, video editing, advanced media |
 
 ## Tool Comparison by Category
 
@@ -38,6 +41,34 @@ This document provides a detailed comparison between the Base Version and Full V
 | Generate OpenAI Speech | ✅ | ✅ | OpenAI API key |
 | Transcribe OpenAI Audio | ✅ | ✅ | OpenAI API key |
 | Generate Perfume Lifestyle Image | ✅ | ✅ | OpenAI API key |
+| Edit Gemini Image | ✅ | ✅ | Gemini API key |
+| Generate Veo Video | ✅ | ✅ | Gemini API key |
+| Check Video Status | ✅ | ✅ | Gemini API key |
+| Generate Music | ✅ | ✅ | Gemini API key |
+| **Extract Video Frames** | ❌ | ✅ | **Pro addon + FFmpeg** |
+| **Get Video Metadata** | ❌ | ✅ | **Pro addon + FFmpeg** |
+| **Generate Jukebox Music** | ❌ | ✅ | **Pro addon + Jukebox** |
+| **Check Jukebox Status** | ❌ | ✅ | **Pro addon + Jukebox** |
+
+### Image Manipulation (Graphic Editor Suite)
+
+| Tool | Base | Full | Requirements |
+|------|------|------|--------------|
+| Resize Image | ✅ | ✅ | WordPress core |
+| Crop Image | ✅ | ✅ | WordPress core |
+| Rotate Image | ✅ | ✅ | WordPress core |
+| Flip Image | ✅ | ✅ | WordPress core |
+| Adjust Brightness | ✅ | ✅ | WordPress core |
+| Adjust Contrast | ✅ | ✅ | WordPress core |
+| Convert Image Format | ✅ | ✅ | WordPress core |
+| Compress Image | ✅ | ✅ | WordPress core |
+| Add Watermark | ✅ | ✅ | WordPress core |
+| Blur Image | ✅ | ✅ | WordPress core |
+| Sharpen Image | ✅ | ✅ | WordPress core |
+| Grayscale Image | ✅ | ✅ | WordPress core |
+| Sepia Image | ✅ | ✅ | WordPress core |
+| Add Image Border | ✅ | ✅ | WordPress core |
+| **Remove Background** | ❌ | ✅ | **Pro addon + Python/rembg OR remove.bg API** |
 
 ### Research & External Data
 
@@ -63,11 +94,14 @@ This document provides a detailed comparison between the Base Version and Full V
 | Get System Logs | ✅ | ✅ | WordPress core |
 | Get Update Status | ✅ | ✅ | WordPress core |
 | Create Cron Job | ✅ | ✅ | WordPress core |
-| Check WP-CLI | ✅ | ✅ | WordPress core |
+| List Cron Jobs | ✅ | ✅ | WordPress core |
+| Get Cron Job | ✅ | ✅ | WordPress core |
+| Delete Cron Job | ✅ | ✅ | WordPress core |
 | Probe Chat | ✅ | ✅ | WordPress core |
 | Probe Remote MCP | ✅ | ✅ | WordPress core |
 | Open OpenAI Usage | ✅ | ✅ | WordPress core |
 | Open OpenAI Logs | ✅ | ✅ | WordPress core |
+| **Check WP-CLI** | ❌ | ✅ | **Pro addon + WP-CLI** |
 
 ### Automation
 
@@ -143,13 +177,19 @@ This document provides a detailed comparison between the Base Version and Full V
 ## Integration Support
 
 ### Base Version
-- ✅ WordPress Core
+- ✅ WordPress Core (71 tools)
 - ✅ OpenAI API
 - ✅ Gemini API
 - ✅ Ollama (local AI)
 - ✅ LM Studio (local AI)
 
-### Full Version (All Base Version plus:)
+### Full Version (Base + Pro Addon)
+- ✅ All Base Version integrations (71 tools)
+- ✅ **Pro Addon - Exec Service Tools** (6 tools):
+  - FFmpeg (video frame extraction, metadata)
+  - WP-CLI (environment inspection)
+  - Python rembg (background removal)
+  - OpenAI Jukebox (music generation with vocals)
 - ✅ WooCommerce
 - ✅ JetEngine
 - ✅ JetFormBuilder
@@ -165,14 +205,19 @@ This document provides a detailed comparison between the Base Version and Full V
 ### Base Version (Default)
 1. WordPress 6.0+ with PHP 7.4+
 2. OpenAI API key OR Gemini API key OR Ollama/LM Studio
-3. **No configuration needed** - Base version is enabled by default
+3. **71 tools included** - No additional configuration needed
 
-### Full Version
+### Full Version (Base + Pro Addon)
 1. WordPress 6.0+ with PHP 7.4+
 2. OpenAI API key OR Gemini API key OR Ollama/LM Studio
-3. Define constant in wp-config.php: `define( 'WP_MCP_AI_BASE_VERSION', false );`
-4. Optional: WooCommerce, JetEngine, Elementor, etc.
-5. Optional: External API keys for services you want to use
+3. **Activate Pro addon** for 6 additional exec-based tools
+4. Install external executables for Pro tools:
+   - FFmpeg (for video frame extraction and metadata)
+   - WP-CLI (for environment inspection)
+   - Python + rembg library (for background removal)
+   - OpenAI Jukebox (for music generation with vocals)
+5. Optional: WooCommerce, JetEngine, Elementor, etc.
+6. Optional: External API keys for services you want to use
 
 ## Use Cases
 
@@ -182,79 +227,96 @@ This document provides a detailed comparison between the Base Version and Full V
 - Learning and experimenting with AI
 - Development and testing environments
 - Simple blogs and content sites
-- Sites without ecommerce
+- Sites without video/audio processing needs
 - Users who want minimal setup
 - Privacy-conscious deployments (local AI only)
 - Budget-conscious projects
+- Most WordPress sites (71 tools cover common use cases)
 
 ❌ **Not ideal for:**
-- Ecommerce sites
-- Sites with WooCommerce
-- Marketing automation needs
-- Social media management
-- Sites already using JetEngine/Elementor
+- Video editing and frame extraction workflows
+- Advanced audio generation with vocals (Jukebox)
+- Python-based image processing (rembg)
+- WP-CLI automation scripts
 
-### When to Use Full Version
+### When to Use Full Version (with Pro Addon)
 
 ✅ **Perfect for:**
-- Production ecommerce sites
-- Marketing agencies
-- Sites with WooCommerce
-- Social media automation
-- Complex WordPress setups with JetEngine/Elementor
-- Business sites needing CRM/ERP integration
-- Sites requiring external API integrations
+- Video production and editing sites
+- Media agencies requiring frame extraction
+- Music generation with vocal synthesis
+- Advanced image processing (background removal)
+- Development environments needing WP-CLI inspection
+- Sites with complex media processing workflows
+- Professional content creators
 
 ❌ **Not needed for:**
 - Simple blogs
-- Testing environments
-- Sites without external integrations
+- Standard content sites
+- Sites without exec-based tool requirements
 - Users wanting simplicity
+- Environments where installing FFmpeg/Python/Jukebox is not feasible
 
 ## Migration Path
 
-### From Base to Full
+### From Base to Full (Adding Pro Addon)
 
-1. Add the constant: `define( 'WP_MCP_AI_BASE_VERSION', false );` to wp-config.php
-2. Install required plugins (WooCommerce, JetEngine, etc.) as needed
-3. Configure API credentials for external services
-4. The additional 30 tools will automatically become available
+1. Install the Pro addon plugin
+2. Activate the Pro addon
+3. Install required executables for tools you want:
+   - `sudo apt install ffmpeg` (for video tools)
+   - `sudo apt install wp-cli` (for WP-CLI tool)
+   - Install Python + rembg (for background removal)
+   - Install OpenAI Jukebox (for music generation)
+4. The additional 6 Pro tools will automatically become available
+5. Configure tools in WP oOS → Tools & Features
 
-### From Full to Base
+### From Full to Base (Removing Pro Addon)
 
-1. Remove the constant: Delete or comment out `define( 'WP_MCP_AI_BASE_VERSION', false );`
-2. The 30 extended tools will be hidden from assistants
-3. Third-party plugin integrations will not load
-4. No data is lost - switching back restores everything
+1. Deactivate the Pro addon
+2. The 6 Pro tools will be hidden from assistants
+3. External executables can remain installed or be removed
+4. No data is lost - reactivating Pro addon restores everything
 
 ## Performance Impact
 
 ### Base Version
-- **Memory Usage**: Lower (~30% reduction from full version)
-- **Load Time**: Faster (fewer classes to load)
-- **Admin Complexity**: Simpler (fewer tools in assistant editor)
+- **Memory Usage**: Standard WordPress plugin footprint
+- **Load Time**: Faster (71 core tools)
+- **Admin Complexity**: Streamlined (no exec-based tools)
+- **Server Requirements**: WordPress + PHP only
 
-### Full Version
-- **Memory Usage**: Higher (all integrations loaded)
-- **Load Time**: Standard WordPress plugin load time
-- **Admin Complexity**: More options (all 65 tools available)
+### Full Version (with Pro Addon)
+- **Memory Usage**: Slightly higher (6 additional tools)
+- **Load Time**: Minimal impact (Pro tools lazy-load)
+- **Admin Complexity**: More options (77 total tools)
+- **Server Requirements**: WordPress + PHP + external executables
 
 ## Recommended Approach
 
-1. **Start with Base Version** if you're new to the plugin or WordPress
-2. **Switch to Full Version** as your needs grow and you add plugins
-3. **Use Base Version** for staging/development, Full Version for production
-4. **Mix and Match** - Use custom filters to create your own version with specific tools
+1. **Start with Base Version** - 71 tools cover most WordPress use cases
+2. **Add Pro Addon** only if you need exec-based media processing
+3. **Install Executables** only for tools you'll actually use
+4. **Test First** - Verify FFmpeg/Python/Jukebox work before relying on them
 
 ## Support and Documentation
 
 - Base Version Guide: [BASE-VERSION.md](../BASE-VERSION.md)
 - Full Documentation: [README.md](../README.md)
-- Tool Reference: See README for complete tool descriptions
+- Tool Reference: [docs/tool-reference.md](tool-reference.md)
+- Pro Tool Setup: See individual tool documentation
 - GitHub Issues: Report problems or request features
 
 ## Summary
 
-The Base Version provides a streamlined, WordPress-native experience with 35 essential tools, while the Full Version offers 65 tools including third-party integrations and external API connections. Both versions are production-ready and can be switched at any time without data loss.
+The **Base Version** provides a comprehensive, WordPress-native experience with **71 essential tools**, covering content management, media generation, research, automation, caching, communications, and more.
 
-Choose Base Version for simplicity and WordPress-only features. Choose Full Version for advanced integrations and external service connections.
+The **Pro Addon** adds **6 specialized tools** that require external executables:
+- **FFmpeg** - Video frame extraction and metadata
+- **WP-CLI** - Environment inspection and automation
+- **Python/rembg** - AI-powered background removal
+- **Jukebox** - Music generation with vocal synthesis
+
+**Total: 77 tools** when both are active.
+
+Choose **Base Version** for standard WordPress AI features. Add **Pro Addon** only if you need exec-based media processing capabilities.
