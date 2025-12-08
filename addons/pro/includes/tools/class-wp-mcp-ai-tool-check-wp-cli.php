@@ -490,6 +490,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro feature.
 			'read-only',            // Only reads data, does not modify state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires 'manage_options' capability.

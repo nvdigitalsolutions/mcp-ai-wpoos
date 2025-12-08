@@ -181,6 +181,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Load Pro tool files.
 		$pro_tools = array(
+			// Exec service tools (video, audio, CLI).
+			'WP_MCP_AI_Tool_Check_WP_CLI'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
+			'WP_MCP_AI_Tool_Extract_Video_Frames'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
+			'WP_MCP_AI_Tool_Get_Video_Metadata'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
+			'WP_MCP_AI_Tool_Remove_Background'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
+			'WP_MCP_AI_Tool_Generate_Jukebox_Music'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
+			'WP_MCP_AI_Tool_Check_Jukebox_Status'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			// WooCommerce tools.
 			'WP_MCP_AI_Pro_Tool_Woo_Products'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 			'WP_MCP_AI_Pro_Tool_Woo_Orders'               => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
@@ -402,6 +409,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 	function wp_mcp_ai_pro_tool_group_map( $group_map ) {
 		// Pro tools and their group assignments.
 		$pro_tools = array(
+			// Exec service tools (video, audio, CLI) - Pro features.
+			'check_wp_cli'                    => 'wordpress-core',
+			'extract_video_frames'            => 'wordpress-core',
+			'get_video_metadata'              => 'wordpress-core',
+			'remove_background'               => 'wordpress-core',
+			'generate_jukebox_music'          => 'external-tools',
+			'check_jukebox_status'            => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
 			'product_actualization'           => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).

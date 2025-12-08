@@ -482,6 +482,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                 // Pro feature.
 			'requires-capability', // Requires upload_files capability.
 			'read-only',           // Only reads video metadata.
 			'external-api',        // May download remote videos.

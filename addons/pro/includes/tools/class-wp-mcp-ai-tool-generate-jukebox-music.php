@@ -468,6 +468,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',                  // Pro feature.
 			'local-execution',      // Executes commands on the local server.
 			'requires-capability',  // Requires user capabilities.
 		);
