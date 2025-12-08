@@ -317,21 +317,31 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			}
 
 			$confidence_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'prediction_confidence_threshold', 30 );
+			$insights             = array();
 
-			// TODO: Implement actual predictive analytics.
-			// For now, return empty array - will be implemented in future enhancement.
-			$insights = array();
+			// Analyze memory trends.
+			$memory_insights = self::analyze_memory_trends();
+			if ( ! empty( $memory_insights ) ) {
+				$insights = array_merge( $insights, $memory_insights );
+			}
 
-			// Example structure for future implementation:
-			/*
-			$insights = array(
-				array(
-					'message'    => 'Token usage increasing by 15% over past 24h',
-					'confidence' => 85,
-					'action'     => 'Consider increasing token limits',
-				),
-			);
-			*/
+			// Analyze error rate trends.
+			$error_insights = self::analyze_error_trends();
+			if ( ! empty( $error_insights ) ) {
+				$insights = array_merge( $insights, $error_insights );
+			}
+
+			// Analyze response time trends.
+			$performance_insights = self::analyze_performance_trends();
+			if ( ! empty( $performance_insights ) ) {
+				$insights = array_merge( $insights, $performance_insights );
+			}
+
+			// Analyze resource utilization.
+			$resource_insights = self::analyze_resource_utilization();
+			if ( ! empty( $resource_insights ) ) {
+				$insights = array_merge( $insights, $resource_insights );
+			}
 
 			// Filter insights by confidence threshold.
 			return array_filter(
@@ -352,6 +362,288 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			// Return empty array - don't break the plugin.
 			return array();
 		}
+	}
+
+	/**
+	 * Analyze memory usage trends over time.
+	 *
+	 * @return array Array of memory-related insights.
+	 */
+	private static function analyze_memory_trends() {
+		$insights         = array();
+		$recent_activity  = self::get_settings_repository()->get( 'recent_activity', array() );
+		$safety_buffer    = WP_MCP_AI_Settings_Registry::get_setting( 'prediction_safety_buffer', 15 );
+		$warning_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
+
+		if ( empty( $recent_activity ) || count( $recent_activity ) < 10 ) {
+			return $insights;
+		}
+
+		// Get memory usage from last 50 activities.
+		$memory_samples = array();
+		$sample_count   = min( 50, count( $recent_activity ) );
+
+		foreach ( array_slice( $recent_activity, -$sample_count ) as $activity ) {
+			if ( isset( $activity['memory_usage'] ) ) {
+				$memory_samples[] = array(
+					'timestamp' => isset( $activity['timestamp'] ) ? $activity['timestamp'] : time(),
+					'usage'     => $activity['memory_usage'],
+				);
+			}
+		}
+
+		if ( count( $memory_samples ) < 10 ) {
+			return $insights;
+		}
+
+		// Calculate trend using linear regression.
+		$trend = self::calculate_trend( $memory_samples );
+
+		if ( $trend['slope'] > 0 ) {
+			// Memory is increasing.
+			$current_memory = self::get_memory_usage();
+			$projected_time = time() + ( 3 * HOUR_IN_SECONDS ); // 3 hours ahead.
+			$projected_usage = $current_memory['percent'] + ( $trend['slope'] * 3 );
+
+			if ( $projected_usage > $warning_threshold ) {
+				$confidence = min( 90, 60 + abs( $trend['slope'] ) * 10 );
+				$insights[] = array(
+					'type'       => 'memory',
+					'severity'   => $projected_usage > 85 ? 'critical' : 'warning',
+					'message'    => sprintf(
+						/* translators: 1: Projected memory percentage, 2: Hours ahead */
+						__( 'Memory usage trending upward. Projected to reach %1$d%% in %2$d hours.', 'wp-mcp-ai' ),
+						round( $projected_usage ),
+						3
+					),
+					'confidence' => round( $confidence ),
+					'action'     => __( 'Consider increasing PHP memory limit or reducing concurrent operations.', 'wp-mcp-ai' ),
+				);
+			}
+		}
+
+		return $insights;
+	}
+
+	/**
+	 * Analyze error rate trends over time.
+	 *
+	 * @return array Array of error-related insights.
+	 */
+	private static function analyze_error_trends() {
+		$insights        = array();
+		$recent_errors   = self::get_settings_repository()->get( 'recent_errors', array() );
+		$critical_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 10 );
+
+		if ( empty( $recent_errors ) || count( $recent_errors ) < 5 ) {
+			return $insights;
+		}
+
+		// Count errors per hour for the last 6 hours.
+		$hourly_errors = array();
+		$six_hours_ago = time() - ( 6 * HOUR_IN_SECONDS );
+
+		foreach ( $recent_errors as $error ) {
+			if ( ! isset( $error['timestamp'] ) || $error['timestamp'] < $six_hours_ago ) {
+				continue;
+			}
+
+			$hour = floor( $error['timestamp'] / HOUR_IN_SECONDS );
+			if ( ! isset( $hourly_errors[ $hour ] ) ) {
+				$hourly_errors[ $hour ] = 0;
+			}
+			++$hourly_errors[ $hour ];
+		}
+
+		if ( count( $hourly_errors ) < 3 ) {
+			return $insights;
+		}
+
+		// Calculate error rate trend.
+		$error_samples = array();
+		foreach ( $hourly_errors as $hour => $count ) {
+			$error_samples[] = array(
+				'timestamp' => $hour * HOUR_IN_SECONDS,
+				'usage'     => $count,
+			);
+		}
+
+		$trend = self::calculate_trend( $error_samples );
+
+		if ( $trend['slope'] > 0.5 ) {
+			// Error rate is increasing significantly.
+			$current_hour_errors = end( $hourly_errors );
+			$projected_errors    = $current_hour_errors + ( $trend['slope'] * 2 );
+
+			if ( $projected_errors > $critical_threshold ) {
+				$confidence = min( 85, 50 + abs( $trend['slope'] ) * 15 );
+				$insights[] = array(
+					'type'       => 'errors',
+					'severity'   => 'critical',
+					'message'    => sprintf(
+						/* translators: %d: Projected error count */
+						__( 'Error rate increasing. Projected %d errors in next hour.', 'wp-mcp-ai' ),
+						round( $projected_errors )
+					),
+					'confidence' => round( $confidence ),
+					'action'     => __( 'Review recent error logs and consider temporarily reducing load.', 'wp-mcp-ai' ),
+				);
+			}
+		}
+
+		return $insights;
+	}
+
+	/**
+	 * Analyze response time performance trends.
+	 *
+	 * @return array Array of performance-related insights.
+	 */
+	private static function analyze_performance_trends() {
+		$insights        = array();
+		$recent_activity = self::get_settings_repository()->get( 'recent_activity', array() );
+
+		if ( empty( $recent_activity ) || count( $recent_activity ) < 20 ) {
+			return $insights;
+		}
+
+		// Get response times from last 50 activities.
+		$response_samples = array();
+		$sample_count     = min( 50, count( $recent_activity ) );
+
+		foreach ( array_slice( $recent_activity, -$sample_count ) as $activity ) {
+			if ( isset( $activity['duration'] ) && isset( $activity['timestamp'] ) ) {
+				$response_samples[] = array(
+					'timestamp' => $activity['timestamp'],
+					'usage'     => $activity['duration'],
+				);
+			}
+		}
+
+		if ( count( $response_samples ) < 20 ) {
+			return $insights;
+		}
+
+		// Calculate average response time for recent vs older samples.
+		$mid_point      = floor( count( $response_samples ) / 2 );
+		$older_samples  = array_slice( $response_samples, 0, $mid_point );
+		$recent_samples = array_slice( $response_samples, $mid_point );
+
+		$older_avg  = array_sum( array_column( $older_samples, 'usage' ) ) / count( $older_samples );
+		$recent_avg = array_sum( array_column( $recent_samples, 'usage' ) ) / count( $recent_samples );
+
+		// If recent average is 30% slower than older average, warn about degradation.
+		if ( $recent_avg > ( $older_avg * 1.3 ) && $older_avg > 0 ) {
+			$degradation_pct = ( ( $recent_avg - $older_avg ) / $older_avg ) * 100;
+			$confidence      = min( 80, 40 + ( $degradation_pct / 2 ) );
+
+			$insights[] = array(
+				'type'       => 'performance',
+				'severity'   => $degradation_pct > 50 ? 'warning' : 'info',
+				'message'    => sprintf(
+					/* translators: 1: Percentage degradation, 2: Average response time */
+					__( 'Response times degrading by %1$d%%. Current average: %2$.2fs.', 'wp-mcp-ai' ),
+					round( $degradation_pct ),
+					$recent_avg
+				),
+				'confidence' => round( $confidence ),
+				'action'     => __( 'Check system resources and consider optimizing slow operations.', 'wp-mcp-ai' ),
+			);
+		}
+
+		return $insights;
+	}
+
+	/**
+	 * Analyze overall resource utilization patterns.
+	 *
+	 * @return array Array of resource-related insights.
+	 */
+	private static function analyze_resource_utilization() {
+		$insights        = array();
+		$current_metrics = self::get_health_metrics();
+
+		// Check if system is approaching multiple thresholds simultaneously.
+		$warning_threshold  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
+		$critical_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
+
+		$stress_indicators = 0;
+
+		if ( isset( $current_metrics['memory']['percent'] ) && $current_metrics['memory']['percent'] > $warning_threshold ) {
+			++$stress_indicators;
+		}
+
+		if ( isset( $current_metrics['error_rate'] ) && $current_metrics['error_rate'] > 3 ) {
+			++$stress_indicators;
+		}
+
+		if ( isset( $current_metrics['avg_response'] ) && $current_metrics['avg_response'] > 5.0 ) {
+			++$stress_indicators;
+		}
+
+		// If multiple indicators show stress, warn about system overload.
+		if ( $stress_indicators >= 2 ) {
+			$insights[] = array(
+				'type'       => 'system',
+				'severity'   => 'warning',
+				'message'    => sprintf(
+					/* translators: %d: Number of stress indicators */
+					__( 'System showing %d stress indicators. Performance may degrade soon.', 'wp-mcp-ai' ),
+					$stress_indicators
+				),
+				'confidence' => 75,
+				'action'     => __( 'Consider reducing concurrent operations or increasing system resources.', 'wp-mcp-ai' ),
+			);
+		}
+
+		return $insights;
+	}
+
+	/**
+	 * Calculate linear regression trend from time-series data.
+	 *
+	 * @param array $samples Array of samples with 'timestamp' and 'usage' keys.
+	 * @return array Array with 'slope' and 'intercept' keys.
+	 */
+	private static function calculate_trend( $samples ) {
+		if ( empty( $samples ) ) {
+			return array(
+				'slope'     => 0,
+				'intercept' => 0,
+			);
+		}
+
+		$n          = count( $samples );
+		$sum_x      = 0;
+		$sum_y      = 0;
+		$sum_xy     = 0;
+		$sum_x2     = 0;
+		$base_time  = $samples[0]['timestamp'];
+
+		foreach ( $samples as $sample ) {
+			$x       = ( $sample['timestamp'] - $base_time ) / HOUR_IN_SECONDS; // Hours from start.
+			$y       = $sample['usage'];
+			$sum_x  += $x;
+			$sum_y  += $y;
+			$sum_xy += $x * $y;
+			$sum_x2 += $x * $x;
+		}
+
+		$denominator = ( $n * $sum_x2 ) - ( $sum_x * $sum_x );
+		if ( 0 === $denominator ) {
+			return array(
+				'slope'     => 0,
+				'intercept' => $sum_y / $n,
+			);
+		}
+
+		$slope     = ( ( $n * $sum_xy ) - ( $sum_x * $sum_y ) ) / $denominator;
+		$intercept = ( $sum_y - ( $slope * $sum_x ) ) / $n;
+
+		return array(
+			'slope'     => $slope,
+			'intercept' => $intercept,
+		);
 	}
 
 	/**
