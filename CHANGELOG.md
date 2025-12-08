@@ -15,6 +15,14 @@
 
 ### Fixed
 
+#### Test Team Modal Feature Activation (December 8, 2025)
+- **Test Team Page Initialization**: Activated the test team modal feature by adding missing initialization in main plugin file
+  - Added `admin.test_team` service loading in `mcp-ai-wpoos.php` (lines 558-560)
+  - Feature was 90% complete (all components built) but not initialized
+  - Now accessible via **Teams → Test Team** admin menu
+  - Allows testing AI teams with temporary assistants for each team member
+  - All components verified: admin page, JavaScript, CSS, REST API, tests, documentation
+
 #### Async Tool Execution & VEO Video Generation (November 26-27, 2025)
 - **Async Tool Result Display Fix (PR #1739, #1755)**: Fixed async tool results (VEO video generation) not appearing in chat interface
   - Dynamically create assistant message when `tool_results` present but no LLM message exists
