@@ -174,6 +174,60 @@ Execute a registered tool without generating a full chat turn.
 
 Tool responses include the assistant ID, the tool slug, and the tool result. Errors bubble up as `WP_Error` instances so remote clients can react to permission failures, missing dependencies, or validation issues. Every execution is logged for auditing.【F:includes/class-wp-mcp-ai-rest.php†L1252-L1321】
 
+## GET `/teams/{id}/members`
+
+Retrieve the list of profession members for a specific team. This endpoint powers the team member selection UI in the test team page.
+
+### Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `id` | integer | Team post ID (required) |
+
+### Authorization
+
+Requires `manage_options` capability (administrator access). Authenticated via WordPress nonce, Auth0 token, or assistant credential.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L84-L86】
+
+### Response
+
+```json
+{
+  "team_id": 123,
+  "members": [
+    {
+      "id": 456,
+      "title": "Software Engineer",
+      "category": "Technical",
+      "category_slug": "technical",
+      "excerpt": "Develops and maintains software applications",
+      "expertise": ["JavaScript", "PHP", "React"],
+      "tools_count": 12
+    },
+    {
+      "id": 789,
+      "title": "Content Writer",
+      "category": "Creative Services",
+      "category_slug": "creative",
+      "excerpt": "Creates engaging content for marketing",
+      "expertise": ["Copywriting", "SEO", "Content Strategy"],
+      "tools_count": 8
+    }
+  ],
+  "count": 2
+}
+```
+
+- `team_id` reflects the requested team post ID.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L174】
+- `members` contains an array of profession posts assigned to this team, with each member including ID, title, category, expertise areas, and tool count.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L161-L169】
+- `count` provides the total number of active members (deleted profession posts are filtered out).【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L176】
+- Empty teams return `count: 0` with an empty `members` array.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L148-L150】
+
+### Error responses
+
+- **400 Bad Request**: Invalid team ID or team post does not exist.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L94-L108】【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L129-L133】
+- **403 Forbidden**: User lacks `manage_options` capability.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L84-L86】
+- **500 Internal Server Error**: Team CPT system is not available (rare edge case).【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L137-L142】
+
 ## Troubleshooting tips
 
 - Verify that the authenticated account retains the capability enforced by `wp_mcp_ai_get_required_chat_capability()` (defaults to `edit_posts`) when testing with WordPress nonces.【F:mcp-ai-wpoos.php†L21-L67】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
