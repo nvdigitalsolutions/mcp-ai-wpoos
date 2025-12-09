@@ -96,7 +96,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 			wp_enqueue_script(
 				'wp-mcp-ai-admin-test-team',
 				WP_MCP_AI_URL . $test_script_relative,
-				array( 'wp-mcp-ai-chat' ),
+				array( 'wp-mcp-ai-chat', 'jquery' ),
 				$this->get_asset_version( $test_script_relative ),
 				true
 			);
