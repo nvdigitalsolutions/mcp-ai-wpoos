@@ -135,21 +135,49 @@
 				'<div class="wp-mcp-ai-loading"><span class="spinner is-active"></span> Loading team members...</div>'
 			);
 
+			const ajaxUrl = wpMcpAiChat.restUrl + 'teams/' + this.currentTeamId + '/members';
+			console.log('Loading team members from:', ajaxUrl);
+
 			// Use WordPress REST API to get team meta
 			$.ajax({
-				url: wpMcpAiChat.restUrl + 'teams/' + this.currentTeamId + '/members',
+				url: ajaxUrl,
 				method: 'GET',
 				beforeSend: (xhr) => {
 					xhr.setRequestHeader('X-WP-Nonce', wpMcpAiChat.nonce);
+					console.log('Sending request with nonce:', wpMcpAiChat.nonce ? 'present' : 'missing');
 				},
 				success: (data) => {
+					console.log('Team members loaded successfully:', data);
 					this.teamMembers = data.members || [];
 					this.renderMemberSelector();
 				},
 				error: (xhr, status, error) => {
-					console.error('Failed to load team members:', error);
+					console.error('Failed to load team members:', {
+						status: xhr.status,
+						statusText: xhr.statusText,
+						responseText: xhr.responseText,
+						error: error,
+						url: ajaxUrl
+					});
+					
+					// User-friendly error message from localized strings
+					const errorMessage = wpMcpAiChat.strings && wpMcpAiChat.strings.teamMemberLoadError 
+						? wpMcpAiChat.strings.teamMemberLoadError
+						: 'Failed to load team members. Please try again.';
+					
+					// Log detailed error information to console only
+					if (xhr.status === 404) {
+						console.error('Endpoint not found - check REST API registration');
+					} else if (xhr.status === 403) {
+						console.error('Permission denied - check user capabilities');
+					} else if (xhr.status === 500) {
+						console.error('Server error - check PHP error logs');
+					} else if (xhr.status === 0) {
+						console.error('Network error - check browser console and network tab');
+					}
+					
 					this.selectorContainer.html(
-						'<div class="notice notice-error"><p>Failed to load team members. Please try again.</p></div>'
+						'<div class="notice notice-error"><p>' + errorMessage + '</p></div>'
 					);
 				}
 			});

@@ -117,6 +117,31 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Log an event if the logger is available.
+	 *
+	 * @param string $event   Event name.
+	 * @param string $message Event message.
+	 * @param array  $context Event context data.
+	 */
+	private function log_event( $event, $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event( $event, $message, $context );
+		}
+	}
+
+	/**
+	 * Log an error if the logger is available.
+	 *
+	 * @param string $message Error message.
+	 * @param array  $context Error context data.
+	 */
+	private function log_error( $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error( $message, $context );
+		}
+	}
+
+	/**
 	 * Get team members.
 	 *
 	 * @param WP_REST_Request $request REST request object.
@@ -124,6 +149,16 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 	 */
 	public function get_team_members( $request ) {
 		$team_id = absint( $request->get_param( 'id' ) );
+
+		// Log the request for debugging.
+		$this->log_event(
+			'rest_teams_get_members',
+			'Team members request received',
+			array(
+				'team_id' => $team_id,
+				'user_id' => get_current_user_id(),
+			)
+		);
 
 		if ( ! $team_id ) {
 			return new WP_Error(
@@ -135,6 +170,10 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 		// Safety check: Ensure Team CPT class is loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
+			$this->log_error(
+				'Team CPT class not loaded',
+				array( 'team_id' => $team_id )
+			);
 			return new WP_Error(
 				'team_cpt_not_loaded',
 				__( 'Team system is not available.', 'wp-mcp-ai' ),
@@ -161,6 +200,13 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 			// Safety check: Ensure Profession CPT class is loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				$this->log_error(
+					'Profession CPT class not loaded',
+					array(
+						'team_id'   => $team_id,
+						'member_id' => $member_id,
+					)
+				);
 				continue; // Skip this member if Profession CPT isn't available.
 			}
 
@@ -191,6 +237,16 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'tools_count'   => is_array( $tools ) ? count( $tools ) : 0,
 			);
 		}
+
+		// Log successful response.
+		$this->log_event(
+			'rest_teams_get_members_success',
+			'Team members loaded successfully',
+			array(
+				'team_id'      => $team_id,
+				'member_count' => count( $members ),
+			)
+		);
 
 		return new WP_REST_Response(
 			array(
