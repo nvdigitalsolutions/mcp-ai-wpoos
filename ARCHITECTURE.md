@@ -98,7 +98,69 @@ WP oOS is a WordPress plugin that provides an AI Assistant framework integrating
 4. **Research & Content** (15 tools) - Web scraping, summarization, analysis
 5. **Advanced** (14 tools) - Cron jobs, database queries, code execution
 
-### 3. AI Provider Clients (`includes/`)
+### 3. Process Service (`includes/services/class-wp-mcp-ai-process-service.php`)
+
+**Purpose:** Modern external command execution framework using Symfony Process component.
+
+**Added:** December 2025 (Symfony Phase 2B)
+
+**Key Features:**
+- Replaces direct `exec()` calls in Pro addon tools
+- WordPress-friendly wrappers with WP_Error integration
+- Configurable timeouts and graceful error handling
+- Secure argument escaping and process control
+
+**Migrated Components:**
+- 6 Pro addon tools (FFmpeg, WP-CLI, Python rembg, Jukebox)
+- 2 supporting services (Jukebox Service, Video Frame Extractor Service)
+
+**Usage Pattern:**
+```php
+$process_service = WP_MCP_AI_Process_Service::get_instance();
+$result = $process_service->run( $command, array(
+    'timeout' => 120,
+    'cwd' => '/path/to/working/dir',
+) );
+
+if ( is_wp_error( $result ) ) {
+    // Handle error
+} else {
+    $output = $result['output'];
+}
+```
+
+### 3. Process Service (`includes/services/class-wp-mcp-ai-process-service.php`)
+
+**Purpose:** Modern external command execution framework using Symfony Process component.
+
+**Added:** December 2025 (Symfony Phase 2B)
+
+**Key Features:**
+- Replaces direct `exec()` calls in Pro addon tools
+- WordPress-friendly wrappers with WP_Error integration
+- Configurable timeouts and graceful error handling
+- Secure argument escaping and process control
+
+**Migrated Components:**
+- 6 Pro addon tools (FFmpeg, WP-CLI, Python rembg, Jukebox)
+- 2 supporting services (Jukebox Service, Video Frame Extractor Service)
+
+**Usage Pattern:**
+```php
+$process_service = WP_MCP_AI_Process_Service::get_instance();
+$result = $process_service->run( $command, array(
+    'timeout' => 120,
+    'cwd' => '/path/to/working/dir',
+) );
+
+if ( is_wp_error( $result ) ) {
+    // Handle error
+} else {
+    $output = $result['output'];
+}
+```
+
+### 4. AI Provider Clients (`includes/`)
 
 **Purpose:** Abstract and normalize AI provider APIs.
 
@@ -116,7 +178,7 @@ WP oOS is a WordPress plugin that provides an AI Assistant framework integrating
 - Streaming support (SSE)
 - Function calling / tool use
 
-### 4. REST API (`includes/rest/`, `includes/class-wp-mcp-ai-rest.php`)
+### 5. REST API (`includes/rest/`, `includes/class-wp-mcp-ai-rest.php`)
 
 **Purpose:** Expose AI functionality via REST endpoints.
 
@@ -133,7 +195,7 @@ WP oOS is a WordPress plugin that provides an AI Assistant framework integrating
 3. Auth0 Tokens (enterprise)
 4. Guest Tokens (temporary public access)
 
-### 5. Orchestration Layer (`includes/services/`)
+### 6. Orchestration Layer (`includes/services/`)
 
 **Purpose:** Manage AI workflow execution, resource allocation, and budget enforcement.
 

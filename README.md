@@ -184,6 +184,23 @@ The system comprises a processor and memory storing instructions that:
 
 This architecture is embodied in non-transitory computer-readable media (PHP source files) that, when executed by a web server processor, cause the system to perform the complete resource management workflow. The implementation prioritizes stability, security, and efficient resource utilization across diverse hosting environments.
 
+### Symfony Process Integration (December 2025)
+
+WP oOS Pro addon integrates the Symfony Process component for secure external command execution. This modern framework replaces direct `exec()` calls in 6 Pro tools and 2 supporting services, providing:
+
+- **Enhanced Security**: Proper argument escaping and command validation
+- **Timeout Management**: Configurable timeouts with graceful handling
+- **Better Error Handling**: Comprehensive exception catching and WordPress-friendly error reporting
+- **Process Control**: Real-time output streaming and cancellation support
+
+**Migrated Tools & Services:**
+- FFmpeg operations (video frame extraction, metadata reading)
+- Python rembg (background removal)
+- WP-CLI execution
+- Meta AI Jukebox (music generation)
+- Supporting services for video and audio processing
+
+The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
 
@@ -248,6 +265,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🎯 Intelligent token overflow handling with automatic model switching (gpt-4.1-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
 - 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
 - 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
+- 🔧 **Symfony Process Component** - Modern process execution framework replacing direct `exec()` calls in Pro addon tools for enhanced security, timeout management, and error handling【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 - ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
