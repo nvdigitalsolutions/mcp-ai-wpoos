@@ -40,6 +40,8 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Create_Chart_Validated'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart-validated.php',
 		'WP_MCP_AI_Tool_Send_Group_Email_Validated'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email-validated.php',
 		'WP_MCP_AI_Tool_Create_Woo_Product_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product-validated.php',
+		// Batch 2 - December 9, 2025.
+		'WP_MCP_AI_Tool_Get_User_Info_Validated'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info-validated.php',
 	);
 
 	// Register each validated tool.
