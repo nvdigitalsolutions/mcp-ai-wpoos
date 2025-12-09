@@ -278,28 +278,29 @@ PYTHON;
 		$filename_base = isset( $pathinfo['filename'] ) ? $pathinfo['filename'] : 'image';
 		$output_path   = wp_tempnam( $filename_base . '-nobg-' . time(), '.png' );
 
-		// Execute Python script.
-		$command = sprintf(
-			'%s %s %s %s 2>&1',
-			escapeshellcmd( $python_cmd ),
-			escapeshellarg( $script_path ),
-			escapeshellarg( $source_path ),
-			escapeshellarg( $output_path )
+		// Execute Python script using Process Service.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		
+		$result = $process_service->run(
+			array(
+				$python_cmd,
+				$script_path,
+				$source_path,
+				$output_path,
+			),
+			array( 'timeout' => 120 )
 		);
-
-		$output      = array();
-		$return_code = 0;
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $command, $output, $return_code );
 
 		// Clean up script.
 		wp_delete_file( $script_path );
 
 		// Check for errors.
-		if ( 0 !== $return_code ) {
-			$error_message = implode( "\n", $output );
-
-			if ( 2 === $return_code ) {
+		if ( is_wp_error( $result ) ) {
+			$error_message = $result->get_error_message();
+			$error_data    = $result->get_error_data();
+			
+			// Check if it's a specific exit code error.
+			if ( isset( $error_data['exit_code'] ) && 2 === $error_data['exit_code'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_rembg_not_installed',
 					__( 'The rembg library is not installed. On modern systems (Debian 12+, Ubuntu 23.04+), use: pipx install rembg OR create a virtual environment. See documentation for details.', 'wp-mcp-ai' )
@@ -350,15 +351,11 @@ PYTHON;
 	 * @return string|WP_Error Python command or error.
 	 */
 	protected function find_python_command() {
+		$process_service  = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 		$python_commands = array( 'python3', 'python' );
 
 		foreach ( $python_commands as $cmd ) {
-			$output      = array();
-			$return_code = 0;
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-			exec( sprintf( 'which %s 2>&1', escapeshellcmd( $cmd ) ), $output, $return_code );
-
-			if ( 0 === $return_code && ! empty( $output[0] ) ) {
+			if ( $process_service->is_command_available( $cmd ) ) {
 				return $cmd;
 			}
 		}

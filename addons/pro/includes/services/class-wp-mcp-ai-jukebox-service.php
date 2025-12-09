@@ -70,10 +70,15 @@ class WP_MCP_AI_Jukebox_Service {
 			);
 		}
 
-		// Check Python availability.
-		// Note: This uses shell_exec but with validated Python path.
-		$python_check = shell_exec( escapeshellcmd( $python_path ) . ' --version 2>&1' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
-		if ( empty( $python_check ) || false === strpos( strtolower( $python_check ), 'python' ) ) {
+		// Check Python availability using Process Service.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		
+		$python_result = $process_service->run_silent(
+			array( $python_path, '--version' ),
+			array( 'timeout' => 5 )
+		);
+		
+		if ( ! $python_result['success'] || empty( $python_result['output'] ) || false === strpos( strtolower( $python_result['output'] ), 'python' ) ) {
 			return array(
 				'installed'    => false,
 				'python_path'  => null,
@@ -241,20 +246,33 @@ class WP_MCP_AI_Jukebox_Service {
 			)
 		);
 
-		// Execute command (this will take a long time - potentially hours for longer samples).
-		// SECURITY NOTE: While exec() is used here, all parameters are properly escaped:
-		// - Paths use escapeshellarg()
-		// - Commands use escapeshellcmd()
-		// - User input is sanitized before this point
-		// - Only users with 'manage_options' can configure paths
-		//
+		// Execute command using Process Service.
 		// PERFORMANCE NOTE: This is a long-running operation (hours for larger samples).
 		// Consider running this in async mode or as a background job.
-		// The WordPress default execution time limit will apply unless overridden.
-		$output     = array();
-		$return_var = 0;
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $command, $output, $return_var );
+		// The timeout is set generously to allow for processing.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		
+		$result = $process_service->run(
+			array(
+				$python_path,
+				$sample_script,
+				'--model=' . $model,
+				'--name=wp_mcp_ai_' . gmdate( 'Ymd_His' ),
+				'--levels=3',
+				'--sample_length_in_seconds=' . absint( $sample_length ),
+				'--total_sample_length_in_seconds=' . absint( $sample_length ),
+				'--sr=44100',
+				'--n_samples=1',
+				'--hop_fraction=0.5,0.5,0.125',
+				'--mode=primed',
+				'--temp=' . (string) $temperature,
+				'--metadata_file=' . $metadata_file,
+			),
+			array(
+				'timeout' => 3600, // 1 hour timeout for music generation
+				'cwd'     => $jukebox_path,
+			)
+		);
 
 		// Clean up metadata file.
 		if ( file_exists( $metadata_file ) ) {
@@ -263,33 +281,29 @@ class WP_MCP_AI_Jukebox_Service {
 		}
 
 		// Check if command succeeded.
-		if ( 0 !== $return_var ) {
+		if ( is_wp_error( $result ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'jukebox_generation_failed',
 				'Jukebox generation command failed',
 				array(
-					'return_code' => $return_var,
-					'output'      => implode( "\n", $output ),
+					'error' => $result->get_error_message(),
+					'data'  => $result->get_error_data(),
 				)
 			);
 
 			return new WP_Error(
 				'wp_mcp_ai_jukebox_generation_failed',
-				sprintf(
-					/* translators: %d: return code */
-					__( 'Jukebox generation failed with return code %d. Check logs for details.', 'wp-mcp-ai' ),
-					$return_var
-				),
+				__( 'Jukebox generation failed. Check logs for details.', 'wp-mcp-ai' ),
 				array(
 					'status' => 500,
-					'output' => implode( "\n", $output ),
+					'error'  => $result,
 				)
 			);
 		}
 
 		// Parse output to find the generated audio file.
 		// Jukebox typically outputs files to a 'samples' subdirectory.
-		$output_text = implode( "\n", $output );
+		$output_text = $result['output'];
 		$audio_file  = null;
 
 		// Try to find the generated file in the output path or jukebox samples directory.
