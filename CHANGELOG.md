@@ -4,6 +4,24 @@
 
 ### Added
 
+#### Symfony Process Component Integration (December 9, 2025, PR #2091)
+- **Symfony Phase 2B Complete**: Migrated all Pro addon exec-based tools and services to Symfony Process component
+  - **Process Service Created**: New `WP_MCP_AI_Process_Service` provides WordPress-friendly wrapper around Symfony Process【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】
+  - **6 Pro Tools Migrated**: 
+    - `check_jukebox_status` - Meta AI Jukebox status checking
+    - `check_wp_cli` - WP-CLI environment inspection  
+    - `extract_video_frames` - FFmpeg frame extraction
+    - `generate_jukebox_music` - Meta AI Jukebox music generation
+    - `get_video_metadata` - FFmpeg metadata extraction
+    - `remove_background` - Python rembg background removal
+  - **2 Services Migrated**:
+    - `WP_MCP_AI_Jukebox_Service` - Jukebox execution service
+    - `WP_MCP_AI_Video_Frame_Extractor_Service` - FFmpeg operations service
+  - **Benefits**: Enhanced security, proper timeout handling, better error reporting, process control
+  - Replaced 14 direct `exec()` calls across Pro addon
+  - All migrated tools maintain backward compatibility
+  - See `docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md` for migration details
+
 #### Settings UI Enhancements (December 8, 2025, PR #2072)
 - **27 New Settings Exposed in Admin UI**: Made previously hidden settings accessible with proper UI organization
   - **Media**: MIME type allowlists for file and image uploads

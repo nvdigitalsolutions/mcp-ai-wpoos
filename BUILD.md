@@ -4,10 +4,24 @@ This document describes the build process for the Open Operator System (WP oOS) 
 
 ## Overview
 
-The plugin uses industry-standard build tools to:
-- Minify and optimize CSS and JavaScript assets (40-60% reduction)
-- Manage PHP dependencies via Composer
+WP oOS uses a modern development toolchain including:
+
+- Manage PHP dependencies via Composer (including Symfony components)
 - Package development dependencies for offline use
+- Build and minify JavaScript/CSS assets
+- Lint PHP and JavaScript code
+- Run automated tests
+- Generate translation files
+- Create production-ready releases
+
+**Key PHP Dependencies:**
+- **Symfony Process** - Modern process execution framework (v6.4+/v7.0+)
+- **Symfony HTTP Client** - HTTP request handling
+- **Symfony Validator** - Input validation framework
+- **Symfony Cache & Filesystem** - Caching and file operations
+- **Tiktoken-PHP** - Token counting for AI models
+
+All Symfony components are included in production builds and provide enterprise-grade functionality for Pro addon tools.
 
 ## Prerequisites
 
@@ -49,6 +63,10 @@ composer install --no-dev
 Production packages (~5.6 MB):
 - `rahul900day/tiktoken-php` - Token counting for AI models
 - `symfony/http-client` - HTTP client for API requests
+- `symfony/validator` - Input validation framework
+- `symfony/cache` - Caching components
+- `symfony/filesystem` - File operations
+- `symfony/process` - External process execution (Pro addon tools)
 - `nyholm/psr7` - PSR-7 HTTP message implementation
 
 #### Development Dependencies
