@@ -1,9 +1,16 @@
 # WP oOS Quick Reference Guide
 
 **Version:** 1.0.0  
-**Last Updated:** November 6, 2024
+**Last Updated:** December 9, 2025
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
+
+## 🆕 Recent Updates (December 2025)
+
+- **Symfony Process Integration** - Pro addon tools now use Symfony Process for safer external command execution
+- **27 New Settings Exposed** - Federation, mesh networking, TTS, MIME controls, and more accessible in admin UI
+- **Test Team Modal** - New team testing feature for deploying multi-assistant teams
+- **Pro Tool Reorganization** - 6 exec-based tools moved to Pro addon (breaking change for base users)
 
 ---
 
