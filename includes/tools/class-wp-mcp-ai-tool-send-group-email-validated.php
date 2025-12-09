@@ -74,7 +74,11 @@ class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool with validated arguments.
+	 *
+	 * @param \WP_MCP_AI\Tools\Arguments\SendGroupEmailArguments $validated_args Validated arguments object.
+	 * @param array                                               $context        Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
 	 */
 	protected function execute_validated( $validated_args, $context ) {
 		// Convert validated args object to array format expected by original tool.
