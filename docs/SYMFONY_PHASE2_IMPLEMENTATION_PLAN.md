@@ -72,9 +72,9 @@ Phase 2 continues the Symfony enhancements by migrating existing tools to use th
 - [x] `CreateCronJobArguments` - For create_cron_job tool (2025-12-08)
 - [x] `GetRecentPostsArguments` - For get_recent_posts tool (2025-12-08)
 - [x] `GetSystemLogsArguments` - For get_system_logs tool (2025-12-09)
+- [x] `CreateChartArguments` - For create_chart tool (2025-12-09)
 - [ ] `SendGroupEmailArguments` - For send_group_email tool
 - [ ] `CreateWooProductArguments` - For create_woo_product tool
-- [ ] `CreateChartArguments` - For create_chart tool
 - [ ] `UpdateUserMetaArguments` - For update_user_meta tool
 
 ### Tools Migrated
@@ -107,6 +107,11 @@ Phase 2 continues the Symfony enhancements by migrating existing tools to use th
 - [x] `get_system_logs` → `get_system_logs_validated` (2025-12-09)
   - File: `includes/tools/class-wp-mcp-ai-tool-get-system-logs-validated.php`
   - Tests: `tests/test-get-system-logs-validated-tool.php` (13 test methods)
+  - Status: ✅ Complete, ready for testing
+  
+- [x] `create_chart` → `create_chart_validated` (2025-12-09)
+  - File: `includes/tools/class-wp-mcp-ai-tool-create-chart-validated.php`
+  - Tests: `tests/test-create-chart-validated-tool.php` (12 test methods)
   - Status: ✅ Complete, ready for testing
 
 ### Services Created
