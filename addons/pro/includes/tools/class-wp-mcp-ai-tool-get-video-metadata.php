@@ -291,33 +291,10 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return bool True if FFprobe is available, false otherwise.
 	 */
 	protected function is_ffprobe_available() {
-		$output      = array();
-		$return_code = 0;
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 
-		// Try to execute FFprobe version command.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( 'which ffprobe 2>&1', $ffprobe_path, $which_return );
-
-		if ( 0 === $which_return && ! empty( $ffprobe_path[0] ) ) {
-			// Use absolute path for security.
-			$ffprobe_cmd = escapeshellcmd( $ffprobe_path[0] ) . ' -version 2>&1';
-		} else {
-			// Fallback to PATH-based ffprobe.
-			$ffprobe_cmd = 'ffprobe -version 2>&1';
-		}
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $ffprobe_cmd, $output, $return_code );
-
-		// FFprobe should return 0 and have output containing 'ffprobe version'.
-		if ( 0 === $return_code && ! empty( $output ) ) {
-			$first_line = $output[0];
-			if ( false !== stripos( $first_line, 'ffprobe version' ) ) {
-				return true;
-			}
-		}
-
-		return false;
+		// Use process service to check FFprobe availability.
+		return $process_service->is_command_available( 'ffprobe' );
 	}
 
 	/**
@@ -328,21 +305,35 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error Metadata array or error.
 	 */
 	protected function extract_metadata( $video_path, $include_streams = true ) {
-		$escaped_path = escapeshellarg( $video_path );
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 
-		// Build FFprobe command to get JSON output.
-		$command = sprintf(
-			'ffprobe -v quiet -print_format json -show_format -show_streams %s 2>&1',
-			$escaped_path
+		// Use Process Service to get video metadata with FFprobe.
+		$result = $process_service->run(
+			array(
+				'ffprobe',
+				'-v',
+				'quiet',
+				'-print_format',
+				'json',
+				'-show_format',
+				'-show_streams',
+				$video_path,
+			),
+			array( 'timeout' => 30 )
 		);
 
-		$output      = array();
-		$return_code = 0;
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_ffprobe_failed',
+				__( 'Failed to extract video metadata. FFprobe returned an error.', 'wp-mcp-ai' ),
+				array(
+					'status'   => 500,
+					'original' => $result,
+				)
+			);
+		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $command, $output, $return_code );
-
-		if ( 0 !== $return_code || empty( $output ) ) {
+		if ( empty( $result['output'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
 				__( 'Failed to extract video metadata. FFprobe returned an error.', 'wp-mcp-ai' ),
@@ -351,8 +342,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Parse JSON output.
-		$json_output = implode( "\n", $output );
-		$data        = json_decode( $json_output, true );
+		$data = json_decode( $result['output'], true );
 
 		if ( json_last_error() !== JSON_ERROR_NONE || ! isset( $data['format'] ) ) {
 			return new WP_Error(
