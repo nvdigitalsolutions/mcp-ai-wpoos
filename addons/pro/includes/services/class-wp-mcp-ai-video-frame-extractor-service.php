@@ -70,34 +70,10 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 	 * @return bool True if FFmpeg is available, false otherwise.
 	 */
 	public function is_ffmpeg_available() {
-		// Try to execute FFmpeg version command.
-		$output      = array();
-		$return_code = 0;
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 
-		// Use absolute path if available, otherwise rely on PATH.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( 'which ffmpeg 2>&1', $ffmpeg_path, $which_return );
-
-		if ( 0 === $which_return && ! empty( $ffmpeg_path[0] ) ) {
-			// Use absolute path for security.
-			$ffmpeg_cmd = escapeshellcmd( $ffmpeg_path[0] ) . ' -version 2>&1';
-		} else {
-			// Fallback to PATH-based ffmpeg.
-			$ffmpeg_cmd = 'ffmpeg -version 2>&1';
-		}
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $ffmpeg_cmd, $output, $return_code );
-
-		// FFmpeg should return 0 and have output containing 'ffmpeg version'.
-		if ( 0 === $return_code && ! empty( $output ) ) {
-			$first_line = $output[0];
-			if ( false !== stripos( $first_line, 'ffmpeg version' ) ) {
-				return true;
-			}
-		}
-
-		return false;
+		// Use process service to check FFmpeg availability.
+		return $process_service->is_command_available( 'ffmpeg' );
 	}
 
 	/**
@@ -115,20 +91,35 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			);
 		}
 
-		// Use FFprobe to get duration.
-		$escaped_path = escapeshellarg( $video_path );
-		$command      = sprintf(
-			'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>&1',
-			$escaped_path
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+
+		// Use Process Service to get video duration with FFprobe.
+		$result = $process_service->run(
+			array(
+				'ffprobe',
+				'-v',
+				'error',
+				'-show_entries',
+				'format=duration',
+				'-of',
+				'default=noprint_wrappers=1:nokey=1',
+				$video_path,
+			),
+			array( 'timeout' => 30 )
 		);
 
-		$output      = array();
-		$return_code = 0;
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_ffprobe_failed',
+				__( 'Failed to determine video duration. FFprobe returned an error.', 'wp-mcp-ai' ),
+				array(
+					'status'   => 500,
+					'original' => $result,
+				)
+			);
+		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $command, $output, $return_code );
-
-		if ( 0 !== $return_code || empty( $output ) ) {
+		if ( empty( $result['output'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
 				__( 'Failed to determine video duration. FFprobe returned an error.', 'wp-mcp-ai' ),
@@ -136,7 +127,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			);
 		}
 
-		$duration = floatval( trim( $output[0] ) );
+		$duration = floatval( trim( $result['output'] ) );
 
 		if ( $duration <= 0 ) {
 			return new WP_Error(
@@ -264,31 +255,33 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function extract_single_frame( $video_path, $timestamp, $output_path ) {
-		$escaped_video       = escapeshellarg( $video_path );
-		$escaped_output      = escapeshellarg( $output_path );
 		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
+		$process_service     = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 
-		// FFmpeg command to extract frame at specific timestamp.
+		// Use Process Service to execute FFmpeg frame extraction.
 		// -ss: seek to timestamp
 		// -i: input file
 		// -vframes 1: extract 1 frame
 		// -q:v: quality (2 is high quality)
 		// -y: overwrite output file.
-		$command = sprintf(
-			'ffmpeg -ss %s -i %s -vframes 1 -q:v %d -y %s 2>&1',
-			$timestamp_formatted,
-			$escaped_video,
-			$this->frame_quality,
-			$escaped_output
+		$result = $process_service->run(
+			array(
+				'ffmpeg',
+				'-ss',
+				$timestamp_formatted,
+				'-i',
+				$video_path,
+				'-vframes',
+				'1',
+				'-q:v',
+				(string) $this->frame_quality,
+				'-y',
+				$output_path,
+			),
+			array( 'timeout' => 60 )
 		);
 
-		$output      = array();
-		$return_code = 0;
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $command, $output, $return_code );
-
-		if ( 0 !== $return_code ) {
+		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_extraction_failed',
 				sprintf(
@@ -297,8 +290,8 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 					$timestamp_formatted
 				),
 				array(
-					'status' => 500,
-					'output' => implode( "\n", $output ),
+					'status'   => 500,
+					'original' => $result,
 				)
 			);
 		}

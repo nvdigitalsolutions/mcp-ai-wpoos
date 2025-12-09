@@ -445,26 +445,28 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * @return true|WP_Error True on success, error on failure.
 	 */
 	protected function extract_single_frame_at_timestamp( $frame_extractor, $video_path, $timestamp, $output_path ) {
-		$escaped_video       = escapeshellarg( $video_path );
-		$escaped_output      = escapeshellarg( $output_path );
 		$timestamp_formatted = number_format( $timestamp, 3, '.', '' );
+		$process_service     = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 
-		// FFmpeg command to extract frame at specific timestamp.
-		$command = sprintf(
-			'ffmpeg -ss %s -i %s -vframes 1 -q:v 2 -y %s 2>&1',
-			$timestamp_formatted,
-			$escaped_video,
-			$escaped_output
+		// Use Process Service to execute FFmpeg frame extraction.
+		$result = $process_service->run(
+			array(
+				'ffmpeg',
+				'-ss',
+				$timestamp_formatted,
+				'-i',
+				$video_path,
+				'-vframes',
+				'1',
+				'-q:v',
+				'2',
+				'-y',
+				$output_path,
+			),
+			array( 'timeout' => 60 )
 		);
 
-		$output      = array();
-		$return_code = 0;
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec.
-
-		exec( $command, $output, $return_code );
-
-		if ( 0 !== $return_code ) {
+		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_extraction_failed',
 				sprintf(
@@ -473,8 +475,8 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 					$timestamp_formatted
 				),
 				array(
-					'status' => 500,
-					'output' => implode( "\n", $output ),
+					'status'   => 500,
+					'original' => $result,
 				)
 			);
 		}
