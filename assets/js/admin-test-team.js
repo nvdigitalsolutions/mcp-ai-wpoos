@@ -156,20 +156,22 @@
 						status: xhr.status,
 						statusText: xhr.statusText,
 						responseText: xhr.responseText,
-						error: error
+						error: error,
+						url: ajaxUrl
 					});
 					
+					// User-friendly error message
 					let errorMessage = 'Failed to load team members. Please try again.';
 					
-					// Add more specific error messages based on status code
+					// Log detailed error information to console only
 					if (xhr.status === 404) {
-						errorMessage += ' (Endpoint not found - check REST API registration)';
+						console.error('Endpoint not found - check REST API registration');
 					} else if (xhr.status === 403) {
-						errorMessage += ' (Permission denied - check user capabilities)';
+						console.error('Permission denied - check user capabilities');
 					} else if (xhr.status === 500) {
-						errorMessage += ' (Server error - check PHP error logs)';
+						console.error('Server error - check PHP error logs');
 					} else if (xhr.status === 0) {
-						errorMessage += ' (Network error - check browser console)';
+						console.error('Network error - check browser console and network tab');
 					}
 					
 					this.selectorContainer.html(
