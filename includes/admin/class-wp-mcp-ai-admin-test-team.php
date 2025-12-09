@@ -71,10 +71,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 			$strings = parent::get_chat_strings();
 
 			// Customize specific strings for team context.
-			$strings['waiting']                 = __( 'Waiting for team member…', 'wp-mcp-ai' );
-			$strings['missingAssistant']        = __( 'Team configuration was not found.', 'wp-mcp-ai' );
-			$strings['notAuthorized']           = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
-			$strings['roleLabels']['assistant'] = __( 'Team Member', 'wp-mcp-ai' );
+			$strings['waiting']                  = __( 'Waiting for team member…', 'wp-mcp-ai' );
+			$strings['missingAssistant']         = __( 'Team configuration was not found.', 'wp-mcp-ai' );
+			$strings['notAuthorized']            = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
+			$strings['teamMemberLoadError']      = __( 'Failed to load team members. Please try again.', 'wp-mcp-ai' );
+			$strings['roleLabels']['assistant']  = __( 'Team Member', 'wp-mcp-ai' );
 
 			return $strings;
 		}

@@ -160,8 +160,10 @@
 						url: ajaxUrl
 					});
 					
-					// User-friendly error message
-					let errorMessage = 'Failed to load team members. Please try again.';
+					// User-friendly error message from localized strings
+					const errorMessage = wpMcpAiChat.strings && wpMcpAiChat.strings.teamMemberLoadError 
+						? wpMcpAiChat.strings.teamMemberLoadError
+						: 'Failed to load team members. Please try again.';
 					
 					// Log detailed error information to console only
 					if (xhr.status === 404) {
