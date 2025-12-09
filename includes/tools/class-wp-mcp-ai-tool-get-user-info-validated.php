@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/../validators/class-wp-mcp-ai-validated-tool.php';
+require_once __DIR__ . '/../validators/arguments/class-get-user-info-arguments.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-mcp-ai-tool-get-user-info.php';
 
 /**
