@@ -67,6 +67,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-timeout-detection-service.php';
 
+// Load Symfony-based services.
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-process-service.php';
+
 // Load video-related services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-analysis-service.php';
 // Note: Video frame extractor service moved to Pro addon (requires shell execution via ffmpeg).
