@@ -129,37 +129,6 @@ if ( is_wp_error( $result ) ) {
 }
 ```
 
-### 3. Process Service (`includes/services/class-wp-mcp-ai-process-service.php`)
-
-**Purpose:** Modern external command execution framework using Symfony Process component.
-
-**Added:** December 2025 (Symfony Phase 2B)
-
-**Key Features:**
-- Replaces direct `exec()` calls in Pro addon tools
-- WordPress-friendly wrappers with WP_Error integration
-- Configurable timeouts and graceful error handling
-- Secure argument escaping and process control
-
-**Migrated Components:**
-- 6 Pro addon tools (FFmpeg, WP-CLI, Python rembg, Jukebox)
-- 2 supporting services (Jukebox Service, Video Frame Extractor Service)
-
-**Usage Pattern:**
-```php
-$process_service = WP_MCP_AI_Process_Service::get_instance();
-$result = $process_service->run( $command, array(
-    'timeout' => 120,
-    'cwd' => '/path/to/working/dir',
-) );
-
-if ( is_wp_error( $result ) ) {
-    // Handle error
-} else {
-    $output = $result['output'];
-}
-```
-
 ### 4. AI Provider Clients (`includes/`)
 
 **Purpose:** Abstract and normalize AI provider APIs.
