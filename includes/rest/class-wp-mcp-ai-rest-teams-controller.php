@@ -125,6 +125,18 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 	public function get_team_members( $request ) {
 		$team_id = absint( $request->get_param( 'id' ) );
 
+		// Log the request for debugging.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'rest_teams_get_members',
+				'Team members request received',
+				array(
+					'team_id' => $team_id,
+					'user_id' => get_current_user_id(),
+				)
+			);
+		}
+
 		if ( ! $team_id ) {
 			return new WP_Error(
 				'invalid_team_id',
@@ -135,6 +147,12 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 		// Safety check: Ensure Team CPT class is loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Team CPT class not loaded',
+					array( 'team_id' => $team_id )
+				);
+			}
 			return new WP_Error(
 				'team_cpt_not_loaded',
 				__( 'Team system is not available.', 'wp-mcp-ai' ),
@@ -161,6 +179,15 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 			// Safety check: Ensure Profession CPT class is loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Profession CPT class not loaded',
+						array(
+							'team_id'   => $team_id,
+							'member_id' => $member_id,
+						)
+					);
+				}
 				continue; // Skip this member if Profession CPT isn't available.
 			}
 
@@ -189,6 +216,18 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'excerpt'       => $member->post_excerpt,
 				'expertise'     => is_array( $expertise ) ? $expertise : array(),
 				'tools_count'   => is_array( $tools ) ? count( $tools ) : 0,
+			);
+		}
+
+		// Log successful response.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'rest_teams_get_members_success',
+				'Team members loaded successfully',
+				array(
+					'team_id'      => $team_id,
+					'member_count' => count( $members ),
+				)
 			);
 		}
 
