@@ -33,6 +33,7 @@ class ComposerStaticInitb8af0d90fd2ca84f4aa8d6f7a4a49c99
             'Symfony\\Contracts\\Cache\\' => 24,
             'Symfony\\Component\\VarExporter\\' => 30,
             'Symfony\\Component\\Validator\\' => 28,
+            'Symfony\\Component\\Process\\' => 26,
             'Symfony\\Component\\HttpClient\\' => 29,
             'Symfony\\Component\\Filesystem\\' => 29,
             'Symfony\\Component\\Cache\\' => 24,
@@ -107,6 +108,10 @@ class ComposerStaticInitb8af0d90fd2ca84f4aa8d6f7a4a49c99
         'Symfony\\Component\\Validator\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/validator',
+        ),
+        'Symfony\\Component\\Process\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/process',
         ),
         'Symfony\\Component\\HttpClient\\' =>
         array (
