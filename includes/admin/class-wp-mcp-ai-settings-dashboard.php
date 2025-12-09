@@ -341,6 +341,29 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'wp-mcp-ai' );
 			}
 
+			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'performance_monitoring' === $_GET['subtab'] ) {
+				$performance_admin_js_path = WP_MCP_AI_PATH . 'assets/js/performance-admin.js';
+				wp_enqueue_script(
+					'wp-mcp-ai-performance-admin',
+					WP_MCP_AI_URL . 'assets/js/performance-admin.js',
+					array( 'jquery' ),
+					file_exists( $performance_admin_js_path ) ? filemtime( $performance_admin_js_path ) : WP_MCP_AI_VERSION,
+					true
+				);
+
+				wp_localize_script(
+					'wp-mcp-ai-performance-admin',
+					'wpMcpAiPerformance',
+					array(
+						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
+						'runningText' => __( 'Running...', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
 			// Localize script with settings.
 			wp_localize_script(
 				'wp-mcp-ai-dashboard',
