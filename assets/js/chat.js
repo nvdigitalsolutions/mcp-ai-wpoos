@@ -5757,7 +5757,7 @@
         }
         if (attachment.name) {
             segment.name = attachment.name;
-            // Also set file_name to match OpenAI tool return format
+            // file_name matches OpenAI tool return format (only set when name exists)
             segment.file_name = attachment.name;
         }
         if (attachment.mime) {
