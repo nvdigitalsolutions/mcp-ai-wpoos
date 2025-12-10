@@ -1271,7 +1271,7 @@
     /**
      * Strip display-only data from attachment segments.
      * Removes blob:/data: URLs used only for display.
-     * Preserves attachment_id, real HTTP/HTTPS URLs, and API-required fields (display_name, caption, detail).
+     * Preserves attachment_id, real HTTP/HTTPS URLs, and API-required fields following OpenAI image tool pattern.
      * 
      * @param {Object} segment - Attachment segment object
      * @return {Object} Cleaned segment object with API-compatible fields
@@ -1308,6 +1308,21 @@
         }
         if (segment.detail !== undefined) {
             cleanSegment.detail = segment.detail;
+        }
+        
+        // Preserve file metadata for agentic workflow (following OpenAI image tool pattern)
+        // These fields provide context about the file without including large binary data
+        if (segment.file_name !== undefined) {
+            cleanSegment.file_name = segment.file_name;
+        }
+        if (segment.name !== undefined) {
+            cleanSegment.name = segment.name;
+        }
+        if (segment.mime_type !== undefined) {
+            cleanSegment.mime_type = segment.mime_type;
+        }
+        if (segment.bytes !== undefined) {
+            cleanSegment.bytes = segment.bytes;
         }
 
         return cleanSegment;
@@ -5735,12 +5750,21 @@
             return;
         }
         
-        // Include URL and name for display purposes when restoring from localStorage
+        // Include metadata for agentic workflow, following OpenAI image tool pattern
+        // This includes URL, name, MIME type, and size for complete file context
         if (attachment.url) {
             segment.url = attachment.url;
         }
         if (attachment.name) {
             segment.name = attachment.name;
+            // Also set file_name to match OpenAI tool return format
+            segment.file_name = attachment.name;
+        }
+        if (attachment.mime) {
+            segment.mime_type = attachment.mime;
+        }
+        if (attachment.size) {
+            segment.bytes = attachment.size;
         }
     }
 

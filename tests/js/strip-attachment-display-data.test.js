@@ -14,6 +14,21 @@ describe('Strip Attachment Display Data', () => {
 		// Since the functions are in a closure, we'll mock them here for testing
 		
 		// Mock stripSegmentDisplayData function
+		// Helper function to check if URL is real (HTTP/HTTPS) vs display-only (blob:/data:)
+		const isRealAttachmentUrl = function(url) {
+			if (!url || typeof url !== 'string') {
+				return false;
+			}
+			const trimmedUrl = url.trim();
+			try {
+				const parsedUrl = new URL(trimmedUrl);
+				const protocol = parsedUrl.protocol.toLowerCase();
+				return protocol === 'http:' || protocol === 'https:';
+			} catch (e) {
+				return false;
+			}
+		};
+		
 		stripSegmentDisplayData = function(segment) {
 			if (!segment || typeof segment !== 'object') {
 				return segment;
@@ -30,7 +45,13 @@ describe('Strip Attachment Display Data', () => {
 				attachment_id: segment.attachment_id
 			};
 
-			// Preserve API-required fields (but not display-only url/name)
+			// Preserve real attachment URLs (HTTP/HTTPS) for the agentic workflow
+			// Strip blob:/data: URLs which are display-only
+			if (segment.url && isRealAttachmentUrl(segment.url)) {
+				cleanSegment.url = segment.url;
+			}
+
+			// Preserve API-required fields
 			if (segment.display_name !== undefined) {
 				cleanSegment.display_name = segment.display_name;
 			}
@@ -39,6 +60,20 @@ describe('Strip Attachment Display Data', () => {
 			}
 			if (segment.detail !== undefined) {
 				cleanSegment.detail = segment.detail;
+			}
+			
+			// Preserve file metadata for agentic workflow (following OpenAI image tool pattern)
+			if (segment.file_name !== undefined) {
+				cleanSegment.file_name = segment.file_name;
+			}
+			if (segment.name !== undefined) {
+				cleanSegment.name = segment.name;
+			}
+			if (segment.mime_type !== undefined) {
+				cleanSegment.mime_type = segment.mime_type;
+			}
+			if (segment.bytes !== undefined) {
+				cleanSegment.bytes = segment.bytes;
 			}
 
 			return cleanSegment;
@@ -104,62 +139,98 @@ describe('Strip Attachment Display Data', () => {
 	});
 
 	describe('stripSegmentDisplayData', () => {
-		it('should remove url and name from input_image segments', () => {
+		it('should remove blob: URLs but preserve file metadata from input_image segments', () => {
 			const segment = {
 				type: 'input_image',
 				attachment_id: 123,
 				url: 'blob:http://localhost/abc-123',
-				name: 'test-image.jpg'
+				name: 'test-image.jpg',
+				file_name: 'test-image.jpg',
+				mime_type: 'image/jpeg',
+				bytes: 102400
 			};
 
 			const cleaned = stripSegmentDisplayData(segment);
 
-			expect(cleaned).toEqual({
-				type: 'input_image',
-				attachment_id: 123
-			});
-			expect(cleaned.url).toBeUndefined();
-			expect(cleaned.name).toBeUndefined();
+			expect(cleaned.type).toBe('input_image');
+			expect(cleaned.attachment_id).toBe(123);
+			expect(cleaned.url).toBeUndefined(); // blob: URL should be stripped
+			expect(cleaned.name).toBe('test-image.jpg'); // name preserved for agentic flow
+			expect(cleaned.file_name).toBe('test-image.jpg'); // file_name preserved
+			expect(cleaned.mime_type).toBe('image/jpeg'); // mime_type preserved
+			expect(cleaned.bytes).toBe(102400); // bytes preserved
 		});
 
-		it('should remove url and name from input_file segments', () => {
+		it('should preserve real HTTP/HTTPS URLs and file metadata from input_file segments', () => {
 			const segment = {
 				type: 'input_file',
 				attachment_id: 456,
-				url: 'data:application/pdf;base64,JVBERi0xLjQK...',
+				url: 'https://example.com/uploads/document.pdf',
 				name: 'document.pdf',
+				file_name: 'document.pdf',
+				mime_type: 'application/pdf',
+				bytes: 524288,
 				display_name: 'My Document'
 			};
 
 			const cleaned = stripSegmentDisplayData(segment);
 
-			expect(cleaned).toEqual({
-				type: 'input_file',
-				attachment_id: 456,
-				display_name: 'My Document'
-			});
-			expect(cleaned.url).toBeUndefined();
-			expect(cleaned.name).toBeUndefined();
+			expect(cleaned.type).toBe('input_file');
+			expect(cleaned.attachment_id).toBe(456);
+			expect(cleaned.url).toBe('https://example.com/uploads/document.pdf'); // real URL preserved
+			expect(cleaned.name).toBe('document.pdf'); // name preserved
+			expect(cleaned.file_name).toBe('document.pdf'); // file_name preserved
+			expect(cleaned.mime_type).toBe('application/pdf'); // mime_type preserved
+			expect(cleaned.bytes).toBe(524288); // bytes preserved
+			expect(cleaned.display_name).toBe('My Document');
 		});
 
-		it('should preserve API-required fields like caption and detail', () => {
+		it('should strip data: URLs but preserve file metadata', () => {
+			const segment = {
+				type: 'input_file',
+				attachment_id: 789,
+				url: 'data:application/pdf;base64,JVBERi0xLjQK...',
+				name: 'inline-doc.pdf',
+				file_name: 'inline-doc.pdf',
+				mime_type: 'application/pdf',
+				bytes: 8192
+			};
+
+			const cleaned = stripSegmentDisplayData(segment);
+
+			expect(cleaned.type).toBe('input_file');
+			expect(cleaned.attachment_id).toBe(789);
+			expect(cleaned.url).toBeUndefined(); // data: URL should be stripped
+			expect(cleaned.name).toBe('inline-doc.pdf'); // name preserved
+			expect(cleaned.file_name).toBe('inline-doc.pdf'); // file_name preserved
+			expect(cleaned.mime_type).toBe('application/pdf'); // mime_type preserved
+			expect(cleaned.bytes).toBe(8192); // bytes preserved
+		});
+
+		it('should preserve API-required fields like caption and detail along with metadata', () => {
 			const segment = {
 				type: 'input_image',
 				attachment_id: 789,
 				url: 'blob:http://localhost/xyz-789',
 				name: 'screenshot.png',
+				file_name: 'screenshot.png',
+				mime_type: 'image/png',
+				bytes: 51200,
 				caption: 'Error screenshot',
 				detail: 'high'
 			};
 
 			const cleaned = stripSegmentDisplayData(segment);
 
-			expect(cleaned).toEqual({
-				type: 'input_image',
-				attachment_id: 789,
-				caption: 'Error screenshot',
-				detail: 'high'
-			});
+			expect(cleaned.type).toBe('input_image');
+			expect(cleaned.attachment_id).toBe(789);
+			expect(cleaned.caption).toBe('Error screenshot');
+			expect(cleaned.detail).toBe('high');
+			expect(cleaned.url).toBeUndefined(); // blob: URL stripped
+			expect(cleaned.name).toBe('screenshot.png'); // metadata preserved
+			expect(cleaned.file_name).toBe('screenshot.png');
+			expect(cleaned.mime_type).toBe('image/png');
+			expect(cleaned.bytes).toBe(51200);
 		});
 
 		it('should not modify text segments', () => {
@@ -173,7 +244,7 @@ describe('Strip Attachment Display Data', () => {
 			expect(cleaned).toEqual(segment);
 		});
 
-		it('should handle segments without url or name fields', () => {
+		it('should handle segments without optional metadata fields', () => {
 			const segment = {
 				type: 'input_image',
 				attachment_id: 111
@@ -196,7 +267,7 @@ describe('Strip Attachment Display Data', () => {
 			expect(cleaned).toBe('Hello world');
 		});
 
-		it('should clean array of segments with attachments', () => {
+		it('should clean array of segments - strip blob: URLs but preserve metadata', () => {
 			const content = [
 				{
 					type: 'text',
@@ -206,7 +277,10 @@ describe('Strip Attachment Display Data', () => {
 					type: 'input_image',
 					attachment_id: 123,
 					url: 'blob:http://localhost/abc-123',
-					name: 'image.jpg'
+					name: 'image.jpg',
+					file_name: 'image.jpg',
+					mime_type: 'image/jpeg',
+					bytes: 204800
 				}
 			];
 
@@ -217,13 +291,16 @@ describe('Strip Attachment Display Data', () => {
 				type: 'text',
 				text: 'Check out this image:'
 			});
-			expect(cleaned[1]).toEqual({
-				type: 'input_image',
-				attachment_id: 123
-			});
+			expect(cleaned[1].type).toBe('input_image');
+			expect(cleaned[1].attachment_id).toBe(123);
+			expect(cleaned[1].url).toBeUndefined(); // blob: URL stripped
+			expect(cleaned[1].name).toBe('image.jpg'); // metadata preserved
+			expect(cleaned[1].file_name).toBe('image.jpg');
+			expect(cleaned[1].mime_type).toBe('image/jpeg');
+			expect(cleaned[1].bytes).toBe(204800);
 		});
 
-		it('should handle mixed content with multiple attachments', () => {
+		it('should handle mixed content - preserve real URLs, strip blob:/data: URLs', () => {
 			const content = [
 				{
 					type: 'text',
@@ -234,6 +311,9 @@ describe('Strip Attachment Display Data', () => {
 					attachment_id: 456,
 					url: 'https://example.com/file.pdf',
 					name: 'report.pdf',
+					file_name: 'report.pdf',
+					mime_type: 'application/pdf',
+					bytes: 1048576,
 					display_name: 'Monthly Report'
 				},
 				{
@@ -241,6 +321,9 @@ describe('Strip Attachment Display Data', () => {
 					attachment_id: 789,
 					url: 'blob:http://localhost/image',
 					name: 'chart.png',
+					file_name: 'chart.png',
+					mime_type: 'image/png',
+					bytes: 307200,
 					caption: 'Sales chart'
 				}
 			];
@@ -249,16 +332,22 @@ describe('Strip Attachment Display Data', () => {
 
 			expect(cleaned).toHaveLength(3);
 			expect(cleaned[0].type).toBe('text');
-			expect(cleaned[1]).toEqual({
-				type: 'input_file',
-				attachment_id: 456,
-				display_name: 'Monthly Report'
-			});
-			expect(cleaned[2]).toEqual({
-				type: 'input_image',
-				attachment_id: 789,
-				caption: 'Sales chart'
-			});
+			expect(cleaned[1].type).toBe('input_file');
+			expect(cleaned[1].attachment_id).toBe(456);
+			expect(cleaned[1].url).toBe('https://example.com/file.pdf'); // real URL preserved
+			expect(cleaned[1].name).toBe('report.pdf');
+			expect(cleaned[1].file_name).toBe('report.pdf');
+			expect(cleaned[1].mime_type).toBe('application/pdf');
+			expect(cleaned[1].bytes).toBe(1048576);
+			expect(cleaned[1].display_name).toBe('Monthly Report');
+			expect(cleaned[2].type).toBe('input_image');
+			expect(cleaned[2].attachment_id).toBe(789);
+			expect(cleaned[2].url).toBeUndefined(); // blob: URL stripped
+			expect(cleaned[2].name).toBe('chart.png');
+			expect(cleaned[2].file_name).toBe('chart.png');
+			expect(cleaned[2].mime_type).toBe('image/png');
+			expect(cleaned[2].bytes).toBe(307200);
+			expect(cleaned[2].caption).toBe('Sales chart');
 		});
 	});
 
@@ -297,10 +386,12 @@ describe('Strip Attachment Display Data', () => {
 				type: 'text',
 				text: 'Here is my image'
 			});
-			expect(cleaned.content[1]).toEqual({
-				type: 'input_image',
-				attachment_id: 123
-			});
+			// After our changes, name is preserved for agentic workflow
+			// but blob: URL is stripped
+			expect(cleaned.content[1].type).toBe('input_image');
+			expect(cleaned.content[1].attachment_id).toBe(123);
+			expect(cleaned.content[1].name).toBe('photo.jpg');
+			expect(cleaned.content[1].url).toBeUndefined(); // blob: URL stripped
 			expect(cleaned.display).toBeUndefined();
 		});
 
@@ -372,6 +463,9 @@ describe('Strip Attachment Display Data', () => {
 							attachment_id: 100,
 							url: 'https://example.com/doc1.pdf',
 							name: 'document1.pdf',
+							file_name: 'document1.pdf',
+							mime_type: 'application/pdf',
+							bytes: 2097152,
 							display_name: 'Document 1'
 						},
 						{
@@ -379,6 +473,9 @@ describe('Strip Attachment Display Data', () => {
 							attachment_id: 101,
 							url: 'blob:http://localhost/img1',
 							name: 'screenshot.png',
+							file_name: 'screenshot.png',
+							mime_type: 'image/png',
+							bytes: 409600,
 							caption: 'Error screen'
 						}
 					]
@@ -391,16 +488,22 @@ describe('Strip Attachment Display Data', () => {
 			expect(cleaned[0].content).toBe('Hello');
 			expect(cleaned[1].content).toBe('Hi! How can I help?');
 			expect(cleaned[2].content).toHaveLength(3);
-			expect(cleaned[2].content[1]).toEqual({
-				type: 'input_file',
-				attachment_id: 100,
-				display_name: 'Document 1'
-			});
-			expect(cleaned[2].content[2]).toEqual({
-				type: 'input_image',
-				attachment_id: 101,
-				caption: 'Error screen'
-			});
+			expect(cleaned[2].content[1].type).toBe('input_file');
+			expect(cleaned[2].content[1].attachment_id).toBe(100);
+			expect(cleaned[2].content[1].url).toBe('https://example.com/doc1.pdf'); // real URL preserved
+			expect(cleaned[2].content[1].name).toBe('document1.pdf');
+			expect(cleaned[2].content[1].file_name).toBe('document1.pdf');
+			expect(cleaned[2].content[1].mime_type).toBe('application/pdf');
+			expect(cleaned[2].content[1].bytes).toBe(2097152);
+			expect(cleaned[2].content[1].display_name).toBe('Document 1');
+			expect(cleaned[2].content[2].type).toBe('input_image');
+			expect(cleaned[2].content[2].attachment_id).toBe(101);
+			expect(cleaned[2].content[2].url).toBeUndefined(); // blob: URL stripped
+			expect(cleaned[2].content[2].name).toBe('screenshot.png');
+			expect(cleaned[2].content[2].file_name).toBe('screenshot.png');
+			expect(cleaned[2].content[2].mime_type).toBe('image/png');
+			expect(cleaned[2].content[2].bytes).toBe(409600);
+			expect(cleaned[2].content[2].caption).toBe('Error screen');
 		});
 	});
 });
