@@ -50,6 +50,7 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Generate_Image_Caption_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption-validated.php',
 		'WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech-validated.php',
 		'WP_MCP_AI_Tool_Generate_Music_Validated'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music-validated.php',
+		'WP_MCP_AI_Tool_Generate_Gemini_Image_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image-validated.php',
 	);
 
 	// Register each validated tool.
