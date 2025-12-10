@@ -51,6 +51,13 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech-validated.php',
 		'WP_MCP_AI_Tool_Generate_Music_Validated'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music-validated.php',
 		'WP_MCP_AI_Tool_Generate_Gemini_Image_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image-validated.php',
+		// Batch 4 - Continued (December 10, 2025).
+		'WP_MCP_AI_Tool_Generate_Veo_Video_Validated'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video-validated.php',
+		'WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image-validated.php',
+		'WP_MCP_AI_Tool_Web_Search_Validated'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search-validated.php',
+		'WP_MCP_AI_Tool_Edit_Gemini_Image_Validated'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image-validated.php',
+		'WP_MCP_AI_Tool_Scrape_Product_Validated'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product-validated.php',
+		'WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job-validated.php',
 	);
 
 	// Register each validated tool.
