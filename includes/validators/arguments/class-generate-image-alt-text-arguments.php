@@ -23,8 +23,8 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Image URL must be a string.')]
-	#[Assert\Url(message: 'Image URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'Image URL must be a string.' )]
+	#[Assert\Url( message: 'Image URL must be a valid URL.' )]
 	public $image_url = null;
 
 	/**
@@ -32,8 +32,8 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'URL must be a string.')]
-	#[Assert\Url(message: 'URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'URL must be a string.' )]
+	#[Assert\Url( message: 'URL must be a valid URL.' )]
 	public $url = null;
 
 	/**
@@ -41,7 +41,7 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Image content must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Image content must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 10485760,
@@ -55,8 +55,8 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Attachment ID must be an integer.')]
-	#[Assert\Positive(message: 'Attachment ID must be a positive integer.')]
+	#[Assert\Type( type: 'integer', message: 'Attachment ID must be an integer.' )]
+	#[Assert\Positive( message: 'Attachment ID must be a positive integer.' )]
 	public $attachment_id = null;
 
 	/**
@@ -64,7 +64,7 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File ID must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File ID must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 200,
@@ -78,7 +78,7 @@ class GenerateImageAltTextArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Context must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Context must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Context cannot be longer than {{ limit }} characters.'

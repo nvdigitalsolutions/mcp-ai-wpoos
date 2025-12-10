@@ -25,8 +25,8 @@ class CreateCronJobArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'A valid hook name is required to schedule a cron job.')]
-	#[Assert\Type(type: 'string')]
+	#[Assert\NotBlank( message: 'A valid hook name is required to schedule a cron job.' )]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		min: 1,
 		minMessage: 'Hook name must be at least {{ limit }} character long.'
@@ -42,8 +42,8 @@ class CreateCronJobArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'int')]
-	#[Assert\PositiveOrZero(message: 'Timestamp must be a positive integer or zero.')]
+	#[Assert\Type( type: 'int' )]
+	#[Assert\PositiveOrZero( message: 'Timestamp must be a positive integer or zero.' )]
 	public $timestamp = null;
 
 	/**
@@ -51,7 +51,7 @@ class CreateCronJobArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $schedule = 'single';
 
 	/**
@@ -59,6 +59,6 @@ class CreateCronJobArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	public $args = array();
 }

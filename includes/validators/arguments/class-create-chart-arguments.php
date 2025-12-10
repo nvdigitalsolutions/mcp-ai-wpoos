@@ -25,10 +25,10 @@ class CreateChartArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\NotBlank(message: 'Chart type is required.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\NotBlank( message: 'Chart type is required.' )]
 	#[Assert\Choice(
-		choices: ['bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble'],
+		choices: array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' ),
 		message: 'Chart type must be one of: {{ choices }}.'
 	)]
 	public $type = '';
@@ -38,8 +38,8 @@ class CreateChartArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
-	#[Assert\NotBlank(message: 'Chart data is required.')]
+	#[Assert\Type( type: 'array' )]
+	#[Assert\NotBlank( message: 'Chart data is required.' )]
 	public $data = array();
 
 	/**
@@ -47,7 +47,7 @@ class CreateChartArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	public $options = null;
 
 	/**
@@ -55,7 +55,7 @@ class CreateChartArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		max: 200,
 		maxMessage: 'Chart title cannot exceed {{ limit }} characters.'
@@ -67,7 +67,7 @@ class CreateChartArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 100,
 		max: 2000,
@@ -80,7 +80,7 @@ class CreateChartArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 100,
 		max: 2000,
@@ -93,7 +93,7 @@ class CreateChartArguments {
 	 *
 	 * @var bool
 	 */
-	#[Assert\Type(type: 'bool')]
+	#[Assert\Type( type: 'bool' )]
 	public $save_as_attachment = false;
 
 	/**
@@ -101,7 +101,7 @@ class CreateChartArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		max: 100,
 		maxMessage: 'File name cannot exceed {{ limit }} characters.'

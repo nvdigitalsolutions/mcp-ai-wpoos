@@ -23,8 +23,8 @@ class GenerateMusicArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Prompt is required for music generation.')]
-	#[Assert\Type(type: 'string', message: 'Prompt must be a string.')]
+	#[Assert\NotBlank( message: 'Prompt is required for music generation.' )]
+	#[Assert\Type( type: 'string', message: 'Prompt must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 2000,
@@ -38,7 +38,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Duration must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Duration must be an integer.' )]
 	#[Assert\Range(
 		min: 1,
 		max: 300,
@@ -51,7 +51,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Genre must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Genre must be a string.' )]
 	#[Assert\Length(
 		max: 100,
 		maxMessage: 'Genre cannot exceed {{ limit }} characters.'
@@ -63,7 +63,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Mood must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Mood must be a string.' )]
 	#[Assert\Length(
 		max: 100,
 		maxMessage: 'Mood cannot exceed {{ limit }} characters.'
@@ -75,7 +75,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Instrumentation must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Instrumentation must be a string.' )]
 	#[Assert\Length(
 		max: 200,
 		maxMessage: 'Instrumentation cannot exceed {{ limit }} characters.'
@@ -87,7 +87,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'BPM must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'BPM must be an integer.' )]
 	#[Assert\Range(
 		min: 20,
 		max: 300,
@@ -100,7 +100,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Key must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Key must be a string.' )]
 	#[Assert\Length(
 		max: 50,
 		maxMessage: 'Key cannot exceed {{ limit }} characters.'
@@ -112,7 +112,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var float|null
 	 */
-	#[Assert\Type(type: 'numeric', message: 'Temperature must be a number.')]
+	#[Assert\Type( type: 'numeric', message: 'Temperature must be a number.' )]
 	#[Assert\Range(
 		min: 0.0,
 		max: 2.0,
@@ -125,7 +125,7 @@ class GenerateMusicArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File name must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File name must be a string.' )]
 	#[Assert\Length(
 		max: 255,
 		maxMessage: 'File name cannot exceed {{ limit }} characters.'

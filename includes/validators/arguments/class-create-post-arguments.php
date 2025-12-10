@@ -24,7 +24,7 @@ class CreatePostArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Post title is required.')]
+	#[Assert\NotBlank( message: 'Post title is required.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 200,
@@ -38,7 +38,7 @@ class CreatePostArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Post content is required.')]
+	#[Assert\NotBlank( message: 'Post content is required.' )]
 	public $content = '';
 
 	/**
@@ -57,7 +57,7 @@ class CreatePostArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Post type is required.')]
+	#[Assert\NotBlank( message: 'Post type is required.' )]
 	#[Assert\Regex(
 		pattern: '/^[a-z_]+$/',
 		message: 'Post type must contain only lowercase letters and underscores.'
@@ -69,8 +69,8 @@ class CreatePostArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'User ID must be an integer.')]
-	#[Assert\Positive(message: 'User ID must be a positive integer.')]
-	#[WPCapability(capability: 'edit_posts')]
+	#[Assert\Type( type: 'integer', message: 'User ID must be an integer.' )]
+	#[Assert\Positive( message: 'User ID must be a positive integer.' )]
+	#[WPCapability( capability: 'edit_posts' )]
 	public $user_id = null;
 }

@@ -23,8 +23,8 @@ class WebSearchArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Search query is required.')]
-	#[Assert\Type(type: 'string', message: 'Query must be a string.')]
+	#[Assert\NotBlank( message: 'Search query is required.' )]
+	#[Assert\Type( type: 'string', message: 'Query must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Query cannot exceed {{ limit }} characters.'
@@ -36,7 +36,7 @@ class WebSearchArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Max results must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Max results must be an integer.' )]
 	#[Assert\Range(
 		min: 1,
 		max: 10,

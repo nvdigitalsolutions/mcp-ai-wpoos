@@ -25,7 +25,7 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		max: 200,
 		maxMessage: 'Email subject cannot exceed {{ limit }} characters.'
@@ -37,7 +37,7 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $message = null;
 
 	/**
@@ -45,7 +45,7 @@ class SendGroupEmailArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	public $recipients = null;
 
 	/**
@@ -53,8 +53,8 @@ class SendGroupEmailArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'int')]
-	#[Assert\Positive(message: 'Attachment ID must be a positive integer.')]
+	#[Assert\Type( type: 'int' )]
+	#[Assert\Positive( message: 'Attachment ID must be a positive integer.' )]
 	public $attachment_id = null;
 
 	/**
@@ -62,7 +62,7 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $file_id = null;
 
 	/**
@@ -70,8 +70,8 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\Url(message: 'URL must be a valid URL.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\Url( message: 'URL must be a valid URL.' )]
 	public $url = null;
 
 	/**
@@ -79,11 +79,13 @@ class SendGroupEmailArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array')]
-	#[Assert\All([
-		new Assert\Type(type: 'int'),
-		new Assert\Positive(message: 'Each attachment ID must be a positive integer.')
-	])]
+	#[Assert\Type( type: 'array' )]
+	#[Assert\All(
+		array(
+			new Assert\Type( type: 'int' ),
+			new Assert\Positive( message: 'Each attachment ID must be a positive integer.' ),
+		)
+	)]
 	public $attachment_ids = null;
 
 	/**
@@ -91,8 +93,8 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\Email(message: 'From email must be a valid email address.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\Email( message: 'From email must be a valid email address.' )]
 	public $from_email = null;
 
 	/**
@@ -100,7 +102,7 @@ class SendGroupEmailArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		max: 100,
 		maxMessage: 'From name cannot exceed {{ limit }} characters.'
@@ -112,9 +114,11 @@ class SendGroupEmailArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array')]
-	#[Assert\All([
-		new Assert\Type(type: 'string')
-	])]
+	#[Assert\Type( type: 'array' )]
+	#[Assert\All(
+		array(
+			new Assert\Type( type: 'string' ),
+		)
+	)]
 	public $headers = null;
 }

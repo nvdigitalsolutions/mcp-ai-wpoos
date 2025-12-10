@@ -23,15 +23,17 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array', message: 'URLs must be an array.')]
+	#[Assert\Type( type: 'array', message: 'URLs must be an array.' )]
 	#[Assert\Count(
 		min: 1,
 		minMessage: 'At least one URL is required.'
 	)]
-	#[Assert\All([
-		new Assert\Type(type: 'string', message: 'Each URL must be a string.'),
-		new Assert\Url(message: 'Each URL must be a valid URL.')
-	])]
+	#[Assert\All(
+		array(
+			new Assert\Type( type: 'string', message: 'Each URL must be a string.' ),
+			new Assert\Url( message: 'Each URL must be a valid URL.' ),
+		)
+	)]
 	public $urls = null;
 
 	/**
@@ -39,8 +41,8 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'URL must be a string.')]
-	#[Assert\Url(message: 'URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'URL must be a string.' )]
+	#[Assert\Url( message: 'URL must be a valid URL.' )]
 	public $url = null;
 
 	/**
@@ -48,7 +50,7 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Priority must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Priority must be an integer.' )]
 	#[Assert\Range(
 		min: 0,
 		max: 100,
@@ -61,7 +63,7 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array', message: 'Options must be an array.')]
+	#[Assert\Type( type: 'array', message: 'Options must be an array.' )]
 	public $options = null;
 
 	/**
@@ -69,7 +71,7 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var bool|null
 	 */
-	#[Assert\Type(type: 'bool', message: 'Wait for completion must be a boolean.')]
+	#[Assert\Type( type: 'bool', message: 'Wait for completion must be a boolean.' )]
 	public $wait_for_completion = null;
 
 	/**
@@ -77,7 +79,7 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Poll interval must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Poll interval must be an integer.' )]
 	#[Assert\Range(
 		min: 0,
 		max: 30,
@@ -90,7 +92,7 @@ class RunCrawl4AIJobArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Timeout must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
 	#[Assert\Range(
 		min: 0,
 		max: 600,

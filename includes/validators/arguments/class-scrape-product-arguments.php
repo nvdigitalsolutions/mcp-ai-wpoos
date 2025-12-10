@@ -23,8 +23,8 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'URL must be a string.')]
-	#[Assert\Url(message: 'URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'URL must be a string.' )]
+	#[Assert\Url( message: 'URL must be a valid URL.' )]
 	public $url = null;
 
 	/**
@@ -32,7 +32,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'HTML file must be a string.')]
+	#[Assert\Type( type: 'string', message: 'HTML file must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'HTML file path cannot exceed {{ limit }} characters.'
@@ -44,7 +44,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Title selector must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Title selector must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Title selector cannot exceed {{ limit }} characters.'
@@ -56,7 +56,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Subtitle selector must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Subtitle selector must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Subtitle selector cannot exceed {{ limit }} characters.'
@@ -68,7 +68,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Description selector must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Description selector must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Description selector cannot exceed {{ limit }} characters.'
@@ -80,7 +80,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Images selector must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Images selector must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Images selector cannot exceed {{ limit }} characters.'
@@ -92,7 +92,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var bool|null
 	 */
-	#[Assert\Type(type: 'bool', message: 'Download images must be a boolean.')]
+	#[Assert\Type( type: 'bool', message: 'Download images must be a boolean.' )]
 	public $download_images = null;
 
 	/**
@@ -100,7 +100,7 @@ class ScrapeProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Price selector must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Price selector must be a string.' )]
 	#[Assert\Length(
 		max: 500,
 		maxMessage: 'Price selector cannot exceed {{ limit }} characters.'
@@ -112,6 +112,6 @@ class ScrapeProductArguments {
 	 *
 	 * @var bool|null
 	 */
-	#[Assert\Type(type: 'bool', message: 'Extract structured data must be a boolean.')]
+	#[Assert\Type( type: 'bool', message: 'Extract structured data must be a boolean.' )]
 	public $extract_structured_data = null;
 }
