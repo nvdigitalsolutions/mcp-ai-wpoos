@@ -169,7 +169,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			'wp-mcp-ai-chat',
 			'wpMcpAiChat',
 			array(
-				'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
+				'restUrl'             => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),

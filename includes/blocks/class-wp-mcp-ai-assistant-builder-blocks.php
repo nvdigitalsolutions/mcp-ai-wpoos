@@ -125,7 +125,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			array(
 				'assistants'       => self::get_assistants_for_editor(),
 				'toolGroups'       => self::get_tool_groups_for_editor(),
-				'restUrl'          => rest_url( 'mcp-ai/v1' ),
+				'restUrl'          => trailingslashit( rest_url( 'mcp-ai/v1' ) ),
 				'wpRestUrl'        => rest_url( 'wp/v2' ),
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'ajaxUrl'          => admin_url( 'admin-ajax.php' ),

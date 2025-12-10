@@ -462,7 +462,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 				self::SCRIPT_HANDLE,
 				'wpMcpAiUserChats',
 				array(
-					'restUrl' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+					'restUrl' => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 					'nonce'   => wp_create_nonce( 'wp_rest' ),
 					'strings' => $localised_strings,
 				)
