@@ -23,8 +23,8 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Attachment ID must be an integer.')]
-	#[Assert\Positive(message: 'Attachment ID must be a positive integer.')]
+	#[Assert\Type( type: 'integer', message: 'Attachment ID must be an integer.' )]
+	#[Assert\Positive( message: 'Attachment ID must be a positive integer.' )]
 	public $attachment_id = null;
 
 	/**
@@ -32,7 +32,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File ID must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File ID must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 200,
@@ -46,8 +46,8 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'URL must be a string.')]
-	#[Assert\Url(message: 'URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'URL must be a string.' )]
+	#[Assert\Url( message: 'URL must be a valid URL.' )]
 	public $url = null;
 
 	/**
@@ -55,7 +55,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var bool
 	 */
-	#[Assert\Type(type: 'bool', message: 'Translate must be a boolean.')]
+	#[Assert\Type( type: 'bool', message: 'Translate must be a boolean.' )]
 	public $translate = true;
 
 	/**
@@ -63,7 +63,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Model cannot be blank.')]
+	#[Assert\NotBlank( message: 'Model cannot be blank.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 100,
@@ -77,7 +77,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Prompt must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Prompt must be a string.' )]
 	#[Assert\Length(
 		max: 1000,
 		maxMessage: 'Prompt cannot be longer than {{ limit }} characters.'
@@ -89,7 +89,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var float|null
 	 */
-	#[Assert\Type(type: 'float', message: 'Temperature must be a number.')]
+	#[Assert\Type( type: 'float', message: 'Temperature must be a number.' )]
 	#[Assert\Range(
 		min: 0,
 		max: 1,
@@ -102,8 +102,8 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Timeout must be an integer.')]
-	#[Assert\Positive(message: 'Timeout must be a positive integer.')]
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
+	#[Assert\Positive( message: 'Timeout must be a positive integer.' )]
 	#[Assert\Range(
 		min: 1,
 		max: 300,
@@ -127,7 +127,7 @@ class TranscribeOpenAIAudioArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Language must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Language must be a string.' )]
 	#[Assert\Length(
 		min: 2,
 		max: 10,

@@ -23,8 +23,8 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Prompt is required for image editing.')]
-	#[Assert\Type(type: 'string', message: 'Prompt must be a string.')]
+	#[Assert\NotBlank( message: 'Prompt is required for image editing.' )]
+	#[Assert\Type( type: 'string', message: 'Prompt must be a string.' )]
 	#[Assert\Length(
 		max: 4000,
 		maxMessage: 'Prompt cannot exceed {{ limit }} characters.'
@@ -36,8 +36,8 @@ class EditGeminiImageArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Attachment ID must be an integer.')]
-	#[Assert\Positive(message: 'Attachment ID must be a positive integer.')]
+	#[Assert\Type( type: 'integer', message: 'Attachment ID must be an integer.' )]
+	#[Assert\Positive( message: 'Attachment ID must be a positive integer.' )]
 	public $attachment_id = null;
 
 	/**
@@ -45,8 +45,8 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Image URL must be a string.')]
-	#[Assert\Url(message: 'Image URL must be a valid URL.')]
+	#[Assert\Type( type: 'string', message: 'Image URL must be a string.' )]
+	#[Assert\Url( message: 'Image URL must be a valid URL.' )]
 	public $image_url = null;
 
 	/**
@@ -54,7 +54,7 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Image data must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Image data must be a string.' )]
 	public $image_data = null;
 
 	/**
@@ -62,9 +62,9 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Source MIME type must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Source MIME type must be a string.' )]
 	#[Assert\Choice(
-		choices: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+		choices: array( 'image/png', 'image/jpeg', 'image/webp', 'image/gif' ),
 		message: 'Source MIME type must be one of: {{ choices }}.'
 	)]
 	public $source_mime_type = null;
@@ -74,7 +74,7 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Model must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Model must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 100,
@@ -88,9 +88,9 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Aspect ratio must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Aspect ratio must be a string.' )]
 	#[Assert\Choice(
-		choices: ['1:1', '3:4', '4:3', '9:16', '16:9'],
+		choices: array( '1:1', '3:4', '4:3', '9:16', '16:9' ),
 		message: 'Aspect ratio must be one of: {{ choices }}.'
 	)]
 	public $aspect_ratio = null;
@@ -100,9 +100,9 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'MIME type must be a string.')]
+	#[Assert\Type( type: 'string', message: 'MIME type must be a string.' )]
 	#[Assert\Choice(
-		choices: ['image/png', 'image/jpeg', 'image/webp'],
+		choices: array( 'image/png', 'image/jpeg', 'image/webp' ),
 		message: 'MIME type must be one of: {{ choices }}.'
 	)]
 	public $mime_type = null;
@@ -112,7 +112,7 @@ class EditGeminiImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File name must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File name must be a string.' )]
 	#[Assert\Length(
 		max: 255,
 		maxMessage: 'File name cannot exceed {{ limit }} characters.'
@@ -124,7 +124,7 @@ class EditGeminiImageArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Timeout must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
 	#[Assert\Range(
 		min: 5,
 		max: 300,

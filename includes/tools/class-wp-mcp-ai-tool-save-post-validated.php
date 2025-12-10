@@ -18,7 +18,7 @@ require_once __DIR__ . '/../validators/arguments/class-save-post-arguments.php';
  * Creates a new post or updates an existing one using Symfony Validator.
  */
 class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
-	
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 		if ( $post_id > 0 ) {
 			$post = get_post( $post_id );
 			// Post existence already validated by WPPostExists constraint.
-			
+
 			if ( $post->post_type !== $post_type ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not match the existing post.', 'wp-mcp-ai' ) );
 			}

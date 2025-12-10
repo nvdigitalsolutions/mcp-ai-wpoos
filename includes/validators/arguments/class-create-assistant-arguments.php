@@ -25,14 +25,14 @@ class CreateAssistantArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Title is required.')]
+	#[Assert\NotBlank( message: 'Title is required.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 200,
 		minMessage: 'Title must be at least {{ limit }} character long.',
 		maxMessage: 'Title cannot be longer than {{ limit }} characters.'
 	)]
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $title = '';
 
 	/**
@@ -44,7 +44,7 @@ class CreateAssistantArguments {
 		max: 5000,
 		maxMessage: 'Description cannot be longer than {{ limit }} characters.'
 	)]
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $description = null;
 
 	/**
@@ -56,7 +56,7 @@ class CreateAssistantArguments {
 		max: 32000,
 		maxMessage: 'System prompt cannot be longer than {{ limit }} characters.'
 	)]
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $system_prompt = null;
 
 	/**
@@ -64,34 +64,36 @@ class CreateAssistantArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	#[Assert\Count(
 		max: 3,
 		maxMessage: 'You can select up to {{ limit }} professions.'
 	)]
-	#[Assert\All(array(
-		new Assert\Type('string'),
-		new Assert\Choice(
-			choices: array(
-				'tax_advisor',
-				'customs_broker',
-				'compliance_officer',
-				'trade_consultant',
-				'import_export_specialist',
-				'logistics_manager',
-				'supply_chain_analyst',
-				'freight_forwarder',
-				'regulatory_affairs_specialist',
-				'international_business_consultant',
-				'tariff_specialist',
-				'quality_assurance_manager',
-				'product_certification_expert',
-				'legal_advisor',
-				'financial_advisor',
+	#[Assert\All(
+		array(
+			new Assert\Type( 'string' ),
+			new Assert\Choice(
+				choices: array(
+					'tax_advisor',
+					'customs_broker',
+					'compliance_officer',
+					'trade_consultant',
+					'import_export_specialist',
+					'logistics_manager',
+					'supply_chain_analyst',
+					'freight_forwarder',
+					'regulatory_affairs_specialist',
+					'international_business_consultant',
+					'tariff_specialist',
+					'quality_assurance_manager',
+					'product_certification_expert',
+					'legal_advisor',
+					'financial_advisor',
+				),
+				message: 'The profession "{{ value }}" is not valid.'
 			),
-			message: 'The profession "{{ value }}" is not valid.'
-		),
-	))]
+		)
+	)]
 	public $professions = array();
 
 	/**
@@ -99,30 +101,32 @@ class CreateAssistantArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	#[Assert\Count(
 		max: 2,
 		maxMessage: 'You can select up to {{ limit }} regions.'
 	)]
-	#[Assert\All(array(
-		new Assert\Type('string'),
-		new Assert\Choice(
-			choices: array(
-				'jamaica',
-				'sri_lanka',
-				'global',
-				'caribbean',
-				'south_asia',
-				'european_union',
-				'north_america',
-				'latin_america',
-				'middle_east',
-				'africa',
-				'asia_pacific',
+	#[Assert\All(
+		array(
+			new Assert\Type( 'string' ),
+			new Assert\Choice(
+				choices: array(
+					'jamaica',
+					'sri_lanka',
+					'global',
+					'caribbean',
+					'south_asia',
+					'european_union',
+					'north_america',
+					'latin_america',
+					'middle_east',
+					'africa',
+					'asia_pacific',
+				),
+				message: 'The region "{{ value }}" is not valid.'
 			),
-			message: 'The region "{{ value }}" is not valid.'
-		),
-	))]
+		)
+	)]
 	public $regions = array();
 
 	/**
@@ -130,7 +134,7 @@ class CreateAssistantArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Length(
 		max: 100,
 		maxMessage: 'Industry focus cannot be longer than {{ limit }} characters.'
@@ -142,15 +146,17 @@ class CreateAssistantArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	#[Assert\Count(
 		max: 20,
 		maxMessage: 'You can attach up to {{ limit }} files.'
 	)]
-	#[Assert\All(array(
-		new Assert\Type('integer'),
-		new Assert\Positive(message: 'Attachment ID must be a positive integer.'),
-	))]
+	#[Assert\All(
+		array(
+			new Assert\Type( 'integer' ),
+			new Assert\Positive( message: 'Attachment ID must be a positive integer.' ),
+		)
+	)]
 	public $attachment_ids = array();
 
 	/**
@@ -158,7 +164,7 @@ class CreateAssistantArguments {
 	 *
 	 * @var bool
 	 */
-	#[Assert\Type(type: 'bool')]
+	#[Assert\Type( type: 'bool' )]
 	public $async = false;
 
 	/**
@@ -166,7 +172,7 @@ class CreateAssistantArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Email(message: 'The email "{{ value }}" is not a valid email address.')]
-	#[Assert\Type(type: 'string')]
+	#[Assert\Email( message: 'The email "{{ value }}" is not a valid email address.' )]
+	#[Assert\Type( type: 'string' )]
 	public $notification_email = null;
 }

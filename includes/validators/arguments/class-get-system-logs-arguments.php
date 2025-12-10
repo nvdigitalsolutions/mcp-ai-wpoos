@@ -25,7 +25,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 50,
@@ -38,10 +38,12 @@ class GetSystemLogsArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
-	#[Assert\All([
-		new Assert\Type('string')
-	])]
+	#[Assert\Type( type: 'array' )]
+	#[Assert\All(
+		array(
+			new Assert\Type( 'string' ),
+		)
+	)]
 	public $activity_types = array();
 
 	/**
@@ -49,7 +51,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 50,
@@ -62,7 +64,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var bool
 	 */
-	#[Assert\Type(type: 'bool')]
+	#[Assert\Type( type: 'bool' )]
 	public $include_debug_log = true;
 
 	/**
@@ -70,7 +72,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 200,
@@ -83,7 +85,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1024,
 		max: 200000,
@@ -96,7 +98,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var bool
 	 */
-	#[Assert\Type(type: 'bool')]
+	#[Assert\Type( type: 'bool' )]
 	public $include_plugin_logs = true;
 
 	/**
@@ -104,7 +106,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 20,
@@ -117,7 +119,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 200,
@@ -130,7 +132,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1024,
 		max: 200000,
@@ -143,10 +145,12 @@ class GetSystemLogsArguments {
 	 *
 	 * @var array
 	 */
-	#[Assert\Type(type: 'array')]
-	#[Assert\All([
-		new Assert\Type('string')
-	])]
+	#[Assert\Type( type: 'array' )]
+	#[Assert\All(
+		array(
+			new Assert\Type( 'string' ),
+		)
+	)]
 	public $plugin_log_directories = array();
 
 	/**
@@ -154,7 +158,7 @@ class GetSystemLogsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 0,
 		max: 5,

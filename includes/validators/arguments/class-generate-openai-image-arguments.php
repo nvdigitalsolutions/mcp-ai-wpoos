@@ -23,8 +23,8 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Prompt is required for image generation.')]
-	#[Assert\Type(type: 'string', message: 'Prompt must be a string.')]
+	#[Assert\NotBlank( message: 'Prompt is required for image generation.' )]
+	#[Assert\Type( type: 'string', message: 'Prompt must be a string.' )]
 	#[Assert\Length(
 		max: 4000,
 		maxMessage: 'Prompt cannot exceed {{ limit }} characters.'
@@ -36,7 +36,7 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Model must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Model must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 100,
@@ -50,9 +50,9 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Size must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Size must be a string.' )]
 	#[Assert\Choice(
-		choices: ['1024x1024', '1792x1024', '1024x1792', '256x256', '512x512'],
+		choices: array( '1024x1024', '1792x1024', '1024x1792', '256x256', '512x512' ),
 		message: 'Size must be one of: {{ choices }}.'
 	)]
 	public $size = null;
@@ -62,9 +62,9 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Quality must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Quality must be a string.' )]
 	#[Assert\Choice(
-		choices: ['low', 'medium', 'high', 'auto', 'standard', 'hd'],
+		choices: array( 'low', 'medium', 'high', 'auto', 'standard', 'hd' ),
 		message: 'Quality must be one of: {{ choices }}.'
 	)]
 	public $quality = null;
@@ -74,9 +74,9 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Response format must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Response format must be a string.' )]
 	#[Assert\Choice(
-		choices: ['b64_json', 'url'],
+		choices: array( 'b64_json', 'url' ),
 		message: 'Response format must be one of: {{ choices }}.'
 	)]
 	public $response_format = null;
@@ -86,9 +86,9 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Format must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Format must be a string.' )]
 	#[Assert\Choice(
-		choices: ['png'],
+		choices: array( 'png' ),
 		message: 'Format must be one of: {{ choices }}.'
 	)]
 	public $format = null;
@@ -98,7 +98,7 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File name must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File name must be a string.' )]
 	#[Assert\Length(
 		max: 255,
 		maxMessage: 'File name cannot exceed {{ limit }} characters.'
@@ -110,7 +110,7 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Timeout must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
 	#[Assert\Range(
 		min: 5,
 		max: 300,

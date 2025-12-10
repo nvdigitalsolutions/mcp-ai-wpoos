@@ -24,8 +24,8 @@ class SavePostArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Post ID must be an integer.')]
-	#[Assert\Positive(message: 'Post ID must be a positive integer.')]
+	#[Assert\Type( type: 'integer', message: 'Post ID must be an integer.' )]
+	#[Assert\Positive( message: 'Post ID must be a positive integer.' )]
 	#[WPPostExists]
 	public $post_id = null;
 
@@ -34,7 +34,7 @@ class SavePostArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Post type cannot be empty.')]
+	#[Assert\NotBlank( message: 'Post type cannot be empty.' )]
 	#[Assert\Regex(
 		pattern: '/^[a-z0-9_-]+$/',
 		message: 'Post type must contain only lowercase letters, numbers, hyphens, and underscores.'
@@ -57,7 +57,7 @@ class SavePostArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Post content is required.')]
+	#[Assert\NotBlank( message: 'Post content is required.' )]
 	public $content = '';
 
 	/**
@@ -66,7 +66,7 @@ class SavePostArguments {
 	 * @var string
 	 */
 	#[Assert\Choice(
-		choices: ['publish', 'draft', 'pending', 'private', 'future', 'trash'],
+		choices: array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 		message: 'Post status must be one of: {{ choices }}.'
 	)]
 	public $status = 'draft';

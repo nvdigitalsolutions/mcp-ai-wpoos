@@ -23,8 +23,8 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\NotBlank(message: 'Text is required for speech generation.')]
-	#[Assert\Type(type: 'string', message: 'Text must be a string.')]
+	#[Assert\NotBlank( message: 'Text is required for speech generation.' )]
+	#[Assert\Type( type: 'string', message: 'Text must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 4096,
@@ -38,7 +38,7 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Voice must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Voice must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 50,
@@ -52,9 +52,9 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Format must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Format must be a string.' )]
 	#[Assert\Choice(
-		choices: ['mp3', 'aac', 'flac', 'ogg', 'opus', 'wav'],
+		choices: array( 'mp3', 'aac', 'flac', 'ogg', 'opus', 'wav' ),
 		message: 'Format must be one of: {{ choices }}.'
 	)]
 	public $format = null;
@@ -64,7 +64,7 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'Model must be a string.')]
+	#[Assert\Type( type: 'string', message: 'Model must be a string.' )]
 	#[Assert\Length(
 		min: 1,
 		max: 100,
@@ -78,7 +78,7 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var float|null
 	 */
-	#[Assert\Type(type: 'numeric', message: 'Speed must be a number.')]
+	#[Assert\Type( type: 'numeric', message: 'Speed must be a number.' )]
 	#[Assert\Range(
 		min: 0.25,
 		max: 4.0,
@@ -91,7 +91,7 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string', message: 'File name must be a string.')]
+	#[Assert\Type( type: 'string', message: 'File name must be a string.' )]
 	#[Assert\Length(
 		max: 255,
 		maxMessage: 'File name cannot exceed {{ limit }} characters.'
@@ -103,7 +103,7 @@ class GenerateOpenAISpeechArguments {
 	 *
 	 * @var int|null
 	 */
-	#[Assert\Type(type: 'integer', message: 'Timeout must be an integer.')]
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
 	#[Assert\Range(
 		min: 5,
 		max: 300,

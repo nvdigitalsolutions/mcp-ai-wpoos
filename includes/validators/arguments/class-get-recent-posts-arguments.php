@@ -25,7 +25,7 @@ class GetRecentPostsArguments {
 	 *
 	 * @var int
 	 */
-	#[Assert\Type(type: 'int')]
+	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
 		max: 50,
@@ -38,7 +38,7 @@ class GetRecentPostsArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\NotBlank(message: 'Post type is required.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\NotBlank( message: 'Post type is required.' )]
 	public $post_type = 'post';
 }

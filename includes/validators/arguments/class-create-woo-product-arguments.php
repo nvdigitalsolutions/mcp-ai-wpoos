@@ -25,8 +25,8 @@ class CreateWooProductArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\NotBlank(message: 'Product reference is required.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\NotBlank( message: 'Product reference is required.' )]
 	#[Assert\Length(
 		min: 1,
 		minMessage: 'Product reference cannot be empty.'
@@ -38,9 +38,9 @@ class CreateWooProductArguments {
 	 *
 	 * @var string
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	#[Assert\Choice(
-		choices: ['simple', 'variable'],
+		choices: array( 'simple', 'variable' ),
 		message: 'Product type must be either "simple" or "variable".'
 	)]
 	public $product_type = 'simple';
@@ -50,7 +50,7 @@ class CreateWooProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $brand = null;
 
 	/**
@@ -58,7 +58,7 @@ class CreateWooProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $title = null;
 
 	/**
@@ -73,7 +73,7 @@ class CreateWooProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $description = null;
 
 	/**
@@ -81,7 +81,7 @@ class CreateWooProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
+	#[Assert\Type( type: 'string' )]
 	public $description_secondary = null;
 
 	/**
@@ -89,8 +89,8 @@ class CreateWooProductArguments {
 	 *
 	 * @var string|null
 	 */
-	#[Assert\Type(type: 'string')]
-	#[Assert\Url(message: 'Brand page URL must be a valid URL.')]
+	#[Assert\Type( type: 'string' )]
+	#[Assert\Url( message: 'Brand page URL must be a valid URL.' )]
 	public $brand_page_url = null;
 
 	/**
@@ -98,16 +98,18 @@ class CreateWooProductArguments {
 	 *
 	 * @var array|null
 	 */
-	#[Assert\Type(type: 'array')]
+	#[Assert\Type( type: 'array' )]
 	#[Assert\Count(
 		min: 2,
 		max: 10,
 		minMessage: 'At least {{ limit }} image URLs are required.',
 		maxMessage: 'Cannot provide more than {{ limit }} image URLs.'
 	)]
-	#[Assert\All([
-		new Assert\Type(type: 'string'),
-		new Assert\Url(message: 'Each image URL must be a valid URL.')
-	])]
+	#[Assert\All(
+		array(
+			new Assert\Type( type: 'string' ),
+			new Assert\Url( message: 'Each image URL must be a valid URL.' ),
+		)
+	)]
 	public $image_urls = null;
 }

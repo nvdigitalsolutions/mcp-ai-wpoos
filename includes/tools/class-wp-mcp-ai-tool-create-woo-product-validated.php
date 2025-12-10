@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_To
 	 * Execute the tool with validated arguments.
 	 *
 	 * @param \WP_MCP_AI\Tools\Arguments\CreateWooProductArguments $validated_args Validated arguments object.
-	 * @param array                                                 $context        Execution context including user_id.
+	 * @param array                                                $context        Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
 	 */
 	protected function execute_validated( $validated_args, $context ) {
