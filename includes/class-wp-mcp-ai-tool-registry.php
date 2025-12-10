@@ -771,6 +771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Music'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
 				'WP_MCP_AI_Tool_Save_Post'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
+				'WP_MCP_AI_Tool_Create_Post'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-post.php',
 				'WP_MCP_AI_Tool_Create_Assistant'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant.php',
 				'WP_MCP_AI_Tool_Run_Crawl4AI_Job'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
 				'WP_MCP_AI_Tool_Open_OpenAI_Logs'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php',
