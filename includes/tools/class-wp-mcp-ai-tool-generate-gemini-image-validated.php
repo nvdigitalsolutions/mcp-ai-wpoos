@@ -147,8 +147,8 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_MCP_AI_Validated
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_rules() {
+	public function get_tool_rules() {
 		// Delegate to the original tool.
-		return $this->original_tool->get_rules();
+		return $this->original_tool->get_tool_rules();
 	}
 }
