@@ -167,4 +167,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_To
 		// Delegate to the original tool.
 		return $this->original_tool->get_async_metadata();
 	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
+		// Delegate to the original tool.
+		return $this->original_tool->get_async_pending_metadata( $job_id, $arguments, $context );
+	}
 }
