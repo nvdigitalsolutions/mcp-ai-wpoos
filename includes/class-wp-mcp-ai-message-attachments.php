@@ -600,9 +600,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$prepared = array(
 					'type' => 'input_file',
 					'url'  => $url,
-				)
-
-;
+				);
 
 				if ( ! empty( $segment['display_name'] ) ) {
 					$prepared['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
