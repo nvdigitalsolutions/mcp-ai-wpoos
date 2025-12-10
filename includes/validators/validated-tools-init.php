@@ -42,6 +42,8 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Create_Woo_Product_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product-validated.php',
 		// Batch 2 - December 9, 2025.
 		'WP_MCP_AI_Tool_Get_User_Info_Validated'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info-validated.php',
+		// Batch 3 - December 10, 2025.
+		'WP_MCP_AI_Tool_Create_Post_Validated'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-post-validated.php',
 	);
 
 	// Register each validated tool.
