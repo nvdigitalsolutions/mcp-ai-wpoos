@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_MCP_AI_Validat
 	 * Execute the tool with validated arguments.
 	 *
 	 * @param \WP_MCP_AI\Tools\Arguments\TranscribeOpenAIAudioArguments $validated_args Validated arguments object.
-	 * @param array                                                      $context        Execution context including user_id.
+	 * @param array                                                     $context        Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
 	 */
 	protected function execute_validated( $validated_args, $context ) {
