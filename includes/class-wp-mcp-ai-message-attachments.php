@@ -376,6 +376,25 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					$prepared['detail'] = $detail;
 				}
 
+				// Preserve file metadata for agentic workflow (following OpenAI image tool pattern).
+				// These fields provide context about the file without including large binary data.
+				if ( ! empty( $segment['file_name'] ) ) {
+					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
+				} elseif ( ! empty( $segment['name'] ) ) {
+					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['name'] ) );
+				}
+
+				if ( ! empty( $segment['mime_type'] ) ) {
+					$prepared['mime_type'] = sanitize_text_field( wp_unslash( $segment['mime_type'] ) );
+				}
+
+				if ( isset( $segment['bytes'] ) && is_numeric( $segment['bytes'] ) ) {
+					$prepared['bytes'] = absint( $segment['bytes'] );
+				}
+
+				// Also include direct URL for agentic workflows that need it.
+				$prepared['url'] = $url;
+
 				return $prepared;
 			}
 
@@ -426,6 +445,28 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					$prepared['detail'] = $detail;
 				}
 
+				// Add file metadata for agentic workflow (following OpenAI image tool pattern).
+				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
+					$attachment_id = absint( $resolved['attachment_id'] );
+					$image_url     = wp_get_attachment_url( $attachment_id );
+					if ( ! empty( $image_url ) ) {
+						$prepared['url'] = esc_url_raw( $image_url );
+					}
+				}
+
+				if ( isset( $resolved['metadata'] ) && is_array( $resolved['metadata'] ) ) {
+					$metadata = $resolved['metadata'];
+					if ( ! empty( $metadata['filename'] ) ) {
+						$prepared['file_name'] = sanitize_text_field( $metadata['filename'] );
+					}
+					if ( ! empty( $metadata['mime_type'] ) ) {
+						$prepared['mime_type'] = sanitize_text_field( $metadata['mime_type'] );
+					}
+					if ( isset( $metadata['bytes'] ) && is_numeric( $metadata['bytes'] ) ) {
+						$prepared['bytes'] = absint( $metadata['bytes'] );
+					}
+				}
+
 				return $prepared;
 			}
 
@@ -450,6 +491,8 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$image_url = wp_get_attachment_url( $attachment_id );
 			if ( ! empty( $image_url ) ) {
 				$prepared['image_url'] = array( 'url' => esc_url_raw( $image_url ) );
+				// Also add direct url field for agentic workflow.
+				$prepared['url'] = esc_url_raw( $image_url );
 			} else {
 				// Log warning if URL cannot be retrieved, but continue since we have file_id.
 				WP_MCP_AI_Logger::log_error(
@@ -479,6 +522,17 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$prepared['detail'] = $detail;
 			}
 
+			// Add file metadata for agentic workflow (following OpenAI image tool pattern).
+			if ( ! empty( $prepared_attachment['filename'] ) ) {
+				$prepared['file_name'] = sanitize_text_field( $prepared_attachment['filename'] );
+			}
+			if ( ! empty( $prepared_attachment['mime_type'] ) ) {
+				$prepared['mime_type'] = sanitize_text_field( $prepared_attachment['mime_type'] );
+			}
+			if ( isset( $prepared_attachment['bytes'] ) && is_numeric( $prepared_attachment['bytes'] ) ) {
+				$prepared['bytes'] = absint( $prepared_attachment['bytes'] );
+			}
+
 			return $prepared;
 		}
 
@@ -489,6 +543,64 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 * @return array|WP_Error
 		 */
 		public function prepare_input_file_segment( array $segment ) {
+			// Check for direct URL first (for external files or when URL is provided).
+			$url = '';
+			if ( ! empty( $segment['url'] ) ) {
+				$url = $segment['url'];
+			}
+
+			if ( ! empty( $url ) ) {
+				$url = esc_url_raw( $url );
+				if ( empty( $url ) ) {
+					return new WP_Error( 'wp_mcp_ai_invalid_file_url', __( 'File segment URL is invalid.', 'wp-mcp-ai' ) );
+				}
+
+				$allowed_schemes = apply_filters(
+					'wp_mcp_ai_allowed_remote_file_url_schemes',
+					array( 'http', 'https' )
+				);
+				$allowed_schemes = array_unique( array_map( 'strtolower', (array) $allowed_schemes ) );
+
+				$parsed_url = wp_parse_url( $url );
+				$scheme     = isset( $parsed_url['scheme'] ) ? strtolower( $parsed_url['scheme'] ) : '';
+
+				if ( empty( $scheme ) || ! in_array( $scheme, $allowed_schemes, true ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_unsupported_file_url_scheme',
+						__( 'File segment URLs must use an allowed scheme.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
+
+				$prepared = array(
+					'type' => 'input_file',
+					'url'  => $url,
+				);
+
+				if ( ! empty( $segment['display_name'] ) ) {
+					$prepared['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
+				}
+
+				// Preserve file metadata for agentic workflow (following OpenAI file tool pattern).
+				if ( ! empty( $segment['file_name'] ) ) {
+					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
+					$prepared['name']      = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
+				} elseif ( ! empty( $segment['name'] ) ) {
+					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['name'] ) );
+					$prepared['name']      = sanitize_text_field( wp_unslash( $segment['name'] ) );
+				}
+
+				if ( ! empty( $segment['mime_type'] ) ) {
+					$prepared['mime_type'] = sanitize_text_field( wp_unslash( $segment['mime_type'] ) );
+				}
+
+				if ( isset( $segment['bytes'] ) && is_numeric( $segment['bytes'] ) ) {
+					$prepared['bytes'] = absint( $segment['bytes'] );
+				}
+
+				return $prepared;
+			}
+
 			$segment_file = isset( $segment['file'] ) && is_array( $segment['file'] ) ? $segment['file'] : array();
 			$file_id      = '';
 
@@ -522,6 +634,30 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					$segment_payload['display_name'] = $resolved['metadata']['filename'];
 				}
 
+				// Add file metadata for agentic workflow (following OpenAI file tool pattern).
+				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
+					$attachment_id = absint( $resolved['attachment_id'] );
+					$file_url      = wp_get_attachment_url( $attachment_id );
+					if ( ! empty( $file_url ) ) {
+						$segment_payload['url'] = esc_url_raw( $file_url );
+					}
+				}
+
+				if ( isset( $resolved['metadata'] ) && is_array( $resolved['metadata'] ) ) {
+					$metadata = $resolved['metadata'];
+					if ( ! empty( $metadata['filename'] ) ) {
+						$segment_payload['file_name'] = sanitize_text_field( $metadata['filename'] );
+						// Also set 'name' field for compatibility.
+						$segment_payload['name'] = sanitize_text_field( $metadata['filename'] );
+					}
+					if ( ! empty( $metadata['mime_type'] ) ) {
+						$segment_payload['mime_type'] = sanitize_text_field( $metadata['mime_type'] );
+					}
+					if ( isset( $metadata['bytes'] ) && is_numeric( $metadata['bytes'] ) ) {
+						$segment_payload['bytes'] = absint( $metadata['bytes'] );
+					}
+				}
+
 				return $segment_payload;
 			}
 
@@ -529,7 +665,8 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_file_attachment', __( 'File segments must include an attachment ID.', 'wp-mcp-ai' ) );
 			}
 
-			$prepared_attachment = $this->register_attachment( absint( $segment['attachment_id'] ), 'file' );
+			$attachment_id       = absint( $segment['attachment_id'] );
+			$prepared_attachment = $this->register_attachment( $attachment_id, 'file' );
 
 			if ( is_wp_error( $prepared_attachment ) ) {
 				return $prepared_attachment;
@@ -544,6 +681,24 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
 			} elseif ( ! empty( $prepared_attachment['title'] ) ) {
 				$segment_payload['display_name'] = $prepared_attachment['title'];
+			}
+
+			// Add file metadata for agentic workflow (following OpenAI file tool pattern).
+			$file_url = wp_get_attachment_url( $attachment_id );
+			if ( ! empty( $file_url ) ) {
+				$segment_payload['url'] = esc_url_raw( $file_url );
+			}
+
+			if ( ! empty( $prepared_attachment['filename'] ) ) {
+				$segment_payload['file_name'] = sanitize_text_field( $prepared_attachment['filename'] );
+				// Also set 'name' field for compatibility.
+				$segment_payload['name'] = sanitize_text_field( $prepared_attachment['filename'] );
+			}
+			if ( ! empty( $prepared_attachment['mime_type'] ) ) {
+				$segment_payload['mime_type'] = sanitize_text_field( $prepared_attachment['mime_type'] );
+			}
+			if ( isset( $prepared_attachment['bytes'] ) && is_numeric( $prepared_attachment['bytes'] ) ) {
+				$segment_payload['bytes'] = absint( $prepared_attachment['bytes'] );
 			}
 
 			return $segment_payload;
@@ -562,9 +717,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$entry   = isset( $this->attachments[ $file_id ] ) ? $this->attachments[ $file_id ] : array();
 
 				return array(
-					'file_id' => $file_id,
-					'title'   => isset( $entry['title'] ) ? $entry['title'] : '',
-					'caption' => isset( $entry['caption'] ) ? $entry['caption'] : '',
+					'file_id'   => $file_id,
+					'title'     => isset( $entry['title'] ) ? $entry['title'] : '',
+					'caption'   => isset( $entry['caption'] ) ? $entry['caption'] : '',
+					'filename'  => isset( $entry['filename'] ) ? $entry['filename'] : '',
+					'mime_type' => isset( $entry['mime_type'] ) ? $entry['mime_type'] : '',
+					'bytes'     => isset( $entry['bytes'] ) ? (int) $entry['bytes'] : 0,
+					'metadata'  => $entry,
 				);
 			}
 
@@ -742,9 +901,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$this->file_id_index[ $resolved_file_id ] = $attachment_id;
 
 			return array(
-				'file_id' => $resolved_file_id,
-				'title'   => $title,
-				'caption' => $caption,
+				'file_id'   => $resolved_file_id,
+				'title'     => $title,
+				'caption'   => $caption,
+				'filename'  => isset( $metadata['filename'] ) ? $metadata['filename'] : wp_basename( $file_path ),
+				'mime_type' => isset( $metadata['mime_type'] ) ? $metadata['mime_type'] : $mime_type,
+				'bytes'     => isset( $metadata['bytes'] ) ? (int) $metadata['bytes'] : (int) $file_size,
+				'metadata'  => $metadata,
 			);
 		}
 
