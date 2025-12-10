@@ -311,6 +311,24 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		}
 
 		/**
+		 * Extract and sanitize filename from segment.
+		 *
+		 * Helper method to get filename from file_name or name field with consistent sanitization.
+		 *
+		 * @param array $segment Segment array.
+		 * @return string Sanitized filename or empty string.
+		 */
+		protected function extract_segment_filename( array $segment ) {
+			if ( ! empty( $segment['file_name'] ) ) {
+				return sanitize_text_field( wp_unslash( $segment['file_name'] ) );
+			}
+			if ( ! empty( $segment['name'] ) ) {
+				return sanitize_text_field( wp_unslash( $segment['name'] ) );
+			}
+			return '';
+		}
+
+		/**
 		 * Prepare an input image segment using an attachment or remote URL.
 		 *
 		 * @param array $segment Segment definition.
@@ -378,10 +396,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 				// Preserve file metadata for agentic workflow (following OpenAI image tool pattern).
 				// These fields provide context about the file without including large binary data.
-				if ( ! empty( $segment['file_name'] ) ) {
-					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
-				} elseif ( ! empty( $segment['name'] ) ) {
-					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['name'] ) );
+				$filename = $this->extract_segment_filename( $segment );
+				if ( ! empty( $filename ) ) {
+					$prepared['file_name'] = $filename;
 				}
 
 				if ( ! empty( $segment['mime_type'] ) ) {
@@ -575,19 +592,19 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$prepared = array(
 					'type' => 'input_file',
 					'url'  => $url,
-				);
+				)
+
+;
 
 				if ( ! empty( $segment['display_name'] ) ) {
 					$prepared['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
 				}
 
 				// Preserve file metadata for agentic workflow (following OpenAI file tool pattern).
-				if ( ! empty( $segment['file_name'] ) ) {
-					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
-					$prepared['name']      = sanitize_text_field( wp_unslash( $segment['file_name'] ) );
-				} elseif ( ! empty( $segment['name'] ) ) {
-					$prepared['file_name'] = sanitize_text_field( wp_unslash( $segment['name'] ) );
-					$prepared['name']      = sanitize_text_field( wp_unslash( $segment['name'] ) );
+				$filename = $this->extract_segment_filename( $segment );
+				if ( ! empty( $filename ) ) {
+					$prepared['file_name'] = $filename;
+					$prepared['name']      = $filename; // Compatibility field.
 				}
 
 				if ( ! empty( $segment['mime_type'] ) ) {
@@ -646,9 +663,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( isset( $resolved['metadata'] ) && is_array( $resolved['metadata'] ) ) {
 					$metadata = $resolved['metadata'];
 					if ( ! empty( $metadata['filename'] ) ) {
-						$segment_payload['file_name'] = sanitize_text_field( $metadata['filename'] );
-						// Also set 'name' field for compatibility.
-						$segment_payload['name'] = sanitize_text_field( $metadata['filename'] );
+						$filename                       = sanitize_text_field( $metadata['filename'] );
+						$segment_payload['file_name']   = $filename;
+						$segment_payload['name']        = $filename; // Compatibility field.
 					}
 					if ( ! empty( $metadata['mime_type'] ) ) {
 						$segment_payload['mime_type'] = sanitize_text_field( $metadata['mime_type'] );
@@ -690,9 +707,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( ! empty( $prepared_attachment['filename'] ) ) {
-				$segment_payload['file_name'] = sanitize_text_field( $prepared_attachment['filename'] );
-				// Also set 'name' field for compatibility.
-				$segment_payload['name'] = sanitize_text_field( $prepared_attachment['filename'] );
+				$filename                     = sanitize_text_field( $prepared_attachment['filename'] );
+				$segment_payload['file_name'] = $filename;
+				$segment_payload['name']      = $filename; // Compatibility field.
 			}
 			if ( ! empty( $prepared_attachment['mime_type'] ) ) {
 				$segment_payload['mime_type'] = sanitize_text_field( $prepared_attachment['mime_type'] );
