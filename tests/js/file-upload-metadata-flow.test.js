@@ -99,7 +99,7 @@ describe('File Upload Metadata Flow', () => {
 		}
 		if (attachment.name) {
 			segment.name = attachment.name;
-			// file_name is only set when name exists
+			// file_name is set here (inside if block) only when name exists
 			segment.file_name = attachment.name;
 		}
 		if (attachment.mime) {
