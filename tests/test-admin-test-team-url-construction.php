@@ -15,6 +15,13 @@
 class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 
 	/**
+	 * Captured localized data for testing.
+	 *
+	 * @var array
+	 */
+	private $captured_localized_data = array();
+
+	/**
 	 * Test that restUrl has a trailing slash when localized.
 	 *
 	 * This test validates the fix for the issue where the URL
@@ -37,13 +44,14 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		// Capture the localized script data.
+		// Capture the localized script data using a closure.
+		$test_instance = $this;
 		add_filter(
 			'wp_localize_script',
-			function( $handle, $object_name, $l10n ) {
+			function( $handle, $object_name, $l10n ) use ( $test_instance ) {
 				if ( 'wp-mcp-ai-chat' === $handle && 'wpMcpAiChat' === $object_name ) {
 					// Store the localized data for assertion.
-					$GLOBALS['test_localized_data'] = $l10n;
+					$test_instance->captured_localized_data = $l10n;
 				}
 			},
 			10,
@@ -54,7 +62,7 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', $test_team->page_hook );
 
 		// Get the stored localized data.
-		$localized_data = isset( $GLOBALS['test_localized_data'] ) ? $GLOBALS['test_localized_data'] : array();
+		$localized_data = $this->captured_localized_data;
 
 		// Assert that restUrl exists and has a trailing slash.
 		$this->assertArrayHasKey( 'restUrl', $localized_data, 'restUrl should be present in localized data' );
@@ -79,7 +87,7 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$this->assertStringEndsWith( $expected_endpoint, $path_part, 'URL should end with the correct endpoint path' );
 
 		// Clean up.
-		unset( $GLOBALS['test_localized_data'] );
+		$this->captured_localized_data = array();
 	}
 
 	/**
@@ -104,38 +112,38 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		// Capture the localized script data.
-		$captured_data = null;
+		// Reset captured data.
+		$this->captured_localized_data = array();
+
+		// Capture the localized script data using a closure.
+		$test_instance = $this;
 		add_filter(
-			'script_loader_tag',
-			function( $tag, $handle, $src ) use ( &$captured_data ) {
-				if ( 'wp-mcp-ai-chat' === $handle ) {
-					// Check if wpMcpAiChat has been localized.
-					global $wp_scripts;
-					if ( isset( $wp_scripts->registered[ $handle ]->extra['data'] ) ) {
-						$data = $wp_scripts->registered[ $handle ]->extra['data'];
-						// Extract the restUrl from the localized data.
-						if ( preg_match( '/"restUrl":"([^"]+)"/', $data, $matches ) ) {
-							$captured_data = $matches[1];
-						}
-					}
+			'wp_localize_script',
+			function( $handle, $object_name, $l10n ) use ( $test_instance ) {
+				if ( 'wp-mcp-ai-chat' === $handle && 'wpMcpAiChat' === $object_name ) {
+					// Store the localized data for assertion.
+					$test_instance->captured_localized_data = $l10n;
 				}
-				return $tag;
 			},
 			10,
 			3
 		);
 
-		// Render the shortcode.
+		// Render the shortcode (this will trigger wp_localize_script).
 		do_shortcode( '[wp_mcp_ai_chat assistant_id="' . $assistant_id . '"]' );
 
-		// If we captured data, verify it has a trailing slash.
-		if ( null !== $captured_data ) {
-			// Decode URL-encoded slashes.
-			$rest_url = str_replace( '\/', '/', $captured_data );
+		// Get the stored localized data.
+		$localized_data = $this->captured_localized_data;
+
+		// Verify restUrl has a trailing slash if localized data was captured.
+		if ( ! empty( $localized_data ) && isset( $localized_data['restUrl'] ) ) {
+			$rest_url = $localized_data['restUrl'];
 
 			$this->assertStringEndsWith( '/', $rest_url, 'Shortcode restUrl should have a trailing slash' );
 			$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'Shortcode restUrl should contain /mcp-ai/v1/' );
 		}
+
+		// Clean up.
+		$this->captured_localized_data = array();
 	}
 }
