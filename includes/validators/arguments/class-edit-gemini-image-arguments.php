@@ -26,9 +26,7 @@ class EditGeminiImageArguments {
 	#[Assert\NotBlank(message: 'Prompt is required for image editing.')]
 	#[Assert\Type(type: 'string', message: 'Prompt must be a string.')]
 	#[Assert\Length(
-		min: 1,
 		max: 4000,
-		minMessage: 'Prompt must not be empty.',
 		maxMessage: 'Prompt cannot exceed {{ limit }} characters.'
 	)]
 	public $prompt;

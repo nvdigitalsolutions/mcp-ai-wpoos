@@ -26,9 +26,7 @@ class WebSearchArguments {
 	#[Assert\NotBlank(message: 'Search query is required.')]
 	#[Assert\Type(type: 'string', message: 'Query must be a string.')]
 	#[Assert\Length(
-		min: 1,
 		max: 500,
-		minMessage: 'Query must not be empty.',
 		maxMessage: 'Query cannot exceed {{ limit }} characters.'
 	)]
 	public $query;
