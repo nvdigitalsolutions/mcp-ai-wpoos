@@ -44,6 +44,10 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Get_User_Info_Validated'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info-validated.php',
 		// Batch 3 - December 10, 2025.
 		'WP_MCP_AI_Tool_Create_Post_Validated'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-post-validated.php',
+		// Batch 4 - December 10, 2025.
+		'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio-validated.php',
+		'WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text-validated.php',
+		'WP_MCP_AI_Tool_Generate_Image_Caption_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption-validated.php',
 	);
 
 	// Register each validated tool.
