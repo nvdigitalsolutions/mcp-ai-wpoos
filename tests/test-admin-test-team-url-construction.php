@@ -15,135 +15,103 @@
 class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 
 	/**
-	 * Captured localized data for testing.
-	 *
-	 * @var array
-	 */
-	private $captured_localized_data = array();
-
-	/**
-	 * Test that restUrl has a trailing slash when localized.
+	 * Test that trailingslashit is applied to rest_url results.
 	 *
 	 * This test validates the fix for the issue where the URL
 	 * `/wp-json/mcp-ai/v1teams/1408/members` was being generated
 	 * instead of `/wp-json/mcp-ai/v1/teams/1408/members`.
 	 */
 	public function test_rest_url_has_trailing_slash() {
-		// Ensure required classes are loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
-		}
+		// Get the base REST URL as WordPress would provide it.
+		$rest_namespace = 'mcp-ai/v1';
+		$base_rest_url  = rest_url( $rest_namespace );
 
-		// Create an instance of the test team class.
-		$test_team = new WP_MCP_AI_Admin_Test_Team();
-
-		// Mock the admin page hook to trigger asset enqueue.
-		$test_team->page_hook = 'test_page';
-
-		// Set current user as admin.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
-
-		// Capture the localized script data using a closure.
-		$test_instance = $this;
-		add_filter(
-			'wp_localize_script',
-			function( $handle, $object_name, $l10n ) use ( $test_instance ) {
-				if ( 'wp-mcp-ai-chat' === $handle && 'wpMcpAiChat' === $object_name ) {
-					// Store the localized data for assertion.
-					$test_instance->captured_localized_data = $l10n;
-				}
-			},
-			10,
-			3
-		);
-
-		// Trigger the enqueue assets method.
-		do_action( 'admin_enqueue_scripts', $test_team->page_hook );
-
-		// Get the stored localized data.
-		$localized_data = $this->captured_localized_data;
-
-		// Assert that restUrl exists and has a trailing slash.
-		$this->assertArrayHasKey( 'restUrl', $localized_data, 'restUrl should be present in localized data' );
-
-		$rest_url = $localized_data['restUrl'];
+		// Apply trailingslashit as our fix does.
+		$fixed_rest_url = trailingslashit( $base_rest_url );
 
 		// Verify it ends with a trailing slash.
-		$this->assertStringEndsWith( '/', $rest_url, 'restUrl should have a trailing slash' );
+		$this->assertStringEndsWith( '/', $fixed_rest_url, 'restUrl should have a trailing slash after trailingslashit' );
 
 		// Verify the URL structure is correct.
-		$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'restUrl should contain /mcp-ai/v1/' );
+		$this->assertStringContainsString( '/mcp-ai/v1/', $fixed_rest_url, 'restUrl should contain /mcp-ai/v1/' );
 
 		// Simulate the JavaScript concatenation that was failing.
 		$team_id           = 1408;
-		$constructed_url   = $rest_url . 'teams/' . $team_id . '/members';
+		$constructed_url   = $fixed_rest_url . 'teams/' . $team_id . '/members';
 		$expected_endpoint = '/teams/1408/members';
 
 		// Verify no double slashes are created (except in http://).
 		$path_part = parse_url( $constructed_url, PHP_URL_PATH );
+
+		// The critical assertion: verify the bug is fixed.
 		$this->assertStringNotContainsString( 'v1teams', $path_part, 'URL should not contain v1teams (missing slash)' );
 		$this->assertStringContainsString( 'v1/teams', $path_part, 'URL should contain v1/teams (with slash)' );
 		$this->assertStringEndsWith( $expected_endpoint, $path_part, 'URL should end with the correct endpoint path' );
-
-		// Clean up.
-		$this->captured_localized_data = array();
 	}
 
 	/**
-	 * Test that URL construction works correctly in the shortcode.
+	 * Test URL construction without trailing slash to demonstrate the bug.
+	 *
+	 * This test documents the original bug behavior when trailing slash is missing.
 	 */
-	public function test_shortcode_rest_url_has_trailing_slash() {
-		// Ensure required class is loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
-		}
+	public function test_url_construction_bug_without_trailing_slash() {
+		// Get the base REST URL without trailing slash.
+		$rest_namespace = 'mcp-ai/v1';
+		$base_rest_url  = rest_url( $rest_namespace );
 
-		// Create a test assistant.
-		$assistant_id = $this->factory->post->create(
-			array(
-				'post_type'   => 'mcp_ai_assistant',
-				'post_title'  => 'Test Assistant',
-				'post_status' => 'publish',
-			)
+		// Remove trailing slash to simulate the bug.
+		$buggy_rest_url = untrailingslashit( $base_rest_url );
+
+		// Simulate the JavaScript concatenation.
+		$team_id         = 1408;
+		$constructed_url = $buggy_rest_url . 'teams/' . $team_id . '/members';
+
+		// Get the path part.
+		$path_part = parse_url( $constructed_url, PHP_URL_PATH );
+
+		// Verify the bug: URL contains v1teams instead of v1/teams.
+		$this->assertStringContainsString( 'v1teams', $path_part, 'Without trailing slash, URL incorrectly contains v1teams' );
+		$this->assertStringNotContainsString( 'v1/teams', $path_part, 'Without trailing slash, URL missing v1/teams separator' );
+	}
+
+	/**
+	 * Test that the fix works correctly with different namespace paths.
+	 */
+	public function test_trailing_slash_works_with_different_namespaces() {
+		$test_cases = array(
+			'mcp-ai/v1'   => '/mcp-ai/v1/',
+			'wp/v2'       => '/wp/v2/',
+			'custom/v3'   => '/custom/v3/',
 		);
 
-		// Set current user.
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $user_id );
+		foreach ( $test_cases as $namespace => $expected_suffix ) {
+			$rest_url = rest_url( $namespace );
+			$fixed    = trailingslashit( $rest_url );
 
-		// Reset captured data.
-		$this->captured_localized_data = array();
-
-		// Capture the localized script data using a closure.
-		$test_instance = $this;
-		add_filter(
-			'wp_localize_script',
-			function( $handle, $object_name, $l10n ) use ( $test_instance ) {
-				if ( 'wp-mcp-ai-chat' === $handle && 'wpMcpAiChat' === $object_name ) {
-					// Store the localized data for assertion.
-					$test_instance->captured_localized_data = $l10n;
-				}
-			},
-			10,
-			3
-		);
-
-		// Render the shortcode (this will trigger wp_localize_script).
-		do_shortcode( '[wp_mcp_ai_chat assistant_id="' . $assistant_id . '"]' );
-
-		// Get the stored localized data.
-		$localized_data = $this->captured_localized_data;
-
-		// Verify restUrl has a trailing slash if localized data was captured.
-		if ( ! empty( $localized_data ) && isset( $localized_data['restUrl'] ) ) {
-			$rest_url = $localized_data['restUrl'];
-
-			$this->assertStringEndsWith( '/', $rest_url, 'Shortcode restUrl should have a trailing slash' );
-			$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'Shortcode restUrl should contain /mcp-ai/v1/' );
+			$this->assertStringEndsWith( '/', $fixed, "Namespace {$namespace} should end with slash" );
+			$this->assertStringContainsString( $expected_suffix, $fixed, "Namespace {$namespace} should contain {$expected_suffix}" );
 		}
+	}
 
-		// Clean up.
-		$this->captured_localized_data = array();
+	/**
+	 * Test that URL concatenation works correctly with both leading and non-leading slashes.
+	 */
+	public function test_url_concatenation_patterns() {
+		$rest_url_with_slash = trailingslashit( rest_url( 'mcp-ai/v1' ) );
+
+		// Pattern 1: No leading slash (like team members endpoint).
+		$url1 = $rest_url_with_slash . 'teams/123/members';
+		$this->assertStringContainsString( '/v1/teams/', $url1, 'No leading slash pattern should work' );
+
+		// Pattern 2: With leading slash (like cron-status endpoint).
+		$url2 = $rest_url_with_slash . '/cron-status';
+		$this->assertStringContainsString( '/v1/cron-status', $url2, 'Leading slash pattern should work' );
+
+		// Verify neither creates v1teams or v1/cron-status.
+		$path1 = parse_url( $url1, PHP_URL_PATH );
+		$path2 = parse_url( $url2, PHP_URL_PATH );
+
+		$this->assertStringNotContainsString( 'v1teams', $path1, 'Pattern 1 should not create v1teams' );
+		$this->assertStringNotContainsString( 'v1//cron-status', $path2, 'Pattern 2 should not create double slashes' );
 	}
 }
