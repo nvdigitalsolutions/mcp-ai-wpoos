@@ -30,8 +30,8 @@ class GetUserInfoArguments {
 		type: 'int',
 		message: 'User ID must be an integer.'
 	)]
-	#[Assert\Positive(
-		message: 'User ID must be a positive integer.'
+	#[Assert\PositiveOrZero(
+		message: 'User ID must be zero or a positive integer.'
 	)]
 	public $user_id = 0;
 }
