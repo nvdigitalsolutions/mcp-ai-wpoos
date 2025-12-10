@@ -90,7 +90,7 @@ class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool impl
 			'status'    => $validated_args->status,
 		);
 
-		// Add optional user_id if provided.
+		// Add optional user_id if provided (when null, base tool will use current user from context).
 		if ( null !== $validated_args->user_id ) {
 			$arguments['user_id'] = $validated_args->user_id;
 		}

@@ -137,8 +137,8 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		// Sanitize content.
 		$sanitized_content = wp_kses_post( $content );
 
-		// Convert to blocks if needed for standard posts.
-		if ( 'post' === $post_type ) {
+		// Convert to blocks if the post type supports the block editor.
+		if ( post_type_supports( $post_type, 'editor' ) && function_exists( 'use_block_editor_for_post_type' ) && use_block_editor_for_post_type( $post_type ) ) {
 			$sanitized_content = $this->ensure_post_content_uses_blocks( $sanitized_content, $content );
 		}
 
@@ -252,8 +252,8 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string
 	 */
 	private function convert_plain_text_to_paragraph_blocks( $content ) {
-		$normalized_content = preg_replace( "/\r\n?/", "\n", $content );
-		$paragraphs         = preg_split( "/\n{2,}/", trim( $normalized_content ) );
+		$normalized_content = preg_replace( '~\r\n?~', "\n", $content );
+		$paragraphs         = preg_split( '~\n{2,}~', trim( $normalized_content ) );
 		$blocks             = array();
 
 		foreach ( $paragraphs as $paragraph ) {
