@@ -48,6 +48,7 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio-validated.php',
 		'WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text-validated.php',
 		'WP_MCP_AI_Tool_Generate_Image_Caption_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption-validated.php',
+		'WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech-validated.php',
 	);
 
 	// Register each validated tool.
