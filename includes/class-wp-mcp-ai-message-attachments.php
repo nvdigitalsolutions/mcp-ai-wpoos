@@ -412,6 +412,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Also include direct URL for agentic workflows that need it.
 				$prepared['url'] = $url;
 
+				// Preserve attachment_id if present for agentic workflows
+				if ( ! empty( $segment['attachment_id'] ) ) {
+					$prepared['attachment_id'] = absint( $segment['attachment_id'] );
+				}
+
 				return $prepared;
 			}
 
@@ -465,7 +470,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Add file metadata for agentic workflow (following OpenAI image tool pattern).
 				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
 					$attachment_id = absint( $resolved['attachment_id'] );
-					$image_url     = wp_get_attachment_url( $attachment_id );
+					// Preserve attachment_id for agentic workflows
+					$prepared['attachment_id'] = $attachment_id;
+					$image_url                 = wp_get_attachment_url( $attachment_id );
 					if ( ! empty( $image_url ) ) {
 						$prepared['url'] = esc_url_raw( $image_url );
 					}
@@ -499,8 +506,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			$prepared = array(
-				'type'    => 'input_image',
-				'file_id' => $prepared_attachment['file_id'],
+				'type'          => 'input_image',
+				'file_id'       => $prepared_attachment['file_id'],
+				'attachment_id' => $attachment_id,
 			);
 
 			// Get the image URL for providers that need it (OpenAI Chat Completions, Gemini).
@@ -592,9 +600,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$prepared = array(
 					'type' => 'input_file',
 					'url'  => $url,
-				)
-
-;
+				);
 
 				if ( ! empty( $segment['display_name'] ) ) {
 					$prepared['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
@@ -613,6 +619,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 				if ( isset( $segment['bytes'] ) && is_numeric( $segment['bytes'] ) ) {
 					$prepared['bytes'] = absint( $segment['bytes'] );
+				}
+
+				// Preserve attachment_id if present for agentic workflows
+				if ( ! empty( $segment['attachment_id'] ) ) {
+					$prepared['attachment_id'] = absint( $segment['attachment_id'] );
 				}
 
 				return $prepared;
@@ -654,7 +665,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Add file metadata for agentic workflow (following OpenAI file tool pattern).
 				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
 					$attachment_id = absint( $resolved['attachment_id'] );
-					$file_url      = wp_get_attachment_url( $attachment_id );
+					// Preserve attachment_id for agentic workflows
+					$segment_payload['attachment_id'] = $attachment_id;
+					$file_url                         = wp_get_attachment_url( $attachment_id );
 					if ( ! empty( $file_url ) ) {
 						$segment_payload['url'] = esc_url_raw( $file_url );
 					}
@@ -690,8 +703,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			$segment_payload = array(
-				'type'    => 'input_file',
-				'file_id' => $prepared_attachment['file_id'],
+				'type'          => 'input_file',
+				'file_id'       => $prepared_attachment['file_id'],
+				'attachment_id' => $attachment_id,
 			);
 
 			if ( ! empty( $segment['display_name'] ) ) {
