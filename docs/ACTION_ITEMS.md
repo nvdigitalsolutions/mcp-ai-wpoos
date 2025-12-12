@@ -340,25 +340,31 @@ Based on the comprehensive code review, here are actionable improvements organiz
 
 ## 🔮 Future Enhancements (Tracked TODOs)
 
-Based on the December 2025 gap analysis, the following TODOs have been identified in the codebase:
+Based on the December 2025 gap analysis and INCOMPLETE-FEATURES-REVIEW.md, the following items have been tracked:
 
-### Predictive Analytics for Orchestration Health
+### ✅ Predictive Analytics for Orchestration Health - COMPLETE
 - **File:** `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
 - **Description:** Implement actual predictive analytics for orchestration health monitoring
-- **Current:** Placeholder comment indicating future implementation needed
-- **Priority:** Low
-- **Effort:** 8-12 hours
-- **Dependencies:** None
-- **Issue:** To be created
+- **Status:** ✅ COMPLETE - Implemented 4 specialized analysis methods (305 lines)
+- **Date Completed:** December 8, 2025
+- **Details:** See INCOMPLETE-FEATURES-REVIEW.md, Phase 1.1
 
 ### RabbitMQ Message Consumption Loop
 - **File:** `includes/class-wp-mcp-ai-cli-command.php`
 - **Description:** Implement actual message consumption loop when AMQPQueue::consume is available
-- **Current:** Placeholder implementation, waiting for AMQPQueue library integration
+- **Current:** Waiting for php-amqp extension (external dependency issue, not code issue)
 - **Priority:** Medium
 - **Effort:** 4-6 hours
-- **Dependencies:** AMQPQueue library, RabbitMQ configuration
-- **Issue:** To be created
+- **Dependencies:** AMQPQueue library, RabbitMQ configuration, php-amqp extension
+- **Issue:** To be created when dependency available
+
+### ✅ Settings UI Exposure - COMPLETE
+- **Description:** Expose all 28 previously hidden settings in admin UI
+- **Status:** ✅ COMPLETE - All 28 settings exposed (PR #2072, December 8, 2025)
+- **Date Completed:** December 8, 2025
+- **Settings Added:** Federation (7), Mesh (2), Media (2), Chat (1), Cloudways (2), Analytics (1), TTS (3), High Token Fallback (2), Tools (5), Authentication (2), Orchestration (1)
+- **Details:** See INCOMPLETE-FEATURES-REVIEW.md, Phase 3
+- **Pending:** Comprehensive functional testing
 
 ### Gemini Video File Naming Pattern
 - **File:** `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
@@ -372,5 +378,5 @@ Based on the December 2025 gap analysis, the following TODOs have been identifie
 ---
 
 **Document Created:** November 2, 2024  
-**Last Updated:** December 6, 2025 (Added Future Enhancements section from gap analysis)  
+**Last Updated:** December 12, 2025 (Updated completion status for Predictive Analytics and Settings UI from INCOMPLETE-FEATURES-REVIEW.md)  
 **Next Review:** Weekly until all immediate items complete, then monthly
