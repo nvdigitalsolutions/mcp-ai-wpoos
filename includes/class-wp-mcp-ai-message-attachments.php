@@ -475,6 +475,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					$image_url                 = wp_get_attachment_url( $attachment_id );
 					if ( ! empty( $image_url ) ) {
 						$prepared['url'] = esc_url_raw( $image_url );
+						// Add image_url structure for agentic workflows (same as OpenAI image tool)
+						// This allows vision models to "see" the image in the agentic loop
+						$prepared['image_url'] = array( 'url' => esc_url_raw( $image_url ) );
 					}
 				}
 
