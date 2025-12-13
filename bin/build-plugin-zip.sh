@@ -229,7 +229,7 @@ if [ "$BUILD_BASE" = true ]; then
     echo "✓ Removing unminified JS source files (keeping .min.js only)..."
     find "build/${BASE_SLUG}/assets/js" -type f -name "*.js" ! -name "*.min.js" \
         ! -name "chat-service-worker.js" \
-        ! -name "vendor/*" \
+        ! -path "*/vendor/*" \
         -delete 2>/dev/null || true
     
     echo "✓ Removing unminified CSS source files (keeping .min.css only)..."
@@ -413,7 +413,7 @@ if [ "$BUILD_COMBINED" = true ]; then
     echo "✓ Removing unminified JS source files (keeping .min.js only)..."
     find "build/${COMBINED_SLUG}/assets/js" -type f -name "*.js" ! -name "*.min.js" \
         ! -name "chat-service-worker.js" \
-        ! -name "vendor/*" \
+        ! -path "*/vendor/*" \
         -delete 2>/dev/null || true
     
     echo "✓ Removing unminified CSS source files (keeping .min.css only)..."
