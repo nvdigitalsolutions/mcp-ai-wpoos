@@ -3,7 +3,7 @@
  * Plugin Name: Open Operator System Pro (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes comprehensive tools with optional plugin integrations.
- * Version: 1.1.0-dev
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.7.1
@@ -72,7 +72,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.0-dev' );
+	define( 'WP_MCP_AI_VERSION', '1.1.0' );
 }
 if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
 	define( 'WP_MCP_AI_FILE', __FILE__ );
