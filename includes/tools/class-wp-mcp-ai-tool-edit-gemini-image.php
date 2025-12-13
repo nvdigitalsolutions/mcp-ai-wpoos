@@ -14,11 +14,13 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_Attachment_File_Resolver;
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';
@@ -41,7 +43,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library.', 'wp-mcp-ai' );
+		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library. Can edit images from user attachments by using their URL, or images from the Media Library by attachment_id.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -64,13 +66,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
 				),
+				'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'wp-mcp-ai' ) ),
+				'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. Can be a WordPress media URL (e.g., from user attachments) or external URL.', 'wp-mcp-ai' ) ),
 				'image_url'        => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the image to edit (alternative to attachment_id).', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'wp-mcp-ai' ),
 				),
 				'image_data'       => array(
 					'type'        => 'string',
-					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id or image_url). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
+					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
 				),
 				'source_mime_type' => array(
 					'type'        => 'string',
@@ -120,15 +124,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			array(
 				'label'   => __( 'Remove background', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to remove the background from an image. Ask for the image to edit, then use a prompt like "remove background, make transparent".', 'wp-mcp-ai' ),
+				'payload' => __( 'Use the `edit_gemini_image` tool to remove the background from an image. When the user has attached an image, use the "url" parameter with the attachment URL. Use a prompt like "remove background, make transparent".', 'wp-mcp-ai' ),
 			),
 			array(
 				'label'   => __( 'Change image style', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to change the style of an image. Ask for the image and desired style, then create a prompt like "convert to watercolor painting style".', 'wp-mcp-ai' ),
+				'payload' => __( 'Use the `edit_gemini_image` tool to change the style of an image. When the user has attached an image, use the "url" parameter with the attachment URL. Create a prompt like "convert to watercolor painting style".', 'wp-mcp-ai' ),
 			),
 			array(
 				'label'   => __( 'Enhance photo', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to enhance a photo. Ask for the image, then use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'wp-mcp-ai' ),
+				'payload' => __( 'Use the `edit_gemini_image` tool to enhance a photo. When the user has attached an image, use the "url" parameter with the attachment URL. Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'wp-mcp-ai' ),
 			),
 		);
 	}
