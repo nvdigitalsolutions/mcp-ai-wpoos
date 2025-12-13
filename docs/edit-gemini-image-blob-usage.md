@@ -1,18 +1,45 @@
-# Using Blob Data with Edit Gemini Image Tool
+# Using Edit Gemini Image Tool with Multiple Image Sources
 
 ## Overview
 
-The `edit_gemini_image` tool now supports three ways to specify the source image:
+The `edit_gemini_image` tool supports multiple ways to specify the source image:
 
 1. **WordPress Attachment ID** (`attachment_id`) - Reference an existing image in the Media Library
-2. **Image URL** (`image_url`) - Download an image from a URL
-3. **Base64 Blob Data** (`image_data`) - Use inline image data (NEW)
+2. **File ID** (`file_id`) - OpenAI or Gemini file identifier (NEW)
+3. **URL** (`url`) - Download an image from any URL, including user attachments (ENHANCED)
+4. **Image URL** (`image_url`) - Legacy parameter (use `url` instead)
+5. **Base64 Blob Data** (`image_data`) - Use inline image data
 
-The blob data option is particularly useful when editing images that were just created in the chat via the `generate_gemini_image` tool.
+This flexibility makes the tool work seamlessly in various contexts:
+- **Chat with attachments**: User attaches an image → LLM uses `url` parameter
+- **Generated images**: User generates image → LLM uses `image_data` from previous result
+- **Media Library**: User references existing image → LLM uses `attachment_id`
+- **OpenAI files**: Image uploaded via files endpoint → LLM uses `file_id`
 
 ## Use Cases
 
-### Scenario 1: Edit a Generated Image in the Same Chat Session
+### Scenario 1: Edit an Attached Image (NEW)
+
+When a user attaches an image in chat and asks to edit it, the LLM can now extract the attachment URL and use it directly:
+
+**Example Flow:**
+
+1. User attaches image: `https://example.com/wp-content/uploads/2025/12/photo.jpg`
+2. User says: "edit Gemini image to remove the background"
+3. LLM calls:
+```json
+{
+  "tool": "edit_gemini_image",
+  "arguments": {
+    "prompt": "remove background, make transparent",
+    "url": "https://example.com/wp-content/uploads/2025/12/photo.jpg"
+  }
+}
+```
+
+This works with **OpenAI as the provider** because the tool uses Gemini's API regardless of the chat provider.
+
+### Scenario 2: Edit a Generated Image in the Same Chat Session
 
 When you generate an image in chat, the result includes a `content` field with base64-encoded image data. You can immediately edit that image without saving it to the Media Library first.
 
@@ -52,7 +79,7 @@ When you generate an image in chat, the result includes a `content` field with b
 }
 ```
 
-### Scenario 2: Chain Multiple Edits
+### Scenario 3: Chain Multiple Edits
 
 You can chain multiple edits without touching the Media Library:
 
@@ -64,7 +91,7 @@ Generate → Edit 1 → Edit 2 → Edit 3
 
 Each step uses the `content.data` from the previous step.
 
-### Scenario 3: Edit Existing Media Library Images
+### Scenario 4: Edit Existing Media Library Images
 
 The traditional approach still works:
 
@@ -85,7 +112,9 @@ The traditional approach still works:
 
 ### Source Image (one required)
 - `attachment_id` (integer): WordPress attachment ID
-- `image_url` (string): Image URL  
+- `file_id` (string): OpenAI or Gemini file identifier
+- `url` (string): Image URL (including user attachments) - **Recommended for chat attachments**
+- `image_url` (string): Legacy parameter (use `url` instead)
 - `image_data` (string): Base64-encoded image data
 
 ### Optional
