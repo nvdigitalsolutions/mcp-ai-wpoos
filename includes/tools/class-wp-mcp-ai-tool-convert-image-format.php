@@ -117,6 +117,9 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 		$quality = isset( $arguments['quality'] ) ? absint( $arguments['quality'] ) : 90;
 		$quality = max( 1, min( 100, $quality ) );
 
+		// Enrich arguments with metadata from context messages if available.
+		$arguments = $this->enrich_arguments_from_messages( $arguments, $context );
+
 		// Load source image.
 		$image_editor = $this->load_source_image( $arguments, $user_id );
 		if ( is_wp_error( $image_editor ) ) {
