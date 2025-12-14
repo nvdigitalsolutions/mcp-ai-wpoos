@@ -26,6 +26,14 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	const DEFAULT_ASPECT_RATIO = '1:1';
 
 	/**
+	 * Instruction for LLMs on how to extract URL from attached images.
+	 * Repeated in multiple places to ensure LLMs see and follow the pattern.
+	 *
+	 * @var string
+	 */
+	const URL_EXTRACTION_INSTRUCTION = 'When the user has attached an image, look for the "url" field in the message content array (within segments of type "input_image") and pass it as the "url" parameter to the tool.';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -124,15 +132,18 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			array(
 				'label'   => __( 'Remove background', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to remove the background from an image. IMPORTANT: When the user has attached an image, look for the "url" field in the message content array (within segments of type "input_image") and pass it as the "url" parameter to the tool. Use a prompt like "remove background, make transparent".', 'wp-mcp-ai' ),
+				/* translators: %s: URL extraction instruction for LLMs */
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to remove the background from an image. IMPORTANT: %s Use a prompt like "remove background, make transparent".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
 				'label'   => __( 'Change image style', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to change the style of an image. IMPORTANT: When the user has attached an image, look for the "url" field in the message content array (within segments of type "input_image") and pass it as the "url" parameter to the tool. Create a prompt like "convert to watercolor painting style".', 'wp-mcp-ai' ),
+				/* translators: %s: URL extraction instruction for LLMs */
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to change the style of an image. IMPORTANT: %s Create a prompt like "convert to watercolor painting style".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
 				'label'   => __( 'Enhance photo', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `edit_gemini_image` tool to enhance a photo. IMPORTANT: When the user has attached an image, look for the "url" field in the message content array (within segments of type "input_image") and pass it as the "url" parameter to the tool. Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'wp-mcp-ai' ),
+				/* translators: %s: URL extraction instruction for LLMs */
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to enhance a photo. IMPORTANT: %s Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 		);
 	}
