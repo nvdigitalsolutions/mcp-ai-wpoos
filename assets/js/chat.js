@@ -7857,7 +7857,7 @@
         const metaRecord = {
             bytes: typeof result.bytes === 'number' ? result.bytes : null,
             mime_type: result.mime_type || result.mimeType || '',
-            attachment_id: typeof result.attachment_id === 'number' ? result.attachment_id : null,
+            attachment_id: result.attachment_id || null,
         };
 
         if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
@@ -7868,8 +7868,8 @@
             metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
         }
 
-        if (!metaRecord.attachment_id && nestedImage && typeof nestedImage.attachment_id === 'number') {
-            metaRecord.attachment_id = nestedImage.attachment_id;
+        if (!metaRecord.attachment_id && nestedImage) {
+            metaRecord.attachment_id = nestedImage.attachment_id || null;
         }
 
         const baseMeta = buildAttachmentMeta(metaRecord);
