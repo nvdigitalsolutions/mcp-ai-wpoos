@@ -9,11 +9,14 @@ This guide explains the changes made to ensure the WP oOS base version complies 
 **Size Reduction:** The build process now automatically optimizes the plugin ZIP for WordPress.org submission:
 
 - **Before optimization:** 4.3MB (1,950 files)
-- **After optimization:** 3.0MB (1,370 files)
-- **Reduction:** 30% smaller, 580 fewer files
+- **After optimization:** 2.7MB (1,272 files)
+- **Reduction:** 37% smaller, 678 fewer files
 
 **Files automatically excluded during build:**
 - Source map files (`*.map`) - Development debugging files (~2MB)
+- Vendor `.git` directories - Git repositories in dependencies (~22MB uncompressed)
+- Symfony translations - Translation files for validators (~2MB uncompressed, 58 files)
+- Vendor documentation - README, CHANGELOG, CONTRIBUTING files (~65 files)
 - Vendor test directories - Symfony test files (~1.7MB, 527 files)
 - Unminified JavaScript source files - Only `.min.js` included
 - Unminified CSS source files - Only `.min.css` included where available

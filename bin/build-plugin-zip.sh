@@ -219,7 +219,23 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'vendor/*/tests' \
         --exclude 'vendor/*/*/Test' \
         --exclude 'vendor/*/*/Tests' \
-        --exclude 'vendor/*/*/tests'
+        --exclude 'vendor/*/*/tests' \
+        --exclude 'vendor/*/.git' \
+        --exclude 'vendor/*/*/.git' \
+        --exclude 'vendor/*/*/*/.git' \
+        --exclude 'vendor/symfony/*/Resources/translations' \
+        --exclude 'vendor/*/README.md' \
+        --exclude 'vendor/*/README' \
+        --exclude 'vendor/*/CHANGELOG.md' \
+        --exclude 'vendor/*/CHANGELOG' \
+        --exclude 'vendor/*/CONTRIBUTING.md' \
+        --exclude 'vendor/*/UPGRADE.md' \
+        --exclude 'vendor/*/*/README.md' \
+        --exclude 'vendor/*/*/README' \
+        --exclude 'vendor/*/*/CHANGELOG.md' \
+        --exclude 'vendor/*/*/CHANGELOG' \
+        --exclude 'vendor/*/*/CONTRIBUTING.md' \
+        --exclude 'vendor/*/*/UPGRADE.md'
     
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
@@ -407,7 +423,23 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'vendor/*/tests' \
         --exclude 'vendor/*/*/Test' \
         --exclude 'vendor/*/*/Tests' \
-        --exclude 'vendor/*/*/tests'
+        --exclude 'vendor/*/*/tests' \
+        --exclude 'vendor/*/.git' \
+        --exclude 'vendor/*/*/.git' \
+        --exclude 'vendor/*/*/*/.git' \
+        --exclude 'vendor/symfony/*/Resources/translations' \
+        --exclude 'vendor/*/README.md' \
+        --exclude 'vendor/*/README' \
+        --exclude 'vendor/*/CHANGELOG.md' \
+        --exclude 'vendor/*/CHANGELOG' \
+        --exclude 'vendor/*/CONTRIBUTING.md' \
+        --exclude 'vendor/*/UPGRADE.md' \
+        --exclude 'vendor/*/*/README.md' \
+        --exclude 'vendor/*/*/README' \
+        --exclude 'vendor/*/*/CHANGELOG.md' \
+        --exclude 'vendor/*/*/CHANGELOG' \
+        --exclude 'vendor/*/*/CONTRIBUTING.md' \
+        --exclude 'vendor/*/*/UPGRADE.md'
     
     # Remove unminified source files (keep only .min.js and .min.css for production)
     echo "✓ Removing unminified JS source files (keeping .min.js only)..."
