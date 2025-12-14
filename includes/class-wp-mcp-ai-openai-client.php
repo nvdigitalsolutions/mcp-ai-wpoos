@@ -3094,6 +3094,24 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 									$converted_segment['image_url']['detail'] = sanitize_key( $segment['image_url']['detail'] );
 								}
 
+								// Preserve metadata fields for agentic workflow (allows tools like edit_gemini_image to access the URL).
+								// These fields are not sent to OpenAI but are available for tools to use.
+								if ( isset( $segment['attachment_id'] ) ) {
+									$converted_segment['attachment_id'] = absint( $segment['attachment_id'] );
+								}
+								if ( isset( $segment['url'] ) ) {
+									$converted_segment['url'] = esc_url_raw( $segment['url'] );
+								}
+								if ( isset( $segment['file_name'] ) ) {
+									$converted_segment['file_name'] = sanitize_text_field( $segment['file_name'] );
+								}
+								if ( isset( $segment['mime_type'] ) ) {
+									$converted_segment['mime_type'] = sanitize_text_field( $segment['mime_type'] );
+								}
+								if ( isset( $segment['bytes'] ) ) {
+									$converted_segment['bytes'] = absint( $segment['bytes'] );
+								}
+
 								$converted_segments[] = $converted_segment;
 								continue;
 							}
@@ -3155,6 +3173,21 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 									if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
 										$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
+									}
+
+									// Preserve metadata fields for agentic workflow (allows tools like edit_gemini_image to access the URL).
+									// These fields are not sent to OpenAI but are available for tools to use.
+									// attachment_id and url are guaranteed to exist here (just retrieved above).
+									$converted_segment['attachment_id'] = $attachment_id;
+									$converted_segment['url']           = esc_url_raw( $image_url );
+									if ( isset( $segment['file_name'] ) ) {
+										$converted_segment['file_name'] = sanitize_text_field( $segment['file_name'] );
+									}
+									if ( isset( $segment['mime_type'] ) ) {
+										$converted_segment['mime_type'] = sanitize_text_field( $segment['mime_type'] );
+									}
+									if ( isset( $segment['bytes'] ) ) {
+										$converted_segment['bytes'] = absint( $segment['bytes'] );
 									}
 
 									$converted_segments[] = $converted_segment;
