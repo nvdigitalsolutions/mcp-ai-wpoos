@@ -524,6 +524,7 @@ class WP_MCP_AI_Chat_Service {
 					'iteration'        => $iteration,
 					'max_iterations'   => $max_iterations,
 					'user_id'          => get_current_user_id(),
+					'messages'         => $messages, // Include original messages for metadata access.
 				)
 			);
 
