@@ -380,6 +380,31 @@ See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature co
 
 **Note:** The terms "base" and "core" are used interchangeably throughout the documentation and refer to the same plugin. See [BUILD-ARTIFACTS-CLARIFICATION.md](docs/BUILD-ARTIFACTS-CLARIFICATION.md) for detailed explanation.
 
+### Build Optimizations
+
+The build process automatically optimizes plugin ZIP files for distribution:
+
+**Size Optimization:**
+- **Base version:** ~3.0MB (optimized from 4.3MB, 30% reduction)
+- Files excluded: Source maps (*.map), vendor tests, unminified sources, dev docs
+- Result: Faster uploads to WordPress.org, prevents 504 Gateway Timeout errors
+
+**What's excluded:**
+- ✂️ Source map files (`*.map`) - Development debugging files
+- ✂️ Vendor test directories - Symfony/PSR test files
+- ✂️ Unminified JS/CSS - Only minified versions included
+- ✂️ Development docs - `ARCHITECTURE.md`, `CONTRIBUTING.md`, etc.
+- ✂️ `README.md` - WordPress.org uses `readme.txt` instead
+
+**What's included:**
+- ✅ All plugin functionality (PHP classes, tools, integrations)
+- ✅ Minified assets (.min.js, .min.css)
+- ✅ Production dependencies (vendor/)
+- ✅ License files and WordPress.org readme
+- ✅ Language files and translation support
+
+See [WORDPRESS_ORG_SUBMISSION_GUIDE.md](WORDPRESS_ORG_SUBMISSION_GUIDE.md) for WordPress.org submission details.
+
 ### Where to Find ZIP Files
 
 Plugin ZIP files are created in several ways:
