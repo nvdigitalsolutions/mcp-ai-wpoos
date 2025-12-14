@@ -7857,6 +7857,7 @@
         const metaRecord = {
             bytes: typeof result.bytes === 'number' ? result.bytes : null,
             mime_type: result.mime_type || result.mimeType || '',
+            attachment_id: typeof result.attachment_id === 'number' ? result.attachment_id : null,
         };
 
         if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
@@ -7867,18 +7868,13 @@
             metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
         }
 
+        if (!metaRecord.attachment_id && nestedImage && typeof nestedImage.attachment_id === 'number') {
+            metaRecord.attachment_id = nestedImage.attachment_id;
+        }
+
         const baseMeta = buildAttachmentMeta(metaRecord);
         if (baseMeta) {
             metaParts.push(baseMeta);
-        }
-
-        let attachmentId = typeof result.attachment_id === 'number' ? result.attachment_id : null;
-        if (!attachmentId && nestedImage && typeof nestedImage.attachment_id === 'number') {
-            attachmentId = nestedImage.attachment_id;
-        }
-
-        if (attachmentId) {
-            metaParts.push('ID: ' + attachmentId);
         }
 
         let sizeValue = '';
