@@ -235,7 +235,48 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'vendor/*/*/CHANGELOG.md' \
         --exclude 'vendor/*/*/CHANGELOG' \
         --exclude 'vendor/*/*/CONTRIBUTING.md' \
-        --exclude 'vendor/*/*/UPGRADE.md'
+        --exclude 'vendor/*/*/UPGRADE.md' \
+        --exclude 'vendor/*/.gitignore' \
+        --exclude 'vendor/*/*/.gitignore' \
+        --exclude 'vendor/*/.gitattributes' \
+        --exclude 'vendor/*/*/.gitattributes' \
+        --exclude 'vendor/*/Makefile' \
+        --exclude 'vendor/*/*/Makefile' \
+        --exclude 'vendor/*/.travis.yml' \
+        --exclude 'vendor/*/*/.travis.yml' \
+        --exclude 'vendor/*/.circleci' \
+        --exclude 'vendor/*/*/.circleci' \
+        --exclude 'vendor/*/phpunit.xml' \
+        --exclude 'vendor/*/*/phpunit.xml' \
+        --exclude 'vendor/*/phpunit.xml.dist' \
+        --exclude 'vendor/*/*/phpunit.xml.dist' \
+        --exclude 'vendor/*/phpstan.neon' \
+        --exclude 'vendor/*/*/phpstan.neon' \
+        --exclude 'vendor/*/phpstan.neon.dist' \
+        --exclude 'vendor/*/*/phpstan.neon.dist' \
+        --exclude 'vendor/*/phpstan-baseline.neon' \
+        --exclude 'vendor/*/*/phpstan-baseline.neon' \
+        --exclude 'vendor/*/psalm.xml' \
+        --exclude 'vendor/*/*/psalm.xml' \
+        --exclude 'vendor/*/psalm.baseline.xml' \
+        --exclude 'vendor/*/*/psalm.baseline.xml' \
+        --exclude 'vendor/*/.php-cs-fixer.php' \
+        --exclude 'vendor/*/*/.php-cs-fixer.php' \
+        --exclude 'vendor/*/.php-cs-fixer.dist.php' \
+        --exclude 'vendor/*/*/.php-cs-fixer.dist.php' \
+        --exclude 'vendor/*/phpspec.yml' \
+        --exclude 'vendor/*/*/phpspec.yml' \
+        --exclude 'vendor/*/phpspec.yml.dist' \
+        --exclude 'vendor/*/*/phpspec.yml.dist' \
+        --exclude 'vendor/*/phpspec.ci.yml' \
+        --exclude 'vendor/*/*/phpspec.ci.yml' \
+        --exclude 'vendor/*/.pullapprove.yml' \
+        --exclude 'vendor/*/*/.pullapprove.yml' \
+        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
+        --exclude 'assets/css/admin-test-*.css' \
+        --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
+        --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
+        --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
     
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
@@ -439,7 +480,48 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'vendor/*/*/CHANGELOG.md' \
         --exclude 'vendor/*/*/CHANGELOG' \
         --exclude 'vendor/*/*/CONTRIBUTING.md' \
-        --exclude 'vendor/*/*/UPGRADE.md'
+        --exclude 'vendor/*/*/UPGRADE.md' \
+        --exclude 'vendor/*/.gitignore' \
+        --exclude 'vendor/*/*/.gitignore' \
+        --exclude 'vendor/*/.gitattributes' \
+        --exclude 'vendor/*/*/.gitattributes' \
+        --exclude 'vendor/*/Makefile' \
+        --exclude 'vendor/*/*/Makefile' \
+        --exclude 'vendor/*/.travis.yml' \
+        --exclude 'vendor/*/*/.travis.yml' \
+        --exclude 'vendor/*/.circleci' \
+        --exclude 'vendor/*/*/.circleci' \
+        --exclude 'vendor/*/phpunit.xml' \
+        --exclude 'vendor/*/*/phpunit.xml' \
+        --exclude 'vendor/*/phpunit.xml.dist' \
+        --exclude 'vendor/*/*/phpunit.xml.dist' \
+        --exclude 'vendor/*/phpstan.neon' \
+        --exclude 'vendor/*/*/phpstan.neon' \
+        --exclude 'vendor/*/phpstan.neon.dist' \
+        --exclude 'vendor/*/*/phpstan.neon.dist' \
+        --exclude 'vendor/*/phpstan-baseline.neon' \
+        --exclude 'vendor/*/*/phpstan-baseline.neon' \
+        --exclude 'vendor/*/psalm.xml' \
+        --exclude 'vendor/*/*/psalm.xml' \
+        --exclude 'vendor/*/psalm.baseline.xml' \
+        --exclude 'vendor/*/*/psalm.baseline.xml' \
+        --exclude 'vendor/*/.php-cs-fixer.php' \
+        --exclude 'vendor/*/*/.php-cs-fixer.php' \
+        --exclude 'vendor/*/.php-cs-fixer.dist.php' \
+        --exclude 'vendor/*/*/.php-cs-fixer.dist.php' \
+        --exclude 'vendor/*/phpspec.yml' \
+        --exclude 'vendor/*/*/phpspec.yml' \
+        --exclude 'vendor/*/phpspec.yml.dist' \
+        --exclude 'vendor/*/*/phpspec.yml.dist' \
+        --exclude 'vendor/*/phpspec.ci.yml' \
+        --exclude 'vendor/*/*/phpspec.ci.yml' \
+        --exclude 'vendor/*/.pullapprove.yml' \
+        --exclude 'vendor/*/*/.pullapprove.yml' \
+        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
+        --exclude 'assets/css/admin-test-*.css' \
+        --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
+        --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
+        --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
     
     # Remove unminified source files (keep only .min.js and .min.css for production)
     echo "✓ Removing unminified JS source files (keeping .min.js only)..."
