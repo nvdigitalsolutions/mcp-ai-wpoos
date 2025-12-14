@@ -117,6 +117,9 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
 		}
 
+		// Enrich arguments with metadata from context messages if available.
+		$arguments = $this->enrich_arguments_from_messages( $arguments, $context );
+
 		// Load source image.
 		$image_editor = $this->load_source_image( $arguments, $user_id );
 		if ( is_wp_error( $image_editor ) ) {
