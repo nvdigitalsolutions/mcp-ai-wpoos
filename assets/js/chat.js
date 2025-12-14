@@ -6584,6 +6584,12 @@
             parts.push(mime);
         }
 
+        // Include attachment_id if available (matching tool result format)
+        const attachmentId = record.id || record.attachment_id;
+        if (typeof attachmentId === 'number' || (typeof attachmentId === 'string' && attachmentId)) {
+            parts.push('ID: ' + attachmentId);
+        }
+
         return parts.join(' • ');
     }
 
