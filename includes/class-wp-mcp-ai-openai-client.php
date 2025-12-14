@@ -3177,6 +3177,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 									// Preserve metadata fields for agentic workflow (allows tools like edit_gemini_image to access the URL).
 									// These fields are not sent to OpenAI but are available for tools to use.
+									// attachment_id and url are guaranteed to exist here (just retrieved above).
 									$converted_segment['attachment_id'] = $attachment_id;
 									$converted_segment['url']           = esc_url_raw( $image_url );
 									if ( isset( $segment['file_name'] ) ) {
