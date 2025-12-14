@@ -385,8 +385,8 @@ See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature co
 The build process automatically optimizes plugin ZIP files for distribution:
 
 **Size Optimization:**
-- **Base version:** ~2.7MB (optimized from 4.3MB, 37% reduction)
-- Files excluded: Source maps (*.map), vendor tests, .git directories, translations, vendor docs, unminified sources, dev docs
+- **Base version:** ~2.7MB, 1,236 files (optimized from 4.3MB, 1,950 files - 37% reduction)
+- Files excluded: Source maps (*.map), vendor tests, .git directories, translations, vendor docs, CI configs, unminified sources, dev docs, test pages
 - Result: Faster uploads to WordPress.org, prevents 504 Gateway Timeout errors
 
 **What's excluded:**
@@ -395,6 +395,9 @@ The build process automatically optimizes plugin ZIP files for distribution:
 - ✂️ Symfony translations - Translation files for validators (~2MB uncompressed, 58 files)
 - ✂️ Vendor documentation - README, CHANGELOG, CONTRIBUTING files (~65 files)
 - ✂️ Vendor test directories - Symfony/PSR test files (~1.7MB, 527 files)
+- ✂️ Vendor CI/dev config files - .gitignore, .gitattributes, phpstan.neon, psalm.xml, .php-cs-fixer, phpspec.yml, phpunit.xml, .travis.yml, Makefile, etc.
+- ✂️ Admin test pages - class-wp-mcp-ai-admin-test-*.php, admin-test-*.css, performance test widgets
+- ✂️ Remote tester - class-wp-mcp-ai-remote-tester.php (development tool)
 - ✂️ Unminified JS/CSS - Only minified versions included
 - ✂️ Development docs - `ARCHITECTURE.md`, `CONTRIBUTING.md`, etc.
 - ✂️ `README.md` - WordPress.org uses `readme.txt` instead
