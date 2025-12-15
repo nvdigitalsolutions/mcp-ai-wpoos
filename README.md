@@ -505,11 +505,20 @@ If you're cloning from GitHub for development:
 
 1. Clone the repository: `git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git`
 2. Copy to `/wp-content/plugins/mcp-ai-wpoos/`
-3. Run `npm install && composer install` to install dependencies
-4. Activate **Open Operator System Pro (WP oOS)** from WordPress admin
-5. This automatically activates the **Pro version** with all 105+ tools
+3. Run `npm install && composer install --no-dev` to install dependencies
+4. Activate **Open Operator System Complete (WP oOS)** from WordPress admin
+5. You now have the **complete version** with all 109 tools (71 base + 38 Pro)
 
-**Note**: The repository includes `mcp-ai-wpoos-base.php` which is used for WordPress.org builds but does NOT appear as a separate plugin when cloning. Only the Pro version (`mcp-ai-wpoos.php`) will be visible in WordPress.
+**What you get from the repository clone:**
+- ✅ Complete plugin with base + Pro features combined
+- ✅ All 109 built-in tools ready to use
+- ✅ Single plugin activation (not separate base + pro)
+- ✅ Pro features automatically available (no separate Pro plugin to install)
+
+**Notes**: 
+- The repository includes `mcp-ai-wpoos-base.php` and `addons/pro/mcp-ai-wpoos-pro.php` which are used for building separate distributions but do NOT appear as separate plugins when cloning
+- Only the main plugin file (`mcp-ai-wpoos.php`) has a plugin header in the repository
+- The build script adds headers to the other files when creating standalone distributions
 
 ### Standard Installation
 1. Upload `mcp-ai-wpoos.zip` to `/wp-content/plugins/`

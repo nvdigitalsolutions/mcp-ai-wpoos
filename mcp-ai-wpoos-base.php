@@ -1,6 +1,6 @@
 <?php
 /**
- * WP MCP AI - Base Version Entry Point
+ * Open Operator System (WP oOS) - Base Version Entry Point
  *
  * This file serves as the entry point for the standalone base version
  * when built for WordPress.org. In the repository, it does NOT have a

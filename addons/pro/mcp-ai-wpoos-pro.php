@@ -1,17 +1,18 @@
 <?php
 /**
- * Plugin Name: Open Operator System Pro (WP oOS Pro)
- * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
- * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).
- * Version: 1.0.0
- * Requires at least: 6.0
- * Requires PHP: 7.4
- * Author: NV Digital Solutions
- * Author URI: https://nvdigitalsolutions.com
- * License: Proprietary
- * Text Domain: mcp-ai-wpoos-pro
- * Domain Path: /languages
- * Network: true
+ * Open Operator System (WP oOS) - Pro Add-on Entry Point
+ *
+ * This file serves as the entry point for the Pro add-on when built as a
+ * standalone plugin for distribution. In the repository, it does NOT have a
+ * plugin header to prevent WordPress from detecting it as a separate plugin
+ * when the repository is cloned for development.
+ *
+ * The build script (bin/build-plugin-zip.sh) adds the plugin header when
+ * creating the Pro add-on distribution for separate installation.
+ *
+ * When the complete repository is cloned, this file is automatically loaded
+ * by mcp-ai-wpoos.php (line 462-465), so the Pro features are available
+ * without needing to activate it as a separate plugin.
  *
  * @package WP_MCP_AI_Pro
  *
@@ -45,7 +46,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
  * ============================================================================
  * DEPENDENCY CHECK
  *
- * Verify that WP MCP AI Core is active before loading Pro features.
+ * Verify that Open Operator System (WP oOS) Core is active before loading Pro features.
  * ============================================================================
  */
 
@@ -54,8 +55,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_check_dependencies' ) ) {
 	 * Check if required dependencies are available.
 	 *
 	 * Pro addon requires either:
-	 * - WP MCP AI Core (separated plugin architecture), OR
-	 * - WP MCP AI combined plugin with tool registry
+	 * - Open Operator System (WP oOS) Core (separated plugin architecture), OR
+	 * - Open Operator System (WP oOS) combined plugin with tool registry
 	 *
 	 * @since 1.0.0
 	 *
@@ -84,7 +85,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
 	 */
 	function wp_mcp_ai_pro_missing_core_notice() {
 		$message = sprintf(
-			'<strong>Open Operator System Pro</strong> requires either <strong>WP MCP AI Core</strong> or <strong>Open Operator System</strong> to be installed and activated. Please <a href="%s">install WP MCP AI Core</a> or <a href="%s">Open Operator System</a> first.',
+			'<strong>Open Operator System Pro</strong> requires either <strong>Open Operator System (WP oOS)</strong> or <strong>Open Operator System</strong> to be installed and activated. Please <a href="%s">install Open Operator System (WP oOS)</a> or <a href="%s">Open Operator System</a> first.',
 			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) ),
 			esc_url( admin_url( 'plugin-install.php?s=wp-open-operator-system&tab=search&type=term' ) )
 		);
@@ -547,7 +548,7 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		// Deactivate self and show error.
 		deactivate_plugins( plugin_basename( WP_MCP_AI_PRO_FILE ) );
 		wp_die(
-			esc_html__( 'Open Operator System Pro requires WP MCP AI Core to be installed and activated first.', 'wp-mcp-ai-pro' ),
+			esc_html__( 'Open Operator System Pro requires Open Operator System (WP oOS) to be installed and activated first.', 'wp-mcp-ai-pro' ),
 			esc_html__( 'Plugin Activation Error', 'wp-mcp-ai-pro' ),
 			array( 'back_link' => true )
 		);

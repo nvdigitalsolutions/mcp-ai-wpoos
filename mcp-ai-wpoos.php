@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Open Operator System Pro (WP oOS)
+ * Plugin Name: Open Operator System Complete (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes comprehensive tools with optional plugin integrations.
+ * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 109 tools with base features and Pro add-on (WooCommerce, social media, GitHub, Google services, FFmpeg, WP-CLI, and more).
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -189,9 +189,9 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
 	/**
-	 * Check if WP MCP AI Core is loaded.
+	 * Check if Open Operator System (WP oOS) Core is loaded.
 	 *
-	 * This function serves as a marker for add-ons (like WP MCP AI Pro) to verify that
+	 * This function serves as a marker for add-ons (like Open Operator System Pro) to verify that
 	 * the core plugin is active and ready before registering their features.
 	 *
 	 * @since 1.0.0

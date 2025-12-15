@@ -383,6 +383,38 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '*.zip' \
             --exclude 'assets/examples'
         
+        # Add plugin header to mcp-ai-wpoos-pro.php for standalone Pro addon distribution
+        # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
+        if [ -f "build/${PRO_SLUG}/mcp-ai-wpoos-pro.php" ]; then
+            # Replace the comment block with a full plugin header
+            sed -i '1,/\*\//c\
+<?php\
+/**\
+ * Plugin Name: Open Operator System Pro (WP oOS Pro)\
+ * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai\
+ * Description: Professional add-on for Open Operator System (WP oOS). Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
+ * Version: '"${VERSION}"'\
+ * Requires at least: 6.0\
+ * Requires PHP: 7.4\
+ * Author: NV Digital Solutions\
+ * Author URI: https://nvdigitalsolutions.com\
+ * License: Proprietary\
+ * Text Domain: mcp-ai-wpoos-pro\
+ * Domain Path: /languages\
+ * Network: true\
+ *\
+ * @package WP_MCP_AI_Pro\
+ *\
+ * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)\
+ * All rights reserved. This is proprietary software.\
+ *\
+ * Patent Pending: This software is the subject of a pending patent application\
+ * (Application #19/410,504) for "System and Method for Dynamic AI Orchestration\
+ * Layer with Real-Time Capability Gating and Resource Budgeting."\
+ */' "build/${PRO_SLUG}/mcp-ai-wpoos-pro.php"
+            echo "✓ Added plugin header to mcp-ai-wpoos-pro.php for Pro addon"
+        fi
+        
         # Create ZIP
         cd build
         zip -r -q "${PRO_SLUG}-${VERSION}.zip" "${PRO_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"

@@ -35,11 +35,14 @@ composer.phar
 !/vendor/rahul900day/
 !/vendor/symfony/
 
-# Ignore composer temporary and dev files
+# Ignore composer temporary files
 /vendor/composer/*.zip~
 /vendor/composer/tmp-*.zip~
-/vendor/composer/installed.php
-/vendor/composer/installed.json
+
+# Keep installed.php and installed.json so plugin works after cloning
+# These files are needed for composer autoloader to function properly
+#!/vendor/composer/installed.php
+#!/vendor/composer/installed.json
 
 # Minified assets (generated during build)
 *.min.css
