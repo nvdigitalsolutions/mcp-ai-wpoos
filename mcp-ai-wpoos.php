@@ -26,6 +26,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Prevent double-loading of the plugin.
+ * This check must come before any constants are defined to ensure we exit early
+ * if the plugin has already been loaded through another entry point.
+ */
+if ( function_exists( 'wp_mcp_ai_core_loaded' ) ) {
+	return;
+}
+
+/**
  * Define plugin constants early, before any version checks or conditional code.
  * These constants are needed throughout the plugin, including in error handlers.
  */
