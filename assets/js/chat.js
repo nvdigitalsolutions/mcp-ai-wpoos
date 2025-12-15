@@ -7937,7 +7937,7 @@
                 }
 
                 // Show edit instruction as a hint about what was done
-                if (typeof result.edit_instruction === 'string' && result.edit_instruction.trim()) {
+                if (typeof result.edit_instruction === 'string' && result.edit_instruction.trim().length > 0) {
                     const instruction = result.edit_instruction.trim();
                     // Truncate long instructions
                     const maxLength = 30;
