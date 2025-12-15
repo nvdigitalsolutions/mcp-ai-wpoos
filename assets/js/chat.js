@@ -7921,6 +7921,33 @@
             if (formatValue) {
                 metaParts.push(formatValue.toUpperCase());
             }
+
+            // For edit_gemini_image, also show the model and edit instruction if available
+            if (toolName === 'edit_gemini_image') {
+                if (typeof result.model === 'string' && result.model.trim()) {
+                    const modelName = result.model.trim();
+                    // Display clean model name
+                    if (modelName.indexOf('gemini-2.5-flash-image') !== -1 || modelName.indexOf('gemini-2.0-flash-exp') !== -1) {
+                        metaParts.push('Gemini 2.5');
+                    } else if (modelName.indexOf('gemini-exp-1206') !== -1) {
+                        metaParts.push('Gemini Exp');
+                    } else {
+                        metaParts.push(modelName);
+                    }
+                }
+
+                // Show edit instruction as a hint about what was done
+                if (typeof result.edit_instruction === 'string' && result.edit_instruction.trim()) {
+                    const instruction = result.edit_instruction.trim();
+                    // Truncate long instructions
+                    const maxLength = 30;
+                    if (instruction.length > maxLength) {
+                        metaParts.push('Edit: ' + instruction.substring(0, maxLength) + '...');
+                    } else {
+                        metaParts.push('Edit: ' + instruction);
+                    }
+                }
+            }
         } else if (toolName === SPEECH_TOOL_NAME) {
             if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
                 metaParts.push(result.duration_formatted.trim());
