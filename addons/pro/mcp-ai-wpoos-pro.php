@@ -522,8 +522,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 // When loaded as part of combined plugin (via inline require_once), init immediately.
 // When loaded as separate plugin, use plugins_loaded hook.
 // Defensive check: only call did_action/doing_action if functions exist.
-if ( function_exists( 'did_action' ) && function_exists( 'doing_action' ) &&
-	( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) ) ) {
+$functions_available = function_exists( 'did_action' ) && function_exists( 'doing_action' );
+$plugins_loaded_fired = $functions_available && ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) );
+
+if ( $plugins_loaded_fired ) {
 	// Already in plugins_loaded or after - init immediately.
 	// This handles the combined plugin scenario where Pro is loaded inline.
 	wp_mcp_ai_pro_init();
@@ -593,11 +595,14 @@ function wp_mcp_ai_pro_deactivate( $network_wide = false ) { // phpcs:ignore Gen
 if ( function_exists( 'register_activation_hook' ) && function_exists( 'register_deactivation_hook' ) ) {
 	// Check if we're being loaded as a standalone plugin (has plugin data in get_file_data).
 	// When loaded inline, we won't have plugin headers since they're commented out in the repo version.
-	$plugin_data = function_exists( 'get_file_data' ) ? get_file_data(
-		WP_MCP_AI_PRO_FILE,
-		array( 'Name' => 'Plugin Name' ),
-		'plugin'
-	) : array();
+	$plugin_data = array();
+	if ( function_exists( 'get_file_data' ) ) {
+		$plugin_data = get_file_data(
+			WP_MCP_AI_PRO_FILE,
+			array( 'Name' => 'Plugin Name' ),
+			'plugin'
+		);
+	}
 
 	// Only register hooks if we have plugin headers (standalone plugin scenario).
 	// In the cloned repo, this file has no plugin header at the top.
