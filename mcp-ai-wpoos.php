@@ -26,6 +26,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Define plugin constants early, before any version checks or conditional code.
+ * These constants are needed throughout the plugin, including in error handlers.
+ */
+if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
+	define( 'WP_MCP_AI_VERSION', '1.1.0' );
+}
+if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
+	define( 'WP_MCP_AI_FILE', __FILE__ );
+}
+if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+	define( 'WP_MCP_AI_PATH', plugin_dir_path( WP_MCP_AI_FILE ) );
+}
+if ( ! defined( 'WP_MCP_AI_URL' ) ) {
+	define( 'WP_MCP_AI_URL', plugin_dir_url( WP_MCP_AI_FILE ) );
+}
+
+/**
  * Check PHP version compatibility before loading any classes.
  *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
@@ -69,19 +86,6 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 
 	// Stop execution - don't load any class files that will cause parse errors.
 	return;
-}
-
-if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.0' );
-}
-if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
-	define( 'WP_MCP_AI_FILE', __FILE__ );
-}
-if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-	define( 'WP_MCP_AI_PATH', plugin_dir_path( WP_MCP_AI_FILE ) );
-}
-if ( ! defined( 'WP_MCP_AI_URL' ) ) {
-	define( 'WP_MCP_AI_URL', plugin_dir_url( WP_MCP_AI_FILE ) );
 }
 
 /**
