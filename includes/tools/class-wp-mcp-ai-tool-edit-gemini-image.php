@@ -299,6 +299,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * This method extracts that metadata from the original user messages in the context
 	 * to restore it for agentic workflows.
 	 *
+	 * Enhanced to automatically find the most recent image attachment when no URL is provided,
+	 * making agentic workflows more robust when LLMs don't explicitly pass the URL parameter.
+	 *
 	 * @param array $arguments Tool arguments from OpenAI.
 	 * @param array $context   Execution context including messages.
 	 * @return array Enriched arguments with metadata.
@@ -322,16 +325,86 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$target_url = $arguments['image_url'];
 		}
 
-		if ( '' === $target_url ) {
+		// If a URL was provided, try to find matching attachment with that URL.
+		if ( '' !== $target_url ) {
+			// Normalize URL for comparison (strip query strings and fragments).
+			$target_url_normalized = strtok( $target_url, '?' );
+			$target_url_normalized = strtok( $target_url_normalized, '#' );
+
+			// Search through messages for matching image attachment.
+			foreach ( $context['messages'] as $message ) {
+				// Only check user messages (where attachments originate).
+				if ( ! isset( $message['role'] ) || 'user' !== $message['role'] ) {
+					continue;
+				}
+
+				// Check if message has content array with segments.
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					continue;
+				}
+
+				foreach ( $message['content'] as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						continue;
+					}
+
+					// Check for image segments (input_image or image_url type).
+					$type = isset( $segment['type'] ) ? $segment['type'] : '';
+					if ( ! in_array( $type, array( 'input_image', 'image_url' ), true ) ) {
+						continue;
+					}
+
+					// Extract URL from segment.
+					$segment_url = '';
+					if ( isset( $segment['url'] ) ) {
+						$segment_url = $segment['url'];
+					} elseif ( isset( $segment['image_url']['url'] ) ) {
+						$segment_url = $segment['image_url']['url'];
+					} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
+						$segment_url = $segment['image_url'];
+					}
+
+					if ( '' === $segment_url ) {
+						continue;
+					}
+
+					// Normalize segment URL for comparison.
+					$segment_url_normalized = strtok( $segment_url, '?' );
+					$segment_url_normalized = strtok( $segment_url_normalized, '#' );
+
+					// Check if URLs match.
+					if ( $segment_url_normalized === $target_url_normalized ) {
+						// Found matching image! Extract metadata.
+						if ( isset( $segment['attachment_id'] ) && $segment['attachment_id'] > 0 ) {
+							$arguments['attachment_id'] = absint( $segment['attachment_id'] );
+						}
+
+						if ( isset( $segment['file_name'] ) && '' !== $segment['file_name'] ) {
+							$arguments['file_name'] = sanitize_text_field( $segment['file_name'] );
+						}
+
+						if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+							$arguments['source_mime_type'] = sanitize_text_field( $segment['mime_type'] );
+						}
+
+						if ( isset( $segment['bytes'] ) && $segment['bytes'] > 0 ) {
+							$arguments['bytes'] = absint( $segment['bytes'] );
+						}
+
+						// Found the match, no need to continue searching.
+						return $arguments;
+					}
+				}
+			}
+
+			// URL was provided but no match found, return arguments as-is.
 			return $arguments;
 		}
 
-		// Normalize URL for comparison (strip query strings and fragments).
-		$target_url_normalized = strtok( $target_url, '?' );
-		$target_url_normalized = strtok( $target_url_normalized, '#' );
-
-		// Search through messages for matching image attachment.
-		foreach ( $context['messages'] as $message ) {
+		// No URL provided in arguments, so find the most recent image attachment.
+		// Iterate through messages in reverse order to find the latest user message with an image.
+		$messages_reversed = array_reverse( $context['messages'] );
+		foreach ( $messages_reversed as $message ) {
 			// Only check user messages (where attachments originate).
 			if ( ! isset( $message['role'] ) || 'user' !== $message['role'] ) {
 				continue;
@@ -353,50 +426,44 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					continue;
 				}
 
-				// Extract URL from segment.
-				$segment_url = '';
-				if ( isset( $segment['url'] ) ) {
-					$segment_url = $segment['url'];
-				} elseif ( isset( $segment['image_url']['url'] ) ) {
-					$segment_url = $segment['image_url']['url'];
-				} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
-					$segment_url = $segment['image_url'];
+				// Found an image segment! Extract all available metadata.
+				// Start with URL.
+				if ( isset( $segment['url'] ) && '' !== $segment['url'] ) {
+					$arguments['url'] = esc_url_raw( $segment['url'] );
+				} elseif ( isset( $segment['image_url']['url'] ) && '' !== $segment['image_url']['url'] ) {
+					$arguments['url'] = esc_url_raw( $segment['image_url']['url'] );
+				} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) && '' !== $segment['image_url'] ) {
+					$arguments['url'] = esc_url_raw( $segment['image_url'] );
 				}
 
-				if ( '' === $segment_url ) {
-					continue;
+				// Extract attachment metadata.
+				if ( isset( $segment['attachment_id'] ) && $segment['attachment_id'] > 0 ) {
+					$arguments['attachment_id'] = absint( $segment['attachment_id'] );
 				}
 
-				// Normalize segment URL for comparison.
-				$segment_url_normalized = strtok( $segment_url, '?' );
-				$segment_url_normalized = strtok( $segment_url_normalized, '#' );
-
-				// Check if URLs match.
-				if ( $segment_url_normalized === $target_url_normalized ) {
-					// Found matching image! Extract metadata.
-					if ( isset( $segment['attachment_id'] ) && $segment['attachment_id'] > 0 ) {
-						$arguments['attachment_id'] = absint( $segment['attachment_id'] );
-					}
-
-					if ( isset( $segment['file_name'] ) && '' !== $segment['file_name'] ) {
-						$arguments['file_name'] = sanitize_text_field( $segment['file_name'] );
-					}
-
-					if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
-						$arguments['source_mime_type'] = sanitize_text_field( $segment['mime_type'] );
-					}
-
-					if ( isset( $segment['bytes'] ) && $segment['bytes'] > 0 ) {
-						$arguments['bytes'] = absint( $segment['bytes'] );
-					}
-
-					// Found the match, no need to continue searching.
-					return $arguments;
+				if ( isset( $segment['file_name'] ) && '' !== $segment['file_name'] ) {
+					$arguments['file_name'] = sanitize_text_field( $segment['file_name'] );
 				}
+
+				if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+					$arguments['source_mime_type'] = sanitize_text_field( $segment['mime_type'] );
+				}
+
+				if ( isset( $segment['bytes'] ) && $segment['bytes'] > 0 ) {
+					$arguments['bytes'] = absint( $segment['bytes'] );
+				}
+
+				// Extract file_id if available.
+				if ( isset( $segment['file_id'] ) && '' !== $segment['file_id'] ) {
+					$arguments['file_id'] = sanitize_text_field( $segment['file_id'] );
+				}
+
+				// Found the most recent image attachment, return enriched arguments.
+				return $arguments;
 			}
 		}
 
-		// No matching attachment found, return arguments as-is.
+		// No image attachments found in any user messages, return arguments as-is.
 		return $arguments;
 	}
 
