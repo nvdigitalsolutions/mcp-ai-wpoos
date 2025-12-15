@@ -1,6 +1,6 @@
 <?php
 /**
- * WP MCP AI - Pro Add-on Entry Point
+ * WP oOS - Pro Add-on Entry Point
  *
  * This file serves as the entry point for the Pro add-on when built as a
  * standalone plugin for distribution. In the repository, it does NOT have a
@@ -14,7 +14,7 @@
  * by mcp-ai-wpoos.php (line 462-465), so the Pro features are available
  * without needing to activate it as a separate plugin.
  *
- * @package WP_MCP_AI_Pro
+ * @package WP_oOS_Pro
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * All rights reserved. This is proprietary software.

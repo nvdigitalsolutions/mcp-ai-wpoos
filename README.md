@@ -506,7 +506,7 @@ If you're cloning from GitHub for development:
 1. Clone the repository: `git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git`
 2. Copy to `/wp-content/plugins/mcp-ai-wpoos/`
 3. Run `npm install && composer install --no-dev` to install dependencies
-4. Activate **Open Operator System (WP oOS)** from WordPress admin
+4. Activate **WP oOS Combined** from WordPress admin
 5. You now have the **complete version** with all 109 tools (71 base + 38 Pro)
 
 **What you get from the repository clone:**

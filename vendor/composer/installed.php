@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-plugin-activation-issue-again',
         'version' => 'dev-copilot/fix-plugin-activation-issue-again',
-        'reference' => 'a6d33ac61f43d905bbdf11cd9b549c0d610a7020',
+        'reference' => '1338f7ddd42b0d10cb9fc2701f2a62ab199b0f4c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-plugin-activation-issue-again',
             'version' => 'dev-copilot/fix-plugin-activation-issue-again',
-            'reference' => 'a6d33ac61f43d905bbdf11cd9b549c0d610a7020',
+            'reference' => '1338f7ddd42b0d10cb9fc2701f2a62ab199b0f4c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
