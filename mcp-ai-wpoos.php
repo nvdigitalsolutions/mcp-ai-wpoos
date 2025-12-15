@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Open Operator System (WP oOS)
+ * Plugin Name: Open Operator System Complete (WP oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 109 tools with base features and Pro add-on (WooCommerce, social media, GitHub, Google services, FFmpeg, WP-CLI, and more).
  * Version: 1.1.0
