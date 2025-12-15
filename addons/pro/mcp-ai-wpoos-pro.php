@@ -1,17 +1,18 @@
 <?php
 /**
- * Plugin Name: Open Operator System Pro (WP oOS Pro)
- * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
- * Description: Professional add-on for WP MCP AI Core. Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).
- * Version: 1.0.0
- * Requires at least: 6.0
- * Requires PHP: 7.4
- * Author: NV Digital Solutions
- * Author URI: https://nvdigitalsolutions.com
- * License: Proprietary
- * Text Domain: mcp-ai-wpoos-pro
- * Domain Path: /languages
- * Network: true
+ * WP MCP AI - Pro Add-on Entry Point
+ *
+ * This file serves as the entry point for the Pro add-on when built as a
+ * standalone plugin for distribution. In the repository, it does NOT have a
+ * plugin header to prevent WordPress from detecting it as a separate plugin
+ * when the repository is cloned for development.
+ *
+ * The build script (bin/build-plugin-zip.sh) adds the plugin header when
+ * creating the Pro add-on distribution for separate installation.
+ *
+ * When the complete repository is cloned, this file is automatically loaded
+ * by mcp-ai-wpoos.php (line 462-465), so the Pro features are available
+ * without needing to activate it as a separate plugin.
  *
  * @package WP_MCP_AI_Pro
  *
