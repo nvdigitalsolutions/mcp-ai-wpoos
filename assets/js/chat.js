@@ -6626,6 +6626,21 @@
 
         // Include attachment_id if available (matching tool result format)
         const attachmentId = record.id || record.attachment_id;
+        
+        // Debug: Log attachment ID resolution
+        if (window.console && console.log) {
+            console.log('[WP oOS] buildAttachmentMeta - ID resolution:', {
+                record_id: record.id,
+                record_id_type: typeof record.id,
+                record_attachment_id: record.attachment_id,
+                record_attachment_id_type: typeof record.attachment_id,
+                resolved_attachmentId: attachmentId,
+                resolved_type: typeof attachmentId,
+                will_include_id: (typeof attachmentId === 'number' || (typeof attachmentId === 'string' && attachmentId)),
+                record_keys: Object.keys(record)
+            });
+        }
+        
         if (typeof attachmentId === 'number' || (typeof attachmentId === 'string' && attachmentId)) {
             parts.push('ID: ' + attachmentId);
         }
