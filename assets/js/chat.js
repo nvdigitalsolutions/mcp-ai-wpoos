@@ -5574,7 +5574,7 @@
 
         const isImage = typeof mime === 'string' && mime.indexOf('image/') === 0;
 
-        return {
+        const record = {
             id: id,
             fileId: fileId,
             name: name || (file ? file.name : ''),
@@ -5584,6 +5584,21 @@
             size: size,
             isImage: isImage,
         };
+
+        // Debug: Log normalized upload response
+        if (window.console && console.log) {
+            console.log('[WP oOS] normaliseUploadResponse - created record:', {
+                id: record.id,
+                fileId: record.fileId,
+                name: record.name,
+                size: record.size,
+                mime: record.mime,
+                from_data_id: data.id,
+                from_data_data_id: data.data ? data.data.id : 'N/A'
+            });
+        }
+
+        return record;
     }
 
     function handleUploadError(state, error) {
@@ -5636,6 +5651,17 @@
             info.appendChild(name);
 
             const metaText = buildAttachmentMeta(attachment);
+            // Debug: Log attachment data and generated metadata
+            if (window.console && console.log) {
+                console.log('[WP oOS] renderPendingAttachments - attachment data:', {
+                    id: attachment.id,
+                    fileId: attachment.fileId,
+                    name: attachment.name,
+                    size: attachment.size,
+                    mime: attachment.mime,
+                    metaText: metaText
+                });
+            }
             if (metaText) {
                 const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
