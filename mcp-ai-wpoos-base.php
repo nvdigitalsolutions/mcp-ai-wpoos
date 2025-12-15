@@ -20,6 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent double-loading if the main plugin is already loaded.
+if ( function_exists( 'wp_mcp_ai_core_loaded' ) ) {
+	return;
+}
+
 // Define the base version constant to exclude Pro features.
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', true );
