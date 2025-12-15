@@ -331,7 +331,7 @@ if [ "$BUILD_BASE" = true ]; then
         sed -i '1,/\*\//c\
 <?php\
 /**\
- * Plugin Name: WP oOS\
+ * Plugin Name: Open Operator System (WP oOS)\
  * Plugin URI: https://nvdigitalsolutions.com/wpoos\
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.\
  * Version: '"${VERSION}"'\
@@ -346,7 +346,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Domain Path: /languages\
  * Network: true\
  *\
- * @package WP_oOS\
+ * @package WP_MCP_AI\
  *\
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)\
  * This plugin is licensed under the GNU General Public License v3 or later.\
@@ -390,9 +390,9 @@ if [ "$BUILD_PRO" = true ]; then
             sed -i '1,/\*\//c\
 <?php\
 /**\
- * Plugin Name: WP oOS Pro\
+ * Plugin Name: Open Operator System Pro (WP oOS Pro)\
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai\
- * Description: Professional add-on for WP oOS. Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
+ * Description: Professional add-on for Open Operator System (WP oOS). Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
  * Version: '"${VERSION}"'\
  * Requires at least: 6.0\
  * Requires PHP: 7.4\
@@ -403,7 +403,7 @@ if [ "$BUILD_PRO" = true ]; then
  * Domain Path: /languages\
  * Network: true\
  *\
- * @package WP_oOS_Pro\
+ * @package WP_MCP_AI_Pro\
  *\
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)\
  * All rights reserved. This is proprietary software.\

@@ -1,6 +1,6 @@
 <?php
 /**
- * WP oOS - Base Version Entry Point
+ * Open Operator System (WP oOS) - Base Version Entry Point
  *
  * This file serves as the entry point for the standalone base version
  * when built for WordPress.org. In the repository, it does NOT have a
@@ -10,7 +10,7 @@
  * creating the base version distribution for WordPress.org, where this file
  * gets renamed to mcp-ai-wpoos.php.
  *
- * @package WP_oOS
+ * @package WP_MCP_AI
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
