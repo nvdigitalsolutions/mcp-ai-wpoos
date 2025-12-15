@@ -6584,6 +6584,12 @@
             parts.push(mime);
         }
 
+        // Include attachment_id if available (matching tool result format)
+        const attachmentId = record.id || record.attachment_id;
+        if (typeof attachmentId === 'number' || (typeof attachmentId === 'string' && attachmentId)) {
+            parts.push('ID: ' + attachmentId);
+        }
+
         return parts.join(' • ');
     }
 
@@ -7851,6 +7857,7 @@
         const metaRecord = {
             bytes: typeof result.bytes === 'number' ? result.bytes : null,
             mime_type: result.mime_type || result.mimeType || '',
+            attachment_id: result.attachment_id || null,
         };
 
         if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
@@ -7861,18 +7868,13 @@
             metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
         }
 
+        if (!metaRecord.attachment_id && nestedImage) {
+            metaRecord.attachment_id = nestedImage.attachment_id || null;
+        }
+
         const baseMeta = buildAttachmentMeta(metaRecord);
         if (baseMeta) {
             metaParts.push(baseMeta);
-        }
-
-        let attachmentId = typeof result.attachment_id === 'number' ? result.attachment_id : null;
-        if (!attachmentId && nestedImage && typeof nestedImage.attachment_id === 'number') {
-            attachmentId = nestedImage.attachment_id;
-        }
-
-        if (attachmentId) {
-            metaParts.push('ID: ' + attachmentId);
         }
 
         let sizeValue = '';
