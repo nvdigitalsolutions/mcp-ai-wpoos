@@ -10223,11 +10223,18 @@
                                 }
                                 
                                 if (imageUrl) {
+                                    // Build metadata record from segment for display (matching tool result format)
+                                    const metaRecord = {
+                                        bytes: segment.bytes || null,
+                                        mime_type: segment.mime_type || '',
+                                        attachment_id: segment.attachment_id || null,
+                                    };
+                                    
                                     displayPayload.attachments.push({
                                         url: imageUrl,
-                                        label: segment.caption || segment.name || 'Image attachment',
-                                        downloadName: segment.name || '',
-                                        meta: '',
+                                        label: segment.caption || segment.name || segment.file_name || 'Image attachment',
+                                        downloadName: segment.name || segment.file_name || '',
+                                        meta: buildAttachmentMeta(metaRecord),
                                     });
                                 } else {
                                     textParts.push('[Image attachment]');
@@ -10235,11 +10242,18 @@
                             } else if (segment && segment.type === 'input_file') {
                                 // Build attachment link for file
                                 if (segment.url) {
+                                    // Build metadata record from segment for display (matching tool result format)
+                                    const metaRecord = {
+                                        bytes: segment.bytes || null,
+                                        mime_type: segment.mime_type || '',
+                                        attachment_id: segment.attachment_id || null,
+                                    };
+                                    
                                     displayPayload.attachments.push({
                                         url: segment.url,
-                                        label: segment.display_name || segment.name || 'File attachment',
-                                        downloadName: segment.display_name || segment.name || '',
-                                        meta: '',
+                                        label: segment.display_name || segment.name || segment.file_name || 'File attachment',
+                                        downloadName: segment.display_name || segment.name || segment.file_name || '',
+                                        meta: buildAttachmentMeta(metaRecord),
                                     });
                                 } else {
                                     textParts.push('[File attachment]');
