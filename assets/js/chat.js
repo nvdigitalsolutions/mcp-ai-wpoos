@@ -5760,11 +5760,25 @@
             label = getString('downloadAttachment', 'Download attachment');
         }
 
+        const meta = buildAttachmentMeta(record);
+
+        // Debug: Log display attachment creation
+        if (window.console && console.log) {
+            console.log('[WP oOS] buildDisplayAttachment - creating display attachment:', {
+                attachment_id: attachment.id,
+                attachment_fileId: attachment.fileId,
+                record_id: record.id,
+                record_fileId: record.fileId,
+                found_in_library: attachment.fileId && state && state.attachmentLibrary && !!state.attachmentLibrary[attachment.fileId],
+                meta: meta
+            });
+        }
+
         return {
             url: url,
             label: label,
             downloadName: record.originalName || record.name || '',
-            meta: buildAttachmentMeta(record),
+            meta: meta,
         };
     }
 
