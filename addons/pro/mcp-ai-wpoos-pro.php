@@ -521,13 +521,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 // Initialize Pro addon.
 // When loaded as part of combined plugin (via inline require_once), init immediately.
 // When loaded as separate plugin, use plugins_loaded hook.
-if ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) ) {
+// Defensive check: only call did_action/doing_action if functions exist.
+$functions_available = function_exists( 'did_action' ) && function_exists( 'doing_action' );
+$plugins_loaded_fired = $functions_available && ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) );
+
+if ( $plugins_loaded_fired ) {
 	// Already in plugins_loaded or after - init immediately.
 	// This handles the combined plugin scenario where Pro is loaded inline.
 	wp_mcp_ai_pro_init();
 } else {
 	// Not yet at plugins_loaded - schedule init for when it fires.
-	// This handles the separate plugin scenario.
+	// This handles the separate plugin scenario and early activation scenarios.
 	add_action( 'plugins_loaded', 'wp_mcp_ai_pro_init', 15 );
 }
 
@@ -571,7 +575,6 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 
 	flush_rewrite_rules();
 }
-register_activation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_activate' );
 
 /**
  * Plugin deactivation handler.
@@ -581,4 +584,30 @@ register_activation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_activate' );
 function wp_mcp_ai_pro_deactivate( $network_wide = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Hook callback signature requires $network_wide parameter for potential future multisite support.
 	flush_rewrite_rules();
 }
-register_deactivation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_deactivate' );
+
+/**
+ * Register activation/deactivation hooks only when Pro addon is a standalone plugin.
+ *
+ * When loaded inline from the cloned repository by mcp-ai-wpoos.php, these hooks
+ * should not be registered since the Pro addon is not being activated as a separate plugin.
+ * Activation/deactivation hooks are only relevant for the built/distributed version.
+ */
+if ( function_exists( 'register_activation_hook' ) && function_exists( 'register_deactivation_hook' ) ) {
+	// Check if we're being loaded as a standalone plugin (has plugin data in get_file_data).
+	// When loaded inline, we won't have plugin headers since they're commented out in the repo version.
+	$plugin_data = array();
+	if ( function_exists( 'get_file_data' ) ) {
+		$plugin_data = get_file_data(
+			WP_MCP_AI_PRO_FILE,
+			array( 'Name' => 'Plugin Name' ),
+			'plugin'
+		);
+	}
+
+	// Only register hooks if we have plugin headers (standalone plugin scenario).
+	// In the cloned repo, this file has no plugin header at the top.
+	if ( ! empty( $plugin_data['Name'] ) ) {
+		register_activation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_activate' );
+		register_deactivation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_deactivate' );
+	}
+}
