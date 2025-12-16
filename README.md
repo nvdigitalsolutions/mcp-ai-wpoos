@@ -503,11 +503,53 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 If you're cloning from GitHub for development:
 
-1. Clone the repository: `git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git`
-2. Copy to `/wp-content/plugins/mcp-ai-wpoos/`
-3. Run `npm install && composer install --no-dev` to install dependencies
-4. Activate **Open Operator System Complete (WP oOS)** from WordPress admin
-5. You now have the **complete version** with all 109 tools (71 base + 38 Pro)
+#### Option 1: Cloudways and Managed Hosting (Recommended)
+
+For Cloudways and similar managed hosting platforms, clone directly into the WordPress plugins directory:
+
+```bash
+# SSH into your server
+# Navigate to WordPress plugins directory
+cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
+
+# Clone the repository
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Verify you're in the correct directory
+pwd  # Should show the plugins path
+
+# Install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**⚠️ Cloudways Important Notes:**
+- Always clone directly into `/home/master/applications/YOURAPP/public_html/wp-content/plugins/`
+- Do NOT clone elsewhere and then move/copy - this causes `getcwd() failed` errors
+- Replace `YOURAPP` with your actual Cloudways application name
+
+#### Option 2: Local Development or VPS
+
+For local development or standard VPS hosting:
+
+```bash
+# Option A: Clone directly into WordPress plugins directory (recommended)
+cd /path/to/wordpress/wp-content/plugins/
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+npm install && composer install --no-dev --optimize-autoloader
+
+# Option B: Clone, install, then copy
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+npm install && composer install --no-dev --optimize-autoloader
+cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+#### Final Steps
+
+1. Activate **Open Operator System Complete (WP oOS)** from WordPress admin
+2. You now have the **complete version** with all 109 tools (71 base + 38 Pro)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
@@ -2204,6 +2246,57 @@ When encountering problems, please:
 - [ ] Test with a default assistant to isolate configuration issues
 
 ### Common Issues
+
+#### npm/Composer Install Error After Cloning
+If you get `ENOENT: no such file or directory, uv_cwd` (npm) or `getcwd() failed` (composer) errors:
+
+**For Cloudways Users (Most Common):**
+
+These errors occur when you try to run npm or composer from a directory that has been moved, deleted, or no longer exists. This commonly happens when you clone outside the WordPress plugins directory and then move/copy files while your shell session is still in the original location.
+
+**Solution: Always clone directly into the plugins directory:**
+
+```bash
+# SSH into your Cloudways server
+cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
+
+# Clone directly (replace YOURAPP with your application name)
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Verify you're in the right place
+pwd  # Should show the full plugins path
+
+# Install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**For Local Development or VPS:**
+
+1. **Ensure you're in the correct directory** - Run `pwd` to verify you're in the `mcp-ai-wpoos` directory
+2. **Check package.json and composer.json exist** - Run `ls -la package.json composer.json` to confirm files are present
+3. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
+4. **Follow the correct workflow**:
+   ```bash
+   # Clone the repository
+   git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+   cd mcp-ai-wpoos
+   
+   # Install dependencies BEFORE moving/copying
+   npm install
+   composer install --no-dev --optimize-autoloader
+   
+   # THEN copy to WordPress plugins directory
+   cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+   ```
+
+5. **Alternative: Clone directly into WordPress** - This avoids copy/move issues:
+   ```bash
+   cd /path/to/wordpress/wp-content/plugins/
+   git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+   cd mcp-ai-wpoos
+   npm install && composer install --no-dev --optimize-autoloader
+   ```
 
 #### Chat Not Working
 1. Verify OpenAI API key is configured in Settings → WP oOS
