@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-tools-for-sora-models',
-        'version' => 'dev-copilot/add-tools-for-sora-models',
-        'reference' => 'bd5517357d5847daad2fe02e159a1d43a642d04b',
+        'pretty_version' => 'dev-copilot/update-readme-documentation-yet-again',
+        'version' => 'dev-copilot/update-readme-documentation-yet-again',
+        'reference' => '505460c03b1e7f43c3f8632e52464129d92b89c4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-tools-for-sora-models',
-            'version' => 'dev-copilot/add-tools-for-sora-models',
-            'reference' => 'bd5517357d5847daad2fe02e159a1d43a642d04b',
+            'pretty_version' => 'dev-copilot/update-readme-documentation-yet-again',
+            'version' => 'dev-copilot/update-readme-documentation-yet-again',
+            'reference' => '505460c03b1e7f43c3f8632e52464129d92b89c4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
