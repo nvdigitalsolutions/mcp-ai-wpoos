@@ -425,7 +425,10 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
+// Remote tester is excluded from production builds. Load it conditionally.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
@@ -570,16 +573,23 @@ if ( is_admin() ) {
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 
 	// Load test assistant page (submenu of AI Assistants CPT).
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
-	wp_mcp_ai_container()->get( 'admin.test_assistant' );
+	// Test pages are excluded from production builds. Load them conditionally.
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
+		wp_mcp_ai_container()->get( 'admin.test_assistant' );
+	}
 
 	// Load test profession page (submenu of AI Professions CPT).
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php';
-	wp_mcp_ai_container()->get( 'admin.test_profession' );
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php';
+		wp_mcp_ai_container()->get( 'admin.test_profession' );
+	}
 
 	// Load test team page (submenu of AI Teams CPT).
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
-	wp_mcp_ai_container()->get( 'admin.test_team' );
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
+		wp_mcp_ai_container()->get( 'admin.test_team' );
+	}
 
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';

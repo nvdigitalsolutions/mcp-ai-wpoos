@@ -255,6 +255,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 * @param array $assoc_args Associative arguments.
 			 */
 			public function remote( $args, $assoc_args ) {
+				// Remote tester may not be available in production builds.
+				if ( ! class_exists( 'WP_MCP_AI_Remote_Tester' ) ) {
+					WP_CLI::error( __( 'Remote tester utility is not available in this build.', 'wp-mcp-ai' ) );
+				}
+
 				if ( empty( $args ) || ! isset( $args[0] ) ) {
 					WP_CLI::error( __( 'Please provide the remote MCP REST base URL.', 'wp-mcp-ai' ) );
 				}
