@@ -304,19 +304,23 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					);
 				}
 				
-				// Downgrade resolution to 720p if 1080p was requested.
-				// Veo 2.0 does not support 1080p resolution.
+				// Log resolution downgrade if 1080p was requested.
+				// Veo 2.0 does not support the resolution parameter at all (outputs 720p by default).
+				// The resolution parameter will be filtered out in build_generation_payload() for Veo 2.0.
+				// We log this to make the downgrade explicit for debugging.
 				if ( isset( $veo_2_args['resolution'] ) && '1080p' === $veo_2_args['resolution'] ) {
 					WP_MCP_AI_Logger::log_event(
 						'veo_2_resolution_downgraded',
-						'Downgraded resolution from 1080p to 720p for Veo 2.0 compatibility',
+						'Resolution downgraded from 1080p to 720p for Veo 2.0 compatibility',
 						array(
 							'original'   => '1080p',
-							'downgraded' => '720p',
-							'reason'     => 'Veo 2.0 fallback - 1080p not supported',
+							'downgraded' => '720p (default for Veo 2.0)',
+							'reason'     => 'Veo 2.0 fallback - resolution parameter not supported, always outputs 720p',
 						)
 					);
-					$veo_2_args['resolution'] = '720p';
+					// Note: We don't need to modify $veo_2_args['resolution'] here because
+					// build_generation_payload() will filter it out for Veo 2.0 anyway (line 526-534).
+					// Veo 2.0 always outputs 720p regardless of this parameter.
 				}
 
 				// Attempt with Veo 2.0.
