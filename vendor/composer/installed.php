@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-plugin-fatal-error',
-        'version' => 'dev-copilot/fix-plugin-fatal-error',
-        'reference' => 'f0ef5eddfd0963de203a9891d9d6ec0b9d15817f',
+        'pretty_version' => 'dev-copilot/fix-composer-install-error',
+        'version' => 'dev-copilot/fix-composer-install-error',
+        'reference' => '7f105e32d38d4c64886f6ff05f1d9b0d15e2bad0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-plugin-fatal-error',
-            'version' => 'dev-copilot/fix-plugin-fatal-error',
-            'reference' => 'f0ef5eddfd0963de203a9891d9d6ec0b9d15817f',
+            'pretty_version' => 'dev-copilot/fix-composer-install-error',
+            'version' => 'dev-copilot/fix-composer-install-error',
+            'reference' => '7f105e32d38d4c64886f6ff05f1d9b0d15e2bad0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
