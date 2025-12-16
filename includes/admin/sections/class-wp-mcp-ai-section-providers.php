@@ -408,7 +408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_video_duration'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Duration', 'wp-mcp-ai' ),
-					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: 1080p resolution requires exactly 8 seconds duration.', 'wp-mcp-ai' ),
+					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'wp-mcp-ai' ),
 					'options'     => array(
 						'4' => '4 seconds (Veo 3.1 only)',
 						'5' => '5 seconds',

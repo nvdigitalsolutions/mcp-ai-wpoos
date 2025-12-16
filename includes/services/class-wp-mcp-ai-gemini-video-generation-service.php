@@ -227,7 +227,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
-		// Validate 1080p requirements upfront.
+		// Validate and auto-adjust 1080p requirements upfront.
 		if ( isset( $args['resolution'] ) && '1080p' === $args['resolution'] ) {
 			// 1080p only supported for 16:9 aspect ratio.
 			if ( isset( $args['aspect_ratio'] ) && '9:16' === $args['aspect_ratio'] ) {
@@ -239,15 +239,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// 1080p requires exactly 8 seconds duration.
-			if ( isset( $args['duration'] ) && self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_invalid_arguments',
-					sprintf(
-						/* translators: %d: required duration in seconds */
-						__( '1080p resolution requires exactly %d seconds duration. Please adjust the duration or use 720p resolution.', 'wp-mcp-ai' ),
-						self::REQUIRED_1080P_DURATION
-					),
-					array( 'status' => 400 )
+			// Auto-adjust duration to 8 seconds if not provided or if different from required.
+			// This prevents errors when the LLM doesn't specify duration or provides a different value.
+			if ( ! isset( $args['duration'] ) || self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
+				$args['duration'] = self::REQUIRED_1080P_DURATION;
+				WP_MCP_AI_Logger::log_event(
+					'veo_1080p_duration_auto_adjusted',
+					'Duration auto-adjusted to 8 seconds for 1080p resolution',
+					array(
+						'original_duration' => isset( $args['duration'] ) ? $args['duration'] : 'not_set',
+						'adjusted_duration' => self::REQUIRED_1080P_DURATION,
+					)
 				);
 			}
 		}
