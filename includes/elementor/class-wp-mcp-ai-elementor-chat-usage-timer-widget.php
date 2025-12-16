@@ -443,10 +443,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'requires_login' => false,
 				'has_usage'      => false,
 				'totals'         => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-					'cached_tokens'     => 0,
+					'prompt_tokens'        => 0,
+					'completion_tokens'    => 0,
+					'cached_prompt_tokens' => 0,
+					'total_tokens'         => 0,
+					'cached_tokens'        => 0,
 				),
 			);
 		}
@@ -457,10 +458,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'requires_login' => true,
 				'has_usage'      => false,
 				'totals'         => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-					'cached_tokens'     => 0,
+					'prompt_tokens'        => 0,
+					'completion_tokens'    => 0,
+					'cached_prompt_tokens' => 0,
+					'total_tokens'         => 0,
+					'cached_tokens'        => 0,
 				),
 			);
 		}
@@ -473,19 +475,21 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'requires_login' => false,
 				'has_usage'      => false,
 				'totals'         => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-					'cached_tokens'     => 0,
+					'prompt_tokens'        => 0,
+					'completion_tokens'    => 0,
+					'cached_prompt_tokens' => 0,
+					'total_tokens'         => 0,
+					'cached_tokens'        => 0,
 				),
 			);
 		}
 
 		$totals = array(
-			'prompt_tokens'     => 0,
-			'completion_tokens' => 0,
-			'total_tokens'      => 0,
-			'cached_tokens'     => 0,
+			'prompt_tokens'        => 0,
+			'completion_tokens'    => 0,
+			'cached_prompt_tokens' => 0,
+			'total_tokens'         => 0,
+			'cached_tokens'        => 0,
 		);
 
 		foreach ( $user_usage as $provider_usage ) {
