@@ -24,7 +24,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	const DEFAULT_SIZE       = '1080p';
 	const DEFAULT_DURATION   = 5;
 	const DEFAULT_FPS        = 24;
-	const API_ENDPOINT       = 'https://api.openai.com/v1/videos/generations';
+	const API_ENDPOINT       = 'https://api.openai.com/v1/videos';
 
 	/**
 	 * {@inheritdoc}
@@ -384,32 +384,9 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		// Extract video URL or data from response.
-		// Note: Actual API response format will vary based on OpenAI's implementation.
-		// This implementation attempts to handle multiple possible response formats.
-		$video_url = null;
-		
-		// Try multiple response format patterns.
-		if ( ! empty( $data['data'] ) && is_array( $data['data'] ) && ! empty( $data['data'][0]['url'] ) ) {
-			// Format 1: data array with url field.
-			$video_url = $data['data'][0]['url'];
-		} elseif ( ! empty( $data['url'] ) ) {
-			// Format 2: direct url field.
-			$video_url = $data['url'];
-		} elseif ( ! empty( $data['video_url'] ) ) {
-			// Format 3: video_url field.
-			$video_url = $data['video_url'];
-		} elseif ( ! empty( $data['data'] ) && is_string( $data['data'] ) ) {
-			// Format 4: base64-encoded data in data field.
-			// If data is a string, it might be base64-encoded video content.
-			$video_data = base64_decode( $data['data'] );
-			if ( false !== $video_data && ! empty( $video_data ) ) {
-				// Skip download and use decoded data directly.
-				$video_url = null; // Signal to use $video_data.
-			}
-		}
-		
-		if ( null === $video_url && ! isset( $video_data ) ) {
+		// OpenAI Sora API returns an async job response, not the video directly.
+		// Response format: {"id": "video_123", "object": "video", "status": "queued", ...}
+		if ( empty( $data['id'] ) || empty( $data['status'] ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Sora API returned unexpected response format',
 				array(
@@ -420,7 +397,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			
 			return new WP_Error(
 				'wp_mcp_ai_sora_invalid_response',
-				__( 'OpenAI Sora returned an unexpected response format. The API may have changed or the video generation failed.', 'wp-mcp-ai' ),
+				__( 'OpenAI Sora returned an unexpected response format. Expected job ID and status.', 'wp-mcp-ai' ),
 				array( 
 					'status'        => 500,
 					'response_keys' => array_keys( $data ),
@@ -428,28 +405,184 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		// Download video from URL if needed.
-		if ( ! isset( $video_data ) ) {
-			$video_response = wp_remote_get(
-				$video_url,
+		$video_id     = $data['id'];
+		$video_status = $data['status'];
+
+		WP_MCP_AI_Logger::log_event(
+			'sora_video_job_created',
+			'Sora video job created',
+			array(
+				'video_id' => $video_id,
+				'status'   => $video_status,
+			)
+		);
+
+		// Poll for job completion.
+		$max_polls    = 60; // Maximum number of polls (10 minutes at 10s intervals).
+		$poll_delay   = 10; // Seconds between polls.
+		$poll_count   = 0;
+		$video_url    = null;
+
+		while ( $poll_count < $max_polls ) {
+			// Wait before polling (except first check).
+			if ( $poll_count > 0 ) {
+				sleep( $poll_delay );
+			}
+
+			// Poll job status.
+			$status_response = wp_remote_get(
+				self::API_ENDPOINT . '/' . $video_id,
 				array(
-					'timeout' => $timeout,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $api_key,
+					),
+					'timeout' => 30,
 				)
 			);
 
-			if ( is_wp_error( $video_response ) ) {
-				return $video_response;
+			if ( is_wp_error( $status_response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Sora status poll failed',
+					array(
+						'video_id' => $video_id,
+						'error'    => $status_response->get_error_message(),
+					)
+				);
+				$poll_count++;
+				continue;
 			}
 
-			$video_data = wp_remote_retrieve_body( $video_response );
+			$status_code = wp_remote_retrieve_response_code( $status_response );
+			$status_body = wp_remote_retrieve_body( $status_response );
+			$status_data = json_decode( $status_body, true );
 
-			if ( empty( $video_data ) ) {
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'Sora status poll error',
+					array(
+						'video_id' => $video_id,
+						'code'     => $status_code,
+						'body'     => $status_data,
+					)
+				);
+				
 				return new WP_Error(
-					'wp_mcp_ai_sora_download_failed',
-					__( 'Failed to download generated video.', 'wp-mcp-ai' ),
+					'wp_mcp_ai_sora_status_error',
+					isset( $status_data['error']['message'] ) ? $status_data['error']['message'] : __( 'Failed to check video status.', 'wp-mcp-ai' ),
+					array(
+						'status'   => $status_code,
+						'response' => $status_data,
+					)
+				);
+			}
+
+			$video_status = isset( $status_data['status'] ) ? $status_data['status'] : '';
+
+			WP_MCP_AI_Logger::log_event(
+				'sora_video_status_poll',
+				'Sora video status polled',
+				array(
+					'video_id'   => $video_id,
+					'status'     => $video_status,
+					'poll_count' => $poll_count + 1,
+				)
+			);
+
+			// Check if completed.
+			if ( 'completed' === $video_status ) {
+				// Download the video.
+				$video_url = self::API_ENDPOINT . '/' . $video_id . '/content';
+				break;
+			} elseif ( 'failed' === $video_status ) {
+				$error_message = isset( $status_data['processing_error'] ) ? $status_data['processing_error'] : __( 'Video generation failed.', 'wp-mcp-ai' );
+				
+				WP_MCP_AI_Logger::log_error(
+					'Sora video generation failed',
+					array(
+						'video_id' => $video_id,
+						'error'    => $error_message,
+					)
+				);
+				
+				return new WP_Error(
+					'wp_mcp_ai_sora_generation_failed',
+					$error_message,
 					array( 'status' => 500 )
 				);
 			}
+
+			$poll_count++;
+		}
+
+		// Check if we timed out.
+		if ( null === $video_url ) {
+			WP_MCP_AI_Logger::log_error(
+				'Sora video generation timeout',
+				array(
+					'video_id'   => $video_id,
+					'poll_count' => $poll_count,
+					'status'     => $video_status,
+				)
+			);
+			
+			return new WP_Error(
+				'wp_mcp_ai_sora_timeout',
+				__( 'Video generation timed out. The video may still be processing.', 'wp-mcp-ai' ),
+				array(
+					'status'    => 504,
+					'video_id'  => $video_id,
+					'last_poll' => $video_status,
+				)
+			);
+		}
+
+		// Download the completed video.
+		$video_response = wp_remote_get(
+			$video_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			)
+		);
+
+		if ( is_wp_error( $video_response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Sora video download failed',
+				array(
+					'video_id' => $video_id,
+					'error'    => $video_response->get_error_message(),
+				)
+			);
+			return $video_response;
+		}
+
+		$download_code = wp_remote_retrieve_response_code( $video_response );
+		if ( $download_code < 200 || $download_code >= 300 ) {
+			WP_MCP_AI_Logger::log_error(
+				'Sora video download error',
+				array(
+					'video_id' => $video_id,
+					'code'     => $download_code,
+				)
+			);
+			
+			return new WP_Error(
+				'wp_mcp_ai_sora_download_failed',
+				__( 'Failed to download generated video.', 'wp-mcp-ai' ),
+				array( 'status' => $download_code )
+			);
+		}
+
+		$video_data = wp_remote_retrieve_body( $video_response );
+
+		if ( empty( $video_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sora_download_empty',
+				__( 'Downloaded video is empty.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
 		}
 
 		// Calculate cost.
@@ -460,7 +593,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( $save_to_media ) {
 			$job_id      = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
-			$save_result = $this->save_video_to_media( $video_data, $prompt, $model, $user_id, $job_id );
+			$save_result = $this->save_video_to_media( $video_data, $prompt, $model, $user_id, $job_id, $video_id );
 
 			if ( is_wp_error( $save_result ) ) {
 				return $save_result;
@@ -541,9 +674,10 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	 * @param string $model      Model used.
 	 * @param int    $user_id    User ID for ownership.
 	 * @param string $job_id     Optional job ID for tracking.
+	 * @param string $video_id   Optional OpenAI video ID.
 	 * @return array|WP_Error Attachment result array or error.
 	 */
-	protected function save_video_to_media( $video_data, $prompt, $model, $user_id, $job_id = '' ) {
+	protected function save_video_to_media( $video_data, $prompt, $model, $user_id, $job_id = '', $video_id = '' ) {
 		// Generate filename.
 		if ( ! empty( $job_id ) ) {
 			$filename = 'sora-video-' . sanitize_file_name( $job_id ) . '.mp4';
@@ -595,6 +729,10 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( ! empty( $job_id ) ) {
 			$metadata['sora_job_id'] = sanitize_key( $job_id );
+		}
+
+		if ( ! empty( $video_id ) ) {
+			$metadata['sora_video_id'] = sanitize_text_field( $video_id );
 		}
 
 		foreach ( $metadata as $key => $value ) {

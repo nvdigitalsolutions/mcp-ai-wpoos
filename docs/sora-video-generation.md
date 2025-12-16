@@ -200,7 +200,7 @@ cinematic composition"
 
 ### OpenAI Sora API Endpoint
 ```
-POST https://api.openai.com/v1/videos/generations
+POST https://api.openai.com/v1/videos
 ```
 
 ### Response Format
