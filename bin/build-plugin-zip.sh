@@ -193,9 +193,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
         --exclude 'phpunit.xml.dist' \
-        --exclude 'composer.json' \
         --exclude 'composer.lock' \
-        --exclude 'package.json' \
         --exclude 'package-lock.json' \
         --exclude 'patches.lock.json' \
         --exclude 'babel.config.js' \
@@ -511,9 +509,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
         --exclude 'phpunit.xml.dist' \
-        --exclude 'composer.json' \
         --exclude 'composer.lock' \
-        --exclude 'package.json' \
         --exclude 'package-lock.json' \
         --exclude 'patches.lock.json' \
         --exclude 'babel.config.js' \
