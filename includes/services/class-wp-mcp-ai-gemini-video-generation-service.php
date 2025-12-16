@@ -285,9 +285,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				);
 
 				// Adjust args for Veo 2.0 compatibility before fallback.
-				// Veo 2.0 requires minimum 5 seconds, while Veo 3.1 allows 4 seconds.
-				// If duration is 4, adjust to 5 to prevent "out of bound" errors.
+				// Veo 2.0 has different constraints than Veo 3.1:
+				// - Requires minimum 5 seconds duration (Veo 3.1 allows 4)
+				// - Only supports 720p resolution (Veo 3.1 supports up to 1080p)
 				$veo_2_args = $args;
+				
+				// Adjust duration if below Veo 2.0 minimum.
 				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
 					$original_duration      = $veo_2_args['duration'];
 					$veo_2_args['duration'] = self::VEO_2_MIN_DURATION;
@@ -299,6 +302,21 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'adjusted' => $veo_2_args['duration'],
 						)
 					);
+				}
+				
+				// Downgrade resolution to 720p if 1080p was requested.
+				// Veo 2.0 does not support 1080p resolution.
+				if ( isset( $veo_2_args['resolution'] ) && '1080p' === $veo_2_args['resolution'] ) {
+					WP_MCP_AI_Logger::log_event(
+						'veo_2_resolution_downgraded',
+						'Downgraded resolution from 1080p to 720p for Veo 2.0 compatibility',
+						array(
+							'original'   => '1080p',
+							'downgraded' => '720p',
+							'reason'     => 'Veo 2.0 fallback - 1080p not supported',
+						)
+					);
+					$veo_2_args['resolution'] = '720p';
 				}
 
 				// Attempt with Veo 2.0.
