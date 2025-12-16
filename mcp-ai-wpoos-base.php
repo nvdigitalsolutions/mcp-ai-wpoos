@@ -30,5 +30,11 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', true );
 }
 
+// Define the plugin file constant before including the main file.
+// This ensures activation hooks and plugin paths reference the correct entry point.
+if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
+	define( 'WP_MCP_AI_FILE', __FILE__ );
+}
+
 // Include the main plugin file.
 require_once __DIR__ . '/mcp-ai-wpoos.php';

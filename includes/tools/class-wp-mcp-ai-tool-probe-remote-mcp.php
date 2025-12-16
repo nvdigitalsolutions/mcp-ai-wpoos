@@ -102,6 +102,11 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Remote tester may not be available in production builds.
+		if ( ! class_exists( 'WP_MCP_AI_Remote_Tester' ) ) {
+			return new WP_Error( 'wp_mcp_ai_remote_tester_unavailable', __( 'Remote tester utility is not available in this build.', 'wp-mcp-ai' ) );
+		}
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
