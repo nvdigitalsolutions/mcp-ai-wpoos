@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load base classes for settings sections.
 // Note: Settings Registry and Validator are loaded in the main plugin file.
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
+// Note: abstract-wp-mcp-ai-settings-section.php is now loaded early in main plugin file
+// (before Pro addon loads) to prevent fatal errors when Pro sections extend it during activation.
 
 // Load custom filters applicator.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-custom-filters-applicator.php';
