@@ -1,0 +1,68 @@
+{
+  "name": "mcp-ai-wpoos/mcp-ai-wpoos",
+  "description": "WordPress plugin integrating MCP tools with AI workflows.",
+  "type": "wordpress-plugin",
+  "license": "GPL-3.0-or-later",
+  "autoload": {
+    "psr-4": {
+      "WP\\MCP\\AI\\": "includes/namespaced/"
+    }
+  },
+  "require": {
+    "rahul900day/tiktoken-php": "^1.0",
+    "symfony/http-client": "^6.1|^7.0",
+    "nyholm/psr7": "^1.8",
+    "symfony/validator": "^6.4|^7.0",
+    "symfony/cache": "^6.4|^7.0",
+    "symfony/filesystem": "^6.4|^7.0",
+    "symfony/process": "^6.4|^7.0"
+  },
+  "require-dev": {
+    "cweagans/composer-patches": "^2.0",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "php-stubs/wordpress-stubs": "^6.4",
+    "squizlabs/php_codesniffer": "^3.13",
+    "wp-coding-standards/wpcs": "^3.0",
+    "phpunit/phpunit": "^9.6",
+    "wp-phpunit/wp-phpunit": "^6.5",
+    "yoast/phpunit-polyfills": "^4.0"
+  },
+  "scripts": {
+    "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
+    "lint:errors-only": "phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers --error-severity=1 --warning-severity=8 .",
+    "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
+    "format": "phpcbf --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
+    "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
+    "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",
+    "test": "vendor/bin/phpunit",
+    "test:coverage": "vendor/bin/phpunit --coverage-html coverage/",
+    "ci:all": [
+      "@lint:errors-only",
+      "@test:coverage"
+    ]
+  },
+  "extra": {
+    "patches": {
+      "wp-phpunit/wp-phpunit": {
+        "Add guard check for WP_LANG_DIR constant": "patches/wp-phpunit-wp-lang-dir-guard.patch"
+      }
+    },
+    "php_codesniffer": {
+      "installed_paths": [
+        "vendor/wp-coding-standards/wpcs",
+        "vendor/phpcompatibility/php-compatibility"
+      ]
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "cweagans/composer-patches": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "php-http/discovery": true
+    },
+    "platform": {
+      "php": "8.1.0"
+    }
+  }
+}
