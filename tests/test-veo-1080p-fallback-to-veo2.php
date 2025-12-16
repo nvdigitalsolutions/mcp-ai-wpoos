@@ -113,11 +113,11 @@ class WP_MCP_AI_Veo_1080p_Fallback_Test extends WP_UnitTestCase {
 		$this->assertEquals( '1080p', $veo_3_body['parameters']['resolution'], 'Veo 3.1 request should have 1080p resolution' );
 		$this->assertEquals( 8, $veo_3_body['parameters']['durationSeconds'], 'Veo 3.1 request should have 8s duration (auto-adjusted)' );
 
-		// Verify second request was to Veo 2.0 with 720p (downgraded).
+		// Verify second request was to Veo 2.0 with resolution parameter filtered out.
 		$veo_2_request = $captured_requests[1];
 		$this->assertEquals( 'veo-2.0', $veo_2_request['model'], 'Second request should be to Veo 2.0' );
 		$veo_2_body = json_decode( $veo_2_request['args']['body'], true );
-		// Veo 2.0 doesn't support resolution parameter, so it should not be present or be null.
+		// Veo 2.0 doesn't support resolution parameter, so it should be filtered out during payload building.
 		$this->assertArrayNotHasKey( 'resolution', $veo_2_body['parameters'], 'Veo 2.0 request should not have resolution parameter' );
 		$this->assertEquals( 8, $veo_2_body['parameters']['durationSeconds'], 'Veo 2.0 request should maintain 8s duration' );
 

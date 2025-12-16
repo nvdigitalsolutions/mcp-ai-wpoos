@@ -289,7 +289,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				// - Requires minimum 5 seconds duration (Veo 3.1 allows 4)
 				// - Only supports 720p resolution (Veo 3.1 supports up to 1080p)
 				$veo_2_args = $args;
-				
+
 				// Adjust duration if below Veo 2.0 minimum.
 				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
 					$original_duration      = $veo_2_args['duration'];
@@ -303,7 +303,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						)
 					);
 				}
-				
+
 				// Log resolution downgrade if 1080p was requested.
 				// Veo 2.0 does not support the resolution parameter at all (outputs 720p by default).
 				// The resolution parameter will be filtered out in build_generation_payload() for Veo 2.0.
@@ -319,7 +319,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						)
 					);
 					// Note: We don't need to modify $veo_2_args['resolution'] here because
-					// build_generation_payload() will filter it out for Veo 2.0 anyway (line 526-534).
+					// build_generation_payload() will filter it out for Veo 2.0 anyway.
+					// See resolution validation logic where $is_veo_2 is checked.
 					// Veo 2.0 always outputs 720p regardless of this parameter.
 				}
 
