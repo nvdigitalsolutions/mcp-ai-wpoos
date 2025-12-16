@@ -52,7 +52,7 @@ if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
    - Tests fields not defined in base version
    - Tests fields ARE defined in full version
 
-3. **verify-site-creator-fix.sh** (new)
+3. **bin/verify-site-creator-fix.sh** (new)
    - Automated verification script
    - Checks all protection layers
 
@@ -60,7 +60,7 @@ if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 
 Run the verification script:
 ```bash
-./verify-site-creator-fix.sh
+bin/verify-site-creator-fix.sh
 ```
 
 Expected output:

@@ -2,6 +2,9 @@
 # Verification script for site creator base version fix
 # This script verifies that site creator is properly hidden in base version
 
+# Change to plugin root directory (parent of bin/)
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 echo "=== Site Creator Base Version Fix Verification ==="
 echo ""
 

@@ -4,6 +4,9 @@
 
 set -e
 
+# Change to plugin root directory (parent of bin/)
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 echo "=== File-Based Polling Verification ==="
 echo ""
 

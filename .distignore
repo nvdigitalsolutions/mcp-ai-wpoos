@@ -101,7 +101,7 @@ core
 shared
 
 # Specific exclusions for this plugin
-test-capability-flags-integration.php
+# Note: test-capability-flags-integration.php moved to bin/ which is already excluded
 mcp-diagnostic-debug.php
 test-storage-service.html
 assets/examples

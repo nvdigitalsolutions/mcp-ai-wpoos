@@ -152,7 +152,7 @@ Understanding the WordPress hook order is crucial to why this fix works:
 
 Run the verification script:
 ```bash
-./verify-performance-buttons-fix.sh
+bin/verify-performance-buttons-fix.sh
 ```
 
 Or manually test:
@@ -170,4 +170,4 @@ Or manually test:
 1. `includes/admin/class-wp-mcp-ai-settings-dashboard.php` - Added JavaScript enqueue logic
 2. `addons/pro/mcp-ai-wpoos-pro.php` - Instantiate Performance section early
 3. `tests/test-performance-buttons-fix.php` - Test suite
-4. `verify-performance-buttons-fix.sh` - Verification script
+4. `bin/verify-performance-buttons-fix.sh` - Verification script

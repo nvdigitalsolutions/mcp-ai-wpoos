@@ -9,6 +9,9 @@
 # 4. Dashboard enqueues the JavaScript on the correct page
 #
 
+# Change to plugin root directory (parent of bin/)
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 echo "=== Performance Buttons Fix Verification ==="
 echo ""
 

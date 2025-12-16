@@ -22,7 +22,8 @@ echo " Plugin Double-Loading Protection Verification"
 echo "======================================================="
 echo ""
 
-PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the plugin root directory (parent of bin/)
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAIN_FILE="${PLUGIN_DIR}/mcp-ai-wpoos.php"
 BASE_FILE="${PLUGIN_DIR}/mcp-ai-wpoos-base.php"
 TESTS_PASSED=0

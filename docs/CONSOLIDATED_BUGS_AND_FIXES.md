@@ -44,7 +44,7 @@ This document consolidates all known bugs, fixes, and code quality issues for th
 - `mcp-ai-wpoos.php` (lines 451-459)
 - `addons/pro/wp-mcp-ai-pro.php` (lines 412-423)
 
-**Verification**: Run `./verify-pro-tools-fix.sh`
+**Verification**: Run `bin/verify-pro-tools-fix.sh`
 
 ---
 
@@ -308,7 +308,7 @@ Initial grep-based count was misleading - didn't account for:
 
 **Tests**: `tests/test-site-creator-base-version.php`
 
-**Verification**: `verify-site-creator-fix.sh`
+**Verification**: `bin/verify-site-creator-fix.sh`
 
 **Documentation**: `archive/summaries/SITE_CREATOR_FIX_SUMMARY.md`
 
@@ -677,11 +677,10 @@ All historical fixes, reviews, and summaries are preserved in:
 - `docs/archive/implementations/` - Implementation summaries
 
 ### Verification Scripts
-- `verify-pro-tools-fix.sh` - Verify pro tools loading
-- `verify-site-creator-fix.sh` - Verify site creator protection
-- `verify-file-polling.sh` - Verify file polling
-- `verify-pro-tools-fix.sh` - Verify pro tools
-- `verify-veo-changes.sh` - Verify VEO changes
+- `bin/verify-pro-tools-fix.sh` - Verify pro tools loading
+- `bin/verify-site-creator-fix.sh` - Verify site creator protection
+- `bin/verify-file-polling.sh` - Verify file polling
+- `bin/verify-veo-changes.sh` - Verify VEO changes
 
 ---
 

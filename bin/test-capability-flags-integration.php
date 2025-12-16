@@ -14,11 +14,13 @@ if ( ! getenv( 'WP_TESTS_DIR' ) ) {
 }
 
 // Set up basic constants.
+// Script is now in bin/ directory, so plugin root is parent directory
+$plugin_root = dirname( __DIR__ );
 if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', __DIR__ . '/' );
+	define( 'ABSPATH', $plugin_root . '/' );
 }
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-	define( 'WP_MCP_AI_PATH', __DIR__ . '/' );
+	define( 'WP_MCP_AI_PATH', $plugin_root . '/' );
 }
 
 // Mock WordPress functions needed by the registry.
@@ -43,8 +45,8 @@ if ( ! function_exists( 'esc_html__' ) ) {
 echo "=== Capability Flags Integration Test ===\n\n";
 
 // Load required files.
-require_once __DIR__ . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once __DIR__ . '/includes/class-wp-mcp-ai-tool-registry.php';
+require_once $plugin_root . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once $plugin_root . '/includes/class-wp-mcp-ai-tool-registry.php';
 
 echo "1. Testing tool registry initialization...\n";
 $registry = WP_MCP_AI_Tool_Registry::get_instance();

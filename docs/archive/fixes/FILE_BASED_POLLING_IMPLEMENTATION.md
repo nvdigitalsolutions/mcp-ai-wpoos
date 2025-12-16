@@ -130,7 +130,7 @@ Extracted common hook firing logic to eliminate duplication:
    - Verifies hooks fire correctly
    - Validates completion status updated
 
-### Verification Script: `verify-file-polling.sh`
+### Verification Script: `bin/verify-file-polling.sh`
 
 Automated checks:
 - ✅ Expected filename generation implemented
