@@ -39,9 +39,15 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Load the trait first, as the widget depends on it.
+		$trait_file = dirname( __DIR__ ) . '/includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
+		if ( file_exists( $trait_file ) && ! trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {
+			require_once $trait_file;
+		}
+
 		// Include the widget file if it exists.
 		$widget_file = dirname( __DIR__ ) . '/includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php';
-		if ( file_exists( $widget_file ) ) {
+		if ( file_exists( $widget_file ) && trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {
 			require_once $widget_file;
 		}
 
