@@ -4,6 +4,21 @@
 
 ### Added
 
+#### GPT-5.2 Model Support (December 16, 2025)
+- **OpenAI GPT-5.2 Model Family**: Added support for the latest GPT-5.2 models with 400K context window
+  - **Base Model**: `gpt-5.2` - Standard flagship model ($0.00175 per 1K tokens)
+  - **Pro Model**: `gpt-5.2-pro` - Advanced reasoning model with enhanced capabilities ($0.021 per 1K tokens)
+  - **Instant Variant**: `gpt-5.2-instant` - High throughput optimized for volume work
+  - **Thinking Variant**: `gpt-5.2-thinking` - Deeper analysis with reasoning time dial
+  - **Dated Versions**: `gpt-5.2-2025-12-11` and `gpt-5.2-pro-2025-12-11` for version pinning
+  - All models feature 400,000 token context window (2x larger than GPT-5.1)
+  - Max output: 128,000 tokens per response
+  - Knowledge cutoff: August 31, 2025
+  - Properly configured rate limits (TPM, RPM, TPD, RPD)
+  - Fallback chain configured for graceful degradation
+  - Added comprehensive test coverage in `tests/test-model-config.php`
+  - See [OpenAI GPT-5.2 Documentation](https://platform.openai.com/docs/models/gpt-5.2) and [GPT-5.2 Pro Documentation](https://platform.openai.com/docs/models/gpt-5.2-pro)
+
 #### Symfony Process Component Integration (December 9, 2025, PR #2091)
 - **Symfony Phase 2B Complete**: Migrated all Pro addon exec-based tools and services to Symfony Process component
   - **Process Service Created**: New `WP_MCP_AI_Process_Service` provides WordPress-friendly wrapper around Symfony Process【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】
