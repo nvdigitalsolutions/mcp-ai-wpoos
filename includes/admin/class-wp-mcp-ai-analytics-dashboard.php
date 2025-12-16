@@ -411,34 +411,42 @@ class WP_MCP_AI_Analytics_Dashboard {
 		$users                = self::get_cached_user_ids();
 		$stats['total_users'] = count( $users );
 
-		// Calculate usage across all users.
-		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+		// Calculate usage across all users using actual date ranges.
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			// Define date ranges based on current time.
+			$now = current_time( 'mysql' );
+			
+			// Today: from start of today to now.
+			$today_start = gmdate( 'Y-m-d 00:00:00', strtotime( 'today', strtotime( $now ) ) );
+			$today_end   = $now;
+			
+			// This week: from start of this week (Monday) to now.
+			$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( 'monday this week', strtotime( $now ) ) );
+			$week_end   = $now;
+			
+			// This month: from start of this month to now.
+			$month_start = gmdate( 'Y-m-01 00:00:00', strtotime( $now ) );
+			$month_end   = $now;
+
 			$active_count = 0;
-			$total_tokens = 0;
 			$today_tokens = 0;
 			$week_tokens  = 0;
 			$month_tokens = 0;
 
 			foreach ( $users as $user_id ) {
-				$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+				// Get actual token usage for each period.
+				$today_summary = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $today_start, $today_end );
+				$week_summary  = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $week_start, $week_end );
+				$month_summary = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $month_start, $month_end );
 
-				if ( ! empty( $usage ) ) {
+				// Count as active if user has any token usage this month.
+				if ( $month_summary['total_tokens'] > 0 ) {
 					++$active_count;
-
-					foreach ( $usage as $provider => $models ) {
-						foreach ( $models as $model => $totals ) {
-							if ( isset( $totals['total_tokens'] ) ) {
-								$tokens        = absint( $totals['total_tokens'] );
-								$total_tokens += $tokens;
-
-								// Estimate distribution (simplified).
-								$today_tokens += (int) ( $tokens * 0.1 );
-								$week_tokens  += (int) ( $tokens * 0.3 );
-								$month_tokens += $tokens;
-							}
-						}
-					}
 				}
+
+				$today_tokens += absint( $today_summary['total_tokens'] );
+				$week_tokens  += absint( $week_summary['total_tokens'] );
+				$month_tokens += absint( $month_summary['total_tokens'] );
 			}
 
 			$stats['active_users']     = $active_count;
