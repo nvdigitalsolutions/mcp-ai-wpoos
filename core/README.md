@@ -1,10 +1,10 @@
-# WP oOS Core
+# Open Operator System Core (WP oOS)
 
 Core MCP (Model Context Protocol) server framework for WordPress. Provides a stable API for AI tool integration.
 
 ## Overview
 
-WP oOS Core is an open-source MCP server implementation for WordPress. It allows WordPress sites to act as MCP servers, exposing tools that AI assistants can use to interact with your site's content and functionality.
+Open Operator System Core (WP oOS) is an open-source MCP server implementation for WordPress. It allows WordPress sites to act as MCP servers, exposing tools that AI assistants can use to interact with your site's content and functionality.
 
 ## Features
 

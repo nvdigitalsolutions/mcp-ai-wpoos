@@ -3,19 +3,21 @@
 # Build Plugin ZIP
 #
 # Creates production-ready ZIP files of the WP oOS plugin.
-# Supports building base, pro, or combined (base + pro) versions.
+# Supports building base, pro, core-only, or combined (base + pro) versions.
 #
 # Usage:
-#   ./bin/build-plugin-zip.sh                    # Builds all three versions
+#   ./bin/build-plugin-zip.sh                    # Builds all versions (base, pro, combined)
 #   ./bin/build-plugin-zip.sh --base             # Builds base version only
 #   ./bin/build-plugin-zip.sh --pro              # Builds pro add-on only
 #   ./bin/build-plugin-zip.sh --combined         # Builds base + pro combined
+#   ./bin/build-plugin-zip.sh --core-only        # Builds core plugin only
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
 #   build/mcp-ai-wpoos-base-X.Y.Z.zip       (standalone base version - works alone)
 #   build/mcp-ai-wpoos-pro-X.Y.Z.zip        (pro add-on - requires base)
 #   build/mcp-ai-wpoos-X.Y.Z.zip            (base + pro combined)
+#   build/mcp-ai-wpoos-core-X.Y.Z.zip       (lightweight core plugin - 4 basic tools)
 #
 # Requirements:
 #   - Node.js and npm (for asset building)
@@ -34,6 +36,7 @@ cd "$ROOT_DIR"
 BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
+BUILD_CORE_ONLY=false
 VERSION=""
 
 # Parse arguments
@@ -49,6 +52,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --combined|--full)
             BUILD_COMBINED=true
+            shift
+            ;;
+        --core-only)
+            BUILD_CORE_ONLY=true
             shift
             ;;
         --version)
@@ -68,15 +75,17 @@ while [[ $# -gt 0 ]]; do
             echo "  --base, --core    Build base version (free, WordPress.org compatible)"
             echo "  --pro             Build pro add-on (requires base plugin)"
             echo "  --combined        Build base + pro combined package"
-            echo "  --all             Build all three versions (default)"
+            echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
+            echo "  --all             Build all main versions (base, pro, combined)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                       # Build all three versions"
+            echo "  $0                       # Build base, pro, and combined"
             echo "  $0 --base                # Build only base version"
             echo "  $0 --pro                 # Build only pro add-on"
             echo "  $0 --combined            # Build base + pro combined"
+            echo "  $0 --core-only           # Build only core plugin"
             echo "  $0 --version 1.0.0       # Specify version"
             exit 0
             ;;
@@ -88,8 +97,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no build type specified, build all three
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ]; then
+# If no build type specified, build base, pro, and combined (but not core-only)
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
@@ -111,6 +120,7 @@ echo "Build targets:"
 [ "$BUILD_BASE" = true ] && echo "  ✓ Base version (mcp-ai-wpoos-base) - standalone"
 [ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (mcp-ai-wpoos-pro)"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
+[ "$BUILD_CORE_ONLY" = true ] && echo "  ✓ Core plugin (mcp-ai-wpoos-core) - lightweight"
 echo ""
 
 # Check requirements
@@ -342,7 +352,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Author URI: https://nvdigitalsolutions.com\
  * License: GPLv3 or later\
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html\
- * Text Domain: mcp-ai-wpoos\
+ * Text Domain: mcp-ai-wpoos-base\
  * Domain Path: /languages\
  * Network: true\
  *\
@@ -429,10 +439,51 @@ if [ "$BUILD_PRO" = true ]; then
 fi
 
 # ============================================================================
+# Build Core Plugin (Lightweight)
+# ============================================================================
+if [ "$BUILD_CORE_ONLY" = true ]; then
+    echo "Step 3c: Building Core plugin (lightweight)..."
+    
+    CORE_SLUG="mcp-ai-wpoos-core"
+    mkdir -p "build/${CORE_SLUG}"
+    
+    # Copy core plugin files
+    if [ -d "core" ]; then
+        rsync -av --quiet core/ "build/${CORE_SLUG}/" \
+            --exclude '.git' \
+            --exclude '.vscode' \
+            --exclude 'node_modules' \
+            --exclude 'tests' \
+            --exclude '*.zip' \
+            --exclude '.DS_Store'
+        
+        # The core plugin already has its plugin header, just update the version if needed
+        # Core plugin has its own version (1.0.0) separate from main plugin
+        CORE_VERSION=$(grep -E "^\s*\*\s*Version:" "build/${CORE_SLUG}/mcp-ai-wpoos-core.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+        if [ -z "$CORE_VERSION" ]; then
+            CORE_VERSION="1.0.0"
+        fi
+        
+        echo "✓ Core plugin version: ${CORE_VERSION}"
+        
+        # Create ZIP
+        cd build
+        zip -r -q "${CORE_SLUG}-${CORE_VERSION}.zip" "${CORE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
+        cd ..
+        
+        CORE_SIZE=$(du -h "build/${CORE_SLUG}-${CORE_VERSION}.zip" | cut -f1)
+        echo "✅ Core plugin created: build/${CORE_SLUG}-${CORE_VERSION}.zip (${CORE_SIZE})"
+    else
+        echo "⚠️  Core plugin directory (core/) not found, skipping..."
+    fi
+    echo ""
+fi
+
+# ============================================================================
 # Build Base + Pro Combined Version
 # ============================================================================
 if [ "$BUILD_COMBINED" = true ]; then
-    echo "Step 3c: Building Base + Pro combined version..."
+    echo "Step 3d: Building Base + Pro combined version..."
     
     COMBINED_SLUG="mcp-ai-wpoos"
     mkdir -p "build/${COMBINED_SLUG}"
@@ -605,5 +656,9 @@ echo "  2. Upload the appropriate ZIP file:"
 [ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Standalone base plugin)"
 [ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on, requires base)"
 [ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Base + Pro combined)"
+if [ "$BUILD_CORE_ONLY" = true ]; then
+    CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
+    echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
+fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""

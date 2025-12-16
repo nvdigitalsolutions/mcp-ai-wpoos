@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: WP MCP AI Core
- * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
+ * Plugin Name: Open Operator System Core (WP oOS)
+ * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: Core MCP (Model Context Protocol) server framework for WordPress. Provides a stable API for AI tool integration.
  * Version: 1.0.0
  * Requires at least: 6.0
