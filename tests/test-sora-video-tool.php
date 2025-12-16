@@ -167,4 +167,19 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Generate_Sora_Video_Validated', $tool );
 		$this->assertEquals( 'generate_sora_video_validated', $tool->get_slug() );
 	}
+
+	/**
+	 * Test API endpoint is correct.
+	 */
+	public function test_api_endpoint() {
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
+		
+		// Use reflection to access the constant.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Generate_Sora_Video' );
+		$endpoint   = $reflection->getConstant( 'API_ENDPOINT' );
+		
+		// Verify the endpoint is correct (not the old /generations endpoint).
+		$this->assertEquals( 'https://api.openai.com/v1/videos', $endpoint );
+		$this->assertStringNotContainsString( '/generations', $endpoint );
+	}
 }

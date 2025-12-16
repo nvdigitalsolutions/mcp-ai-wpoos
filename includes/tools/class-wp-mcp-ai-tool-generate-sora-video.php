@@ -24,7 +24,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	const DEFAULT_SIZE       = '1080p';
 	const DEFAULT_DURATION   = 5;
 	const DEFAULT_FPS        = 24;
-	const API_ENDPOINT       = 'https://api.openai.com/v1/videos/generations';
+	const API_ENDPOINT       = 'https://api.openai.com/v1/videos';
 
 	/**
 	 * {@inheritdoc}
