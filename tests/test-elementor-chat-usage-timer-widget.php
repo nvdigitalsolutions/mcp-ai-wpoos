@@ -160,8 +160,8 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 					$warning_occurred = true;
 					$warning_message  = $errstr;
 				}
-				// Return false to let the default error handler run as well.
-				return false;
+				// Return true to suppress the default error handler.
+				return true;
 			},
 			E_ALL
 		);
@@ -177,9 +177,6 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 		// This should not produce any PHP warnings about undefined array keys.
 		$summary = $method->invoke( $this->widget );
 
-		// Try to access cached_prompt_tokens - this should not trigger a warning.
-		$cached_prompt_tokens = $summary['totals']['cached_prompt_tokens'];
-
 		// Restore the original error handler.
 		restore_error_handler();
 
@@ -189,8 +186,9 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 			"No warnings should occur when accessing cached_prompt_tokens. Got: {$warning_message}"
 		);
 
+		// Verify the key exists and is an integer.
 		$this->assertIsInt(
-			$cached_prompt_tokens,
+			$summary['totals']['cached_prompt_tokens'],
 			'cached_prompt_tokens should be an integer'
 		);
 	}
