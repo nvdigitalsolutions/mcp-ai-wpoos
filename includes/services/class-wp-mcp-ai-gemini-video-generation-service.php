@@ -516,8 +516,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
-			// This is a defensive safeguard that ensures duration is correct even if not adjusted earlier.
-			// Primary adjustment happens in generate_video() method.
+			// This is a defensive safeguard during payload building to ensure duration is correct.
+			// Primary adjustment occurs earlier in generate_video() method (lines 244-256).
+			// This secondary check protects against edge cases and direct service method calls.
 			if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
 				$duration = self::REQUIRED_1080P_DURATION;
 			}

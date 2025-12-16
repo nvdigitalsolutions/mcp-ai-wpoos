@@ -384,38 +384,33 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 		foreach ( $test_durations as $test_duration ) {
 			$captured_request = null;
 
-			// Remove previous filters to avoid accumulation.
-			remove_all_filters( 'pre_http_request' );
+			// Create a new filter callback for each iteration to avoid accumulation.
+			$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+				if ( strpos( $url, 'predictLongRunning' ) !== false ) {
+					$captured_request = array(
+						'args' => $args,
+						'url'  => $url,
+					);
 
-			// Mock HTTP requests.
-			add_filter(
-				'pre_http_request',
-				function ( $preempt, $args, $url ) use ( &$captured_request ) {
-					if ( strpos( $url, 'predictLongRunning' ) !== false ) {
-						$captured_request = array(
-							'args' => $args,
-							'url'  => $url,
-						);
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'name' => 'operations/test-op',
+								'done' => false,
+							)
+						),
+					);
+				}
 
-						return array(
-							'response' => array(
-								'code'    => 200,
-								'message' => 'OK',
-							),
-							'body'     => wp_json_encode(
-								array(
-									'name' => 'operations/test-op',
-									'done' => false,
-								)
-							),
-						);
-					}
+				return $preempt;
+			};
 
-					return $preempt;
-				},
-				10,
-				3
-			);
+			// Mock HTTP requests - filter will be removed after assertion.
+			add_filter( 'pre_http_request', $filter_callback, 10, 3 );
 
 			$result = $service->generate_video(
 				array(
@@ -424,6 +419,9 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 					'duration'   => $test_duration,
 				)
 			);
+
+			// Remove the specific filter callback after use.
+			remove_filter( 'pre_http_request', $filter_callback, 10 );
 
 			$this->assertNotWPError( $result, "1080p with duration {$test_duration} should not return error" );
 			$this->assertNotNull( $captured_request, "Request should be captured for duration {$test_duration}" );
