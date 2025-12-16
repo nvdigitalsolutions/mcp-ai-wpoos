@@ -37,10 +37,10 @@ Added comprehensive console logging to trace attachment ID through every step:
 
 Created 4 comprehensive guides:
 
-1. **DEPLOYMENT_CHECKLIST.md** - Step-by-step deployment and testing
-2. **ATTACHMENT_METADATA_DEBUG_GUIDE.md** - How to interpret console logs
-3. **ATTACHMENT_ID_TROUBLESHOOTING.md** - Complete troubleshooting with solutions
-4. **ATTACHMENT_ID_FIX_SUMMARY.md** - Technical deep dive and context
+1. **[DEPLOYMENT_CHECKLIST.md](../../DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment and testing
+2. **[ATTACHMENT_METADATA_DEBUG_GUIDE.md](../../ATTACHMENT_METADATA_DEBUG_GUIDE.md)** - How to interpret console logs
+3. **[ATTACHMENT_ID_TROUBLESHOOTING.md](../../ATTACHMENT_ID_TROUBLESHOOTING.md)** - Complete troubleshooting with solutions
+4. **[ATTACHMENT_ID_FIX_SUMMARY.md](../../ATTACHMENT_ID_FIX_SUMMARY.md)** - Technical deep dive and context
 
 ### Phase 4: Build & Deploy 🔄 READY
 
@@ -89,7 +89,7 @@ console.log('[WP oOS] buildAttachmentMeta - ID resolution:', {...});
 
 ## Next Steps
 
-### 1. Deploy (See DEPLOYMENT_CHECKLIST.md)
+### 1. Deploy (See [DEPLOYMENT_CHECKLIST.md](../../DEPLOYMENT_CHECKLIST.md))
 
 ```bash
 # On server
@@ -134,10 +134,10 @@ Once working:
 
 | File | Purpose |
 |------|---------|
-| `DEPLOYMENT_CHECKLIST.md` | Step-by-step deployment guide |
-| `docs/ATTACHMENT_METADATA_DEBUG_GUIDE.md` | How to interpret logs |
-| `docs/ATTACHMENT_ID_TROUBLESHOOTING.md` | Solutions for common issues |
-| `docs/ATTACHMENT_ID_FIX_SUMMARY.md` | Technical deep dive |
+| [DEPLOYMENT_CHECKLIST.md](../../DEPLOYMENT_CHECKLIST.md) | Step-by-step deployment guide |
+| [ATTACHMENT_METADATA_DEBUG_GUIDE.md](../../ATTACHMENT_METADATA_DEBUG_GUIDE.md) | How to interpret logs |
+| [ATTACHMENT_ID_TROUBLESHOOTING.md](../../ATTACHMENT_ID_TROUBLESHOOTING.md) | Solutions for common issues |
+| [ATTACHMENT_ID_FIX_SUMMARY.md](../../ATTACHMENT_ID_FIX_SUMMARY.md) | Technical deep dive |
 | `assets/js/chat.js` | Source code with debug logging |
 | `assets/js/chat.min.js` | Production file (rebuilt) |
 
@@ -195,15 +195,15 @@ When you attach a file, you should see:
 
 | Log Shows | Issue | Solution Doc |
 |-----------|-------|--------------|
-| No logs appear | Old JS cached | DEPLOYMENT_CHECKLIST.md |
-| `from_data_id: undefined` | WordPress API issue | ATTACHMENT_ID_TROUBLESHOOTING.md |
-| `record_id: undefined` | State management issue | ATTACHMENT_METADATA_DEBUG_GUIDE.md |
-| `will_include_id: false` | Type check failing | ATTACHMENT_ID_TROUBLESHOOTING.md |
-| Logs correct, UI wrong | CSS or DOM issue | ATTACHMENT_ID_TROUBLESHOOTING.md |
+| No logs appear | Old JS cached | [DEPLOYMENT_CHECKLIST.md](../../DEPLOYMENT_CHECKLIST.md) |
+| `from_data_id: undefined` | WordPress API issue | [ATTACHMENT_ID_TROUBLESHOOTING.md](../../ATTACHMENT_ID_TROUBLESHOOTING.md) |
+| `record_id: undefined` | State management issue | [ATTACHMENT_METADATA_DEBUG_GUIDE.md](../../ATTACHMENT_METADATA_DEBUG_GUIDE.md) |
+| `will_include_id: false` | Type check failing | [ATTACHMENT_ID_TROUBLESHOOTING.md](../../ATTACHMENT_ID_TROUBLESHOOTING.md) |
+| Logs correct, UI wrong | CSS or DOM issue | [ATTACHMENT_ID_TROUBLESHOOTING.md](../../ATTACHMENT_ID_TROUBLESHOOTING.md) |
 
 ## Quick Start
 
-1. **Deploy:** Follow DEPLOYMENT_CHECKLIST.md
+1. **Deploy:** Follow [DEPLOYMENT_CHECKLIST.md](../../DEPLOYMENT_CHECKLIST.md)
 2. **Test:** Attach file, check console
 3. **Verify:** Look for "ID: XXX" in UI
 4. **Debug:** Use logs to find where ID is lost (if any)
