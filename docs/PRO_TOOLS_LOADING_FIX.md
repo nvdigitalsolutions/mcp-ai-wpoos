@@ -107,7 +107,7 @@ Updated comment to document that Pro addon is now loaded earlier:
 Run the verification script:
 
 ```bash
-./verify-pro-tools-fix.sh
+bin/verify-pro-tools-fix.sh
 ```
 
 Expected output:
@@ -177,4 +177,4 @@ All 6 Pro tools are now properly loaded when the combined plugin is used:
 - `includes/tools-init.php` - Tool registry initialization
 - `includes/class-wp-mcp-ai-tool-registry.php` - Tool registry class
 - `tests/test-pro-tools-loading.php` - PHPUnit tests
-- `verify-pro-tools-fix.sh` - Verification script
+- `bin/verify-pro-tools-fix.sh` - Verification script

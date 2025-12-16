@@ -102,7 +102,7 @@ if (isset($arguments['duration'])) {
 
 ### Verification Scripts
 
-**File**: `verify-veo-changes.sh` (98 lines)
+**File**: `bin/verify-veo-changes.sh` (98 lines)
 Automated verification script that checks:
 1. Service DEFAULT_DURATION constant is 4
 2. Tool parameter schema default is 4
@@ -156,7 +156,7 @@ Automated verification script that checks:
 
 ### Verification Script Output
 ```bash
-$ ./verify-veo-changes.sh
+$ bin/verify-veo-changes.sh
 
 === Veo Video Tool Direct Verification ===
 
@@ -226,7 +226,7 @@ The video tool is correctly configured with default duration of 4 seconds.
    - 476 lines of test code
    - 6 test methods covering REST endpoints and service validation
 
-3. `verify-veo-changes.sh`
+3. `bin/verify-veo-changes.sh`
    - Automated verification script
    - 98 lines
    - 6 verification checks

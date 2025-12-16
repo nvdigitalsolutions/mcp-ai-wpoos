@@ -204,7 +204,7 @@
 - `tests/test-site-creator-base-version.php`
 
 **Verification Script**:
-- `verify-site-creator-fix.sh`
+- `bin/verify-site-creator-fix.sh`
 
 **Reference**: `archive/summaries/SITE_CREATOR_FIX_SUMMARY.md`
 

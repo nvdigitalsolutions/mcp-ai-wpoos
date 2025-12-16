@@ -4,6 +4,9 @@
 
 set -e  # Exit immediately on any command failure
 
+# Change to plugin root directory (parent of bin/)
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 echo "=== Veo Video Tool Direct Verification ==="
 echo ""
 

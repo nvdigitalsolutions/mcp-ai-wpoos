@@ -5,6 +5,9 @@
 # This script simulates the plugin loading and verifies Pro tools are registered.
 #
 
+# Change to plugin root directory (parent of bin/)
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 echo "==================================================================="
 echo "Pro Tools Loading Fix - Manual Verification"
 echo "==================================================================="
