@@ -25,6 +25,37 @@ This quick reference provides fast access to the most common tasks and commands 
 # 5. Create your first assistant
 ```
 
+### Developer Installation (GitHub Clone)
+
+**For Cloudways (Recommended):**
+```bash
+# SSH into your server and clone directly into plugins directory
+cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**For Local/VPS:**
+```bash
+# Option 1: Clone directly into WordPress (recommended)
+cd /path/to/wordpress/wp-content/plugins/
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+npm install && composer install --no-dev --optimize-autoloader
+
+# Option 2: Clone, install, then copy
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+npm install && composer install --no-dev --optimize-autoloader
+cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+**⚠️ Important:** 
+- Always run `composer install` BEFORE moving/copying files
+- On Cloudways: Clone directly into the plugins directory to avoid `getcwd() failed` errors
+- Running composer after moving can cause path errors
+
 ### First Chat (2 minutes)
 ```php
 // Add to any page/post

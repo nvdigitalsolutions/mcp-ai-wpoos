@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-composer-install-error',
         'version' => 'dev-copilot/fix-composer-install-error',
-        'reference' => '7f105e32d38d4c64886f6ff05f1d9b0d15e2bad0',
+        'reference' => '2e961080d6632c8e102d5c3dcd69e9b5318f0455',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-composer-install-error',
             'version' => 'dev-copilot/fix-composer-install-error',
-            'reference' => '7f105e32d38d4c64886f6ff05f1d9b0d15e2bad0',
+            'reference' => '2e961080d6632c8e102d5c3dcd69e9b5318f0455',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

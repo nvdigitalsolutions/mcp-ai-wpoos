@@ -4,6 +4,117 @@ This guide captures the most common issues surfaced while testing the MCP REST
 layer and the JetEngine proxy tools. Use it during staging deployments and when
 triaging production incidents.
 
+## Composer Install Error After Cloning (getcwd() Failed)
+
+### Problem
+When running `composer install --no-dev --optimize-autoloader` after cloning the repository, you get:
+```
+sh: 0: getcwd() failed: No such file or directory
+Composer could not find a composer.json file in
+```
+
+### Root Cause
+This error typically occurs when:
+1. You run composer from a directory that has been moved or deleted
+2. You're in the original clone location while trying to install after copying files elsewhere
+3. The current working directory path is no longer valid due to filesystem operations
+4. On managed hosting (like Cloudways), SSH session directories can become orphaned
+
+### Solution for Cloudways and Managed Hosting
+
+**Recommended: Clone Directly Into WordPress Plugins Directory**
+
+On Cloudways and similar managed hosting platforms, always clone directly into the final destination:
+
+```bash
+# SSH into your Cloudways server
+# Navigate to your WordPress plugins directory
+cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
+
+# Clone directly into the plugins directory
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Verify you're in the right place
+pwd  # Should show: /home/master/applications/YOURAPP/public_html/wp-content/plugins/mcp-ai-wpoos
+
+# Install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**Important for Cloudways:**
+- Cloudways uses a specific directory structure: `/home/master/applications/YOURAPP/public_html/`
+- Always clone directly into `public_html/wp-content/plugins/` to avoid path issues
+- Do not clone elsewhere and then move/copy - this causes the getcwd() error
+
+### Solution for Standard Hosting
+
+**Option 1: Install Dependencies Before Moving (Recommended)**
+
+```bash
+# Clone the repository
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Install dependencies while IN the clone directory
+npm install
+composer install --no-dev --optimize-autoloader
+
+# THEN copy to WordPress plugins directory
+cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+**Option 2: Clone Directly Into WordPress Plugins Directory**
+
+```bash
+# Navigate to WordPress plugins directory first
+cd /path/to/wordpress/wp-content/plugins/
+
+# Clone directly into the plugins directory
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**Option 3: If You Already Copied Without Installing**
+
+```bash
+# Navigate to where you copied the files
+cd /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+
+# Verify you're in the right place
+ls -la composer.json  # Should exist
+
+# Install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+### Verification
+
+After successful installation, verify dependencies are installed:
+
+```bash
+# Check vendor directory exists
+ls -la vendor/
+
+# Check composer autoloader is generated
+ls -la vendor/autoload.php
+
+# Check node_modules exists
+ls -la node_modules/
+```
+
+### Prevention
+
+**Best Practice for Fresh Installations:**
+
+1. Always run `npm install` and `composer install` from within the cloned directory
+2. Do not change directories or move files while composer is running
+3. Complete all dependency installation before copying/moving the plugin
+4. If cloning for development, clone directly into `wp-content/plugins/`
+
 ## Development Dependencies in Production (putenv() Error)
 
 ### Problem
