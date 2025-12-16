@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Sora Video', 'wp-mcp-ai' );
+		return __( 'Generate Sora video', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -386,37 +386,70 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		// Extract video URL or data from response.
 		// Note: Actual API response format will vary based on OpenAI's implementation.
-		// This assumes a URL is returned that we need to download.
-		if ( empty( $data['data'] ) || empty( $data['data'][0]['url'] ) ) {
+		// This implementation attempts to handle multiple possible response formats.
+		$video_url = null;
+		
+		// Try multiple response format patterns.
+		if ( ! empty( $data['data'] ) && is_array( $data['data'] ) && ! empty( $data['data'][0]['url'] ) ) {
+			// Format 1: data array with url field.
+			$video_url = $data['data'][0]['url'];
+		} elseif ( ! empty( $data['url'] ) ) {
+			// Format 2: direct url field.
+			$video_url = $data['url'];
+		} elseif ( ! empty( $data['video_url'] ) ) {
+			// Format 3: video_url field.
+			$video_url = $data['video_url'];
+		} elseif ( ! empty( $data['data'] ) && is_string( $data['data'] ) ) {
+			// Format 4: base64-encoded data in data field.
+			// If data is a string, it might be base64-encoded video content.
+			$video_data = base64_decode( $data['data'] );
+			if ( false !== $video_data && ! empty( $video_data ) ) {
+				// Skip download and use decoded data directly.
+				$video_url = null; // Signal to use $video_data.
+			}
+		}
+		
+		if ( null === $video_url && ! isset( $video_data ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Sora API returned unexpected response format',
+				array(
+					'response_keys' => array_keys( $data ),
+					'response'      => wp_json_encode( $data ),
+				)
+			);
+			
 			return new WP_Error(
 				'wp_mcp_ai_sora_invalid_response',
-				__( 'OpenAI Sora returned an invalid response.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
+				__( 'OpenAI Sora returned an unexpected response format. The API may have changed or the video generation failed.', 'wp-mcp-ai' ),
+				array( 
+					'status'        => 500,
+					'response_keys' => array_keys( $data ),
+				)
 			);
 		}
 
-		$video_url = $data['data'][0]['url'];
-
-		// Download video from URL.
-		$video_response = wp_remote_get(
-			$video_url,
-			array(
-				'timeout' => $timeout,
-			)
-		);
-
-		if ( is_wp_error( $video_response ) ) {
-			return $video_response;
-		}
-
-		$video_data = wp_remote_retrieve_body( $video_response );
-
-		if ( empty( $video_data ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_sora_download_failed',
-				__( 'Failed to download generated video.', 'wp-mcp-ai' ),
-				array( 'status' => 500 )
+		// Download video from URL if needed.
+		if ( ! isset( $video_data ) ) {
+			$video_response = wp_remote_get(
+				$video_url,
+				array(
+					'timeout' => $timeout,
+				)
 			);
+
+			if ( is_wp_error( $video_response ) ) {
+				return $video_response;
+			}
+
+			$video_data = wp_remote_retrieve_body( $video_response );
+
+			if ( empty( $video_data ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_sora_download_failed',
+					__( 'Failed to download generated video.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
 		}
 
 		// Calculate cost.
