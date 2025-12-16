@@ -9,7 +9,7 @@ Stable tag: 1.1.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework for WordPress supporting OpenAI, Gemini, and Ollama. Works standalone with optional third-party plugin integrations.
+AI Assistant framework for WordPress supporting OpenAI, Gemini, Anthropic, and Ollama (Local). Works standalone with optional third-party plugin integrations.
 
 == Description ==
 
