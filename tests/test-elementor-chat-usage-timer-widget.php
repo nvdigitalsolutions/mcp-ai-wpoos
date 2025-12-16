@@ -21,6 +21,19 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 	private $widget;
 
 	/**
+	 * Required keys that should exist in the totals array.
+	 *
+	 * @var array
+	 */
+	private $required_totals_keys = array(
+		'prompt_tokens',
+		'completion_tokens',
+		'cached_prompt_tokens',
+		'total_tokens',
+		'cached_tokens',
+	);
+
+	/**
 	 * Set up before each test.
 	 */
 	public function set_up() {
@@ -59,15 +72,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $summary['totals'], 'Totals should be an array' );
 
 		// Verify all required keys exist in totals.
-		$required_keys = array(
-			'prompt_tokens',
-			'completion_tokens',
-			'cached_prompt_tokens',
-			'total_tokens',
-			'cached_tokens',
-		);
-
-		foreach ( $required_keys as $key ) {
+		foreach ( $this->required_totals_keys as $key ) {
 			$this->assertArrayHasKey(
 				$key,
 				$summary['totals'],
@@ -100,15 +105,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $summary['totals'], 'Totals should be an array' );
 
 		// Verify all required keys exist in totals.
-		$required_keys = array(
-			'prompt_tokens',
-			'completion_tokens',
-			'cached_prompt_tokens',
-			'total_tokens',
-			'cached_tokens',
-		);
-
-		foreach ( $required_keys as $key ) {
+		foreach ( $this->required_totals_keys as $key ) {
 			$this->assertArrayHasKey(
 				$key,
 				$summary['totals'],
@@ -152,9 +149,22 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Widget class not available' );
 		}
 
-		// Enable error reporting to catch warnings.
-		$old_error_reporting = error_reporting();
-		error_reporting( E_ALL );
+		// Set up a custom error handler to catch any warnings.
+		$warning_occurred = false;
+		$warning_message  = '';
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Used in test to verify no warnings occur.
+		set_error_handler(
+			function ( $errno, $errstr ) use ( &$warning_occurred, &$warning_message ) {
+				if ( E_WARNING === $errno || E_NOTICE === $errno ) {
+					$warning_occurred = true;
+					$warning_message  = $errstr;
+				}
+				// Return false to let the default error handler run as well.
+				return false;
+			},
+			E_ALL
+		);
 
 		// Make sure user is not logged in for predictable test case.
 		wp_set_current_user( 0 );
@@ -170,12 +180,18 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget_Test extends WP_UnitTestCase {
 		// Try to access cached_prompt_tokens - this should not trigger a warning.
 		$cached_prompt_tokens = $summary['totals']['cached_prompt_tokens'];
 
+		// Restore the original error handler.
+		restore_error_handler();
+
+		// Assert no warnings occurred.
+		$this->assertFalse(
+			$warning_occurred,
+			"No warnings should occur when accessing cached_prompt_tokens. Got: {$warning_message}"
+		);
+
 		$this->assertIsInt(
 			$cached_prompt_tokens,
 			'cached_prompt_tokens should be an integer'
 		);
-
-		// Restore error reporting.
-		error_reporting( $old_error_reporting );
 	}
 }
