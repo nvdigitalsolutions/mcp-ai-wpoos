@@ -15231,7 +15231,8 @@
         // Build cron status endpoint using global restUrl to avoid cross-domain issues
         // (config.messagesEndpoint might point to an external URL)
         const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
-        const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
+        // Remove trailing slash to avoid double slashes in the URL
+        const cronStatusEndpoint = restUrl ? restUrl.replace(/\/$/, '') + '/cron-status' : '';
         const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
         const guestToken = config.guestToken || '';
 
