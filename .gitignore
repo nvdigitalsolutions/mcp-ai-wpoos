@@ -18,6 +18,7 @@ composer.phar
 /build/mcp-ai-wpoos/
 /build/mcp-ai-wpoos-base/
 /build/mcp-ai-wpoos-pro/
+/build/mcp-ai-wpoos-core/
 
 # Ignore ZIP files everywhere except in build directory
 *.zip

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-plugin-file-header',
-        'version' => 'dev-copilot/fix-plugin-file-header',
-        'reference' => '7f1eccd8f5c86a431a7568cb0024984c296e5b38',
+        'pretty_version' => 'dev-copilot/run-script-to-rebuild-plugins',
+        'version' => 'dev-copilot/run-script-to-rebuild-plugins',
+        'reference' => '9bcd6408b017fcc47d63221d70508fe37f922732',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-plugin-file-header',
-            'version' => 'dev-copilot/fix-plugin-file-header',
-            'reference' => '7f1eccd8f5c86a431a7568cb0024984c296e5b38',
+            'pretty_version' => 'dev-copilot/run-script-to-rebuild-plugins',
+            'version' => 'dev-copilot/run-script-to-rebuild-plugins',
+            'reference' => '9bcd6408b017fcc47d63221d70508fe37f922732',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
