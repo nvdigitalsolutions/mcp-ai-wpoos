@@ -12,6 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent fatal error if WP_REST_Controller is not available yet.
+// This can happen during plugin activation before WordPress REST API is fully loaded.
+if ( ! class_exists( 'WP_REST_Controller' ) ) {
+	return;
+}
+
 // Ensure Team and Profession CPT classes are loaded for constants.
 if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) && file_exists( WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php';
