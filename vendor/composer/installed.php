@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-attach-file-button-error',
+        'version' => 'dev-copilot/fix-attach-file-button-error',
+        'reference' => '9993e4c4eb8470adadbfe9fbe2df6aefb6466686',
         'pretty_version' => 'dev-copilot/update-cron-bar-logging-service',
         'version' => 'dev-copilot/update-cron-bar-logging-service',
         'reference' => 'be6e2294bf4f35740f463d7c0d7e7e39bdbf78d8',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-attach-file-button-error',
+            'version' => 'dev-copilot/fix-attach-file-button-error',
+            'reference' => '9993e4c4eb8470adadbfe9fbe2df6aefb6466686',
             'pretty_version' => 'dev-copilot/update-cron-bar-logging-service',
             'version' => 'dev-copilot/update-cron-bar-logging-service',
             'reference' => 'be6e2294bf4f35740f463d7c0d7e7e39bdbf78d8',
