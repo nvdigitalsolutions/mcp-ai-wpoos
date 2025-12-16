@@ -94,6 +94,14 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
+			// Sora video generation models.
+			// Pricing is per second of generated video.
+			'sora-2'        => array(
+				'per_second' => 0.10, // $0.10 per second of generated video (estimated).
+			),
+			'sora-2-pro'    => array(
+				'per_second' => 0.20, // $0.20 per second of generated video (estimated).
+			),
 		),
 		'gemini'    => array(
 			// Gemini 2.5 series (November 2025).
