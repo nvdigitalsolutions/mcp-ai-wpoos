@@ -8591,10 +8591,9 @@
             // Build SSE URL with stream=true parameter and authentication
             // EventSource cannot send custom headers, so we pass auth via query params
             let url = state.config.restUrl;
-            if (url.charAt(url.length - 1) !== '/') {
-                url += '/';
-            }
-            url += 'cron-status/' + encodeURIComponent(jobId) + '?stream=true';
+            // Remove trailing slash to avoid double slashes in the URL
+            url = url.replace(/\/$/, '');
+            url += '/cron-status/' + encodeURIComponent(jobId) + '?stream=true';
 
             // Add assistant_id for multi-widget isolation and context.
             // The cron-status service uses this to filter jobs by assistant.
@@ -9164,10 +9163,9 @@
         }
 
         let url = state.config.restUrl;
-        if (url.charAt(url.length - 1) !== '/') {
-            url += '/';
-        }
-        url += 'cron-status/' + encodeURIComponent(jobId);
+        // Remove trailing slash to avoid double slashes in the URL
+        url = url.replace(/\/$/, '');
+        url += '/cron-status/' + encodeURIComponent(jobId);
 
         // Add assistant_id for context
         const assistantId = state.originalAssistantId || (state.config && state.config.assistantId);
@@ -9235,10 +9233,9 @@
         }
 
         let url = state.config.restUrl;
-        if (url.charAt(url.length - 1) !== '/') {
-            url += '/';
-        }
-        url += 'cron-status/' + encodeURIComponent(jobId);
+        // Remove trailing slash to avoid double slashes in the URL
+        url = url.replace(/\/$/, '');
+        url += '/cron-status/' + encodeURIComponent(jobId);
 
         // Add assistant_id for multi-widget isolation and context.
         // The cron-status service uses this to filter jobs by assistant.
