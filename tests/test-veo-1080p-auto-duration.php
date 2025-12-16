@@ -379,7 +379,9 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Test various duration values that should all be adjusted to 8 for 1080p.
-		$test_durations = array( 4, 5, 6, 7 ); // All valid durations except 8.
+		// Testing with Veo 3.1 (default) which supports 4-8 seconds.
+		// Note: 1080p is only available with Veo 3.1, not Veo 2.0.
+		$test_durations = array( 4, 5, 6, 7 ); // All valid Veo 3.1 durations except 8.
 
 		foreach ( $test_durations as $test_duration ) {
 			$captured_request = null;
