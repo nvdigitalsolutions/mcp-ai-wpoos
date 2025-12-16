@@ -12,7 +12,51 @@ This document provides a comprehensive index of all documentation available for 
 
 ## 🆕 Latest Additions (December 16, 2025)
 
-### GPT-5.2 Model Support (CURRENT)
+### Naming Structure Decision & Assessment (CURRENT)
+Comprehensive analysis of proposed naming structure change with impact assessment and recommended alternatives:
+
+- **[NAMING_STRUCTURE_DECISION.md](../NAMING_STRUCTURE_DECISION.md)** ⭐ **NEW** (Root)
+  - Executive summary: Would proposed naming change be breaking?
+  - Answer: YES - Major breaking change (9/10 severity)
+  - Quick reference for decision makers
+  - Links to detailed documentation
+  - Final recommendation: Use Hybrid Approach
+
+- **[NAMING_STRUCTURE_CHANGE_ASSESSMENT.md](NAMING_STRUCTURE_CHANGE_ASSESSMENT.md)** ⭐ **NEW**
+  - Complete impact analysis (400+ lines)
+  - Breaking change score: 9/10 (Critical)
+  - 288 classes, 2,000+ references, 50+ tests affected
+  - 25+ days development effort estimated
+  - Detailed pros/cons comparison
+  - Final verdict: DO NOT MIGRATE
+
+- **[HYBRID_NAMING_MIGRATION_GUIDE.md](HYBRID_NAMING_MIGRATION_GUIDE.md)** ⭐ **NEW**
+  - Recommended alternative approach (400+ lines)
+  - Zero breaking changes strategy
+  - PSR-4 autoloader for NEW code only
+  - Keep existing code unchanged
+  - Step-by-step implementation guide
+  - Real code examples and patterns
+
+- **[examples/composer-hybrid-autoload.json](examples/composer-hybrid-autoload.json)** ⭐ **NEW**
+  - Example Composer configuration for hybrid approach
+  - PSR-4 autoload setup for namespaced classes
+
+- **[examples/hybrid-directory-structure.md](examples/hybrid-directory-structure.md)** ⭐ **NEW**
+  - Practical directory structure layout
+  - Old vs new naming conventions
+  - File organization examples
+  - Usage patterns and best practices
+
+**Key Findings:**
+- ✅ Current plugin: 415 files, 288 classes, mature v1.1.0
+- ❌ Full migration: 9/10 breaking change severity
+- ❌ Impact: All external APIs break, 2,000+ code references
+- ❌ Effort: 25+ days development, very high risk
+- ✅ Hybrid approach: Zero breaking changes, 2 hours setup
+- 📊 Recommendation: **DO NOT migrate** - Use hybrid approach instead
+
+### GPT-5.2 Model Support
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 
 - **[CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md)** ⭐ **NEW**
