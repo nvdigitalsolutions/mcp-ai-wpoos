@@ -242,12 +242,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// Auto-adjust duration to 8 seconds if not provided or if different from required.
 			// This prevents errors when the LLM doesn't specify duration or provides a different value.
 			if ( ! isset( $args['duration'] ) || self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
-				$args['duration'] = self::REQUIRED_1080P_DURATION;
+				// Save original duration for logging before modification.
+				$original_duration = isset( $args['duration'] ) ? $args['duration'] : 'not_set';
+				$args['duration']  = self::REQUIRED_1080P_DURATION;
 				WP_MCP_AI_Logger::log_event(
 					'veo_1080p_duration_auto_adjusted',
 					'Duration auto-adjusted to 8 seconds for 1080p resolution',
 					array(
-						'original_duration' => isset( $args['duration'] ) ? $args['duration'] : 'not_set',
+						'original_duration' => $original_duration,
 						'adjusted_duration' => self::REQUIRED_1080P_DURATION,
 					)
 				);
