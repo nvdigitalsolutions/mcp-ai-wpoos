@@ -384,6 +384,9 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 		foreach ( $test_durations as $test_duration ) {
 			$captured_request = null;
 
+			// Remove previous filters to avoid accumulation.
+			remove_all_filters( 'pre_http_request' );
+
 			// Mock HTTP requests.
 			add_filter(
 				'pre_http_request',
