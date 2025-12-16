@@ -227,7 +227,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			);
 		}
 
-		// Validate 1080p requirements upfront.
+		// Validate and auto-adjust 1080p requirements upfront.
 		if ( isset( $args['resolution'] ) && '1080p' === $args['resolution'] ) {
 			// 1080p only supported for 16:9 aspect ratio.
 			if ( isset( $args['aspect_ratio'] ) && '9:16' === $args['aspect_ratio'] ) {
@@ -239,15 +239,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// 1080p requires exactly 8 seconds duration.
-			if ( isset( $args['duration'] ) && self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_invalid_arguments',
-					sprintf(
-						/* translators: %d: required duration in seconds */
-						__( '1080p resolution requires exactly %d seconds duration. Please adjust the duration or use 720p resolution.', 'wp-mcp-ai' ),
-						self::REQUIRED_1080P_DURATION
-					),
-					array( 'status' => 400 )
+			// Auto-adjust duration to 8 seconds if not provided or if different from required.
+			// This prevents errors when the LLM doesn't specify duration or provides a different value.
+			if ( ! isset( $args['duration'] ) || self::REQUIRED_1080P_DURATION !== absint( $args['duration'] ) ) {
+				// Save original duration for logging before modification.
+				$original_duration = isset( $args['duration'] ) ? $args['duration'] : 'not_set';
+				$args['duration']  = self::REQUIRED_1080P_DURATION;
+				WP_MCP_AI_Logger::log_event(
+					'veo_1080p_duration_auto_adjusted',
+					'Duration auto-adjusted to 8 seconds for 1080p resolution',
+					array(
+						'original_duration' => $original_duration,
+						'adjusted_duration' => self::REQUIRED_1080P_DURATION,
+					)
 				);
 			}
 		}
@@ -281,9 +285,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				);
 
 				// Adjust args for Veo 2.0 compatibility before fallback.
-				// Veo 2.0 requires minimum 5 seconds, while Veo 3.1 allows 4 seconds.
-				// If duration is 4, adjust to 5 to prevent "out of bound" errors.
+				// Veo 2.0 has different constraints than Veo 3.1:
+				// - Requires minimum 5 seconds duration (Veo 3.1 allows 4)
+				// - Only supports 720p resolution (Veo 3.1 supports up to 1080p)
 				$veo_2_args = $args;
+
+				// Adjust duration if below Veo 2.0 minimum.
 				if ( isset( $veo_2_args['duration'] ) && absint( $veo_2_args['duration'] ) < self::VEO_2_MIN_DURATION ) {
 					$original_duration      = $veo_2_args['duration'];
 					$veo_2_args['duration'] = self::VEO_2_MIN_DURATION;
@@ -295,6 +302,26 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 							'adjusted' => $veo_2_args['duration'],
 						)
 					);
+				}
+
+				// Log resolution downgrade if 1080p was requested.
+				// Veo 2.0 does not support the resolution parameter at all (outputs 720p by default).
+				// The resolution parameter will be filtered out in build_generation_payload() for Veo 2.0.
+				// We log this to make the downgrade explicit for debugging.
+				if ( isset( $veo_2_args['resolution'] ) && '1080p' === $veo_2_args['resolution'] ) {
+					WP_MCP_AI_Logger::log_event(
+						'veo_2_resolution_downgraded',
+						'Resolution downgraded from 1080p to 720p for Veo 2.0 compatibility',
+						array(
+							'original'   => '1080p',
+							'downgraded' => '720p (default for Veo 2.0)',
+							'reason'     => 'Veo 2.0 fallback - resolution parameter not supported, always outputs 720p',
+						)
+					);
+					// Note: We don't need to modify $veo_2_args['resolution'] here because
+					// build_generation_payload() will filter it out for Veo 2.0 anyway.
+					// See resolution validation logic where $is_veo_2 is checked.
+					// Veo 2.0 always outputs 720p regardless of this parameter.
 				}
 
 				// Attempt with Veo 2.0.
@@ -512,6 +539,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Stage 2: Veo 3.1 - 1080p requires 8 seconds duration (2025 API requirement).
+			// This is a defensive safeguard during payload building to ensure duration is correct.
+			// Primary adjustment occurs earlier in generate_video() method (lines 244-256).
+			// This secondary check protects against edge cases and direct service method calls.
 			if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
 				$duration = self::REQUIRED_1080P_DURATION;
 			}
