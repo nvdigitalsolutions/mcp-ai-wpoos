@@ -1,4 +1,4 @@
-=== WP MCP AI Core ===
+=== Open Operator System Core (WP oOS) ===
 Contributors: nvdigitalsolutions
 Tags: mcp, ai, assistant, tools, wordpress
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Core MCP (Model Context Protocol) server framework for WordPress. Provides a sta
 
 == Description ==
 
-WP MCP AI Core is an open-source MCP server implementation for WordPress. It provides a stable foundation for AI assistant integrations, allowing WordPress to act as an MCP server that exposes tools for AI models to interact with.
+Open Operator System Core (WP oOS) is an open-source MCP server implementation for WordPress. It provides a stable foundation for AI assistant integrations, allowing WordPress to act as an MCP server that exposes tools for AI models to interact with.
 
 = Key Features =
 
