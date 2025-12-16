@@ -44,6 +44,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Check for known 2025 models.
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
+		$this->assertArrayHasKey( 'gpt-5.2', $configs );
+		$this->assertArrayHasKey( 'gpt-5.2-pro', $configs );
 		$this->assertArrayHasKey( 'gpt-5', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $configs );
@@ -406,5 +408,56 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		$result = WP_MCP_AI_Model_Config::set_model_config( '', array( 'name' => 'Test' ) );
 		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Test GPT-5.2 models have correct configuration.
+	 */
+	public function test_gpt_5_2_models_configuration() {
+		$gpt_5_2_models = array(
+			'gpt-5.2'                => array(
+				'name'           => 'GPT-5.2',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.00175,
+			),
+			'gpt-5.2-pro'            => array(
+				'name'           => 'GPT-5.2 Pro (Advanced Reasoning)',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.021,
+			),
+			'gpt-5.2-instant'        => array(
+				'name'           => 'GPT-5.2 Instant (High Throughput)',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.00175,
+			),
+			'gpt-5.2-thinking'       => array(
+				'name'           => 'GPT-5.2 Thinking (Deeper Analysis)',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.00175,
+			),
+			'gpt-5.2-2025-12-11'     => array(
+				'name'           => 'GPT-5.2 (Dec 2025)',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.00175,
+			),
+			'gpt-5.2-pro-2025-12-11' => array(
+				'name'           => 'GPT-5.2 Pro (Dec 2025)',
+				'context_window' => 400000,
+				'cost_per_1k'    => 0.021,
+			),
+		);
+
+		foreach ( $gpt_5_2_models as $model_id => $expected ) {
+			$config = WP_MCP_AI_Model_Config::get_model_config( $model_id );
+
+			$this->assertIsArray( $config, "Model $model_id should have a configuration" );
+			$this->assertEquals( 'openai', $config['provider'], "Model $model_id should have openai provider" );
+			$this->assertEquals( $expected['name'], $config['name'], "Model $model_id should have correct name" );
+			$this->assertEquals( $expected['context_window'], $config['context_window'], "Model $model_id should have 400K context window" );
+			$this->assertEquals( $expected['cost_per_1k'], $config['cost_per_1k'], "Model $model_id should have correct pricing" );
+			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
+			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
+			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
+		}
 	}
 }
