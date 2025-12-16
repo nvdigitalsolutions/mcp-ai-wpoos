@@ -13843,10 +13843,20 @@
 
                     item.appendChild(link);
 
-                    if (attachment.meta) {
+                    if (attachment.meta || attachment.url) {
                         const meta = document.createElement('span');
                         meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                        meta.textContent = attachment.meta;
+                        
+                        // Build metadata string with URL
+                        let metaText = '';
+                        if (attachment.meta) {
+                            metaText = attachment.meta;
+                        }
+                        if (attachment.url) {
+                            metaText += (metaText ? ' • URL: ' : 'URL: ') + attachment.url;
+                        }
+                        
+                        meta.textContent = metaText;
                         item.appendChild(document.createTextNode(' – '));
                         item.appendChild(meta);
                     }
