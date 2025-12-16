@@ -4,21 +4,29 @@ This guide captures the most common issues surfaced while testing the MCP REST
 layer and the JetEngine proxy tools. Use it during staging deployments and when
 triaging production incidents.
 
-## Composer Install Error After Cloning (getcwd() Failed)
+## npm/Composer Install Error After Cloning (getcwd() / uv_cwd Failed)
 
 ### Problem
-When running `composer install --no-dev --optimize-autoloader` after cloning the repository, you get:
+When running `npm install` or `composer install --no-dev --optimize-autoloader` after cloning the repository, you get one of these errors:
+
+**npm error:**
+```
+Error: ENOENT: no such file or directory, uv_cwd
+    at process.wrappedCwd [as cwd]
+```
+
+**composer error:**
 ```
 sh: 0: getcwd() failed: No such file or directory
 Composer could not find a composer.json file in
 ```
 
 ### Root Cause
-This error typically occurs when:
-1. You run composer from a directory that has been moved or deleted
-2. You're in the original clone location while trying to install after copying files elsewhere
+Both npm and composer need to get the current working directory (cwd). These errors occur when:
+1. You run npm/composer from a directory that has been moved or deleted
+2. You're in the original clone location after moving/copying files elsewhere
 3. The current working directory path is no longer valid due to filesystem operations
-4. On managed hosting (like Cloudways), SSH session directories can become orphaned
+4. On managed hosting (like Cloudways), SSH session directories can become orphaned after file moves
 
 ### Solution for Cloudways and Managed Hosting
 
@@ -90,6 +98,29 @@ ls -la composer.json  # Should exist
 # Install dependencies
 npm install && composer install --no-dev --optimize-autoloader
 ```
+
+**Option 4: If You're Already Getting the Error (Critical Fix)**
+
+If you're currently experiencing this error, your shell session is in an orphaned directory. You must start fresh:
+
+```bash
+# 1. Exit your current shell session or open a NEW terminal/SSH connection
+#    (This is critical - do not try to cd from the orphaned directory)
+
+# 2. In the NEW session, navigate directly to the plugin location
+cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/mcp-ai-wpoos
+
+# 3. Verify you're in a valid directory
+pwd  # Should show the full path without errors
+
+# 4. Verify files exist
+ls -la package.json composer.json
+
+# 5. Now install dependencies
+npm install && composer install --no-dev --optimize-autoloader
+```
+
+**Why this happens:** When you move files while your shell is in that directory, the shell's working directory becomes "orphaned" - it points to a path that no longer exists. The only fix is to start a new shell session and navigate to the correct location.
 
 ### Verification
 

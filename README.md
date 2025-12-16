@@ -2247,12 +2247,14 @@ When encountering problems, please:
 
 ### Common Issues
 
-#### Composer Install Error After Cloning
-If you get `getcwd() failed: No such file or directory` or `Composer could not find a composer.json file` error:
+#### npm/Composer Install Error After Cloning
+If you get `ENOENT: no such file or directory, uv_cwd` (npm) or `getcwd() failed` (composer) errors:
 
 **For Cloudways Users (Most Common):**
 
-This error typically occurs when you clone the repository outside the WordPress plugins directory and then try to move it. On Cloudways, always clone directly into the plugins directory:
+These errors occur when you try to run npm or composer from a directory that has been moved, deleted, or no longer exists. This commonly happens when you clone outside the WordPress plugins directory and then move/copy files while your shell session is still in the original location.
+
+**Solution: Always clone directly into the plugins directory:**
 
 ```bash
 # SSH into your Cloudways server
@@ -2272,8 +2274,8 @@ npm install && composer install --no-dev --optimize-autoloader
 **For Local Development or VPS:**
 
 1. **Ensure you're in the correct directory** - Run `pwd` to verify you're in the `mcp-ai-wpoos` directory
-2. **Check composer.json exists** - Run `ls -la composer.json` to confirm the file is present
-3. **Run composer from the plugin directory** - Do not run composer from outside the plugin directory
+2. **Check package.json and composer.json exist** - Run `ls -la package.json composer.json` to confirm files are present
+3. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
 4. **Follow the correct workflow**:
    ```bash
    # Clone the repository

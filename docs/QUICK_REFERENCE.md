@@ -52,9 +52,10 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 
 **⚠️ Important:** 
-- Always run `composer install` BEFORE moving/copying files
-- On Cloudways: Clone directly into the plugins directory to avoid `getcwd() failed` errors
-- Running composer after moving can cause path errors
+- Always run `npm install` and `composer install` BEFORE moving/copying files
+- On Cloudways: Clone directly into the plugins directory to avoid errors
+- If you get `ENOENT: uv_cwd` or `getcwd() failed` errors: EXIT your shell and start a NEW terminal session, then navigate to the plugin directory and run the install commands
+- Running npm/composer after moving files OR from an orphaned directory will fail
 
 ### First Chat (2 minutes)
 ```php
