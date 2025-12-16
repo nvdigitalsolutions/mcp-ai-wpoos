@@ -393,6 +393,12 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handler
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-renderer.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
+
+// Load abstract settings section base class early so Pro addon sections can extend it.
+// This must be loaded before the Pro addon is loaded (line 477) to prevent fatal errors
+// when Pro sections extend WP_MCP_AI_Settings_Section during plugin activation.
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
+
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-chart-js-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
