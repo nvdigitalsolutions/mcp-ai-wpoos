@@ -225,24 +225,45 @@ npm install idb-keyval
 
 **For:** Better storage quotas (future enhancement)
 
-### Phase 3: Code Refactoring (FUTURE)
+### Phase 3: Code Refactoring ⏳ IN PROGRESS
 
 #### Modularization Plan
 
 Break chat.js into logical modules:
 
+**Status:** ⏳ In Progress (Step 1/4 completed)
+
+**Completed Modules:**
+- ✅ **markdown.js** → `chat-markdown-service.js` (marked + DOMPurify)
+- ✅ **storage.js** → `chat-storage-service.js` (LocalStorage management)
+- ✅ **sse.js** → `sse-service.js` (Server-Sent Events with @microsoft/fetch-event-source)
+- ✅ **ui.js** → `chat-ui-utilities-service.js` (DOM helpers, batching)
+- ✅ **speech.js** → `chat-audio-service.js` (TTS + audio handling)
+- ✅ **clipboard.js** → `chat-clipboard-service.js` (copy functionality)
+- ✅ **http.js** → `chat-http-client-service.js` (HTTP with retry via ky)
+- ✅ **attachments.js** → `chat-attachments-service.js` (file upload/attachment handling) - **NEW 2025-12-17**
+
+**Remaining Modules:**
+- ❌ **transcription.js** - Audio recording and transcription API
+- ❌ **history.js** - Conversation list, load/save/delete, CCT, export
+- ❌ **tools.js** - Tool execution display, async job monitoring
+- ❌ **core.js** - Core chat logic (main message handling)
+
+**Module Structure:**
 ```
-assets/js/chat/
-├── index.js              # Main entry point
-├── core.js               # Core chat logic
-├── markdown.js           # Markdown rendering (using marked)
-├── attachments.js        # File attachment handling
-├── speech.js             # Speech synthesis
-├── transcription.js      # Audio transcription
-├── storage.js            # LocalStorage/IndexedDB
-├── sse.js                # Server-Sent Events
-├── ui.js                 # DOM manipulation
-└── utils.js              # Shared utilities
+assets/js/
+├── sse-service.js                    # ✅ Server-Sent Events
+├── job-event-bus.js                  # ✅ Event coordination
+├── cron-status-service.js            # ✅ Async job status
+├── chat-http-client-service.js       # ✅ HTTP with retry logic
+├── chat-storage-service.js           # ✅ LocalStorage management
+├── chat-clipboard-service.js         # ✅ Copy functionality
+├── chat-markdown-service.js          # ✅ Markdown rendering
+├── chat-ui-utilities-service.js      # ✅ DOM helpers
+├── chat-audio-service.js             # ✅ TTS/transcription
+├── chat-attachments-service.js       # ✅ File attachments (NEW)
+├── chat-bundle.js                    # ✅ Entry point (11 files)
+└── chat.js                           # ⏳ Main application (being modularized)
 ```
 
 #### Benefits
@@ -297,9 +318,16 @@ npm install --save-dev vitest @vitest/ui
 2. ✅ Add @microsoft/fetch-event-source for SSE - COMPLETED (2025-12-17)
 3. ✅ Integrate @microsoft/fetch-event-source into sse-service.js - COMPLETED (2025-12-17)
 4. Test SSE improvements with real endpoints (network throttling, disconnections)
-5. Begin modularization
-6. Set up testing framework
-7. Add comprehensive tests
+5. ✅ Begin modularization - **STEP 1 COMPLETED** (2025-12-17)
+   - ✅ Created chat-attachments-service.js
+   - ✅ Integrated into build system
+   - ✅ Started migration in chat.js
+6. Continue modularization (next steps):
+   - Extract transcription service
+   - Extract history management service
+   - Extract tool execution display service
+7. Set up testing framework
+8. Add comprehensive tests
 
 **Effort:** 2 weeks
 **Risk:** Medium
@@ -564,8 +592,44 @@ For questions about chat.js optimization:
     Body: { "stream": true, "assistant_id": 123 }
     ```
 
+### 2025-12-17 (Phase 4 - Modularization Begins)
+- ✅ **Created chat-attachments-service.js**
+  - New service module for file attachment operations (14.7 KB, 430 lines)
+  - Extracted 14 attachment-related utility functions
+  - **Functions included:**
+    - `getFileExtension()` - Extract file extension from File object or filename
+    - `isFileTypeAllowed()` - Validate file type against assistant config
+    - `isRealAttachmentUrl()` - Distinguish HTTP/HTTPS URLs from blob:/data:
+    - `isVideoAttachment()` - Detect video files from MIME type or extension
+    - `normaliseUploadResponse()` - Normalize server upload response
+    - `normaliseAttachmentRecord()` - Normalize attachment records from various sources
+    - `buildAttachmentMeta()` - Build attachment metadata for display
+    - `buildDisplayAttachment()` - Build display attachment object for rendering
+    - `buildFileDownloadUrl()` - Construct file download URL from ID
+    - `getAttachmentUrlFromRecord()` - Get attachment URL from record
+    - `stripSegmentDisplayData()` - Remove display-only data from attachment segments
+    - `createSegmentFromAttachment()` - Create content segment from attachment
+    - `addAttachmentMetadataToSegment()` - Add attachment metadata to segment
+    - `createContentDispositionHeader()` - Create Content-Disposition header for uploads
+  - Exposed as global `window.wpMcpAiChatAttachments`
+- ✅ **Updated build configuration**
+  - Added chat-attachments-service.js to chat-bundle.js
+  - Updated esbuild.config.js bundled files list (11 files, was 10)
+  - Bundle size: 317.0 KB (was 313.1 KB, +3.9 KB)
+- ✅ **Started migration in chat.js**
+  - Added attachments service compatibility layer
+  - Updated `getFileExtension()` to use service when available
+  - Updated `isRealAttachmentUrl()` to use service when available
+  - Maintained backward compatibility with fallback implementations
+  - Build successful, all existing functionality preserved
+- **Next steps:**
+  - Complete migration of remaining attachment functions in chat.js
+  - Extract transcription service (audio recording, transcription API)
+  - Extract history service (conversation management, CCT, export)
+  - Extract tools service (tool execution display, async monitoring)
+
 ### Future Updates
 - 🔄 Test SSE improvements in production environments
 - 🔄 Consider migrating to POST-based SSE with auth headers (now possible!)
-- 🔄 Begin modularization (Phase 4)
+- ⏳ Continue modularization (Phase 4 - Step 1 of 4 completed)
 - 🔄 Add testing framework (Phase 5)
