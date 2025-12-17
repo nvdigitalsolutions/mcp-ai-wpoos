@@ -1,11 +1,15 @@
 /**
  * Server-Sent Events (SSE) Service
  *
- * Handles SSE connections for real-time updates from the server.
- * Follows separation of concerns by encapsulating SSE communication logic.
+ * Enhanced SSE service using @microsoft/fetch-event-source for improved reliability.
+ * Provides support for POST requests, custom headers, and automatic reconnection.
+ * Maintains backward compatibility with the original EventSource-based API.
  *
  * @package WP_MCP_AI
+ * @since 1.1.0
  */
+
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 (function (window) {
 	'use strict';
@@ -16,7 +20,7 @@
 	}
 
 	/**
-	 * EventSource ready state constants
+	 * EventSource ready state constants (for backward compatibility)
 	 * These mirror the EventSource.readyState values for clarity
 	 */
 	const READY_STATE = {
@@ -37,25 +41,27 @@
 	/**
 	 * SSE Service
 	 * 
-	 * Provides methods to create and manage Server-Sent Events connections.
+	 * Provides methods to create and manage Server-Sent Events connections
+	 * using @microsoft/fetch-event-source for improved capabilities.
 	 */
 	const SSEService = {
 		/**
-		 * Active EventSource connections by key
+		 * Active connections by key
 		 */
 		connections: {},
 
 		/**
 		 * Check if SSE is supported by the browser
+		 * Now checks for fetch and AbortController instead of EventSource
 		 * 
-		 * @return {boolean} True if EventSource is available
+		 * @return {boolean} True if required APIs are available
 		 */
 		isSupported: function () {
-			return typeof EventSource !== 'undefined';
+			return typeof fetch !== 'undefined' && typeof AbortController !== 'undefined';
 		},
 
 		/**
-		 * Get human-readable description for EventSource ready state
+		 * Get human-readable description for EventSource ready state (for backward compatibility)
 		 * 
 		 * @param {number} readyState - EventSource ready state value
 		 * @return {string} Human-readable state description
@@ -65,69 +71,24 @@
 		},
 
 		/**
-		 * Extract useful error information from an SSE error event
-		 * EventSource error events are notoriously uninformative, so we
-		 * gather as much context as possible from the connection state.
-		 * 
-		 * @param {Event} event - The error event
-		 * @param {EventSource} eventSource - The EventSource instance
-		 * @param {string} url - The connection URL (for logging)
-		 * @return {Object} Error details object
-		 */
-		extractErrorDetails: function (event, eventSource, url) {
-			const details = {
-				type: 'sse_error',
-				readyState: eventSource ? eventSource.readyState : -1,
-				readyStateName: eventSource ? this.getReadyStateName(eventSource.readyState) : 'N/A',
-				timestamp: new Date().toISOString()
-			};
-
-			// Add URL origin for debugging (without exposing full URL which may contain tokens)
-			if (url) {
-				try {
-					const urlObj = new URL(url, window.location.origin);
-					details.endpoint = urlObj.pathname;
-					details.origin = urlObj.origin;
-				} catch (e) {
-					details.endpoint = '(invalid URL)';
-				}
-			}
-
-			// Determine likely cause based on ready state
-			if (eventSource) {
-				switch (eventSource.readyState) {
-					case READY_STATE.CONNECTING:
-						details.likelyCause = 'Connection failed during handshake - check endpoint availability, CORS, or authentication';
-						break;
-					case READY_STATE.CLOSED:
-						details.likelyCause = 'Connection closed unexpectedly - server may have rejected the request, returned non-200 status, or connection timed out';
-						break;
-					case READY_STATE.OPEN:
-						details.likelyCause = 'Error during active connection - server may have closed the stream or sent malformed data';
-						break;
-					default:
-						details.likelyCause = 'Unknown error state';
-				}
-			}
-
-			return details;
-		},
-
-		/**
-		 * Create an SSE connection
+		 * Create an enhanced SSE connection using @microsoft/fetch-event-source
 		 * 
 		 * @param {string} url - SSE endpoint URL
 		 * @param {Object} options - Configuration options
-		 * @param {Function} options.onMessage - Callback for message events
-		 * @param {Function} options.onError - Callback for error events
-		 * @param {Function} options.onOpen - Optional callback for open event
-		 * @param {Object} options.eventHandlers - Map of custom event names to handlers
-		 * @return {Object} Connection object with EventSource and close method
+		 * @param {string} [options.method='GET'] - HTTP method (GET or POST)
+		 * @param {Object} [options.headers] - Custom request headers
+		 * @param {string|Object} [options.body] - Request body (for POST requests)
+		 * @param {Function} [options.onMessage] - Callback for message events
+		 * @param {Function} [options.onError] - Callback for error events
+		 * @param {Function} [options.onOpen] - Optional callback for open event
+		 * @param {Object} [options.eventHandlers] - Map of custom event names to handlers
+		 * @param {boolean} [options.openWhenHidden=false] - Keep connection open when page is hidden
+		 * @return {Object} Connection object with abort controller and close method
 		 */
 		connect: function (url, options) {
 			if (!this.isSupported()) {
 				if (options.onError) {
-					options.onError(new Error('EventSource not supported'));
+					options.onError(new Error('fetch or AbortController not supported'));
 				}
 				return null;
 			}
@@ -142,100 +103,146 @@
 			options = options || {};
 
 			try {
-				const eventSource = new EventSource(url);
+				const ctrl = new AbortController();
 				const connectionKey = this.generateConnectionKey(url);
-				// Store reference to SSEService for use in event handlers and return object
 				const self = this;
 
-				// Handle open event
-				eventSource.addEventListener('open', function () {
-					if (options.onOpen && typeof options.onOpen === 'function') {
-						options.onOpen();
-					}
-				});
+				// Build fetch options
+				const fetchOptions = {
+					method: options.method || 'GET',
+					headers: options.headers || {},
+					signal: ctrl.signal,
+					openWhenHidden: options.openWhenHidden !== undefined ? options.openWhenHidden : false,
 
-				// Handle generic message events
-				if (options.onMessage && typeof options.onMessage === 'function') {
-					eventSource.addEventListener('message', function (event) {
+					/**
+					 * Called when the connection is established
+					 * Validates response before processing events
+					 */
+					async onopen(response) {
+						// Check for successful response
+						if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
+							// Connection successful
+							if (options.onOpen && typeof options.onOpen === 'function') {
+								options.onOpen(response);
+							}
+							return; // Everything is good
+						} else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+							// Client-side errors (4xx) are usually non-retriable
+							if (window.wpMcpAiDebug && window.console && console.error) {
+								console.error('[WP oOS SSE] Client error (' + response.status + ')');
+							}
+							// Throw to stop reconnection
+							const errorText = await response.text();
+							throw new Error('Client error (' + response.status + '): ' + errorText);
+						} else {
+							// Server errors (5xx) or network issues are retriable
+							if (window.wpMcpAiDebug && window.console && console.error) {
+								console.error('[WP oOS SSE] Server error (' + response.status + ')');
+							}
+							throw new Error('Server error (' + response.status + ')');
+						}
+					},
+
+					/**
+					 * Called when a message is received
+					 * Handles both generic messages and custom event types
+					 */
+					onmessage: (event) => {
 						try {
 							// Check for [DONE] marker
 							if (event.data === '[DONE]') {
 								return;
 							}
 
-							// Try to parse JSON
-							const data = event.data ? JSON.parse(event.data) : null;
-							options.onMessage(data, event);
+							// Parse JSON data if possible
+							let data = event.data;
+							try {
+								data = JSON.parse(event.data);
+							} catch (e) {
+								// Not JSON, use raw string
+							}
+
+							// Handle custom event types
+							if (event.event && options.eventHandlers && options.eventHandlers[event.event]) {
+								const handler = options.eventHandlers[event.event];
+								if (typeof handler === 'function') {
+									handler(data, event);
+								}
+							}
+
+							// Handle generic message events
+							if (options.onMessage && typeof options.onMessage === 'function') {
+								options.onMessage(data, event);
+							}
 						} catch (parseError) {
 							if (window.console && console.error) {
 								console.error('[WP oOS SSE] Failed to parse message:', parseError);
 							}
 						}
-					});
-				}
+					},
 
-				// Handle custom event types
-				if (options.eventHandlers && typeof options.eventHandlers === 'object') {
-					Object.keys(options.eventHandlers).forEach(function (eventName) {
-						const handler = options.eventHandlers[eventName];
-						if (typeof handler === 'function') {
-							eventSource.addEventListener(eventName, function (event) {
-								try {
-									const data = event.data ? JSON.parse(event.data) : null;
-									handler(data, event);
-								} catch (parseError) {
-									if (window.console && console.error) {
-										console.error('[WP oOS SSE] Failed to parse event:', parseError);
-									}
-								}
-							});
+					/**
+					 * Called when the connection is closed by the server
+					 * Can throw an error to trigger reconnection
+					 */
+					onclose: () => {
+						// Connection closed normally
+						if (window.wpMcpAiDebug && window.console && console.log) {
+							console.log('[WP oOS SSE] Connection closed by server');
 						}
-					});
-				}
+					},
 
-				// Handle errors
-				eventSource.addEventListener('error', function (event) {
-					// Extract detailed error information for the onError callback
-					const errorDetails = self.extractErrorDetails(event, eventSource, url);
-					
-					// Only log detailed errors in debug mode or when explicitly enabled.
-					// SSE connection failures during handshake are often expected (e.g., auth expired)
-					// and handled gracefully by falling back to REST polling.
-					// Set window.wpMcpAiDebug = true to enable verbose SSE error logging.
-					if (window.wpMcpAiDebug && window.console && console.error) {
-						console.error('[WP oOS SSE] Connection error:', errorDetails.likelyCause);
-						console.error('[WP oOS SSE] Error details:', {
-							readyState: errorDetails.readyStateName + ' (' + errorDetails.readyState + ')',
-							endpoint: errorDetails.endpoint,
-							timestamp: errorDetails.timestamp
-						});
-						// Log troubleshooting hints based on the error state
-						if (errorDetails.readyState === READY_STATE.CLOSED) {
-							console.info('[WP oOS SSE] Troubleshooting: Check browser Network tab for the failed SSE request. Common issues include:');
-							console.info('  - 401/403 errors: Authentication required or failed');
-							console.info('  - 404 errors: Endpoint not found');
-							console.info('  - CORS errors: Missing Access-Control headers');
-							console.info('  - Network errors: Server unreachable');
+					/**
+					 * Called when an error occurs
+					 * Can throw to stop reconnection, or return retry interval
+					 */
+					onerror: (err) => {
+						if (window.wpMcpAiDebug && window.console && console.error) {
+							console.error('[WP oOS SSE] Connection error:', err);
 						}
-					}
 
-					if (options.onError && typeof options.onError === 'function') {
-						options.onError(event);
-					}
-				});
+						// Call user's error handler if provided
+						if (options.onError && typeof options.onError === 'function') {
+							options.onError(err);
+						}
 
-				// Store connection
-				this.connections[connectionKey] = {
-					eventSource: eventSource,
-					url: url,
-					createdAt: Date.now()
+						// Throw error to stop reconnection on fatal errors
+						// For retriable errors, don't throw (library will auto-retry)
+						if (err.message && err.message.includes('Client error')) {
+							throw err; // Stop reconnecting on client errors
+						}
+						// For other errors, allow automatic retry
+					}
 				};
 
-				// Return connection object
+				// Add request body if provided (only for POST/PUT methods)
+				if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
+					fetchOptions.body = typeof options.body === 'string' 
+						? options.body 
+						: JSON.stringify(options.body);
+				}
+
+				// Start the connection
+				// fetchEventSource returns a promise that resolves when the connection ends
+				const connectionPromise = fetchEventSource(url, fetchOptions);
+
+				// Store connection reference
+				this.connections[connectionKey] = {
+					ctrl: ctrl,
+					url: url,
+					createdAt: Date.now(),
+					promise: connectionPromise
+				};
+
+				// Return connection object with close method (backward compatible API)
 				return {
-					eventSource: eventSource,
+					ctrl: ctrl,
 					close: function () {
 						self.closeConnection(connectionKey);
+					},
+					// Expose abort method for advanced use cases
+					abort: function () {
+						ctrl.abort();
 					}
 				};
 
@@ -260,6 +267,10 @@
 		closeConnection: function (key) {
 			if (this.connections[key]) {
 				const connection = this.connections[key];
+				if (connection.ctrl) {
+					connection.ctrl.abort();
+				}
+				// Backward compatibility: also handle old eventSource connections
 				if (connection.eventSource) {
 					connection.eventSource.close();
 				}
@@ -285,7 +296,7 @@
 		 * @return {string} Connection key
 		 */
 		generateConnectionKey: function (url) {
-			return 'sse_' + url.replace(/[^a-zA-Z0-9]/g, '_') + '_' + Date.now();
+			return 'sse_fetch_' + url.replace(/[^a-zA-Z0-9]/g, '_') + '_' + Date.now();
 		},
 
 		/**
