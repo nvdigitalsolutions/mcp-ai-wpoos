@@ -39,5 +39,13 @@
 				"argsIgnorePattern": "^_"
 			}
 		]
-	}
+	},
+	"overrides": [
+		{
+			"files": ["**/chat-markdown-service.js", "**/chat-bundle.js"],
+			"parserOptions": {
+				"sourceType": "module"
+			}
+		}
+	]
 }
