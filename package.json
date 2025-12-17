@@ -26,6 +26,7 @@
 		"install:chartjs": "cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js"
 	},
 	"dependencies": {
+		"@microsoft/fetch-event-source": "^2.0.1",
 		"chart.js": "^4.4.1",
 		"dompurify": "^3.3.0",
 		"ky": "^1.14.0",
