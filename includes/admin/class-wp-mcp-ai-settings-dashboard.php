@@ -274,12 +274,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$use_minified = ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
 			$extension    = pathinfo( $file_path, PATHINFO_EXTENSION );
 			$base_path    = preg_replace( '/\.' . $extension . '$/', '', $file_path );
-			
+
 			// Try minified version first if not in debug mode.
 			if ( $use_minified ) {
 				$minified_path = $base_path . '.min.' . $extension;
 				$full_path     = WP_MCP_AI_PATH . $minified_path;
-				
+
 				if ( file_exists( $full_path ) ) {
 					return array(
 						'url'     => WP_MCP_AI_URL . $minified_path,
@@ -288,7 +288,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					);
 				}
 			}
-			
+
 			// Fall back to unminified version.
 			$full_path = WP_MCP_AI_PATH . $file_path;
 			return array(
