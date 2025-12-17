@@ -42,7 +42,7 @@
 	},
 	"overrides": [
 		{
-			"files": ["**/chat-markdown-service.js", "**/chat-bundle.js"],
+			"files": ["**/chat-markdown-service.js", "**/chat-http-client-service.js", "**/chat-bundle.js"],
 			"parserOptions": {
 				"sourceType": "module"
 			}
