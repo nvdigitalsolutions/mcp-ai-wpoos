@@ -9,6 +9,7 @@
  * - SSE Service (Server-Sent Events)
  * - Job Event Bus (event coordination)
  * - Cron Status Service (async job status)
+ * - HTTP Client Service (HTTP with retry logic)
  * - Chat Storage Service (localStorage management)
  * - Chat Clipboard Service (copy functionality)
  * - Chat Markdown Service (markdown rendering)
@@ -35,6 +36,8 @@ import './job-event-bus.js';
 import './cron-status-service.js';
 
 // 4. Chat service modules (no cross-dependencies)
+// eslint-disable-next-line no-unused-vars
+import './chat-http-client-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-storage-service.js';
 // eslint-disable-next-line no-unused-vars

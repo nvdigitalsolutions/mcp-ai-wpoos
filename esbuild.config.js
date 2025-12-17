@@ -10,12 +10,13 @@
  *
  * Chat Bundle Optimization:
  * The chat-bundle.js entry point bundles all chat-related services into a single
- * optimized file, reducing HTTP requests from 9 files to just 1 file.
+ * optimized file, reducing HTTP requests from 10 files to just 1 file.
  *
  * Bundled modules include:
  * - sse-service.js (Server-Sent Events)
  * - job-event-bus.js (event coordination)
  * - cron-status-service.js (async job status)
+ * - chat-http-client-service.js (HTTP with retry logic)
  * - chat-storage-service.js (localStorage)
  * - chat-clipboard-service.js (copy functionality)
  * - chat-markdown-service.js (markdown rendering)
@@ -127,6 +128,7 @@ async function buildAll() {
 		'assets/js/sse-service.js',
 		'assets/js/job-event-bus.js',
 		'assets/js/cron-status-service.js',
+		'assets/js/chat-http-client-service.js',
 		'assets/js/chat-storage-service.js',
 		'assets/js/chat-clipboard-service.js',
 		'assets/js/chat-markdown-service.js',
