@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 		 * @return string
 		 */
 		protected function get_post_type() {
-			if ( ! defined( 'WP_MCP_AI_Profession_CPT::POST_TYPE' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
 				return 'mcp_ai_profession';
 			}
 			return WP_MCP_AI_Profession_CPT::POST_TYPE;
@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 				return;
 			}
 
-			$post_type = defined( 'WP_MCP_AI_Profession_CPT::POST_TYPE' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';
+			$post_type = class_exists( 'WP_MCP_AI_Profession_CPT' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';
 
 			// Get all published professions.
 			$professions = get_posts(

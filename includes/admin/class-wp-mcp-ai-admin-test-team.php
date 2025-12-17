@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 		 * @return string
 		 */
 		protected function get_post_type() {
-			if ( ! defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
 				return 'mcp_ai_team';
 			}
 			return WP_MCP_AI_Team_CPT::POST_TYPE;
@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 				return;
 			}
 
-			$post_type = defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
+			$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
 
 			// Get all published teams.
 			$teams = get_posts(
