@@ -54,6 +54,9 @@
 
     // HTTP client service compatibility layer - use external service if available
     const httpClientService = window.wpMcpAiHttpClient || null;
+
+    // Attachments service compatibility layer - use external service if available
+    const attachmentsService = window.wpMcpAiChatAttachments || null;
     let objectUrlRegistry = [];
 
     // Audio-related constants - use from service if available
@@ -4036,6 +4039,12 @@
     }
 
     function getFileExtension(file) {
+        // Use attachments service if available
+        if (attachmentsService && attachmentsService.getFileExtension) {
+            return attachmentsService.getFileExtension(file);
+        }
+
+        // Fallback implementation
         if (!file || !file.name) {
             return '';
         }

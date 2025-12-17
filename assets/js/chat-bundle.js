@@ -15,6 +15,7 @@
  * - Chat Markdown Service (markdown rendering)
  * - Chat UI Utilities Service (DOM helpers)
  * - Chat Audio Service (TTS/transcription)
+ * - Chat Attachments Service (file upload/attachment handling)
  * - Main Chat functionality
  *
  * @package WP_MCP_AI
@@ -48,6 +49,8 @@ import './chat-markdown-service.js';
 import './chat-ui-utilities-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-audio-service.js';
+// eslint-disable-next-line no-unused-vars
+import './chat-attachments-service.js';
 
 // 5. Main chat application (depends on all above)
 // eslint-disable-next-line no-unused-vars

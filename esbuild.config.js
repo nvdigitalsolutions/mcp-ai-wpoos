@@ -22,6 +22,7 @@
  * - chat-markdown-service.js (markdown rendering)
  * - chat-ui-utilities-service.js (DOM helpers)
  * - chat-audio-service.js (TTS/transcription)
+ * - chat-attachments-service.js (file upload/attachment handling)
  * - chat.js (main chat application)
  */
 
@@ -134,6 +135,7 @@ async function buildAll() {
 		'assets/js/chat-markdown-service.js',
 		'assets/js/chat-ui-utilities-service.js',
 		'assets/js/chat-audio-service.js',
+		'assets/js/chat-attachments-service.js',
 		'assets/js/chat.js',
 	];
 
