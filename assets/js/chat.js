@@ -1437,6 +1437,12 @@
      * @return {boolean} True if URL is a valid HTTP/HTTPS URL, false for blob:/data: or invalid URLs
      */
     function isRealAttachmentUrl(url) {
+        // Use attachments service if available
+        if (attachmentsService && attachmentsService.isRealAttachmentUrl) {
+            return attachmentsService.isRealAttachmentUrl(url);
+        }
+
+        // Fallback implementation
         if (!url || typeof url !== 'string') {
             return false;
         }

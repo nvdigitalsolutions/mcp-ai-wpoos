@@ -81,6 +81,7 @@
         /**
          * Check if a URL is a real attachment URL (HTTP/HTTPS) vs display-only (blob:/data:).
          * Real attachment URLs should be preserved for the API, while display-only URLs should be stripped.
+         * Uses URL constructor for robust validation.
          *
          * @param {string} url - URL to check.
          * @return {boolean} True if URL is a real HTTP/HTTPS attachment URL.
@@ -89,10 +90,21 @@
             if (!url || typeof url !== 'string') {
                 return false;
             }
-
-            // Only accept HTTP and HTTPS protocols (real attachment URLs from WordPress)
-            // Reject blob: and data: URLs (browser-only, not persistable)
-            return /^https?:\/\//i.test(url);
+            
+            const trimmedUrl = url.trim();
+            
+            // Use URL constructor for robust validation
+            try {
+                const parsedUrl = new URL(trimmedUrl);
+                const protocol = parsedUrl.protocol.toLowerCase();
+                
+                // Only accept HTTP and HTTPS protocols (real attachment URLs from WordPress)
+                // Reject other protocols like javascript:, data:, blob:, etc.
+                return protocol === 'http:' || protocol === 'https:';
+            } catch (e) {
+                // Invalid URL format - treat as display-only
+                return false;
+            }
         },
 
         /**
