@@ -216,10 +216,13 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 				};
 
 				// Add request body if provided (only for POST/PUT methods)
-				if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
-					fetchOptions.body = typeof options.body === 'string' 
-						? options.body 
-						: JSON.stringify(options.body);
+				if (options.body) {
+					const method = options.method ? options.method.toUpperCase() : 'GET';
+					if (method === 'POST' || method === 'PUT') {
+						fetchOptions.body = typeof options.body === 'string' 
+							? options.body 
+							: JSON.stringify(options.body);
+					}
 				}
 
 				// Start the connection
