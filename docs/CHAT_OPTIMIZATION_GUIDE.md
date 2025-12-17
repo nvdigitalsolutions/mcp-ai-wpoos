@@ -523,7 +523,7 @@ For questions about chat.js optimization:
   - TypeScript types included for better IDE support
   - Bundle size: +~11 KB (expected for production-ready SSE client)
 
-### 2025-12-17 (SSE Integration)
+### 2025-12-17 (SSE Integration - Frontend)
 - ✅ **Integrated @microsoft/fetch-event-source into sse-service.js**
   - Replaced native EventSource with fetchEventSource from @microsoft/fetch-event-source
   - Maintained 100% backward compatibility with existing API
@@ -542,6 +542,27 @@ For questions about chat.js optimization:
     - Same `connect()` API signature
     - Same `isSupported()`, `closeAll()`, `getConnectionCount()` methods
     - Falls back gracefully if fetch/AbortController not available
+
+### 2025-12-17 (SSE Integration - Backend)
+- ✅ **Enhanced REST API endpoints to support POST requests**
+  - Updated `/cron-status` endpoint to accept both GET and POST methods
+  - Updated `/cron-status/{job_id}` endpoint to accept both GET and POST methods
+  - Modified `includes/rest/class-wp-mcp-ai-rest-tools-controller.php`
+  - **Key improvements:**
+    - ✅ POST requests can now send authentication tokens in headers (more secure)
+    - ✅ GET still supported for backward compatibility
+    - ✅ CORS headers already configured for POST in SSE handler
+    - ✅ No breaking changes - all existing GET requests continue to work
+  - **Usage examples:**
+    ```php
+    // Legacy GET with query params (still works)
+    GET /wp-json/mcp-ai/v1/cron-status/{job_id}?stream=true&_wpnonce=abc123
+    
+    // Enhanced POST with headers (now available)
+    POST /wp-json/mcp-ai/v1/cron-status/{job_id}
+    Headers: Authorization: Bearer token_here
+    Body: { "stream": true, "assistant_id": 123 }
+    ```
 
 ### Future Updates
 - 🔄 Test SSE improvements in production environments
