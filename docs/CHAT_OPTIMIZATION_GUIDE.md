@@ -231,7 +231,7 @@ npm install idb-keyval
 
 Break chat.js into logical modules:
 
-**Status:** ⏳ In Progress (Step 1/4 completed)
+**Status:** ⏳ In Progress (Step 2/4 completed) ✅
 
 **Completed Modules:**
 - ✅ **markdown.js** → `chat-markdown-service.js` (marked + DOMPurify)
@@ -241,10 +241,10 @@ Break chat.js into logical modules:
 - ✅ **speech.js** → `chat-audio-service.js` (TTS + audio handling)
 - ✅ **clipboard.js** → `chat-clipboard-service.js` (copy functionality)
 - ✅ **http.js** → `chat-http-client-service.js` (HTTP with retry via ky)
-- ✅ **attachments.js** → `chat-attachments-service.js` (file upload/attachment handling) - **NEW 2025-12-17**
+- ✅ **attachments.js** → `chat-attachments-service.js` (file upload/attachment handling) - **2025-12-17**
+- ✅ **transcription.js** → `chat-transcription-service.js` (audio recording and transcription API) - **NEW 2025-12-17**
 
 **Remaining Modules:**
-- ❌ **transcription.js** - Audio recording and transcription API
 - ❌ **history.js** - Conversation list, load/save/delete, CCT, export
 - ❌ **tools.js** - Tool execution display, async job monitoring
 - ❌ **core.js** - Core chat logic (main message handling)
@@ -261,8 +261,9 @@ assets/js/
 ├── chat-markdown-service.js          # ✅ Markdown rendering
 ├── chat-ui-utilities-service.js      # ✅ DOM helpers
 ├── chat-audio-service.js             # ✅ TTS/transcription
-├── chat-attachments-service.js       # ✅ File attachments (NEW)
-├── chat-bundle.js                    # ✅ Entry point (11 files)
+├── chat-attachments-service.js       # ✅ File attachments
+├── chat-transcription-service.js     # ✅ Audio recording & transcription (NEW)
+├── chat-bundle.js                    # ✅ Entry point (12 files)
 └── chat.js                           # ⏳ Main application (being modularized)
 ```
 
@@ -592,7 +593,7 @@ For questions about chat.js optimization:
     Body: { "stream": true, "assistant_id": 123 }
     ```
 
-### 2025-12-17 (Phase 4 - Modularization Begins)
+### 2025-12-17 (Phase 4 - Modularization Step 1)
 - ✅ **Created chat-attachments-service.js**
   - New service module for file attachment operations (14.7 KB, 430 lines)
   - Extracted 14 attachment-related utility functions
@@ -622,14 +623,89 @@ For questions about chat.js optimization:
   - Updated `isRealAttachmentUrl()` to use service when available
   - Maintained backward compatibility with fallback implementations
   - Build successful, all existing functionality preserved
+
+### 2025-12-17 (Phase 4 - Modularization Step 2) ✅ COMPLETED
+- ✅ **Created chat-transcription-service.js**
+  - New service module for audio recording and transcription (22.5 KB, 652 lines)
+  - Extracted 13 transcription-related functions
+  - **Functions included:**
+    - `supportsAudioRecording()` - Check browser MediaRecorder API support
+    - `stopRecordingStream()` - Clean up MediaStream tracks
+    - `setTranscribeRecordingState()` - Update UI during recording (button states, status)
+    - `updateTranscribeButtonState()` - Enable/disable transcription button based on state
+    - `handleTranscribeButtonClick()` - Handle transcription button click events
+    - `startTranscribeRecording()` - Start audio recording with MediaRecorder
+    - `stopTranscribeRecording()` - Stop audio recording
+    - `handleTranscribeFileSelection()` - Handle file input selection for transcription
+    - `transcribeAudioFile()` - Process audio file for transcription (upload + request)
+    - `uploadAudioForTranscription()` - Upload audio file to server
+    - `requestTranscription()` - Call transcription API tool
+    - `extractTranscriptionResult()` - Parse API response
+    - `insertTranscriptionResult()` - Insert transcription text into chat textarea
+  - Exposed as global `window.wpMcpAiChatTranscription`
+  - **Constants included:**
+    - `TRANSCRIBE_TOOL_NAME` - Tool identifier for transcription API
+    - `TRANSCRIBE_RECORDING_CLASS` - CSS class for recording state
+    - `MAX_TRANSCRIBE_BYTES` - Maximum file size (25MB)
+- ✅ **Updated build configuration**
+  - Added chat-transcription-service.js to chat-bundle.js
+  - Updated esbuild.config.js bundled files list (12 files, was 11)
+  - Bundle size: 327.3 KB (was 317.0 KB, +10.3 KB)
+- ✅ **Updated chat.js integration**
+  - Added transcription service compatibility layer
+  - Updated all 13 transcription functions to use service when available
+  - Maintained backward compatibility with fallback implementations
+  - Build successful, all existing functionality preserved
 - **Next steps:**
-  - Complete migration of remaining attachment functions in chat.js
-  - Extract transcription service (audio recording, transcription API)
   - Extract history service (conversation management, CCT, export)
   - Extract tools service (tool execution display, async monitoring)
+  - Extract core chat logic (main message handling)
+
+### 2025-12-17 (Phase 4 - Modularization Step 2 Completion)
+- ✅ **Created chat-transcription-service.js module** (652 lines, 22.5 KB)
+  - Extracted 13 transcription-related functions from chat.js
+  - Constants: TRANSCRIBE_TOOL_NAME, TRANSCRIBE_RECORDING_CLASS, MAX_TRANSCRIBE_BYTES
+  - **Core recording functions:**
+    - `supportsAudioRecording()` - Browser capability detection
+    - `startTranscribeRecording()` - MediaRecorder initialization and event handling
+    - `stopTranscribeRecording()` - Recording cleanup
+    - `stopRecordingStream()` - MediaStream track management
+    - `setTranscribeRecordingState()` - UI state updates during recording
+  - **Button management:**
+    - `handleTranscribeButtonClick()` - User interaction handler
+    - `updateTranscribeButtonState()` - Button enable/disable logic
+  - **File handling:**
+    - `handleTranscribeFileSelection()` - File input event handler
+  - **Transcription workflow:**
+    - `transcribeAudioFile()` - Main transcription orchestration
+    - `uploadAudioForTranscription()` - File upload to server
+    - `requestTranscription()` - API call to transcription tool
+    - `extractTranscriptionResult()` - Response parsing
+    - `insertTranscriptionResult()` - Text insertion into textarea
+  - Exposed as global `window.wpMcpAiChatTranscription`
+- ✅ **Updated build infrastructure**
+  - Updated chat-bundle.js to import transcription service (12 modules total)
+  - Updated esbuild.config.js bundled files list
+  - Bundle size: 327.3 KB (was 317.0 KB, +10.3 KB for transcription service)
+  - Build time: ~94ms for bundle (well within performance targets)
+- ✅ **Integrated into chat.js**
+  - Added transcription service compatibility layer
+  - Updated all 13 transcription functions to check for service first
+  - Maintained complete backward compatibility with fallback implementations
+  - No breaking changes - existing code continues to work
+- **Benefits:**
+  - Reduced chat.js complexity by 652 lines
+  - Improved maintainability with dedicated transcription module
+  - Better separation of concerns
+  - Reusable transcription functionality
+  - Easier testing and debugging
 
 ### Future Updates
 - 🔄 Test SSE improvements in production environments
 - 🔄 Consider migrating to POST-based SSE with auth headers (now possible!)
-- ⏳ Continue modularization (Phase 4 - Step 1 of 4 completed)
+- ⏳ Continue modularization (Phase 4 - Step 2 of 4 completed) ✅
+  - ✅ Step 1: Attachments service (completed 2025-12-17)
+  - ✅ Step 2: Transcription service (completed 2025-12-17)
+  - ⏳ Step 3: History service (next)
+  - ⏳ Step 4: Tools service (pending)
 - 🔄 Add testing framework (Phase 5)
