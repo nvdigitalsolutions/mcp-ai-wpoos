@@ -51,6 +51,9 @@
 
     // SSE service compatibility layer - use external service if available
     const sseService = window.wpMcpAiSSE || null;
+
+    // HTTP client service compatibility layer - use external service if available
+    const httpClientService = window.wpMcpAiHttpClient || null;
     let objectUrlRegistry = [];
 
     // Audio-related constants - use from service if available
@@ -602,6 +605,189 @@
         }
         
         return fallback;
+    }
+
+    /**
+     * Helper to create retry notification callback for HTTP client service.
+     * @param {Object} state - Chat state object with container for status messages.
+     * @return {Function} Retry callback function.
+     */
+    function createRetryCallback(state) {
+        return function(retryInfo) {
+            if (state && state.container) {
+                const message = getString('retrying', 'Connection issue, retrying...') + 
+                               ' (' + (retryInfo.retryCount + 1) + '/' + retryInfo.maxRetries + ')';
+                setStatus(state.container, message);
+            }
+        };
+    }
+
+    /**
+     * Perform a POST request with JSON body using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to POST to.
+     * @param {Object} data - Data to send as JSON.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function postJson(url, data, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.postJson) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.postJson(url, data, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a file upload using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to POST to.
+     * @param {File|Blob} file - File or Blob to upload.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function uploadFile(url, file, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.uploadFile) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.uploadFile(url, file, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: file
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a GET request using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to GET.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function httpGet(url, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.get) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.get(url, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'GET',
+            headers: headers,
+            credentials: 'same-origin'
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a DELETE request using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to DELETE.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function httpDelete(url, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.delete) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.delete(url, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'DELETE',
+            headers: headers,
+            credentials: 'same-origin'
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
     }
 
     /**
@@ -1632,13 +1818,16 @@
                 controller.abort();
             }, timeout);
 
-            return fetch(state.config.transcriptsEndpoint, {
-                method: 'POST',
-                headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            })
+            return postJson(
+                state.config.transcriptsEndpoint,
+                payload,
+                buildJsonHeaders(state),
+                {
+                    timeout: timeout,
+                    signal: controller.signal,
+                    state: state
+                }
+            )
                 .then(function(response) {
                     clearTimeout(timeoutId);
                     
@@ -1954,12 +2143,12 @@
             },
         };
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -3052,12 +3241,12 @@
 
         headers['Content-Type'] = contentType || 'audio/webm';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
-            headers: headers,
-            body: file,
-            credentials: 'same-origin',
-        })
+        return uploadFile(
+            state.config.uploadEndpoint,
+            file,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 if (window.console && console.log) {
                     console.log('Voice chat: Upload response received', {
@@ -3137,12 +3326,12 @@
             });
         }
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        }).then(function (response) {
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        ).then(function (response) {
             if (!response.ok) {
                 if (window.console && console.error) {
                     console.error('Voice chat: Transcription request failed', {
@@ -4725,11 +4914,7 @@
             });
         }
 
-        fetch(deleteUrl, {
-            method: 'DELETE',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        })
+        httpDelete(deleteUrl, buildHistoryHeaders(state), { state: state })
             .then(function (response) {
                 return response
                     .json()
@@ -4987,11 +5172,7 @@
             });
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildHistoryHeaders(state), { state: state }).then(function (response) {
             return response
                 .json()
                 .catch(function () {
@@ -5060,11 +5241,7 @@
             });
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildHistoryHeaders(state), { state: state }).then(function (response) {
             // Log response status for debugging
             if (window.console && console.log) {
                 console.log('[WP oOS] Conversation details response:', {
@@ -5474,12 +5651,12 @@
 
         headers['Content-Type'] = file.type || 'application/octet-stream';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
-            headers: headers,
-            body: file,
-            credentials: 'same-origin',
-        })
+        return uploadFile(
+            state.config.uploadEndpoint,
+            file,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -8324,11 +8501,7 @@
             return Promise.reject(new Error('Crawl4AI endpoint not configured.'));
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             // 404 means task not found yet - this is expected early in async execution
             if (response.status === 404) {
                 return null;
@@ -9184,11 +9357,7 @@
             console.log('[WP oOS] Attempting timeout recovery for job:', jobId);
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             if (!response.ok) {
                 return null;
             }
@@ -9244,11 +9413,7 @@
             url += '?assistant_id=' + encodeURIComponent(assistantId);
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             // 404 means job not found yet - this is expected early in async execution
             // Return null to signal "not ready yet" rather than an error
             if (response.status === 404) {
@@ -9585,11 +9750,7 @@
             });
 
             // Make the fetch request
-            return fetch(url, {
-                method: 'GET',
-                headers: headers,
-                credentials: 'same-origin'
-            }).then(function(response) {
+            return httpGet(url, headers, {}).then(function(response) {
                 console.log('[wpMcpAiTestGetTranscript] Response status:', response.status, response.statusText);
                 
                 return response.json().then(function(data) {
@@ -10682,12 +10843,12 @@
         }
 
         // Non-streaming request (original implementation)
-        return fetch(state.config.messagesEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.messagesEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -10831,12 +10992,12 @@
             updateStreamingStatus(safeContent);
         }
 
-        return fetch(state.config.messagesEndpoint, {
-            method: 'POST',
-            headers: headers,
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.messagesEndpoint,
+            payload,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)
                 streamingLogger.logResponseReceived(response);
@@ -15069,13 +15230,16 @@
                 controller.abort();
             }, timeout);
 
-            return fetch(state.config.toolsEndpoint, {
-                method: 'POST',
-                headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-                signal: controller.signal,
-            })
+            return postJson(
+                state.config.toolsEndpoint,
+                payload,
+                buildJsonHeaders(state),
+                {
+                    timeout: timeout,
+                    signal: controller.signal,
+                    state: state
+                }
+            )
                 .then(function(response) {
                     clearTimeout(timeoutId);
                     
