@@ -462,4 +462,81 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$result        = $dashboard->hide_update_footer_text( $original_text );
 		$this->assertSame( $original_text, $result );
 	}
+
+	/**
+	 * Test that get_asset_file returns minified version in production mode.
+	 */
+	public function test_get_asset_file_returns_minified_in_production() {
+		// Ensure SCRIPT_DEBUG is not set.
+		if ( defined( 'SCRIPT_DEBUG' ) ) {
+			$this->markTestSkipped( 'SCRIPT_DEBUG is enabled, skipping production test' );
+		}
+
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_asset_file' );
+		$method->setAccessible( true );
+
+		// Test with a JS file that has a minified version.
+		$result = $method->invoke( $dashboard, 'assets/js/settings-dashboard.js' );
+
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'path', $result );
+		$this->assertArrayHasKey( 'version', $result );
+		$this->assertStringContainsString( 'settings-dashboard.min.js', $result['url'] );
+	}
+
+	/**
+	 * Test that get_asset_file returns unminified version when minified doesn't exist.
+	 */
+	public function test_get_asset_file_falls_back_to_unminified() {
+		// Ensure SCRIPT_DEBUG is not set.
+		if ( defined( 'SCRIPT_DEBUG' ) ) {
+			$this->markTestSkipped( 'SCRIPT_DEBUG is enabled, skipping production test' );
+		}
+
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_asset_file' );
+		$method->setAccessible( true );
+
+		// Test with a JS file that doesn't have a minified version.
+		$result = $method->invoke( $dashboard, 'assets/js/storage-util.js' );
+
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'path', $result );
+		$this->assertArrayHasKey( 'version', $result );
+		// Should fall back to unminified.
+		$this->assertStringContainsString( 'storage-util.js', $result['url'] );
+		$this->assertStringNotContainsString( '.min.', $result['url'] );
+	}
+
+	/**
+	 * Test that get_asset_file handles CSS files correctly.
+	 */
+	public function test_get_asset_file_handles_css_files() {
+		// Ensure SCRIPT_DEBUG is not set.
+		if ( defined( 'SCRIPT_DEBUG' ) ) {
+			$this->markTestSkipped( 'SCRIPT_DEBUG is enabled, skipping production test' );
+		}
+
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_asset_file' );
+		$method->setAccessible( true );
+
+		// Test with a CSS file that has a minified version.
+		$result = $method->invoke( $dashboard, 'assets/css/settings-dashboard.css' );
+
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'path', $result );
+		$this->assertArrayHasKey( 'version', $result );
+		$this->assertStringContainsString( 'settings-dashboard.min.css', $result['url'] );
+	}
 }

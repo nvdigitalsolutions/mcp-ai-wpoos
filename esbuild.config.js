@@ -92,6 +92,27 @@ const builds = [
 		outfile: 'assets/js/performance-blocks.min.js',
 		...commonOptions,
 	},
+	// Admin dashboard assets
+	{
+		entryPoints: ['assets/js/ajax-error-service.js'],
+		outfile: 'assets/js/ajax-error-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-tool-orchestration.js'],
+		outfile: 'assets/js/admin-tool-orchestration.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/performance-admin.js'],
+		outfile: 'assets/js/performance-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/tools-manager.js'],
+		outfile: 'assets/js/tools-manager.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files
