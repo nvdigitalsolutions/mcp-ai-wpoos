@@ -280,8 +280,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'vendor/*/*/phpspec.ci.yml' \
         --exclude 'vendor/*/.pullapprove.yml' \
         --exclude 'vendor/*/*/.pullapprove.yml' \
-        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
-        --exclude 'assets/css/admin-test-*.css' \
         --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
@@ -583,8 +581,6 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'vendor/*/*/phpspec.ci.yml' \
         --exclude 'vendor/*/.pullapprove.yml' \
         --exclude 'vendor/*/*/.pullapprove.yml' \
-        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
-        --exclude 'assets/css/admin-test-*.css' \
         --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'

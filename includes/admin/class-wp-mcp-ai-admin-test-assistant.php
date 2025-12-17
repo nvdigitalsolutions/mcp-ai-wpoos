@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 		 * @return string
 		 */
 		protected function get_post_type() {
-			if ( ! defined( 'WP_MCP_AI_Assistant_CPT::POST_TYPE' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return 'mcp_ai_assistant';
 			}
 			return WP_MCP_AI_Assistant_CPT::POST_TYPE;
