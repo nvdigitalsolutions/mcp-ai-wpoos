@@ -1,67 +1,466 @@
-Profession Playbook — Taxi/Rideshare Driver
+Profession Playbook — Taxi Driver
 Slug: taxi_driver
-Category: other
+Category: transportation
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook for taxi and rideshare drivers, containing actionable instructions,
+  SOPs, checklists, and templates for safe passenger transport, professional customer service, and licensing compliance.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize passenger safety, professional conduct, customer service excellence, and local regulatory compliance.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Transport passengers safely to requested destinations via the most efficient route
+- Maintain valid taxi/rideshare license, driver's license, and vehicle inspections per local jurisdiction
+- Conduct pre-trip vehicle safety checks (brakes, tires, lights, cleanliness)
+- Operate taximeter or app accurately, provide clear fare estimates and receipts
+- Maintain professional demeanor (courteous, respectful, helpful)
+- Ensure passenger comfort and security (clean vehicle, safe driving, privacy)
+- Handle payment transactions securely (cash, card, contactless, app-based)
+- Assist passengers with accessibility needs (wheelchair-accessible vehicles, service animals)
+- Report incidents and safety concerns to dispatch or platform immediately
+- Success = Safe, courteous, efficient passenger transport with positive customer reviews and regulatory compliance
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Operate without valid taxi license, commercial driver's license, or proper permits
+- Refuse service based on discrimination (race, religion, disability, destination - illegal under equality laws)
+- Drive under influence of alcohol or drugs (zero tolerance)
+- Exceed safe speeds or engage in reckless driving behaviors
+- Overcharge passengers or manipulate fares/meters
+- Share passenger information or violate privacy (addresses, phone numbers, travel patterns)
+- Engage in inappropriate conversation or behavior with passengers
+- Operate vehicle with safety defects (brake issues, tire problems, lighting failures)
+- Transport unaccompanied minors without proper authorization and protocols
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Passenger exhibits threatening or violent behavior (contact police, ensure personal safety first)
+- Medical emergency occurs (call 911, provide first aid if trained, document incident)
+- Accident with injuries or significant property damage (secure scene, call police, exchange information)
+- Vehicle mechanical breakdown requires towing or roadside assistance
+- Passenger refuses to pay or disputes fare (document details, report to company, do not escalate conflict)
+- Suspected human trafficking or illegal activity (discreetly contact law enforcement hotline)
+- Lost property valuable or perishable (secure item, report immediately to dispatch/platform)
+- Accessibility accommodation beyond vehicle capability (wheelchair van needed, specialized medical transport)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What type of taxi service (traditional cab, rideshare app, private hire, airport shuttle)?
+- What licensing jurisdiction applies (city/county taxi permit, state commercial license requirements)?
+- What vehicle type and accessibility features (sedan, van, wheelchair-accessible)?
+- What payment methods are accepted (cash, card, app-based, account billing)?
+- What are the fare calculation methods (meter, flat rate, zone-based, app algorithm)?
+- What are the safety and security protocols (GPS tracking, emergency button, camera)?
+- What customer service standards apply (greeting protocol, route preferences, tipping expectations)?
+- What incident reporting procedures exist (accidents, passenger complaints, safety concerns)?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use industry best practices and local taxi licensing requirements:
+
+1. Pre-Shift Preparation
+   - Verify valid taxi/rideshare license and driver's license (check expiration dates)
+   - Review daily vehicle assignment and ensure proper insurance coverage
+   - Conduct pre-trip vehicle inspection (walk-around check)
+     * Tires (inflation, tread depth, damage)
+     * Lights (headlights, brake lights, turn signals, hazards)
+     * Brakes (test pedal feel and response)
+     * Interior cleanliness (seats, floor mats, air freshener)
+     * Safety equipment (first aid kit, fire extinguisher if required, protective screen)
+   - Set up payment systems (card reader, app login, change for cash transactions)
+   - Review GPS/navigation system functionality
+   - Stock supplies (hand sanitizer, tissues, water for extreme weather, phone charger)
+
+2. Passenger Pickup & Greeting
+   - Verify passenger identity (name confirmation for pre-booked rides)
+   - Greet courteously ("Good morning, are you [Name]? Heading to [destination]?")
+   - Assist with luggage loading (offer help, handle carefully)
+   - Confirm destination and preferred route ("Would you like to take the highway or surface streets?")
+   - Provide fare estimate if requested ("The trip should be approximately $[X] based on current traffic")
+   - Ensure passenger safely seated before departing (wait for door to close)
+   - Adjust climate control and ask if passenger prefers music/silence
+
+3. Safe Driving & Navigation
+   - Follow GPS or use local knowledge for most efficient route
+   - Obey all traffic laws (speed limits, stop signs, traffic signals)
+   - Practice defensive driving (maintain following distance, anticipate hazards)
+   - Avoid hard braking and sharp turns for passenger comfort
+   - Provide smooth acceleration and deceleration
+   - Communicate route changes ("There's construction ahead, I'll take an alternate route")
+   - Monitor traffic conditions and adjust route in real-time
+   - Respect passenger preferences (conversation level, music, temperature)
+
+4. Customer Service During Trip
+   - Be friendly but respectful of personal space and privacy
+   - Avoid controversial topics (politics, religion) unless passenger initiates
+   - Provide local information if requested (landmarks, restaurants, directions)
+   - Handle phone calls briefly and professionally (hands-free only)
+   - Maintain clean and comfortable environment (no strong odors, trash removed)
+   - Respect passenger's need for quiet (reading, working, resting)
+   - Accommodate reasonable requests (route preferences, quick stops, multiple drop-offs)
+
+5. Drop-Off & Conclusion
+   - Announce arrival ("We've arrived at [destination]")
+   - Clearly state fare and payment options ("Your fare is $[X], I accept cash or card")
+   - Process payment accurately, provide receipt immediately
+   - Assist with luggage unloading
+   - Thank passenger and wish them well ("Thank you, have a great day!")
+   - Ensure passenger has all belongings before departing
+   - Check vehicle for lost items immediately after drop-off
+   - Log trip details (for record-keeping and lost property tracking)
+
+6. Post-Shift & Maintenance
+   - Clean vehicle interior (remove trash, vacuum if needed, wipe surfaces)
+   - Check for lost property and report immediately
+   - Refuel vehicle if required
+   - Report any mechanical issues or damage to dispatch/management
+   - Submit trip logs, receipts, and payment reconciliation
+   - Review customer feedback and ratings (address any concerns)
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Trip logs with pickup/drop-off locations, times, and fares
+- Payment receipts (printed or digital) for each trip
+- Vehicle inspection reports (pre-shift and post-shift)
+- Incident reports (accidents, passenger issues, safety concerns)
+- Lost property documentation with photos and descriptions
+- Customer service feedback responses (addressing complaints or commendations)
+- License renewal and insurance documentation
+- Fuel and maintenance expense records
+
+Minimum viable: Safe, courteous passenger transport with accurate fares, clean vehicle, no complaints
+Gold standard: Consistent 5-star ratings, passenger commendations, exemplary safety record, local route expertise
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Safety & Compliance:
+- [ ] Valid taxi/rideshare license and driver's license current
+- [ ] Vehicle inspection passed (brakes, tires, lights functional)
+- [ ] Insurance coverage verified and current
+- [ ] No driving under influence (zero alcohol/drugs)
+- [ ] All traffic laws followed (speed limits, signals, right-of-way)
+- [ ] GPS tracking and emergency button functional (if equipped)
+
+Customer Service Excellence:
+- [ ] Courteous greeting and destination confirmation
+- [ ] Professional appearance and demeanor
+- [ ] Clean, comfortable vehicle interior
+- [ ] Smooth, safe driving (no harsh braking/acceleration)
+- [ ] Respectful of passenger preferences (conversation, music, temperature)
+- [ ] Accurate fare calculation and clear receipt provided
+
+Passenger Safety & Security:
+- [ ] Passenger identity verified for pre-booked rides
+- [ ] No discrimination in service provision
+- [ ] Privacy maintained (no sharing of passenger information)
+- [ ] Lost property handled promptly and securely
+- [ ] Incidents reported immediately to proper authorities
+- [ ] Accessibility needs accommodated (service animals, mobility devices)
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Daily Vehicle Inspection Checklist ===
+**Taxi/Rideshare Pre-Shift Inspection**
+Date: [Date] | Vehicle #: [ID] | Driver: [Name] | License #: [Number]
+Odometer: [Miles] | Fuel Level: [1/4, 1/2, 3/4, Full]
+
+**Exterior Check:**
+- [ ] Tires (proper inflation, no damage, adequate tread)
+- [ ] Lights (headlights, brake lights, turn signals, hazards all working)
+- [ ] Mirrors (clean, adjusted, no cracks)
+- [ ] Body (no new damage, all doors open/close properly)
+- [ ] License plate visible and current registration sticker
+
+**Interior Check:**
+- [ ] Seats clean and free of debris
+- [ ] Floor mats clean and in place
+- [ ] Air conditioning/heating functional
+- [ ] Seatbelts all functional
+- [ ] Windows/doors lock properly
+
+**Safety & Equipment:**
+- [ ] Brakes responsive (tested in parking lot)
+- [ ] Steering smooth and responsive
+- [ ] Windshield clean, wipers functional
+- [ ] First aid kit present and stocked
+- [ ] Fire extinguisher present (if required)
+- [ ] Protective screen secure (if equipped)
+
+**Payment & Technology:**
+- [ ] Card reader/payment terminal functional
+- [ ] GPS/navigation app working
+- [ ] Phone mount secure
+- [ ] Emergency button tested (if equipped)
+- [ ] Dash camera recording (if equipped)
+
+Defects Noted: [List any issues requiring attention]
+Vehicle Status: [ ] Safe to Operate [ ] Requires Maintenance
+
+Driver Signature: ________________ Date/Time: ________
+
+=== Incident Report Template ===
+**Passenger Incident Report**
+Date/Time: [Date, Time] | Vehicle #: [ID] | License #: [Driver License #]
+Driver: [Your Name] | Incident Type: [ ] Accident [ ] Medical [ ] Dispute [ ] Safety Concern [ ] Other
+
+**Trip Details:**
+Pickup Location: [Address]
+Drop-off Location: [Address]
+Passenger Name: [If known]
+Trip Start Time: [Time] | Incident Time: [Time]
+
+**Incident Description:**
+[Provide detailed, factual account of what occurred. Include who, what, when, where, how.
+Avoid speculation or opinions. Stick to observable facts.]
+
+**Witnesses:**
+Name: [If any] | Contact: [Phone/email]
+
+**Actions Taken:**
+- [ ] Called 911/police
+- [ ] Contacted dispatch/support
+- [ ] Provided first aid
+- [ ] Documented with photos/video
+- [ ] Obtained witness statements
+- [ ] Exchanged insurance information (if accident)
+
+**Damage/Injuries:**
+Vehicle Damage: [Description and estimated severity]
+Personal Injuries: [Driver or passenger injuries, if any]
+Property Damage: [Other vehicles or property involved]
+
+**Police Report:**
+[ ] Police called | Report #: [Number] | Officer: [Name/Badge #]
+
+**Follow-Up Required:**
+- [ ] Insurance claim filed
+- [ ] Medical attention needed
+- [ ] Vehicle repair required
+- [ ] Passenger banned from platform
+- [ ] Legal consultation needed
+
+Driver Signature: ________________ Date: ________
+Management Review: ________________ Date: ________
+
+=== Lost Property Log Template ===
+**Lost Property Report**
+Date Found: [Date] | Time: [Time] | Vehicle #: [ID] | Driver: [Name]
+
+**Trip Information:**
+Passenger Name: [If known from trip record]
+Pickup: [Address] | Drop-off: [Address]
+Trip Time: [Start - End] | Trip ID: [App/System ID if available]
+
+**Item Description:**
+Type: [ ] Phone [ ] Wallet [ ] Keys [ ] Bag [ ] Clothing [ ] Electronics [ ] Documents [ ] Other
+Brand/Model: [Specific details]
+Color: [Color]
+Distinguishing Features: [Unique identifiers, scratches, labels, contents]
+
+**Photo Documentation:**
+- [ ] Photo taken of item (general)
+- [ ] Photo of any identifying markings
+- [ ] Photo of item in secure storage
+
+**Passenger Contact Attempt:**
+- [ ] Contacted via app/dispatch (Time: _____)
+- [ ] Left voicemail (Time: _____)
+- [ ] Sent text/message (Time: _____)
+- [ ] No contact information available
+
+**Item Storage:**
+Location: [Where item is secured - dispatch office, driver locker, safe]
+Condition: [ ] Excellent [ ] Good [ ] Damaged
+Security: [ ] Locked [ ] With supervisor [ ] Other: _____
+
+**Resolution:**
+- [ ] Returned to passenger (Date: ____ | Signature: ________)
+- [ ] Donated after [X] days per policy
+- [ ] Turned over to lost & found
+- [ ] Destroyed (perishable/unsanitary)
+
+Notes: [Any additional relevant information]
+
+Driver Signature: ________________ Date: ________
+Passenger Receipt (if claimed): ________________ Date: ________
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Professional Passenger Service
+```
+TRIP REPORT - Exemplary Service
+Date: 2024-12-18 | Driver: Chen, Michael | License #: TX-4592-A
+Vehicle #: CAB-217 | Trip ID: RIDE-20241218-1423
+
+PASSENGER DETAILS:
+Pickup: Austin-Bergstrom International Airport, Terminal 1
+Drop-off: Hilton Austin Downtown, 500 E 4th St
+Distance: 8.2 miles | Duration: 22 minutes | Fare: $32.50
+
+SERVICE HIGHLIGHTS:
+- Met passenger in arrivals area with name sign
+- Greeted professionally: "Good afternoon Ms. Rodriguez, welcome to Austin!"
+- Assisted with two suitcases, handled carefully
+- Confirmed destination and offered route options
+- Provided local recommendations: "If you need dinner, there are excellent restaurants 
+  on Rainey Street, just a short walk from your hotel"
+- Maintained comfortable cabin temperature (70°F per passenger preference)
+- Drove smoothly, no hard braking or sharp turns
+- Arrived on time despite minor traffic on I-35
+- Processed payment efficiently, provided digital receipt
+- Assisted with luggage at hotel entrance
+- Thanked passenger: "Enjoy your stay in Austin, please let me know if you need 
+  a ride during your visit!"
+
+OUTCOME:
+- 5-star rating received
+- $10 tip (31% of fare - above average)
+- Passenger comment: "Michael was professional, friendly, and made me feel 
+  welcome in Austin. Best taxi experience I've had. Highly recommend!"
+
+PROFESSIONAL PRACTICES DEMONSTRATED:
+✓ Punctual airport pickup
+✓ Clean, comfortable vehicle
+✓ Professional appearance and demeanor
+✓ Local knowledge shared appropriately
+✓ Smooth, safe driving
+✓ Efficient payment processing
+✓ Luggage assistance provided
+✓ Customer satisfaction prioritized
+```
+
+Example 2: Medical Emergency Response
+```
+INCIDENT REPORT - Medical Emergency
+Date: 2024-12-18 | Time: 14:35 | Driver: Johnson, Patricia | Vehicle #: CAB-104
+
+SITUATION:
+Elderly male passenger (approx. 75 years old) experienced chest pain and shortness of breath 
+during trip from residential address to medical clinic.
+
+TIMELINE:
+14:25 - Passenger picked up at 2341 Maple Drive (routine medical appointment transport)
+14:30 - Passenger complained of chest pain, appeared pale and sweating
+14:31 - Pulled safely to curb on Oak Street (near Oak & 5th intersection)
+14:31 - Called 911, provided exact location and passenger symptoms
+14:32 - Asked passenger if taking any medications (confirmed heart medication)
+14:32 - Helped passenger loosen collar, ensured comfortable position
+14:33 - Stayed with passenger, monitored condition, kept passenger calm
+14:37 - EMS arrived, paramedics took over care
+14:40 - Provided trip information to paramedics (pickup location, destination, 
+        when symptoms started)
+14:45 - Passenger transported to Regional Hospital by ambulance (stable condition)
+
+ACTIONS TAKEN:
+✓ Recognized medical emergency immediately
+✓ Prioritized passenger safety over trip completion
+✓ Called 911 without delay
+✓ Provided accurate location and symptoms to dispatcher
+✓ Monitored passenger and provided reassurance
+✓ Cooperated fully with EMS personnel
+✓ Documented incident thoroughly
+
+FOLLOW-UP:
+- Contacted dispatch immediately after EMS departure (14:47)
+- Incident report filed (report #2024-1218-MED-01)
+- Passenger's emergency contact notified by EMS
+- No fare charged for incomplete trip (waived per medical emergency policy)
+- Vehicle sanitized after incident
+- Driver debriefing completed with supervisor
+
+COMPLIANCE:
+Driver followed all emergency protocols correctly. Passenger received prompt medical attention.
+Outcome: Life-threatening situation handled professionally with optimal passenger care.
+```
+
+Example 3: Lost Property Recovery Success
+```
+LOST PROPERTY RECOVERY REPORT
+Date Found: 2024-12-18 | Time: 16:20 | Driver: Williams, Sarah | Vehicle #: CAB-092
+
+ITEM DETAILS:
+Type: Apple iPhone 14 Pro (Space Black)
+Distinguishing Features: Purple protective case with University of Texas logo, 
+                          cracked screen protector on lower left corner
+Location Found: Backseat floor (passenger side) during post-shift cleaning
+
+TRIP INFORMATION:
+Passenger: Jessica Martinez (from trip log)
+Pickup: 1200 Congress Avenue (16:05)
+Drop-off: 4500 Duval Street (16:15)
+Trip Duration: 10 minutes | Fare: $18.50
+
+RECOVERY ACTIONS:
+16:20 - Phone discovered during vehicle cleaning
+16:21 - Photo documentation taken (phone exterior, case logo, location found)
+16:22 - Secured phone in lockbox (driver locker at dispatch office)
+16:23 - Reviewed trip log to identify last passenger
+16:25 - Called passenger using dispatch phone (passenger answered immediately)
+16:26 - Verified phone ownership: "Can you describe your phone case?"
+        Passenger: "Purple with UT logo, and the screen protector is cracked"
+        Confirmed match ✓
+16:30 - Arranged return meeting at secure location (dispatch office)
+17:15 - Passenger arrived to claim phone
+17:16 - Verified identity (driver's license matched trip name)
+17:17 - Phone returned, passenger signed receipt
+
+OUTCOME:
+- Phone returned within 1 hour of discovery
+- Passenger extremely grateful: "Thank you so much! I was panicking. 
+  You saved my day!"
+- $20 reward offered by passenger (politely accepted per company policy)
+- 5-star rating with comment: "Driver went above and beyond to return my 
+  phone quickly. Honest and professional!"
+
+BEST PRACTICES DEMONSTRATED:
+✓ Thorough post-shift vehicle inspection
+✓ Immediate documentation with photos
+✓ Secure storage of found item
+✓ Prompt passenger contact attempt
+✓ Safe, convenient return arrangement
+✓ Professional identity verification
+✓ Receipt obtained for chain of custody
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Taxi License**: Municipal or county permit required to operate taxi/cab service legally
+- **Private Hire**: Pre-booked passenger transport (not street hail) requiring separate licensing
+- **Rideshare/TNC**: Transportation Network Company (Uber, Lyft) with app-based booking and payment
+- **Taximeter**: Device measuring distance/time to calculate fares (required for metered taxis)
+- **Fare Estimate**: Pre-trip price quote based on distance, time, and current traffic conditions
+- **Protective Screen**: Safety barrier between driver and passenger compartment
+- **Accessibility Requirements**: Legal obligations under ADA/Equality Act (wheelchair access, service animals)
+- **Street Hail**: Passenger flagging down taxi on street (vs. pre-booked dispatch/app)
+- **Zone-Based Pricing**: Flat fares for specific geographic zones (common at airports)
+- **No-Show Fee**: Charge applied when passenger fails to appear for pre-booked ride
+- **Surge Pricing**: Higher fares during peak demand periods (rideshare apps)
+- **GPS Tracking**: Real-time vehicle location monitoring for safety and dispatch efficiency
+
+Standards & Frameworks (2024):
+- **Local Taxi Licensing Ordinances**: Municipal/county regulations for taxi permits, vehicle standards
+- **ADA Title III (Americans with Disabilities Act)**: Accessibility requirements for passenger services
+- **Equality Act 2010 (UK equivalent)**: Non-discrimination requirements for taxi/PHV services
+- **DOT Taxi Accessibility**: Federal guidance on accessible taxi service provision
+- **GAO Ridesharing Safety Standards (2024)**: Background check and safety requirements for TNCs
+- **PCI DSS (Payment Card Industry Data Security Standard)**: Card payment security requirements
+- **State/Local Traffic Codes**: Speed limits, traffic laws, commercial vehicle regulations
+- **Insurance Requirements**: Commercial auto liability coverage (varies by jurisdiction)
+- **Background Check Standards**: Criminal history and driving record requirements for licensing
+- **Vehicle Inspection Standards**: Annual or periodic safety inspections (brakes, tires, emissions)
+
+Common Tools:
+- Navigation/GPS: Google Maps, Waze, Apple Maps, dedicated taxi GPS systems
+- Payment Processing: Square, Stripe, PayPal, integrated taxi card readers
+- Rideshare Apps: Uber Driver, Lyft Driver, local taxi dispatch apps
+- Dash Cameras: Vantrue, BlackVue, Garmin (for security and incident documentation)
+- Taxi Meters: Centrodyne, Digitax, Pulsar (traditional meter systems)
+- Communication: Two-way radio, mobile data terminal, smartphone
+- Safety Equipment: Protective screens (Pro-gard), emergency buttons, first aid kits
+
+Change log
+2024-12: Initial playbook created based on taxi licensing best practices, passenger safety standards, and customer service excellence frameworks.
+- Emphasis on professional conduct, passenger safety, and customer service
+- Focus on incident response, lost property handling, and accessibility compliance
+- Templates for vehicle inspection, incident reporting, and lost property documentation
+- Real-world examples of exemplary service, medical emergency, and lost property recovery
