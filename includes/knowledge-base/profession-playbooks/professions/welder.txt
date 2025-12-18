@@ -4,64 +4,959 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality welding guidance and planning.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize safety protocols, code compliance, hands-on limitations, and clear planning steps.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on welding project design, planning, and specifications
+- Explain AWS (American Welding Society) codes and standards (D1.1, D1.6, D1.8)
+- Help plan welding procedures, joint design, and material specifications
+- Advise on welding process selection (SMAW, GMAW, GTAW, FCAW, SAW)
+- Recommend appropriate filler metals, shielding gases, and safety equipment
+- Explain OSHA welding safety standards and confined space entry procedures
+- Guide inspection methodology and quality control procedures
+- Provide documentation templates for WPS, PQR, and weld inspection reports
+- Advise on metallurgy fundamentals and material compatibility
+- Success = Safe, code-compliant welding plans with proper procedure specifications and quality assurance
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Perform hands-on welding work (AI cannot physically weld or fabricate metal structures)
+- Guarantee code approval or pass/fail inspection outcomes
+- Override AWS codes, OSHA requirements, or engineer specifications
+- Provide structural engineering calculations without proper engineering license
+- Certify welders or welding procedures (requires AWS Certified Welding Inspector or Engineer)
+- Make decisions about existing welds without proper non-destructive testing (NDT)
+- Recommend work that violates AWS codes, OSHA standards, or manufacturer specifications
+- Approve critical welds for pressure vessels, bridges, or life-safety applications without proper CWI oversight
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Hazardous conditions exist (compressed gas leaks, fire hazards, confined spaces without proper ventilation)
+- Structural welds require engineering calculations and stamped drawings
+- Pressure vessel or piping work requiring ASME Section IX certification
+- Radiographic or ultrasonic testing required for weld quality verification
+- Complex metallurgical issues (cracking, porosity, heat-affected zone problems)
+- Welder qualification testing and certification needed
+- Arc flash or electrical safety hazards present
+- Exotic materials requiring specialized procedures (titanium, duplex stainless, Inconel)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the project type (structural steel, pipe, fabrication, repair, maintenance)?
+- What base materials are being welded (mild steel, stainless steel, aluminum, other)?
+- What are the applicable welding codes and standards (AWS D1.1, ASME, API, etc.)?
+- What is the service application (structural, pressure vessel, non-critical fabrication)?
+- What welding processes are available or preferred (SMAW, GMAW, GTAW, FCAW)?
+- What is the material thickness and joint configuration?
+- What are the environmental conditions (indoor, outdoor, confined space, weather exposure)?
+- What inspection and testing requirements apply (visual, NDT, destructive testing)?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Assessment & Planning
+   - Review project specifications, drawings, and applicable codes
+   - Identify base materials and verify material test reports (MTRs)
+   - Determine welding code jurisdiction (AWS D1.1 for structural, ASME for pressure)
+   - Assess joint access, fit-up requirements, and welding position
+   - Evaluate environmental conditions (temperature, wind, moisture)
+   - Identify required welder qualifications and certifications
+   
+2. Procedure Development
+   - Select appropriate welding process for application
+   - Design joint preparation and weld joint details per code
+   - Specify preheat and interpass temperature requirements
+   - Determine filler metal specification (AWS A5.x series)
+   - Select shielding gas type and flow rate for GMAW/GTAW
+   - Establish welding parameters (amperage, voltage, travel speed)
+   - Create Welding Procedure Specification (WPS) per AWS or ASME
+   
+3. Documentation & Qualifications
+   - Prepare WPS with all essential and non-essential variables
+   - Document Procedure Qualification Record (PQR) if required
+   - Verify welder certifications match WPS requirements
+   - Complete joint inspection and fit-up checklists
+   - Prepare material traceability and MTR documentation
+   - Create weld maps and joint identification system
+   
+4. Execution Guidance (for qualified welders)
+   - Verify all materials meet specification and have proper MTRs
+   - Follow confined space entry procedures if applicable per OSHA 1910.146
+   - Ensure proper ventilation for fume extraction per OSHA 1910.252
+   - Maintain preheat temperature throughout welding per WPS
+   - Use correct welding parameters and techniques per qualified WPS
+   - Remove slag and clean between passes for multi-pass welds
+   - Perform in-process visual inspection after each pass
+   
+5. Inspection & Testing
+   - Conduct visual inspection per AWS D1.1 Section 6 or applicable code
+   - Check weld size, profile, and dimensional requirements
+   - Verify no cracks, undercut, overlap, or excessive porosity
+   - Perform required non-destructive testing (MT, PT, RT, UT)
+   - Document all inspection results with accept/reject criteria
+   - Address deficiencies with approved repair procedures
+   - Obtain final inspection approval and documentation
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Welding Procedure Specifications (WPS) per AWS D1.1 or ASME Section IX
+- Procedure Qualification Records (PQR) with test results
+- Weld joint details and preparation drawings
+- Material specifications and filler metal selection tables
+- Welding sequence and joint identification maps
+- Preheat and PWHT (Post-Weld Heat Treatment) requirements
+- Quality control plans and inspection checklists
+- Safety procedures including confined space and hot work permits
+- Welder qualification records and certification tracking
+
+Minimum viable: Basic WPS with essential variables, joint detail, and safety requirements
+Gold standard: Complete WPS/PQR package, detailed weld maps, comprehensive QC plan, all supporting MTRs and certifications
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Welding Procedures:
+- [ ] WPS prepared per AWS D1.1 Annex J or ASME Section IX format
+- [ ] All essential variables identified and specified
+- [ ] Filler metal specification matches base material requirements
+- [ ] Preheat and interpass temperatures specified per AWS D1.1 Table 3.2
+- [ ] Welding parameters within qualified range from PQR
+- [ ] Required welder qualifications clearly stated
+
+Material Verification:
+- [ ] Base material identified and grade verified (ASTM/ASME specification)
+- [ ] Material Test Reports (MTRs) reviewed and match specifications
+- [ ] Filler metal matches AWS classification (e.g., E7018, ER70S-6)
+- [ ] Material thickness within qualified range
+- [ ] Material compatibility verified (no dissimilar metal issues)
+- [ ] Material storage and handling procedures followed
+
+Joint Preparation:
+- [ ] Joint geometry matches AWS D1.1 prequalified joint details or qualified WPS
+- [ ] Root opening, bevel angle, and land dimensions verified
+- [ ] Backing material properly specified if required
+- [ ] Joint surfaces clean, free from rust, oil, mill scale per code
+- [ ] Fit-up tolerances met per AWS D1.1 Section 5
+- [ ] Tack welds properly sized and positioned
+
+Welding Execution:
+- [ ] Preheat temperature achieved and maintained per WPS
+- [ ] Welding parameters (amps, volts, travel speed) within WPS range
+- [ ] Shielding gas flow rate correct for GMAW/GTAW (typically 20-30 CFH)
+- [ ] Proper electrode angle and travel technique maintained
+- [ ] Interpass cleaning performed (slag removal, wire brush)
+- [ ] No starts/stops in critical stress areas
+- [ ] Multi-pass sequence per WPS
+
+Visual Inspection (per AWS D1.1 Section 6):
+- [ ] Weld size meets minimum effective throat or leg size
+- [ ] Weld profile acceptable (no excessive convexity or concavity)
+- [ ] No cracks of any size (zero tolerance)
+- [ ] Undercut does not exceed 1/32" or 10% of base metal thickness
+- [ ] Porosity within acceptable limits per code (typically <1/4" diameter)
+- [ ] No incomplete fusion or inadequate penetration
+- [ ] Surface condition acceptable (smooth, uniform appearance)
+
+Safety & Environment:
+- [ ] Hot work permit obtained if required
+- [ ] Confined space entry procedures followed per OSHA 1910.146
+- [ ] Adequate ventilation for fume extraction (local exhaust preferred)
+- [ ] Personal protective equipment worn (welding helmet shade 10-14, leather gloves/jacket, safety boots)
+- [ ] Fire watch posted and fire extinguisher accessible
+- [ ] Compressed gas cylinders secured and stored properly
+- [ ] Electrical connections inspected and grounded
+- [ ] Warning signs posted for arc flash and welding in progress
+
+Documentation:
+- [ ] WPS number clearly marked on fabrication drawings
+- [ ] Weld joints numbered and tracked on weld map
+- [ ] Welder identification stamps traceable to qualified personnel
+- [ ] Material traceability maintained through MTRs
+- [ ] Inspection reports completed and signed by qualified inspector
+- [ ] Non-conformance reports (NCRs) issued for rejectable defects
+- [ ] Repair procedures documented and re-inspected
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Welding Procedure Specification (WPS) Template ===
+WELDING PROCEDURE SPECIFICATION (WPS)
+Company: [Company Name]
+WPS Number: [WPS-###]
+Date: [Date]
+Revision: [0]
+
+SUPPORTING PQR NUMBERS: [PQR-###, PQR-###]
+Welding Process: [SMAW, GMAW, GTAW, FCAW]
+Type: [Manual, Semi-Automatic, Automatic]
+
+BASE MATERIALS:
+P-Number: [P-1] to P-Number: [P-1] (Per ASME Section IX)
+Group Number: [1] to Group Number: [1]
+Specification: [ASTM A36, ASTM A572 Gr.50, etc.]
+Thickness Range: [Minimum] to [Maximum] inches
+Diameter Range: [If pipe] [Minimum] to [Maximum] inches
+
+FILLER METALS:
+SFA Specification: [AWS A5.1, A5.18, A5.28, etc.]
+AWS Classification: [E7018, ER70S-6, ER308L, etc.]
+Size: [1/8", 3/32", 0.045", etc.]
+Trade Name: [Optional]
+
+POSITIONS:
+Welding Position: [1G, 2G, 3G, 4G, 1F, 2F, 3F, 4F] or [All]
+Vertical Progression: [Up, Down] if 3G or 3F
+
+PREHEAT:
+Preheat Temperature (Minimum): [##]°F per AWS D1.1 Table 3.2
+Interpass Temperature (Maximum): [##]°F
+Preheat Maintenance: [Throughout welding, Continuous]
+
+POST-WELD HEAT TREATMENT:
+Required: [Yes/No]
+Temperature: [If required: [##]°F for [##] hours]
+Method: [Furnace, Local heating, etc.]
+
+SHIELDING:
+Gas (GMAW/GTAW): [75% Ar / 25% CO2, 100% Argon, etc.]
+Flow Rate: [20-30 CFH]
+Backing Gas: [If required for root pass on pipe]
+Flux Type (SAW): [AWS A5.17 F7xx-EXxx]
+
+ELECTRICAL CHARACTERISTICS:
+Current: [AC, DCEP, DCEN]
+Amperage Range: [##-###] amps
+Voltage Range: [##-##] volts
+Travel Speed: [##-##] inches per minute
+
+TECHNIQUE:
+String or Weave Bead: [String beads preferred for structural]
+Oscillation: [If weave, specify max width: 3x electrode diameter]
+Multi-Pass: [Yes, with interpass cleaning]
+Electrode Angle: [90° work angle, 10-15° drag angle for SMAW]
+Contact Tip to Work Distance: [3/8" - 5/8" for GMAW]
+Peening: [Not permitted on final pass]
+
+JOINT DESIGN:
+Joint Type: [Butt, Fillet, Corner, etc.]
+Backing: [Yes/No] [If yes: Steel backing bar, Ceramic, Flux, Open root]
+Root Opening: [##" ± ##"]
+Groove Angle: [##° included angle]
+Root Face: [##"]
+Welding Technique: [Single side, Both sides, Backgouge]
+
+PASS SEQUENCE:
+Pass | Process | Filler Size | Current | Voltage | Travel Speed | Notes
+-----|---------|-------------|---------|---------|--------------|------
+Root | [Process] | [Size] | [##-##A] | [##-##V] | [##-##IPM] | [Technique notes]
+Fill | [Process] | [Size] | [##-##A] | [##-##V] | [##-##IPM] | [Multi-pass]
+Cap  | [Process] | [Size] | [##-##A] | [##-##V] | [##-##IPM] | [Final pass]
+
+COMMENTS:
+- [Any special requirements or notes]
+- [Environmental conditions or restrictions]
+- [Inspection requirements beyond visual]
+
+Prepared by: _________________ Date: _______
+Approved by: _________________ Date: _______
+(Title: Welding Engineer, CWE, or CWI as appropriate)
+
+=== Weld Inspection Report Template ===
+WELD INSPECTION REPORT
+Project: [Project Name]
+Location: [Site/Building]
+Date: [Date]
+Inspector: [Name] Certification: [CWI, AWS QC1, etc.] Cert #: [####]
+
+INSPECTION INFORMATION:
+Welding Code: [AWS D1.1-2020, ASME Section VIII, etc.]
+Inspection Type: [In-process, Final, Repair]
+Inspection Method: [Visual, MT, PT, RT, UT]
+Acceptance Criteria: [AWS D1.1 Section 6, ASME Section VIII Div.1]
+
+WELD IDENTIFICATION:
+Drawing Number: [####]
+Joint Number(s): [J-001, J-002, J-003]
+WPS Number: [WPS-###]
+Welder ID: [####]
+Welder Certification: [Expires: MM/DD/YYYY]
+
+BASE MATERIAL:
+Specification: [ASTM A572 Grade 50]
+Thickness: [##"] x [##"]
+Material Test Report: [MTR-#### verified]
+
+FILLER METAL:
+Specification: [AWS A5.1 E7018]
+Size: [1/8"]
+Heat/Lot Number: [####]
+
+WELD DETAILS:
+Weld Type: [Fillet, Complete Penetration Groove, Partial Penetration]
+Weld Size: [Specified: [##"] Actual: [##"]]
+Weld Length: [##" total]
+Position: [Flat, Horizontal, Vertical, Overhead]
+
+VISUAL INSPECTION RESULTS:
+(Use AWS D1.1 Table 6.1 for Statically Loaded Structures)
+
+Cracks:
+[ ] Acceptable - No cracks detected
+[ ] Rejectable - [Describe location and size]
+
+Weld Size:
+[ ] Acceptable - Meets minimum size requirements
+[ ] Rejectable - Undersized: [##"] (Minimum required: [##"])
+
+Undercut:
+[ ] Acceptable - ≤ 1/32" depth
+[ ] Rejectable - Exceeds 1/32" or 10% of base metal thickness
+
+Porosity:
+[ ] Acceptable - Scattered porosity within limits
+[ ] Rejectable - [Describe: cluster porosity, size >1/4", excessive frequency]
+
+Incomplete Fusion:
+[ ] Acceptable - Full fusion achieved
+[ ] Rejectable - [Describe location]
+
+Overlap:
+[ ] Acceptable - No overlap detected
+[ ] Rejectable - [Describe location]
+
+Profile:
+[ ] Acceptable - Smooth transition, proper contour
+[ ] Rejectable - Excessive convexity/concavity, rough appearance
+
+Arc Strikes:
+[ ] Acceptable - None outside weld area
+[ ] Rejectable - [Describe location]
+
+DIMENSIONAL CHECK:
+Weld Size (Leg/Throat): [##"] (Specification: [##"] minimum)
+Weld Length: [##"] (Specification: [##"] minimum)
+Profile Height: [Within acceptable limits]
+
+OVERALL RESULT:
+[ ] ACCEPT - All criteria met
+[ ] ACCEPT WITH DEVIATION - (Requires engineer approval) [Describe]
+[ ] REJECT - Repair required (NCR Number: [NCR-####])
+
+DEFICIENCIES NOTED:
+[Describe any rejectable defects with location, size, and severity]
+
+REPAIR REQUIREMENTS:
+[If rejected, describe repair procedure: grinding, re-welding, heat treatment, etc.]
+
+COMMENTS:
+[Any additional observations or notes]
+
+ATTACHMENTS:
+[ ] Photographs
+[ ] NDT Reports
+[ ] Material Test Reports
+
+Inspector Signature: _________________ Date: _______ Time: _______
+Certification Number: [####]
+Next Re-inspection Date (if repair): _______
+
+=== Material Traceability Log Template ===
+MATERIAL TRACEABILITY LOG
+Project: [Project Name]
+Date: [Date]
+Prepared By: [Name]
+
+PURPOSE:
+Track material from receipt through fabrication to ensure proper material specifications
+are used and documented per code requirements.
+
+MATERIAL INFORMATION:
+Item | Material Spec | Grade | Size | Heat Number | MTR Number | Quantity | Location | Date Received
+-----|---------------|-------|------|-------------|------------|----------|----------|---------------
+[##] | ASTM A572    | Gr.50 | W12x50 | [Heat#] | [MTR-###] | [##] pcs | [Zone A] | [MM/DD/YY]
+[##] | ASTM A36     | N/A   | 1/2"x12"x20' | [Heat#] | [MTR-###] | [##] pcs | [Zone A] | [MM/DD/YY]
+[##] | ASTM A500    | Gr.B  | 4"x4"x1/4" | [Heat#] | [MTR-###] | [##] ft | [Zone B] | [MM/DD/YY]
+
+FILLER METAL TRACEABILITY:
+Type | AWS Class | Size | Heat/Lot # | Manufacturer | Quantity | Storage Location | Oven Temp
+-----|-----------|------|------------|--------------|----------|------------------|----------
+SMAW | E7018     | 1/8" | [####]     | [Brand]      | [##] lbs | Electrode Oven #1 | 250°F
+GMAW | ER70S-6   | .045"| [####]     | [Brand]      | [##] lbs | Dry storage      | N/A
+GTAW | ER308L    | 1/16"| [####]     | [Brand]      | [##] lbs | Sealed container | N/A
+
+MATERIAL USAGE TRACKING:
+Drawing # | Joint ID | Material Item | Heat # | MTR # | Quantity Used | Date | Installed By
+----------|----------|---------------|--------|-------|---------------|------|-------------
+[DWG-##] | J-001    | [##]          | [####] | [MTR-###] | [1 pc] | [MM/DD] | [Welder ID]
+[DWG-##] | J-002    | [##]          | [####] | [MTR-###] | [8'] | [MM/DD] | [Welder ID]
+
+MTR VERIFICATION:
+[ ] All MTRs received and reviewed
+[ ] Chemical composition meets specification
+[ ] Mechanical properties meet specification
+[ ] Heat numbers match mill markings
+[ ] Traceability stamps applied to material
+[ ] Material segregated by specification/grade
+[ ] Substitutions approved by engineer (if any)
+
+NON-CONFORMING MATERIAL:
+Item # | Issue | Disposition | Approved By | Date
+-------|-------|-------------|-------------|-----
+[If applicable]
+
+NOTES:
+- All material shall be marked with heat number prior to fabrication
+- MTRs shall be kept on file for duration of project plus [##] years
+- Any substitutions require engineer approval and documentation
+- Suspect material shall be quarantined pending disposition
+
+Prepared By: _________________ Date: _______
+Approved By: _________________ Date: _______
+
+=== Hot Work Permit Template ===
+HOT WORK PERMIT
+Permit Number: [HW-####]
+Date: [Date]
+Valid Time: [Start Time] to [End Time] (Maximum 8 hours)
+
+WORK LOCATION:
+Building/Area: [Specify]
+Room/Bay Number: [Specify]
+Description of Work: [Welding, cutting, grinding, brazing, other]
+
+RESPONSIBLE PERSONS:
+Permit Issuer: _________________ Signature: ________ Time: ____
+Operator (Welder): _____________ Signature: ________ Time: ____
+Fire Watch: ____________________ Signature: ________ Time: ____
+Area Supervisor: _______________ Signature: ________ Time: ____
+
+PRE-WORK CHECKLIST (All items must be checked YES before work begins):
+
+Fire Protection:
+[ ] Fire extinguisher(s) present and accessible (10 lb ABC minimum)
+[ ] Fire watch assigned and trained
+[ ] Fire alarm system in service
+[ ] Sprinkler heads protected if within 35 feet
+
+Flammable Materials:
+[ ] Flammable liquids/gases removed from area (35 foot radius)
+[ ] Combustible materials removed or protected with fire blankets
+[ ] Floor swept clean of debris and combustibles
+[ ] Walls/ceilings checked for combustible construction
+[ ] Adjacent areas checked on other side of walls
+
+Openings Protection:
+[ ] Floor openings covered or protected
+[ ] Wall/floor penetrations sealed to prevent fire spread
+[ ] Ducts and conveyor systems checked and protected
+
+Ventilation:
+[ ] Adequate ventilation provided for fume extraction
+[ ] Confined space ventilation adequate (if applicable)
+[ ] Ventilation maintained throughout operation
+[ ] No flammable vapors detected with meter reading
+
+Confined Space (If applicable):
+[ ] Confined space entry permit obtained
+[ ] Atmosphere tested and monitored (O2, LEL, toxic gases)
+[ ] Forced ventilation provided
+[ ] Rescue equipment available
+[ ] Attendant posted outside
+
+Personal Protective Equipment:
+[ ] Welding helmet with proper lens shade (10-14)
+[ ] Flame-resistant clothing (leather jacket/sleeves)
+[ ] Safety glasses with side shields
+[ ] Leather gloves
+[ ] Safety boots (no synthetic soles near hot work)
+[ ] Hearing protection (if noise >85 dBA)
+
+Equipment:
+[ ] Welding equipment inspected and in good condition
+[ ] Electrical connections properly grounded
+[ ] Compressed gas cylinders secured upright
+[ ] Gas hoses inspected for damage
+[ ] Flashback arrestors installed
+[ ] Equipment complies with OSHA standards
+
+SPECIAL REQUIREMENTS:
+[ ] Standby fire pump running (if applicable)
+[ ] Additional fire extinguisher(s): Location: _________
+[ ] Special fire watch duration after work: [30 minutes minimum]
+[ ] Other: _________________________________________
+
+WORK AUTHORIZATION:
+I certify that the above precautions have been taken and authorize hot work to proceed.
+
+Permit Issuer: _________________ Time: _______ Date: _______
+
+I have read and understand the requirements of this permit.
+
+Operator: _________________ Time: _______ Date: _______
+
+FIRE WATCH:
+Fire watch maintained during work: Yes [ ] No [ ]
+Fire watch maintained after work completion: [ ] 30 minutes [ ] 1 hour [ ] Other: ___
+No fire detected during or after watch: [ ]
+
+Fire Watch Signature: _________________ Time watch ended: _______
+
+PERMIT CLOSURE:
+Work completed satisfactorily: [ ]
+Area inspected after completion: [ ]
+No fire hazards remain: [ ]
+
+Closed By: _________________ Time: _______ Date: _______
+
+NOTE: This permit must be posted at the work location and surrendered after work completion.
+In case of fire or emergency, call 911 immediately.
+
+=== Welder Qualification Tracking Template ===
+WELDER QUALIFICATION TRACKING
+Company: [Company Name]
+Updated: [Date]
+
+PURPOSE:
+Track welder certifications to ensure qualified personnel perform work per AWS or ASME codes.
+
+WELDER INFORMATION:
+Welder Name | ID # | Hire Date | Qualification Level
+------------|------|-----------|--------------------
+[Name]      | [##] | [MM/DD/YY] | [Journeyman, 3G/4G, 6G pipe, etc.]
+
+CERTIFICATIONS:
+Cert ID | Code | Process | Material | Position | Thickness | Test Date | Expiry Date | Status
+--------|------|---------|----------|----------|-----------|-----------|-------------|-------
+[C-001] | D1.1 | SMAW    | Carbon Steel | 3G | 3/8" | [MM/DD/YY] | [MM/DD/YY] | [ ] Current [ ] Expired
+[C-002] | D1.1 | GMAW    | Carbon Steel | 4G | 1/2" | [MM/DD/YY] | [MM/DD/YY] | [ ] Current [ ] Expired
+[C-003] | Section IX | GTAW | SS 304L | 6G Pipe | 2" Sch 40 | [MM/DD/YY] | [MM/DD/YY] | [ ] Current [ ] Expired
+
+AWS D1.1 Qualification Matrix:
+Qualified Position | Qualified Thickness Range | Qualified Process
+-------------------|---------------------------|------------------
+3G                 | [Base metal to 2x test]  | [SMAW E7018]
+4G                 | [Base metal to 2x test]  | [GMAW ER70S-6]
+
+ASME Section IX Qualification Matrix:
+Test Position | Qualified Positions | Test Thickness | Qualified Thickness
+--------------|---------------------|----------------|---------------------
+6G            | All pipe positions  | 2" Schedule 40 | [Range per Table]
+
+RENEWAL REQUIREMENTS:
+AWS D1.1:
+- Visual inspection every 6 months of work performed
+- Re-qualification if 6+ months of no welding in qualified process
+- Re-qualification if code compliance questioned
+
+ASME Section IX:
+- Re-qualification if 6+ months of no welding in qualified process
+- Re-qualification for code changes affecting essential variables
+
+TRAINING RECORD:
+Training Course | Date Completed | Hours | Instructor | Certificate #
+----------------|----------------|-------|------------|---------------
+[SMAW Fundamentals] | [MM/DD/YY] | [40] | [Name] | [####]
+[GTAW Stainless] | [MM/DD/YY] | [80] | [Name] | [####]
+[Welding Symbols] | [MM/DD/YY] | [8] | [Name] | [####]
+
+MEDICAL REQUIREMENTS:
+Physical Exam: Date: [MM/DD/YY] Expiry: [MM/DD/YY] Status: [ ] Current
+Vision Test: Date: [MM/DD/YY] Result: [ ] Pass [ ] Corrective lenses
+Respirator Fit Test: Date: [MM/DD/YY] Mask Type: [Half-face, Full-face]
+
+NOTES:
+- Qualification records maintained per AWS QC1 or ASME Section IX
+- Original test coupons and radiographs retained on file
+- Welder must stamp work with unique identification stamp
+- Disqualification for code violations or failed inspection
+
+Maintained By: _________________ Date: _______
+Reviewed By: _________________ Date: _______
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Structural Steel Connection WPS
+```
+WELDING PROCEDURE SPECIFICATION (WPS)
+WPS Number: WPS-001-SMAW-CS
+Date: December 2024
+Revision: 0
+
+SUPPORTING PQR: PQR-001
+Welding Process: SMAW (Shielded Metal Arc Welding)
+Type: Manual
+
+BASE MATERIALS:
+P-Number: P-1 to P-1
+Group Number: Group 1 to Group 1
+Specification: ASTM A992 / ASTM A36
+Thickness Range: 1/4" to Unlimited
+Application: Structural steel building connections per AWS D1.1
+
+FILLER METALS:
+SFA Specification: AWS A5.1
+AWS Classification: E7018
+Sizes: 1/8", 5/32"
+Condition: Low-hydrogen electrodes, stored at 250°F per AWS D1.1
+
+POSITIONS:
+Welding Position: All (1G, 2G, 3G, 4G, 1F, 2F, 3F, 4F)
+Vertical Progression: Up
+
+PREHEAT:
+Preheat Temperature: 50°F minimum per AWS D1.1 Table 3.2
+(For material thickness >3/4" or ambient <32°F, preheat to 150°F minimum)
+Interpass Temperature: 550°F maximum
+Preheat Maintenance: Minimum preheat maintained throughout welding
+
+POST-WELD HEAT TREATMENT:
+Required: No
+
+SHIELDING:
+Gas: Not applicable (electrode coating provides shielding)
+Flux/Slag: Remove completely between passes
+
+ELECTRICAL CHARACTERISTICS:
+Current: DCEP (Direct Current Electrode Positive)
+Amperage Range:
+  1/8" electrode: 110-165 amps
+  5/32" electrode: 140-190 amps
+Voltage: Arc voltage maintained at 24-28 volts
+
+TECHNIQUE:
+String or Weave: String beads preferred (weave max 3x electrode diameter)
+Oscillation: Slight oscillation acceptable for vertical-up
+Multi-Pass: Yes, with complete slag removal between passes
+Electrode Angle: 90° work angle, 10-15° drag angle (push angle for overhead)
+Inter-pass Cleaning: Wire brush and visual inspection between all passes
+Peening: Not permitted
+
+JOINT DESIGN:
+Joint Type: Complete Joint Penetration (CJP) Groove Weld
+Backing: Steel backing bar or open root with backgouging
+Root Opening: 1/4" ± 1/16"
+Groove Angle: 60° included angle (30° bevel each side)
+Root Face: 0" to 1/8"
+Back gouging: Required for double-sided welds without backing
+
+PASS SEQUENCE:
+Pass 1 (Root): E7018 1/8", 110-130 amps, stringer bead, complete penetration
+Pass 2-3 (Fill): E7018 5/32", 150-175 amps, stringer beads, slight weave acceptable
+Pass 4 (Cap): E7018 5/32", 140-165 amps, smooth uniform cover pass
+
+INSPECTION:
+Visual Inspection: 100% per AWS D1.1 Section 6, Table 6.1
+Acceptance Criteria: 
+  - No cracks (zero tolerance)
+  - Undercut ≤ 1/32" (≤ 10% base metal thickness)
+  - Porosity: scattered, ≤ 3/32" diameter, well separated
+NDT Requirements: Per contract documents (typically MT or UT for critical joints)
+
+WELDER QUALIFICATIONS:
+Welders must be qualified per AWS D1.1 Section 4
+Minimum qualification: 3G position for flat, horizontal, and vertical welds
+4G qualification required for overhead position welds
+Re-qualification required if no welding performed in 6-month period
+
+SPECIAL NOTES:
+- Electrodes must be dry and stored at 250°F minimum per AWS A5.1
+- Electrodes exposed to atmosphere >4 hours must be re-dried at 700°F for 2 hours
+- Root pass critical for preventing cold lap and incomplete penetration
+- All starts and stops ground smooth and tied-in
+- For seismic applications, see AWS D1.8 supplemental requirements
+
+Prepared by: [Welding Engineer Name], PE
+Approved by: [CWI Name], AWS CWI #####
+```
+
+Example 2: Pipe Welding Procedure (6G GTAW Root / SMAW Fill)
+```
+WELDING PROCEDURE SPECIFICATION (WPS)
+WPS Number: WPS-010-GTAW-SMAW-PIPE
+Date: December 2024
+Revision: 0
+
+SUPPORTING PQR: PQR-010
+Welding Process: GTAW Root + Hot Pass, SMAW Fill and Cap
+Type: Manual
+
+BASE MATERIALS:
+P-Number: P-1 to P-1
+Specification: ASTM A106 Grade B Carbon Steel Pipe
+Diameter Range: 2" to 12" NPS
+Thickness Range: Schedule 40 to Schedule 80
+Application: Process piping per ASME B31.3
+
+FILLER METALS:
+GTAW: AWS A5.18 ER70S-2 (1/16", 3/32")
+SMAW: AWS A5.1 E7018 (1/8", 5/32")
+
+POSITIONS:
+Welding Position: 6G (45° fixed position pipe)
+Qualified Positions: All pipe positions (1G, 2G, 5G, 6G)
+
+PREHEAT:
+Preheat Temperature: 150°F minimum for material >3/4" thick
+Interpass Temperature: 450°F maximum
+Preheat Maintenance: Minimum preheat throughout welding operation
+
+PWHT (Post-Weld Heat Treatment):
+Required: Per contract specifications or ASME B31.3
+Temperature: 1100°F ± 25°F for 1 hour per inch of thickness
+
+SHIELDING:
+GTAW Shielding Gas: 100% Argon
+Flow Rate: 15-20 CFH cup gas, 5-10 CFH backing gas
+Backing Gas: Argon purge inside pipe for root pass
+Purge until oxygen level <100 PPM before welding
+
+JOINT DESIGN:
+Joint Type: Single-V groove weld with open root
+Root Opening: 1/16" to 3/32"
+Groove Angle: 37.5° bevel each side (75° included angle)
+Root Face: 1/16" ± 1/32"
+Alignment: Maximum offset (hi-lo) = 1/16" or 10% of thickness
+
+TECHNIQUE - GTAW ROOT PASS:
+Current: DCEN (Direct Current Electrode Negative)
+Amperage: 70-95 amps for 1/16" filler
+Tungsten: 2% Lanthanated, 3/32" diameter, ground to point
+Cup Size: #6 or #7 gas lens
+Filler Rod Angle: 15-20° from vertical
+Torch Angle: 15-20° in direction of travel
+Travel Speed: 3-5 inches per minute
+Root Reinforcement: 0" to 1/16" inside, 0" to 1/8" outside
+
+TECHNIQUE - SMAW FILL AND CAP:
+Current: DCEP
+Hot Pass: E7018 1/8", 95-120 amps immediately after root
+Fill Passes: E7018 5/32", 130-165 amps
+Cap Pass: E7018 5/32", 120-150 amps, smooth cover
+
+PASS SEQUENCE:
+Pass 1: GTAW root with ER70S-2, consumable insert optional
+Pass 2: SMAW hot pass E7018 1/8" to fuse root and burn out slag
+Pass 3-5: SMAW fill passes E7018 5/32", stringer beads
+Pass 6: SMAW cap pass E7018 5/32", smooth uniform cover
+
+INSPECTION:
+Visual: 100% per ASME B31.3
+Radiography: 100% per ASME Section V, Article 2
+Acceptance: Per ASME B31.3, Section 344.6
+
+WELDER QUALIFICATION:
+Per ASME Section IX
+Test Position: 6G (pipe at 45° angle)
+Test Coupon: 6" NPS Schedule 40
+Testing: Radiographic examination and guided bend tests
+Requalification: If no welding in qualified process for 6 months
+
+SPECIAL REQUIREMENTS:
+- Maintain argon purge until weld cools below 300°F
+- Root pass must achieve full penetration with slight inside bead
+- Hot pass applied within 5 minutes of root completion
+- No starts/stops except at 12, 3, 6, 9 o'clock positions
+- Pipe rotation prohibited during welding (6G fixed position)
+- Fit-up critical: tack welds at 4 locations, ground flush before welding
+
+Prepared by: [Welding Engineer], CWE
+Approved by: [Authorized Inspector], API 510
+```
+
+Example 3: Aluminum GMAW Procedure
+```
+WELDING PROCEDURE SPECIFICATION (WPS)
+WPS Number: WPS-025-GMAW-AL
+Date: December 2024
+Revision: 0
+
+SUPPORTING PQR: PQR-025
+Welding Process: GMAW (Gas Metal Arc Welding) - Spray Transfer
+Type: Semi-Automatic
+
+BASE MATERIALS:
+Aluminum Alloy: 6061-T6 to 6061-T6
+Specification: ASTM B221
+Thickness Range: 1/8" to 1/2"
+Application: Structural aluminum per AWS D1.2
+
+FILLER METAL:
+SFA Specification: AWS A5.10
+Classification: ER4043 (AlSi5)
+Wire Diameter: 0.035", 0.045"
+Alternative: ER5356 (AlMg5) for higher strength/ductility
+
+POSITIONS:
+Welding Position: 1F, 2F (Flat and Horizontal fillet welds)
+Qualified Positions: Flat and horizontal only
+
+PREHEAT:
+Preheat Temperature: 150-250°F (improves fusion, reduces porosity)
+Maximum Interpass: 350°F (prevent loss of temper in base metal)
+Method: Torch or oven preheat acceptable
+
+POST-WELD HEAT TREATMENT:
+Required: No (welding produces annealed condition in HAZ)
+Note: Strength in heat-affected zone reduced approximately 50%
+
+SHIELDING GAS:
+Gas: 100% Argon (CP grade)
+Flow Rate: 25-35 CFH
+Contamination: Ensure gas supply free from moisture and oil
+
+ELECTRICAL CHARACTERISTICS:
+Current: DCEP (reverse polarity)
+Wire Feed Speed: 300-450 IPM for 0.045" wire
+Amperage Range: 180-280 amps (spray transfer mode)
+Voltage Range: 24-28 volts
+Arc Mode: Spray transfer (smooth, minimal spatter)
+
+TECHNIQUE:
+Gun Angle: 10-15° push angle (gun ahead of weld pool)
+Contact Tip to Work Distance: 1/2" to 3/4"
+Travel Speed: 12-18 inches per minute
+Weave: Stringer beads or slight oscillation (max 3x wire diameter)
+Wire Stick-out: 3/8" to 1/2" beyond contact tip
+
+JOINT PREPARATION:
+Cleaning: Critical for aluminum welding success
+- Remove oxide layer with stainless steel wire brush (dedicated for aluminum only)
+- Degrease with acetone or approved solvent
+- File or grind to bright metal immediately before welding
+- Maximum 8-hour exposure after cleaning before welding
+Joint Fit-up: Gap should be minimal, maximum 1/16"
+Tack Welds: Use same filler metal and parameters as production welds
+
+PASS SEQUENCE:
+Single Pass: Preferred for material ≤ 1/4" thick
+Multi-Pass: For thicker material, use stringer beads with interpass cleaning
+
+INSPECTION:
+Visual: 100% per AWS D1.2, Section 8
+Acceptance Criteria:
+  - No cracks (zero tolerance)
+  - Porosity: scattered, ≤ 1/8" diameter, well separated
+  - Undercut: ≤ 1/32" depth for non-cyclically loaded, ≤ 0.01" for cyclic
+  - Weld profile: smooth, uniform appearance
+NDT: Penetrant Testing (PT) per AWS D1.2 Section 8 if required
+
+QUALITY CONTROL:
+Wire Feed System: Push-pull or spool gun recommended for long cables
+Liner: Teflon or nylon liner (not steel) to prevent wire damage
+Drive Rolls: U-groove style to prevent flattening aluminum wire
+Contact Tip: Oversized (0.052" for 0.045" wire) to reduce burnback
+Gun Angle: Maintain consistent push angle for smooth bead profile
+
+COMMON DEFECTS AND PREVENTION:
+Porosity:
+  - Ensure adequate preheat to drive out moisture
+  - Increase shielding gas flow if drafty conditions
+  - Clean oxide layer immediately before welding
+  - Check gas supply for contamination
+Lack of Fusion:
+  - Increase heat input (higher amps/lower travel speed)
+  - Improve preheat temperature
+  - Ensure proper gun angle and wire placement
+Black Soot:
+  - Reduce shielding gas flow (excessive turbulence)
+  - Check for air leaks in gas system
+  - Reduce travel speed
+
+WELDER QUALIFICATION:
+Per AWS D1.2, Section 4
+Test Position: 2F horizontal fillet
+Test Material: 6061-T6 aluminum
+Filler: ER4043 or ER5356
+Acceptance: Visual inspection and macro-etch examination
+
+SPECIAL NOTES:
+- Aluminum oxidizes rapidly; cleaning immediately before welding is critical
+- Porosity most common defect due to hydrogen absorption
+- No color change during welding (unlike steel) - judge heat by puddle fluidity
+- Aluminum has high thermal conductivity - requires higher heat input than steel
+- Post-weld strength in HAZ approximately 50% of parent material T6 condition
+- For critical applications, consider post-weld artificial aging (T6 temper restoration)
+
+Prepared by: [Welding Engineer]
+Approved by: [AWS SCWI or CWI]
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **SMAW (Shielded Metal Arc Welding)**: Manual "stick" welding process using consumable electrode with flux coating
+- **GMAW (Gas Metal Arc Welding)**: "MIG" welding using continuous solid wire with external shielding gas
+- **GTAW (Gas Tungsten Arc Welding)**: "TIG" welding using non-consumable tungsten electrode, separate filler rod, and shielding gas
+- **FCAW (Flux-Cored Arc Welding)**: Similar to GMAW but uses tubular wire filled with flux
+- **SAW (Submerged Arc Welding)**: Automatic process with electrode submerged under granular flux
+- **WPS (Welding Procedure Specification)**: Document specifying variables for producing acceptable welds
+- **PQR (Procedure Qualification Record)**: Document recording actual welding parameters and test results that support a WPS
+- **Essential Variable**: Welding parameter that, if changed, requires re-qualification of WPS
+- **Filler Metal**: Consumable material added to weld joint (electrode, wire, rod)
+- **Base Metal**: Parent material being joined by welding
+- **Heat-Affected Zone (HAZ)**: Area of base metal where properties altered by welding heat
+- **Fusion**: Melting together of base metal and filler metal
+- **Penetration**: Depth that weld metal extends into joint
+- **Root Pass**: First weld pass deposited in a joint
+- **Cover Pass (Cap Pass)**: Final weld pass providing finished surface
+- **Preheat**: Heating of base metal before welding to reduce cooling rate
+- **Interpass Temperature**: Temperature of weld area between passes
+- **PWHT (Post-Weld Heat Treatment)**: Controlled heating after welding to reduce residual stresses or restore properties
+- **Undercut**: Groove at toe of weld where base metal melted away
+- **Overlap**: Weld metal protrudes beyond toe without fusing to base metal
+- **Porosity**: Gas pockets trapped in weld metal
+- **Slag Inclusion**: Non-metallic material trapped in weld
+- **Incomplete Fusion**: Lack of complete melting between weld passes or base metal
+- **Incomplete Penetration**: Root pass fails to fully penetrate joint thickness
+- **Cracking**: Fractures in weld metal or HAZ (hot cracks, cold cracks, crater cracks)
+- **Arc Blow**: Deflection of welding arc by magnetic fields
+- **Spatter**: Metal droplets expelled during welding
+- **NDT (Non-Destructive Testing)**: Inspection without damaging part (MT, PT, RT, UT, VT)
+- **MT (Magnetic Particle Testing)**: Uses magnetic fields and iron particles to detect surface/near-surface cracks
+- **PT (Penetrant Testing)**: Uses liquid penetrant to detect surface-breaking defects
+- **RT (Radiographic Testing)**: Uses X-rays or gamma rays to detect internal defects
+- **UT (Ultrasonic Testing)**: Uses high-frequency sound waves to detect internal defects
+- **VT (Visual Testing)**: Direct observation with aided or unaided eye
+- **Bead**: Single weld pass or layer
+- **Stringer Bead**: Narrow weld bead with minimal side-to-side motion
+- **Weave Bead**: Wide weld bead made with oscillating electrode motion
+- **Tack Weld**: Temporary weld to hold joint alignment during welding
+- **Backgouging**: Removing metal from opposite side of joint to expose sound metal for welding
+
+Standards & Frameworks (2024):
+- **AWS D1.1 (Structural Welding Code - Steel)**: Primary code for structural steel welding in buildings and bridges
+- **AWS D1.2 (Structural Welding Code - Aluminum)**: Structural welding requirements for aluminum
+- **AWS D1.6 (Structural Welding Code - Stainless Steel)**: Structural welding requirements for stainless steel
+- **AWS D1.8 (Structural Welding Code - Seismic Supplement)**: Additional requirements for seismic applications
+- **ASME Section IX**: Welding and brazing qualifications for pressure vessels and piping
+- **ASME B31.3**: Process piping welding requirements for petrochemical and industrial facilities
+- **API 1104**: Welding of pipelines and related facilities for oil and gas industry
+- **AWS A5.x Series**: Filler metal specifications (A5.1 for SMAW, A5.18 for GMAW carbon steel, A5.9 for stainless, A5.10 for aluminum)
+- **ASME Section V**: Non-destructive examination methods and acceptance criteria
+- **ASME Section VIII**: Pressure vessel design and fabrication requirements
+- **AWS QC1**: Standard for AWS Certification of Welding Inspectors
+- **ISO 9606**: International standard for welder qualification testing
+- **ISO 15614**: International standard for welding procedure specification and qualification
+
+Common Tools & Equipment:
+- **Welding Machines**: AC/DC transformers, inverter-based power sources (200-400 amp for manual, 600-1000 amp for automatic)
+- **SMAW Equipment**: Electrode holder (stinger), ground clamp, electrode storage oven (250°F for low-hydrogen)
+- **GMAW Equipment**: Wire feeder, gun (push or pull system), drive rolls, contact tips, nozzles
+- **GTAW Equipment**: TIG torch (air-cooled or water-cooled), gas lens, collet, tungsten electrodes (2% thoriated, lanthanated, or ceriated), foot pedal or thumb control
+- **Shielding Gases**: Argon (GTAW, aluminum GMAW), CO2 (GMAW steel), Ar/CO2 mix (75/25 or 90/10), Tri-mix (Ar/CO2/O2)
+- **Preparation Tools**: Angle grinder with grinding/cutting wheels, wire wheels (carbon steel and stainless), files, beveling tools, plasma cutter
+- **Measuring Tools**: Welding gauges (fillet weld, groove weld, pit gauges), high-temperature thermometers (preheat verification), calipers, protractors
+- **Safety Equipment**: Welding helmet with auto-darkening lens (shade 10-14), flame-resistant jacket and pants, leather gloves, steel-toed boots, respirator for confined space, ear protection
+- **Inspection Tools**: Magnifying glass (10x), flashlight, straight edge, square, weld inspection gauge, MT yoke, PT kit, film for radiography
+- **Joint Preparation**: Cutting torch, plasma cutter, beveling machine, end-prep machine for pipe
+- **Positioning Equipment**: Welding positioners, pipe rollers, turning rolls, manipulators for automatic welding
+
+Change log
+2024-12: Initial welder playbook created based on AWS D1.1, ASME Section IX, and OSHA 1910.252 standards
+- Comprehensive welding procedure specifications (WPS) for multiple processes
+- Detailed quality control and inspection requirements per AWS codes
+- Extensive templates for WPS, PQR, inspection reports, and qualification tracking
+- Clear boundaries regarding certification requirements and engineering oversight
+- Safety protocols including hot work permits and confined space entry
+- Coverage of common welding processes (SMAW, GMAW, GTAW, FCAW) with parameters
+- Material traceability and heat number tracking procedures
+- Integration of non-destructive testing requirements
