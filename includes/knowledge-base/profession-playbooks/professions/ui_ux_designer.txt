@@ -13,55 +13,1209 @@ Category guidance
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Design intuitive, accessible user interfaces for web, mobile, and desktop applications
+- Conduct user research, create personas, user journeys, and empathy maps
+- Create wireframes, mockups, prototypes, and interactive prototypes
+- Develop and maintain design systems, style guides, and component libraries
+- Conduct usability testing and iterate based on user feedback
+- Design responsive layouts that work across devices and screen sizes
+- Ensure designs meet WCAG 2.1 accessibility standards (AA minimum)
+- Collaborate with developers to ensure accurate design implementation
+- Create user flows, information architecture diagrams, and sitemaps
+- Design micro-interactions, animations, and transitions
+- Success = Intuitive, accessible designs that meet user needs, validated through testing, and successfully implemented
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Make design decisions without user research or data to support them
+- Implement designs that violate accessibility standards or exclude users
+- Ignore platform-specific design guidelines (Material Design, HIG, Windows UI)
+- Copy designs from competitors without understanding user context
+- Promise specific conversion rate improvements without testing data
+- Design beyond technical feasibility without developer consultation
+- Proceed with designs that violate brand guidelines or legal requirements
+- Make color/contrast choices that fail WCAG accessibility standards
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- User research requires specialized expertise (ethnographic studies, large-scale surveys)
+- Accessibility requirements are complex or regulatory (Section 508, ADA compliance)
+- Brand strategy questions arise (rebranding, positioning, messaging)
+- Legal issues with design assets (copyright, trademark, licensing)
+- Technical feasibility questions require specialized engineering input
+- Performance optimization requires front-end development expertise
+- Animation complexity requires motion designer or animator
+- Data visualization requires specialist data viz designer
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- Who are the target users? (Demographics, tech proficiency, accessibility needs)
+- What problem are we solving for users? (User goals, pain points, Jobs to Be Done)
+- What platforms and devices must we support? (Web, iOS, Android, desktop, tablet)
+- Are there existing brand guidelines or design systems? (Colors, typography, components)
+- What are the business goals and success metrics? (Conversion, engagement, retention)
+- What is the timeline and project scope? (MVP vs full feature set, deadlines)
+- Are there specific accessibility or compliance requirements? (WCAG level, industry regulations)
+- What research or data do we have about users? (Analytics, user feedback, previous studies)
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Research & Discovery
+   - Review existing research, analytics, and user feedback
+   - Conduct stakeholder interviews to understand business goals
+   - Perform competitive analysis and industry benchmarking
+   - Conduct user interviews, surveys, or contextual inquiry
+   - Create or update user personas and user journey maps
+   - Define problem statement and design goals
+   - Identify constraints (technical, business, timeline)
+   
+2. Information Architecture & Strategy
+   - Create user flows and task flows
+   - Develop information architecture diagrams
+   - Create sitemaps for web projects
+   - Prioritize features using MoSCoW or Kano model
+   - Define content strategy and microcopy guidelines
+   - Plan navigation patterns and interaction models
+   
+3. Ideation & Wireframing
+   - Conduct ideation sessions (sketching, crazy 8s, design studio)
+   - Create low-fidelity wireframes for key screens
+   - Test paper prototypes or digital wireframes with users
+   - Iterate based on feedback
+   - Get stakeholder alignment on structure and flow
+   - Plan responsive breakpoints and layouts
+   
+4. Visual Design & Prototyping
+   - Establish or apply visual design system
+   - Create high-fidelity mockups for key screens/states
+   - Design micro-interactions and transitions
+   - Build interactive prototypes (Figma, Framer, ProtoPie)
+   - Ensure accessibility (color contrast, text size, touch targets)
+   - Create responsive designs for multiple breakpoints
+   - Document design specifications and redlines
+   
+5. Testing & Validation
+   - Conduct usability testing with target users (5-8 participants)
+   - Perform accessibility audits (automated and manual)
+   - Test responsive designs on actual devices
+   - Gather and analyze feedback
+   - Iterate designs based on findings
+   - Validate against success metrics
+   
+6. Handoff & Implementation Support
+   - Prepare design files for developer handoff
+   - Create design specifications document
+   - Export assets (SVGs, PNGs, icons)
+   - Review developer implementation
+   - Provide feedback on implementation accuracy
+   - Document design system components
+   - Create usage guidelines for design patterns
 
 4) Deliverables
 List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- User research reports (personas, journey maps, empathy maps)
+- Information architecture diagrams (sitemaps, user flows, task flows)
+- Low-fidelity wireframes (sketches, grayscale layouts)
+- High-fidelity mockups (pixel-perfect visual designs)
+- Interactive prototypes (clickable, with transitions)
+- Design systems and style guides (colors, typography, spacing, components)
+- Component libraries (buttons, forms, cards, navigation)
+- Responsive design specifications (mobile, tablet, desktop)
+- Accessibility documentation (WCAG compliance checklist)
+- Design handoff files (Figma, Sketch, Adobe XD files with developer annotations)
+- Asset exports (icons, images, logos in multiple formats)
+- Animation and micro-interaction specifications
+
+Minimum viable deliverable: Wireframes + key mockups + basic prototype + developer handoff
+Gold standard deliverable: Above + comprehensive research + design system + interactive prototype + usability test results + accessibility audit + implementation support
 
 5) Quality checklist
 Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+User Experience:
+- [ ] Solves identified user problems and pain points
+- [ ] Supports primary user goals and tasks
+- [ ] Navigation is intuitive and consistent
+- [ ] Information hierarchy is clear
+- [ ] Loading states and empty states designed
+- [ ] Error messages are helpful and actionable
+- [ ] Confirmation patterns for destructive actions
+- [ ] Onboarding helps users understand the product
+
+Visual Design:
+- [ ] Consistent with brand guidelines
+- [ ] Typography hierarchy is clear (H1-H6, body, labels)
+- [ ] Color palette is consistent and purposeful
+- [ ] Adequate whitespace and visual breathing room
+- [ ] Visual consistency across all screens
+- [ ] Icons and imagery are appropriate and consistent
+- [ ] Design works in light and dark modes (if applicable)
+
+Accessibility (WCAG 2.1 AA):
+- [ ] Color contrast ratio ≥ 4.5:1 for normal text, ≥ 3:1 for large text
+- [ ] Touch targets ≥ 44x44px (mobile) or 48x48dp (Android)
+- [ ] Text can be resized up to 200% without loss of functionality
+- [ ] Alternative text for all meaningful images
+- [ ] Form inputs have associated labels
+- [ ] Keyboard navigation works for all interactive elements
+- [ ] Focus indicators are visible
+- [ ] No content flashing more than 3 times per second
+- [ ] ARIA labels provided where needed
+
+Responsive Design:
+- [ ] Layouts adapt to mobile (320px+), tablet (768px+), desktop (1024px+)
+- [ ] Touch targets appropriately sized for mobile
+- [ ] Content is readable on small screens without horizontal scrolling
+- [ ] Navigation adapts (hamburger menu on mobile, expanded on desktop)
+- [ ] Images and media scale appropriately
+- [ ] Key actions accessible on all screen sizes
+
+Interaction Design:
+- [ ] Micro-interactions provide feedback (hover, active, focus states)
+- [ ] Loading indicators show progress
+- [ ] Animations have appropriate duration (200-500ms typical)
+- [ ] Transitions feel natural and purposeful
+- [ ] Interactive elements have clear affordances
+- [ ] Gestures follow platform conventions (swipe, pinch, tap)
+
+Usability:
+- [ ] Tested with at least 5 representative users
+- [ ] Major usability issues addressed
+- [ ] Task success rate meets goals (typically ≥80%)
+- [ ] Users can complete key tasks without assistance
+- [ ] Error recovery is straightforward
 
 6) Templates (paste-ready)
 Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== User Persona Template ===
+# Persona: [Persona Name]
+**Type**: [Primary / Secondary]
+**Created**: [YYYY-MM-DD]
+
+## Demographics
+- **Age**: [Age range]
+- **Location**: [Geographic location]
+- **Occupation**: [Job title/industry]
+- **Education**: [Education level]
+- **Tech Savviness**: [Low / Medium / High]
+
+## Photo
+[Representative stock photo or illustration]
+
+## Quote
+"[A quote that captures their mindset or frustration]"
+
+## Goals & Motivations
+1. [Primary goal - what they want to achieve]
+2. [Secondary goal]
+3. [Underlying motivation - why they want this]
+
+## Frustrations & Pain Points
+1. [Main frustration with current solutions]
+2. [Secondary pain point]
+3. [Workflow challenge]
+
+## Behaviors
+- **Daily Routine**: [How they typically use technology]
+- **Preferred Devices**: [Mobile-first / Desktop / Tablet]
+- **Social Media**: [Which platforms they use and how]
+- **Shopping/Decision Making**: [How they research and decide]
+
+## Needs from Our Product
+1. [Primary need - must-have]
+2. [Secondary need - important]
+3. [Nice-to-have - enhances experience]
+
+## Scenario
+[A specific scenario showing how this persona would use the product]
+
+**Example**: Sarah needs to check her bank balance while waiting in line at the coffee shop. She pulls out her phone and opens the app, expecting to see her balance immediately without multiple taps.
+
+## Tech Profile
+- **Devices Used**: [iPhone, MacBook, iPad]
+- **Apps/Tools**: [Commonly used apps]
+- **Browser**: [Primary browser]
+- **Accessibility Needs**: [Screen reader, large text, etc. if applicable]
+
+## Research Source
+Based on: [User interviews (n=15), Analytics data, Customer support tickets]
+
+=== User Journey Map Template ===
+# User Journey Map: [Journey Name]
+**Persona**: [Primary persona name]
+**Scenario**: [Specific user scenario being mapped]
+**Date**: [YYYY-MM-DD]
+
+## Journey Overview
+**Goal**: [What the user wants to accomplish]
+**Current Experience**: [Brief description of current state]
+
+## Journey Stages
+
+### Stage 1: [Awareness / Research]
+**User Actions**:
+- [Action 1]
+- [Action 2]
+
+**Thoughts**: [What the user is thinking]
+**Emotions**: 😐 Neutral / 😊 Positive / 😟 Frustrated
+**Pain Points**:
+- [Pain point 1]
+- [Pain point 2]
+
+**Touchpoints**: [Website, mobile app, email, customer service]
+**Opportunities**: [Design opportunities to improve this stage]
+
+---
+
+### Stage 2: [Consideration / Evaluation]
+**User Actions**:
+- [Action 1]
+- [Action 2]
+
+**Thoughts**: [What the user is thinking]
+**Emotions**: 😐 Neutral / 😊 Positive / 😟 Frustrated
+**Pain Points**:
+- [Pain point 1]
+
+**Touchpoints**: [Which channels the user interacts with]
+**Opportunities**: [Improvements we can make]
+
+---
+
+### Stage 3: [Purchase / Conversion]
+**User Actions**:
+- [Action 1]
+- [Action 2]
+
+**Thoughts**: [What the user is thinking]
+**Emotions**: 😊 Satisfied / 😟 Anxious / 😡 Angry
+**Pain Points**:
+- [Checkout too complex]
+- [Unclear pricing]
+
+**Touchpoints**: [Checkout page, payment gateway, confirmation email]
+**Opportunities**:
+- Simplify checkout to 3 steps
+- Show clear pricing breakdown
+- Add guest checkout option
+
+---
+
+### Stage 4: [Post-Purchase / Retention]
+**User Actions**:
+- [Receives confirmation]
+- [Tracks order]
+
+**Thoughts**: [Wondering when it will arrive]
+**Emotions**: 😊 Happy
+**Pain Points**:
+- [Tracking info unclear]
+
+**Touchpoints**: [Confirmation email, tracking page, app notifications]
+**Opportunities**:
+- Send proactive status updates
+- Add in-app tracking
+
+## Overall Journey Insights
+**Biggest Pain Points**:
+1. [Major friction point 1]
+2. [Major friction point 2]
+
+**Emotional Peaks**:
+- [When user feels most positive]
+
+**Emotional Valleys**:
+- [When user feels most frustrated]
+
+**Key Opportunities**:
+1. [Highest-impact improvement opportunity]
+2. [Second priority opportunity]
+
+=== Design System Component Specification ===
+# Component: [Button / Input / Card / etc.]
+**Last Updated**: [YYYY-MM-DD]
+**Owner**: [Designer name]
+
+## Purpose
+[What this component does and when to use it]
+
+## Variants
+### Primary Button
+- **Use**: Main call-to-action, highest priority action
+- **Colors**: Brand primary (#0066CC), White text
+- **States**: Default, Hover, Active, Disabled, Loading
+- **Sizes**: Small (32px), Medium (40px), Large (48px)
+
+### Secondary Button
+- **Use**: Secondary actions, less important than primary
+- **Colors**: Gray background (#F5F5F5), Dark text
+- **States**: Default, Hover, Active, Disabled, Loading
+- **Sizes**: Small (32px), Medium (40px), Large (48px)
+
+### Ghost/Tertiary Button
+- **Use**: Least important actions, inline with text
+- **Colors**: Transparent background, Brand text
+- **States**: Default, Hover, Active, Disabled
+- **Sizes**: Small, Medium, Large
+
+## Anatomy
+```
+[Icon (optional)] [Label] [Loading Spinner (when loading)]
+```
+
+## Specifications
+**Typography**:
+- Font: Inter Semi-Bold
+- Size: 14px (Small), 16px (Medium), 18px (Large)
+- Letter Spacing: 0.02em
+
+**Spacing**:
+- Padding: 8px 16px (Small), 12px 24px (Medium), 16px 32px (Large)
+- Icon-Label Gap: 8px
+- Border Radius: 8px
+
+**States**:
+- Hover: Darken by 10%
+- Active: Darken by 20%, scale(0.98)
+- Disabled: Opacity 40%, cursor not-allowed
+- Focus: 2px outline, offset 2px, outline-color: brand primary
+
+## Accessibility
+- **Minimum Touch Target**: 44x44px (iOS), 48x48dp (Android)
+- **Color Contrast**: 4.5:1 minimum for text
+- **Keyboard**: Focus visible, activates on Enter/Space
+- **Screen Reader**: Button text clearly describes action
+
+## Behavior
+- **Click**: Triggers assigned action, shows loading state for async operations
+- **Loading**: Shows spinner, disables button, maintains button width
+- **Animation**: Transform scale(0.98) on click, 150ms ease-out
+- **Multiple Buttons**: Primary button on right, secondary on left (LTR layouts)
+
+## Usage Guidelines
+**Do**:
+✅ Use primary button for main action on screen
+✅ Keep button labels concise (1-3 words)
+✅ Use verbs that describe the action (Save, Send, Create)
+✅ Maintain visual hierarchy (one primary per screen typically)
+
+**Don't**:
+❌ Don't use multiple primary buttons competing for attention
+❌ Don't use vague labels like "Click Here" or "Submit"
+❌ Don't disable buttons without explanation
+❌ Don't make touch targets smaller than 44x44px
+
+## Code Implementation
+### React/Tailwind Example
+```jsx
+<button
+  className="px-6 py-3 bg-blue-600 text-white rounded-lg 
+             hover:bg-blue-700 active:scale-98 disabled:opacity-40 
+             transition-all duration-150 font-semibold"
+  disabled={isLoading}
+>
+  {isLoading ? <Spinner /> : 'Save Changes'}
+</button>
+```
+
+### SwiftUI Example
+```swift
+Button(action: { handleSave() }) {
+    HStack {
+        if isLoading {
+            ProgressView()
+        }
+        Text("Save Changes")
+    }
+    .frame(maxWidth: .infinity)
+    .padding()
+    .background(Color.blue)
+    .foregroundColor(.white)
+    .cornerRadius(8)
+}
+.disabled(isLoading)
+```
+
+## Related Components
+- Link Button (for navigation)
+- Icon Button (icon only, no label)
+- Floating Action Button (mobile primary action)
+
+=== Usability Test Plan Template ===
+# Usability Test Plan: [Feature/Flow Name]
+**Test Date**: [YYYY-MM-DD to YYYY-MM-DD]
+**Moderator**: [Name]
+**Note Taker**: [Name]
+
+## Test Objectives
+**Primary Goals**:
+1. [Evaluate if users can successfully complete [task]]
+2. [Identify pain points in [specific flow]]
+3. [Validate design decisions for [feature]]
+
+**Success Metrics**:
+- Task success rate: ≥ 80%
+- Task completion time: ≤ [X] minutes
+- User satisfaction rating: ≥ 4/5
+- Critical errors: 0
+
+## Participants
+**Target Users**: [Persona name(s)]
+**Number of Participants**: 5-8
+**Screening Criteria**:
+- [Requirement 1, e.g., "Uses mobile banking apps weekly"]
+- [Requirement 2, e.g., "Age 25-45"]
+- [Requirement 3, e.g., "Not UI/UX professionals"]
+
+**Recruitment**: [Source - user panel, recruiting agency, social media]
+
+## Test Format
+**Method**: Moderated remote / In-person / Unmoderated
+**Duration**: 45-60 minutes per session
+**Tool**: [Zoom, UserTesting.com, in-person lab]
+**Recording**: Yes (with consent)
+
+## Test Protocol
+### Introduction (5 minutes)
+"Thank you for participating in this test today. We're testing a [product/feature], not you. There are no wrong answers. Please think out loud as you complete tasks. Your honest feedback helps us improve the design."
+
+**Consent**: Record consent for recording and data usage
+
+### Background Questions (5 minutes)
+1. How often do you [relevant activity]?
+2. What tools/apps do you currently use for [task]?
+3. What frustrates you most about [current solutions]?
+
+### Tasks (30 minutes)
+#### Task 1: [Task Name - e.g., "Create a new project"]
+**Scenario**: "[Realistic scenario - e.g., You need to start tracking time for a new client project called 'Acme Corp']"
+
+**Success Criteria**:
+- [ ] User navigates to project creation
+- [ ] User enters project details
+- [ ] User saves project successfully
+
+**Metrics to Track**:
+- Time to complete
+- Number of errors/hesitations
+- Path taken
+- Verbalizations (confusion, satisfaction)
+
+---
+
+#### Task 2: [Task Name]
+**Scenario**: "[Scenario]"
+
+**Success Criteria**:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+
+**Metrics to Track**:
+- Time to complete
+- Success/failure
+- Assistance needed (yes/no)
+
+---
+
+#### Task 3: [Task Name]
+[Continue for 3-5 key tasks]
+
+### Post-Task Questions (10 minutes)
+**Per Task**:
+- On a scale of 1-5, how easy was it to complete this task?
+- What, if anything, was confusing?
+- What would you change?
+
+**Overall**:
+1. What did you like most about the design?
+2. What frustrated you?
+3. How does this compare to similar products you've used?
+4. On a scale of 1-10, how likely are you to use this product?
+
+### Wrap-Up (5 minutes)
+"Thank you for your time and feedback. Do you have any final thoughts or questions?"
+
+## Data Collection
+**Quantitative**:
+- Task success rate (%)
+- Task completion time (minutes:seconds)
+- Error count per task
+- Satisfaction ratings (1-5 scale)
+
+**Qualitative**:
+- Quotes (note memorable verbalizations)
+- Observed behaviors (hesitations, confusion points)
+- Pain points identified
+- Suggested improvements
+
+## Analysis & Reporting
+**Data Synthesis**:
+- Aggregate metrics across participants
+- Identify patterns in failures and confusion points
+- Categorize findings by severity (Critical / High / Medium / Low)
+
+**Report Deliverables**:
+1. Executive summary (1 page)
+2. Detailed findings with severity ratings
+3. Video clips of key moments
+4. Actionable recommendations prioritized by impact
+5. Comparison to baseline metrics (if available)
+
+=== Design Handoff Specification Template ===
+# Design Handoff: [Feature Name]
+**Designer**: [Name]
+**Developers**: [Name(s)]
+**Date**: [YYYY-MM-DD]
+
+## Overview
+**Feature**: [Brief description of what's being built]
+**User Story**: As a [user type], I want to [action] so that [benefit]
+**Acceptance Criteria**: [Link to requirements doc or list key criteria]
+
+## Design Files
+**Figma/Sketch Link**: [URL with view/comment access]
+**Prototype Link**: [URL to interactive prototype]
+**Version**: [Design file version number]
+
+## Screens Included
+1. [Screen 1 name] - [Brief description]
+2. [Screen 2 name] - [Brief description]
+3. [Screen 3 name] - [Brief description]
+
+## Design Specifications
+### Layout & Spacing
+- **Container Width**: 1200px max, centered
+- **Grid**: 12 columns, 24px gutters
+- **Breakpoints**: 
+  - Mobile: 320px - 767px
+  - Tablet: 768px - 1023px
+  - Desktop: 1024px+
+
+### Typography
+- **Heading 1**: Inter Bold, 32px/40px, #1A1A1A
+- **Heading 2**: Inter Semi-Bold, 24px/32px, #1A1A1A
+- **Body**: Inter Regular, 16px/24px, #333333
+- **Small Text**: Inter Regular, 14px/20px, #666666
+- **Link**: Inter Medium, 16px/24px, #0066CC, underline on hover
+
+### Colors
+**Primary Palette**:
+- Primary: #0066CC
+- Primary Hover: #0052A3
+- Primary Active: #003D7A
+
+**Neutral Palette**:
+- Text Primary: #1A1A1A
+- Text Secondary: #666666
+- Border: #E0E0E0
+- Background: #FFFFFF
+- Background Secondary: #F5F5F5
+
+**Semantic Colors**:
+- Success: #00A86B
+- Warning: #FF9500
+- Error: #FF3B30
+- Info: #007AFF
+
+### Interactive States
+**Buttons**:
+- Default: Primary color
+- Hover: Darken 10%, cursor pointer
+- Active: Darken 20%, scale(0.98)
+- Focus: 2px outline, primary color
+- Disabled: Opacity 40%
+
+**Inputs**:
+- Default: 1px border #E0E0E0
+- Focus: 2px border primary color
+- Error: 2px border error color
+- Disabled: Background #F5F5F5
+
+### Icons
+**Icon Set**: [Heroicons / Material Icons / Custom]
+**Size**: 24x24px (default), 20x20px (small), 32x32px (large)
+**Color**: Inherit from parent or #666666
+
+### Animations & Transitions
+- **Duration**: 200ms (quick interactions), 300ms (standard), 500ms (large movements)
+- **Easing**: ease-out for entrances, ease-in for exits, ease-in-out for movement
+- **Loading**: Spinner appears after 300ms delay to avoid flash
+
+## Responsive Behavior
+### Mobile (< 768px)
+- Single column layout
+- Navigation collapses to hamburger menu
+- Forms stack vertically
+- Touch targets minimum 44x44px
+
+### Tablet (768px - 1023px)
+- Two column layout where appropriate
+- Navigation shows limited items, overflow to menu
+- Cards displayed in 2 columns
+
+### Desktop (1024px+)
+- Full navigation visible
+- Three column layout where appropriate
+- Hover states active
+
+## Accessibility Requirements
+- [ ] Color contrast ≥ 4.5:1 for text
+- [ ] All images have alt text
+- [ ] Form inputs have labels
+- [ ] Keyboard navigation works (Tab, Enter, Escape)
+- [ ] Focus indicators visible
+- [ ] ARIA labels for icon-only buttons
+- [ ] Heading hierarchy maintained (H1 → H2 → H3)
+
+## Asset Export
+**Location**: [Folder path or cloud storage link]
+**Format**: SVG (icons, logos), PNG @2x and @3x (raster images)
+**Naming Convention**: `component-name_variant_state.svg`
+Example: `button-primary_large_hover.svg`
+
+## Implementation Notes
+**Key Interactions**:
+1. [Interaction 1]: When user clicks [element], [behavior]
+2. [Interaction 2]: On hover over [element], show [tooltip/effect]
+
+**Edge Cases**:
+- Long text: Truncate with ellipsis after 2 lines
+- Empty state: Show illustration + "No items yet" message + CTA
+- Loading state: Show skeleton screens, not blank page
+- Error state: Show error message, retry button
+
+**Dependencies**:
+- [ ] API endpoint [name] must return [data]
+- [ ] New font (Inter) needs to be added to project
+- [ ] Icon library needs updating to v2.0
+
+## QA Checkpoints
+**Visual**:
+- [ ] Colors match design exactly
+- [ ] Typography (font, size, weight) matches
+- [ ] Spacing matches spec (use 8px grid)
+- [ ] Icons correct size and color
+- [ ] Images display correctly
+
+**Functional**:
+- [ ] All interactive elements work
+- [ ] Hover states show correctly
+- [ ] Focus states visible
+- [ ] Loading states display
+- [ ] Error handling works
+
+**Responsive**:
+- [ ] Mobile layout correct
+- [ ] Tablet layout correct
+- [ ] Desktop layout correct
+- [ ] No horizontal scroll on any breakpoint
+
+**Accessibility**:
+- [ ] Screen reader testing completed
+- [ ] Keyboard navigation works
+- [ ] Color contrast meets WCAG AA
+
+## Questions & Feedback
+[Space for developers to ask questions or provide feedback]
+
+**Designer Availability**:
+- Slack: @[designer-handle]
+- Email: [designer@company.com]
+- Available for questions: [Time range]
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: User Research Synthesis Report
+```markdown
+# User Research Report: Mobile Banking App Redesign
+**Research Period**: November 2024
+**Researcher**: UX Research Team
+**Participants**: 15 (8 frequent users, 7 occasional users)
+
+## Executive Summary
+Our research identified three critical pain points preventing users from completing money transfers quickly: complex navigation (mentioned by 12/15 participants), unclear fee structure (10/15), and lack of transaction confirmation visibility (8/15). We recommend simplifying the transfer flow to 3 steps (down from 5), displaying fees upfront, and adding prominent confirmation screens.
+
+## Research Methodology
+- **Semi-structured interviews**: 15 participants, 45 minutes each
+- **Task analysis**: Observed users completing 5 common tasks
+- **Diary study**: 7 participants tracked banking app usage for 1 week
+- **Analytics review**: 3 months of app usage data
+
+## Participant Demographics
+- Age range: 22-58 years
+- Gender: 9 female, 6 male
+- Tech proficiency: 3 low, 7 medium, 5 high
+- Banking frequency: 5 daily, 7 weekly, 3 monthly
+
+## Key Findings
+
+### 1. Navigation Complexity (Critical)
+**Finding**: 80% of participants (12/15) struggled to find the money transfer feature, taking an average of 37 seconds and 4.2 taps to initiate a transfer.
+
+**Evidence**:
+- "I never know where to tap to send money. Sometimes it's under 'Payments', sometimes 'Transfer'?" - P3
+- "Why is this buried so deep? It's literally the main thing I do in this app." - P8
+
+**User Pain Points**:
+- Inconsistent terminology ("Pay", "Send", "Transfer" used interchangeably)
+- Transfer buried 3 levels deep in navigation
+- No quick actions on home screen
+- Recent payees not easily accessible
+
+**Impact**:
+- Task completion time 3x longer than competitors
+- 23% of users abandon before completing transfer (analytics)
+- Primary driver of low App Store ratings
+
+**Recommendation**:
+- Add "Send Money" as primary action on home screen
+- Consolidate "Pay", "Send", "Transfer" into single "Send Money" flow
+- Show recent payees on home screen (top 3)
+- Reduce navigation depth from 3 levels to 1
+
+---
+
+### 2. Unclear Fee Structure (High)
+**Finding**: 67% (10/15) were surprised by fees at confirmation step, with 4 participants abandoning transactions due to unexpected costs.
+
+**Evidence**:
+- "Wait, there's a fee? I didn't see that mentioned anywhere before now." - P5
+- "I would have used a different method if I knew it would cost $4." - P11
+
+**Current Experience**:
+- Fees only shown at final confirmation screen
+- No explanation of why fees vary
+- No way to compare transfer methods by cost
+
+**Recommendation**:
+- Display estimated fees immediately when entering amount
+- Explain fee calculation (e.g., "International transfers: 2.5% + $2")
+- Add fee comparison between transfer methods
+- Highlight fee-free options when available
+
+---
+
+### 3. Lack of Confirmation Visibility (Medium)
+**Finding**: 53% (8/15) expressed anxiety about whether transfers completed successfully, with some checking multiple times or contacting support.
+
+**Evidence**:
+- "It just went back to the home screen. Did it work? I don't know." - P2
+- "I wish there was a big green checkmark or something. I need to be sure." - P7
+
+**Current Experience**:
+- Brief toast message (3 seconds) as only confirmation
+- No persistent confirmation screen
+- Receipt buried in transaction history
+- No confirmation email option
+
+**Impact**:
+- Users unnecessary contact support to verify transfers (14% of support tickets)
+- Reduced trust in app
+- Users reluctant to transfer larger amounts
+
+**Recommendation**:
+- Add full-screen success confirmation with prominent checkmark
+- Show transfer details (amount, recipient, date, reference number)
+- Offer to share receipt via email/SMS
+- Add "View in transactions" CTA from confirmation screen
+
+## Secondary Findings
+
+### 4. Positive: Users Love Transaction History Search
+- 100% of participants easily found past transactions
+- Search and filtering features highly rated (4.8/5)
+- "This is actually better than my other banking apps" - P6
+
+### 5. Opportunity: Recurring Transfers Underutilized
+- Only 20% aware of recurring transfer feature
+- Would be useful for rent, allowances, subscriptions
+- Feature buried in settings, not discoverable
+
+## User Personas Update
+
+### Primary Persona: "Busy Professional Bobby"
+**Updated based on research**:
+- Sends money 2-3x per week (rent, splitting bills, family support)
+- Uses mobile banking exclusively while commuting
+- Values speed over features - wants tasks done in <30 seconds
+- Frustrated by navigation complexity in current app
+- Would pay premium for faster, simpler experience
+
+**Key Quote**: "I don't have time to hunt through menus. I just want to send my roommate money for utilities and be done."
+
+## Recommendations Summary (Prioritized)
+
+### Must Fix (P0 - Next Sprint)
+1. ✅ Add "Send Money" as primary CTA on home screen
+2. ✅ Show estimated fees upfront when entering amount
+3. ✅ Create dedicated confirmation screen with clear success indicators
+
+### Should Fix (P1 - Following Sprint)
+4. Consolidate payment terminology and navigation
+5. Surface recent payees on home screen
+6. Add receipt sharing options
+
+### Nice to Have (P2 - Backlog)
+7. Promote recurring transfers feature
+8. Add fee comparison between transfer methods
+9. Improve onboarding to highlight key features
+
+## Impact Projections
+Based on competitive benchmarks and user feedback:
+- **Task Completion Time**: Reduce from 47s to <15s (68% improvement)
+- **Abandonment Rate**: Reduce from 23% to <8% (65% improvement)
+- **Support Tickets**: Reduce transfer-related tickets by 40%
+- **User Satisfaction**: Increase from 3.2 to 4.5+ (App Store rating)
+
+## Next Steps
+1. **Validation Workshop** (Week of Dec 18): Present findings to stakeholders
+2. **Design Sprint** (Dec 18-22): Create and test solutions for P0 items
+3. **Usability Testing** (Early January): Validate redesign with 8 new participants
+4. **Phased Rollout** (Late January): A/B test with 10% of users
+
+## Appendix
+- Full interview transcripts: [Link]
+- Task analysis videos: [Link]
+- Analytics dashboard: [Link]
+- Competitive analysis: [Link]
+```
+
+Example 2: High-Fidelity Mockup with Annotations (Figma Export)
+```markdown
+# Design Mockup: Money Transfer Flow - Step 2 (Enter Amount)
+
+## Screen Description
+This is the second step in the simplified 3-step transfer flow. User has already selected the recipient (Step 1) and now enters the amount to send.
+
+## Layout Specifications
+**Canvas**: 375x812px (iPhone 13/14)
+**Safe Area**: 20px margins (top: 59px accounting for status bar)
+**Grid**: 8px baseline grid
+
+## Component Breakdown
+
+### 1. Header (Fixed)
+- **Height**: 56px
+- **Background**: White (#FFFFFF)
+- **Shadow**: 0px 2px 4px rgba(0, 0, 0, 0.08)
+- **Back Button**: 
+  - Position: 16px from left
+  - Icon: Chevron left, 24x24px, #1A1A1A
+  - Touch target: 44x44px
+- **Title**: "Send to Sarah Johnson"
+  - Font: Inter Semi-Bold, 18px/24px
+  - Color: #1A1A1A
+  - Position: Centered
+- **Close Button**:
+  - Position: 16px from right
+  - Icon: X, 24x24px, #666666
+  - Touch target: 44x44px
+
+### 2. Progress Indicator
+- **Position**: 16px below header
+- **Height**: 4px
+- **Total Width**: 343px (375px - 32px margins)
+- **Steps**: 3 segments
+- **Completed Steps**: 2 (Step 1 & 2)
+  - Color: #0066CC
+  - Width per segment: 110px
+- **Remaining Steps**: 1
+  - Color: #E0E0E0
+  - Width: 110px
+- **Gap between segments**: 6px
+
+### 3. Amount Input Section
+- **Position**: 48px below progress indicator
+- **Background**: Light gray card (#F8F8F8)
+- **Border Radius**: 16px
+- **Padding**: 24px
+- **Shadow**: 0px 1px 3px rgba(0, 0, 0, 0.04)
+
+**Amount Input**:
+- **Label**: "Amount"
+  - Font: Inter Medium, 14px/20px
+  - Color: #666666
+  - Margin bottom: 8px
+- **Input Field**:
+  - Font: Inter Semi-Bold, 48px/56px
+  - Color: #1A1A1A
+  - Placeholder: "$0.00"
+  - Type: Number with decimal
+  - Border: None (borderless input)
+  - Focus: No visible border, cursor blinks
+
+**Currency Toggle** (right side):
+- **Position**: Aligned to right, 12px from input
+- **Options**: USD | EUR | GBP
+- **Selected**: USD (Bold, #0066CC)
+- **Unselected**: (#999999)
+- **Tap to switch currencies**
+
+### 4. Fee Display (Real-time calculation)
+- **Position**: 16px below amount input section
+- **Layout**: Row with space-between alignment
+
+**Fee Label**:
+- Font: Inter Regular, 16px/24px
+- Color: #666666
+- Text: "Transfer fee"
+
+**Fee Amount**:
+- Font: Inter Semi-Bold, 16px/24px
+- Color: #1A1A1A
+- Text: "$2.50" (updates as amount changes)
+- **Info Icon**: 
+  - Position: 8px to right of amount
+  - Icon: Info circle, 16x16px, #999999
+  - Tappable: Shows fee breakdown popover
+
+**Total Display** (below fee):
+- **Position**: 8px below fee row
+- **Border top**: 1px solid #E0E0E0
+- **Padding top**: 12px
+- **Label**: "Total to send"
+  - Font: Inter Semi-Bold, 18px/24px
+  - Color: #1A1A1A
+- **Amount**: "$152.50"
+  - Font: Inter Bold, 24px/32px
+  - Color: #0066CC (brand color for emphasis)
+
+### 5. Quick Amount Shortcuts
+- **Position**: 24px below fee display
+- **Layout**: Horizontal scroll / Grid of 4 chips
+
+**Chip Design**:
+- **Size**: 80px x 40px
+- **Border**: 1px solid #E0E0E0
+- **Border Radius**: 20px (pill shape)
+- **Background**: White
+- **Active State**:
+  - Background: #E6F2FF (light brand color)
+  - Border: 1px solid #0066CC
+- **Font**: Inter Medium, 16px/24px
+- **Values**: $50, $100, $200, $500
+
+**Behavior**: Tap to set amount immediately
+
+### 6. Recent Transfers (Optional)
+- **Position**: 24px below shortcuts
+- **Visibility**: Only shown if user has transfer history with this recipient
+
+**Section Header**:
+- Font: Inter Semi-Bold, 14px/20px
+- Color: #666666
+- Text: "Recent amounts to Sarah"
+
+**Amount Pills**:
+- Layout: Horizontal row, 8px gap
+- Design: Similar to shortcuts but smaller
+- Size: Auto width, 32px height
+- Values: Based on recent transfers ($45.00, $120.00)
+- Tap to set amount
+
+### 7. Primary CTA (Fixed Bottom)
+- **Position**: Fixed to bottom, 24px from bottom edge
+- **Width**: 343px (375px - 32px margins)
+- **Height**: 56px
+- **Background**: #0066CC (primary brand color)
+- **Border Radius**: 12px
+- **Text**: "Continue"
+  - Font: Inter Semi-Bold, 18px/24px
+  - Color: #FFFFFF
+  - Letter spacing: 0.02em
+
+**States**:
+- **Default**: Enabled when amount > 0
+- **Disabled**: When amount = 0
+  - Background: #E0E0E0
+  - Text color: #999999
+  - cursor: not-allowed
+- **Hover/Active**: Background darkens to #0052A3
+- **Loading**: Shows spinner, text hidden, button disabled
+
+**Safe Area**: Button respects iPhone home indicator (34px)
+
+## Interactions
+
+### Amount Input
+1. **Focus**: Keyboard appears (numeric with decimal)
+2. **Real-time validation**: 
+   - Shows error if amount > $10,000 (daily limit)
+   - Error message appears below total: "Daily transfer limit is $10,000"
+   - Error text: Inter Regular, 14px/20px, #FF3B30 (error red)
+3. **Fee calculation**: Updates automatically as user types
+4. **Decimal handling**: Max 2 decimal places
+
+### Quick Amount Chips
+1. **Tap**: Immediately fills amount input
+2. **Visual feedback**: Chip becomes "active" state
+3. **Accessible**: Screen reader announces "Set amount to $50"
+
+### Fee Info Icon
+1. **Tap**: Shows popover with fee breakdown
+2. **Popover content**:
+   - "Transfer fees explained"
+   - "Domestic: $2.50 flat fee"
+   - "International: 2.5% + $2.00"
+   - "Free for transfers over $500"
+3. **Dismiss**: Tap outside or X button
+
+### Continue Button
+1. **Tap**: Navigates to Step 3 (Confirmation)
+2. **Validates**: Amount > 0 and < $10,000
+3. **Loading state**: Shows for API call to calculate exact fees
+4. **Error handling**: If API fails, shows error banner at top
+
+## Accessibility
+
+### Screen Reader
+- Header announces: "Step 2 of 3: Enter amount to send to Sarah Johnson"
+- Amount input labeled: "Amount in US dollars"
+- Fee info icon: "Information about transfer fees"
+- Continue button: "Continue to confirmation, button, enabled"
+
+### Keyboard Navigation
+- Tab order: Back button → Close → Amount input → Currency toggle → Fee info → Shortcuts → Continue
+- Focus indicators visible (2px outline, #0066CC)
+
+### Dynamic Type
+- Supports iOS Dynamic Type (text scales up to 200%)
+- Layout adapts to maintain readability
+- Minimum touch target 44x44px maintained
+
+### Color Contrast
+- All text meets WCAG AA (4.5:1 minimum)
+- Primary button: 7.2:1 contrast ratio
+- Disabled state: 3.2:1 (acceptable for disabled elements)
+
+## Edge Cases
+
+### No Network
+- Fee shows "Calculating..." if offline
+- Continue button disabled
+- Banner: "No internet connection. Please check your connection and try again."
+
+### Very Large Amount
+- If amount > $10,000: Show error
+- Error message: "Daily transfer limit is $10,000. Contact support for higher limits."
+- Continue button disabled
+
+### Very Small Amount
+- If amount < $1: Show warning (not error)
+- Warning: "Minimum transfer amount is $1.00"
+- Continue button disabled
+
+### Decimal Precision
+- Input limited to 2 decimal places
+- Rounds display amounts to 2 decimals
+- Internally stores full precision
+
+## Design Files
+- **Figma Link**: https://figma.com/file/abc123
+- **Prototype**: https://figma.com/proto/abc123
+- **Assets Exported**: [Link to asset folder]
+- **Design System**: Uses "FinBank Mobile v2.0" components
+
+## Developer Notes
+- Amount input uses native number keyboard on mobile
+- Fee calculation requires API call to `/api/v1/transfers/calculate-fee`
+- Currency toggle changes fee calculation endpoint parameter
+- Continue button triggers analytics event: `transfer_amount_entered`
+- Consider caching recent amounts locally for offline access
+```
+
+Example 3: Design System Documentation (Button Component)
+[See Template #3 in section 6 above - "Design System Component Specification"]
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **UI (User Interface)**: Visual elements users interact with
+- **UX (User Experience)**: Overall experience of using a product
+- **Wireframe**: Low-fidelity sketch or diagram showing layout and structure
+- **Mockup**: High-fidelity visual design showing colors, typography, imagery
+- **Prototype**: Interactive simulation demonstrating user flows and interactions
+- **Persona**: Fictional character representing a user segment
+- **User Journey**: Map of user's experience across touchpoints over time
+- **Information Architecture (IA)**: Organization and structure of content
+- **Design System**: Collection of reusable components, patterns, and guidelines
+- **Heuristic Evaluation**: Expert review using established usability principles
+- **A/B Testing**: Comparing two design variants to determine which performs better
+- **Affinity Diagram**: Method for organizing research insights into themes
+- **Card Sorting**: Research technique to understand user mental models
+- **Jobs to Be Done (JTBD)**: Framework focusing on user goals and motivations
+- **Accessibility**: Designing for users with disabilities or limitations
+
+Standards & Frameworks (2024):
+- **WCAG 2.1** (Level AA minimum): Web Content Accessibility Guidelines
+- **WCAG 2.2** (2023): Latest accessibility standard with mobile improvements
+- **Section 508**: US federal accessibility requirements
+- **EN 301 549**: European accessibility standard
+- **Apple Human Interface Guidelines** (2024): iOS, iPadOS, macOS, watchOS design
+- **Material Design 3** (2023): Google's design system with Material You
+- **Fluent Design System 2**: Microsoft's design language
+- **Nielsen's 10 Usability Heuristics**: Foundational UX principles
+- **ISO 9241-210**: Human-centered design for interactive systems
+- **ARIA 1.2**: Accessible Rich Internet Applications specification
+
+Design Methodologies:
+- **Design Thinking**: Empathize, Define, Ideate, Prototype, Test
+- **Double Diamond**: Discover, Define, Develop, Deliver
+- **Lean UX**: Build-Measure-Learn cycle for rapid iteration
+- **Atomic Design**: Design system methodology (Atoms → Molecules → Organisms → Templates → Pages)
+- **Jobs to Be Done (JTBD)**: Focus on user goals rather than demographics
+- **Design Sprint**: 5-day process for solving problems and testing ideas
+- **Agile UX**: Integrating UX work with agile development sprints
+
+Research Methods:
+- **Qualitative**: Interviews, usability testing, diary studies, ethnography
+- **Quantitative**: Surveys, analytics, A/B tests, click-tracking
+- **Generative**: Discovery research to understand problems (what to build)
+- **Evaluative**: Validation research to test solutions (whether it works)
+
+Common Tools:
+Design & Prototyping:
+- **Figma**: Collaborative design tool (industry standard)
+- **Sketch**: macOS design tool
+- **Adobe XD**: Design and prototyping
+- **Framer**: Advanced prototyping with code
+- **ProtoPie**: Interaction design tool
+- **Principle**: Animation and interaction design
+
+User Research:
+- **UserTesting.com**: Remote usability testing platform
+- **Maze**: Rapid testing and product research
+- **Optimal Workshop**: IA and UX research tools (card sorting, tree testing)
+- **Dovetail**: Research repository and analysis
+- **Lookback**: User interview and usability testing
+
+Collaboration & Handoff:
+- **Figma**: Design collaboration and developer handoff
+- **Zeplin**: Design specs and assets for developers
+- **Abstract**: Version control for design files
+- **InVision**: Prototyping and feedback
+- **Miro / FigJam**: Whiteboarding and workshops
+
+Accessibility Tools:
+- **Stark**: Accessibility checker (Figma plugin)
+- **Colour Contrast Analyser**: WCAG contrast checker
+- **WAVE**: Web accessibility evaluation tool
+- **axe DevTools**: Accessibility testing browser extension
+- **VoiceOver / TalkBack**: Screen readers for testing
+
+Analytics:
+- **Google Analytics 4**: Web analytics
+- **Hotjar**: Heatmaps and session recordings
+- **Mixpanel**: Product analytics
+- **Amplitude**: Behavioral analytics
+- **FullStory**: Digital experience analytics
+
+Change log
+2024-12: Initial playbook created based on current industry standards
+- Emphasis on accessibility (WCAG 2.2) and inclusive design
+- Modern design tools (Figma-first workflow)
+- Research-driven design process with user validation
+- Comprehensive design systems and component documentation
+- Responsive and mobile-first design approaches
+- Collaboration between design and development
+- Real-world examples from banking, e-commerce, SaaS applications
