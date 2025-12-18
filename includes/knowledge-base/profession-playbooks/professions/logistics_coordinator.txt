@@ -4,64 +4,498 @@ Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality logistics coordination across transportation modes and supply chain operations.
 
 Category guidance
-- Emphasize diagnosis, options with tradeoffs, recommendation, and execution plan.
+- Emphasize diagnosis, options with tradeoffs, recommendations, and execution plans.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Coordinate inbound and outbound shipments across multiple carriers and modes (air, ocean, ground, rail)
+- Manage freight documentation (BOL, commercial invoices, packing lists, customs declarations)
+- Track shipments and provide real-time status updates to stakeholders
+- Optimize routing and carrier selection for cost, speed, and reliability
+- Coordinate warehouse operations (receiving, putaway, picking, packing, shipping)
+- Manage 3PL and carrier relationships, negotiate rates, review invoices
+- Ensure compliance with shipping regulations (DOT, IATA, IMO, customs requirements)
+- Implement supply chain visibility tools and KPI tracking (on-time delivery, cost per shipment)
+- Resolve transportation issues (delays, damages, lost shipments, customs holds)
+- Maintain inventory accuracy and conduct cycle counts
+- Success = On-time delivery >95%, accurate documentation, cost-effective routing, minimal disruptions
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Make strategic supply chain decisions affecting network design or vendor selection (escalate to supply chain manager)
+- Commit to shipping terms that violate company policies or customer contracts
+- Override customs regulations or safety requirements (DOT hazmat, IATA dangerous goods)
+- Guarantee delivery dates without checking carrier capabilities and service levels
+- Personally operate forklifts, handle dangerous goods, or perform warehouse tasks without proper certification
+- Bypass quality control or inspection processes for expedited shipments
+- Share confidential customer or shipment data without proper authorization
+- Make binding commitments to carriers or vendors without procurement approval
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Hazmat or dangerous goods require special handling (engage safety/compliance officer)
+- International shipments encounter customs issues or regulatory holds (involve customs broker)
+- Carrier service failures threaten customer relationships or SLAs (escalate to operations manager)
+- Insurance claims for damaged/lost shipments exceed authority limits (engage risk management)
+- Force majeure events disrupt supply chain (coordinate with business continuity team)
+- Contract disputes with carriers or 3PLs arise (involve procurement/legal)
+- Warehouse safety incidents occur (engage EHS team immediately)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the shipment origin, destination, and required delivery date?
+- What transportation mode is needed (air, ocean, ground, intermodal) and why?
+- What is being shipped (commodity, dimensions, weight, hazmat classification if applicable)?
+- Are there special handling requirements (temperature control, white glove, lift gate)?
+- What Incoterms apply for international shipments (EXW, FOB, CIF, DDP)?
+- What documentation is required (commercial invoice, certificate of origin, packing list, MSDS)?
+- What is the shipment value and insurance requirements?
+- Are there customs, regulatory, or compliance considerations (FDA, USDA, export controls)?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use SCOR (Supply Chain Operations Reference) and industry best practices:
+
+1. Order Receipt & Validation
+   - Receive shipping request from customer or sales team
+   - Validate order completeness (addresses, commodity details, special requirements)
+   - Verify documentation requirements (commercial docs, regulatory certifications)
+   - Check inventory availability and warehouse capacity
+   - Confirm customer credit status and payment terms (if applicable)
+   - Enter order into TMS (Transportation Management System) or WMS (Warehouse Management System)
+   - Assign unique shipment tracking number
+   - Send order confirmation to customer with expected ship date
+
+2. Carrier Selection & Booking
+   - Determine optimal transportation mode (air/ocean/ground) based on urgency, cost, commodity
+   - Request quotes from multiple carriers (3+ quotes for competitive pricing)
+   - Evaluate carriers on: cost, transit time, service reliability, capacity, insurance coverage
+   - Book shipment with selected carrier via TMS, carrier portal, or email
+   - Obtain booking confirmation and assign carrier reference number
+   - Schedule pickup or delivery appointment at warehouse/customer site
+   - For LTL: coordinate consolidation opportunities to reduce costs
+   - For ocean: book container (FCL) or consolidate with other shipments (LCL)
+   - For air: confirm cut-off times and security requirements (TSA, IATA)
+
+3. Documentation & Compliance
+   - Generate Bill of Lading (BOL) with accurate commodity description, weight, dimensions
+   - Prepare commercial invoice for international shipments (HS codes, country of origin, value)
+   - Create packing list detailing contents, quantities, packaging type
+   - Obtain required certificates (certificate of origin, phytosanitary, FDA prior notice)
+   - For hazmat: prepare dangerous goods declaration (IATA DGD, DOT shipping papers)
+   - For exports: file EEI (Electronic Export Information) via AES Direct
+   - For imports: provide customs broker with documentation for entry filing
+   - Ensure all documents comply with Incoterms and trade agreements (USMCA, etc.)
+   - Email documentation package to carrier, customer, and customs broker
+
+4. Shipment Execution & Tracking
+   - Coordinate warehouse picking, packing, and staging
+   - Verify final weight and dimensions (reweigh if necessary to avoid surprise charges)
+   - Confirm pickup/delivery appointment with carrier dispatcher
+   - Apply shipping labels and placards (hazmat diamonds, orientation arrows, fragile labels)
+   - Conduct final quality inspection (damage-free packaging, correct labeling)
+   - Load shipment and obtain driver signature on BOL
+   - Update TMS with pickup confirmation and tracking number
+   - Monitor shipment progress via carrier tracking system (real-time GPS if available)
+   - Proactively identify potential delays (weather, carrier capacity, customs holds)
+   - Communicate status updates to customer at key milestones (picked up, in transit, out for delivery)
+   - Coordinate delivery appointment and special requirements (lift gate, inside delivery)
+
+5. Delivery Confirmation & Post-Shipment
+   - Obtain proof of delivery (POD) with recipient signature
+   - Verify delivery to correct location and recipient
+   - Upload POD to TMS and attach to customer order
+   - Conduct post-delivery survey for service quality feedback
+   - Resolve delivery exceptions (refused shipments, damages, shortages)
+   - Process freight invoices and audit for accuracy (rate, accessorials, fuel surcharges)
+   - Reconcile billing with booked rates and dispute overcharges
+   - Update KPIs in dashboard (on-time delivery %, cost per shipment, damage rate)
+   - Archive shipment documentation per retention policy (7 years for customs)
+   - Conduct lessons learned for problem shipments (root cause, corrective actions)
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Bill of Lading (BOL) and shipping labels
+- Commercial invoice, packing list, and certificate of origin (international shipments)
+- Carrier booking confirmations and rate quotes
+- Shipment tracking reports and status updates
+- Proof of Delivery (POD) documentation
+- Freight audit reports and invoice reconciliation
+- KPI dashboards (on-time delivery, cost per shipment, damage rate, carrier performance)
+- Standard Operating Procedures (SOPs) for recurring shipments
+- Carrier scorecards and performance reviews
+- Customs documentation and import/export compliance records
+- Incident reports for damaged/lost/delayed shipments
+- Cost savings analysis and carrier negotiation summaries
+
+Minimum viable: Accurate BOL + carrier booking + shipment tracking + POD + basic cost tracking
+Gold standard: Optimized routing + proactive issue resolution + KPI-driven carrier selection + full compliance documentation + continuous cost reduction
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Documentation Accuracy:
+- [ ] BOL contains accurate commodity description (no generic terms like "freight")
+- [ ] Weight and dimensions verified and match actual shipment
+- [ ] Hazmat classification correct if dangerous goods (UN number, proper shipping name, class)
+- [ ] Commercial invoice has correct HS codes and valuation for customs
+- [ ] Packing list matches actual contents and quantities shipped
+- [ ] All required certificates obtained (origin, phytosanitary, FDA, etc.)
+- [ ] Consignee name, address, and contact phone verified for accuracy
+
+Carrier Selection:
+- [ ] Quotes obtained from 3+ carriers for competitive pricing
+- [ ] Carrier selected based on cost, transit time, and service reliability balance
+- [ ] Carrier has capacity and equipment type for shipment (reefer, flatbed, etc.)
+- [ ] Carrier insurance coverage adequate for shipment value
+- [ ] Carrier has required certifications (TSA, C-TPAT, SmartWay, hazmat endorsement)
+- [ ] Pickup and delivery appointments confirmed with carrier dispatcher
+- [ ] Special requirements communicated (liftgate, inside delivery, appointment, etc.)
+
+Compliance & Safety:
+- [ ] Shipment complies with DOT, IATA, IMO, or other regulatory requirements
+- [ ] Export controls verified (EAR, ITAR) if applicable
+- [ ] Import requirements met (FDA prior notice, USDA permits, EPA certifications)
+- [ ] Incoterms clearly stated and understood by all parties
+- [ ] Insurance coverage in place for high-value or fragile shipments
+- [ ] Hazmat packaging, labeling, and placarding per 49 CFR or IATA DGR
+- [ ] Driver has required endorsements and training for cargo type
+
+Tracking & Communication:
+- [ ] Shipment entered in TMS with all relevant details
+- [ ] Tracking number provided to customer within 2 hours of pickup
+- [ ] Proactive status updates sent at key milestones
+- [ ] Potential delays identified early and communicated to customer
+- [ ] Delivery appointment scheduled and confirmed with recipient
+- [ ] POD obtained within 24 hours of delivery
+- [ ] Exceptions (damages, shortages, delays) escalated promptly
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Shipment Booking Request ===
+To: [Carrier Name]
+Subject: Booking Request - [Customer Name] - [Origin] to [Destination]
+
+Shipment Details:
+- Reference Number: [Internal PO/SO Number]
+- Origin: [Address, City, State ZIP]
+- Destination: [Address, City, State ZIP]
+- Pickup Date: [Date] between [Time Window]
+- Delivery Date: [Required Delivery Date]
+- Service Level: [Standard Ground / Expedited / Next Day Air / etc.]
+
+Commodity Information:
+- Description: [Commodity Description - be specific]
+- Weight: [Total Weight in lbs/kg]
+- Dimensions: [L x W x H in inches/cm per piece]
+- Pieces: [Number of Pallets/Cartons]
+- Freight Class: [NMFC Class if LTL]
+- Value: $[Declared Value]
+
+Special Requirements:
+- [ ] Liftgate required
+- [ ] Inside delivery
+- [ ] Residential delivery
+- [ ] Appointment required
+- [ ] Temperature control ([Temp Range])
+- [ ] Hazmat ([UN Number, Class])
+
+Please provide:
+1. Rate quote (all-in with fuel surcharge and accessorials)
+2. Transit time
+3. Booking confirmation number
+4. Pro/tracking number
+5. Driver contact info for pickup
+
+Thank you,
+[Your Name]
+[Title]
+[Phone] | [Email]
+
+=== Bill of Lading (BOL) Template ===
+BILL OF LADING
+
+Shipper Information:
+[Company Name]
+[Address]
+[City, State ZIP]
+Contact: [Name], [Phone]
+
+Consignee Information:
+[Company Name]
+[Address]
+[City, State ZIP]
+Contact: [Name], [Phone]
+
+Carrier Information:
+Carrier Name: [Carrier]
+Pro/Tracking Number: [Number]
+SCAC Code: [SCAC]
+
+Shipment Details:
+Shipment Date: [Date]
+PO/Reference Number: [Number]
+Service Level: [Prepaid / Collect / 3rd Party]
+
+Commodity Description:
+| HM | Qty | Type | Description | Weight | Class | NMFC |
+|----|-----|------|-------------|--------|-------|------|
+|    | 2   | PLT  | [Description] | 800 lbs | 70 | [NMFC] |
+
+Total Pieces: [Number]
+Total Weight: [Weight] lbs
+Freight Charges: [Prepaid / Collect]
+Special Instructions: [Any special handling requirements]
+
+Shipper Signature: _________________ Date: _______
+Driver Signature: _________________ Date: _______
+
+COD Amount: $_______ (if applicable)
+
+=== Shipment Status Update Email ===
+Subject: Shipment Update - [Tracking Number] - [Customer Name]
+
+Hi [Customer Name],
+
+Shipment Status Update for PO [PO Number]:
+
+Status: [In Transit / Out for Delivery / Delivered / Delayed]
+Tracking Number: [Number]
+Origin: [City, State]
+Destination: [City, State]
+Current Location: [City, State]
+
+Timeline:
+- Picked Up: [Date, Time]
+- Expected Delivery: [Date]
+- Actual Delivery: [Date, Time] (if applicable)
+
+[If delayed:]
+Delay Reason: [Weather / Carrier Capacity / Customs Hold / etc.]
+Revised ETA: [New Expected Delivery Date]
+Action Taken: [What we're doing to resolve]
+
+Tracking Link: [URL]
+
+Please let me know if you have any questions or need additional information.
+
+Best regards,
+[Your Name]
+[Title]
+[Phone] | [Email]
+
+=== Freight Damage Report ===
+FREIGHT DAMAGE/SHORTAGE REPORT
+
+Report Date: [Date]
+Reported By: [Name, Title]
+
+Shipment Information:
+- Tracking/Pro Number: [Number]
+- BOL Number: [Number]
+- Origin: [City, State]
+- Destination: [City, State]
+- Carrier: [Carrier Name]
+- Delivery Date: [Date]
+
+Issue Description:
+[ ] Visible damage to packaging
+[ ] Concealed damage (packaging intact, contents damaged)
+[ ] Shortage (missing pieces)
+[ ] Wrong item delivered
+[ ] Other: [Describe]
+
+Details:
+- Pieces Affected: [Number] of [Total Pieces]
+- Description of Damage: [Detailed description]
+- Estimated Value of Loss: $[Amount]
+
+Actions Taken:
+- [ ] Photos taken of damage and packaging (attach)
+- [ ] Notation made on delivery receipt (POD)
+- [ ] Carrier notified within 24 hours
+- [ ] Insurance claim filed
+- [ ] Customer notified
+
+Photos Attached: [Yes/No]
+POD with Notation Attached: [Yes/No]
+
+Next Steps:
+- [List next steps for resolution]
+
+Prepared by: [Name]
+Date: [Date]
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: LTL Ground Shipment Coordination
+```
+Customer Request: Ship 2 pallets (1,200 lbs) of electronics from Chicago, IL to Los Angeles, CA
+Required Delivery: Within 5 business days
+Commodity: Computer components (freight class 85)
+
+Solution:
+1. Obtained quotes from 3 LTL carriers:
+   - Carrier A: $450, 5-day transit
+   - Carrier B: $425, 6-day transit
+   - Carrier C: $440, 4-day transit (SELECTED)
+
+2. Booked with Carrier C for optimal cost/speed balance
+
+3. Prepared documentation:
+   - BOL with accurate commodity description: "Computer components NMFC 84370-1"
+   - Weight verified: 1,180 lbs actual (avoided reweigh charges)
+   - Freight class confirmed: 85
+
+4. Coordinated pickup:
+   - Scheduled pickup window: 10am-12pm
+   - Applied "Fragile" and "This End Up" labels
+   - Driver arrived 10:45am, shipment loaded and departed
+
+5. Tracking:
+   - Pro number emailed to customer within 1 hour
+   - Daily status updates sent
+   - Delivery completed day 4, 2pm local time
+   - POD obtained same day
+
+Result: On-time delivery, 15% cost savings vs. highest quote, zero damage, customer satisfaction score: 10/10
+```
+
+Example 2: International Ocean Freight Shipment
+```
+Customer Request: Export 40' container of machinery parts from Houston, TX to Hamburg, Germany
+Incoterms: FOB Houston
+Required Delivery: Within 30 days
+
+Solution:
+1. Carrier selection:
+   - Obtained quotes from 3 ocean carriers
+   - Selected carrier with best sailing schedule (18-day transit) and competitive rate ($2,800)
+
+2. Documentation preparation:
+   - Commercial invoice with HS codes (8483.40.50)
+   - Packing list (detailed contents, 8,500 kg)
+   - Certificate of origin (Form A for potential duty savings)
+   - AES filing completed via ACE (EEI)
+
+3. Export compliance:
+   - Verified no ECCN/ITAR restrictions
+   - Obtained export license (not required for this commodity)
+   - ISF (Importer Security Filing) communicated to customer's customs broker
+
+4. Container stuffing and loading:
+   - Container delivered to warehouse day before stuffing
+   - Cargo loaded and secured per best practices (no loose pieces)
+   - Container seals applied and seal number recorded
+   - VGM (Verified Gross Mass) declaration submitted 24 hours before vessel cut-off
+
+5. Shipment tracking:
+   - Container gated in at port terminal on time
+   - Vessel departed per schedule
+   - Provided customer with vessel name, voyage number, and container tracking
+   - Monitored progress via ocean carrier portal
+
+6. Arrival and delivery:
+   - Vessel arrived Hamburg port day 19
+   - Customs clearance completed by customer's broker day 21
+   - Container delivered to customer facility day 23
+
+Result: On-time delivery (7 days ahead of 30-day requirement), zero customs issues, full documentation compliance, customer feedback: "Smoothest export we've had"
+```
+
+Example 3: Expedited Air Freight Shipment
+```
+Customer Request: URGENT - Critical machine part needed for production downtime
+Origin: San Francisco, CA
+Destination: Tokyo, Japan
+Required: Delivery within 24 hours
+
+Solution:
+1. Immediate carrier coordination:
+   - Contacted air freight forwarder specializing in same-day service
+   - Confirmed available flight departing SFO at 11pm same day
+
+2. Documentation (prepared within 2 hours):
+   - Air Waybill (AWB)
+   - Commercial invoice (HS code 8431.39)
+   - Shipper's Letter of Instruction
+   - Japanese import permit (customer provided)
+
+3. Special handling:
+   - Expedited customs clearance (used broker with known shipper status)
+   - Arranged door-to-door service with hand carry to aircraft
+   - Temperature-sensitive packaging (part required climate control)
+
+4. Execution:
+   - Part picked up from customer at 4pm
+   - Cleared export customs by 8pm
+   - Loaded on 11pm flight SFO-NRT
+   - Flight departed on time
+
+5. Import and delivery:
+   - Arrived Tokyo Narita 2:30pm next day (local time)
+   - Import customs cleared by 4pm
+   - Hand delivered to customer facility by 6pm same day
+
+Result: 26-hour door-to-door delivery (met 24-hour requirement considering time zone), production downtime minimized, saved customer $50,000 in lost production. Cost: $3,200 (approved by customer for critical nature).
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **BOL (Bill of Lading)**: Legal document between shipper and carrier detailing shipment contents and terms
+- **POD (Proof of Delivery)**: Signed document confirming delivery completion
+- **3PL (Third-Party Logistics)**: Outsourced logistics and supply chain management provider
+- **TMS (Transportation Management System)**: Software for planning, executing, and optimizing freight movements
+- **WMS (Warehouse Management System)**: Software for managing warehouse operations (receiving, inventory, picking, shipping)
+- **LTL (Less Than Truckload)**: Freight service for shipments too small to fill entire trailer (typically 1-6 pallets)
+- **FTL (Full Truckload)**: Freight service for shipments requiring dedicated trailer (typically 10+ pallets)
+- **FCL (Full Container Load)**: Ocean freight using entire container (20' or 40')
+- **LCL (Less than Container Load)**: Ocean freight consolidated with other shippers' cargo
+- **Incoterms**: International commercial terms defining buyer/seller responsibilities (EXW, FOB, CIF, DDP, etc.)
+- **NMFC (National Motor Freight Classification)**: Standardized freight classification system for LTL shipping
+- **HS Code (Harmonized System Code)**: International product classification code for customs (6-10 digits)
+- **SCAC (Standard Carrier Alpha Code)**: Unique 2-4 letter carrier identification code
+- **Pro Number**: Tracking number assigned by LTL carriers
+- **AWB (Air Waybill)**: Contract of carriage for air freight shipments
+- **EEI (Electronic Export Information)**: Required filing for US exports >$2,500 via AES Direct
+- **ISF (Importer Security Filing)**: US Customs requirement (10+2 filing) 24 hours before ocean vessel loading
+- **VGM (Verified Gross Mass)**: SOLAS requirement to declare actual container weight before loading
+- **Freight Class**: Classification determining LTL rates based on density, stowability, handling, and liability
+- **Accessorial Charges**: Additional carrier fees (liftgate, inside delivery, residential, reweigh, detention)
+- **Drayage**: Short-distance transport, typically port-to-warehouse or intermodal container movement
+- **Demurrage**: Charge for container remaining at port terminal beyond free time
+- **Detention**: Charge for container remaining with customer beyond free time
+
+Standards & Frameworks (2024-2025):
+- **SCOR Model (Supply Chain Operations Reference)**: Process framework by APICS for supply chain management
+- **DOT 49 CFR**: US Department of Transportation regulations for hazmat and commercial vehicle operations
+- **IATA Dangerous Goods Regulations (DGR) 65th Edition (2024)**: Air transport of hazmat standards
+- **IMDG Code (International Maritime Dangerous Goods Code) Amendment 41-22**: Ocean transport hazmat
+- **CTPAT (Customs-Trade Partnership Against Terrorism)**: CBP supply chain security program
+- **TSA Security Programs**: Air cargo security requirements (CCSP, IAC)
+- **ISO 28000:2022**: Supply chain security management systems
+- **INCOTERMS 2020**: International commercial terms published by ICC
+- **NMFTA Guidelines**: National Motor Freight Traffic Association standards for LTL freight
+- **SOLAS VGM Requirements**: Safety of Life at Sea verified gross mass mandate (2016, ongoing)
+- **WCO SAFE Framework**: World Customs Organization framework for supply chain security
+- **C-TPAT Minimum Security Criteria**: US CBP supply chain security requirements
+
+Common Tools:
+- **TMS Platforms**: SAP TM, Oracle Transportation Management, MercuryGate, Kuebix, 3Gtms, project44
+- **WMS Platforms**: Manhattan Associates, Blue Yonder, HighJump, Körber, Infor WMS
+- **Freight Audit**: Cass Information Systems, nVision Global, Breakthrough Fuel, Intelligent Audit
+- **Visibility Tools**: FourKites, project44, Transporeon, FreightView, Trucker Tools
+- **Rate Shopping**: Freightos, Shippo, EasyPost, ShipStation, Freightview
+- **Customs Compliance**: Amber Road (now E2open), Descartes, Integration Point, ClearPath
+- **Ocean Tracking**: CargoSmart, INTTRA, Descartes MacroPoint for Ocean
+- **Load Planning**: TOPS Engineering (LoadMaster), Cargo Wiz, PalletStacking.com
+- **Label Printing**: ZPL (Zebra Programming Language), Brother QL-series, Dymo LabelWriter
+- **Documentation**: Microsoft Office (Excel, Word), Adobe Acrobat, DocuSign
+
+Change log
+2024-12: Initial playbook created based on SCOR Model, DOT 49 CFR, IATA DGR 65th Edition, and INCOTERMS 2020
+- Emphasized multi-modal coordination (air, ocean, ground, rail)
+- Focused on compliance (customs, hazmat, export controls)
+- Included KPI tracking (on-time delivery, cost per shipment, damage rate)
+- Provided templates for BOL, shipment booking, status updates, damage reports
+- Real-world examples across LTL, ocean freight, and expedited air scenarios
