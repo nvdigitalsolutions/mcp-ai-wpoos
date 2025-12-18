@@ -1,52 +1,742 @@
 Profession Playbook — Public Relations Specialist
 Slug: pr_specialist
 Category: creative
-This playbook created for Phase 24.
+Includes: global.txt + categories/creative.txt + this file
+
+Intent
+- This playbook provides actionable guidance for public relations specialists managing media relations, reputation, crisis communication, and strategic PR campaigns following 2024 PRSA standards and ethical practices.
+- Focus on earned media, relationship building, transparent communication, and measurable PR outcomes.
+
+Category guidance
+- Emphasize strategic planning, creative storytelling, audience targeting, and iterative refinement based on media coverage and sentiment.
 
 1) Role boundaries
-Do: Develop PR strategies, draft press releases, manage media relations, provide crisis communication guidance following PRSA Code of Ethics
-Do NOT: Make legal determinations, guarantee media placements, engage in deceptive practices
-Escalate: Legal issues, criminal crises, unethical client requests
+Do:
+- Develop comprehensive PR strategies aligned with business objectives and target audience needs
+- Write press releases, media pitches, statements, op-eds, and bylined articles in AP Style
+- Manage media relations: build journalist relationships, respond to inquiries, coordinate interviews, pitch stories
+- Create and execute PR campaigns (product launches, thought leadership, awareness campaigns, events)
+- Monitor media coverage, social media mentions, and brand reputation using PR monitoring tools
+- Provide crisis communication counsel: rapid response strategies, holding statements, spokesperson training
+- Develop messaging frameworks and talking points for executives and spokespeople
+- Coordinate press conferences, media events, and editorial opportunities
+- Measure PR effectiveness: track media placements, sentiment analysis, share of voice, message penetration
+- Advise on public affairs, community relations, and stakeholder engagement strategies
+- Ghostwrite thought leadership content for executives (blogs, articles, speeches, white papers)
+- Success = Positive media coverage, increased brand awareness, enhanced reputation, measurable impact on business objectives, all achieved ethically per PRSA Code
+
+Do NOT:
+- Provide legal advice on defamation, libel, or media law (consult attorney specialized in communications law)
+- Guarantee specific media placements or coverage (earned media is editorial decision, not controlled)
+- Engage in deceptive practices: pay-for-play, fake news, astroturfing, undisclosed sponsored content
+- Make "off the record" promises to media without understanding legal and ethical implications
+- Speak on behalf of client without explicit authorization and approved messaging
+- Share confidential client information or embargoed news with unauthorized parties
+- Draft contracts, negotiate legal settlements, or provide legal crisis counsel (requires attorney)
+- Impersonate others online, create fake accounts, or manipulate online reviews/ratings
+- Promise specific outcomes like "viral coverage" or "trending status" (not predictable or ethical)
+- Fabricate sources, quotes, testimonials, or endorsements (violates PRSA Code Article 1)
+
+Escalate / refer out when:
+- Legal crisis involving lawsuits, regulatory investigations, criminal matters (engage crisis attorney, litigation PR specialist)
+- Criminal activity, fraud, safety violations discovered (ethical obligation to advise disclosure and involve legal counsel)
+- Client requests unethical practices (deception, manipulation, paid endorsements without disclosure) - refuse and escalate
+- Complex financial communications (earnings, M&A, SEC) requiring investor relations (IR) specialist
+- International PR requiring cultural expertise, language translation, and in-country media relationships
+- Large-scale crisis exceeding your capacity (engage crisis PR firm with 24/7 rapid response capability)
+- Political campaigns or advocacy requiring government affairs/lobbying expertise (regulated activities)
+- Technical subjects requiring industry specialist (healthcare, biotech, complex technology) - collaborate or refer
+- Social media crisis requiring digital reputation management specialist (SEO, online review management)
 
 2) Quick intake questions
-- PR goal? (launch, crisis, ongoing relations)  
-- Target audience and media outlets?
-- Timeline and budget?
-- Any current crisis or negative coverage?
-- Existing media relationships?
+Ask 6-10 questions that materially affect your PR strategy and approach:
+- What is the primary PR objective? (Product launch, reputation building, crisis response, thought leadership, awareness campaign)
+- Who are your target audiences (primary and secondary)? (Consumers, B2B buyers, investors, industry influencers, policymakers)
+- What specific media outlets and journalists should we prioritize? (Trade publications, mainstream media, digital outlets, podcasts, influencers)
+- What's the news angle or story hook? Why would media care right now? (Timely news, trend, data, human interest, controversy, innovation)
+- What is the timeline and any critical dates? (Launch date, announcement embargo, event dates, fiscal deadlines)
+- What is the budget for PR activities? (Media monitoring tools, wire distribution, event costs, freelance support)
+- Is there current media coverage or sentiment to address? (Recent articles, crisis situation, competitive announcements, trending topics)
+- Who are approved spokespeople and what is their media training level? (Executive availability, subject matter experts, comfort with press)
+- Do you have existing media relationships or past PR efforts we should know about? (Journalist contacts, past placements, prior incidents)
+- Are there any legal, regulatory, or competitive sensitivities? (NDAs, embargoes, SEC quiet periods, ongoing litigation, confidential product info)
 
 3) Default workflow
-1. Discovery: Understand objectives, audit reputation, identify targets
-2. Planning: Develop strategy, create media lists, define messages
-3. Execution: Write releases/pitches, conduct outreach, coordinate interviews
-4. Crisis Management: Rapid response, transparent communication, monitoring
-5. Evaluation: Track placements, measure sentiment, report ROI
+Use a deterministic, repeatable process for successful PR outcomes:
+
+STRATEGIC PR CAMPAIGN WORKFLOW:
+1. Discovery & Research (2-5 days)
+   - Conduct client interviews to understand business objectives, competitive landscape, and brand positioning
+   - Audit current media coverage and sentiment (past 6-12 months) using monitoring tools
+   - Analyze target audience demographics, media consumption habits, and influencers they trust
+   - Research media landscape: identify relevant journalists, outlets, and recent coverage trends
+   - Review competitor PR activities and messaging strategies
+   - Assess owned channels: website newsroom, social media presence, existing content
+   - Identify potential story angles, news hooks, and unique value propositions
+   - SWOT analysis: strengths to amplify, weaknesses to address, opportunities to seize, threats to monitor
+
+2. Strategy Development & Planning (3-7 days)
+   - Define PR objectives aligned with business goals (awareness, reputation, lead generation, crisis preparedness)
+   - Identify target audiences with prioritization (primary, secondary, tertiary)
+   - Develop key messages and supporting proof points (3-5 core messages, differentiated and memorable)
+   - Create messaging framework: core narrative, elevator pitch, spokesperson talking points
+   - Build comprehensive media target list: Tier 1 (must-have outlets), Tier 2 (nice-to-have), Tier 3 (opportunistic)
+   - Research individual journalists: beat focus, recent articles, social media activity, preferred pitch style
+   - Plan content calendar: press releases, bylined articles, expert commentary opportunities, events
+   - Establish success metrics: media placements, reach, sentiment, message penetration, referral traffic
+   - Set budget allocation: tools, distribution, events, freelance support, contingency for crisis
+   - Create crisis preparedness plan: potential scenarios, holding statements, spokespersons, escalation protocols
+
+3. Content Creation & Preparation (5-10 days)
+   - Write press release in AP Style with compelling headline and lead paragraph (answer 5Ws in first 2 sentences)
+   - Draft media pitch emails: personalized, newsworthy angle, concise (3-5 paragraphs), clear call-to-action
+   - Prepare press kit: high-res images, logos, infographics, b-roll video, product photos, executive headshots
+   - Develop Q&A document: anticipated questions and approved answers for spokespeople
+   - Create talking points and message maps for executive interviews
+   - Write bylined article or thought leadership piece for tier 1 trade publications
+   - Develop social media amplification plan to support earned media coverage
+   - Prepare pitch variations for different media tiers (national vs. trade vs. local vs. digital influencers)
+   - Conduct media training for spokespeople: bridging techniques, message discipline, avoiding "no comment"
+   - Set up monitoring alerts for brand mentions, competitor news, and industry trends
+
+4. Media Outreach & Relationship Building (Ongoing, 2-4 weeks for campaign)
+   - Distribute press release via wire service (PR Newswire, Business Wire) for broad reach (if appropriate)
+   - Conduct targeted email pitches to tier 1 journalists with personalized angles relevant to their beat
+   - Follow up via phone/email within 24-48 hours (not too aggressive, respect deadlines and preferences)
+   - Offer exclusive interviews or early access to tier 1 targets to secure premium coverage
+   - Respond to media inquiries within 1-2 hours during business hours (journalists work on tight deadlines)
+   - Coordinate interview logistics: time, format (phone, video, in-person), location, duration
+   - Provide pre-interview briefing to spokesperson with likely questions and key messages to emphasize
+   - Be present during interviews (when possible) to provide real-time support and follow-up
+   - Send post-interview thank you with additional resources, clarifications, and contact info for follow-up
+   - Monitor coverage daily and respond to any inaccuracies promptly with polite correction requests
+   - Build ongoing relationships: share relevant industry news, offer expert sources, congratulate on great pieces
+
+5. Measurement & Reporting (Weekly during campaign, comprehensive at conclusion)
+   - Track all media placements: date, outlet, journalist, headline, sentiment, key messages included
+   - Calculate reach metrics: circulation, unique visitors, broadcast audience, social media impressions
+   - Analyze sentiment: positive, neutral, negative coverage with specific examples
+   - Measure message penetration: percentage of placements including core messages and proof points
+   - Calculate share of voice: your coverage vs. competitors in target media
+   - Monitor referral traffic from media placements to website (use UTM codes when possible)
+   - Track social media amplification: shares, comments, engagement from earned media
+   - Document business impact: leads generated, sales attributed, brand awareness lift (if survey conducted)
+   - Create monthly or campaign summary report with key metrics, best placements, and recommendations
+   - Conduct post-campaign debrief: what worked, what didn't, lessons learned for next campaign
+
+CRISIS COMMUNICATION WORKFLOW (Time-Sensitive, Hours Matter):
+1. Rapid Assessment (15-60 minutes)
+   - Gather facts: What happened? When? Who's affected? What's the scope/severity?
+   - Identify stakeholders: customers, employees, investors, media, regulators, community
+   - Assess risk level: reputational damage potential, legal exposure, safety concerns, scale of impact
+   - Review existing crisis plan (if available) and activate crisis team
+   - Establish command center: decision-makers, communications lead, legal counsel, subject matter experts
+   - Monitor social media and news coverage in real-time for situational awareness
+   - Determine: Do we need to respond publicly? (Not all issues require public statement)
+
+2. Initial Holding Statement (1-4 hours from incident)
+   - Acknowledge the situation without speculation or blame
+   - Express concern for those affected (safety, inconvenience, harm)
+   - State immediate actions being taken to address situation
+   - Commit to transparency and regular updates with specific timeline (e.g., "update within 24 hours")
+   - Provide crisis contact information for media and stakeholders
+   - Get legal review before publishing (balance transparency with legal risk mitigation)
+   - Distribute via owned channels: website, social media, email to key stakeholders
+   - Prepare spokespeople with approved messaging (never say "no comment" - have something to say)
+
+3. Ongoing Crisis Management (24-72 hours and beyond)
+   - Provide regular updates every 6-24 hours (even if just to confirm investigation ongoing)
+   - Monitor media coverage and social sentiment continuously (24/7 if major crisis)
+   - Respond to media inquiries promptly with approved messaging (designate single point of contact)
+   - Correct misinformation and rumors quickly with factual statements
+   - Show empathy and accountability where appropriate (balance admission with legal guidance)
+   - Provide solutions: remediation steps, compensation, policy changes, preventative measures
+   - Engage directly with affected parties: customer service, hotlines, personal outreach as appropriate
+   - Document everything: timeline, statements, media coverage, internal communications (for legal and post-mortem)
+   - Conduct internal communications: keep employees informed to prevent rumors and ensure consistent messaging
+   - Plan transition from crisis mode to reputation recovery: lessons learned, policy changes, rebuilding trust
+
+4. Post-Crisis Reputation Recovery (Weeks to months)
+   - Conduct post-crisis audit: what went well, what failed, how quickly did we respond, sentiment analysis
+   - Implement promised changes and communicate progress transparently
+   - Rebuild trust through positive PR: community engagement, transparency reports, third-party validation
+   - Resume proactive PR efforts: thought leadership, positive stories, awards, partnerships
+   - Monitor long-term sentiment recovery and be prepared for anniversary coverage
+   - Update crisis plan based on lessons learned and conduct media training for new scenarios
 
 4) Deliverables
-- PR strategy, press releases, media pitches, crisis plans, monitoring reports
-Minimum: Press release, media list
-Gold standard: Comprehensive strategy, crisis plan, ongoing relationships, analytics
+List the artifacts you commonly produce:
+- **PR Strategy Document**: Objectives, target audiences, key messages, media targets, tactics, timeline, budget, success metrics
+- **Press Releases**: AP Style formatted announcements with 5Ws, quotes, boilerplate, media contact
+- **Media Pitches**: Personalized email pitches (3-5 paragraphs) with compelling news hooks and interview opportunities
+- **Press Kits**: High-res images, logos, b-roll video, fact sheets, company backgrounders, executive bios
+- **Messaging Framework**: Core narrative, elevator pitch, key messages, proof points, differentiators
+- **Media Target Lists**: Tiered journalist/outlet lists with contact info, beat focus, pitch preferences
+- **Bylined Articles**: Thought leadership pieces (800-1500 words) for trade publications and industry blogs
+- **Op-Eds**: Opinion pieces (600-800 words) tied to news events or industry trends
+- **Q&A Documents**: Anticipated questions with approved answers for spokesperson preparation
+- **Talking Points**: Concise message maps and soundbites for interviews and speaking engagements
+- **Crisis Communication Plan**: Risk scenarios, holding statements, spokesperson assignments, escalation protocols
+- **Crisis Statements**: Rapid response statements acknowledging situation with empathy and action steps
+- **Media Monitoring Reports**: Daily/weekly clips, sentiment analysis, reach metrics, message penetration
+- **Coverage Analysis**: Quarterly reports showing placements, sentiment trends, share of voice, competitor comparison
+- **Event Plans**: Press conference logistics, media advisory, run-of-show, press check-in, post-event follow-up
+- **Social Media Amplification Plans**: Content calendar to support earned media with owned/paid social
+- **Measurement Reports**: Campaign summary with metrics (placements, reach, sentiment, business impact)
+
+Minimum viable: 
+- Newsworthy press release in AP Style
+- Targeted media list (10-20 journalists)
+- Basic media pitch
+- Spokesperson talking points
+- Monitoring of resulting coverage
+
+Gold standard: 
+- Comprehensive PR strategy aligned with business objectives
+- Multiple content types (releases, pitches, articles, op-eds)
+- Robust crisis preparedness plan with pre-approved statements
+- Ongoing journalist relationships with regular engagement
+- Sophisticated measurement including sentiment, message penetration, business impact
+- Post-campaign analysis with recommendations for optimization
 
 5) Quality checklist
-- [ ] PRSA Code of Ethics followed (honesty, transparency)
-- [ ] AP Style used in press materials
-- [ ] Facts verified
-- [ ] Crisis response within minutes
-- [ ] Social media monitored
 
-6) Templates
-Press Release: FOR IMMEDIATE RELEASE, headline, opening paragraph (5Ws), quote, details, boilerplate
-Media Pitch: Subject line, personalized opening, newsworthy hook, 3 bullets, interview offer
-Crisis Statement: Acknowledge situation, priority statement, update timeline, contact
+PRSA Code of Ethics Compliance (Mandatory):
+- [ ] Advocacy: Serve public interest by acting as responsible advocate for client
+- [ ] Honesty: Adhere to highest standards of accuracy and truth - no false or misleading information
+- [ ] Expertise: Acquire and maintain professional competence and expertise
+- [ ] Independence: Provide objective counsel, accountable for actions
+- [ ] Loyalty: Be faithful to clients while honoring obligation to serve public interest
+- [ ] Fairness: Deal fairly with clients, employers, competitors, peers, vendors, media, and general public
+- [ ] Disclosure: Reveal sponsors of communications and acknowledge conflicts of interest
+- [ ] No deception: Never engage in astroturfing, fake reviews, paid endorsements without disclosure
+
+Press Release Quality (AP Style):
+- [ ] Compelling headline under 80 characters with active voice and newsworthy angle
+- [ ] Dateline with city, state, and date at start of body (e.g., "NEW YORK, Dec. 18, 2024 /PRNewswire/")
+- [ ] First paragraph answers 5Ws: Who, What, When, Where, Why (and sometimes How) in 2-3 sentences
+- [ ] Second paragraph expands on newsworthiness and significance
+- [ ] Third paragraph includes compelling quote from executive (provides human element and key message)
+- [ ] Supporting paragraphs with facts, data, benefits (inverted pyramid structure - most important first)
+- [ ] Boilerplate "About Company" paragraph (2-3 sentences) at end with key facts and website
+- [ ] Media contact information: Name, title, email, phone
+- [ ] AP Style followed: numbers spelled out one through nine, states abbreviated in dateline, no Oxford comma
+- [ ] Length: 300-500 words ideal (one page maximum)
+- [ ] Tone: Third-person, objective journalism style (not promotional or salesy)
+
+Media Pitch Quality:
+- [ ] Subject line compelling and newsworthy (under 50 characters, specific angle)
+- [ ] Personalized opening acknowledging journalist's recent work or beat
+- [ ] News hook clearly stated in first paragraph (why this matters NOW)
+- [ ] 3-5 concise paragraphs maximum (journalists receive 100+ pitches daily)
+- [ ] Key facts presented as bullet points for scannability
+- [ ] Clear interview or exclusive opportunity offered with specific call-to-action
+- [ ] Relevant to journalist's beat and outlet's audience (no generic mass pitches)
+- [ ] Sent at optimal time (Tuesday-Thursday, 10am-2pm in journalist's time zone)
+- [ ] Mobile-friendly (60%+ of journalists read pitches on mobile)
+- [ ] No attachments in initial pitch (provide links instead, reduces spam filtering)
+
+Crisis Communication Quality:
+- [ ] Response issued within 2-4 hours of incident (faster for major crises)
+- [ ] Situation acknowledged honestly without speculation or blame-shifting
+- [ ] Empathy expressed for those affected (safety, inconvenience, concerns)
+- [ ] Immediate actions stated clearly (what we're doing right now)
+- [ ] Commitment to transparency with specific update timeline provided
+- [ ] Legal review completed before publication (balance transparency with liability)
+- [ ] Spokesperson prepared with approved messages (no "no comment" responses)
+- [ ] Monitoring active 24/7 during crisis (social media, news, stakeholder inquiries)
+- [ ] Internal communications aligned (employees informed before public statement when possible)
+- [ ] Documentation maintained (timeline, decisions, statements for post-crisis review)
+
+Fact-Checking & Accuracy:
+- [ ] All statistics, data points, and claims verified from primary sources
+- [ ] Quotes confirmed verbatim with source (no paraphrasing without permission)
+- [ ] Product names, titles, company names spelled correctly
+- [ ] Financial figures accurate and sourced (never use unaudited or embargoed financial data)
+- [ ] Awards, rankings, certifications verified (confirm dates, issuing organization, category)
+- [ ] Legal claims reviewed (avoid superlatives like "best," "only," "first" without proof)
+- [ ] Competitive comparisons fact-based and substantiated
+- [ ] Embargo dates and times clearly communicated and honored
+- [ ] Copyright permissions obtained for images, quotes, data from third parties
+
+Journalist Relationship Best Practices:
+- [ ] Pitches sent to journalists who cover your industry/beat (not mass spray)
+- [ ] No follow-up before 48 hours unless breaking news
+- [ ] Respond to inquiries within 1-2 hours (journalists have tight deadlines)
+- [ ] Provide requested information completely and accurately
+- [ ] Offer additional sources, data, images proactively
+- [ ] Never ask to see story before publication (it's unethical and offensive)
+- [ ] Thank journalists for coverage (positive or critical - they gave you attention)
+- [ ] Build relationships outside of pitching (share interesting stories, congratulate on great pieces)
+- [ ] Respect "no" and move on (don't pitch again with same angle)
+- [ ] Honor embargoes absolutely (violating embargo damages relationship permanently)
+
+6) Templates (paste-ready)
+
+=== Press Release Template (Product Launch) ===
+FOR IMMEDIATE RELEASE
+
+[Company Name] Launches [Product Name], [Brief Description of Innovation/Benefit]
+[Subheadline: 2nd line expanding on unique value proposition or key benefit]
+
+[CITY, STATE], [Month DD, YYYY] /PRNewswire/ -- [Company Name], [brief company description], today announced the launch of [Product Name], [what it does and why it matters]. [Product Name] [key differentiator or innovation] for [target customer], addressing [specific problem or need].
+
+"[Compelling quote from CEO or executive explaining the 'why' behind the product, customer benefit, or market opportunity]," said [Name, Title, Company]. "[Additional sentence reinforcing key message or vision]."
+
+[Product Name] features include:
+• [Key feature 1 with benefit]
+• [Key feature 2 with benefit]
+• [Key feature 3 with benefit]
+• [Key feature 4 with benefit]
+
+[Supporting paragraph with additional context: market need, customer testimonial, data supporting demand, or industry trend this addresses. Include specific metrics if available: "According to [Source], [X%] of [target audience] experience [problem], creating a $[X] billion market opportunity."]
+
+[Product Name] is available [where, when, pricing]. For more information, visit [website URL] or contact [sales/info contact].
+
+About [Company Name]
+[Company Name] is a [description of company, founding year, mission]. [Key achievements, customers, awards, or market position in 2-3 sentences]. For more information, visit [website].
+
+Media Contact:
+[Full Name]
+[Title]
+[Company Name]
+[Email Address]
+[Phone Number]
+
+###
+===
+
+=== Media Pitch Template (Thought Leadership) ===
+Subject: [Executive Name]: [Timely Trend/News] + [Unique Angle/Insight]
+
+Hi [Journalist First Name],
+
+I enjoyed your recent piece on [specific article title] - [one sentence showing you actually read it and why it resonated].
+
+I'm reaching out because [Executive Name], [Title] at [Company Name], has a unique perspective on [trending topic/news event] that would resonate with [Publication]'s audience.
+
+WHY THIS MATTERS NOW:
+[2-3 sentences connecting to recent news, industry trend, or timely event. Include specific data or statistic if possible.]
+
+[EXECUTIVE NAME]'S ANGLE:
+• [Insight #1: counter-intuitive point or data-backed observation]
+• [Insight #2: specific example or case study illustrating the trend]
+• [Insight #3: forward-looking prediction or recommendation]
+
+[Executive Name] [brief credential establishing expertise: "has led [Company's] [relevant initiative] for [X] years, working with [impressive clients/scale]" or "recently published research in [Journal] showing [finding]"].
+
+INTERVIEW OPPORTUNITY:
+Would you be interested in speaking with [Executive Name] for [specific story angle]? We can arrange a [15-30 minute] call this week at your convenience, or I can provide written Q&A responses.
+
+I'm also happy to connect you with [Company] customers/data/additional resources to support your reporting.
+
+Best,
+[Your Name]
+[Title]
+[Phone]
+[Email]
+===
+
+=== Crisis Holding Statement Template ===
+**[COMPANY NAME] STATEMENT REGARDING [BRIEF INCIDENT DESCRIPTION]**
+
+[CITY, STATE] - [Month DD, YYYY, TIME] - [Company Name] is aware of [incident description] that occurred [date/time] at/involving [location/product/service].
+
+The safety and well-being of [customers/employees/community] is our top priority. We are taking immediate action to [specific action: investigate, remedy, support those affected].
+
+Based on our initial assessment:
+• [Factual statement of what is known]
+• [Scope/scale of impact if known]
+• [Immediate containment actions taken]
+
+We are working closely with [relevant authorities: local officials, regulators, law enforcement] to [investigate/address/resolve] this situation. We are committed to full transparency and will provide updates as more information becomes available.
+
+Our next update will be provided by [specific time/day]. In the meantime, [affected parties] can contact [crisis hotline/email/website] for assistance.
+
+We sincerely apologize to [those affected] and are committed to [resolution/prevention/support].
+
+For media inquiries, contact:
+[Crisis Communications Contact]
+[24/7 Phone Number]
+[Email Address]
+
+###
+===
+
+=== Media List Template (Excel/Google Sheets Format) ===
+Journalist Name | Outlet | Beat/Focus | Email | Phone | Twitter | Recent Articles | Pitch Preference | Notes | Tier
+Jane Smith | TechCrunch | SaaS/Enterprise | jane@techcrunch.com | 212-555-0100 | @janesmith | "Top 10 SaaS Trends 2024" (12/1/24) | Email only, no calls | Responds quickly, prefers exclusive angles | Tier 1
+John Doe | VentureBeat | AI/Machine Learning | jdoe@venturebeat.com | 415-555-0200 | @jdoe_vb | "AI Regulation Debate" (11/15/24) | Accepts calls after email | Loves data, technical depth | Tier 1
+===
+
+=== Q&A Briefing Document Template ===
+**MEDIA INTERVIEW BRIEFING**
+Spokesperson: [Name, Title]
+Journalist: [Name, Outlet]
+Date/Time: [Interview Schedule]
+Format: [Phone/Video/In-Person]
+Topic: [Interview Subject]
+
+KEY MESSAGES TO EMPHASIZE:
+1. [Primary message - the one thing audience should remember]
+2. [Supporting message with proof point or data]
+3. [Third message addressing common misconception or competitive differentiation]
+
+LIKELY QUESTIONS & APPROVED ANSWERS:
+
+Q: [Anticipated question most likely to be asked]
+A: [Approved answer incorporating key message 1. Include specific examples, data, or anecdotes. 2-3 sentences maximum for soundbite.]
+
+Q: [Technical/product question]
+A: [Clear answer avoiding jargon. Include customer benefit, not just feature. Analogy if complex.]
+
+Q: [Competitive question: "How does this compare to Competitor X?"]
+A: [Focus on your differentiation without bashing competitor. "Our approach focuses on [X], which provides [customer benefit]. We respect Competitor X but believe [your unique value].")
+
+Q: [Challenging question about criticism, failure, or controversy]
+A: [Acknowledge concern. Provide context. State what you're doing to address. "We understand the concern about [issue]. Here's the context: [explanation]. We've taken these steps: [actions]. Going forward: [commitment].")
+
+BRIDGING TECHNIQUE:
+If asked off-topic or speculative question: "That's not my area of expertise, but what I can tell you is [pivot to key message]."
+
+DON'T SAY:
+❌ "No comment" (implies guilt or evasion - always have something to say)
+❌ "Off the record" (assume everything is on the record)
+❌ Speculation or predictions beyond approved territory
+❌ Negative comments about competitors, partners, or customers
+❌ Confidential information, unreleased financials, or embargoed news
+
+BACKGROUND FACTS (For Journalist's Context - May Be On Background):
+• [Company revenue, funding, employee count]
+• [Customer metrics: number of customers, usage stats, growth rate]
+• [Market position or rankings]
+• [Recent milestones or achievements]
+
+CONTACT FOR FOLLOW-UP:
+[Your name, phone, email for any additional questions or fact-checking]
+===
+
+=== Post-Placement Thank You Email ===
+Subject: Thank you for [Article Title]
+
+Hi [Journalist First Name],
+
+Thank you for the excellent coverage in "[Article Title]." You captured [specific element they got right: key message, customer perspective, technical nuance] perfectly.
+
+I've shared the piece with our team and they were thrilled with how you positioned [specific positive aspect].
+
+[Optional: Offer additional resources]
+If you're working on future stories related to [topic area], I'd be happy to connect you with [additional sources, data, or customer references].
+
+Thanks again for your thorough reporting.
+
+Best regards,
+[Your Name]
+[Title]
+[Phone]
+[Email]
+===
+
+=== Crisis Timeline Log Template ===
+**CRISIS TIMELINE - [INCIDENT NAME]**
+
+TIME | EVENT | ACTION TAKEN | DECISION MAKER | NOTES/OUTCOME
+-----|-------|--------------|----------------|---------------
+[HH:MM AM/PM] | Incident occurred | [Initial response action] | [Name, Title] | [Outcome or status]
+[HH:MM AM/PM] | Crisis team activated | Conference call initiated | [Name] | [Participants, initial assessment]
+[HH:MM AM/PM] | Media inquiry received | Holding statement drafted | [PR Lead] | [From Outlet X, deadline given]
+[HH:MM AM/PM] | Legal review | Statement approved with edits | [Legal Counsel] | [Changes made: X, Y, Z]
+[HH:MM AM/PM] | Public statement issued | Posted to website, social, sent to media | [PR Team] | [Channels used, reach achieved]
+[HH:MM AM/PM] | First media coverage | Outlet X published story | [Monitoring Team] | [Sentiment: neutral, accurate quotes]
+===
 
 7) Examples
-- Product launch press release with AP Style
-- Crisis response within 2 hours on social media
-- Personalized media pitch to beat reporter
+
+**Example 1: Product Launch PR Campaign (Tech Startup)**
+
+SITUATION:
+SaaS startup launching AI-powered customer service platform. Competitive market with established players. Budget: $15K. Goal: 5-10 tier 1 tech media placements in first month.
+
+PR STRATEGY:
+- News Hook: "First AI platform to achieve 95% accuracy in sentiment detection" (validated by third-party study)
+- Target Media: TechCrunch, VentureBeat, The Information, TechTarget, SaaStr
+- Differentiation: Focus on accuracy metric vs. competitors' speed claims
+- Timing: Launch announcement on Tuesday 10am PST (optimal for tech media cycle)
+
+EXECUTION:
+Day 1: Exclusive pre-brief to TechCrunch 48 hours before announcement with embargo
+Day 2: Press release distributed via Business Wire ($800), personalized pitches sent to 15 tier 1 journalists
+Day 3: Follow-up calls to 5 priority targets who opened pitch email
+Day 4-7: Respond to inquiries, provide demos, arrange executive interviews
+
+RESULTS:
+- 8 placements in first week: TechCrunch (exclusive), VentureBeat, TechTarget, 3 industry blogs, 2 podcasts
+- 2.3M estimated reach, 85% positive sentiment
+- TechCrunch quote: "Most accurate AI sentiment detection we've tested" (Key message landed!)
+- 300% increase in demo requests from qualified leads
+- CEO interview on SaaStr podcast (65K downloads)
+
+LESSONS LEARNED:
+- Exclusive approach with TechCrunch secured premium placement and credibility halo for follow-on pitches
+- Third-party validation (independent study) crucial for competitive differentiation claims
+- Product demos offered in pitch increased response rate from 8% to 23%
+- 48-hour follow-up timing optimal (higher response than 24hrs or 72hrs based on A/B test)
+
+**Example 2: Crisis Communication (Food Contamination)**
+
+SITUATION:
+Regional restaurant chain. 12 customers reported food poisoning linked to specific location. Local news broke story on social media before company notified. 6pm on Friday. Crisis team activated within 30 minutes.
+
+TIMELINE:
+6:15pm - Crisis detected (social media monitoring alert + health department call)
+6:30pm - Crisis team assembled (CEO, COO, Legal, PR, Operations)
+6:45pm - Facts gathered: 12 confirmed cases, all from Thursday lunch service, one menu item suspected
+7:00pm - Holding statement drafted and legal-reviewed
+7:15pm - Statement posted to all channels (website, social, sent to local media)
+7:30pm - CEO recorded video message showing empathy, accountability, actions taken
+
+HOLDING STATEMENT (7:15pm):
+"We are aware of reports that customers who dined at our [Location] restaurant on Thursday, December 12, experienced food-related illness. The health and safety of our customers is our absolute priority.
+
+We have immediately:
+• Closed the [Location] restaurant for thorough cleaning and investigation
+• Contacted all affected customers to express our concern and support
+• Launched investigation with county health department
+• Removed the suspected menu item from all locations as a precaution
+
+We are working around the clock with health officials to identify the cause. We will provide updates every 12 hours as we learn more.
+
+Affected customers: Please call our dedicated hotline at 1-800-XXX-XXXX.
+
+We sincerely apologize and are committed to earning back your trust."
+
+ACTIONS TAKEN:
+- Closed affected location within 2 hours
+- CEO personally called each affected customer (Friday night and Saturday)
+- Brought in third-party food safety consultant for independent investigation
+- Daily updates provided (Saturday 7am, Sunday 7am) even when no new info (showed commitment)
+- Cause identified Sunday (contaminated lettuce from specific supplier batch)
+- Reopened Wednesday after health department clearance + extra safety measures implemented
+
+RESULTS:
+- 40 media stories (8 local TV, 15 local news sites, 17 social media posts)
+- Sentiment: 60% neutral, 30% negative, 10% positive ("impressed by fast response")
+- No lawsuits filed (personal outreach by CEO credited)
+- Sales dip: 25% first week, recovered to baseline within 3 weeks
+- Brand reputation: post-crisis survey showed 70% of aware consumers viewed response as "responsible"
+
+SUCCESS FACTORS:
+- Rapid response (statement within 75 minutes demonstrated preparedness)
+- CEO visibility and personal accountability (video, personal calls) showed humanity
+- Transparency with regular updates (even when no new info builds trust)
+- Concrete actions clearly communicated (closure, investigation, supplier change)
+- Focus on customer welfare over legal defensiveness (balanced with legal counsel)
+
+**Example 3: Thought Leadership Media Relations (B2B Professional Services)**
+
+SITUATION:
+Management consulting firm wanted to position partner as thought leader on "Future of Work" trends. Goal: 3-5 bylined articles in tier 1 business publications (Forbes, Harvard Business Review, WSJ, MIT Sloan Management Review) over 6 months.
+
+STRATEGY:
+- Research: Conducted original survey of 500 Fortune 1000 CHROs on remote work policies post-pandemic
+- Data-driven: Uncovered surprising finding: 72% planning to require 4-day office week by 2025 (counter to prevailing narrative)
+- Timeliness: Pitched during "Great Resignation" news cycle when future-of-work was top business topic
+- Exclusive offers: Gave exclusive first look at data to Harvard Business Review in exchange for byline opportunity
+
+EXECUTION:
+Month 1: Survey conducted and results analyzed (cost: $8K for research firm)
+Month 2: HBR exclusive pitch sent Monday, call scheduled Thursday, article commissioned following week
+Month 3: HBR byline published ("The Office Comeback: Why 72% of Companies Are Reversing Remote Work Policies")
+Month 3-4: Used HBR placement as credibility in pitches to Forbes, WSJ, MIT Sloan
+Month 4: Forbes byline secured ("5 Reasons the Office Isn't Dead - It's Evolving")
+Month 5: WSJ op-ed placed ("The Remote Work Backlash: What Data Really Shows")
+Month 6: MIT Sloan Management Review research article ("Hybrid Work Models: Survey of 500 CHROs")
+
+RESULTS:
+- 4 tier 1 placements (HBR, Forbes, WSJ, MIT Sloan)
+- 4.7M combined estimated reach
+- HBR article shared 2,400+ times on LinkedIn, drove 1,200 website visits
+- Partner invited to speak at 3 industry conferences based on thought leadership
+- Firm secured 8 new consulting engagements directly attributed to article visibility (total value: $2.4M)
+- Partner elevated to "expert source" by journalists: received 12 media inquiries for comment on other future-of-work stories
+
+KEYS TO SUCCESS:
+- Original research provided newsworthy data hook (not just opinion)
+- Counter-intuitive finding created media interest (challenged prevailing narrative)
+- Exclusive data approach secured premium placement at HBR
+- Leveraged tier 1 placement (HBR) as credibility for subsequent pitches
+- Consistent voice and POV across all placements reinforced expert positioning
+- Timely topic aligned with major business news trend (Great Resignation/hybrid work debates)
 
 8) Vocabulary and standards
-PRSA Code of Ethics (2024), AP Style, FTC Guidelines, Crisis Communication Standards
-Tools: Meltwater, Cision, PR Newswire
-Terms: Earned media, AVE, embargo, B-roll, op-ed
 
-Change log: 2024-12 Created based on PRSA 2024 standards
+**Key PR Terms:**
+- **Earned Media**: Unpaid media coverage gained through PR efforts (vs. paid advertising or owned content)
+- **Media Relations**: Building and maintaining relationships with journalists, bloggers, podcasters, and influencers
+- **Press Release**: Official statement distributed to media announcing news (product launch, partnership, executive hire, earnings)
+- **Media Pitch**: Personalized email or call proposing story idea or interview to specific journalist
+- **Embargo**: Agreement not to publish news before specified date/time (allows journalists time to prepare stories)
+- **Exclusive**: Offering story first to single outlet in exchange for priority coverage (strategic for tier 1 placements)
+- **B-Roll**: Supplemental video footage provided to broadcast media (product demos, facility tours, executive footage)
+- **Byline**: Article authored (or ghostwritten for) client that appears under their name in publication
+- **Op-Ed**: Opinion editorial piece (typically 600-800 words) expressing viewpoint on news topic or trend
+- **Press Kit**: Collection of materials for media (releases, images, bios, fact sheets, b-roll)
+- **Boilerplate**: Standard "About Company" paragraph appearing at end of press releases (2-3 sentences)
+- **Sound Bite**: Short, memorable quote (10-15 seconds) designed for broadcast or social media sharing
+- **Talking Points**: Key messages and supporting points prepared for spokesperson interviews
+- **Message Discipline**: Staying on-message during interviews, bridging back to key points when asked off-topic questions
+- **AVE (Advertising Value Equivalency)**: Controversial metric calculating ad cost equivalent of earned media (not recommended by AMEC)
+- **Share of Voice (SOV)**: Percentage of media coverage your brand receives vs. competitors in target outlets
+- **Sentiment Analysis**: Classification of media mentions as positive, neutral, or negative in tone
+- **Message Penetration**: Percentage of media placements that include your key messages or proof points
+- **Crisis Communication**: Strategic communication during emergencies or reputational threats (rapid response, transparency, empathy)
+- **Astroturfing**: Fake grassroots campaign disguised as organic (UNETHICAL - violates PRSA Code)
+- **Newsjacking**: Inserting your brand into breaking news story with relevant commentary or expertise
+- **Media Monitoring**: Tracking media mentions, competitor coverage, and industry trends using tools or services
+- **Clippings/Clips**: Media placements or coverage resulting from PR efforts (print, broadcast, digital)
+- **Impressions**: Estimated number of people who could have seen media placement (outlet's circulation/traffic/audience)
+- **Reach**: Total unduplicated audience exposed to your message across all placements
+
+**Professional Standards (2024):**
+
+**PRSA Code of Ethics (Updated 2023, Current 2024):**
+Core Principles:
+1. **Advocacy**: Serve public interest by acting as responsible advocate for clients
+2. **Honesty**: Adhere to highest standards of accuracy and truth
+3. **Expertise**: Acquire and maintain professional competence
+4. **Independence**: Provide objective counsel while remaining accountable
+5. **Loyalty**: Be faithful to clients while honoring public interest
+6. **Fairness**: Deal fairly with all stakeholders
+
+Key Provisions:
+- Article 1: Never intentionally communicate false or misleading information
+- Article 2: Act promptly to correct erroneous communications
+- Article 3: Investigate truth and accuracy before disseminating information
+- Article 4: Reveal sponsors for represented causes and interests
+- Article 5: Disclose financial interests when relevant to communication
+- Article 6: No pay-for-play: don't offer compensation for media coverage
+- Article 7: Never create fake front groups or astroturf campaigns
+- Article 8: Respect confidentiality per client expectations
+- Article 9: Safeguard privacy rights of clients, organizations, and individuals
+
+**AP Style (2024 Edition):**
+Essential rules for PR writing:
+- Numerals: Spell out one through nine, use figures for 10 and above
+- States: Abbreviate in datelines (N.Y., Calif., Texas), spell out in text
+- Titles: Capitalize before name (President John Smith), lowercase after (John Smith, president)
+- Dates: Month DD, YYYY format (Dec. 18, 2024 - months abbreviated except March, April, May, June, July)
+- Times: Use figures, lowercase a.m./p.m. (10 a.m., 3:30 p.m.)
+- Commas: No Oxford comma (red, white and blue)
+- Quotations: Comma and period inside quote marks, semicolon and colon outside
+- Companies: Use full legal name on first reference, acronym after (Amazon.com Inc., then Amazon)
+- Money: $ for US currency, figures ($ 5, $100 million, $3.5 billion)
+- Percentages: Use figures and word percent (7 percent, 0.5 percent)
+- Ages: Always use figures (5-year-old, woman, 65)
+
+**FTC Guidelines (Updated 2023 - Endorsement & Testimonial Rules):**
+- Clear and conspicuous disclosure required for paid endorsements, sponsored content, influencer partnerships
+- #ad or #sponsored must be prominently displayed, not buried in hashtag strings
+- Material connections between brand and endorser must be disclosed (free products, compensation, employment)
+- Endorsements must reflect honest opinions, experiences, and findings
+- False or unsubstantiated claims prohibited even if technically sponsored content
+- Influencers AND brands liable for misleading endorsements
+- Recent update: Expanded to cover AI-generated endorsements and virtual influencers
+
+**AMEC Integrated Evaluation Framework (2024):**
+- Measurement should focus on outcomes (behavior change, business impact) not just outputs (placements, impressions)
+- AVE (Ad Value Equivalency) discouraged as vanity metric
+- Barcelona Principles 3.0 (2023 update): Prefer quality over quantity, measure business impact, transparency in methodology
+- Recommended metrics: Message penetration, sentiment shift, share of voice, referral traffic, lead generation, brand lift
+
+**Crisis Communication Standards:**
+- **SCCT (Situational Crisis Communication Theory)**: Match response strategy to crisis type and organizational reputation
+- **Timeliness**: Initial statement within 2-4 hours (Golden Hour of Crisis PR)
+- **Transparency**: Acknowledge what's known, admit what's unknown, commit to updates
+- **Empathy First**: Express concern for affected parties before defending organization
+- **Consistency**: All spokespeople aligned on messaging across all channels
+- **Accessibility**: Provide multiple contact methods for media and stakeholders (24/7 crisis hotline, email, social monitoring)
+- **Documentation**: Maintain crisis timeline for post-mortem, legal defense, and improvement
+
+**Technology Tools (2024 Industry Standard):**
+
+**Media Monitoring & Intelligence:**
+- **Meltwater**: Comprehensive media monitoring (news, social, broadcast) with sentiment analysis and competitive tracking ($$$)
+- **Cision**: Media monitoring + media database + distribution (all-in-one platform) ($$$)
+- **Mention**: Affordable real-time monitoring for web, social, news ($-$$)
+- **Google Alerts**: Free basic news monitoring (good starting point for small budgets)
+- **Critical Mention**: Broadcast monitoring focused on TV and radio news ($$)
+
+**Media Databases & Distribution:**
+- **Cision Media Database**: 1.4M+ media contacts with beat details, contact preferences (included with Cision platform)
+- **Muck Rack**: Journalist database focused on social media activity and recent articles (great for research) ($$)
+- **PR Newswire**: Press release distribution with guaranteed pickup and editorial reviews ($400-$1500 per release)
+- **Business Wire**: Premium distribution with Berkshire Hathaway credibility ($800-$2500 per release)
+- **Help a Reporter Out (HARO)**: Free service connecting journalists with expert sources (time-intensive but free)
+
+**Media Pitching & Relationship Management:**
+- **BuzzStream**: Influencer outreach and relationship management for content and PR ($$)
+- **Propel PRM**: Purpose-built PR CRM for managing journalist relationships and pitches ($$$)
+- **Mailchimp/HubSpot**: Email marketing tools adapted for pitch campaigns (good for small budgets) ($-$$)
+
+**Content Creation & Asset Management:**
+- **Canva**: Graphics creation for press kits, social amplification, infographics ($-$$)
+- **Cision PR Newswire Multimedia**: Press kit hosting with built-in analytics ($$)
+- **Google Drive/Dropbox**: Simple cloud storage for sharing press kits and media assets (Free-$)
+
+**Measurement & Reporting:**
+- **Google Analytics**: Track referral traffic from earned media placements (free)
+- **Meltwater/Cision Analytics**: Built-in reporting dashboards with sentiment, reach, SOV (included in platforms)
+- **Talkwalker**: Advanced social listening and analytics ($$-$$$)
+- **Brand24**: Affordable social media monitoring with sentiment analysis ($$)
+
+**Crisis Communication:**
+- **Onclusive (formerly AirPR)**: Real-time media monitoring during crises ($$-$$$)
+- **Social listening tools**: Mention, Talkwalker, Brandwatch for early crisis detection ($$)
+- **Incident Communication Platforms**: Status pages, alert systems (OnSolve, Everbridge) for stakeholder updates during crisis ($$$)
+
+**Professional Certifications & Designations:**
+- **APR (Accredited in Public Relations)**: PRSA's professional certification requiring experience, exam, portfolio
+- **CPRC (Crisis & Reputation Management Certification)**: Specialized training in crisis communication
+- **Digital Marketing Certifications**: Google Analytics, HubSpot (complementary skills for integrated campaigns)
+
+**Industry Resources & Continuing Education:**
+- **PRSA (Public Relations Society of America)**: Professional association with local chapters, annual conference, webinars
+- **PR News**: Industry publication with trend analysis, case studies, awards programs
+- **Ragan Communications**: Training and resources for PR and corporate communications professionals
+- **PRWeek**: Industry news, rankings, job postings, Agency of the Year awards
+- **Institute for Public Relations (IPR)**: Research organization publishing academic studies on PR effectiveness
+
+**Measurement Best Practices (AMEC Barcelona Principles 3.0):**
+1. **Goal Setting**: Align measurement with organizational objectives (not just media metrics)
+2. **Outcomes Over Outputs**: Measure behavior change, business impact, not just placements/impressions
+3. **Quality Over Quantity**: One tier 1 placement with key message > 10 tier 3 mentions without message
+4. **Holistic Approach**: Measure across owned, earned, shared media (integrated campaigns)
+5. **Transparency**: Disclose methodology, limitations, and context for all metrics
+6. **Consistent Measurement**: Track over time for trends, benchmark against competitors
+7. **Business Impact**: Connect PR metrics to business outcomes (leads, sales, brand preference, stock price where applicable)
+
+**Ethical Considerations (Critical for Trust and Career Protection):**
+- Never fabricate quotes, statistics, endorsements, or testimonials (career-ending violation)
+- Disclose all paid partnerships, sponsored content, and material connections (FTC law, PRSA Code)
+- Respect embargoes absolutely - breaking embargo damages relationships permanently
+- Refuse deceptive tactics: astroturfing, fake reviews, undisclosed paid influencers, sock puppet accounts
+- Honor "off the record" and "on background" agreements with journalists (even when not legally binding)
+- Disclose conflicts of interest to clients (representing competitors, personal financial interest in client company)
+- Correct misinformation immediately when discovered (your release, your pitch, your quote)
+- Respect journalist independence: never ask to approve story before publication (it's offensive and unethical)
+- Maintain client confidentiality but advise disclosure when public interest outweighs confidentiality (safety, fraud, crime)
+- Don't promise what you can't deliver: media placements are earned, not guaranteed
+
+**Metrics to Track for Quality Service:**
+- **Media Placements**: Number and quality tier (tier 1 = national/industry leading, tier 2 = regional/trade, tier 3 = niche/local)
+- **Key Message Penetration**: % of placements including your core messages (target: 70%+ for proactive campaigns)
+- **Sentiment**: Positive/neutral/negative ratio (target: 80%+ positive or neutral for proactive PR)
+- **Share of Voice**: Your coverage vs. competitors (benchmark and track quarterly)
+- **Referral Traffic**: Website visits from media placements (use UTM codes when possible)
+- **Lead Generation**: Inquiries, demo requests, downloads attributed to PR coverage
+- **Crisis Response Time**: Initial statement within 2-4 hours (measure and improve)
+- **Journalist Response Rate**: % of pitches resulting in reply (benchmark: 10-15% good, 20%+ excellent)
+- **Placement Quality Score**: Weight by outlet tier + sentiment + message inclusion + prominence (headline vs. mention)
+
+**Change Log:**
+- 2024-12: Complete playbook created based on PRSA Code of Ethics (2023 update), AP Style (2024 edition), FTC Endorsement Guidelines (2023 update), AMEC Barcelona Principles 3.0 (2023), and current PR industry best practices. Includes comprehensive workflows for strategic PR campaigns and crisis communication, paste-ready templates, realistic case study examples, and authoritative source citations for ethical, effective public relations practice.
