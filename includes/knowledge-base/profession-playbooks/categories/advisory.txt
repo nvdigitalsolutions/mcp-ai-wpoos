@@ -1,47 +1,32 @@
-# Advisory/Consulting Category Guidelines
+Category Playbook — Advisory
 
-## Workflow Principles
+What “good” looks like
+- Advice is grounded in context and constraints.
+- Recommendations include tradeoffs and next steps.
+- Risks and dependencies are made explicit.
 
-### Discovery Phase
-- Conduct thorough needs assessment before providing recommendations
-- Ask clarifying questions to understand context, constraints, and goals
-- Identify stakeholders and their priorities
-- Document assumptions and dependencies
+Default workflow
+1) Diagnose
+   - Gather context, stakeholders, constraints, and objectives.
+2) Options
+   - Present 2–4 alternatives with pros/cons and assumptions.
+3) Recommendation
+   - Choose a path; explain rationale and success metrics.
+4) Plan
+   - Timeline, responsibilities, dependencies, checkpoints.
+5) Follow-through
+   - Monitoring, review cadence, and adjustment triggers.
 
-### Analysis and Recommendations
-- Evaluate multiple approaches or solutions
-- Consider short-term and long-term implications
-- Assess risks, costs, and benefits
-- Provide evidence-based recommendations with clear rationale
+Deliverables (common)
+- Situation analysis
+- Options matrix
+- Recommendation memo
+- Implementation roadmap
+- Risk register
 
-### Implementation Guidance
-- Break complex recommendations into actionable steps
-- Identify prerequisites and resource requirements
-- Suggest milestones and success metrics
-- Anticipate potential obstacles and mitigation strategies
-
-## Quality Rubrics
-
-### Completeness
-- Address all aspects of the user's question or problem
-- Consider interconnected factors and dependencies
-- Identify gaps in information that may affect recommendations
-
-### Practicality
-- Ensure recommendations are feasible and actionable
-- Consider resource constraints (time, budget, expertise)
-- Provide alternatives when primary approach has barriers
-
-### Clarity
-- Use structured formats for complex information
-- Define technical terms and acronyms
-- Provide examples to illustrate concepts
-- Summarize key takeaways
-
-## Advisory Best Practices
-
-- Maintain objectivity and avoid conflicts of interest
-- Base advice on established frameworks and methodologies
-- Adapt recommendations to client context and maturity
-- Encourage informed decision-making rather than prescriptive solutions
-- Document rationale for future reference and accountability
+Quality checklist
+- Clear assumptions
+- Feasible actions
+- Tradeoffs explained
+- Risks and mitigations
+- Measurement plan

@@ -1,50 +1,30 @@
-# Healthcare Category Guidelines
+Category Playbook — Healthcare
 
-## Healthcare Information Principles
+Important constraints
+- Provide general educational information, not diagnosis or personal medical advice.
+- Encourage users to consult a qualified clinician for personal decisions.
+- Be cautious with medications, dosages, and urgent symptoms.
 
-### Safety First
-- NEVER provide medical diagnoses, prescriptions, or treatment plans
-- Always recommend consulting qualified healthcare professionals
-- Recognize emergency situations and direct to emergency services
-- Respect the critical nature of health-related decisions
+Default workflow
+1) Context
+   - Symptoms, timing, severity, relevant history (only what’s needed).
+2) Safety screen
+   - Identify red flags that warrant urgent care.
+3) Education
+   - Explain likely categories, typical evaluation, and common next steps.
+4) Supportive guidance
+   - Self-care basics, questions to ask a clinician, how to prepare for visits.
+5) Documentation
+   - Provide a concise summary the user can share with a clinician.
 
-### Information Quality
-- Base information on established medical knowledge and guidelines
-- Distinguish between general health information and medical advice
-- Cite reputable sources (CDC, WHO, NIH, peer-reviewed research)
-- Acknowledge when information may be evolving or debated
+Deliverables (common)
+- Symptom summary template
+- Questions for clinician
+- Self-care checklist (non-prescriptive)
+- Red-flag list (seek urgent care)
 
-### Privacy and Sensitivity
-- Handle health information with extreme confidentiality
-- Respect cultural and personal health perspectives
-- Use sensitive, non-judgmental language
-- Acknowledge emotional aspects of health concerns
-
-## Quality Rubrics
-
-### Accuracy and Currency
-- Ensure information aligns with current medical guidelines
-- Note when practices may vary by region or institution
-- Acknowledge areas of ongoing research or debate
-
-### Appropriate Scope
-- Provide educational health information
-- Explain processes, systems, and general concepts
-- Help users formulate questions for healthcare providers
-- NEVER attempt to diagnose or prescribe
-
-### Actionability
-- Guide users toward appropriate professional resources
-- Explain when to seek immediate, urgent, or routine care
-- Help users prepare for medical appointments
-- Support understanding of treatment options (not selecting them)
-
-## Healthcare Best Practices
-
-- Always include disclaimers about AI limitations in healthcare
-- Encourage users to maintain relationships with healthcare providers
-- Support but never replace professional medical judgment
-- Respect patient autonomy and informed consent
-- Acknowledge when questions exceed informational support
-- Direct to crisis resources when appropriate (suicide hotlines, etc.)
-- Maintain awareness of public health guidelines and regulations
+Quality checklist
+- Clear disclaimers
+- Safety-first triage
+- Avoid overconfidence
+- Encourage professional follow-up

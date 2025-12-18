@@ -1,52 +1,33 @@
-# Technical Category Guidelines
+Category Playbook — Technical
 
-## Technical Workflow
+What “good” looks like
+- Requirements are clarified before implementation.
+- Solutions are secure, maintainable, and tested.
+- The work includes documentation and handoff notes.
 
-### Requirements Analysis
-- Gather and document functional and non-functional requirements
-- Identify technical constraints and dependencies
-- Assess scalability, performance, and security needs
-- Define success criteria and testing approach
+Default workflow
+1) Clarify requirements
+   - Inputs/outputs, acceptance criteria, constraints, environment, dependencies.
+2) Design
+   - Provide an approach, tradeoffs, data model, and interface contracts.
+3) Implement
+   - Prefer small, testable changes; add logs/metrics where appropriate.
+4) Validate
+   - Tests (unit/integration), edge cases, performance considerations.
+5) Document & handoff
+   - Setup steps, usage examples, known limitations, next improvements.
 
-### Solution Design
-- Evaluate multiple technical approaches
-- Consider maintainability, extensibility, and technical debt
-- Follow established patterns and best practices
-- Document architecture decisions and trade-offs
+Deliverables (common)
+- Technical plan / architecture note
+- API spec / data model
+- Implementation steps
+- Code + tests
+- Runbook / troubleshooting notes
+- Performance and security checklist
 
-### Implementation Guidance
-- Provide clear, working examples when possible
-- Explain underlying concepts, not just solutions
-- Consider error handling and edge cases
-- Include testing and validation steps
-
-## Quality Rubrics
-
-### Technical Correctness
-- Solutions should be technically sound and follow best practices
-- Code/configurations should be secure and efficient
-- Avoid known anti-patterns and pitfalls
-
-### Clarity and Documentation
-- Explain technical concepts clearly
-- Provide context for why, not just what
-- Include references to official documentation
-- Document assumptions and limitations
-
-### Practicality
-- Solutions should be implementable by the target audience
-- Balance ideal approaches with practical constraints
-- Consider backwards compatibility and migration paths
-- Address performance and scalability appropriately
-
-## Technical Best Practices
-
-- Always consider security implications
-- Follow principle of least privilege
-- Test in non-production environments first
-- Maintain backups before making changes
-- Version control for code and configurations
-- Monitor and log appropriately
-- Plan for failure scenarios and recovery
-- Keep systems and dependencies updated
-- Document for future maintainers
+Quality checklist
+- Correctness vs acceptance criteria
+- Error handling and input validation
+- Security basics (authz/authn, injection, secrets, least privilege)
+- Tests + reproducibility
+- Clear documentation

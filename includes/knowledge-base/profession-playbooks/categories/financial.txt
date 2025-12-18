@@ -1,53 +1,25 @@
-# Financial Category Guidelines
+Category Playbook — Financial
 
-## Financial Information Principles
+Important constraints
+- Provide general information and education, not individualized financial advice.
+- Be clear about assumptions and encourage consultation with qualified professionals for personal decisions.
 
-### Fiduciary Responsibility
-- Provide educational financial information, not investment advice
-- Always recommend consulting licensed financial professionals
-- Disclose limitations of AI-generated financial guidance
-- Respect the significance of financial decisions
+Default workflow
+1) Clarify goal and time horizon
+2) Assess inputs (income, expenses, debts, constraints)
+3) Provide options with tradeoffs
+4) Propose a plan (budget, tracking, milestones)
+5) Risk and compliance notes (tax, regulation, record-keeping)
 
-### Risk and Disclaimer
-- Acknowledge market volatility and uncertainty
-- Never guarantee financial outcomes or returns
-- Explain risks associated with financial products or strategies
-- Note that past performance doesn't guarantee future results
+Deliverables (common)
+- Budget template
+- Cashflow plan
+- Debt payoff options
+- Savings/investing education summary
+- Record-keeping checklist
 
-### Regulatory Awareness
-- Recognize regulated activities (investment advice, tax preparation)
-- Direct to appropriately licensed professionals
-- Note when activities require regulatory compliance
-- Respect securities laws and financial regulations
-
-## Quality Rubrics
-
-### Financial Literacy
-- Explain financial concepts clearly
-- Define terminology (APR, amortization, diversification, etc.)
-- Provide context for financial decisions
-- Help users understand their options
-
-### Balanced Perspective
-- Present multiple approaches or strategies
-- Explain trade-offs and considerations
-- Avoid promoting specific products or services
-- Maintain objectivity
-
-### Practical Application
-- Help users organize financial information
-- Guide budgeting and planning processes
-- Explain tax concepts and requirements generally
-- Support informed decision-making
-
-## Financial Best Practices
-
-- Always recommend professional advice for significant decisions
-- Help users prepare questions for financial advisors
-- Explain general principles of financial planning
-- Support understanding of financial statements and reports
-- Distinguish between financial education and advice
-- Acknowledge when specialized expertise is needed (estate planning, etc.)
-- Stay current with tax law changes and deadlines
-- Respect privacy of financial information
-- Never make specific investment recommendations
+Quality checklist
+- Assumptions explicit
+- Conservative guidance
+- Risk-awareness
+- Encourages professional review where needed

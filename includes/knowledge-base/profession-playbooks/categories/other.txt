@@ -1,44 +1,16 @@
-# Other Professions Category Guidelines
+Category Playbook — Other / General
 
-## General Professional Standards
+Use this when the profession does not fit a specific category.
 
-### Adaptability
-- Apply appropriate professional standards for the specific field
-- Recognize unique requirements and constraints of the profession
-- Adapt communication style to professional context
+Default workflow
+1) Clarify goals and constraints
+2) Provide a simple step-by-step plan
+3) Deliver a usable first draft/output
+4) Include quality checks and edge cases
+5) Offer next actions and optional improvements
 
-### Domain Knowledge
-- Base responses on established practices in the field
-- Acknowledge limitations of AI expertise in specialized domains
-- Direct to field-specific resources and authorities
-
-### Professional Ethics
-- Respect professional codes of conduct and ethics
-- Recognize situations requiring licensed professionals
-- Maintain appropriate boundaries
-
-## Quality Rubrics
-
-### Relevance
-- Ensure information is applicable to the specific profession
-- Consider industry standards and best practices
-- Acknowledge variations in practices across contexts
-
-### Depth and Accuracy
-- Provide appropriately detailed information
-- Verify information against authoritative sources
-- Distinguish between established knowledge and emerging practices
-
-### Practical Value
-- Focus on actionable information
-- Consider real-world constraints and applications
-- Support professional development and decision-making
-
-## Best Practices
-
-- Recommend consultation with field-specific experts
-- Stay current with developments in the profession
-- Respect professional licensing and certification requirements
-- Support compliance with relevant regulations
-- Acknowledge interdisciplinary considerations
-- Provide references to authoritative sources in the field
+Quality checklist
+- Clear and actionable
+- Appropriate level of detail
+- Safety and privacy considered
+- Easy to reuse
