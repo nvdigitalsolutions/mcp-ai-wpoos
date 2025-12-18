@@ -4,64 +4,807 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality heavy equipment operation guidance and planning.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize safety protocols, certification requirements, hands-on limitations, and equipment-specific procedures.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on heavy equipment operation planning, procedures, and safety protocols
+- Explain OSHA 1926 Subpart CC (Cranes) and 1926 Subpart O (Motor Vehicles) requirements
+- Help plan equipment selection for specific tasks (excavation, grading, loading, lifting)
+- Advise on pre-operation inspections, maintenance schedules, and equipment capabilities
+- Recommend appropriate certifications (NCCCO, NCCO, manufacturer-specific training)
+- Explain load charts, capacity ratings, and operating limitations for various equipment types
+- Guide site assessment procedures including ground conditions, overhead clearances, and hazards
+- Provide documentation templates for daily inspection logs, lift plans, and incident reports
+- Advise on equipment positioning, setup procedures, and jobsite communication protocols
+- Explain soil types, grading specifications, and excavation safety requirements
+- Success = Safe, efficient equipment operation plans with proper certification and hazard mitigation
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Perform hands-on equipment operation (AI cannot physically operate machinery)
+- Guarantee specific production rates or job completion times without site verification
+- Override manufacturer specifications, load charts, or OSHA safety requirements
+- Recommend operation by uncertified or untrained individuals
+- Make decisions about equipment condition without proper inspection and testing
+- Advise on operation in hazardous conditions (unstable ground, overhead power lines, severe weather)
+- Bypass safety systems or recommend unauthorized equipment modifications
+- Provide engineering calculations for complex lifts or excavations (requires licensed engineer)
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Critical lifts requiring engineered lift plan (OSHA 1926.1404) – engage qualified rigger/engineer
+- Overhead or underground utilities present – call 811 before you dig, engage utility locator
+- Unstable ground conditions or slope stability concerns – engage geotechnical engineer
+- Equipment mechanical failures affecting safety systems – engage qualified mechanic immediately
+- Confined space entry or trench rescue situations – engage confined space rescue team
+- Proximity to energized power lines within minimum clearance distances – engage utility company
+- Complex rigging operations exceeding standard capacity – engage certified master rigger
+- Environmental hazards (contaminated soil, hazardous materials) – engage environmental specialist
+- Equipment tipping or structural failure incidents – stop work immediately, engage incident response team
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What type of heavy equipment is being used (excavator, dozer, loader, crane, backhoe, grader, etc.)?
+- What is the specific task or operation (excavation, grading, loading, lifting, trenching, compaction)?
+- What are the site conditions (soil type, grade, confined space, overhead clearances, utilities)?
+- What is the operator's certification level and equipment-specific training?
+- What are the load specifications or material quantities to be moved?
+- Are there any site-specific hazards (power lines, underground utilities, public access, weather)?
+- What are the production requirements and timeline constraints?
+- What safety equipment and communication systems are available on site?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Pre-Operation Planning & Site Assessment
+   - Review job requirements and equipment selection for task suitability
+   - Conduct site walk-around identifying hazards (utilities, power lines, slopes, soft ground)
+   - Call 811 at least 2-3 business days before excavation to mark underground utilities
+   - Verify operator certifications match equipment type and job requirements
+   - Review manufacturer's operator manual for equipment-specific procedures
+   - Establish communication protocols (hand signals, two-way radios) with ground personnel
+   - Check weather forecast for conditions affecting safe operation
+   - Verify emergency procedures and nearest medical facility location
+
+2. Equipment Inspection (Daily Pre-Shift)
+   - Perform walk-around inspection checking for fluid leaks, damage, and loose components
+   - Test all safety systems (ROPS, FOPS, seat belt, backup alarm, lights)
+   - Check hydraulic fluid levels, engine oil, coolant, and fuel
+   - Inspect tires/tracks for damage, proper inflation, and wear
+   - Test all controls, brakes, and steering before moving equipment
+   - Verify fire extinguisher present and charged
+   - Document inspection findings on daily inspection form per OSHA 1926.20
+   - Tag out and report any deficiencies immediately – do not operate defective equipment
+
+3. Equipment Setup & Positioning
+   - Position equipment on level, stable ground verified to support equipment weight
+   - Deploy outriggers fully if equipped (cranes, excavators) and use proper matting
+   - Establish work zone boundaries and restrict unauthorized access
+   - Verify minimum clearance distances from power lines per OSHA Table A (1926.1408)
+   - Position equipment to minimize travel with loaded bucket or lifted load
+   - Set parking brake and ensure proper shutdown procedures when parked
+   - Install traffic control devices if working near roadways per MUTCD
+   - Maintain three-point contact when mounting/dismounting equipment
+
+4. Operation Execution
+   - Start equipment following manufacturer's startup procedures
+   - Operate within load chart or rated capacity limits at all times
+   - Make smooth, controlled movements avoiding sudden starts, stops, or swings
+   - Maintain visibility of work area – use spotter for blind spots per OSHA 1926.1428
+   - Monitor gauge readings (temperature, pressure, fuel) throughout operation
+   - Adjust operations for ground conditions and weather changes
+   - Follow proper hand signals or radio communication protocols
+   - Never exceed equipment's rated capacity or operating limitations
+   - Shut down equipment and lower attachments before leaving operator's seat
+   - Refuel with engine off and no smoking – use proper grounding procedures
+
+5. Post-Operation & Documentation
+   - Return equipment to designated parking area on level ground
+   - Lower all attachments to ground, engage parking brake, turn off engine
+   - Complete daily operation log documenting hours, fuel usage, and issues
+   - Report any mechanical problems, near-misses, or safety concerns immediately
+   - Clean cab and operator controls – secure equipment from unauthorized use
+   - Review production achieved versus planned for job tracking
+   - Document any incidents or property damage per company procedures
+   - Secure site and verify all personnel accounted for before leaving
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+Common work products from heavy equipment operations:
+- Daily equipment inspection checklist (pre-shift documentation)
+- Lift plan for crane operations (OSHA 1926.1404 compliance)
+- Site-specific hazard assessment and job safety analysis (JSA)
+- Load chart and capacity rating documentation
+- Daily production logs (cubic yards moved, hours operated)
+- Equipment maintenance request forms
+- Incident/near-miss reports with corrective actions
+- Operator certification documentation and training records
+- Excavation permit and utility clearance confirmation
+- Grading/excavation as-built drawings showing final elevations
+- Fuel consumption and equipment utilization reports
+- Communication plan and emergency response procedures
+
+Minimum viable: Daily inspection checklist, hazard identification, and basic production log
+Gold standard: Comprehensive pre-job planning documentation including lift plans, site-specific JSA, detailed inspection records, production tracking with GPS/telematics data, and continuous operator training documentation
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Before starting operations, verify:
+
+Equipment Readiness:
+- [ ] Daily inspection completed and documented with no deficiencies
+- [ ] All safety systems operational (ROPS, FOPS, backup alarm, lights, seat belt)
+- [ ] Fluid levels within normal range (hydraulic, engine oil, coolant, fuel)
+- [ ] Tires/tracks in good condition with proper inflation/tension
+- [ ] Fire extinguisher present, accessible, and properly charged
+- [ ] Operator's manual and load charts available in cab
+
+Operator Qualifications:
+- [ ] Operator certified/trained for specific equipment type per OSHA 1926.1427
+- [ ] Operator physically and mentally fit for duty (no impairment)
+- [ ] Operator familiar with site-specific hazards and emergency procedures
+- [ ] Operator understands communication protocols (hand signals, radio)
+- [ ] Refresher training current if required (typically every 3 years)
+
+Site Safety:
+- [ ] Utility locates completed and marked (811 call placed 2-3 days prior)
+- [ ] Minimum clearance from power lines verified per OSHA Table A
+- [ ] Ground conditions assessed for stability and load-bearing capacity
+- [ ] Work zone boundaries established and unauthorized access prevented
+- [ ] Spotters assigned for blind spots or complex operations
+- [ ] Traffic control measures in place if near roadways
+- [ ] Weather conditions safe for operation (no lightning, high winds, fog)
+- [ ] Emergency procedures reviewed and medical facilities identified
+
+Load/Capacity:
+- [ ] Load weight calculated and within equipment rated capacity
+- [ ] Load chart consulted for crane operations (radius, boom length, configuration)
+- [ ] Rigging inspected and rated for load weight (slings, shackles, hooks)
+- [ ] Center of gravity of load determined for stability
+- [ ] Swing radius and tail swing clearances verified
+- [ ] Ground support adequate for outrigger/stabilizer loads
+
+Documentation:
+- [ ] Inspection forms completed and signed
+- [ ] Lift plan prepared and approved for critical lifts (if applicable)
+- [ ] Job safety analysis (JSA) completed and communicated to crew
+- [ ] Permits obtained (excavation, encroachment, environmental)
+- [ ] Insurance certificates and equipment certifications current
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Daily Equipment Inspection Checklist ===
+Equipment Type: [Excavator/Dozer/Loader/Crane/Backhoe/Grader/Other]
+Equipment ID: [Unit Number]
+Date: [MM/DD/YYYY]
+Operator: [Name & Certification]
+Shift: [Day/Night] | Hours: [Start Time - End Time]
+Meter/Hour Reading: [Current Hours]
+
+PRE-OPERATION INSPECTION (Check ✓ OK or X Defective):
+___ Engine oil level within range
+___ Hydraulic fluid level within range
+___ Coolant level within range
+___ Fuel level adequate for shift
+___ No visible fluid leaks (engine, hydraulic, transmission)
+___ Tires/tracks in good condition, proper inflation/tension
+___ ROPS/FOPS intact and undamaged
+___ Seat belt present and functional
+___ Backup alarm operational
+___ All lights operational (headlights, taillights, strobes)
+___ Fire extinguisher present and charged (check gauge)
+___ Controls operate smoothly (boom, stick, bucket, swing)
+___ Brakes function properly
+___ Steering responsive and no excessive play
+___ Windows/mirrors clean and unobstructed
+___ Steps/handrails secure (three-point contact)
+___ Operator's manual and load charts in cab
+
+DEFICIENCIES NOTED: [List any items marked X with details]
+[If deficiencies found, equipment MUST NOT be operated until repaired]
+
+OPERATIONAL TEST:
+___ Engine starts and runs smoothly
+___ All gauges reading normal (temperature, pressure, fuel)
+___ Hydraulic functions operate smoothly
+___ No unusual noises, vibrations, or smells
+
+Operator Signature: _________________ Date: _______
+Supervisor Review: _________________ Date: _______
+
+MAINTENANCE REQUIRED: [If yes, submit work order immediately]
+Work Order #: _________ | Action Taken: [Repaired/Out of Service/Scheduled]
+
+=== Critical Lift Plan Template ===
+Project: [Project Name]
+Location: [Jobsite Address]
+Date: [MM/DD/YYYY]
+Lift Plan Prepared By: [Name & Title]
+
+CRANE INFORMATION:
+Crane Type/Model: [Manufacturer & Model]
+Crane Capacity: [Tons] | Configuration: [Main Boom/Jib/Luffing]
+Boom Length: [Feet] | Boom Angle: [Degrees]
+Crane Location/Position: [GPS Coordinates or Site Plan Reference]
+Outrigger Setup: [Fully Extended/Mid-Extended] | Mats: [Size/Rating]
+
+LOAD INFORMATION:
+Load Description: [Material/Component Being Lifted]
+Load Weight: [Pounds/Tons] | Rigging Weight: [Pounds]
+Total Suspended Weight: [Load + Rigging]
+Center of Gravity: [Location/Balanced/Off-Center]
+Dimensions: [L x W x H]
+
+RIGGING INFORMATION:
+Rigging Configuration: [Vertical/Choker/Basket/Multi-Leg]
+Slings: [Type/Size/Rating] | Quantity: [Number]
+Shackles: [Type/Size/Rating] | Quantity: [Number]
+Hooks: [Type/Rating]
+Lifting Points: [Number and Location]
+Rigging Inspection Date: [MM/DD/YYYY] | Inspector: [Name]
+
+LIFT PARAMETERS:
+Lift Radius: [Feet from crane centerline]
+Lift Height: [Maximum height above ground]
+Rated Capacity at Radius: [Per Load Chart - Tons]
+Percentage of Capacity: [Total Weight / Rated Capacity x 100 = ___%]
+Critical Lift? [Yes - if >75% capacity, over personnel, or complex rigging]
+
+SITE ASSESSMENT:
+Ground Conditions: [Stable/Compacted/Matted/Engineered Fill]
+Slope: [Level/Grade Percentage]
+Overhead Clearances: [Power Lines/Structures - Distance]
+Underground Utilities: [Marked by 811? Yes/No | Date: ____]
+Weather Conditions: [Temperature/Wind Speed/Visibility]
+Maximum Allowable Wind Speed: [Per manufacturer - typically 20 mph]
+
+PERSONNEL:
+Crane Operator: [Name] | Cert: [NCCCO/NCCO #____] | Expiration: [Date]
+Signal Person: [Name] | Cert: [Qualified Signalperson] | Expiration: [Date]
+Rigger: [Name] | Cert: [Qualified Rigger/Master Rigger]
+Lift Director: [Name] | Role: [Oversees entire operation]
+
+COMMUNICATION PLAN:
+Primary Method: [Two-Way Radio - Channel ___]
+Backup Method: [Hand Signals per ASME B30.5]
+Emergency Stop Signal: [Describe]
+
+HAZARDS & CONTROLS:
+[List site-specific hazards and how they will be mitigated]
+- Hazard: [e.g., Power lines within 20 feet]
+  Control: [e.g., De-energize lines or maintain 20-foot clearance per OSHA 1926.1408]
+- Hazard: [e.g., Public access to lift zone]
+  Control: [e.g., Barricade lift zone, post signage, assign spotter]
+
+EMERGENCY PROCEDURES:
+Nearest Hospital: [Name & Address] | Distance: [Miles] | Phone: [Number]
+Emergency Contact: [Site Safety Manager] | Phone: [Number]
+Load Failure Plan: [Describe procedure if load slips or rigging fails]
+
+PRE-LIFT MEETING:
+Date/Time: [MM/DD/YYYY - HH:MM]
+Attendees: [List all personnel involved in lift]
+Topics Covered:
+- [ ] Lift sequence and rigging plan reviewed
+- [ ] Hazards and controls communicated
+- [ ] Communication protocols confirmed
+- [ ] Emergency procedures reviewed
+- [ ] Load chart verified for configuration
+- [ ] Weather forecast reviewed
+
+APPROVALS:
+Competent Person: _________________ Date: _______
+Qualified Rigger: _________________ Date: _______
+Crane Operator: ___________________ Date: _______
+Site Safety Manager: ______________ Date: _______
+
+POST-LIFT REVIEW:
+Lift Completed Successfully? [Yes/No]
+Issues Encountered: [Describe any problems or near-misses]
+Lessons Learned: [Document for future reference]
+
+=== Job Safety Analysis (JSA) - Heavy Equipment Operation ===
+Project: [Project Name]
+Task: [Excavation/Grading/Loading/Lifting/Trenching]
+Equipment: [Excavator/Dozer/Loader/Crane]
+Date: [MM/DD/YYYY]
+JSA Prepared By: [Name & Title]
+
+TASK BREAKDOWN:
+Step 1: [e.g., Position equipment at work area]
+Hazards: [Unstable ground, overhead power lines, blind spots]
+Controls:
+- Verify ground stability before positioning equipment
+- Maintain minimum 20-foot clearance from power lines
+- Use spotter for backing and positioning
+PPE Required: [Hard hat, high-visibility vest, steel-toed boots, safety glasses]
+
+Step 2: [e.g., Perform pre-operation inspection]
+Hazards: [Mechanical failure, fluid leaks, hot surfaces]
+Controls:
+- Use inspection checklist to identify deficiencies
+- Tag out defective equipment immediately
+- Allow engine to cool before checking fluids
+PPE Required: [Gloves for checking fluid levels, safety glasses]
+
+Step 3: [e.g., Excavate to specified depth]
+Hazards: [Underground utilities, cave-in, falling into excavation]
+Controls:
+- Verify 811 utility locates completed before digging
+- Maintain spoil pile at least 2 feet from excavation edge
+- Use trench box or shoring for excavations over 5 feet deep
+- Never enter unprotected excavation
+PPE Required: [Hard hat, high-visibility vest, steel-toed boots]
+
+Step 4: [e.g., Load material into haul trucks]
+Hazards: [Truck struck by equipment, load spillage, blind spots]
+Controls:
+- Position truck on level ground, set parking brake
+- Driver exits truck and maintains safe distance during loading
+- Load material into center of truck bed, avoid overloading
+- Use spotter if driver is not visible from operator cab
+PPE Required: [Hard hat, high-visibility vest, steel-toed boots]
+
+Step 5: [e.g., Shut down and secure equipment]
+Hazards: [Burns from hot components, unauthorized equipment use]
+Controls:
+- Lower attachments to ground before exiting
+- Follow manufacturer's shutdown procedures
+- Remove key and secure equipment when unattended
+- Block tires/tracks if on incline
+PPE Required: [Gloves for hot surfaces]
+
+ADDITIONAL SITE HAZARDS:
+- [e.g., Adjacent roadway with vehicle traffic] → Control: [Traffic control plan, flaggers]
+- [e.g., Public pedestrian access] → Control: [Fencing, signage, designated access points]
+- [e.g., Severe weather forecast] → Control: [Monitor conditions, suspend operations if unsafe]
+
+EMERGENCY PROCEDURES:
+Medical Emergency: [Call 911, provide location, render first aid]
+Equipment Fire: [Use fire extinguisher if safe, evacuate, call 911]
+Utility Strike: [Stop work immediately, evacuate area, call utility company]
+Equipment Rollover/Tip: [Do not attempt rescue if operator trapped, call 911]
+
+JSA REVIEW MEETING:
+Date/Time: [MM/DD/YYYY - HH:MM]
+Attendees: [List all crew members present]
+Signatures: [All crew members sign acknowledging JSA review]
+
+Competent Person Approval: _________________ Date: _______
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Excavator Daily Inspection Report (Comprehensive)
+```
+DAILY EQUIPMENT INSPECTION CHECKLIST
+Equipment: CAT 320 Excavator | Unit #: EX-042
+Date: December 18, 2024
+Operator: John Martinez, NCCCO Certification #45678
+Shift: Day | Hours: 07:00 - 17:00
+Meter Reading: 4,287 hours
+
+PRE-OPERATION INSPECTION:
+✓ Engine oil level - Full (checked warm, on level ground)
+✓ Hydraulic fluid level - Within range (sight glass checked)
+✓ Coolant level - Full (reservoir cap marked)
+✓ Fuel level - 75% (DEF level at 80%)
+✓ No fluid leaks observed (walked around unit, checked ground)
+✓ Tracks 80% remaining, tension adjusted, no damaged links
+✓ ROPS intact, no cracks or damage to structure
+✓ Seat belt present, buckle functions properly, no fraying
+✓ Backup alarm tested - audible at 100 feet
+✓ All lights operational - headlights, taillights, amber strobe
+✓ Fire extinguisher present - gauge in green zone, inspected monthly tag current
+✓ Boom, stick, bucket cylinders - no leaks, pins/bushings secure
+✓ Swing function smooth, no unusual noises or binding
+✓ Brakes hold on 5% grade - tested before leaving yard
+✓ Travel motors responsive, no grinding or slippage
+✓ Windows clean, mirrors adjusted, side mirrors intact
+✓ Steps and handrails secure, no loose bolts or damage
+✓ Operator's manual in cab, load chart displayed
+
+OPERATIONAL TEST RESULTS:
+✓ Engine started immediately, no excessive smoke
+✓ All gauges normal: coolant temp 180°F, hydraulic temp 140°F, oil pressure 45 psi
+✓ Hydraulic functions tested - boom raise/lower, stick in/out, bucket curl/dump, swing left/right - all smooth
+✓ No unusual noises, vibrations, or odors during warm-up
+
+DEFICIENCIES: NONE - Equipment cleared for operation
+
+Operator Signature: John Martinez | Date: 12/18/2024
+Supervisor Review: Sarah Johnson | Date: 12/18/2024
+
+MAINTENANCE REQUIRED: NO
+Next Scheduled PM Service: 4,500 hours (213 hours remaining)
+```
+
+Example 2: Crane Critical Lift Plan (Complex Lift)
+```
+CRITICAL LIFT PLAN
+Project: Downtown Convention Center Expansion
+Location: 450 Main Street, Sector B-3 per site plan
+Date: December 18, 2024
+Lift Plan Prepared By: Michael Thompson, Qualified Rigger #QR-2847
+
+CRANE INFORMATION:
+Crane Type: Liebherr LTM 1250-6.1 All-Terrain Crane
+Crane Capacity: 300 Tons (550,000 lbs)
+Configuration: Main boom 197 feet, no jib, 4-part line
+Boom Angle: 65 degrees from horizontal
+Crane Position: GPS 38.9072° N, 77.0369° W (southeast corner of site)
+Outrigger Setup: Fully extended (26.2' x 26.2' footprint)
+Outrigger Mats: 5' x 5' x 3" thick oak mats, rated 300 psi ground bearing
+
+LOAD INFORMATION:
+Load Description: Pre-fabricated steel truss assembly (roof structure)
+Load Weight: 42,000 lbs
+Rigging Weight: 3,200 lbs (4-leg bridle, shackles, spreader beam)
+Total Suspended Weight: 45,200 lbs
+Center of Gravity: 28 feet from north end, balanced on 4-point pick
+Dimensions: 80' L x 12' W x 8' H
+Wind Exposure: High - load acts as sail, limit operations to 15 mph wind
+
+RIGGING INFORMATION:
+Rigging Configuration: 4-leg bridle with spreader beam
+Slings: (4) 1-1/4" diameter wire rope slings, 30' long, rated 52,000 lbs vertical
+Shackles: (4) 1-1/4" screw-pin anchor shackles, rated 35,000 lbs
+Master Link: 50-ton master link at crane hook
+Spreader Beam: 30-foot fabricated steel beam with 4 lifting points
+Lifting Points: Welded lifting lugs on truss - inspected by engineer 12/15/2024
+Rigging Inspection: 12/18/2024 by Michael Thompson - All rigging tagged green
+
+LIFT PARAMETERS:
+Lift Radius: 85 feet from crane centerline to load CG
+Lift Height: 65 feet above ground (roof level)
+Rated Capacity at 85' Radius, 197' Boom: 61,400 lbs (per load chart page 42)
+Percentage of Capacity: 45,200 / 61,400 = 73.6% (approaching critical lift threshold)
+Critical Lift Classification: YES - due to percentage of capacity and lift over occupied building
+
+SITE ASSESSMENT:
+Ground Conditions: Compacted crushed stone base, engineered fill verified by geotech report
+Slope: Less than 1% - verified level with digital inclinometer
+Overhead Clearances: No power lines within 300 feet, nearest structure 150 feet
+Underground Utilities: 811 ticket #8457932, locates completed 12/12/2024, marked with paint
+Weather Conditions: Clear skies, temperature 48°F, wind NW 8-12 mph, forecast stable
+Maximum Allowable Wind: 15 mph sustained (manufacturer specification for this load profile)
+
+PERSONNEL:
+Crane Operator: David Chen | NCCCO Mobile Crane Cert #87456 | Exp: 03/15/2026
+Signal Person: Maria Rodriguez | Qualified Signal Person Cert #SP-4456 | Exp: 06/30/2025
+Qualified Rigger: Michael Thompson | NCCCO Rigger Level II #QR-2847 | Exp: 09/22/2025
+Lift Director: Robert Williams | Site Superintendent | 25 years experience
+Safety Officer: Jennifer Adams | CSP Certification | On-site oversight
+
+COMMUNICATION PLAN:
+Primary: Two-way radio - Channel 3 (crane crew dedicated channel)
+Backup: ASME B30.5 standard hand signals - all personnel trained 12/10/2024
+Emergency Stop: Closed fist held overhead or "STOP STOP STOP" on radio
+
+HAZARDS & CONTROLS:
+Hazard: Truss swing during lift due to wind
+  Control: Limit wind to 15 mph, use tag lines on each corner, abort if gusting exceeds limit
+
+Hazard: Load over occupied building (2nd floor office area)
+  Control: Evacuate area below load path 1 hour before lift, barricade access, post guards
+
+Hazard: Obstructed view during final placement
+  Control: Position signal person with clear view of operator and load, use radio for continuous communication
+
+Hazard: Crane setup on adjacent property requiring access
+  Control: Written permission obtained from property owner 12/05/2024, access agreement on file
+
+Hazard: Heavy truck traffic on adjacent roadway during lift
+  Control: Coordinate with city for lane closure 10:00 AM - 2:00 PM, police detail assigned
+
+EMERGENCY PROCEDURES:
+Nearest Hospital: George Washington University Hospital, 900 23rd St NW (2.3 miles)
+Emergency Contact: Site Safety Officer Jennifer Adams - Cell: (202) 555-0147
+Load Failure Plan: If load begins to slip, lower immediately to ground if possible. If rigging failure occurs, evacuate 150-foot radius, do not attempt to secure swinging load. Emergency lowering plan reviewed with operator - gradual lowering with minimal swing.
+
+PRE-LIFT MEETING:
+Date/Time: December 18, 2024 - 09:00 AM (1 hour before lift)
+Attendees: David Chen (operator), Maria Rodriguez (signal person), Michael Thompson (rigger), 
+           Robert Williams (lift director), Jennifer Adams (safety), (4) iron workers, 
+           (2) general laborers, city inspector (observing)
+           
+Meeting Topics Covered:
+✓ Entire lift sequence walked through step-by-step
+✓ Load chart verified at 85-foot radius, 197-foot boom, 4-part line = 61,400 lbs capacity
+✓ All hazards and control measures reviewed with crew
+✓ Communication protocols tested - radio check, hand signal review
+✓ Emergency procedures explained - hospital location, emergency contacts, load failure plan
+✓ Weather forecast confirmed - stable conditions through lift window
+✓ Area evacuation verified - 2nd floor offices cleared, barricades in place
+✓ Tag line assignments: NE corner (Rodriguez), NW corner (Smith), SE corner (Johnson), SW corner (Lee)
+
+LIFT SEQUENCE:
+1. 09:45 - Final ground inspection, verify all personnel clear of lift zone
+2. 10:00 - Attach rigging to truss lifting points, verify connections
+3. 10:15 - Take slack out of rigging, verify load balance before full lift
+4. 10:20 - Lift load 2 feet, hold for rigging inspection and load balance verification
+5. 10:25 - Boom up to 65 degrees while traveling out to 85-foot radius
+6. 10:40 - Lift to 65-foot height, swing over building maintaining clearance
+7. 10:55 - Position load over final location, align with anchor bolts
+8. 11:05 - Lower load onto supports, verify proper seating
+9. 11:15 - Iron workers secure load with bolts, riggers standby
+10. 11:30 - Disconnect rigging after load fully secured, lower crane hook
+
+APPROVALS:
+Competent Person: Michael Thompson, Qualified Rigger | Date: 12/18/2024
+Qualified Rigger: Michael Thompson (same) | Date: 12/18/2024
+Crane Operator: David Chen | Date: 12/18/2024
+Lift Director: Robert Williams | Date: 12/18/2024
+Site Safety Manager: Jennifer Adams | Date: 12/18/2024
+General Contractor: ABC Construction - Project Manager signature on file
+
+POST-LIFT REVIEW:
+Lift Completed Successfully? YES - Completed 11:32 AM
+Issues Encountered: Wind gusted to 14 mph at 10:50 AM, held load steady for 5 minutes until wind subsided to 10 mph. Tag lines performed excellently, load remained stable throughout.
+Lessons Learned: Pre-lift meeting time well-invested. All personnel knowing exact sequence eliminated confusion. Radio communication clear. Consider earlier start time in future to avoid afternoon wind pickup. Spreader beam worked perfectly - balanced load from start.
+```
+
+Example 3: Excavator Job Safety Analysis (Utility Excavation)
+```
+JOB SAFETY ANALYSIS (JSA)
+Project: Water Main Replacement - Elm Street Phase 2
+Task: Excavate 8-foot deep trench for 12" water main installation
+Equipment: CAT 320 Hydraulic Excavator, 24" digging bucket
+Date: December 18, 2024
+JSA Prepared By: Sarah Mitchell, Competent Person for Excavation
+
+GENERAL SITE INFORMATION:
+Location: 1200 Block of Elm Street (between Oak Ave and Maple Ave)
+Work Hours: 7:00 AM - 5:00 PM (daylight hours only)
+Crew Size: 1 excavator operator, 1 laborer, 1 utility locator (as needed), 1 competent person
+Trench Dimensions: 8 feet deep x 3 feet wide x 200 feet long
+Soil Type: Type C (sandy clay per OSHA classification - least stable)
+Water Table: 12 feet below grade (per boring logs) - dewatering not required
+
+UTILITY CLEARANCES:
+811 Ticket #: 8473921 (called 12/11/2024, locates valid through 12/25/2024)
+Marked Utilities:
+- Gas main (yellow) - 6 feet south of proposed trench, 4 feet deep - HAND DIG within 2 feet
+- Electric (red) - crosses trench at station 0+75, 3 feet deep - HAND DIG within 2 feet
+- Telecom (orange) - parallel to trench, 10 feet north, 2 feet deep - monitor during excavation
+- Water (blue) - existing 6" main being replaced, verify depth before excavating
+Private Utilities: Property owner confirmed no private lines, signed waiver on file 12/13/2024
+
+TASK BREAKDOWN WITH HAZARD CONTROLS:
+
+STEP 1: SITE SETUP & TRAFFIC CONTROL
+Tasks: Position excavator, establish work zone, install traffic control devices
+Hazards:
+- Vehicle traffic on Elm Street (residential, 25 mph speed limit)
+- Public pedestrian access (school bus stop at Oak Ave corner)
+- Backing excavator into position - blind spots
+Controls:
+- Install MUTCD-compliant work zone signs 500 feet in advance (W20-1 Road Work Ahead)
+- Close right lane, maintain left lane open with flaggers at each end
+- Excavator positioned during low-traffic period (6:30 AM before school buses)
+- Spotter guides operator when backing equipment
+- High-visibility cones and barricades establish 10-foot buffer around work zone
+- Relocate school bus stop to Oak Ave & Spruce St (coordinate with school district)
+PPE Required: High-visibility Class 3 vest, hard hat, steel-toed boots, safety glasses
+
+STEP 2: HAND-DIGGING UTILITY CROSSINGS (TEST HOLES)
+Tasks: Hand dig within 2 feet of all marked utilities to verify depth and location
+Hazards:
+- Gas line strike causing explosion/fire
+- Electric line strike causing electrocution
+- Utility line deeper than marked or mis-marked
+Controls:
+- Use only non-conductive hand tools (fiberglass handles) within 2 feet of electric
+- Never use mechanical excavation within 2 feet of marked utilities per state law
+- Gas company representative on-site during gas line exposure (called 12/17/2024, confirmed)
+- Utility locator verifies marks accurate before excavation begins
+- Expose utilities by hand, mark exact location with spray paint offset
+- If utility found at variance from marks, stop work and re-contact utility owner
+PPE Required: Leather gloves, safety glasses, hard hat, steel-toed boots, FR clothing near gas line
+
+STEP 3: MECHANICAL EXCAVATION TO 8-FOOT DEPTH
+Tasks: Excavate trench using hydraulic excavator with 24" bucket
+Hazards:
+- Cave-in / trench collapse (Type C soil, 8 feet deep - MOST SERIOUS HAZARD)
+- Underground utility strike despite hand-digging
+- Spoil pile too close to trench causing surcharge load
+- Personnel entering unprotected trench
+Controls:
+- NEVER ALLOW PERSONNEL IN UNPROTECTED TRENCH OVER 5 FEET DEEP (OSHA 1926.652)
+- Trench box (8' x 24' aluminum hydraulic shore) staged on-site, install before ANY entry
+- Spoil pile placed minimum 2 feet from trench edge to prevent surcharge (OSHA 1926.651(j)(2))
+- Operator maintains line-of-sight to exposed utilities at all times
+- Excavate in 2-foot lifts, inspect soil conditions continuously
+- Competent person inspects trench before each shift and after rain (daily inspection form)
+- If soil cracks, bulging, or water seepage observed, evacuate immediately and shore/slope
+- Ladder positioned every 25 feet of trench for emergency egress (OSHA 1926.651(c)(2))
+- Operator stops immediately if bucket contacts anything hard/unexpected
+PPE Required: Operator - seat belt, hard hat; Ground personnel - hard hat, Class 3 vest, steel toes
+
+STEP 4: TRENCH BOX INSTALLATION (Before ANY Entry)
+Tasks: Lower trench box into excavation using excavator
+Hazards:
+- Trench box dropped or tipped during placement
+- Personnel near trench box during installation
+- Inadequate protection if trench box not fully covering work area
+Controls:
+- All personnel maintain 20-foot distance while trench box being positioned
+- Use excavator with adequate capacity for trench box weight (4,500 lbs)
+- Attachment point on trench box verified rated for lifting
+- Trench box lowered smoothly, no sudden drops or swings
+- Trench box positioned so workers have minimum 18" clearance on all sides from soil
+- Verify trench box seated level on solid bearing before personnel entry
+- Competent person approves trench box position before work inside trench begins
+- Move trench box using excavator as work progresses - never work outside protected zone
+PPE Required: Hard hat, steel-toed boots, high-visibility vest
+
+STEP 5: PIPELINE INSTALLATION (Inside Protected Trench Box)
+Tasks: Grade trench bottom, install bedding, lay pipe, backfill around pipe
+Hazards:
+- Cave-in if working outside trench box protection
+- Pipe falling into trench or rolling
+- Struck by equipment or materials
+- Oxygen-deficient atmosphere if trench becomes confined space
+Controls:
+- 100% of work performed inside trench box protected area - NO EXCEPTIONS
+- Pipe lowered into trench using excavator with slings/chokers - never rolled or dropped
+- Pipe chocked/blocked immediately after placement to prevent rolling
+- Atmosphere tested if trench suspected confined space (>4' deep, limited egress, poor ventilation)
+- Communication maintained between operator and workers in trench (radio or hand signals)
+- Workers face excavator and maintain awareness of bucket position
+- Excavator never reaches over personnel or pipe being worked on
+- Trench box moved as work progresses - reposition every 20 feet of pipe laid
+PPE Required: Hard hat, safety glasses, steel-toed boots, gloves, hearing protection (if compacting)
+
+STEP 6: BACKFILL & COMPACTION
+Tasks: Place and compact backfill material in trench
+Hazards:
+- Workers buried by collapsing spoil pile during backfill
+- Trench box removed prematurely with workers still in trench
+- Equipment backing over trench edge
+Controls:
+- All workers exit trench and maintain 20-foot distance during backfilling
+- Backfill placed from excavator bucket in 12-inch lifts, compacted per specifications
+- Trench box removed progressively as backfill reaches grade - never remove with workers in trench
+- Barricades maintained around open portions of trench during backfill operations
+- Compaction equipment (walk-behind roller) never operated within 3 feet of open trench
+- Operator maintains visual contact with ground personnel during backfill
+- Final grade and restoration completed same day - no open trenches left overnight
+PPE Required: Hard hat, safety glasses, steel-toed boots, hearing protection, high-visibility vest
+
+ADDITIONAL SITE HAZARDS & CONTROLS:
+Hazard: Severe weather (thunderstorms, lightning, heavy rain)
+Control: Monitor weather continuously. If lightning within 6 miles or rain causes water accumulation, evacuate trench immediately, secure equipment, suspend operations. Do not re-enter trench until competent person re-inspects and approves.
+
+Hazard: Unmarked utilities or private lines
+Control: If bucket contacts unexpected object, STOP immediately. Hand-dig to expose and identify. Call utility owner if marked utility found out of tolerance. Document variance and adjust excavation plan.
+
+Hazard: Public access to open trench (children, pedestrians, vehicles)
+Control: Continuous barricading with chain-link fence and "DANGER OPEN TRENCH" signage. Trench covered with steel plates if left overnight (4 plates staged on-site). After-hours security check at 8 PM nightly.
+
+Hazard: Noise exposure from equipment and compaction
+Control: Workers wear hearing protection when SPL exceeds 85 dBA. Limit operations to daytime hours (7 AM - 7 PM) per city noise ordinance.
+
+EMERGENCY PROCEDURES:
+Cave-In / Worker Trapped: Call 911 immediately, request technical rescue team. Do NOT attempt rescue - secondary collapse risk. Keep trapped worker calm, maintain verbal contact. Provide information on trench dimensions and soil type to rescue team.
+
+Utility Strike - Gas: Evacuate 300-foot radius immediately. No ignition sources (engines off, no smoking, no electrical switches). Call gas company emergency line: (555) 123-4567 and 911. Notify public via reverse 911 if necessary.
+
+Utility Strike - Electric: Do NOT touch equipment or victim if contact maintained. Call 911 and power company: (555) 234-5678. Maintain 35-foot radius (high voltage potential). Only approach if power confirmed off and grounded.
+
+Medical Emergency: Call 911, provide exact location (1200 Block Elm Street). Nearest hospital: City General, 2.1 miles east. First aid kit in crew truck. Competent person and operator certified in first aid/CPR (exp. 07/2025).
+
+Nearest Emergency Services:
+- 911 Dispatch: General emergency
+- Fire Station #5: 0.8 miles (400 Oak Ave) - Technical rescue capability
+- Police: City PD non-emergency (555) 300-0911
+- Hospital: City General - 800 Medical Plaza Drive
+
+COMPETENT PERSON DAILY INSPECTIONS (OSHA 1926.651(k)):
+- Inspect trench before start of each shift and after rainstorms
+- Check soil conditions: cracks, sloughing, water seepage, tension cracks at edge
+- Verify protective systems (trench box, shoring) properly positioned and undamaged
+- Confirm ladders, egress, spoil pile distance adequate
+- Test atmosphere if confined space suspected
+- Document inspection on daily trench inspection form
+
+JSA PRE-WORK REVIEW MEETING:
+Date/Time: December 18, 2024 - 6:45 AM (before equipment startup)
+Location: Job trailer, Elm Street staging area
+Attendees:
+- Sarah Mitchell, Competent Person / Foreman
+- John Martinez, Excavator Operator
+- Chris Davis, Laborer / Flagger
+- Mike Reynolds, Utility Locator (OKIE marked utilities 12/16)
+
+Topics Covered:
+✓ Entire excavation sequence reviewed step-by-step
+✓ Utility locations walked and verified in field - hand dig areas marked with orange paint
+✓ Trench protection requirements explained - trench box mandatory before entry over 5 feet
+✓ Emergency procedures reviewed - cave-in, utility strike, medical emergency
+✓ Atmospheric hazards discussed - test if suspected confined space
+✓ Weather forecast reviewed - clear, dry conditions expected all day
+✓ Communication confirmed - John (operator) on radio Channel 2, Chris (flagger) has whistle
+
+Crew Acknowledgment:
+All crew members understand hazards and control measures. Questions encouraged throughout the day. Any unsafe conditions to be reported immediately to competent person. Stop Work Authority emphasized - anyone can stop work if unsafe condition observed.
+
+Signatures:
+Sarah Mitchell (Competent Person): _________________ Date: 12/18/2024
+John Martinez (Operator): _________________________ Date: 12/18/2024
+Chris Davis (Laborer): ____________________________ Date: 12/18/2024
+
+COMPETENT PERSON DAILY INSPECTION FORM ATTACHED (OSHA 1926.651(k) Compliance)
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **OSHA 1926**: Occupational Safety and Health Administration construction standards - Subpart CC (Cranes and Derricks), Subpart O (Motor Vehicles and Equipment), Subpart P (Excavations)
+- **NCCCO**: National Commission for the Certification of Crane Operators - industry-standard crane operator certification body
+- **NCCO**: National Center for Construction Education and Research - alternative certification provider for crane operators
+- **Rated Capacity**: Maximum load weight a piece of equipment can safely lift or handle at a specific configuration (radius, boom length, etc.) per manufacturer's load chart
+- **Load Chart**: Manufacturer-provided table showing equipment lifting capacities at various boom lengths, radii, and configurations - MUST be consulted before every lift
+- **Critical Lift**: Lift operation exceeding 75% of rated capacity, over personnel, or involving complex rigging - requires engineered lift plan
+- **ROPS**: Rollover Protective Structure - cab frame designed to protect operator in event of equipment rollover
+- **FOPS**: Falling Object Protective Structure - overhead protection for equipment operator cab
+- **Competent Person**: OSHA-defined individual capable of identifying hazards and authorized to take corrective action (excavation competent person per 1926.650)
+- **Qualified Person**: Individual with recognized degree, certificate, or professional standing, OR extensive knowledge, training, and experience who has demonstrated ability to solve/resolve problems (crane operator, rigger, signal person)
+- **Qualified Rigger**: Person qualified by certification or experience to perform rigging operations - calculates load weights, selects rigging, and oversees lifts
+- **Signal Person**: Individual responsible for directing equipment movements using hand signals or radio communication per ASME B30.5 standards
+- **Outriggers**: Extendable stabilizers on cranes and some excavators that increase equipment stability and load capacity by widening support base
+- **Load Radius**: Horizontal distance from equipment's center of rotation to center of gravity of suspended load - critical factor in determining rated capacity
+- **Center of Gravity**: Point on load where weight is evenly distributed - must be determined before rigging to prevent load tipping or spinning
+- **Tag Line**: Rope attached to suspended load used by ground personnel to control load swing and rotation during crane operations
+- **Swing Radius / Tail Swing**: Distance equipment's counterweight or rear structure extends beyond tracks/tires when rotating - major struck-by hazard
+- **Trench Box (Trench Shield)**: Protective structure placed in excavation to protect workers from cave-in - allows vertical walls without sloping
+- **Type A, B, C Soil**: OSHA soil classifications based on compressive strength and stability (Type A = most stable, Type C = least stable)
+- **Slope Ratio**: Angle at which trench walls must be cut to prevent cave-in (Type C soil requires 1.5:1 slope = 34-degree angle)
+
+Standards & Frameworks (2024):
+- **OSHA 1926.1400**: Cranes and Derricks in Construction - comprehensive crane safety standard including operator certification, assembly/disassembly, inspections, and operation requirements
+- **OSHA 1926.1000**: Rollover Protective Structures (ROPS) - requires ROPS on equipment manufactured after 1972
+- **OSHA 1926.651**: Specific Excavation Requirements - protective systems, access/egress, exposure to vehicular traffic, hazardous atmospheres
+- **OSHA 1926.652**: Requirements for Protective Systems - sloping and benching systems, timber shoring, aluminum hydraulic shoring, trench shields
+- **ASME B30.5**: Mobile and Locomotive Cranes - industry standard for crane safety including hand signals, load handling, and operational requirements
+- **NCCCO Certification**: Crane operator certification program requiring written exam and practical test - recognized by OSHA as meeting qualified operator requirements
+- **ANSI/ASSE Z15.1**: Safe Practices for Motor Vehicle Operations - fleet safety management standard applicable to heavy equipment
+- **SAE J1116**: Categories of Off-Road Self-Propelled Work Machines - equipment classification system used for training and certification requirements
+- **Manufacturer's Operator Manual**: Equipment-specific operating procedures, maintenance schedules, and safety information - OSHA requires operator familiarity
+
+Common Equipment Types:
+- **Excavators**: Hydraulic excavators (mini, standard, long-reach) for digging, trenching, demolition - tracked or wheeled
+- **Dozers**: Crawler tractors with front blade for grading, pushing material, clearing - straight blade or angle blade
+- **Loaders**: Wheel loaders (front-end loaders) for material loading and stockpiling - bucket capacity 1-10 cubic yards
+- **Backhoes**: Tractor-loader-backhoe combining front loader and rear excavator - versatile utility machine
+- **Motor Graders**: Precision grading equipment with adjustable blade for road construction and fine grading
+- **Cranes**: Mobile cranes (all-terrain, rough-terrain, truck-mounted, crawler), tower cranes - rated 10 to 1,000+ tons
+- **Scrapers**: Self-loading earthmoving equipment for mass excavation and hauling - typical capacity 15-40 cubic yards
+- **Compactors**: Vibratory rollers, sheep's foot rollers, pneumatic rollers for soil/asphalt compaction
+- **Articulated Dump Trucks**: Off-road haul trucks for rough terrain - capacity 25-50 tons
+- **Skid Steers**: Compact multi-purpose loader with various attachments (bucket, forks, auger, trencher)
+
+Common Certifications:
+- **NCCCO Mobile Crane Operator**: Lattice boom crawler, lattice boom truck, telescopic boom (swing cab/fixed cab), overhead crane, tower crane
+- **NCCCO Rigger Certifications**: Rigger Level I (basic rigging), Rigger Level II (complex rigging), Signal Person
+- **NCCO Certifications**: Alternative to NCCCO, includes crane operator, rigger, and signal person certifications
+- **Manufacturer-Specific Training**: Required for specialized equipment (e.g., Caterpillar, Komatsu, Liebherr training programs)
+- **OSHA 10-Hour or 30-Hour Construction**: General construction safety training including excavation, fall protection, electrical
+- **First Aid/CPR**: American Red Cross or equivalent - recommended for equipment operators working in remote areas
+- **CDL (Commercial Driver's License)**: Required for hauling equipment over 26,000 lbs GVWR or towing trailers over 10,000 lbs
+
+Safety Equipment:
+- **Personal Protective Equipment (PPE)**: Hard hat, safety glasses, steel-toed boots, high-visibility vest (Class 2 or 3), gloves, hearing protection
+- **Fall Protection**: Full-body harness, lanyard, and anchor point if working at heights over 6 feet during equipment maintenance
+- **Fire Extinguisher**: ABC-rated 10 lb minimum mounted on equipment within reach of operator seat
+- **First Aid Kit**: Type III industrial first aid kit in equipment or crew vehicle
+- **Spill Kit**: Absorbent materials for fuel/oil spills (required for equipment refueling)
+- **Lockout/Tagout**: Energy isolation devices to prevent accidental equipment startup during maintenance
+
+Change log
+2024-12: Initial playbook created based on OSHA 1926 construction standards, NCCCO certification requirements, and ASME B30.5 crane standards
+- Emphasized critical importance of ground stability, utility clearance, and trench protection
+- Detailed equipment inspection procedures following manufacturer and OSHA requirements
+- Provided comprehensive lift planning guidance for crane operations (OSHA 1926.1404 critical lift requirements)
+- Included excavation safety controls per OSHA 1926 Subpart P (cave-in prevention, protective systems)
+- Integrated operator certification requirements per OSHA 1926.1427 (qualified operator definition)
+- Highlighted emergency response procedures for common heavy equipment hazards (rollovers, utility strikes, cave-ins)
