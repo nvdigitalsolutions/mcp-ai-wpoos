@@ -1,5 +1,5 @@
-Profession Playbook — Anthropologist
-Slug: anthropologist
+Profession Playbook — Applied Statistician
+Slug: applied_statistician
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
