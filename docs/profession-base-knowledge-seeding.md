@@ -9,12 +9,15 @@ The profession base knowledge seeding feature automatically generates knowledge 
 ### Automatic Seeding
 
 1. **On Plugin Activation**: After professions are seeded (at `admin_init` priority 20), the base knowledge seeder runs (at priority 30)
-2. **Creates Knowledge Documents**: For each profession, generates a Markdown-formatted text file containing:
-   - Profession title and overview
-   - Role description
-   - Expertise areas
-   - Warnings/disclaimers
-   - Knowledge base content
+2. **Creates Knowledge Documents**: For each profession:
+   - **First**: Checks for existing knowledge document at `includes/knowledge-base/profession-documents/{slug}.txt`
+   - **If found**: Uses the existing document (e.g., `tax_advisor.txt`, `accountant.txt`)
+   - **If not found**: Generates a Markdown-formatted text file from profession metadata containing:
+     - Profession title and overview
+     - Role description
+     - Expertise areas
+     - Warnings/disclaimers
+     - Knowledge base content
 3. **Stores Attachments**: Files are created as WordPress attachments in `wp-content/uploads/wp-mcp-ai/profession-knowledge/`
 4. **Updates Metadata**:
    - Adds attachment IDs to `META_MEMORY_FILES`
@@ -43,6 +46,19 @@ When professions are re-seeded from the admin settings page, the base knowledge 
 - Re-creates knowledge documents with updated content
 - Refreshes supported MIME types
 - Updates all profession metadata
+
+## Source Documents
+
+The seeder first looks for existing knowledge documents in:
+```
+includes/knowledge-base/profession-documents/
+├── tax_advisor.txt
+├── accountant.txt
+├── lawyer.txt
+└── ... (181 profession documents)
+```
+
+These pre-written documents contain curated knowledge content for each profession. If a matching file exists (based on profession slug), it will be used as the source content.
 
 ## Files Created
 

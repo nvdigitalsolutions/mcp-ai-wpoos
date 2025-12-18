@@ -160,11 +160,30 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 
 	/**
 	 * Build knowledge document content from profession data.
+	 * First tries to load from existing txt file in includes/knowledge-base/profession-documents/
+	 * If not found, generates content from profession metadata.
 	 *
 	 * @param WP_Post $profession Profession post object.
-	 * @return string Knowledge document content in Markdown format.
+	 * @return string Knowledge document content.
 	 */
 	protected static function build_knowledge_document( $profession ) {
+		$slug = $profession->post_name;
+
+		// Try to load existing knowledge document from includes/knowledge-base/profession-documents/
+		$existing_doc_path = WP_MCP_AI_PATH . 'includes/knowledge-base/profession-documents/' . $slug . '.txt';
+
+		if ( file_exists( $existing_doc_path ) ) {
+			// Use existing document.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$content = file_get_contents( $existing_doc_path );
+
+			if ( false !== $content && ! empty( $content ) ) {
+				return $content;
+			}
+			// If file read fails, fall through to generate content.
+		}
+
+		// Fallback: Generate content from profession metadata.
 		$title            = $profession->post_title;
 		$overview         = $profession->post_content;
 		$role_description = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
