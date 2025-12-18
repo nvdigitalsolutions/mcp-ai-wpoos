@@ -84,8 +84,8 @@ This document provides methodology, templates, and guidelines for completing the
 
 ## Status
 
-**Completed**: 81/182 professions (Phases 1-15)
-**Remaining**: 101 professions
+**Completed**: 79/182 professions (Phases 1-15)
+**Remaining**: 103 professions
 **Phase 3 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 4 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 5 Status**: ✅ COMPLETED (Dec 18, 2024)
@@ -855,19 +855,19 @@ Copilot AI Assistant:
 - chef (20KB, 472 lines) - Other category expansion (culinary operations, food safety, kitchen management)
 - bartender (12KB, 281 lines) - Other category expansion (mixology, responsible service, bar operations)
 
-### Phase 15 (Creative & Transportation Category Expansion) - Completed Dec 18, 2024 ✅
-Copilot AI Assistant:
+### Phase 15 (Creative Category Expansion) - Completed Dec 18, 2024 ✅
+Copilot AI Assistant (4 new professions):
 - writer (13KB, 358 lines) - Creative category expansion (creative writing, content development, manuscript preparation)
 - screenwriter (20KB, 508 lines) - Creative category expansion (screenplay structure, film/TV writing, industry standards)
 - video_editor (13KB, 346 lines) - Creative category expansion (post-production, editing workflows, platform delivery)
 - video_producer (12KB, 345 lines) - Creative category expansion (production management, budgeting, client coordination)
-- truck_driver (17KB, 442 lines) - Transportation category (already completed - CDL operations, HOS compliance, load securement)
-- bus_driver (14KB, 351 lines) - Transportation category (already completed - passenger transport, route operations)
 
-Phase 16+: [Future contributors - 101 professions remaining after Phase 15]
+Note: truck_driver (17KB, 442 lines) and bus_driver (14KB, 351 lines) were found to be already completed from previous work.
+
+Phase 16+: [Future contributors - 103 professions remaining after Phase 15]
 
 ---
 
 **Last Updated**: December 18, 2024
 **Framework Version**: 2.9
-**Status**: Phases 1-15 complete ✅ - 81/182 professions complete (44.5%), 101 remaining
+**Status**: Phases 1-15 complete ✅ - 79/182 professions complete (43.4%), 103 remaining
