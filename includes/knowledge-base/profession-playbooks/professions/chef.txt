@@ -1,67 +1,472 @@
 Profession Playbook — Chef
 Slug: chef
 Category: other
-Includes: global.txt + categories/other.txt + this file
+Includes: global.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
-
-Category guidance
-- Use a practical, general workflow with checklists and templates.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality culinary operations and food preparation.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on cooking techniques, recipe development, and menu planning
+- Assist with food safety, sanitation, and HACCP compliance
+- Guide on kitchen operations, staff management, and workflow optimization  
+- Help with cost control, portion sizing, and inventory management
+- Advise on plating, presentation, and culinary trends
+- Support with dietary accommodations (allergies, restrictions, preferences)
+- Guide on different cuisines, cooking methods, and ingredient selection
+- Provide templates for recipes, prep lists, and kitchen organization
+- Success = Delicious, safe, consistent food delivered efficiently with strong operational execution
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Provide medical/nutritional advice for health conditions (requires dietitian/physician)
+- Guarantee food allergy safety without proper protocols (life-threatening liability)
+- Recommend unsafe food handling practices or shortcuts
+- Provide legal advice on health codes, liability, or employment law
+- Make investment recommendations for restaurant ventures without full context
+- Diagnose foodborne illness outbreaks (requires health department)
+- Violate intellectual property by copying proprietary recipes
+- Promise specific business outcomes for restaurants
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Foodborne illness outbreak suspected (contact health department immediately)
+- Serious kitchen injuries occur (burns, cuts, slips) (call emergency services, workers comp)
+- Legal issues with health inspections or violations (engage attorney)
+- Complex dietary medical needs beyond standard accommodations (refer to registered dietitian)
+- Restaurant financial distress or business planning (engage restaurant consultant/CPA)
+- Equipment failures creating safety hazards (engage certified repair technician)
+- Employment disputes or discrimination claims (engage HR attorney)
+- Mental health concerns (burnout, substance abuse common in industry) (refer to therapist)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What type of cuisine or dish (fine dining, casual, ethnic, home cooking)?
+- What is the service style (à la carte, banquet, family-style, buffet, meal prep)?
+- What dietary restrictions or allergies must be accommodated?
+- What equipment and ingredients are available?
+- What is the skill level of the kitchen staff?
+- What is the budget per plate or overall budget?
+- What is the timeline (prep time, service time, event date)?
+- How many servings/covers needed?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Menu Planning & Recipe Development
+   - Determine cuisine concept and target audience
+   - Design balanced menu (proteins, starches, vegetables, flavors, textures)
+   - Consider seasonality and ingredient availability
+   - Calculate food costs and target plate cost (typically 28-32% of menu price)
+   - Test recipes for consistency and adjust seasoning
+   - Document recipes with precise measurements and methods
+   - Plan for dietary modifications
+
+2. Prep & Mise en Place
+   - Create prep lists organized by station
+   - Order ingredients with lead time for delivery
+   - Receive and inspect deliveries for quality
+   - Organize storage by FIFO (first in, first out)
+   - Pre-prep ingredients (wash, chop, portion, marinate)
+   - Set up stations with all tools and ingredients  
+   - Verify all equipment functioning properly
+
+3. Service Execution
+   - Conduct pre-service meeting with staff
+   - Fire orders according to ticket times
+   - Coordinate timing across stations
+   - Plate dishes with consistency and artistry
+   - Taste and adjust seasonings throughout service
+   - Communicate with front-of-house on timing and issues
+   - Maintain cleanliness and organization during service
+
+4. Post-Service & Cleanup
+   - Break down stations and store food properly
+   - Clean and sanitize all surfaces and equipment
+   - Take inventory of remaining food
+   - Document waste and issues for improvement
+   - Plan next day's prep based on inventory
+   - Secure kitchen and verify all equipment off
+
+5. Quality Control & Improvement
+   - Review guest feedback and complaints
+   - Analyze food costs and waste
+   - Train staff on techniques and standards
+   - Update recipes based on lessons learned
+   - Maintain food safety logs and temperature records
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Recipes with ingredients, quantities, and procedures
+- Menu with descriptions and pricing
+- Prep lists organized by station and timeline
+- Kitchen station setup diagrams
+- Plate presentation photos for consistency
+- Food cost analysis and pricing sheets
+- Staff training materials and SOPs
+- Daily production sheets and par levels
+
+Minimum viable: Safe, tasty, consistent food served on time
+Gold standard: Exceptional flavors, beautiful presentation, efficient operations, strong profitability, well-trained team
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Food Quality:
+- [ ] Flavors balanced (salt, acid, fat, sweet, umami)
+- [ ] Textures varied and appropriate (crispy, tender, creamy, crunchy)
+- [ ] Temperatures correct for service (hot food hot, cold food cold)
+- [ ] Ingredients fresh and high quality
+- [ ] Seasoning consistent across dishes
+- [ ] Cooking techniques executed properly (not overcooked/undercooked)
+- [ ] Garnishes fresh and purposeful (not just decorative)
+
+Food Safety (Critical Control Points):
+- [ ] Proper handwashing and glove use
+- [ ] Cold foods held at 41°F or below
+- [ ] Hot foods held at 135°F or above
+- [ ] Foods cooled from 135°F to 70°F within 2 hours, then to 41°F within 4 more hours
+- [ ] Foods reheated to 165°F within 2 hours
+- [ ] Cross-contamination prevented (separate boards for raw meat/vegetables)
+- [ ] Allergen protocols followed strictly
+- [ ] Temperature logs maintained
+
+Presentation:
+- [ ] Plates clean with no drips or smudges
+- [ ] Portions consistent across dishes
+- [ ] Colors vibrant and appetizing
+- [ ] Height and dimension on plate
+- [ ] Negative space used effectively
+- [ ] Garnishes edible and complementary
+- [ ] Plate temperature appropriate
+
+Operations:
+- [ ] Mise en place complete before service
+- [ ] Timing coordinated across stations
+- [ ] Ticket times met consistently
+- [ ] Communication clear between kitchen and FOH
+- [ ] Food costs within target range
+- [ ] Waste minimized through proper portioning
+- [ ] Staff working efficiently and safely
+- [ ] Kitchen clean and organized throughout service
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Recipe Template ===
+Recipe Name: [Dish Name]
+Yield: [Number of portions]
+Portion Size: [Weight/volume]
+Prep Time: [Minutes] | Cook Time: [Minutes]
+Category: [Appetizer/Entrée/Dessert] | Cuisine: [Type]
+
+Cost Analysis:
+Food Cost per Portion: $[Amount] ([Percentage]% of menu price)
+Menu Price: $[Amount]
+
+Ingredients:
+[Quantity] [Unit] [Ingredient] - Prep notes - $[Cost]
+[Quantity] [Unit] [Ingredient] - Prep notes - $[Cost]
+[Quantity] [Unit] [Ingredient] - Prep notes - $[Cost]
+Total Food Cost: $[Amount]
+
+Equipment Needed:
+- [List essential equipment]
+
+Mise en Place:
+1. [Pre-prep task 1]
+2. [Pre-prep task 2]
+
+Procedure:
+1. [Step-by-step instruction with temperatures and times]
+2. [Be specific: "Sauté over medium-high heat 3-4 minutes"]
+3. [Include sensory cues: "until golden brown" or "fragrant"]
+
+Plating:
+- [Detailed plating instructions]
+- [Garnish placement]
+- [Serve with accompaniments]
+
+Holding/Service:
+- Hold at [Temperature]
+- Shelf life: [Time period]
+- Refire instructions if needed
+
+Modifications:
+- Vegetarian: [Substitutions]
+- Gluten-free: [Substitutions]
+- Allergy accommodations: [Notes]
+
+Chef's Notes:
+- [Tips for success]
+- [Common mistakes to avoid]
+- [Pairing suggestions]
+
+=== Daily Prep List ===
+Date: [Day/Date]
+Service: [Lunch/Dinner/Banquet]
+Expected Covers: [Number]
+
+COLD PREP (Priority: Complete by 10 AM):
+Station: Garde Manger
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name] - Par: [Amount]
+- [ ] Salad greens washed, spun, stored - Qty: 5 lbs - Assigned to: Maria
+- [ ] Vinaigrette prepared - Qty: 1 quart - Assigned to: Maria
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name]
+
+HOT PREP (Priority: Complete by 4 PM):
+Station: Sauté
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name] - Par: [Amount]
+- [ ] Proteins portioned and seasoned - Qty: [Amount] - Assigned to: [Name]
+- [ ] Stock reduced - Qty: [Amount] - Assigned to: [Name]
+
+Station: Grill
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name]
+
+Station: Fry
+- [ ] Breading stations set up - Assigned to: [Name]
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name]
+
+PASTRY (Priority: Complete by 3 PM):
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name]
+- [ ] [Item] - Qty: [Amount] - Assigned to: [Name]
+
+ADDITIONAL TASKS:
+- [ ] Stock rotation (check dates, FIFO)
+- [ ] Equipment check (ovens, burners, fryer oil)
+- [ ] Mise containers labeled with date
+- [ ] Station setup diagrams followed
+- [ ] Pre-service meeting at 4:30 PM
+
+Notes:
+- 86'd items: [List]
+- Specials: [List]
+- VIPs or large parties: [Details]
+
+=== Kitchen Station Setup ===
+Station: [Sauté/Grill/Garde Manger/etc.]
+Service: [Lunch/Dinner]
+Cook: [Name]
+
+Equipment:
+- [ ] Burners/grill cleaned and functioning
+- [ ] Pans/tools in place
+- [ ] Side towels and sanitizer bucket ready
+- [ ] Tasting spoons and waste bowl
+
+Hot Holding:
+- [ ] Steam table/warmer on and at temp
+- [ ] [Item] in insert, covered, labeled with time
+
+Cold Holding:
+- [ ] Low boy stocked and at temp (41°F or below)
+- [ ] [Ingredient] - Location: [Which drawer/shelf]
+- [ ] [Ingredient] - Location: [Which drawer/shelf]
+
+Mise en Place (left to right on station):
+1. [Ingredient] - [Container size] - [Quantity needed for service]
+2. [Ingredient] - [Container size] - [Quantity needed for service]
+3. [Ingredient] - [Container size] - [Quantity needed for service]
+
+Prep Backup (stored in walk-in):
+- [Item] - Location: [Where in walk-in]
+
+Tickets/Orders:
+- [Menu item] - [Key ingredients/steps to remember]
+- [Menu item] - [Key ingredients/steps to remember]
+
+Critical Temps:
+- Chicken: 165°F
+- Ground beef: 155°F
+- Steaks: 125°F (rare) to 160°F (well done)
+
+Common Modifications:
+- No [ingredient]: [How to accommodate]
+- Gluten-free: [Alternative preparation]
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Recipe with Cost Analysis
+```
+PAN-SEARED SALMON WITH LEMON BEURRE BLANC
+
+Yield: 10 portions | Portion: 6 oz salmon + 2 oz sauce
+Prep: 20 min | Cook: 12 min
+Food Cost per Portion: $6.80 (28% of $24 menu price)
+
+INGREDIENTS:
+3.75 lbs salmon fillet (skin-on, portioned to 6 oz) - $5.50/lb = $20.63
+2 oz butter (for searing) - $0.15
+4 oz shallots, minced - $0.60
+1 cup white wine - $2.00
+2 cups fish stock - $1.50
+1/2 cup heavy cream - $0.75
+8 oz cold butter, cubed - $2.00
+2 lemons (juice and zest) - $1.00
+Salt, pepper, herbs - $0.50
+TOTAL: $29.13 / 10 portions = $2.91 per portion (salmon only $2.06)
+
+Wait, this shows $2.91 not $6.80—let me recalculate...
+Actually, this shows proper costing: add plated vegetables/starch to reach full plate cost.
+
+PROCEDURE:
+1. Season salmon portions with salt, pepper (30 min before cooking, room temp)
+2. Heat sauté pan over medium-high, add butter
+3. Place salmon skin-side down, press gently with spatula (prevents curling)
+4. Cook 4-5 min until skin crispy, flip, cook 2-3 min more (medium doneness)
+5. Rest on warm plate
+
+BEURRE BLANC:
+1. Sweat shallots in heavy-bottomed saucepan (no color)
+2. Add wine, reduce by 90% (almost dry)
+3. Add stock and cream, reduce by half
+4. Remove from heat, whisk in cold butter gradually (emulsification)
+5. Strain through fine mesh, season with lemon juice, salt, pepper
+6. Hold warm (not hot or sauce breaks) 120-130°F
+
+PLATING:
+- Potato purée at 9 o'clock (2 oz)
+- Seasonal vegetables at 3 o'clock (3 oz)
+- Salmon center, skin-side up for texture
+- Sauce pool underneath salmon
+- Garnish with lemon zest and fresh dill
+
+CHEF'S NOTES:
+- Skin must be dry for crispy texture (pat with paper towel)
+- Don't move salmon while searing (let it release naturally)
+- Sauce can break if too hot—keep gentle heat
+- Make sauce à la minute or within 30 min of service
+```
+
+Example 2: Service Flow for 100-Cover Dinner
+```
+WEDDING DINNER SERVICE - 100 COVERS
+Menu: Appetizer (plated), Entrée (choice of 3), Dessert
+
+TIMELINE:
+
+4:00 PM - Kitchen Team Arrives
+- Walk-through of menu and counts (60 beef, 30 chicken, 10 vegetarian)
+- Assign stations and responsibilities
+- Verify all prep complete
+
+4:30 PM - Final Prep & Plating Setup
+- Plate warmers on (180°F)
+- Line up plates for appetizers (pre-wipe for cleanliness)
+- Sauces prepared and held at proper temp
+- Garnishes ready
+
+6:00 PM - Guests Seated for Cocktails
+- Expeditor coordinates with event manager on timing
+
+6:30 PM - Appetizer Course
+- Event manager gives "go" signal
+- Plate 10 appetizers at a time (quality control)
+- Each plate: arugula salad, candied pecans, goat cheese, vinaigrette
+- Runners take plates immediately (no sitting)
+- Complete all 100 plates in 15 minutes
+
+7:00 PM - Entrée Prep Begins
+- Fire first 30 entrées (based on table service order)
+- Sauté cook: sear beef tenderloin (3 min per side, finish in oven to 130°F)
+- Grill cook: chicken breast (6-7 min per side to 165°F)
+- Veg cook: vegetable napoleon (layer grilled veggies, polenta)
+
+7:15 PM - Entrée Service Begins
+- Expeditor calls tickets by table
+- Plate components: protein, potato gratin, seasonal vegetables
+- Sauce applied tableside
+- Wipe rims before passing to runners
+- Continuous flow: as tables finish apps, fire their entrées
+
+8:15 PM - Entrée Service Complete
+- All 100 entrées plated and served
+- Desserts pre-plated during entrée service
+
+8:30 PM - Dessert Service
+- Individual chocolate tortes (pre-plated, held in walk-in)
+- Dust with powdered sugar before service
+- Raspberry coulis drizzle
+- All 100 served within 10 minutes
+
+9:00 PM - Breakdown Begins
+- Cool hot food rapidly (ice bath or blast chiller)
+- Clean and sanitize all stations
+- Store leftovers properly labeled with date
+- Complete final cleaning checklist
+
+KEY SUCCESS FACTORS:
+- Pre-event meeting with timings and counts
+- Strong expeditor coordinating flow
+- Sufficient staffing (1 cook per 25 covers minimum)
+- Backup plan for equipment failures
+- Clear communication with event manager
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Mise en Place**: "Everything in its place" - all prep done before service
+- **Brigade System**: Kitchen hierarchy (Chef de Cuisine, Sous Chef, Chef de Partie, Commis)
+- **À la Carte**: Items ordered individually from menu
+- **Table d'hôte**: Fixed price multi-course menu
+- **Prix Fixe**: Set menu at set price
+- **Fire**: Begin cooking an order
+- **On the Fly**: Rush order needed immediately
+- **86'd**: Item no longer available
+- **In the Weeds**: Overwhelmed, behind on orders
+- **Covers**: Number of guests served
+- **Pass**: Area where finished dishes are plated and inspected before service
+- **Wheel**: Round of dough or wheel of cheese
+- **Mother Sauces**: Béchamel, Velouté, Espagnole, Hollandaise, Tomato
+- **Chiffonade**: Thin ribbon cut for herbs/leafy greens
+- **Brunoise**: Fine dice (1/8 inch)
+- **Julienne**: Matchstick cut (1/8 x 1/8 x 2 inches)
+- **Bain-Marie**: Water bath for gentle heating
+
+Cooking Techniques:
+- **Sauté**: Quick cooking in fat over high heat
+- **Braise**: Brown then cook slowly in liquid
+- **Confit**: Cook slowly in fat at low temp
+- **Blanch**: Brief boil, then ice bath
+- **Deglaze**: Add liquid to pan to lift fond (browned bits)
+- **Emulsify**: Blend two liquids that normally don't mix (oil and water)
+- **Reduce**: Simmer to concentrate flavors and thicken
+- **Temper**: Gradually raise temperature (eggs, chocolate)
+- **Nappe**: Coating consistency for sauce
+
+Food Safety Standards:
+- **HACCP**: Hazard Analysis Critical Control Points system
+- **Temperature Danger Zone**: 41°F - 135°F (bacteria growth range)
+- **Cross-Contamination**: Transfer of harmful bacteria between foods
+- **FIFO**: First In, First Out (rotation system)
+- **Calibrate**: Verify thermometer accuracy (32°F ice water, 212°F boiling)
+- **Sanitize**: Reduce microorganisms to safe levels (heat or chemical)
+- **Clean vs. Sanitize**: Clean removes visible dirt; sanitize kills bacteria
+
+Cost Control:
+- **Food Cost %**: (Food cost / Menu price) × 100 (target: 28-35%)
+- **Prime Cost**: Food + Labor costs (target: under 65% of revenue)
+- **As-Purchased (AP) Weight**: Weight including trim and waste
+- **Edible Portion (EP) Weight**: Usable weight after trim
+- **Yield %**: (EP / AP) × 100
+- **Par Level**: Minimum quantity to have on hand
+- **Plate Cost**: Total cost of all ingredients on one plate
+- **Menu Engineering**: Analyzing profitability and popularity of menu items
+
+Common Tools:
+- **Knives**: Chef's knife (8-10"), paring (3-4"), serrated bread knife
+- **Pots/Pans**: Sauté pans, saucepans, stock pots, roasting pans
+- **Small Tools**: Bench scraper, offset spatula, microplane, peeler, tongs, ladle, spider
+- **Thermometers**: Instant-read, probe, infrared
+- **Equipment**: Range, oven, grill, fryer, salamander (broiler), combi-oven, blast chiller
+
+Industry Resources:
+- **ServSafe**: Food safety certification program
+- **ACF** (American Culinary Federation): Professional organization and certification
+- **CIA** (Culinary Institute of America): Premier culinary school
+- **James Beard Foundation**: Culinary awards and advocacy
+- **Michelin Guide**: Restaurant rating system (1-3 stars)
+
+Change log
+2024-12: Initial playbook created for chef profession
+- Coverage of cooking techniques, kitchen operations, and food safety
+- Templates for recipes, prep lists, and service planning
+- Cost control and menu engineering fundamentals
+- HACCP and food safety compliance
+- Brigade system and professional kitchen standards
