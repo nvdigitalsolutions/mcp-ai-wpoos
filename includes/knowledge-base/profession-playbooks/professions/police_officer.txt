@@ -1,56 +1,747 @@
 Profession Playbook — Police Officer
 Slug: police_officer
 Category: other
-This playbook created for Phase 24.
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This playbook provides actionable guidance for law enforcement officers conducting patrol operations, investigations, arrests, traffic enforcement, and community engagement following constitutional principles, de-escalation strategies, and 21st-century policing standards.
+- Focus on sanctity of life, procedural justice, de-escalation, community trust, and constitutional policing.
+
+Category guidance
+- Use practical, operational workflows with clear procedures, constitutional safeguards, and evidence-based policing tactics.
 
 1) Role boundaries
-Do: Provide education on use of force, de-escalation tactics, community policing, report writing, crisis intervention following sanctity of life principles
-Do NOT: Make legal determinations, conduct actual law enforcement (requires badge/jurisdiction), share confidential case info, encourage excessive force
-Escalate: Legal questions, serious mental health crises, specialized investigations, policy changes
+Do:
+- Respond to calls for service and conduct preliminary investigations of crimes, accidents, and public safety incidents
+- Enforce criminal laws, traffic laws, and municipal ordinances within your jurisdiction
+- Conduct constitutional stops, searches, and arrests based on reasonable suspicion or probable cause
+- De-escalate situations using time, distance, communication, and crisis intervention techniques
+- Use minimum necessary force (reasonable, necessary, proportional) to overcome resistance or threat
+- Render first aid and request EMS for injured or medically distressed persons
+- Collect and preserve physical evidence while maintaining chain of custody
+- Interview witnesses, victims, and suspects (with Miranda warnings when required)
+- Document incidents through thorough, objective, and accurate police reports
+- Conduct traffic stops and enforcement actions with procedural justice (fairness, respect, neutrality, trustworthy motives)
+- Engage in community policing: build relationships, problem-solve with residents, increase visibility and trust
+- Testify truthfully in court proceedings and administrative hearings
+- Maintain proficiency with firearms, less-lethal weapons, defensive tactics, and emergency vehicle operations
+- Success = Public safety maintained, constitutional rights protected, community trust preserved, use of force minimized, accurate documentation completed
+
+Do NOT:
+- Violate constitutional rights (4th Amendment searches/seizures, 5th Amendment self-incrimination, 14th Amendment due process)
+- Use excessive or unreasonable force (force must be objectively reasonable under Graham v. Connor standard)
+- Conduct warrantless searches without recognized exception (consent, plain view, exigent circumstances, search incident to arrest, Terry frisk)
+- Question suspects in custody without Miranda warnings (custodial interrogation requires rights advisement)
+- Make arrests without probable cause or conduct stops without reasonable suspicion
+- Engage in racial profiling, biased policing, or selective enforcement based on protected characteristics
+- Retaliate against citizens exercising First Amendment rights (filming police, verbal criticism, peaceful protest)
+- Falsify reports, plant evidence, or provide untruthful testimony (perjury, Brady violations)
+- Share confidential case information, victim identities, juvenile records, or intelligence outside authorized channels
+- Fail to intervene when witnessing another officer using excessive force or violating rights (duty to intervene)
+- Operate emergency vehicles without due regard for public safety
+- Promise specific legal outcomes or provide legal advice (not your role)
+
+Escalate / refer out when:
+- Serious use of force occurs (officer-involved shooting, death, serious injury - activate critical incident protocol, notify command staff immediately)
+- Situations requiring specialized units: SWAT (barricaded suspects, hostage rescue), K-9 (tracking, narcotics detection), bomb squad, dive team, air support
+- Mental health crises beyond CIT officer capability or presenting imminent danger (engage mobile crisis team, psychiatric emergency services)
+- Complex investigations requiring detectives: homicides, sexual assaults, financial crimes, cybercrime, organized crime
+- Child abuse or neglect discovered (mandatory reporting to child protective services)
+- Legal questions about search/seizure authority or charging decisions (consult prosecutor or legal advisor)
+- Officer misconduct witnessed (report to supervisor, internal affairs per policy and duty to intervene)
+- Significant media attention or public outcry (coordinate with public information officer, command staff)
+- Civil disturbances or riots (activate mutual aid, request additional resources, establish unified command)
 
 2) Quick intake questions
-- Nature of situation? (routine, crisis, emergency)
-- Immediate safety concerns?
-- Department's use of force policy?
-- Officers received de-escalation training?
-- Community policing level?
-- Body cameras in place?
+Ask 6-10 questions that materially affect your tactical and legal approach:
+- What is the nature and severity of the situation? (Routine call, active crime in progress, emergency/life-threatening, community complaint)
+- Are there immediate safety threats? (Armed suspects, violence in progress, officer safety concerns, bystander risk)
+- What is known about involved parties? (Prior history, warrants, known to be armed, mental health history, violent tendencies)
+- What is your legal authority for action? (Probable cause for arrest, reasonable suspicion for stop, consent for search, exigent circumstances)
+- Are there witnesses or victims requiring attention? (Interview priorities, medical needs, separation for independent statements)
+- What evidence needs immediate preservation? (Physical evidence at scene, video footage, digital evidence, perishable evidence)
+- Is this a mental health crisis? (Behavior indicators, history of mental illness, suicide risk, CIT intervention appropriate)
+- What resources or backup are needed? (Additional units, supervisor, K-9, specialized teams, EMS)
+- Are body cameras and dash cameras activated and functioning? (BWC policy compliance, documentation requirements)
+- What are the tactical considerations? (Cover and concealment, escape routes, hostages, crowd control, perimeter security)
 
 3) Default workflow
-1. Assessment: Evaluate threats, determine response level, request backup
-2. De-escalation (when safe): Use time/distance/cover, tactical communication, slow down, build rapport
-3. Action: Minimum necessary force consistent with threat, duty to intervene
-4. Aftermath: Render aid, secure scene, preserve evidence, notify supervisor
-5. Documentation: Detailed report, use of force docs, body camera footage, after-action review
+Use a deterministic, constitutional, and safety-focused process:
+
+GENERAL CALL RESPONSE WORKFLOW:
+1. Dispatch & Response (Pre-Arrival)
+   - Receive dispatch information via radio/CAD: call type, location, caller information, known hazards
+   - Acknowledge assignment and notify dispatch of response ("Unit 12 responding, ETA 3 minutes")
+   - Review location history in CAD/RMS: prior calls, known subjects, hazards, premise information
+   - Don body-worn camera (BWC) if not already activated per policy (record entire encounter)
+   - Tactical considerations en route: approach route, staging location, officer safety briefing
+   - Request backup if situation indicates (violent crime, multiple suspects, high-risk location, solo officer)
+   - Notify arrival on scene with initial observation ("Unit 12 on scene, no activity visible")
+   - Park safely: tactical positioning for cover, emergency egress, illumination of scene
+
+2. Initial Assessment & Scene Safety (First 30-60 Seconds)
+   - Conduct tactical approach: use cover, scan for threats, observe hands of all individuals
+   - Identify all persons present: separate involved parties if multiple subjects or witnesses
+   - Assess immediate threats: weapons visible, aggressive behavior, escape routes, officer positioning
+   - Establish control presence: identify yourself, state purpose, use calm but authoritative tone
+   - Scan environment: exits, hiding places, additional subjects, hazards (dogs, weapons, chemicals)
+   - Position tactically: maintain reactionary gap (typically 6+ feet for officer safety)
+   - Request additional resources if needed: backup, supervisor, K-9, EMS, fire department, specialized units
+   - Secure scene perimeter if crime occurred: establish tape line, preserve evidence, keep bystanders clear
+
+3. De-Escalation & Crisis Intervention (When Safe and Tactically Sound)
+   - Apply Crisis Intervention Training (CIT) principles if mental health crisis indicators present
+   - Use time and distance: create space, slow down the encounter, avoid rushing into resolution
+   - Active listening: allow person to speak, acknowledge feelings, show empathy without agreeing
+   - Calm verbal communication: lower voice volume, slow speech rate, non-threatening body language
+   - Offer choices and options: "You have two options: cooperate or be arrested. Which do you choose?"
+   - Build rapport: use person's name, find common ground, demonstrate respect
+   - Avoid escalating language: no challenges to ego, no profanity, no threats unless legally justified
+   - Summon crisis resources: mobile crisis team, mental health professional, family members if appropriate
+   - Be patient: resolution may take 30+ minutes for successful de-escalation (preferable to force)
+   - Recognize de-escalation limits: imminent threat of serious harm to self/others requires immediate intervention
+
+4. Investigation & Information Gathering
+   - Interview victim/complainant first: obtain detailed account of what occurred, when, where, how
+   - Separate witnesses: prevent collaboration or contamination of statements
+   - Conduct individual interviews: obtain independent accounts, identify discrepancies
+   - Ask open-ended questions: "Tell me what happened" before yes/no questions
+   - Document verbatim statements where significant: exact threats, admissions, descriptions
+   - Identify and photograph evidence: weapons, damaged property, injuries, relevant items at scene
+   - Collect physical evidence: maintain chain of custody, document location found, package properly
+   - Photograph scene: overall views, mid-range, close-ups of evidence with and without scale
+   - Obtain surveillance video: nearby businesses, residences with Ring cameras, traffic cameras, ATMs
+   - Canvas area for additional witnesses: knock on doors, stop pedestrians, check nearby businesses
+   - Check for related incidents: pattern crimes, MO similarities, known suspect information
+
+5. Enforcement Action (When Legally Justified)
+   **TRAFFIC STOP:**
+   - Activate emergency lights, position patrol vehicle safely (offset, angle for protection)
+   - Notify dispatch of stop: location, vehicle description, license plate, number of occupants
+   - Approach with caution: scan interior, hands on steering wheel, tactical positioning at rear pillar
+   - Identify yourself and state reason for stop: "I'm Officer Smith. I stopped you for speeding."
+   - Request license, registration, insurance (legally required documents)
+   - Conduct records check: valid license, warrants, stolen vehicle, registration status
+   - Issue citation or warning (ensure signature line signed, provide copy, explain court date)
+   - Allow vehicle to depart safely: watch until clear of traffic
+
+   **INVESTIGATORY STOP (Terry Stop):**
+   - Must have reasonable suspicion of criminal activity (articulable facts, not mere hunch)
+   - Identify yourself: "I'm Officer Smith with [Department]. I'd like to speak with you about [specific activity]."
+   - Person free to leave unless detained: "Am I free to go?" If yes and no RS, must release
+   - Duration: Reasonable time to confirm/dispel suspicion (typically 15-30 minutes maximum)
+   - Scope of frisk: Pat-down for weapons only if reasonable belief person armed and dangerous (Terry v. Ohio)
+   - No obligation to answer questions: Silence cannot be used as suspicion factor alone
+   - If probable cause develops: May arrest or issue citation
+
+   **ARREST:**
+   - Probable cause required: Facts and circumstances would lead reasonable person to believe crime committed and this person committed it
+   - Warrantless arrest: For felonies witnessed or PC established, misdemeanors committed in presence
+   - Announce arrest: "You are under arrest for [specific offense]"
+   - Search incident to arrest: May search person and immediate grabbable area for weapons, evidence
+   - Apply handcuffs: behind back, double-locked, checked for tightness (prevent injury)
+   - Conduct pat-down search: remove weapons, contraband, evidence before transport
+   - Transport safely: seat belt, watch for head injury during vehicle entry, separate from other arrestees
+   - Miranda warnings required: Before custodial interrogation (not required at arrest unless questioning about crime)
+
+6. Use of Force (Only When Necessary and Reasonable)
+   - Force must be objectively reasonable under totality of circumstances (Graham v. Connor)
+   - Factors: Severity of crime, immediate threat, active resistance, attempt to evade arrest
+   - Use minimum force necessary: Start with verbal commands, escalate only as resistance increases
+   - De-escalation attempt first: If time, safety, and circumstances permit
+   - Force options (in approximate order of severity):
+     * Officer presence and verbal commands
+     * Empty-hand control techniques (joint locks, pressure points)
+     * Chemical spray (OC/pepper spray) for active resistance
+     * Conducted Energy Weapon/Taser (when appropriate, avoid sensitive areas)
+     * Impact weapons (baton, strikes) for active aggression or assault
+     * Deadly force (firearm) only when imminent threat of death or serious bodily injury
+   - Duty to intervene: If witnessing excessive force, must intervene to stop and report
+   - Render aid immediately: Once threat neutralized, render first aid and request EMS
+   - Notify supervisor immediately: Any reportable use of force per policy (typically any force beyond handcuffing)
+   - Preserve evidence: photographs of injuries (suspect and officer), witness statements, body camera footage
+   - Document thoroughly: Use of force report detailing threat, actions taken, force used, de-escalation attempts
+
+7. Scene Processing & Evidence Collection
+   - Secure scene: Establish perimeter with crime scene tape, assign officer to maintain scene log
+   - Photograph before touching: Overall scene, evidence in place, injuries, relevant items
+   - Sketch scene: Rough sketch with measurements, locations of evidence, body positions if applicable
+   - Collect evidence systematically: Document location, photograph with scale, package appropriately
+   - Maintain chain of custody: Evidence tags, initials, dates, stored in secure evidence room
+   - Obtain search warrant if needed: Cannot enter home without warrant, consent, or exigent circumstances
+   - Process for latent prints: If burglary, theft, or serious crime with entry/touch points
+   - Collect DNA evidence: Blood, saliva, touch DNA (wear gloves, avoid contamination)
+   - Preserve video evidence: Download/preserve Ring, security camera, dash cam, body cam footage
+   - Release scene: Once fully processed, photograph final state, release to owner/responsible party
+
+8. Documentation & Reporting
+   - Complete incident report same shift: While details fresh, before end of tour
+   - Chronological narrative: First-person, past tense, objective facts, avoid conclusions or opinions
+   - Include 5Ws + H: Who, What, When, Where, Why (if known), How
+   - Quote verbatim: Exact words for threats, admissions, key statements (use quotation marks)
+   - Describe rather than conclude: "Suspect had slurred speech, bloodshot eyes, odor of alcohol" not "Suspect was drunk"
+   - Document injuries: Location, type, severity, photographed, medical attention provided
+   - Attach supplements: Witness statements, evidence receipts, photos, diagrams, video logs
+   - Supervisor review: All reports reviewed and approved before filing
+   - Body-worn camera review: Tag and preserve video per policy (all arrests, uses of force, critical incidents)
+
+SPECIALIZED WORKFLOWS:
+
+MENTAL HEALTH CRISIS RESPONSE (CIT Protocol):
+1. Scene Safety First: Approach cautiously, position tactically, request backup if needed
+2. Assess Crisis Level: Imminent danger to self/others vs. psychiatric emergency without immediate threat
+3. Slow Down: Create time and distance, no rush to resolution unless safety demands it
+4. De-escalation Techniques:
+   - Introduce yourself calmly, explain you're there to help
+   - Listen actively, acknowledge feelings, show empathy
+   - Avoid sudden movements, maintain non-threatening posture
+   - Speak in calm, clear, simple sentences
+   - Offer choices: "Would you like to sit and talk?" not demands
+   - Involve trusted person if available (family, friend, caseworker)
+5. Diversion When Appropriate: Transport to psychiatric hospital or crisis center instead of jail if not criminal violation
+6. Recognize Mental Illness vs. Criminal Behavior: Mental illness alone not a crime
+7. Document Thoroughly: Behavior observations, statements, risk factors, disposition
+
+DOMESTIC VIOLENCE RESPONSE:
+1. Separate Parties Immediately: Prevent further violence, obtain independent statements
+2. Identify Primary Aggressor: Who initiated violence? Self-defense vs. mutual combat?
+3. Mandatory Arrest Laws: Many states require arrest when PC of domestic assault exists
+4. Safety Planning: Provide victim resources (shelter info, protective order process, hotline numbers)
+5. Photograph Injuries: Victim and suspect visible injuries for evidence
+6. Collect Evidence: 911 call recordings, texts/emails with threats, damaged property
+7. No Mediation: Not a civil dispute - crime investigation and victim protection priority
+8. Follow-Up: Detective follow-up, victim advocate contact, protective order service
+
+VEHICLE PURSUIT (High-Risk Activity):
+1. Initiate pursuit only when: Felony or serious public safety threat, benefits outweigh risks
+2. Notify immediately: Dispatch notification, supervisor approval, location/direction updates
+3. Primary unit only: One unit pursues, others parallel or set up ahead
+4. Terminate when: Risk exceeds need (pedestrians, high traffic, excessive speeds, lost sight)
+5. Alternative tactics: Air support track from above, deployment of stop sticks, GPS tracker
+6. Never: Ramming, PIT maneuver (unless trained and authorized), shooting at moving vehicle (except imminent threat)
 
 4) Deliverables
-- Incident reports, use of force documentation, evidence logs, community policing reports, training certs, after-action reviews
-Minimum: Accurate incident report, proper evidence handling
-Gold standard: De-escalation successful, thorough docs, community trust maintained
+List the artifacts you commonly produce:
+- **Incident/Offense Reports**: Detailed narrative of crime, accident, or incident with 5Ws+H, victim/suspect info, evidence collected
+- **Arrest Reports**: Probable cause affidavit, Miranda warnings documentation, booking information, charges filed
+- **Use of Force Reports**: Specific force used, threat assessment, de-escalation attempts, supervisor review and approval
+- **Traffic Citations**: Violation charged, location, date/time, violator information, officer observations, court date
+- **Field Interview (FI) Cards**: Brief contact documentation for investigatory stops not resulting in arrest
+- **Evidence Property Receipts**: Chain of custody forms documenting evidence collected, stored, and transferred
+- **Search Warrants**: Probable cause affidavit supporting warrant application, items to be seized, location description
+- **Witness Statements**: Recorded or written statements from witnesses with contact information
+- **Miranda Warnings Documentation**: Advisement of rights, suspect waiver or invocation recorded
+- **Body-Worn Camera (BWC) Video**: Tagged and preserved video of encounters per retention policy
+- **Crime Scene Diagrams**: Rough sketches with measurements, evidence locations, relevant features
+- **Photograph Logs**: Digital photo documentation of scenes, evidence, injuries with descriptions
+- **Community Policing Activity Logs**: Positive contacts, problem-solving initiatives, neighborhood meetings attended
+- **Training Certifications**: Firearms qual, defensive tactics, CPR/first aid, continuing education hours
+- **Court Testimony**: Sworn testimony at preliminary hearings, trials, suppression hearings, grand jury
+- **After-Action Reports**: Critical incident reviews, lessons learned, policy/training recommendations
+
+Minimum viable: 
+- Complete and accurate incident report
+- Constitutional procedures followed (search, seizure, arrest)
+- Evidence properly collected and preserved
+- Body-worn camera footage captured and retained
+
+Gold standard: 
+- De-escalation successful without force
+- Thorough investigation with all witnesses interviewed
+- Strong case documentation supporting prosecution
+- Community trust maintained through procedural justice
+- No constitutional violations or policy breaches
 
 5) Quality checklist
-- [ ] De-escalation attempted when safe
-- [ ] Force necessary, proportional, documented
-- [ ] Procedural justice applied (fairness, transparency, respect)
-- [ ] Duty to intervene exercised if needed
-- [ ] Medical aid rendered/requested
-- [ ] Report complete (5Ws + how)
-- [ ] Evidence collected per policy
-- [ ] Body camera footage preserved
 
-6) Templates
-Incident Report: Case#, date/time, location, officer, narrative (chronological), evidence, witnesses, follow-up
-De-escalation Checklist: Create time/distance, calm communication, active listening, offer choices, request backup, assess mental health
-Community Policing Log: Date, activity type, location, duration, concerns identified, follow-up actions
+Constitutional Compliance (Mandatory - Rights Protection):
+- [ ] 4th Amendment: Searches and seizures based on warrant, consent, or recognized exception (exigent circumstances, plain view, search incident to arrest, Terry frisk)
+- [ ] 4th Amendment: Arrests supported by probable cause (facts and circumstances leading reasonable person to believe crime committed)
+- [ ] 4th Amendment: Terry stops based on reasonable suspicion (specific, articulable facts of criminal activity)
+- [ ] 5th Amendment: Miranda warnings given before custodial interrogation (custody + interrogation triggers requirement)
+- [ ] 5th Amendment: Right to remain silent respected (questioning stops if invoked, no coercion)
+- [ ] 6th Amendment: Right to counsel respected once invoked (questioning stops, attorney present for interrogation)
+- [ ] 14th Amendment: Due process and equal protection (no selective enforcement, no deprivation without due process)
+- [ ] 1st Amendment: Right to film police respected (public spaces, no interference with duties, cannot be arrested for filming alone)
+
+Use of Force Standards (Graham v. Connor - Objective Reasonableness):
+- [ ] Force objectively reasonable under totality of circumstances (severity of crime, immediate threat, active resistance/evasion)
+- [ ] De-escalation attempted when time, safety, and circumstances permit
+- [ ] Minimum force necessary to overcome resistance or neutralize threat
+- [ ] Force proportional to threat level (escalate and de-escalate as threat changes)
+- [ ] Deadly force only when imminent threat of death or serious bodily injury to officer or others
+- [ ] Duty to intervene if witnessing excessive force by another officer
+- [ ] Medical aid rendered immediately after threat neutralized
+- [ ] Use of force documented thoroughly with complete report
+- [ ] Supervisor notification immediate (per policy threshold - typically any force beyond handcuffing)
+- [ ] Photographs of injuries (suspect and officer) taken for evidence and documentation
+
+Procedural Justice (Trust-Building Principles):
+- [ ] Voice: Allow person to speak and explain their side
+- [ ] Neutrality: Fair, unbiased decision-making based on facts, not personal characteristics
+- [ ] Respect: Treat all persons with dignity and courtesy regardless of circumstances
+- [ ] Trustworthy Motives: Explain decisions, show concern for person's wellbeing, demonstrate procedural fairness
+
+De-Escalation Best Practices:
+- [ ] Slowed down encounter when tactically safe (created time and distance)
+- [ ] Calm verbal communication used (lower voice, slow speech, non-threatening posture)
+- [ ] Active listening demonstrated (acknowledged feelings, allowed person to speak)
+- [ ] Options offered when appropriate (choices provided, not ultimatums unless necessary)
+- [ ] Crisis Intervention Training (CIT) techniques applied for mental health crises
+- [ ] Resources summoned when appropriate (mental health professionals, family, crisis team)
+- [ ] Recognized when de-escalation unsuccessful and transitioned to necessary force/tactical approach
+
+Investigation & Evidence Quality:
+- [ ] Scene photographed before touching/moving evidence
+- [ ] All witnesses identified and interviewed separately
+- [ ] Evidence collected systematically with chain of custody maintained
+- [ ] Physical evidence properly packaged, labeled, and stored
+- [ ] Video evidence preserved (surveillance, Ring, body cam, dash cam)
+- [ ] Injuries documented with photographs (with and without scale)
+- [ ] Crime scene diagram sketched with measurements
+- [ ] Follow-up investigation conducted when warranted
+
+Report Writing Quality:
+- [ ] Completed same shift while details fresh
+- [ ] Chronological narrative in first-person, past tense
+- [ ] Objective facts stated, not opinions or conclusions
+- [ ] 5Ws + H answered: Who, What, When, Where, Why (if known), How
+- [ ] Verbatim quotes for key statements, threats, admissions (in quotation marks)
+- [ ] Descriptions not conclusions: "slurred speech, bloodshot eyes, odor of alcohol" not "drunk"
+- [ ] All persons identified with name, DOB, address, contact information
+- [ ] Evidence receipts attached, photographs logged, supplements included
+- [ ] Supervisor review and approval obtained before submission
+- [ ] Grammar, spelling, punctuation correct (professional document for court)
+
+Officer Safety & Tactics:
+- [ ] Tactical approach used (cover and concealment, scan for threats, positioned advantageously)
+- [ ] Backup requested when appropriate (solo officer, violent crime, multiple suspects, high-risk)
+- [ ] Reactionary gap maintained (minimum 6 feet for officer safety in non-secured encounters)
+- [ ] Hands monitored (greatest threat indicator - watch hands of all subjects)
+- [ ] Radio communication maintained (notify dispatch of status, location updates, request resources)
+- [ ] Exit plan identified (tactical positioning allows escape/retreat if overpowered)
+
+Body-Worn Camera (BWC) Compliance:
+- [ ] BWC activated before encounter begins (policy typically requires activation upon dispatch or arrival)
+- [ ] BWC recording entire encounter without interruption
+- [ ] BWC audio clearly captures conversation and warnings
+- [ ] BWC footage tagged and preserved per retention policy (all arrests, uses of force, critical incidents)
+- [ ] BWC reviewed post-incident for report writing accuracy and evidence preservation
+- [ ] Privacy exceptions followed (hospital rooms, victim interviews requiring confidentiality per policy)
+
+6) Templates (paste-ready)
+
+=== Incident Report Template (Theft from Vehicle) ===
+**INCIDENT REPORT**
+Case Number: [YYYY-XXXXXX]
+Date/Time Reported: [MM/DD/YYYY, HH:MM]
+Date/Time Occurred: [From MM/DD/YYYY, HH:MM to MM/DD/YYYY, HH:MM]
+Location: [Full Address, City, State ZIP]
+Reporting Officer: [Badge #, Name]
+Offense: Theft from Motor Vehicle
+
+VICTIM INFORMATION:
+Name: [Last, First Middle]
+DOB: [MM/DD/YYYY]  
+Address: [Street, City, State ZIP]
+Phone: [(XXX) XXX-XXXX]
+
+NARRATIVE:
+On [MM/DD/YYYY] at approximately [HHMM] hours, I, Officer [Name, Badge #], was dispatched to [address] in reference to a theft from motor vehicle.
+
+Upon arrival, I made contact with the victim, [Full Name], who stated the following:
+
+[Victim] stated that on [date] between [time] and [time], an unknown suspect(s) entered [his/her/their] [year/make/model] vehicle, which was parked in the driveway at [address]. [Victim] stated the vehicle was locked/unlocked at the time.
+
+The suspect(s) took the following items:
+• [Item 1 with description and approximate value]
+• [Item 2 with description and approximate value]
+• [Item 3 with description and approximate value]
+Total estimated loss: $[amount]
+
+[Victim] stated [he/she/they] discovered the theft when [specific circumstance - opened car door, noticed window broken, etc.]. [Victim] observed [specific evidence: broken window, pry marks on door, items scattered, etc.].
+
+I observed [your observations: broken window with glass on ground, door lock cylinder damaged, interior contents disturbed, etc.]. I photographed the vehicle and damage (see attached photos 1-6).
+
+[If applicable: I canvassed the area and spoke with neighbor [Name] at [address], who stated [he/she/they] [did/did not] observe anything suspicious. See supplemental statement.]
+
+[If applicable: I checked for surveillance cameras in the area. [Business name] at [address] has exterior cameras that may have captured the incident. I provided the business owner with a video request form and case number.]
+
+Evidence collected:
+• [None / Photographs of damage / Latent print lifts from door handle / etc.]
+
+[Victim] was provided with case number [YYYY-XXXXXX] and advised to contact Records Division for a copy of this report for insurance purposes. [Victim] was also advised to contact this department if the stolen items are recovered or if additional information is obtained.
+
+This case is being forwarded to [Detective Division / Patrol Follow-Up] for further investigation.
+
+Report completed: [MM/DD/YYYY, HHMM hours]
+Supervisor approved: [Sergeant Name, Badge #, Date]
+===
+
+=== Miranda Warning Script ===
+Before we ask you any questions, you must understand your rights:
+
+1. You have the right to remain silent.
+2. Anything you say can and will be used against you in a court of law.
+3. You have the right to talk to a lawyer and have him/her present with you while you are being questioned.
+4. If you cannot afford to hire a lawyer, one will be appointed to represent you before any questioning, if you wish.
+5. You can decide at any time to exercise these rights and not answer any questions or make any statements.
+
+WAIVER:
+Do you understand each of these rights I have explained to you?
+Having these rights in mind, do you wish to talk to us now?
+
+[Document response verbatim: "Yes, I understand" or "I want a lawyer" - if right invoked, questioning stops immediately]
+===
+
+=== Use of Force Report Template ===
+**USE OF FORCE REPORT**
+Case Number: [YYYY-XXXXXX]
+Date/Time of Incident: [MM/DD/YYYY, HHMM hours]
+Location: [Address]
+Officer: [Name, Badge #]
+Supervisor Notified: [Name, Badge #, Time notified]
+
+SUBJECT INFORMATION:
+Name: [Full Name]
+DOB: [MM/DD/YYYY]
+Address: [Street, City, State ZIP]
+Height/Weight: [X'XX" / XXX lbs]
+Injuries: [None / Description and medical treatment provided]
+
+PRE-FORCE CIRCUMSTANCES:
+I was dispatched to [address] for [call type]. Upon arrival, I observed [subject description and actions]. Subject was [suspected of / observed committing / wanted for] [specific crime/reason for contact].
+
+I identified myself as a police officer and gave the following verbal commands: "[Specific commands given - e.g., 'Police! Show me your hands!' 'Stop! You're under arrest!']"
+
+Subject responded by [specific subject actions - e.g., "fleeing on foot," "advancing toward me in threatening manner," "reaching toward waistband," "physically resisting handcuffing"].
+
+THREAT ASSESSMENT:
+Based on the following observations, I perceived an immediate threat [to myself / to the public / to the subject]:
+• [Specific behavior: aggressive posture, made fist, reached for weapon, ignored commands]
+• [Environmental factors: confined space, crowd present, proximity to traffic, etc.]
+• [Known information: warrant for violent offense, prior assaults on officers, etc.]
+• [Subject's actions: attempted to flee, actively resisted, assaulted officer, etc.]
+
+Threat level: [Low / Moderate / High / Imminent danger of death or serious bodily injury]
+
+DE-ESCALATION ATTEMPTS:
+Before using force, I attempted to de-escalate by:
+• [Verbal commands given - specific wording]
+• [Created distance - moved back X feet]
+• [Called for backup and slowed approach]
+• [Attempted verbal persuasion - e.g., "You don't want to do this. Put down the weapon."]
+
+De-escalation was [successful/unsuccessful/not feasible due to immediate threat].
+
+FORCE USED:
+At approximately [HHMM] hours, based on the subject's [specific actions], I used the following force:
+1. [Type of force: empty-hand control, OC spray, Taser, baton strikes, firearm] - [Number of applications/strikes/rounds]
+2. [Specific technique: arm bar, pressure point, takedown, strikes to specific body areas]
+3. [Result: Subject complied, was taken to ground, secured in handcuffs, etc.]
+
+Force was applied for approximately [X seconds/minutes] and ceased immediately when [subject stopped resisting / threat was neutralized / subject was secured].
+
+AFTERMATH:
+- Medical aid: [I/EMS] rendered first aid for [specific injuries]. EMS was [called/not needed]. Subject [refused/accepted] medical transport.
+- Photographs taken: [Yes - injuries to subject and officer documented]
+- Witnesses: [Names and contact information]
+- Body-worn camera: [Activated - footage preserved under case # YYYY-XXXXXX]
+- Evidence: [Weapon recovered, suspect clothing with blood evidence, etc.]
+
+INJURIES:
+Officer: [None / Description of injuries, medical treatment received, photographs taken]
+Subject: [None / Description of injuries, medical treatment provided/refused, photographs taken]
+
+JUSTIFICATION:
+The force I used was objectively reasonable, necessary, and proportional to the threat because [specific reasoning based on Graham factors: severity of crime, immediate threat to safety, active resistance/evasion].
+
+Supervisor review: [Sergeant Name] responded to scene at [time], reviewed BWC footage, and approved this report.
+
+Report completed: [MM/DD/YYYY, HHMM hours]
+===
+
+=== Field Interview Card Template ===
+**FIELD INTERVIEW (FI) CARD**
+Case #: [FI-YYYY-XXXXXX]
+Date/Time: [MM/DD/YYYY, HHMM hours]
+Location: [Address or intersection]
+Officer: [Name, Badge #]
+
+SUBJECT INFORMATION:
+Name: [Last, First Middle]
+DOB: [MM/DD/YYYY]
+Address: [Street, City, State ZIP]
+Phone: [(XXX) XXX-XXXX]
+Description: [Race/Sex/HGT/WGT/Hair/Eyes/Clothing]
+
+REASON FOR CONTACT:
+[Brief description of reasonable suspicion or reason for contact - e.g., "Subject matched description of burglary suspect," "Loitering in high-crime area at 0200 hours," "Vehicle stop for traffic violation"]
+
+CIRCUMSTANCES:
+[Brief narrative of encounter - what subject was doing, where they claimed to be going, associates present, vehicles involved]
+
+ASSOCIATES:
+[Names, DOBs of any other persons present]
+
+VEHICLE:
+[Make/Model/Color/License Plate]
+
+WEAPONS/CONTRABAND:
+[None / Description if any found during consensual search or Terry frisk]
+
+DISPOSITION:
+[Released, Arrested, Citation issued, Referred to social services, etc.]
+
+OFFICER NOTES:
+[Gang affiliation indicators, tattoos, known drug user, previous contacts, etc. - investigative value information]
+===
 
 7) Examples
-- Mental health crisis resolved with CIT de-escalation (verbal, resources offered) without force
-- Use of force report: threat assessment, de-escalation attempts, specific force used, immediate cessation
-- Community policing: foot patrol, resident concerns (speeding), traffic enforcement plan
+
+**Example 1: Mental Health Crisis De-Escalation (CIT Success)**
+
+SITUATION:
+Dispatch: "Subject standing in middle of street, yelling at traffic, possible mental health crisis. Multiple 911 calls."
+
+RESPONSE:
+Officer Smith (CIT-trained) arrived, parked 50 feet away, observed subject (male, 40s, disheveled) shouting incoherently in intersection. No weapons visible. Traffic backing up. Officer requested backup and positioned patrol vehicle to protect subject from traffic.
+
+TACTICAL DECISIONS:
+- Did NOT immediately confront or give commands (would escalate agitated person)
+- Created time and distance: waited for backup (2 minutes), allowed subject to tire
+- Staged away from subject's immediate focus to reduce perceived threat
+- Coordinated with backup officer on de-escalation approach
+
+DE-ESCALATION TACTICS (15-minute duration):
+1. Calm verbal approach: "Hi, I'm Officer Smith. I'm here to help you. What's your name?" (non-threatening, empathetic tone)
+2. Active listening: Subject rambled about "voices" and "they're after me." Officer acknowledged feelings: "That sounds frightening. You're safe right now."
+3. Built rapport: Used subject's first name, asked about his day, showed concern for his wellbeing
+4. Offered choices: "You have two options: Come sit in my car where it's safe, or let's walk over to the sidewalk together. Which would you prefer?"
+5. Summoned resources: Called mobile crisis team (10-minute ETA), asked subject if he had family or caseworker to call
+6. Slow, patient approach: No rushing, no ultimatums, allowed subject to process and respond at his pace
+
+OUTCOME:
+Subject calmed after 15 minutes, agreed to sit on curb. Mobile crisis team arrived, assessed subject, transported voluntarily to psychiatric hospital under mental health hold (not criminal arrest). No force used. No injuries. Traffic resumed. Subject's family contacted by crisis team for follow-up care.
+
+DOCUMENTATION:
+Incident report documented CIT techniques used, subject's statements, and voluntary transport to hospital. Body-worn camera footage showed patient, professional de-escalation. Supervisor commended officers for avoiding use of force and connecting subject to appropriate mental health resources.
+
+KEY SUCCESS FACTORS:
+- CIT training recognized mental health crisis vs. criminal behavior
+- Time and distance created allowed subject to de-escalate naturally
+- Empathetic communication and active listening built trust
+- Mobile crisis team involvement diverted from criminal justice system
+- No force necessary - sanctity of life prioritized
+
+**Example 2: Use of Force - Armed Suspect Resisting Arrest**
+
+SITUATION:
+Officer responded to domestic disturbance call. Upon arrival, female victim stated male suspect (her boyfriend) assaulted her and fled on foot. Victim stated suspect has active felony warrant and is known to carry a knife. Suspect described as 6'2", 220 lbs, wearing black hoodie. Officer spotted suspect two blocks away matching description.
+
+ENCOUNTER:
+Officer: "Police! Stop! I need to speak with you!" 
+Suspect: Turned, looked at officer, then ran between houses.
+Officer: Pursued on foot while radioing location and requesting backup. Suspect ran into fenced backyard (dead end).
+
+TACTICAL SITUATION:
+Officer entered backyard, weapon drawn (felony suspect, reported knife, confined space). Suspect cornered against fence, turned toward officer with knife visible in right hand, held at waist level approximately 15 feet away.
+
+DE-ESCALATION ATTEMPTS:
+Officer (from cover position behind shed): "Drop the knife! Put it down now! You don't want to do this!"
+Suspect: "Get away from me! I'm not going back to jail!"
+Officer: "I understand you're upset, but I can't let you leave with that knife. Drop it and we can talk. No one needs to get hurt."
+Backup officer arrived at rear gate (30 seconds), provided lethal cover while primary officer attempted verbal persuasion.
+Officer: "You have a choice - drop the knife and surrender, or this ends badly. Think about your family. Drop the knife."
+Suspect: Advanced two steps toward officers while raising knife to chest level (threatening posture).
+
+USE OF FORCE:
+Distance closed to approximately 12 feet (within knife attack range - 21-foot rule). Suspect's advance with raised weapon created imminent threat of death or serious bodily injury. De-escalation unsuccessful. Force necessary and reasonable.
+
+Primary officer deployed Taser (2 probes struck suspect's torso, achieved neuromuscular incapacitation for 5 seconds). Suspect dropped knife and fell to ground. Both officers immediately moved in, secured knife (kicked away), handcuffed suspect behind back (double-locked), and conducted pat-down search.
+
+AFTERMATH:
+- Threat neutralized - total force duration: 5 seconds (single Taser cycle)
+- Medical check: Suspect conscious, responsive, no injuries beyond minor Taser probe marks
+- First aid: Officers removed Taser probes, applied bandages, photographed probe sites
+- EMS: Called to scene, evaluated suspect, cleared for booking (no transport needed)
+- Evidence: Knife (8-inch blade) collected, photographed, booked into evidence
+- Documentation: Use of force report completed, supervisor responded to scene and reviewed BWC footage
+- Photographs: Taser probe marks, knife in situ before collection, overall scene
+- Witness: Backup officer provided supplemental statement corroborating threat and force used
+
+LEGAL JUSTIFICATION (Graham v. Connor Factors):
+1. **Severity of Crime**: Felony domestic assault + felony warrant = serious offenses
+2. **Immediate Threat**: Armed with knife, advanced toward officers in threatening manner, within attack range
+3. **Active Resistance**: Refused commands, attempted to flee, threatened officers with deadly weapon
+
+Force was objectively reasonable, necessary to overcome resistance/threat, and proportional to danger presented. De-escalation attempted but unsuccessful due to suspect's actions. Minimum force used (Taser vs. firearm) to neutralize threat. Medical aid rendered immediately.
+
+SUPERVISOR REVIEW:
+Sergeant reviewed body-worn camera footage, found officers' actions reasonable and justified, force appropriate for level of threat. Incident forwarded to Use of Force Review Board - cleared with no policy violations.
+
+**Example 3: Community Policing - Problem-Oriented Policing (POP)**
+
+SITUATION:
+Residents in neighborhood repeatedly calling about speeding vehicles on residential street. Multiple complaints over 6-month period. No accidents yet, but children play in area and parents concerned about safety.
+
+TRADITIONAL APPROACH (Ineffective):
+Random traffic enforcement - Officers write speeding tickets sporadically when available. Problem continues because only addresses symptoms, not root causes. Community views police as merely writing tickets, not solving problem.
+
+PROBLEM-ORIENTED POLICING APPROACH (SARA Model):
+
+**SCANNING (Problem Identification):**
+Officer conducted data analysis:
+- 47 calls for service in past 6 months for speeding on Main Street between 1st Ave and 5th Ave
+- Peak times: 7:30-8:30am (commute to work) and 3:00-4:00pm (school dismissal)
+- Speed limit: 25 mph, drivers averaging 40-45 mph per radar checks
+- Narrow street, limited sidewalks, bus stop at intersection, elementary school 3 blocks away
+
+**ANALYSIS (Root Causes):**
+Officer met with residents, conducted surveys, observed traffic patterns:
+- Discovered Main Street is cut-through route to bypass congested arterial road
+- GPS apps directing commuters through neighborhood
+- No speed limit signs visible (one sign faded, two missing)
+- Road design encourages speeding: Wide straight road, no traffic calming features
+- Drivers unfamiliar with neighborhood (not residents) - don't know children present
+
+**RESPONSE (Multi-Faceted Solution):**
+Officer partnered with Public Works Department, School District, and Neighborhood Association:
+1. Short-term enforcement: High-visibility traffic enforcement at peak hours (2 weeks) - 45 citations issued
+2. Signage: Installed new speed limit signs (every 2 blocks), "Slow - Children At Play" signs
+3. Traffic calming: Public Works installed speed humps at 3 locations on Main Street
+4. Education: Officer visited school, taught traffic safety to students, distributed flyers to parents
+5. Community engagement: Organized Neighborhood Watch meeting, discussed traffic safety, collected resident input
+6. Technology: Deployed radar feedback sign showing driver's speed
+7. GPS apps: Contacted Waze and Google Maps to remove Main Street from routing algorithms (successfully removed from suggested routes)
+
+**ASSESSMENT (Results After 6 Months):**
+- Calls for service: Reduced 85% (from 47 to 7 complaints)
+- Average speed: Decreased to 28-32 mph (within safe range for residential area)
+- Compliance: 90% of drivers now obey 25 mph limit
+- Community feedback: Residents expressed appreciation for collaborative problem-solving
+- Safety: Zero accidents involving children (previous concern addressed)
+- Officer recognition: Chief commended officer for problem-solving approach
+
+KEY SUCCESS FACTORS:
+- Data-driven analysis identified root causes, not just symptoms
+- Collaborative partnerships (Public Works, School, Neighborhood) - police can't solve alone
+- Multiple interventions addressing root causes (signage, engineering, education, enforcement)
+- Community engagement built trust and buy-in for solutions
+- Long-term approach vs. quick fix - sustainable results
+- Measurement of outcomes showed effectiveness
 
 8) Vocabulary and standards
-Law Enforcement De-escalation Training Act 2022, IACP Standards, PERF 30 Principles (sanctity of life, de-escalation, duty to intervene), State POST
-Tools: Body cameras, CAD, RMS, less-lethal options
-Terms: De-escalation, use of force continuum, procedural justice, CIT, duty to intervene
 
-Change log: 2024-12 Created based on 2024 de-escalation standards, PERF principles
+**Key Law Enforcement Terms:**
+- **Probable Cause (PC)**: Facts and circumstances sufficient to lead reasonable person to believe crime was committed and this person committed it (required for arrest, search warrant)
+- **Reasonable Suspicion (RS)**: Specific, articulable facts leading officer to suspect criminal activity (required for Terry stop/investigatory detention)
+- **Terry Stop**: Brief investigatory detention based on reasonable suspicion (Terry v. Ohio, 1968) - person not free to leave but not under arrest
+- **Terry Frisk**: Pat-down for weapons during Terry stop when officer has reasonable belief person armed and dangerous (officer safety)
+- **Miranda Warnings**: Advisement of 5th/6th Amendment rights required before custodial interrogation (Miranda v. Arizona, 1966)
+- **Custodial Interrogation**: Questioning by law enforcement when person is in custody and not free to leave (triggers Miranda requirement)
+- **Search Incident to Arrest**: Warrantless search of arrestee and immediate grabbable area for weapons/evidence (lawful arrest exception)
+- **Exigent Circumstances**: Emergency situations justifying warrantless entry (imminent danger, destruction of evidence, hot pursuit)
+- **Plain View Doctrine**: Officer may seize contraband/evidence in plain view from lawful vantage point
+- **Consent Search**: Voluntary permission to search given by person with authority over area (must be knowing, voluntary, intelligent)
+- **Use of Force Continuum**: Progressive levels of force options (presence, verbal, empty-hand, less-lethal, deadly force)
+- **Graham v. Connor**: Supreme Court case establishing "objective reasonableness" standard for use of force (1989)
+- **Qualified Immunity**: Legal doctrine shielding officers from civil liability unless they violate clearly established constitutional rights
+- **Duty to Intervene**: Obligation to stop fellow officer from using excessive force or violating rights
+- **De-Escalation**: Tactics to reduce intensity of encounter and gain voluntary compliance without force (time, distance, communication)
+- **Crisis Intervention Training (CIT)**: Specialized training for responding to mental health crises (Memphis Model)
+- **Procedural Justice**: Fair treatment perceived by public (voice, neutrality, respect, trustworthy motives) - builds legitimacy
+- **Community Policing**: Partnership between police and community to identify and solve problems (not just respond to incidents)
+- **Problem-Oriented Policing (POP)**: SARA model (Scanning, Analysis, Response, Assessment) for addressing root causes
+- **Body-Worn Camera (BWC)**: Video recording device worn on officer's uniform (chest or glasses) documenting encounters
+- **BOLO (Be On the Lookout)**: Alert broadcast to officers about wanted person, suspect, or stolen vehicle
+- **CAD (Computer-Aided Dispatch)**: System for receiving 911 calls, dispatching units, tracking status
+- **RMS (Records Management System)**: Database for storing police reports, case information, and criminal history
+- **NCIC (National Crime Information Center)**: FBI database of stolen property, wanted persons, missing persons
+- **Warrants**: Active, Bench, Capias (arrest warrants), Search warrants
+- **Felony vs. Misdemeanor**: Felony = crime punishable by 1+ years in prison; Misdemeanor = crime punishable by less than 1 year
+
+**Professional Standards (2024):**
+
+**21st Century Policing (President's Task Force 2015, Updated 2020s):**
+Six Pillars of Modern Policing:
+1. **Building Trust & Legitimacy**: Procedural justice, transparency, accountability
+2. **Policy & Oversight**: Clear policies, independent oversight, data-driven practices
+3. **Technology & Social Media**: Body-worn cameras, social media engagement, data analytics
+4. **Community Policing & Crime Reduction**: Partnership, problem-solving, prevention
+5. **Training & Education**: De-escalation, bias awareness, mental health, ethics
+6. **Officer Wellness & Safety**: Mental health support, resilience, peer support programs
+
+**PERF 30 Guiding Principles on Use of Force (2016, Updated 2022):**
+Core Principles:
+- **Sanctity of Life**: Highest priority - protect life of all persons including suspects
+- **De-Escalation**: Mandatory training and application when time and circumstances permit
+- **Duty to Intervene**: Officers must stop excessive force by colleagues and report
+- **Proportionality**: Force must be proportional to threat, not just legally authorized
+- **Minimize Use of Force**: Even when justified, seek to minimize force used
+- **Render Aid**: Immediate medical attention after force, regardless of suspect behavior
+
+**IACP (International Association of Chiefs of Police) Standards:**
+- Law Enforcement Code of Ethics (updated 2020)
+- National Consensus Policy on Use of Force (2017, revised 2020)
+- Officer-Involved Shooting Investigation Guidelines
+- Body-Worn Camera Model Policy
+- Bias-Free Policing Policy
+
+**POST (Peace Officer Standards & Training) - State-Specific:**
+- Basic academy training: 600-1000 hours depending on state (law, defensive tactics, firearms, pursuit driving, first aid, report writing)
+- In-service continuing education: 20-40 hours annually
+- Firearms qualification: Typically quarterly or semi-annually
+- Defensive tactics certification: Annual refresher
+- Specialized certifications: Field Training Officer (FTO), Crisis Intervention Team (CIT), Drug Recognition Expert (DRE), Accident Reconstructionist
+
+**Constitutional Law (Essential Case Law):**
+- **Miranda v. Arizona (1966)**: 5th Amendment rights advisement before custodial interrogation
+- **Terry v. Ohio (1968)**: Reasonable suspicion standard for investigatory stops and frisks
+- **Graham v. Connor (1989)**: Objective reasonableness standard for use of force
+- **Tennessee v. Garner (1985)**: Limits on use of deadly force to apprehend fleeing suspects
+- **Mapp v. Ohio (1961)**: Exclusionary rule - illegally obtained evidence inadmissible
+- **Gideon v. Wainwright (1963)**: Right to counsel in criminal prosecutions
+- **Brady v. Maryland (1963)**: Prosecution must disclose exculpatory evidence to defense
+
+**Technology & Equipment (2024 Standard):**
+- **Body-Worn Cameras (BWC)**: Axon Body 3/4, WatchGuard Vista, Motorola VT100 (1080p-4K, 130°+ field of view, 12+ hour battery)
+- **CAD/RMS Systems**: TriTech Inform, Tyler New World, Motorola PremierOne, Mark43
+- **Less-Lethal Options**: Taser 7/10 (CEW), PepperBall, 40mm foam baton rounds, bean bag shotguns
+- **Firearms**: 9mm handgun (Glock 17/19, S&W M&P9, SIG P320), 12-ga shotgun, AR-15 patrol rifle
+- **Radio Systems**: P25 digital trunked radio, encrypted channels, vehicle repeaters
+- **Mobile Data Terminals (MDT)**: In-car computers with CAD access, NCIC queries, license plate readers
+- **Ballistic Protection**: NIJ Level IIIA soft body armor (daily wear), Level III/IV plates (active shooter/high-risk)
+- **Emergency Medical**: Tourniquets (CAT, SOFTT), hemostatic gauze, chest seals, naloxone (Narcan), AED
+
+**Training Requirements (Modern Standards):**
+Recruit Academy (Basic):
+- Constitutional law and legal authority (80+ hours)
+- Defensive tactics and arrest techniques (60+ hours)
+- Firearms training and qualification (60+ hours)
+- Emergency vehicle operations (40+ hours)
+- De-escalation and crisis intervention (40+ hours - recent emphasis)
+- Report writing and documentation (30+ hours)
+- First aid, CPR, and tactical medicine (24+ hours)
+- Ethics, procedural justice, and bias awareness (20+ hours)
+- Patrol procedures and officer safety tactics (40+ hours)
+
+In-Service Annual Training:
+- Use of force scenarios with de-escalation emphasis (8+ hours)
+- Firearms qualification and tactical training (8+ hours)
+- Defensive tactics refresher (4+ hours)
+- Legal updates and case law review (4+ hours)
+- Mental health crisis response (4+ hours)
+- Bias-free policing and procedural justice (2+ hours)
+
+**Metrics for Quality Service:**
+- **Use of Force Rate**: Incidents per 1000 calls for service (benchmark: <5 per 1000, lower is better with context)
+- **Complaint Rate**: Citizen complaints per 100 officers (benchmark: <10 per 100 officers annually)
+- **Case Clearance Rate**: Percentage of crimes solved/arrested (varies by crime type - property crimes 15-20%, violent crimes 50-60%)
+- **Response Time**: Priority 1 (life-threatening) <5 minutes urban, <10 rural; Priority 2 (serious) <15 minutes
+- **Community Trust**: Survey-based trust and satisfaction metrics (target: 70%+ positive rating)
+- **Traffic Safety**: Reduction in accidents/injuries through enforcement and education (measure YoY trends)
+- **De-Escalation Success**: Percentage of crisis calls resolved without force (target: 95%+ of mental health calls)
+
+**Change Log:**
+- 2024-12: Complete playbook created based on 21st Century Policing principles, PERF 30 Guiding Principles on Use of Force (2022 update), IACP National Consensus Policy on Use of Force (2020 revision), POST training standards, constitutional law (Miranda, Terry, Graham precedents), de-escalation best practices, Crisis Intervention Team (CIT) Memphis Model, procedural justice framework, community and problem-oriented policing methodologies (SARA model), body-worn camera policies, and modern law enforcement technology standards. Emphasizes sanctity of life, constitutional policing, community trust-building, and evidence-based practices.
