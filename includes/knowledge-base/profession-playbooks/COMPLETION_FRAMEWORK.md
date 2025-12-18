@@ -34,21 +34,21 @@ This document provides methodology, templates, and guidelines for completing the
 - Completed: 46KB, 861 lines
 - Time: ~3 hours
 
-## 📋 Phase 7 - Further Template Expansion (PLANNED)
+## 📋 Phase 8 - Next Template Expansion (PLANNED)
 
-**Priority #1: automotive_mechanic** (Trades/Skilled Labor Template Expansion)
+**Priority #1: mason** (Trades/Skilled Labor Template Expansion)
 - Purpose: Continue expanding trades category with established trades template
-- Research Focus: ASE certifications, diagnostic tools (OBD-II), manufacturer service bulletins, safety protocols
-- Key Elements: Vehicle diagnostics, repair procedures, preventive maintenance, parts identification, customer communication, shop safety
+- Research Focus: Masonry codes (IBC, local building codes), mortar mixing ratios, brick/stone laying techniques, OSHA safety standards for masonry work
+- Key Elements: Material selection (brick, stone, concrete block), mortar mixing, wall construction, structural integrity, pointing and finishing, scaffolding safety
 - Target: 25-35KB, 600-800 lines
 - Estimated Time: ~3-4 hours
 
-**Priority #2: instructional_designer** (Education Template Expansion)
-- Purpose: Continue expanding education category with validated teacher template
-- Research Focus: ADDIE model, learning theories (constructivism, behaviorism), adult learning principles, accessibility standards (WCAG, Section 508)
-- Key Elements: Needs analysis, learning objectives, assessment design, multimedia development, LMS integration, evaluation and iteration
-- Target: 35-45KB, 800-1000 lines
-- Estimated Time: ~4-5 hours
+**Priority #2: roofer** (Trades/Skilled Labor Template Expansion)
+- Purpose: Continue expanding trades category with established trades template
+- Research Focus: Roofing codes (IRC, IBC), fall protection standards (OSHA 1926 Subpart M), roofing materials (asphalt, metal, tile), waterproofing systems
+- Key Elements: Roof inspection, material installation, flashing and ventilation, weatherproofing, safety protocols (harness, guardrails), emergency repairs
+- Target: 25-35KB, 600-800 lines
+- Estimated Time: ~3-4 hours
 
 ## ✅ Phase 4 - Template Validation (COMPLETED)
 
@@ -75,6 +75,7 @@ This document provides methodology, templates, and guidelines for completing the
 **Phase 5 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 6 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 7 Status**: ✅ COMPLETED (Dec 18, 2024)
+**Phase 8 Status**: 📋 PLANNED
 
 ## Phase Summary
 
@@ -128,6 +129,11 @@ Additional technical professions following software_engineer template:
 **Status**: COMPLETED December 18, 2024
 29. **automotive_mechanic** (27.7KB) - Trades/Skilled Labor template expansion
 30. **instructional_designer** (41.7KB) - Education template expansion
+
+### Phase 8 - Next Template Expansion (0 completed) 📋
+**Status**: PLANNED
+31. **mason** - Trades/Skilled Labor template expansion
+32. **roofer** - Trades/Skilled Labor template expansion
 
 ## Exemplar Professions by Category
 
@@ -429,9 +435,10 @@ Group similar professions to reuse research:
 
 ### Trades/Skilled Labor (~15) ✅ 6 COMPLETED
 **Templates**: electrician (22KB), plumber (32KB), carpenter (34KB), welder (40KB), hvac_technician (27KB), automotive_mechanic (27.7KB)
-**Status**: Template well-established ✅ Phases 3-7 complete
+**Status**: Template well-established ✅ Phases 3-7 complete; Phase 8 planned
 **Completed**: electrician, plumber, carpenter, welder, hvac_technician, automotive_mechanic
-**Remaining**: ~9 professions (mason, roofer, heavy_equipment_operator, machinist, etc.)
+**Phase 8 Targets**: mason, roofer
+**Remaining**: ~7 professions (heavy_equipment_operator, machinist, etc.)
 
 **Key Adaptations**:
 - Safety protocols (OSHA)
@@ -522,6 +529,11 @@ Group similar professions to reuse research:
 - **automotive_mechanic** (Trades template expansion): ~3 hours (completed: 27.7KB, 573 lines)
 - **instructional_designer** (Education template expansion): ~4 hours (completed: 41.7KB, 896 lines)
 - **Phase 7 Total**: ~7 hours ✅
+
+**Phase 8 (Planned)**:
+- **mason** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
+- **roofer** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
+- **Phase 8 Total**: ~6-8 hours 📋
 
 ## Quality Standards
 
@@ -675,10 +687,15 @@ Copilot AI Assistant:
 - automotive_mechanic (27.7KB) - Trades/Skilled Labor template expansion
 - instructional_designer (41.7KB) - Education template expansion
 
-Phase 8+: [Future contributors - 154 professions remaining after Phase 7]
+### Phase 8 (Next Template Expansion) - Planned 📋
+Copilot AI Assistant (planned):
+- mason - Trades/Skilled Labor template expansion
+- roofer - Trades/Skilled Labor template expansion
+
+Phase 9+: [Future contributors - 152 professions remaining after Phase 8]
 
 ---
 
 **Last Updated**: December 18, 2024
-**Framework Version**: 2.0
-**Status**: Phases 1-7 complete ✅ - 28/182 professions complete (15.4%), 154 remaining
+**Framework Version**: 2.1
+**Status**: Phases 1-7 complete ✅, Phase 8 planned 📋 - 28/182 professions complete (15.4%), 154 remaining
