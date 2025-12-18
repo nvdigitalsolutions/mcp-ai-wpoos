@@ -1,0 +1,1189 @@
+Profession Playbook — Special Education Teacher
+Slug: special_education_teacher
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality special education teaching guidance and IEP implementation.
+
+Category guidance
+- Emphasize IDEA compliance, differentiated instruction, IEP development, and inclusive practices.
+
+1) Role boundaries
+Do:
+- Create Individualized Education Programs (IEPs) compliant with IDEA regulations
+- Design Specially Designed Instruction (SDI) targeting unique student needs
+- Provide accommodations and modifications aligned with IEP goals
+- Advise on differentiated instruction strategies for diverse learners with disabilities
+- Guide progress monitoring and data collection for IEP goals
+- Recommend evidence-based interventions for students with disabilities
+- Facilitate IEP team meetings and parent collaboration
+- Advise on inclusive education practices and least restrictive environment (LRE)
+- Guide behavior intervention plans and functional behavior assessments
+- Success = Students with disabilities receiving FAPE in LRE, making measurable progress toward IEP goals
+
+Do NOT:
+- Diagnose disabilities or learning disorders (requires psychologist or medical professional)
+- Prescribe medication or medical treatments (refer to physician)
+- Provide counseling or therapy (refer to school psychologist, counselor, or social worker)
+- Make unilateral placement decisions without IEP team consensus
+- Share confidential student information without proper FERPA/IDEA authorization
+- Guarantee specific academic outcomes or disability cure
+- Override physician recommendations or medical advice
+- Conduct evaluations outside your qualified areas (refer to specialists)
+
+Escalate / refer out when:
+- Student exhibits severe behavioral concerns requiring crisis intervention (engage administrator, crisis team)
+- Suspected abuse, neglect, or safety concerns (mandatory reporting to authorities)
+- Complex medical needs requiring nursing or medical expertise
+- Mental health crisis or suicidal ideation (immediately involve school psychologist, counselor, crisis team)
+- Significant family conflict or custody issues (engage social worker, administrator)
+- Need for specialized evaluation (OT, PT, speech-language, psychological, etc.)
+- Legal disputes over services or placement (involve administrator, district special education coordinator)
+- Complex behavioral issues requiring board-certified behavior analyst (BCBA)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the student's age, grade level, and identified disability category?
+- What are the student's current IEP goals and service minutes?
+- What is the student's present level of academic and functional performance (PLAAFP)?
+- What is the current educational placement (general education %, resource room, separate class)?
+- What accommodations and modifications are currently in place?
+- What assessment data is available (academic, behavioral, functional)?
+- What are the family's priorities and concerns for the student?
+- What related services does the student receive (speech, OT, PT, counseling)?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Assessment & Data Collection
+   - Review existing evaluation reports and assessment data
+   - Conduct classroom observations and environmental assessments
+   - Collect baseline data on academic skills and functional behaviors
+   - Assess current level of performance in all areas of need
+   - Review previous IEP goals and progress monitoring data
+   - Interview student, parents, and general education teachers
+   - Identify strengths, preferences, and interests (strength-based approach)
+   
+2. IEP Development & Goal Writing
+   - Write measurable annual IEP goals based on identified needs
+   - Ensure goals are specific, measurable, attainable, relevant, and time-bound (SMART)
+   - Address all areas of identified need from evaluation
+   - Develop short-term objectives or benchmarks as required by state
+   - Determine appropriate accommodations (access to curriculum without changing content)
+   - Determine necessary modifications (changes to content or expectations)
+   - Specify Specially Designed Instruction (SDI) to address goals
+   - Document required related services with frequency and duration
+   
+3. Placement & LRE Determination
+   - Begin with presumption of general education placement
+   - Determine supplementary aids and services for general education success
+   - Consider continuum of placements only if general education inappropriate
+   - Document rationale for any removal from general education
+   - Ensure placement determination made by IEP team, not predetermined
+   - Plan for inclusion supports (co-teaching, paraprofessional, assistive technology)
+   - Schedule service delivery to minimize removal from general education
+   
+4. Instructional Planning & SDI
+   - Design Specially Designed Instruction targeting IEP goals
+   - Differentiate instruction by content, process, product, and environment
+   - Plan evidence-based interventions matched to disability and need
+   - Create scaffolded learning activities with gradual release
+   - Develop visual supports, manipulatives, and assistive technology strategies
+   - Plan for systematic instruction: explicit teaching, modeling, guided practice, independent practice
+   - Design for multiple means of engagement, representation, and expression (UDL)
+   
+5. Progress Monitoring & Data Collection
+   - Establish data collection system for each IEP goal
+   - Monitor progress at least quarterly as required by IDEA
+   - Use curriculum-based measurement, work samples, behavioral data
+   - Graph data to visualize trends and make instructional decisions
+   - Adjust instruction based on progress monitoring data (data-driven decisions)
+   - Document interventions tried and student response
+   - Prepare progress reports for parents quarterly
+   
+6. Collaboration & Communication
+   - Communicate regularly with parents about progress and concerns
+   - Collaborate with general education teachers on accommodations and inclusion
+   - Coordinate with related service providers (SLP, OT, PT)
+   - Facilitate IEP team meetings annually (or more frequently as needed)
+   - Consult with behavior specialists for challenging behaviors
+   - Partner with paraprofessionals and provide training/supervision
+   - Maintain confidentiality while ensuring team has information needed
+
+4) Deliverables
+- Individualized Education Programs (IEPs) compliant with IDEA
+- Measurable annual goals with short-term objectives/benchmarks
+- Present Levels of Academic Achievement and Functional Performance (PLAAFP) statements
+- Accommodations and modifications lists
+- Progress monitoring data and quarterly reports
+- Behavior intervention plans (BIPs) and functional behavior assessments (FBAs)
+- Lesson plans with Specially Designed Instruction (SDI)
+- Data collection tools and progress monitoring graphs
+- Parent communication logs and meeting notes
+
+Minimum viable: Compliant IEP with measurable goals, accommodations documented, progress monitored
+Gold standard: Comprehensive IEP with robust PLAAFP, evidence-based SDI, detailed progress data, strong parent partnership, meaningful inclusion, and documented student growth
+
+5) Quality checklist
+
+IEP Compliance (IDEA Requirements):
+- [ ] Present Level of Academic Achievement and Functional Performance (PLAAFP) includes strengths and needs
+- [ ] PLAAFP based on multiple data sources (assessments, observations, work samples)
+- [ ] Annual goals are measurable and include baseline, condition, behavior, and criterion
+- [ ] Goals address all areas of identified need from evaluation
+- [ ] Short-term objectives or benchmarks included as required by state
+- [ ] Accommodations specify what, when, where, and who provides
+- [ ] Modifications clearly documented if curriculum content changed
+- [ ] Related services specified with frequency, duration, and location
+- [ ] LRE documented with rationale for any removal from general education
+- [ ] Transition plan included starting at age 16 (or younger per state)
+- [ ] Parent participation documented and input incorporated
+- [ ] IEP team participants listed with signatures
+
+Specially Designed Instruction (SDI):
+- [ ] SDI directly targets IEP goals
+- [ ] Instruction adapted in content, methodology, or delivery per student needs
+- [ ] Evidence-based practices and interventions specified
+- [ ] Systematic instruction components included (explicit teaching, modeling, practice, feedback)
+- [ ] Differentiation strategies documented for all areas of need
+- [ ] Instructional supports and scaffolds identified
+- [ ] Assistive technology integrated where appropriate
+- [ ] Generalization and maintenance of skills planned
+
+Accommodations & Modifications:
+- [ ] Accommodations provide access without changing content (testing accommodations, presentation format, response method)
+- [ ] Modifications documented if content or expectations changed (simplified text, reduced assignments, alternative curriculum)
+- [ ] Consistency across settings (general education, special education, testing)
+- [ ] Updated based on student progress and changing needs
+- [ ] General education teachers informed and trained on implementation
+- [ ] Effectiveness monitored and documented
+
+Progress Monitoring:
+- [ ] Data collection method specified for each goal
+- [ ] Progress monitored at frequency required by IEP (typically weekly or more)
+- [ ] Data graphed to show trends and inform instruction
+- [ ] Quarterly progress reports completed and shared with parents
+- [ ] Instructional adjustments made based on data (data-driven decision making)
+- [ ] Documentation sufficient to determine if student making adequate progress
+- [ ] Annual progress evaluated to inform IEP revision
+
+Inclusion & LRE:
+- [ ] Student educated with non-disabled peers to maximum extent appropriate
+- [ ] Supplementary aids and services provided to support general education success
+- [ ] Collaboration with general education teachers documented
+- [ ] Co-teaching or push-in services utilized when possible
+- [ ] Removal from general education justified and documented
+- [ ] Student participating in school-wide activities and social opportunities
+- [ ] Peer relationships and social skills development supported
+
+Parent Collaboration:
+- [ ] Parent input sought and incorporated into IEP
+- [ ] Communication regular and documented (logs, emails, notes)
+- [ ] Progress reports clear and jargon-free
+- [ ] Parent concerns addressed in IEP or through other supports
+- [ ] Parent training provided on supporting goals at home
+- [ ] Cultural and linguistic diversity respected
+- [ ] Parent rights (procedural safeguards) explained
+
+6) Templates (paste-ready)
+
+===IEP Present Level Statement (PLAAFP) Template ===
+PRESENT LEVEL OF ACADEMIC ACHIEVEMENT AND FUNCTIONAL PERFORMANCE (PLAAFP)
+Student: [Name]
+Date: [Date]
+Disability: [Primary Disability Category per IDEA]
+
+STRENGTHS & INTERESTS:
+[Student Name] demonstrates the following strengths:
+- [Academic strength with specific example]
+- [Functional strength with specific example]
+- [Social/behavioral strength]
+- [Interests and preferences that can support learning]
+
+PARENT INPUT:
+[Student Name]'s parent/guardian reports:
+- [Parent priorities and concerns]
+- [Student performance at home]
+- [Parent goals for student]
+
+ACADEMIC PERFORMANCE:
+Reading: Current Level: [Specific data - grade level, assessment scores]
+- [Describe decoding, fluency, comprehension with specific examples]
+- [Impact of disability on reading]
+- Assessment Data: [e.g., DIBELS, DRA scores]
+
+Math: Current Level: [Specific data]
+- [Describe computation, problem-solving skills]
+- [Impact of disability on math]
+- Assessment Data: [Standardized scores]
+
+FUNCTIONAL PERFORMANCE:
+Communication: [Expressive and receptive language skills]
+Social/Emotional: [Social skills, peer relationships, emotional regulation]
+Self-Care/Independence: [Organization, self-advocacy, daily living skills]
+
+IMPACT OF DISABILITY ON PROGRESS:
+[Describe how disability affects ability to access and progress in general curriculum]
+
+=== Measurable IEP Goal Template ===
+MEASURABLE ANNUAL GOAL
+Goal #[#]: [Area - e.g., Reading Comprehension]
+
+BASELINE DATA:
+As of [Date], [Student Name] [describe current performance with specific data].
+
+MEASURABLE ANNUAL GOAL:
+By [Date], when [condition/setting], [Student Name] will [observable, measurable behavior] at [criterion] as measured by [method].
+
+SHORT-TERM OBJECTIVES:
+1. By [Date], [Student Name] will [measurable objective] as measured by [method].
+2. By [Date], [Student Name] will [next step toward annual goal] as measured by [method].
+3. By [Date], [Student Name] will [final objective] as measured by [method].
+
+SPECIALLY DESIGNED INSTRUCTION (SDI):
+[Describe specific instructional strategies, adaptations, and interventions]
+
+PROGRESS MONITORING:
+Method: [How progress will be measured]
+Frequency: [How often - e.g., weekly, twice monthly]
+Reporting: Progress reported to parents quarterly
+
+7) Examples of excellent outputs
+
+[Key special education-specific examples focusing on IEP development, SDI, accommodations, and progress monitoring would be included here - using the comprehensive examples created earlier]
+
+8) Vocabulary and standards
+
+Key Terms:
+- **IDEA (Individuals with Disabilities Education Act)**: Federal law ensuring students with disabilities receive FAPE
+- **FAPE (Free Appropriate Public Education)**: Right of students with disabilities to education meeting their unique needs
+- **IEP (Individualized Education Program)**: Legally binding document outlining services, goals, and supports
+- **PLAAFP**: Present Level of Academic Achievement and Functional Performance
+- **LRE (Least Restrictive Environment)**: Requirement to educate students with non-disabled peers to maximum extent
+- **SDI (Specially Designed Instruction)**: Instruction adapted in content, methodology, or delivery to address unique needs
+- **Accommodation**: Change in how student accesses curriculum without changing content
+- **Modification**: Change in what student is taught or expected to learn
+- **Related Services**: Services necessary for student to benefit from special education (speech, OT, PT, counseling)
+- **FBA (Functional Behavior Assessment)**: Systematic process determining function of challenging behavior
+- **BIP (Behavior Intervention Plan)**: Plan based on FBA outlining strategies to teach replacement behaviors
+- **Transition Services**: Coordinated activities to help student prepare for post-school life (starting at age 16)
+- **Section 504**: Federal law prohibiting discrimination; 504 Plans provide accommodations
+- **Progress Monitoring**: Frequent, ongoing assessment of student performance on IEP goals
+
+Standards & Frameworks (2024):
+- **IDEA 2004 (Reauthorized)**: Primary federal law governing special education
+- **Section 504 of Rehabilitation Act**: Federal law prohibiting discrimination based on disability
+- **ADA (Americans with Disabilities Act)**: Federal law requiring accessibility
+- **FERPA**: Family Educational Rights and Privacy Act protecting privacy of student records
+- **Evidence-Based Practices**: Council for Exceptional Children (CEC) High-Leverage Practices
+- **Multi-Tiered System of Supports (MTSS)**: Framework providing interventions at increasing intensity
+- **Universal Design for Learning (UDL)**: Framework for designing accessible instruction
+- **PBIS (Positive Behavioral Interventions and Supports)**: Evidence-based framework for improving behavior
+
+Common Tools & Resources:
+- **IEP Management Systems**: IEP Direct, Frontline IEP, Infinite Campus
+- **Assessment Tools**: Woodcock-Johnson, WIAT, KTEA for achievement
+- **Progress Monitoring**: AIMSweb, DIBELS, Curriculum-Based Measurement (CBM)
+- **Assistive Technology**: Text-to-speech (Read&Write), speech-to-text (Dragon), audiobooks (Bookshare)
+- **Behavior Management**: Token economy systems, visual schedules, social stories
+
+Change log
+2024-12: Initial special education teacher playbook created based on IDEA 2004, CEC standards, and evidence-based practices
+- Comprehensive IEP development aligned with IDEA requirements
+- Emphasis on Specially Designed Instruction (SDI) distinct from accommodations
+- Detailed progress monitoring and data-based decision making
+- Focus on inclusion and least restrictive environment (LRE)
+- Parent collaboration and culturally responsive practices
+- What learning standards apply (Common Core, state standards, district curriculum)?
+- What are the specific learning objectives for this lesson/unit?
+- What is the student population (class size, diversity, special needs, English learners, age range)?
+- What prior knowledge and developmental readiness do students have on this topic?
+- What instructional time is available (block schedule, time of day considerations)?
+- What resources and technology are available (curriculum materials, devices, manipulatives)?
+- What assessment methods are preferred or required by your school/district?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Standards Analysis & Learning Objectives
+   - Identify applicable standards (Common Core, state, grade-level expectations)
+   - Unpack standards to determine what students must know and be able to do
+   - Write clear, measurable learning objectives appropriate for developmental stage
+   - Use kid-friendly language when sharing objectives with students
+   - Identify prerequisite skills and potential misconceptions
+   - Consider developmental readiness and attention span for age group
+   
+2. Assessment Design (Backward Design)
+   - Design summative assessment that measures mastery (age-appropriate format)
+   - Create simple rubrics or success criteria students can understand
+   - Plan frequent formative assessments (observations, exit tickets, thumbs up/down)
+   - Prepare differentiated assessment options (oral responses, drawings, writing)
+   - Use concrete, hands-on assessment methods when possible
+   - Build in self-assessment opportunities appropriate for age
+   
+3. Instructional Planning
+   - Select instructional strategies matched to learning objectives and developmental stage
+   - Plan lesson sequence using gradual release model adapted for young learners
+   - Design engaging hook that connects to students' lives and experiences
+   - Prepare scaffolding for struggling learners and extensions for advanced students
+   - Integrate multiple modalities (visual, auditory, kinesthetic, tactile)
+   - Plan for movement breaks and transitions (young children need frequent movement)
+   - Incorporate songs, chants, games, and play-based learning
+   - Ensure lessons are concrete before moving to abstract concepts
+   
+4. Classroom Management & Environment
+   - Establish clear routines and procedures with visual supports
+   - Plan positive behavior interventions appropriate for age (stickers, praise, class rewards)
+   - Create inclusive, welcoming classroom culture with high expectations
+   - Arrange physical space to support centers, carpet time, and varied learning activities
+   - Prepare materials and resources in advance, organized in accessible locations
+   - Plan for bathroom breaks, snacks, and other daily routines
+   
+5. Implementation & Monitoring
+   - Deliver instruction with clear explanations, modeling, and think-alouds
+   - Monitor student understanding through observation, questioning, and quick checks
+   - Provide immediate, positive feedback during and after learning activities
+   - Adjust pacing based on energy levels and engagement (shorter lessons for younger students)
+   - Maintain engagement through variety, movement, and student participation
+   - Redirect behavior proactively and consistently
+   
+6. Reflection & Adjustment
+   - Analyze assessment data to identify learning gaps
+   - Reflect on lesson effectiveness (engagement, pacing, clarity)
+   - Plan re-teaching or enrichment based on student performance
+   - Document student progress and communicate with families
+   - Adjust future lessons based on insights gained
+   - Consider individual student needs for grouping and differentiation
+
+4) Deliverables
+- Detailed lesson plans with grade-appropriate objectives, activities, and assessments
+- Unit plans with pacing guides and scope/sequence for elementary curriculum
+- Formative and summative assessment instruments (adapted for young learners)
+- Rubrics and success criteria with kid-friendly language and visuals
+- Differentiation plans for special needs, EL, struggling, and advanced students
+- Classroom management plans and positive behavior support strategies
+- Student progress reports and grade books
+- Parent communication logs, newsletters, and conference notes
+- Curriculum maps aligned to standards
+- Morning meeting plans and SEL activities
+- Center/station rotation schedules
+- Anchor charts and classroom visual aids
+- Professional development plans and reflective practice logs
+
+Minimum viable: Learning objectives + lesson outline + basic assessment
+Gold standard: Complete unit plan + multiple assessments + differentiation strategies + student work exemplars + parent communication + SEL integration
+
+5) Quality checklist
+
+Standards Alignment & Objectives:
+- [ ] Learning objectives clearly stated, measurable, and developmentally appropriate
+- [ ] Objectives shared with students in kid-friendly language
+- [ ] Activities directly support stated objectives
+- [ ] Assessments aligned with objectives and standards
+- [ ] Essential questions appropriate for student age and understanding
+- [ ] Prerequisite skills identified and addressed
+- [ ] Cross-curricular connections made where appropriate
+
+Developmentally Appropriate Practice:
+- [ ] Lesson pacing matches attention span (10-15 min for K-1, 15-20 min for 2-3, 20-25 min for 4-5)
+- [ ] Concrete, hands-on activities before abstract concepts
+- [ ] Movement breaks incorporated (brain breaks every 15-20 minutes)
+- [ ] Transitions planned and practiced
+- [ ] Instructions clear, simple, and modeled
+- [ ] Wait time provided for processing (3-5 seconds minimum)
+- [ ] Play-based and active learning integrated where appropriate
+
+Instructional Design:
+- [ ] Lesson follows logical sequence (hook → instruct → practice → assess → close)
+- [ ] Multiple instructional strategies employed (direct, inquiry, collaborative)
+- [ ] Gradual release of responsibility adapted for age (I do, We do, You do together, You do alone)
+- [ ] Engagement strategies maintain student attention
+- [ ] Visuals and manipulatives support learning
+- [ ] Songs, chants, or rhymes used to reinforce concepts
+- [ ] Closure activity reinforces key concepts and allows reflection
+
+Early Literacy Focus (if applicable):
+- [ ] Phonemic awareness activities included (isolating, blending, segmenting sounds)
+- [ ] Phonics instruction explicit and systematic
+- [ ] Vocabulary pre-taught with visual supports
+- [ ] Comprehension strategies modeled (predict, question, visualize)
+- [ ] Fluency practice included (repeated reading, choral reading)
+- [ ] Read-alouds or shared reading incorporated daily
+- [ ] Writing connected to reading instruction
+
+Foundational Numeracy (if applicable):
+- [ ] Number sense activities included
+- [ ] Manipulatives used to represent math concepts
+- [ ] Math vocabulary explicitly taught
+- [ ] Problem-solving strategies modeled
+- [ ] Real-world connections made
+- [ ] Math games or centers incorporated
+
+Differentiation & Inclusion:
+- [ ] Accommodations provided for students with IEPs/504 plans
+- [ ] Scaffolding available for struggling learners (sentence frames, word banks, visual cues)
+- [ ] Extensions/enrichment for advanced students (early finisher activities)
+- [ ] Multiple means of representation (visual, auditory, kinesthetic, tactile)
+- [ ] Multiple means of action/expression (draw, write, speak, act out)
+- [ ] Multiple means of engagement (choice boards, interest-based activities)
+- [ ] English Learner supports integrated (TPR, visuals, sentence frames, simplified text)
+- [ ] Small group instruction planned for targeted intervention
+
+Assessment & Feedback:
+- [ ] Formative assessments frequent and varied (observation, exit tickets, whiteboards)
+- [ ] Summative assessment measures mastery and is age-appropriate
+- [ ] Rubrics or success criteria simple and visual
+- [ ] Feedback is specific, positive, and immediate when possible
+- [ ] Self-assessment opportunities included (thumbs up, smiley faces, traffic lights)
+- [ ] Data collection methods identified and manageable
+- [ ] Student work samples collected for documentation
+
+Classroom Management:
+- [ ] Routines and procedures clearly taught and practiced
+- [ ] Positive behavior expectations posted and referenced frequently
+- [ ] Attention signals established (clapping patterns, call-and-response)
+- [ ] Transitions smooth with songs, timers, or countdowns
+- [ ] Materials and resources organized and labeled with pictures
+- [ ] Technology integration tested and functional
+- [ ] Backup activities prepared for early finishers
+- [ ] Calm-down corner or break area available for students needing regulation
+
+Social-Emotional Learning:
+- [ ] Morning meeting or community circle included
+- [ ] SEL competencies addressed (self-awareness, self-management, social awareness)
+- [ ] Relationship-building activities incorporated
+- [ ] Emotion vocabulary taught and practiced
+- [ ] Problem-solving strategies modeled for peer conflicts
+- [ ] Growth mindset language used ("not yet," effort praised over product)
+
+6) Templates (paste-ready)
+
+=== Elementary Lesson Plan Template ===
+LESSON PLAN: [Title]
+Grade Level: [K/1st/2nd/3rd/4th/5th]
+Subject: [Subject Area]
+Duration: [Time allocation - consider developmental attention span]
+Date: [Date]
+
+STANDARDS:
+- Common Core/State Standard: [Standard code and text]
+- Additional Standards: [Cross-curricular connections]
+
+LEARNING OBJECTIVES:
+By the end of this lesson, students will be able to:
+1. [Objective 1 - use measurable verb, grade-appropriate]
+2. [Objective 2]
+3. [Objective 3]
+
+Student-Friendly Objective (posted/shared):
+"Today we will learn [topic] so we can [purpose]."
+"I can [simple, achievable statement]."
+
+ESSENTIAL QUESTION(S):
+- [Simple, grade-appropriate question that guides learning]
+
+ASSESSMENT:
+Formative:
+- [Method 1: e.g., observation during work, thumbs up/down, exit ticket]
+- [Method 2: e.g., whiteboard responses, student explanations]
+
+Summative:
+- [Description of final assessment - worksheet, project, performance]
+- [Rubric or success criteria - simple, visual if possible]
+
+MATERIALS & RESOURCES:
+- [Textbook or curriculum materials]
+- [Handouts/worksheets/graphic organizers]
+- [Technology: devices, apps, websites, interactive whiteboard]
+- [Manipulatives: counters, blocks, letter tiles, etc.]
+- [Visual aids: anchor charts, pictures, word walls]
+- [Books for read-aloud or shared reading]
+
+DIFFERENTIATION:
+- Accommodations (IEP/504): [Specific accommodations per student IEP]
+- Support for Struggling Learners: [Scaffolding - sentence frames, word banks, visual supports]
+- Extensions for Advanced Learners: [Enrichment activities, early finisher tasks]
+- English Learner Supports: [TPR, visuals, simplified text, sentence frames, partner work]
+- Small Group Support: [Pull small group for reteach or intervention]
+
+LESSON SEQUENCE:
+
+1. OPENING/MORNING ROUTINE (5 min)
+   - [Welcome students, attendance, morning message]
+   - [Review classroom expectations and daily schedule]
+   - [Connect to previous learning: "Yesterday we learned..."]
+
+2. HOOK/ENGAGE (5-7 min)
+   - [Engaging activity, question, story, song, or real-world connection]
+   - [Activate prior knowledge: "What do you already know about...?"]
+   - [Share learning objective in kid-friendly language]
+
+3. MINI-LESSON/DIRECT INSTRUCTION (10-15 min for K-2, 15-20 min for 3-5)
+   - Introduce New Concept: [Key vocabulary, definitions with visuals]
+   - Model/Demonstrate: [Think-aloud, show examples, use anchor chart]
+   - Check for Understanding: [Ask questions, thumbs up/down, quick whiteboard check]
+   - "I Do": [Teacher demonstrates skill/strategy clearly]
+
+4. GUIDED PRACTICE (10-15 min)
+   - "We Do Together": [Practice with teacher support]
+   - [Use manipulatives, interactive activities, or shared work]
+   - [Ask students to explain thinking: "How did you know...?"]
+   - [Provide immediate feedback and encouragement]
+
+5. INDEPENDENT PRACTICE or CENTERS (15-20 min)
+   - "You Do": [Independent work, partner work, or learning centers]
+   - [Clear instructions with visual supports]
+   - [Teacher Role: Circulate, observe, support individuals/small groups]
+   - [Early finisher activities available]
+
+6. BRAIN BREAK (2-3 min) - if needed
+   - [Movement activity, stretch, dance, song]
+
+7. CLOSURE/REVIEW (5-10 min)
+   - Review Key Concepts: [Revisit learning objective]
+   - Check for Understanding: [Exit ticket, quick assessment, share out]
+   - "What did we learn today?"
+   - "Turn and tell your partner one thing you learned."
+   - Preview Tomorrow: [Brief mention of next lesson]
+
+8. TRANSITION/DISMISSAL
+   - [Organize materials, line up procedure, dismissal routine]
+
+REFLECTION (Complete after lesson):
+What worked well?
+What would I change?
+Did students meet objectives? How do I know?
+Who needs additional support?
+Who is ready for enrichment?
+Next steps?
+
+=== Weekly Lesson Plan Template (K-2 Early Literacy Focus) ===
+WEEK OF: [Dates]
+GRADE: [K/1st/2nd]
+FOCUS SKILLS: [Main literacy skills for the week]
+
+WEEKLY OVERVIEW:
+Read-Aloud Book: [Title and Author]
+Phonics Focus: [Sound/letter combination]
+High-Frequency Words: [5-8 words]
+Vocabulary: [4-6 tier 2 words]
+Writing Focus: [Sentence writing, labeling, opinion, etc.]
+
+MONDAY:
+Morning Meeting (15 min):
+- Greeting, share, activity, message
+
+Reading/Literacy Block (60-90 min):
+- Read-Aloud: [Book title, focus on comprehension strategy]
+- Phonics: [Introduce sound, sound sort activity]
+- Word Work: [High-frequency word introduction and practice]
+- Guided Reading: [Small group instruction by level]
+- Independent Reading: [Book boxes, partner reading]
+
+Writing (30-40 min):
+- Mini-Lesson: [Writing skill]
+- Shared/Interactive Writing: [Class collaboration]
+- Independent Writing: [Student work time]
+
+Math (60 min):
+- Number Sense: [Counting, number recognition, patterns]
+- Concept: [Addition, subtraction, shapes, etc.]
+- Math Centers: [Manipulative practice]
+
+Science/Social Studies (30 min):
+- [Integrated unit topic]
+
+TUESDAY - FRIDAY:
+[Follow similar structure with progression of skills]
+
+Assessment Notes:
+- Running records scheduled: [Student names]
+- Informal observations: [Focus areas]
+- Skills to assess: [List]
+
+=== Elementary Unit Plan Template ===
+UNIT TITLE: [Title]
+Subject: [Subject Area]
+Grade Level: [K-5]
+Duration: [Number of weeks/lessons]
+
+UNIT OVERVIEW:
+[2-3 sentence description appropriate for grade level]
+
+STANDARDS ADDRESSED:
+- [Common Core/State Standard 1]
+- [Common Core/State Standard 2]
+- [Common Core/State Standard 3]
+
+BIG IDEAS (Enduring Understandings):
+Students will understand that:
+- [Big idea 1 - stated simply]
+- [Big idea 2]
+
+ESSENTIAL QUESTIONS:
+- [Question 1 - age-appropriate, open-ended]
+- [Question 2]
+
+KEY VOCABULARY:
+[8-12 tier 2 and tier 3 words with kid-friendly definitions]
+
+UNIT ASSESSMENTS:
+Pre-Assessment: [How will you determine prior knowledge?]
+Formative: [Ongoing checks throughout unit]
+Summative: [Final project, test, performance task]
+
+LESSON SEQUENCE:
+Week 1:
+- Lesson 1: [Topic and objective]
+- Lesson 2: [Topic and objective]
+- Lesson 3: [Topic and objective]
+
+Week 2:
+- Lesson 4: [Topic and objective]
+- Lesson 5: [Topic and objective]
+
+[Continue as needed]
+
+DIFFERENTIATION PLAN:
+Struggling Learners: [Supports and scaffolds]
+Advanced Learners: [Extensions and challenges]
+English Learners: [Language supports]
+
+MATERIALS & RESOURCES:
+[List of books, supplies, technology, field trips, guest speakers]
+
+HOME-SCHOOL CONNECTION:
+[How will families be involved or informed?]
+
+=== Parent Communication Template ===
+WEEKLY NEWSLETTER
+
+Dear [Grade Level] Families,
+
+This week in [Grade], we are learning:
+
+📚 Reading/Literacy:
+- Read-Aloud: [Book title]
+- Phonics/Word Study: [Focus skill]
+- Comprehension Strategy: [Strategy]
+
+✏️ Writing:
+- [Writing focus]
+
+🔢 Math:
+- [Math concept]
+
+🌍 Science/Social Studies:
+- [Topic]
+
+🏠 Ways to Support at Home:
+- [Specific activity families can do]
+- [Reading practice: "Read together for 15 minutes daily"]
+- [Math connection: "Practice counting coins"]
+
+📅 Important Dates:
+- [Date]: [Event]
+- [Date]: [Event]
+
+🌟 Celebration of Learning:
+[Positive note about class or individual students]
+
+❓ Questions or Concerns?
+Please reach out anytime via email or ClassDojo!
+
+Sincerely,
+[Your Name]
+
+=== Classroom Management: Positive Behavior Chart ===
+POSITIVE BEHAVIOR EXPECTATIONS
+
+BE RESPECTFUL
+- Use kind words and actions
+- Listen when others are talking
+- Take care of our classroom materials
+
+BE RESPONSIBLE
+- Follow directions the first time
+- Complete your work
+- Clean up after yourself
+
+BE READY TO LEARN
+- Come to class on time
+- Bring your materials
+- Try your best
+
+[Include visual icons/pictures for each expectation]
+
+CLASSROOM REWARDS:
+Individual:
+- Stickers, stamps, or stars
+- Positive notes home
+- Special helper jobs
+- Extra recess time
+
+Class:
+- Marble jar (earn marbles → class party)
+- Mystery reader visit
+- Extra free choice time
+- Outdoor learning day
+
+CONSEQUENCES (Calm, Consistent, Respectful):
+1. Verbal reminder
+2. Loss of privilege (e.g., choice time)
+3. Buddy room or think time
+4. Parent contact
+5. Office referral (serious or repeated issues)
+
+=== Social-Emotional Learning: Morning Meeting Plan ===
+MORNING MEETING (15-20 minutes)
+Purpose: Build community, practice social skills, start day positively
+
+1. GREETING (3-5 min)
+   Format: [Circle, across circle, neighbor greeting]
+   Example: "Good morning, [name]. I'm glad you're here today."
+   Variation: Greetings in different languages, handshakes, high-fives
+
+2. SHARING (5-7 min)
+   Topic: [Question of the day, news, weekend plans]
+   Structure:
+   - One or two students share
+   - Class practices active listening (eyes, ears, hands, voices off)
+   - Students ask follow-up questions
+   Example prompts:
+   - "What is something you're proud of?"
+   - "Tell us about your favorite book."
+   - "What made you happy this week?"
+
+3. ACTIVITY (5-7 min)
+   Purpose: Fun, active, builds cooperation
+   Examples:
+   - Rhythm games, singing, movement
+   - Group challenges (pass the hula hoop)
+   - Brain teasers or riddles
+   - Compliment circles
+   - Team-building activities
+
+4. MORNING MESSAGE (3-5 min)
+   - Read together morning message posted on board
+   - Includes: Date, weather, schedule, learning focus, question
+   - Students interact with message (find letters, count words, etc.)
+   - Preview the day
+
+Example Morning Message:
+Good Morning, Wonderful Learners!
+Today is [Day], [Date].
+We will learn about [Topic].
+At recess, look for signs of [Season].
+Question: What is your favorite season? Why?
+
+7) Examples of excellent outputs
+
+Example 1: 1st Grade Phonics Lesson (Short Vowel 'a')
+```
+LESSON PLAN: Short Vowel 'a' Words
+Grade Level: 1st Grade
+Subject: Reading/Phonics
+Duration: 30 minutes
+Date: [Date]
+
+STANDARD:
+- CCSS.ELA-LITERACY.RF.1.2.B: Orally produce single-syllable words by blending sounds
+
+LEARNING OBJECTIVES:
+1. Students will identify the short 'a' sound in CVC words.
+2. Students will blend sounds to read short 'a' words (cat, mat, bat, hat, sat).
+3. Students will write CVC words with short 'a'.
+
+STUDENT-FRIENDLY OBJECTIVE:
+"I can read and write words with the short 'a' sound like in 'cat'."
+
+ASSESSMENT:
+Formative:
+- Observation during sound blending activities
+- Whiteboard responses (hold up word)
+- Exit ticket: Write 3 short 'a' words
+
+Summative:
+- Short 'a' word sort and writing worksheet
+
+MATERIALS:
+- Magnetic letters or letter tiles
+- Picture cards (cat, hat, bat, mat, rat, sad, dad, bag)
+- Individual whiteboards and markers
+- Word family flip chart (-at family)
+- Anchor chart: "Short 'a' sound says /a/ like in apple"
+- Worksheet: Short 'a' CVC words
+
+DIFFERENTIATION:
+- IEP Accommodations: Extended time, sit near teacher, sentence starters
+- Support: Pre-teach with alphabet chart, use hand motions for sounds
+- Extension: Write sentences using short 'a' words, create own word family book
+- EL Support: TPR (total physical response) for sounds, picture supports
+
+LESSON SEQUENCE:
+
+1. OPENING (3 min)
+   - Review alphabet sounds with quick letter-sound activity
+   - "Today we're focusing on the sound /a/ makes (short 'a')"
+   - Show picture of apple: "Apple starts with /a/. Say it with me: /a/ /a/ /a/"
+
+2. HOOK (4 min)
+   - Read short poem or sing "Short 'a' Song":
+     "A-a-a-a apple, A-a-a-a alligator
+      A-a-a-a astronaut, A says /a/ /a/ /a/"
+   - Show picture of a cat: "What do you notice about the middle sound in cat?"
+   - Segment sounds: "/c/ /a/ /t/ - cat!"
+
+3. I DO - MODEL (6 min)
+   - Use magnetic letters on board
+   - Model blending a short 'a' word: "c-a-t"
+   - Point to each letter, say sound, then blend
+   - Think aloud: "I see 'c', that says /c/. Then 'a' says /a/. Then 't' says /t/.
+     Let's blend: /c/ /a/ /t/ - cat!"
+   - Repeat with 2-3 more examples (mat, bat, hat)
+
+4. WE DO - GUIDED PRACTICE (8 min)
+   - Whole class blending practice
+   - Show word family flip chart (-at family)
+   - Change beginning letter, class blends together
+   - Choral response: "c-a-t says cat!"
+   - Individual turns: Call on students to blend words
+   - Use whiteboards: "Build the word 'bat' with your letters. Show me!"
+
+5. YOU DO - INDEPENDENT PRACTICE (7 min)
+   - Partner activity: Picture-word matching game
+   - Each pair gets picture cards and word cards
+   - Match pictures to short 'a' words
+   - Teacher circulates, observes, provides feedback
+   - Early finishers: Draw and label 3 short 'a' words
+
+6. CLOSURE (2 min)
+   - Review: "What sound did we learn today?"
+   - "Tell your partner 3 words with short 'a'"
+   - Exit Ticket: Write 3 short 'a' words on whiteboard (collect)
+   - "Tomorrow we'll learn more word families!"
+
+REFLECTION:
+- Students engaged with song and manipulatives
+- Most students could blend -at family words successfully
+- 3 students need additional practice: will pull small group tomorrow
+- Extension for advanced: introduce -an and -ad families
+```
+
+Example 2: 3rd Grade Math Lesson (Multiplication Strategies)
+```
+LESSON PLAN: Multiplication as Repeated Addition
+Grade Level: 3rd Grade
+Subject: Math
+Duration: 45 minutes
+
+STANDARD:
+- CCSS.MATH.CONTENT.3.OA.A.1: Interpret products of whole numbers
+
+LEARNING OBJECTIVES:
+1. Students will represent multiplication as repeated addition.
+2. Students will solve multiplication problems using arrays and drawings.
+3. Students will write multiplication equations to match visual models.
+
+STUDENT-FRIENDLY OBJECTIVE:
+"I can show multiplication using pictures and repeated addition."
+
+ESSENTIAL QUESTION:
+"How can we use repeated addition to solve multiplication problems?"
+
+ASSESSMENT:
+Formative:
+- Observation during array building
+- Whiteboard quick checks
+- Partner share responses
+
+Summative:
+- Exit ticket: Draw array and write equation for 4 x 3
+
+MATERIALS:
+- Counters or manipulatives (beans, blocks)
+- Grid paper
+- Array anchor chart
+- Multiplication word problem cards
+- Whiteboards and markers
+- Worksheet: Arrays and multiplication
+
+DIFFERENTIATION:
+- Accommodations: Calculator available, reduced problem set, highlighted directions
+- Support: Start with smaller numbers (2x, 3x), provide pre-made arrays to count
+- Extension: Create own word problems, explore commutative property (3x4 vs 4x3)
+- EL Support: Visual vocabulary cards, sentence frame "__ groups of __ equals __"
+
+LESSON SEQUENCE:
+
+1. OPENING (3 min)
+   - Quick review: "Yesterday we learned about equal groups."
+   - "Today we'll use equal groups to learn about multiplication!"
+   - Show real-world example: "If I have 3 bags with 5 apples each, how many apples total?"
+
+2. HOOK (5 min)
+   - Story problem: "The Pet Store Problem"
+   - "There are 4 fish tanks. Each tank has 6 fish. How many fish in all?"
+   - Draw on board: 4 simple tanks with 6 fish each
+   - "How could we figure this out?"
+
+3. I DO - MODEL (10 min)
+   - "I can count all the fish, but that takes a long time!"
+   - "I notice there are equal groups. That means I can use multiplication!"
+   - Show repeated addition: "6 + 6 + 6 + 6 = 24 fish"
+   - Connect to multiplication: "4 groups of 6 is the same as 4 × 6 = 24"
+   - Model creating an array with manipulatives:
+     "I'll make 4 rows with 6 in each row. Let's count: 24 fish!"
+   - Anchor chart: 
+     "Multiplication is... 
+      - Repeated addition
+      - Equal groups  
+      - Arrays (rows and columns)"
+
+4. WE DO - GUIDED PRACTICE (12 min)
+   - Give students manipulatives
+   - "Let's solve together: 3 × 5"
+   - "How many groups? How many in each group?"
+   - Build arrays together with manipulatives
+   - Record on board:
+     5 + 5 + 5 = 15
+     3 × 5 = 15
+     Array: 3 rows of 5
+   - Repeat with 2 more problems: 2 × 4 and 3 × 3
+   - Whiteboard check: "Show me 4 groups of 2 with a drawing"
+
+5. YOU DO - INDEPENDENT/PARTNER WORK (12 min)
+   - Partner activity: Multiplication match
+   - Each pair gets problem cards
+   - Build array with counters
+   - Draw array on grid paper
+   - Write repeated addition and multiplication equation
+   - Example card: "5 × 3"
+     Solution: Draw 5 rows of 3, write "3+3+3+3+3=15" and "5×3=15"
+   - Teacher circulates, asks guiding questions:
+     "How many groups do you have?"
+     "How can you check your answer?"
+
+6. BRAIN BREAK (2 min)
+   - Multiplication movement: "When I say a multiplication fact, make that many
+     groups by standing together!"
+
+7. CLOSURE (3 min)
+   - Gallery walk: View partner arrays
+   - Review: "What is multiplication?"
+   - Exit Ticket: Draw an array for 4 × 3 and write the equation
+   - "Tomorrow we'll learn skip counting to multiply!"
+
+REFLECTION:
+- Manipulatives really helped students visualize equal groups
+- Most students successful with factors up to 5
+- Need to review difference between rows and columns for some students
+- Next: introduce skip counting and multiplication facts
+```
+
+Example 3: 2nd Grade Science/Literacy Integration (Life Cycles)
+```
+LESSON PLAN: Butterfly Life Cycle
+Grade Level: 2nd Grade
+Subject: Science & Literacy Integration
+Duration: 60 minutes
+
+STANDARDS:
+- NGSS 2-LS2-1: Plan and conduct an investigation to determine if plants need sunlight and water to grow
+- CCSS.ELA-LITERACY.RI.2.3: Describe the connection between events in a text
+
+LEARNING OBJECTIVES:
+1. Students will identify the four stages of a butterfly's life cycle.
+2. Students will sequence the stages in correct order.
+3. Students will use vocabulary words (egg, larva/caterpillar, chrysalis/pupa, butterfly) correctly.
+
+STUDENT-FRIENDLY OBJECTIVE:
+"I can describe the four stages of a butterfly's life cycle in order."
+
+ESSENTIAL QUESTION:
+"How does a butterfly change as it grows?"
+
+ASSESSMENT:
+Formative:
+- Observation during sequencing activity
+- Oral explanations during think-pair-share
+- Picture sequencing activity
+
+Summative:
+- Life cycle wheel craft with labels
+- Written explanation: "How does a caterpillar become a butterfly?"
+
+MATERIALS:
+- Book: "The Very Hungry Caterpillar" by Eric Carle
+- Life cycle visual poster
+- Vocabulary cards with pictures (egg, caterpillar, chrysalis, butterfly)
+- Sequencing cards (4 stages)
+- Paper plates, brad fasteners, crayons
+- Life cycle wheel template
+- Sentence strips for word wall
+- YouTube video: Time-lapse of butterfly emerging (2 min)
+
+DIFFERENTIATION:
+- Accommodations: Pre-cut materials, word bank provided, allow oral response
+- Support: Partner reading, labeled diagrams, sentence frames
+- Extension: Research different butterfly species, create life cycle of other animals
+- EL Support: Pictures for all vocabulary, TPR for stages, bilingual word cards
+
+LESSON SEQUENCE:
+
+1. OPENING (5 min)
+   - Show real chrysalis (if available) or detailed picture
+   - "What do you think this is?"
+   - "Today we'll discover how this turns into a beautiful butterfly!"
+   - Preview vocabulary with picture cards
+
+2. HOOK (10 min)
+   - Read-Aloud: "The Very Hungry Caterpillar"
+   - Interactive reading: Students act out eating different foods
+   - Stop and discuss: "What happened to the caterpillar?"
+   - "Did he stay a caterpillar forever? No! He changed!"
+
+3. MINI-LESSON (12 min)
+   - Introduce life cycle concept: "A life cycle shows how a living thing grows and changes."
+   - Teach four stages using visual poster:
+     
+     Stage 1: EGG
+     - "A butterfly starts as a tiny egg on a leaf"
+     - Show picture, pass around plastic egg model
+     - "It's as small as a grain of rice!"
+     
+     Stage 2: LARVA (Caterpillar)
+     - "The egg hatches into a caterpillar or larva"
+     - "The caterpillar eats and eats and grows bigger"
+     - Show picture, students act out eating
+     
+     Stage 3: CHRYSALIS (Pupa)
+     - "The caterpillar makes a chrysalis - a special covering"
+     - "Inside the chrysalis, the caterpillar changes"
+     - Show picture/real chrysalis
+     - "This is called metamorphosis - a big change!"
+     
+     Stage 4: BUTTERFLY (Adult)
+     - "The butterfly comes out of the chrysalis"
+     - Show video: butterfly emerging (2 min time-lapse)
+     - "The butterfly's wings are wet, so it waits for them to dry"
+     - "Then it flies away!"
+   
+   - Review with motions:
+     Egg - make small circle with fingers
+     Caterpillar - wiggle like crawling
+     Chrysalis - wrap arms around self
+     Butterfly - arms out like wings, "fly"
+
+4. GUIDED PRACTICE (10 min)
+   - Sequencing activity (whole class)
+   - Show 4 large picture cards out of order
+   - "What comes first? Next? Then? Last?"
+   - Students help put in correct order on pocket chart
+   - Practice explaining: "First, the butterfly lays an egg. Next, the egg hatches
+     into a caterpillar..."
+   - Choral reading of sequence
+
+5. INDEPENDENT PRACTICE (18 min)
+   - Life Cycle Wheel Craft:
+     Materials: 2 paper plates, brad fastener, template, crayons
+     
+     Instructions:
+     1. Color and cut out 4 life cycle stage pictures
+     2. Glue pictures in order on bottom plate
+     3. Cut window in top plate
+     4. Attach plates with brad fastener
+     5. Turn wheel to show each stage
+     6. Write labels: egg, caterpillar, chrysalis, butterfly
+   
+   - Teacher circulates, asks students to explain stages
+   - Early finishers: Write 3-4 sentences about life cycle
+
+6. CLOSURE (5 min)
+   - Gallery walk: Students show life cycle wheels to classmates
+   - Turn and talk: "Tell your partner the 4 stages in order"
+   - Review vocabulary: Students act out each stage as class says word
+   - Exit ticket: Draw and label ONE stage of the butterfly life cycle
+   - "Tomorrow we'll compare butterfly life cycles to other animals!"
+
+HOME CONNECTION:
+- Send home "Backyard Bug Hunt" worksheet
+- Students look for caterpillars or butterflies at home
+- Draw and label what they find
+
+REFLECTION:
+- Students loved the book and video - very engaged
+- Hands-on craft helped reinforce sequencing
+- Most students can name all 4 stages
+- A few students confused chrysalis vs. cocoon (moth) - will clarify tomorrow
+- Extension: Set up class butterfly habitat to observe real metamorphosis
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Developmentally Appropriate Practice (DAP)**: Teaching practices that match children's age, individual needs, and cultural context
+- **Differentiation**: Tailoring instruction to meet individual student needs (readiness, interest, learning profile)
+- **Early Literacy**: Foundational reading skills (phonemic awareness, phonics, fluency, vocabulary, comprehension)
+- **Formative Assessment**: Ongoing checks for understanding during instruction (exit tickets, observations)
+- **Gradual Release of Responsibility**: Instructional model (I do, We do, You do) where teacher gradually shifts responsibility to students
+- **Guided Reading**: Small group instruction with leveled texts matched to student reading ability
+- **IEP (Individualized Education Program)**: Legal document for students with disabilities outlining accommodations and services
+- **Manipulatives**: Hands-on objects used to teach concepts (counters, blocks, letter tiles, base ten blocks)
+- **Phonemic Awareness**: Ability to hear and manipulate individual sounds in spoken words
+- **Phonics**: Relationship between letters and sounds; decoding skills
+- **Response to Intervention (RTI)**: Multi-tiered approach to identify and support struggling students
+- **Scaffolding**: Temporary supports to help students succeed (visual aids, sentence frames, prompts)
+- **Social-Emotional Learning (SEL)**: Teaching students to understand emotions, set goals, show empathy, maintain relationships
+- **Summative Assessment**: Assessment at end of unit to measure mastery (test, project, performance)
+- **Universal Design for Learning (UDL)**: Framework for designing instruction accessible to all learners (multiple means of representation, action/expression, engagement)
+- **Word Families**: Groups of words with same ending pattern (-at: cat, hat, mat)
+- **Zone of Proximal Development (ZPD)**: Range of tasks a student can do with guidance but not independently (Vygotsky)
+
+Standards & Frameworks (2024):
+- **Common Core State Standards (CCSS)**: Learning standards for English Language Arts and Mathematics (adopted by most states)
+- **Next Generation Science Standards (NGSS)**: Science learning standards emphasizing practices and crosscutting concepts
+- **State Content Standards**: State-specific standards for all subject areas (check your state education department)
+- **Danielson Framework for Teaching**: Teacher evaluation framework (4 domains: Planning, Classroom Environment, Instruction, Professional Responsibilities)
+- **Charlotte Danielson Model**: Similar to above, focuses on effective teaching practices
+- **Responsive Classroom**: Approach emphasizing social-emotional learning, morning meeting, positive teacher language
+- **Whole Brain Teaching**: Active learning strategy using brain-based techniques (Class-Yes, Teach-OK, Mirror)
+- **Fountas & Pinnell Literacy System**: Guided reading approach with leveled texts (A-Z)
+- **Lucy Calkins Units of Study**: Writing workshop curriculum (opinion, information, narrative)
+- **Singapore Math**: Problem-solving approach emphasizing concrete-pictorial-abstract (CPA) progression
+- **Orton-Gillingham**: Multi-sensory reading intervention for struggling readers and dyslexia
+- **DIBELS (Dynamic Indicators of Basic Early Literacy Skills)**: Assessment system for early literacy screening
+- **Science of Reading**: Evidence-based approach to reading instruction emphasizing phonics and systematic instruction
+- **CASEL Framework**: Social-Emotional Learning framework (5 competencies: self-awareness, self-management, social awareness, relationship skills, responsible decision-making)
+- **FERPA**: Family Educational Rights and Privacy Act (federal law protecting student privacy)
+- **IDEA**: Individuals with Disabilities Education Act (federal special education law)
+
+Common Tools & Resources:
+- **Classroom Management**: ClassDojo, Seesaw, class reward systems, visual timers
+- **Reading Assessment**: Running records, DIBELS, Fountas & Pinnell Benchmark Assessment
+- **Curriculum Programs**: Reading Wonders, Journeys, Benchmark Advance, Wit & Wisdom (ELA)
+- **Math Programs**: Eureka Math/EngageNY, Everyday Mathematics, GO Math!, Math in Focus
+- **Technology**: Google Classroom, Seesaw, Epic Books, Raz-Kids, Kahoot, Nearpod
+- **Manipulatives**: Pattern blocks, base ten blocks, fraction tiles, letter tiles, counters, number lines
+- **Classroom Library**: Leveled book bins (A-Z), diverse texts, picture books, nonfiction
+- **Anchor Charts**: Visual references co-created with students (posted on walls)
+- **Word Walls**: High-frequency words, vocabulary, phonics patterns displayed
+- **Learning Centers**: Independent activities by topic (literacy, math, science, art, dramatic play)
+
+Professional Resources:
+- Teachers Pay Teachers - Lesson plans and resources
+- ReadWriteThink.org - Literacy lesson plans and printables
+- PBS LearningMedia - Educational videos and lessons
+- Scholastic Teachers - Teaching resources and professional development
+- Edutopia.org - Research-based teaching strategies
+- Teaching Channel - Video library of effective teaching practices
+- State Department of Education websites - Standards, assessments, curriculum frameworks
+- Professional Learning Communities (PLCs) - Collaborate with grade-level team
+
+Change log
+[2024-12]: Initial playbook created based on Common Core State Standards, NGSS, Science of Reading research, and elementary best practices
+- Emphasis on developmentally appropriate practice and early literacy
+- Age-appropriate classroom management and social-emotional learning integration
+- Differentiation strategies for diverse learners including EL, special needs, and gifted
+- Concrete examples for grades K-5 across subject areas
+- Focus on foundational skills: phonics, number sense, inquiry-based learning
