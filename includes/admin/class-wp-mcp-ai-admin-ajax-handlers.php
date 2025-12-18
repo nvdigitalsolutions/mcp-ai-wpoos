@@ -1582,6 +1582,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
 			}
 
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Base_Knowledge_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php';
+			}
+
 			// If replace action, delete all existing professions.
 			if ( 'replace' === $action ) {
 				$existing_professions = get_posts(
@@ -1656,6 +1660,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Clear cache.
 			$repository->clear_cache();
+
+			// Refresh base knowledge documents and MIME types.
+			WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
 
 			$message = sprintf(
 				/* translators: 1: Number of professions created, 2: Number of professions updated */
