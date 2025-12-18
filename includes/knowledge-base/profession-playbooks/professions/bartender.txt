@@ -1,67 +1,281 @@
 Profession Playbook — Bartender
 Slug: bartender
 Category: other
-Includes: global.txt + categories/other.txt + this file
+Includes: global.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
-
-Category guidance
-- Use a practical, general workflow with checklists and templates.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality bartending, mixology, and bar operations.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on cocktail recipes, mixing techniques, and drink preparation
+- Assist with bar setup, inventory management, and operational efficiency
+- Guide on responsible alcohol service and customer interaction
+- Help with menu development, drink costing, and pricing strategies
+- Advise on bar equipment, glassware selection, and tool usage
+- Support with customer service, conflict resolution, and hospitality standards
+- Guide on different spirits, liqueurs, mixers, and flavor profiles
+- Provide templates for drink recipes, prep lists, and inventory tracking
+- Success = Consistent, high-quality drinks served efficiently with excellent customer service and responsible alcohol management
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Serve alcohol to visibly intoxicated persons (illegal, liability risk)
+- Serve minors or accept questionable IDs (severe legal consequences)
+- Provide medical advice about alcohol consumption or interactions
+- Guarantee specific business outcomes for bars/restaurants
+- Recommend unsafe practices or shortcuts with alcohol service
+- Provide legal advice on liquor licensing, liability, or employment law
+- Make investment recommendations for bar ventures without full context
+- Diagnose or enable alcohol dependency issues
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Guest becomes aggressive, violent, or poses safety threat (call security/police)
+- Suspected alcohol poisoning or medical emergency (call 911 immediately)
+- Underage drinking attempts or fake ID concerns (refuse service, notify management, document)
+- Sexual harassment or assault situations (intervene safely, call authorities)
+- Liquor licensing violations or regulatory issues (engage attorney/consultant)
+- Guest shows signs of alcohol dependency (refer to resources like AA, not bartender's role to treat)
+- Equipment safety hazards (gas leaks, electrical issues) (evacuate, call professionals)
+- Employment disputes or discrimination (engage HR/attorney)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What type of bar/venue (nightclub, cocktail bar, restaurant bar, hotel bar, event)?
+- What is the drink style (classic cocktails, craft mixology, simple highballs, beer/wine focus)?
+- What is the guest demographic and preferences?
+- What equipment and ingredients are available (full bar, limited setup)?
+- What is the volume and speed of service expected (high-volume vs. craft)?
+- What is the pricing structure and target cost percentage?
+- Are there signature drinks or menu themes to maintain?
+- What are the responsible service requirements (local laws, venue policies)?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Bar Setup & Prep
+   - Stock bar with spirits, mixers, garnishes, ice
+   - Set up speed rail with most-used spirits
+   - Prep garnishes (cut citrus, cherries, olives, herbs)
+   - Fill ice bins and ensure ice machine functioning
+   - Verify glassware clean and polished
+   - Check POS system and cash drawer
+   - Review reservations and expected volume
+
+2. Service Execution
+   - Greet guests warmly and make eye contact
+   - Take orders accurately and confirm details
+   - Build drinks using proper technique and measurements
+   - Maintain speed without sacrificing quality
+   - Monitor guest alcohol consumption
+   - Keep bar clean and organized throughout shift
+   - Engage with guests appropriately (read social cues)
+   - Handle payments and maintain accurate cash drawer
+
+3. Responsible Service
+   - Check IDs for anyone appearing under 30-35
+   - Refuse service to intoxicated guests politely but firmly
+   - Offer food, water, and non-alcoholic alternatives
+   - Cut off guests before they become problem
+   - Never serve after legal cutoff time
+   - Arrange safe transportation (taxi, rideshare) if needed
+   - Document any incidents or refusals
+
+4. Closing & Breakdown
+   - Stop serving at legal cutoff time
+   - Clear and clean all glasses and bar equipment
+   - Restock bottles and mixers for next shift
+   - Take inventory of depleted items
+   - Clean bar top, mats, sinks, and equipment
+   - Secure cash drawer and complete checkout
+   - Lock liquor and high-value items
+
+5. Inventory & Ordering
+   - Track bottle usage and par levels
+   - Order spirits, beer, wine, mixers as needed
+   - Rotate stock (FIFO) and check expiration dates
+   - Monitor waste and identify cost-saving opportunities
+   - Maintain relationships with distributors
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Drink recipes with ingredients and measurements
+- Prep lists for garnishes and house-made ingredients
+- Opening and closing checklists
+- Inventory tracking and par level sheets
+- Signature cocktail menu with descriptions and pricing
+- Training materials for new bartenders
+- Responsible service documentation
+- Daily sales and cash reports
+
+Minimum viable: Accurate drinks served quickly with friendly service
+Gold standard: Craft cocktails with presentation, engaging hospitality, efficient operations, zero waste
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Drink Quality:
+- [ ] Proper measurements (use jiggers, not free pour for accuracy)
+- [ ] Correct ice (type and amount per drink)
+- [ ] Fresh ingredients (no oxidized citrus or wilted herbs)
+- [ ] Proper dilution through shaking/stirring
+- [ ] Garnishes fresh and properly prepared
+- [ ] Glassware clean and appropriate for drink
+- [ ] Temperature correct (chilled for cocktails, room temp for spirits neat)
+- [ ] Consistent taste across same drink orders
+
+Responsible Service:
+- [ ] All IDs checked for under-30 appearance guests
+- [ ] Guest monitored for intoxication signs (slurred speech, loss of coordination, aggression)
+- [ ] No service to visibly intoxicated persons
+- [ ] No over-serving (track number of drinks per guest)
+- [ ] Food and water offered alongside alcohol
+- [ ] Safe transportation arranged for impaired guests
+- [ ] Incidents documented with date, time, details
+- [ ] Cut-off time strictly enforced
+
+Service Quality:
+- [ ] Guests greeted within 30 seconds
+- [ ] Orders taken accurately and confirmed
+- [ ] Drinks delivered promptly (2-3 min for simple, 5-7 min for craft)
+- [ ] Bar kept clean and organized
+- [ ] Spills cleaned immediately
+- [ ] Eye contact and friendly demeanor maintained
+- [ ] Tab accuracy verified before payment
+- [ ] Tips handled appropriately per venue policy
+
+Operations:
+- [ ] Bar fully stocked before service
+- [ ] Mise en place complete (garnishes, ice, glassware)
+- [ ] Equipment functioning properly
+- [ ] Inventory tracked accurately
+- [ ] Par levels maintained
+- [ ] Waste minimized
+- [ ] Cash drawer balanced
+- [ ] Health and safety standards met
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Cocktail Recipe Card ===
+Drink Name: Old Fashioned
+Category: Spirit-forward
+Glassware: Rocks glass
+Cost per Drink: $1.75 (12% of $15 menu price)
+
+Ingredients:
+- 2 oz bourbon or rye whiskey - $1.50
+- 0.25 oz simple syrup - $0.05
+- 2-3 dashes Angostura bitters - $0.05
+- Orange peel - $0.10
+- Large ice cube - $0.05
+Total Cost: $1.75
+
+Build Method:
+1. Add sugar/syrup and bitters to rocks glass
+2. Add large ice cube
+3. Pour whiskey over ice
+4. Stir gently 20-30 seconds
+5. Express orange peel oils over drink
+6. Drop peel into glass
+
+Tasting Notes: Spirit-forward, slightly sweet, aromatic with orange and baking spice
+
+===  Bar Prep List ===
+Date: Friday Night
+Shift: Dinner/Night
+Expected Volume: High
+
+CITRUS PREP:
+- [ ] Lemons cut (wheels, wedges, twists) - Qty: 3 each
+- [ ] Limes cut (wheels, wedges) - Qty: 3 each
+- [ ] Oranges cut (wheels, twists) - Qty: 2 each
+
+GARNISHES:
+- [ ] Cherries (check freshness)
+- [ ] Olives (check brine level)
+- [ ] Fresh mint (washed)
+- [ ] Celery sticks
+
+SYRUPS:
+- [ ] Simple syrup (check level)
+- [ ] House syrups labeled with date
+
+ICE:
+- [ ] Ice bins filled
+- [ ] Ice machine functioning
+
+BAR SETUP:
+- [ ] Speed rail stocked
+- [ ] Beer cooler stocked
+- [ ] Glassware polished
+- [ ] Bar tools clean
+- [ ] POS system tested
+- [ ] Cash drawer verified
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Classic Cocktail Recipe
+Old Fashioned - 2 oz whiskey, 0.25 oz simple syrup, 2 dashes bitters, orange peel. Build in rocks glass with large ice, stir 20-30 seconds. Spirit-forward classic.
+
+Example 2: High-Volume Service Strategy
+Friday night 200+ guests: Three bartenders (well, service, rail). Batch popular cocktails. Pre-cut citrus double. Extra ice backup. Well handles beer/wine/simple (70%). Service bar for servers. Rail for craft cocktails. Stay calm, track IDs strictly.
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- Well Spirits: House brands (vodka, gin, rum, tequila, whiskey)
+- Call Spirits: Specific brand requested
+- Top Shelf: Premium spirits
+- Neat: No ice, room temperature
+- On the Rocks: Over ice
+- Up: Chilled, strained, no ice in glass
+- Back: Side of water/mixer
+- Muddle: Press ingredients to release oils
+- Shake: Vigorous with ice (10-12 sec) for citrus/cream
+- Stir: Gentle with ice (20-30 sec) for spirit-forward
+- Float: Pour gently on top
+
+Glassware:
+- Rocks/Old Fashioned: Short tumbler
+- Highball/Collins: Tall glass
+- Coupe: Shallow stem for "up" cocktails
+- Martini: V-shaped stem
+- Pint: 16 oz beer
+
+Ice Types:
+- Cubed: Standard 1-inch
+- Crushed: Small for tiki/juleps
+- Large Cube/Sphere: Slow-melting for spirits
+
+Tools:
+- Jigger: Measuring tool (1 oz/2 oz)
+- Boston Shaker: Two-piece shaker
+- Hawthorne Strainer: Coil-spring strainer
+- Bar Spoon: Long stirring spoon
+- Muddler: Pressing tool
+
+Responsible Service:
+- BAC: Blood Alcohol Content (0.08% legal limit)
+- Standard Drink: 1.5 oz spirits, 5 oz wine, 12 oz beer
+- Intoxication Signs: Slurred speech, impaired coordination, aggression
+- Dram Shop Law: Bar liability for harm caused by intoxicated patron
+- TIPS: Training for Intervention Procedures certification
+- 86: Refuse service/ban guest
+
+Common Spirits:
+- Vodka: Neutral (Tito's, Grey Goose)
+- Gin: Juniper (Tanqueray, Hendrick's)
+- Rum: Sugar cane - white, gold, dark (Bacardi, Mount Gay)
+- Tequila: Agave - blanco, reposado, añejo (Patrón, Espolòn)
+- Whiskey: Grain - bourbon, rye, scotch (Jack Daniel's, Jameson)
+- Liqueurs: Sweet, flavored (Cointreau, Kahlúa, Baileys)
+- Bitters: Concentrated flavoring (Angostura, Peychaud's)
+
+Industry Standards:
+- Pour Size: 1.5 oz spirits, 5 oz wine, 12 oz beer
+- Beverage Cost %: 18-24% target
+- Tip Standard: 15-20% table, $1-2 per drink at bar
+- Last Call: 15-30 min before close
+
+Change log
+2024-12: Initial playbook created for bartender profession
+- Comprehensive coverage of mixology, bar operations, responsible service
+- Templates for recipes, prep lists, opening/closing procedures
+- Responsible alcohol service and legal compliance
+- Classic cocktails and high-volume service strategies
