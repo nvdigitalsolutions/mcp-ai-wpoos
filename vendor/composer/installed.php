@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-knowledge-documents-seeding',
-        'version' => 'dev-copilot/add-knowledge-documents-seeding',
-        'reference' => 'cd0b8dff5ea215acb0a5ac2a97864a93fa4ec43d',
+        'pretty_version' => 'dev-copilot/add-profession-playbook-system',
+        'version' => 'dev-copilot/add-profession-playbook-system',
+        'reference' => 'd8f4492acf69e050a24fc8d227a0d0ce7a96862f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-knowledge-documents-seeding',
-            'version' => 'dev-copilot/add-knowledge-documents-seeding',
-            'reference' => 'cd0b8dff5ea215acb0a5ac2a97864a93fa4ec43d',
+            'pretty_version' => 'dev-copilot/add-profession-playbook-system',
+            'version' => 'dev-copilot/add-profession-playbook-system',
+            'reference' => 'd8f4492acf69e050a24fc8d227a0d0ce7a96862f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

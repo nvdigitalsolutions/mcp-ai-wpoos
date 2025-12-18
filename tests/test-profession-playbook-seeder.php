@@ -1,0 +1,376 @@
+<?php
+/**
+ * Test Profession Playbook Seeder.
+ *
+ * Tests for the profession playbook seeding functionality.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Class Test_Profession_Playbook_Seeder.
+ */
+class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
+	/**
+	 * Test setup.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Clear any existing professions.
+		$professions = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $professions as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+
+		// Clear any existing playbook attachments.
+		$attachments = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+				'meta_query'     => array(
+					array(
+						'key'     => '_wp_mcp_ai_playbook_profession_id',
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		foreach ( $attachments as $attachment_id ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
+
+		// Clear seeded options.
+		delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
+		delete_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION );
+		delete_option( WP_MCP_AI_Profession_Playbook_Seeder::OFFSET_OPTION );
+	}
+
+	/**
+	 * Test teardown.
+	 */
+	public function tearDown(): void {
+		parent::tearDown();
+	}
+
+	/**
+	 * Test that playbook seeder class exists.
+	 */
+	public function test_playbook_seeder_exists() {
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) );
+	}
+
+	/**
+	 * Test creating playbook attachment for a profession.
+	 */
+	public function test_sync_profession_playbook_creates_attachment() {
+		// Create a test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test Profession',
+			'slug'        => 'test_profession',
+			'description' => 'A test profession for unit testing.',
+			'category'    => 'technical',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Mark professions as seeded so playbook seeder can run.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Run sync_all to create playbooks.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		// Check that META_MEMORY_FILES is set.
+		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$this->assertIsArray( $memory_files, 'META_MEMORY_FILES should be an array' );
+		$this->assertNotEmpty( $memory_files, 'META_MEMORY_FILES should not be empty' );
+
+		// Get the attachment ID.
+		$attachment_id = end( $memory_files );
+		$attachment    = get_post( $attachment_id );
+		$this->assertNotNull( $attachment, 'Attachment should exist' );
+		$this->assertEquals( 'attachment', $attachment->post_type, 'Should be an attachment' );
+		$this->assertEquals( 'text/plain', $attachment->post_mime_type, 'Should be text/plain' );
+
+		// Check playbook metadata.
+		$profession_id = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+		$this->assertEquals( $post_id, absint( $profession_id ), 'Profession ID should match' );
+
+		$hash = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+		$this->assertNotEmpty( $hash, 'Hash should be set' );
+
+		// Check file exists on disk.
+		$file_path = get_attached_file( $attachment_id );
+		$this->assertFileExists( $file_path, 'Playbook file should exist on disk' );
+		$this->assertStringContainsString( 'wp-mcp-ai/profession-playbooks', $file_path, 'File should be in correct subdirectory' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		wp_delete_attachment( $attachment_id, true );
+	}
+
+	/**
+	 * Test idempotency - running sync twice should not create duplicates.
+	 */
+	public function test_idempotency_no_duplicate_attachments() {
+		// Create a test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test Idempotency',
+			'slug'        => 'test_idempotency',
+			'description' => 'Test idempotency.',
+			'category'    => 'advisory',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Run sync first time.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		$memory_files_1 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$this->assertIsArray( $memory_files_1 );
+		$attachment_id_1 = end( $memory_files_1 );
+
+		// Run sync second time (should be idempotent).
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		$memory_files_2 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$this->assertIsArray( $memory_files_2 );
+		$this->assertCount( count( $memory_files_1 ), $memory_files_2, 'Should not add duplicate attachments' );
+
+		$attachment_id_2 = end( $memory_files_2 );
+		$this->assertEquals( $attachment_id_1, $attachment_id_2, 'Attachment ID should be the same' );
+
+		// Verify no duplicate attachments were created.
+		$attachments = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+				'meta_query'     => array(
+					array(
+						'key'     => '_wp_mcp_ai_playbook_profession_id',
+						'value'   => $post_id,
+						'compare' => '=',
+					),
+				),
+			)
+		);
+
+		$this->assertCount( 1, $attachments, 'Should have exactly one attachment in database' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		wp_delete_attachment( $attachment_id_1, true );
+	}
+
+	/**
+	 * Test content update behavior - changing content updates hash and file.
+	 */
+	public function test_content_update_changes_hash() {
+		// Create a test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test Update',
+			'slug'        => 'test_update',
+			'description' => 'Test update.',
+			'category'    => 'creative',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Run sync first time.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$attachment_id = end( $memory_files );
+		$initial_hash  = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+
+		// Get initial file content.
+		$file_path      = get_attached_file( $attachment_id );
+		$initial_content = file_get_contents( $file_path );
+
+		// Modify profession to trigger content change (change title).
+		wp_update_post(
+			array(
+				'ID'         => $post_id,
+				'post_title' => 'Test Update Modified',
+			)
+		);
+
+		// Run sync with force=true to trigger update.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
+
+		// Check that hash changed.
+		$new_hash = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+		$this->assertNotEquals( $initial_hash, $new_hash, 'Hash should change when content changes' );
+
+		// Check that file content changed.
+		$new_content = file_get_contents( $file_path );
+		$this->assertNotEquals( $initial_content, $new_content, 'File content should change' );
+		$this->assertStringContainsString( 'Test Update Modified', $new_content, 'New content should have updated title' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		wp_delete_attachment( $attachment_id, true );
+	}
+
+	/**
+	 * Test that text/plain is added to supported MIME types.
+	 */
+	public function test_supported_mime_types_includes_text_plain() {
+		// Create a test profession without text/plain in MIME types.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test MIME Types',
+			'slug'        => 'test_mime_types',
+			'description' => 'Test MIME types.',
+			'category'    => 'technical',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Set some initial MIME types without text/plain.
+		update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, array( 'application/pdf' ) );
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Run sync.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		// Check META_SUPPORTED_MIME_TYPES now includes text/plain.
+		$mime_types = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, true );
+		$this->assertIsArray( $mime_types );
+		$this->assertContains( 'text/plain', $mime_types, 'Should include text/plain' );
+		$this->assertContains( 'application/pdf', $mime_types, 'Should keep existing MIME types' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test batch processing with offset tracking.
+	 */
+	public function test_batch_processing_tracks_offset() {
+		// Create multiple test professions.
+		$repository = new WP_MCP_AI_Profession_Repository();
+		$post_ids   = array();
+
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$profession_data = array(
+				'title'       => "Test Profession {$i}",
+				'slug'        => "test_profession_{$i}",
+				'description' => "Test profession {$i}.",
+				'category'    => 'advisory',
+			);
+
+			$post_ids[] = $repository->save( $profession_data );
+		}
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Simulate incremental seeding by calling seed_playbooks_incremental.
+		// This should process professions in batches.
+
+		// First batch.
+		WP_MCP_AI_Profession_Playbook_Seeder::seed_playbooks_incremental();
+
+		// Check if offset option is set or seeded option is set (if all processed).
+		$seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );
+		$offset = get_option( WP_MCP_AI_Profession_Playbook_Seeder::OFFSET_OPTION, 0 );
+
+		// With 5 professions and batch size 20, should complete in one run.
+		$this->assertTrue( $seeded, 'Should mark as seeded after processing all professions' );
+		$this->assertFalse( get_option( WP_MCP_AI_Profession_Playbook_Seeder::OFFSET_OPTION ), 'Offset option should be deleted when complete' );
+
+		// Verify all professions have playbooks.
+		foreach ( $post_ids as $post_id ) {
+			$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+			$this->assertIsArray( $memory_files, "Profession {$post_id} should have memory files" );
+			$this->assertNotEmpty( $memory_files, "Profession {$post_id} should have at least one memory file" );
+		}
+
+		// Clean up.
+		foreach ( $post_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+	}
+
+	/**
+	 * Test seeder waits for professions to be seeded first.
+	 */
+	public function test_seeder_waits_for_professions() {
+		// Make sure professions seeded option is false.
+		delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
+
+		// Try to run playbook seeder.
+		WP_MCP_AI_Profession_Playbook_Seeder::seed_playbooks_incremental();
+
+		// Option should NOT be set because professions aren't seeded yet.
+		$this->assertFalse( get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false ) );
+	}
+
+	/**
+	 * Test attachment filename format.
+	 */
+	public function test_attachment_filename_format() {
+		// Create a test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test Filename',
+			'slug'        => 'test_filename',
+			'description' => 'Test',
+			'category'    => 'technical',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Run sync.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		// Get attachment ID.
+		$memory_files  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$attachment_id = end( $memory_files );
+
+		// Get attached file path.
+		$file_path = get_attached_file( $attachment_id );
+		$this->assertNotEmpty( $file_path, 'File path should not be empty' );
+
+		// Verify filename format includes profession ID and slug.
+		$filename = basename( $file_path );
+		$this->assertStringContainsString( "profession-{$post_id}-test_filename-playbook.txt", $filename, 'Filename should match expected format' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		wp_delete_attachment( $attachment_id, true );
+	}
+}
