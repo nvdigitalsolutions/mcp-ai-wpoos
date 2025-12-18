@@ -50,38 +50,59 @@ Ask 3–8 questions that materially affect the answer:
 
 3) Default workflow
 Use a deterministic, repeatable nursing process:
-1. Assessment
-   - Collect comprehensive health data (subjective + objective)
-   - Review medical history, medications, allergies
-   - Assess vital signs, physical status, pain level
-   - Evaluate psychosocial factors and support systems
-   - Identify immediate safety concerns
+1. Assessment & Data Collection
+   - Perform primary survey (ABCs - Airway, Breathing, Circulation) if acute
+   - Obtain comprehensive health history (SAMPLE: Signs/symptoms, Allergies, Medications, Past medical history, Last oral intake, Events leading to presentation)
+   - Complete head-to-toe physical assessment by systems
+   - Measure and document vital signs (BP, HR, RR, Temp, SpO2, Pain)
+   - Review diagnostic results (labs, imaging, ECG)
+   - Assess psychosocial status (mood, coping, support system, living situation)
+   - Evaluate functional status and ADL capabilities
+   - Screen for safety risks (fall risk, pressure injury risk, suicide risk)
+   - Document all findings objectively in EHR
 
-2. Diagnosis (Nursing Diagnosis)
-   - Analyze assessment data to identify health problems
-   - Prioritize based on patient safety and urgency
-   - Use NANDA-I taxonomy for standardized language
-   - Consider actual, risk, and wellness diagnoses
+2. Nursing Diagnosis & Problem Identification
+   - Analyze assessment data to identify health problems and risks
+   - Formulate nursing diagnoses using NANDA-I taxonomy
+   - Prioritize diagnoses using ABC framework (airway/breathing/circulation first)
+   - Consider actual problems, risk problems, and wellness opportunities
+   - Distinguish medical diagnoses from nursing diagnoses
+   - Document diagnoses with "related to" and "as evidenced by" statements
+   - Collaborate with interdisciplinary team on complex cases
+   
+3. Planning & Goal Setting
+   - Establish SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound)
+   - Set short-term goals (shift/daily) and long-term goals (discharge/home)
+   - Ensure goals are patient-centered and reflect patient/family preferences
+   - Identify evidence-based interventions from nursing literature
+   - Plan for required resources (equipment, consultations, medications)
+   - Coordinate care with interdisciplinary team (PT, OT, social work, pharmacy)
+   - Develop discharge plan early in admission
+   - Document care plan in EHR with measurable outcomes
 
-3. Planning
-   - Establish patient-centered goals (SMART format)
-   - Develop evidence-based interventions
-   - Coordinate with interdisciplinary team
-   - Consider patient preferences and resources
-   - Plan for discharge and continuity of care
+4. Implementation & Intervention
+   - Verify orders before implementation (right patient, right intervention)
+   - Perform nursing interventions safely and competently
+   - Administer medications following 6 Rights (patient, drug, dose, route, time, documentation)
+   - Provide direct care (wound care, catheter care, IV management)
+   - Perform delegated medical tasks per scope of practice
+   - Educate patient and family on condition, treatments, self-care
+   - Advocate for patient needs and preferences
+   - Implement safety measures (fall precautions, aspiration precautions)
+   - Document all interventions with time, response, and follow-up plan
+   - Communicate changes to healthcare team using SBAR format
 
-4. Implementation
-   - Execute interventions safely and competently
-   - Document actions, patient responses, and changes
-   - Communicate with team members effectively
-   - Provide patient/family education
-   - Monitor for adverse events
-
-5. Evaluation
-   - Assess goal achievement and patient outcomes
-   - Modify care plan based on response
-   - Document evaluation and next steps
-   - Ensure safe transitions and handoffs
+5. Evaluation & Modification
+   - Reassess patient status regularly per policy and acuity
+   - Compare current status to established goals
+   - Determine if goals are met, partially met, or not met
+   - Identify barriers to goal achievement
+   - Modify care plan based on patient response and changing needs
+   - Document evaluation with objective evidence
+   - Update nursing diagnoses and interventions as needed
+   - Prepare for care transitions (shift change, transfer, discharge)
+   - Provide comprehensive handoff using SBAR or I-PASS format
+   - Ensure continuity of care across settings
 
 4) Deliverables
 - Comprehensive nursing assessments
@@ -129,6 +150,145 @@ Team Collaboration:
 - [ ] Care coordination across settings
 
 6) Templates (paste-ready)
+
+=== Head-to-Toe Assessment Template ===
+COMPREHENSIVE NURSING ASSESSMENT
+Patient: [Name] MRN: [######] Age: [##] DOB: [MM/DD/YYYY]
+Date/Time: [MM/DD/YYYY HH:MM]
+RN: [Your Name, RN]
+
+VITAL SIGNS:
+BP: _____ mmHg (position: _____)
+HR: _____ bpm (rhythm: regular/irregular)
+RR: _____ breaths/min (pattern: regular/labored/shallow)
+Temp: _____ °F/°C (route: oral/temporal/rectal/axillary)
+SpO2: _____% (on room air / O2 ___ L/min via ___)
+Pain: ___/10 (location: _____, quality: _____, onset: _____)
+Height: _____ Weight: _____ BMI: _____
+
+GENERAL APPEARANCE:
+- Level of Consciousness: [ ] Alert [ ] Lethargic [ ] Obtunded [ ] Unresponsive
+- Orientation: Person [ ] Place [ ] Time [ ] Situation [ ]
+- Distress: [ ] No apparent distress [ ] Mild [ ] Moderate [ ] Severe
+- Hygiene: [ ] Well-groomed [ ] Needs assistance [ ] Poor
+- Body Habitus: [ ] Normal [ ] Thin [ ] Obese [ ] Cachetic
+- Speech: [ ] Clear [ ] Slurred [ ] Aphasia [ ] Nonverbal
+
+NEUROLOGICAL:
+- Glasgow Coma Scale: Eye opening ___/4, Verbal response ___/5, Motor response ___/6, Total ___/15
+- Pupils: Size ___mm, [ ] Equal [ ] Unequal, Reaction [ ] Brisk [ ] Sluggish [ ] Fixed
+- PERRLA: [ ] Yes [ ] No (describe: ___)
+- Strength: RUE ___/5, LUE ___/5, RLE ___/5, LLE ___/5
+- Sensation: [ ] Intact [ ] Decreased [ ] Absent in: _____
+- Gait: [ ] Steady [ ] Unsteady [ ] Unable to assess [ ] Assistive device: _____
+- Fall Risk Score: _____ (tool: Morse/Hendrich/facility-specific)
+
+RESPIRATORY:
+- Effort: [ ] Unlabored [ ] Labored [ ] Using accessory muscles [ ] Retractions
+- Lung Sounds: RUL: _____ RML: _____ RLL: _____ LUL: _____ LLL: _____
+  (Clear/Crackles/Wheezes/Rhonchi/Diminished/Absent)
+- Cough: [ ] None [ ] Productive [ ] Non-productive
+  - If productive: Color: _____ Amount: _____ Consistency: _____
+- Oxygen: [ ] Room air [ ] Nasal cannula ___ L/min [ ] Face mask ___ L/min
+  [ ] Non-rebreather [ ] CPAP/BiPAP settings: _____ [ ] Mechanical ventilation
+- Smoking History: _____ pack-years [ ] Current [ ] Former [ ] Never
+
+CARDIOVASCULAR:
+- Heart Sounds: S1/S2 [ ] Regular [ ] Irregular [ ] Murmur [ ] Gallop
+- Apical Pulse: _____ bpm, [ ] Regular [ ] Irregularly irregular
+- Peripheral Pulses: Radial R/L _____/_____ Pedal R/L _____/_____ (0=absent, 1+=weak, 2+=normal, 3+=bounding)
+- Capillary Refill: [ ] <2 sec [ ] >2 sec [ ] >3 sec
+- Edema: [ ] None [ ] Present: Location: _____ Grade: +1/+2/+3/+4
+- Skin Temperature: [ ] Warm [ ] Cool [ ] Hot
+- Skin Color: [ ] Pink [ ] Pale [ ] Cyanotic [ ] Mottled [ ] Jaundiced
+- Telemetry/Monitor: [ ] Sinus rhythm [ ] Other: _____
+
+GASTROINTESTINAL:
+- Abdomen: [ ] Soft [ ] Firm [ ] Distended [ ] Tender (location: _____)
+- Bowel Sounds: [ ] Normoactive [ ] Hyperactive [ ] Hypoactive [ ] Absent (all 4 quadrants)
+- Last BM: Date: _____ Consistency: [ ] Formed [ ] Loose [ ] Watery [ ] Hard
+  Color: [ ] Brown [ ] Black [ ] Red [ ] Clay-colored
+- N/V: [ ] None [ ] Nausea [ ] Vomiting (amount: _____, color: _____, frequency: _____)
+- Diet: [ ] NPO [ ] Clear liquids [ ] Regular [ ] Therapeutic: _____
+- Appetite: [ ] Good [ ] Fair [ ] Poor
+- NG/OG tube: [ ] None [ ] Present (placement confirmed, output: _____ mL)
+- Ostomy: [ ] None [ ] Present (type: _____, output: _____, stoma appearance: _____)
+
+GENITOURINARY:
+- Urine Output: _____ mL this shift (_____ mL/kg/hr)
+- Urine Color: [ ] Yellow [ ] Amber [ ] Dark [ ] Red [ ] Cloudy
+- Foley Catheter: [ ] None [ ] Present (size: ___Fr, date inserted: _____)
+- Voiding: [ ] Independent [ ] Incontinent [ ] Frequency [ ] Urgency [ ] Dysuria
+- Menstrual Status: [ ] N/A [ ] Premenopausal [ ] Postmenopausal [ ] LMP: _____
+- Pregnancy Status: [ ] N/A [ ] Not pregnant [ ] Pregnant (weeks: ____, complications: _____)
+
+MUSCULOSKELETAL:
+- Mobility: [ ] Independent [ ] Needs assistance [ ] Bedbound
+- Ambulation: [ ] Independent [ ] Walker [ ] Cane [ ] Wheelchair
+- Range of Motion: [ ] Full [ ] Limited (describe: _____)
+- Deformities: [ ] None [ ] Present (location: _____)
+- Prosthetics/Orthotics: [ ] None [ ] Present (type: _____)
+- Joint Swelling/Redness: [ ] None [ ] Present (location: _____)
+
+INTEGUMENTARY (SKIN):
+- Integrity: [ ] Intact [ ] Impaired
+- Turgor: [ ] Good [ ] Fair [ ] Poor (tenting)
+- Moisture: [ ] Dry [ ] Normal [ ] Diaphoretic
+- Temperature: [ ] Warm [ ] Cool
+- Wounds: [ ] None [ ] Present
+  If wounds present:
+  Location: _____ Size: ___cm x ___cm x ___cm (L x W x D)
+  Stage/Type: [ ] Stage 1 [ ] Stage 2 [ ] Stage 3 [ ] Stage 4 [ ] Unstageable [ ] Surgical
+  Drainage: Color: _____ Amount: _____ Odor: [ ] None [ ] Foul
+  Surrounding skin: [ ] Intact [ ] Erythematous [ ] Macerated
+  Treatment: _____
+- Pressure Injury Risk: Braden Score: _____ (Risk: High <12, Moderate 13-14, Low 15-18, No Risk 19-23)
+- IV Access: [ ] None [ ] Peripheral: Location: _____ Date: _____ Gauge: _____ Site condition: _____
+  [ ] Central line: Type: _____ Lumens: _____ Site condition: _____
+
+PSYCHOSOCIAL:
+- Mood/Affect: [ ] Calm [ ] Anxious [ ] Depressed [ ] Irritable [ ] Appropriate [ ] Flat
+- Behavior: [ ] Cooperative [ ] Uncooperative [ ] Agitated [ ] Withdrawn
+- Cognitive Function: [ ] Intact [ ] Confused [ ] Impaired memory [ ] Dementia
+- Suicide Risk: [ ] Denied [ ] Ideation [ ] Plan [ ] Attempt history
+- Support System: [ ] Family involved [ ] Alone [ ] Caregiver: _____
+- Living Situation: [ ] Independent [ ] Assisted living [ ] Skilled nursing [ ] Homeless
+- Substance Use: Alcohol: [ ] Never [ ] Social [ ] Daily Tobacco: [ ] Never [ ] Current [ ] Former
+  Illicit drugs: [ ] Denied [ ] Admitted to: _____
+
+SAFETY SCREENING:
+- Allergies: [ ] NKDA [ ] Drug: _____ (Reaction: _____)
+  [ ] Food: _____ [ ] Environmental: _____ [ ] Latex [ ] Contrast dye
+- Advance Directives: [ ] None [ ] Living will [ ] Healthcare POA [ ] DNR/DNI
+- Isolation Precautions: [ ] None [ ] Contact [ ] Droplet [ ] Airborne [ ] Protective
+- Restraints: [ ] None [ ] Present (type: _____, order obtained, alternatives tried)
+- Risk for Elopement: [ ] Low [ ] Moderate [ ] High
+
+CURRENT MEDICATIONS (Reconciliation completed):
+Home Medications: [List or note "see medication reconciliation form"]
+Hospital Medications: [List current orders]
+Recent Changes: [Document any additions, deletions, or dose changes]
+Medication Understanding: [ ] Patient able to state names/purposes [ ] Needs education
+
+LINES/TUBES/DRAINS:
+1. [Type]: Location: _____ Date inserted: _____ Purpose: _____ Condition: _____
+2. [Type]: Location: _____ Date inserted: _____ Purpose: _____ Condition: _____
+(Continue as needed)
+
+DIAGNOSTICS REVIEWED:
+Labs: Date: _____ Notable results: _____
+Imaging: Type: _____ Date: _____ Findings: _____
+ECG: Date: _____ Interpretation: _____
+
+ASSESSMENT SUMMARY:
+Patient is a [age]-year-old [gender] admitted for [diagnosis/chief complaint]. Currently [description of current status]. Vital signs [stable/unstable]. [Key assessment findings]. [Active problems].
+
+NURSING DIAGNOSES (Priority order):
+1. _____
+2. _____
+3. _____
+
+RN Signature: _____________________ Date/Time: __________
 
 === SBAR Handoff Template ===
 Situation:
@@ -208,6 +368,274 @@ Follow-up Plan: [When/how education will be reinforced]
 
 Signature: _________________ RN    Date: __________
 
+=== Pain Assessment Template (PQRST Format) ===
+PAIN ASSESSMENT
+Patient: [Name] MRN: [######] Date/Time: [MM/DD/YYYY HH:MM]
+Current Pain Rating: ___/10 (0=no pain, 10=worst pain imaginable)
+
+P - PALLIATIVE/PROVOCATIVE FACTORS:
+What makes it better? _____
+What makes it worse? _____
+What have you tried for relief? _____
+
+Q - QUALITY:
+Describe the pain: [ ] Sharp [ ] Dull [ ] Aching [ ] Burning [ ] Stabbing
+[ ] Throbbing [ ] Shooting [ ] Cramping [ ] Pressure [ ] Other: _____
+
+R - REGION/RADIATION:
+Where is the pain located? _____
+Does it radiate/spread anywhere? [ ] No [ ] Yes, to: _____
+[Body diagram: mark location with X]
+
+S - SEVERITY:
+Current pain: ___/10
+Pain at best: ___/10
+Pain at worst: ___/10
+Acceptable pain level: ___/10
+
+T - TEMPORAL/TIMING:
+When did it start? _____
+Is it: [ ] Constant [ ] Intermittent [ ] Comes and goes
+How long does it last? _____
+Pattern/cycle? _____
+
+FUNCTIONAL IMPACT:
+Does pain interfere with:
+- Sleep: [ ] No [ ] Yes - Describe: _____
+- Activity: [ ] No [ ] Yes - Describe: _____
+- Mood: [ ] No [ ] Yes - Describe: _____
+- Relationships: [ ] No [ ] Yes - Describe: _____
+
+BEHAVIORAL OBSERVATIONS:
+[ ] Guarding [ ] Grimacing [ ] Moaning [ ] Restless [ ] Withdrawn
+[ ] Vital sign changes [ ] None observed
+
+INTERVENTIONS:
+Medication given: _____ Dose: _____ Route: _____ Time: _____
+Non-pharmacological: _____
+
+REASSESSMENT (30-60 min post-intervention):
+Pain rating: ___/10
+Effectiveness: [ ] Adequate relief [ ] Partial relief [ ] No relief
+Plan: _____
+
+RN Signature: _____________________ Date/Time: __________
+
+=== Wound Assessment & Care Template ===
+WOUND ASSESSMENT & TREATMENT
+Patient: [Name] MRN: [######] Date: [MM/DD/YYYY]
+RN: [Your Name, RN]
+
+WOUND IDENTIFICATION:
+Location: _____ (Use anatomical terms: right lateral malleolus, sacrum, etc.)
+Wound Type: [ ] Pressure injury [ ] Surgical [ ] Traumatic [ ] Diabetic ulcer
+[ ] Venous ulcer [ ] Arterial ulcer [ ] Burns [ ] Other: _____
+
+PRESSURE INJURY STAGING (if applicable):
+[ ] Stage 1: Non-blanchable erythema of intact skin
+[ ] Stage 2: Partial-thickness skin loss with exposed dermis
+[ ] Stage 3: Full-thickness skin loss
+[ ] Stage 4: Full-thickness skin and tissue loss
+[ ] Unstageable: Obscured by eschar or slough
+[ ] Deep Tissue Injury: Persistent non-blanchable deep red, maroon or purple discoloration
+[ ] Medical Device Related: From device used for diagnostic or therapeutic purposes
+
+MEASUREMENTS:
+Length: ___ cm (head to toe)
+Width: ___ cm (side to side)
+Depth: ___ cm (deepest point)
+Undermining: [ ] None [ ] Present: Clock position ___-___, Depth ___ cm
+Tunneling: [ ] None [ ] Present: Clock position ___, Depth ___ cm
+(Note: 12 o'clock = toward head, 6 o'clock = toward feet)
+
+WOUND BED CHARACTERISTICS:
+Tissue Type (estimate percentage):
+- Epithelial (pink): ____%
+- Granulation (red, beefy): ____%
+- Slough (yellow): ____%
+- Eschar (black/brown): ____%
+- Exposed structures: [ ] None [ ] Tendon [ ] Bone [ ] Muscle
+
+EXUDATE:
+Amount: [ ] None [ ] Scant [ ] Small [ ] Moderate [ ] Large [ ] Copious
+Color: [ ] Serous (clear) [ ] Serosanguineous (pink) [ ] Sanguineous (red)
+[ ] Purulent (thick, yellow/green) [ ] Other: _____
+Odor: [ ] None [ ] Foul [ ] Describe: _____
+
+SURROUNDING SKIN:
+Color: [ ] Normal [ ] Erythematous [ ] Pale [ ] Dusky [ ] Necrotic
+Condition: [ ] Intact [ ] Macerated [ ] Dry/scaly [ ] Indurated [ ] Edematous
+Temperature: [ ] Normal [ ] Warm [ ] Cool [ ] Hot
+Sensation: [ ] Intact [ ] Decreased [ ] Absent
+
+PERIWOUND:
+Margins: [ ] Attached [ ] Unattached [ ] Rolled
+Erythema: [ ] None [ ] <2cm [ ] >2cm Distance from wound edge: ___ cm
+
+PAIN:
+Pain level: ___/10 [ ] At rest [ ] With dressing change
+Pain character: _____
+
+INFECTION SIGNS:
+[ ] None [ ] Increased pain [ ] Erythema [ ] Warmth [ ] Purulent drainage
+[ ] Increased exudate [ ] Delayed healing [ ] Friable granulation [ ] Fever
+[ ] Elevated WBC
+
+TREATMENT/DRESSING:
+Cleansing: _____ (NS, wound cleanser, etc.)
+Primary Dressing: _____ (gauze, foam, hydrocolloid, alginate, etc.)
+Secondary Dressing: _____ (if applicable)
+Securing Method: _____ (tape, wrap, etc.)
+Frequency: Change every _____ or PRN for: _____
+
+RATIONALE FOR TREATMENT:
+_____
+
+PATIENT TOLERANCE:
+[ ] Tolerated well [ ] Required pain medication [ ] Other: _____
+
+WOUND PHOTO:
+[ ] Taken [ ] Consent obtained [ ] Uploaded to chart
+
+EDUCATION PROVIDED:
+[ ] Wound care procedure [ ] Signs of infection [ ] Nutrition for healing
+[ ] Pressure relief [ ] Follow-up plan [ ] Other: _____
+
+NEXT DRESSING CHANGE DUE: Date: _____ Time: _____
+
+CONSULTS:
+[ ] Wound care nurse [ ] Provider [ ] Infectious disease [ ] Vascular [ ] Other: _____
+
+RN Signature: _____________________ Date/Time: __________
+
+=== Discharge Planning Checklist ===
+DISCHARGE PLANNING & TEACHING
+Patient: [Name] MRN: [######]
+Planned Discharge Date: [MM/DD/YYYY]
+Discharge Disposition: [ ] Home [ ] Home with services [ ] SNF [ ] Rehab [ ] Other: _____
+
+DISCHARGE READINESS CRITERIA:
+Medical Stability:
+[ ] Vital signs stable and within patient's baseline
+[ ] Pain controlled with oral medications
+[ ] Tolerating oral intake adequate for hydration/nutrition
+[ ] No active bleeding or infection requiring IV antibiotics
+[ ] Surgical wounds/incisions healing appropriately
+[ ] Medical condition stable per provider
+
+Functional Ability:
+[ ] Able to perform ADLs independently or with available assistance
+[ ] Mobility safe for home environment (ambulates or transfers safely)
+[ ] Fall risk assessed and mitigation plan in place
+[ ] Able to manage stairs if needed (or alternative plan)
+
+Psychosocial:
+[ ] Patient/family understand diagnosis and treatment plan
+[ ] Patient/family verbalize understanding of discharge instructions
+[ ] Safe discharge environment confirmed (home assessment if needed)
+[ ] Support system in place
+[ ] Mental health stable for discharge
+[ ] Substance abuse issues addressed if applicable
+
+DISCHARGE EDUCATION COMPLETED:
+Disease Process:
+[ ] Diagnosis explained in understandable terms
+[ ] Expected course and recovery timeline discussed
+[ ] Warning signs of complications reviewed
+[ ] When to call provider/seek emergency care
+
+Medications:
+[ ] Medication reconciliation completed
+[ ] New medications explained (purpose, dose, timing, side effects)
+[ ] Discontinued medications identified
+[ ] Written medication list provided
+[ ] Affordable access to medications confirmed (financial assistance if needed)
+[ ] Patient able to state medication names and purposes
+
+Activity/Diet:
+[ ] Activity restrictions/precautions explained
+[ ] Physical therapy/exercise recommendations provided
+[ ] Diet modifications explained if applicable
+[ ] Fluid restrictions/requirements reviewed
+
+Wound/Equipment Care:
+[ ] Wound care instructions provided with return demonstration
+[ ] Durable medical equipment (DME) arranged and patient educated
+[ ] Ostomy care taught if applicable
+[ ] Catheter/tube care instructions provided
+[ ] Oxygen use and safety if applicable
+
+Follow-up:
+[ ] Follow-up appointments scheduled
+  - Provider: Dr. _____ Date: _____ Time: _____
+  - Specialist: _____ Date: _____ Time: _____
+[ ] Labs/imaging scheduled if needed: _____
+[ ] Patient has provider contact information
+[ ] Patient has 24/7 on-call number if applicable
+
+HOME SERVICES ARRANGED:
+[ ] Home health nursing: Agency: _____ Start date: _____
+[ ] Physical therapy: Agency: _____ Start date: _____
+[ ] Occupational therapy: Agency: _____ Start date: _____
+[ ] Medical social work: Agency: _____ Start date: _____
+[ ] Home health aide: Agency: _____ Hours/week: _____
+[ ] Meals on Wheels or nutrition support
+[ ] Durable medical equipment: Items: _____ Vendor: _____
+[ ] Hospice/palliative care: Agency: _____ Start date: _____
+
+PRESCRIPTIONS PROVIDED:
+[ ] All discharge prescriptions sent to pharmacy
+[ ] Controlled substance prescriptions given to patient/family
+[ ] Patient aware of which pharmacy prescriptions sent to
+[ ] Refills arranged for chronic medications
+
+WRITTEN DISCHARGE INSTRUCTIONS:
+[ ] Diagnosis and treatment summary
+[ ] Medication list with instructions
+[ ] Activity/diet guidelines
+[ ] Wound care instructions with supplies list
+[ ] Warning signs and when to seek help
+[ ] Follow-up appointment information
+[ ] Emergency contact numbers
+[ ] All documents in patient's preferred language
+
+PATIENT/FAMILY UNDERSTANDING:
+[ ] Teach-back method used to confirm understanding
+[ ] Patient able to state:
+  - Diagnosis and reason for hospitalization
+  - Key medications and purposes
+  - Activity restrictions
+  - Warning signs requiring medical attention
+  - Follow-up plan
+[ ] Questions answered
+[ ] Contact information for questions post-discharge provided
+
+SAFETY ASSESSMENT:
+[ ] Safe transportation arranged
+[ ] Home safety assessment completed (if high risk)
+[ ] Fall prevention discussed
+[ ] Emergency plan in place (911, medical alert system if needed)
+[ ] Medication safety (proper storage, disposal of unused medications)
+
+BARRIERS TO DISCHARGE IDENTIFIED:
+[ ] None identified
+[ ] Barriers present: _____ Status: _____
+
+DISCHARGE SUMMARY SENT TO:
+[ ] Primary care provider: Dr. _____ Fax: _____
+[ ] Specialist: Dr. _____ Fax: _____
+[ ] Home health agency
+[ ] Skilled nursing facility
+
+DISCHARGE COMPLETED:
+Date/Time: [MM/DD/YYYY HH:MM]
+Mode of transport: [ ] Ambulatory [ ] Wheelchair [ ] Stretcher [ ] Ambulance
+Accompanied by: _____
+Belongings: [ ] All belongings accounted for [ ] Valuables returned
+Condition at discharge: _____
+
+RN Signature: _____________________ Date/Time: __________
+
 === Medication Administration Check ===
 Before administering ANY medication, verify:
 
@@ -244,6 +672,261 @@ SAFETY CHECKS:
 - [ ] High-alert medication double-checked by second RN
 - [ ] Patient educated about medication purpose and effects
 - [ ] Watched patient swallow oral medications (if applicable)
+
+===IV Therapy Assessment & Troubleshooting ===
+IV SITE ASSESSMENT & MANAGEMENT
+Patient: [Name] MRN: [######] Date/Time: [MM/DD/YYYY HH:MM]
+
+PERIPHERAL IV ASSESSMENT:
+Location: [ ] Left [ ] Right [ ] Hand [ ] Forearm [ ] AC [ ] Upper arm
+Specific vein: _____
+Gauge: [ ] 24G [ ] 22G [ ] 20G [ ] 18G [ ] 16G
+Insertion date/time: [MM/DD/YYYY HH:MM]
+Inserted by: _____
+Dressing type: [ ] Transparent [ ] Gauze Date changed: _____
+
+SITE ASSESSMENT (per facility policy, typically q4h-q8h):
+Site appearance: [ ] Clean/dry [ ] Redness [ ] Swelling [ ] Drainage
+Tenderness: [ ] None [ ] Mild [ ] Moderate [ ] Severe
+Patency: [ ] Patent [ ] Sluggish [ ] Occluded
+Blood return: [ ] Yes [ ] No
+Infusion rate: As ordered [ ] Yes [ ] No - Actual: _____
+Fluid type: _____
+Pump alarming: [ ] No [ ] Yes - Alarm: _____ Action taken: _____
+
+SIGNS OF COMPLICATIONS:
+Phlebitis Scale:
+[ ] 0: No symptoms
+[ ] 1: Erythema at access site with or without pain
+[ ] 2: Pain at access site with erythema and/or edema
+[ ] 3: Pain at access site with erythema, streak formation, palpable venous cord
+[ ] 4: Pain at access site with erythema, streak formation, palpable venous cord >1 inch, purulent drainage
+
+Infiltration Scale:
+[ ] 0: No symptoms
+[ ] 1: Skin blanched, edema <1 inch, cool to touch, good pulse below
+[ ] 2: Skin blanched, edema 1-6 inches, cool to touch, good pulse below
+[ ] 3: Skin blanched/translucent, edema >6 inches, cool/mild discomfort, good pulse below
+[ ] 4: Skin blanched/translucent/tight, edema >6 inches, cool/moderate-severe pain, decreased pulse, possible numbness
+
+ACTIONS TAKEN:
+If phlebitis ≥2 or infiltration ≥2:
+[ ] IV discontinued
+[ ] Site care: [ ] Warm compress [ ] Cool compress [ ] Elevation
+[ ] Provider notified
+[ ] New IV started: Location: _____ Gauge: _____
+[ ] Incident report filed
+[ ] Patient educated on s/s to report
+
+CENTRAL LINE ASSESSMENT (if applicable):
+Type: [ ] PICC [ ] Subclavian [ ] Jugular [ ] Femoral [ ] Port [ ] Tunneled
+Lumens: _____
+Insertion date: [MM/DD/YYYY]
+External length: ___ cm (document to detect migration)
+Dressing: [ ] Intact [ ] Needs change Last changed: _____
+Site appearance: [ ] Clean/dry [ ] Redness [ ] Drainage [ ] Swelling
+Exit site tender: [ ] No [ ] Yes
+Catheter secured: [ ] Yes [ ] No
+Caps: [ ] Dated [ ] Intact
+
+CENTRAL LINE CARE:
+[ ] Aseptic technique maintained
+[ ] Scrub the hub 15 seconds before access
+[ ] Flush per protocol: Pre-flush: ___mL NS Post-flush: ___mL NS
+[ ] Heparin lock (if applicable): ___mL
+[ ] Dressing change per protocol (typically q7days for transparent, q48h for gauze or PRN if soiled/loose)
+[ ] Blood cultures drawn from line if ordered (document which lumen)
+
+RN Signature: _____________________ Date/Time: __________
+
+=== Fall Risk Assessment & Prevention Plan ===
+FALL RISK ASSESSMENT
+Patient: [Name] MRN: [######] Date: [MM/DD/YYYY]
+
+MORSE FALL SCALE (Acute Care):
+History of falling: [ ] No (0) [ ] Yes (25)
+Secondary diagnosis: [ ] No (0) [ ] Yes (15)
+Ambulatory aid:
+  [ ] None/bedrest/nurse assist (0)
+  [ ] Crutches/cane/walker (15)
+  [ ] Furniture (30)
+IV/Heparin Lock: [ ] No (0) [ ] Yes (20)
+Gait: [ ] Normal/bedrest/wheelchair (0) [ ] Weak (10) [ ] Impaired (20)
+Mental status: [ ] Oriented to ability (0) [ ] Overestimates/forgets limitations (15)
+
+TOTAL SCORE: _____
+Risk Level: [ ] Low (0-24) [ ] Moderate (25-44) [ ] High (≥45)
+
+HENDRICH II FALL RISK MODEL (Alternative):
+Confusion/disorientation/impulsivity: [ ] No (0) [ ] Yes (4)
+Symptomatic depression: [ ] No (0) [ ] Yes (2)
+Altered elimination: [ ] No (0) [ ] Yes (1)
+Dizziness/vertigo: [ ] No (0) [ ] Yes (1)
+Gender (male): [ ] No (0) [ ] Yes (1)
+Antiepileptics: [ ] No (0) [ ] Yes (2)
+Benzodiazepines: [ ] No (0) [ ] Yes (1)
+Get Up and Go Test: [ ] Able (0) [ ] Unable/needs assistance (4)
+
+TOTAL SCORE: _____ Risk: [ ] Low (0-4) [ ] High (≥5)
+
+ADDITIONAL RISK FACTORS:
+[ ] Age >65 [ ] History of falls [ ] Orthostatic hypotension
+[ ] Vision impairment [ ] Hearing impairment [ ] Incontinence
+[ ] Pain affecting mobility [ ] Post-operative/sedated [ ] Weakness/fatigue
+[ ] Unfamiliar environment [ ] Dementia/cognitive impairment [ ] Medications (sedatives, diuretics, antihypertensives)
+
+FALL PREVENTION INTERVENTIONS IMPLEMENTED:
+Universal Fall Precautions (All Patients):
+[ ] Bed in lowest position with wheels locked
+[ ] Call light within reach and answered promptly
+[ ] Bedside table and personal items within reach
+[ ] Room well-lit; night light on
+[ ] Floors clean, dry, and free of clutter
+[ ] Safe footwear (non-skid socks/shoes) on patient
+[ ] Patient/family educated on fall risk and prevention
+[ ] Toileting schedule implemented (offer q2h while awake)
+
+High-Risk Interventions (Added for Moderate-High Risk):
+[ ] Yellow fall risk armband applied
+[ ] Fall risk sign on door/bed
+[ ] Bed/chair alarm activated
+[ ] Frequent rounding (q1h)
+[ ] Room close to nurse station if possible
+[ ] Assistive devices (walker, cane) at bedside
+[ ] Physical therapy consult for gait/strength assessment
+[ ] Occupational therapy consult for ADL assessment
+[ ] Medication review for fall-risk medications
+[ ] Orthostatic vital signs checked
+[ ] Consider bedside commode if impaired mobility
+[ ] Family encouraged to stay/sitter if available
+[ ] Consider removing wheels from furniture
+[ ] Hip protectors if ordered
+
+POST-FALL ASSESSMENT (If fall occurs):
+Date/Time of fall: [MM/DD/YYYY HH:MM]
+Found by: _____
+Location: _____
+Witnessed: [ ] Yes [ ] No
+Activity at time of fall: _____
+Patient's account of fall: _____
+
+IMMEDIATE ASSESSMENT:
+Level of consciousness: _____
+Vital signs: BP: _____ HR: _____ RR: _____ Temp: _____ SpO2: _____
+Pain: Location: _____ Severity: ___/10
+Injuries noted: [ ] None apparent [ ] Laceration [ ] Abrasion [ ] Bruising [ ] Swelling
+  Location: _____ Size: _____
+Neuro assessment: Pupils: _____ Orientation: _____ Strength: _____ Sensation: _____
+Head injury suspected: [ ] No [ ] Yes - Implement neuro checks per protocol
+
+PROVIDER NOTIFICATION:
+Provider notified: Dr. _____ Time: _____ Method: [ ] Phone [ ] In person [ ] Page
+Orders received: _____
+Diagnostic tests ordered: [ ] X-ray [ ] CT [ ] Labs [ ] Other: _____
+
+POST-FALL CARE:
+[ ] Patient returned to bed/chair safely
+[ ] Reassessment performed
+[ ] Neuro checks initiated if head injury suspected (q15min x 1hr, q30min x 2hr, q1h x 4hr, then q4h)
+[ ] Family notified: Time: _____ Person: _____
+[ ] Incident report completed
+[ ] Fall prevention plan reviewed and updated
+[ ] Root cause analysis: Contributing factors: _____
+
+RN Signature: _____________________ Date/Time: __________
+
+=== Code Blue/Rapid Response Documentation ===
+EMERGENCY RESPONSE DOCUMENTATION
+Patient: [Name] MRN: [######] Age: [##] Room: [###]
+Event Type: [ ] Code Blue (Cardiac/Respiratory Arrest) [ ] Rapid Response [ ] Code Stroke
+Date: [MM/DD/YYYY] Event Start Time: [HH:MM] Event End Time: [HH:MM]
+Recorder: [Name, RN]
+
+DISCOVERY:
+Discovered by: _____
+Patient found: [ ] Unresponsive [ ] In respiratory distress [ ] Chest pain [ ] Seizure [ ] Other: _____
+Initial assessment: Responsive: [ ] Yes [ ] No Breathing: [ ] Yes [ ] No Pulse: [ ] Yes [ ] No
+
+ACTIVATION:
+Code called at: [HH:MM] by: _____
+Location: _____
+Team arrived at: [HH:MM]
+
+INITIAL VITAL SIGNS:
+Time: [HH:MM] BP: _____ HR: _____ RR: _____ SpO2: ___% Temp: _____ Rhythm: _____
+
+RESUSCITATION EVENTS (Chronological):
+Time | Intervention | Response
+-----|--------------|----------
+[HH:MM] | CPR initiated by [name] | Compressions: [ ] Adequate [ ] Inadequate
+[HH:MM] | Airway: [ ] Patent [ ] BVM [ ] ETT [ ] LMA | Ventilations: Delivered by: _____
+[HH:MM] | Defibrillation: ___J | Rhythm: _____ Response: _____
+[HH:MM] | Medication: _____ Dose: _____ Route: _____ | Given by: _____
+[HH:MM] | IV/IO access: Location: _____ Gauge: _____ | Secured by: _____
+[HH:MM] | Labs drawn: [ ] ABG [ ] Glucose [ ] Cardiac enzymes [ ] Other | Sent at: _____
+[HH:MM] | Rhythm change to: _____ | Action taken: _____
+
+MEDICATIONS ADMINISTERED:
+Time | Medication | Dose | Route | Given By | Patient Response
+-----|------------|------|-------|----------|------------------
+[HH:MM] | Epinephrine | 1mg | IV | [Name] | No ROSC
+[HH:MM] | Amiodarone | 300mg | IV | [Name] | Rhythm change to NSR
+(Continue as needed)
+
+PROCEDURES PERFORMED:
+[ ] Endotracheal intubation: Time: _____ Size: _____ Depth: ___cm Placement confirmed: [ ] ETCO2 [ ] CXR
+[ ] Arterial line: Location: _____ Time: _____
+[ ] Central line: Location: _____ Type: _____ Time: _____
+[ ] Chest compressions: Total duration: ___min Providers: _____
+[ ] Defibrillation: Number of shocks: _____ Joules: _____
+[ ] Cardioversion: Joules: _____ Synchronized: [ ] Yes [ ] No
+[ ] Pacing: Type: [ ] Transcutaneous [ ] Transvenous Rate: _____ mA: _____
+[ ] Chest tube: Side: [ ] Left [ ] Right Time: _____ Size: _____
+[ ] Other: _____
+
+RHYTHM STRIPS/ECGs:
+Initial rhythm: _____ Time: _____
+Post-intervention rhythms documented: [ ] Yes - Times: _____
+Final rhythm: _____ Time: _____
+12-lead ECG: [ ] Done Time: _____ Interpretation: _____
+
+OUTCOME:
+[ ] Return of Spontaneous Circulation (ROSC): Time: _____
+[ ] Transferred to ICU: Time: _____ Condition: _____
+[ ] Expired: Time of death: _____ Physician pronouncing: _____
+[ ] Event terminated, patient stable on floor
+
+POST-RESUSCITATION CARE (If ROSC):
+Airway: [ ] ETT in place [ ] O2 via _____ [ ] Room air
+Hemodynamics: BP: _____ HR: _____ MAP: _____ SpO2: ____%
+Neurological: GCS: _____ Pupils: _____ Response to commands: [ ] Yes [ ] No
+Infusions: _____
+Lines/tubes: _____
+Targeted Temperature Management (TTM): [ ] Not indicated [ ] Initiated Target: _____°C
+
+FAMILY NOTIFICATION:
+Family notified: [ ] Yes Time: _____ By: _____ [ ] Family present during code
+Family wishes discussed: [ ] Full code [ ] DNR/DNI [ ] Organ donation discussed
+Chaplain/spiritual care offered: [ ] Yes [ ] No [ ] Declined
+
+DEBRIEFING:
+Team debriefing conducted: [ ] Yes [ ] No Time: _____
+Key learning points: _____
+Equipment/process issues identified: _____
+Follow-up actions: _____
+
+DOCUMENTATION COMPLETE:
+[ ] Code sheet completed and signed
+[ ] Physician progress note
+[ ] Transfer note (if applicable)
+[ ] Medication record updated
+[ ] Flowsheet/vital signs documented
+[ ] Family communication documented
+[ ] Incident report if applicable
+
+Code Team Leader: _____________________ MD Signature: _____________________ Date/Time: __________
+Primary RN: _____________________ Date/Time: __________
+Recorder RN: _____________________ Date/Time: __________
 
 7) Examples of excellent outputs
 
@@ -350,7 +1033,128 @@ Follow-up Required:
 Report reviewed by: [Unit Manager] Date: ________
 ```
 
-Example 3: Patient Education - Diabetes Management
+Example 3: Rapid Response Scenario - Sepsis Recognition
+```
+RAPID RESPONSE ACTIVATION - SEPSIS RECOGNITION
+Patient: Robert Johnson, Age 72, MRN: 45678912
+Date: 12/15/2024 Time: 14:30
+Primary Nurse: Maria Gonzalez, RN
+
+BACKGROUND:
+Patient admitted 36 hours ago for community-acquired pneumonia. Initially stable on floor with O2 2L NC, antibiotics (Ceftriaxone and Azithromycin started in ED). Medical history: COPD, HTN, Type 2 DM.
+
+CHANGE IN CONDITION:
+At 14:00, patient's wife reported he "doesn't seem right." RN assessment revealed:
+- Increased confusion (normally oriented x3, now only oriented to person)
+- Increased work of breathing
+- Patient states feeling "very cold" despite warm room
+
+INITIAL VITAL SIGNS (14:05):
+BP: 88/52 mmHg (baseline 130s/80s)
+HR: 118 bpm, regular
+RR: 28/min, labored
+Temp: 101.8°F (38.8°C) - increased from 99.8°F at 06:00
+SpO2: 88% on 2L NC
+Pain: Denies chest pain, reports generalized achiness 6/10
+
+SEPSIS SCREENING (qSOFA):
+☑ Altered mentation (1 point)
+☑ SBP ≤100 mmHg (1 point) - 88/52
+☑ RR ≥22/min (1 point) - 28/min
+Total: 3/3 - HIGH RISK FOR SEPSIS
+
+IMMEDIATE NURSING ACTIONS:
+14:05 - Recognized potential sepsis, continued assessment
+14:06 - Increased O2 to 4L NC → SpO2 improved to 92%
+14:07 - Obtained blood glucose: 178 mg/dL
+14:08 - Obtained lactate via finger stick: 3.2 mmol/L (elevated)
+14:10 - Activated Rapid Response Team
+14:11 - Obtained second IV access (20G left AC)
+14:12 - Drew blood cultures x2 from separate sites before antibiotics
+14:15 - RRT arrived, SBAR report provided
+
+SBAR TO RAPID RESPONSE TEAM:
+Situation:
+"This is 72-year-old Robert Johnson with pneumonia, admitted 36 hours ago. He's now hypotensive, tachycardic, tachypneic, and confused. I'm concerned for sepsis."
+
+Background:
+"He was admitted with community-acquired pneumonia, started on Ceftriaxone and Azithromycin in the ED. Past medical history includes COPD, hypertension, diabetes. Was stable yesterday and overnight. This morning seemed okay but wife noticed change about an hour ago."
+
+Assessment:
+"Current vital signs: BP 88/52, heart rate 118, respiratory rate 28, temp 101.8, O2 sat 92% on 4L nasal cannula - just increased from 2L. He's only oriented to person now, was oriented x3 this morning. Point-of-care lactate is 3.2. I have two IVs, drew blood cultures from separate sites before calling you. Lung sounds have more crackles bilaterally than earlier."
+
+Recommendation:
+"I think he's developing septic shock from his pneumonia. He needs sepsis protocol - fluids, repeat lactate, possible ICU transfer, and likely broadened antibiotics. MD is aware and on the way."
+
+RAPID RESPONSE INTERVENTIONS (RRT + Attending):
+14:20 - Physician at bedside, agrees with sepsis diagnosis
+14:22 - Orders received:
+  * 30mL/kg IV fluid bolus (2100mL NS) - started immediately
+  * Repeat lactate in 3 hours
+  * BMP, CBC, procalcitonin, ABG
+  * Chest X-ray portable (STAT)
+  * Urinalysis and urine culture
+  * Antibiotics: Vancomycin 15mg/kg IV + Piperacillin-Tazobactam 3.375g IV (broader coverage)
+  * ICU consult for possible transfer
+  * Norepinephrine ordered if MAP remains <65 after fluids
+
+14:25 - 1000mL NS infusing via pressure bag
+14:30 - Labs drawn: WBC 18,500 (elevated), Cr 1.8 (baseline 1.0 - acute kidney injury)
+14:35 - Foley catheter inserted (per sepsis protocol for strict I&O): 50mL dark amber urine
+14:40 - Portable CXR completed: Bilateral infiltrates, worsened from admission
+14:45 - Second 1000mL NS completed, total 2000mL given
+14:50 - Remaining 100mL NS to complete ordered bolus
+
+REASSESSMENT (15:00):
+BP: 98/60 mmHg (improved, MAP 73)
+HR: 106 bpm (decreased from 118)
+RR: 24/min (decreased from 28)
+SpO2: 94% on 4L NC
+Mental status: Oriented to person and place (improved)
+Urine output: 75mL since Foley insertion
+
+SEPSIS BUNDLE COMPLIANCE:
+Within 3 hours:
+☑ Lactate measured (3.2 at 14:08)
+☑ Blood cultures obtained before antibiotics
+☑ Broad-spectrum antibiotics initiated (Vancomycin + Pip-Tazo at 14:50)
+☑ 30mL/kg crystalloid for hypotension/lactate ≥2 (2100mL given by 14:50)
+
+Within 6 hours:
+☐ Repeat lactate if initial elevated (due at 17:08)
+☐ Vasopressors if hypotensive despite fluids (hold, MAP >65)
+☑ Reassess volume status and tissue perfusion (ongoing)
+
+ICU TRANSFER (16:30):
+- ICU accepted patient for continued sepsis management
+- RN-to-RN handoff using SBAR format
+- All documentation completed and printed for ICU chart
+- Wife updated on transfer, encouraged to follow to ICU waiting room
+- Primary care provider notified of change in condition and ICU transfer
+
+OUTCOME:
+Patient transferred to ICU hemodynamically improved but requiring close monitoring. Continued on broad-spectrum antibiotics. Repeat lactate at 17:00: 2.4 mmol/L (improved from 3.2). Patient responded well to early sepsis recognition and treatment.
+
+KEY LEARNING POINTS:
+1. Early recognition of sepsis using qSOFA screening saved life
+2. Rapid Response activation appropriate for sudden deterioration
+3. Sepsis bundle completed within required timeframes
+4. Effective communication using SBAR format facilitated team response
+5. Proactive monitoring of at-risk patients (pneumonia = infection source) crucial
+6. Family as partners - wife's observation of "not right" was key to early detection
+
+DOCUMENTATION:
+☑ Detailed progress note with timeline
+☑ Sepsis screening tool completed
+☑ Rapid Response documentation
+☑ ICU transfer note with complete SBAR handoff
+☑ Physician orders cosigned
+☑ Intake/output record updated
+☑ Medication administration record updated
+☑ Family communication documented
+```
+
+Example 4: Patient Education - Diabetes Management
 ```
 DIABETES SELF-MANAGEMENT EDUCATION
 Patient: Mary Williams, Age 52, New Type 2 Diabetes Diagnosis
@@ -412,21 +1216,378 @@ Patient signature: Mary Williams  Date: 12/15/2024
 RN signature: Jennifer Lee, RN, CDE  Date: 12/15/2024
 ```
 
+Example 5: Complex Medication Management
+```
+COMPLEX MEDICATION SCENARIO - POST-OPERATIVE CARDIAC PATIENT
+Patient: Elizabeth Martinez, Age 68, MRN: 78945612
+Post-Op Day #2 from CABG x4 (Coronary Artery Bypass Graft)
+Date: 12/15/2024 08:00
+Primary Nurse: David Chen, RN
+
+CURRENT MEDICATIONS (08:00 Administration Time):
+1. Metoprolol 50mg PO BID (cardiac)
+2. Aspirin 81mg PO daily (antiplatelet)
+3. Atorvastatin 80mg PO daily (lipid management)
+4. Lisinopril 10mg PO daily (ACE inhibitor for BP/cardioprotection)
+5. Furosemide 40mg PO daily (diuretic for fluid management)
+6. Potassium Chloride 20mEq PO daily (K+ replacement)
+7. Pantoprazole 40mg PO daily (GI protection)
+8. Docusate 100mg PO BID (stool softener)
+9. Acetaminophen 650mg PO q6h PRN pain/fever
+10. Oxycodone 5mg PO q4h PRN pain >4/10
+
+MEDICATION ADMINISTRATION WORKFLOW:
+PRE-ADMINISTRATION ASSESSMENT (07:45):
+- Reviewed MAR for due medications
+- Checked recent lab values:
+  * K+ 3.3 mEq/L (low - normal 3.5-5.0) ← ALERT
+  * BUN 28, Cr 1.3 (baseline 0.9) ← Acute kidney impairment
+  * BP trend: 118/72, 122/78, 115/70 (stable)
+  * HR trend: 68-74 bpm (controlled)
+- Assessed patient: Alert, oriented x3, denies chest pain, pain 3/10 incisional
+
+CLINICAL DECISION-MAKING:
+1. Potassium 3.3 mEq/L - LOW
+   - Decision: Hold scheduled K-Cl 20mEq
+   - Rationale: Already receiving, level low despite supplementation, may need IV replacement
+   - Action: Notify provider of low K+ for additional orders
+
+2. Creatinine elevated (1.3, baseline 0.9)
+   - Concern: Lisinopril (ACE inhibitor) and Furosemide (diuretic) may worsen kidney function
+   - Decision: Administer as ordered but monitor closely, notify provider
+   - Rationale: Post-op day 2 CABG, likely prerenal azotemia from surgical fluid shifts
+   - Action: Request renal function recheck in AM, strict I&O monitoring
+
+3. Multiple cardiac medications
+   - Check: BP and HR before beta blocker and ACE inhibitor
+   - BP: 118/72 mmHg (adequate, MAP 87)
+   - HR: 72 bpm
+   - Decision: Safe to administer Metoprolol and Lisinopril
+
+PROVIDER COMMUNICATION (08:00):
+Called Dr. Williams regarding K+ 3.3:
+- SBAR format used
+- New orders received:
+  * Potassium Chloride 40mEq PO x1 now (double dose due to low level)
+  * Recheck BMP in AM
+  * Continue to monitor cardiac rhythm on telemetry
+  * Hold tomorrow's furosemide until K+ rechecked
+
+MEDICATION ADMINISTRATION (08:15):
+Medications prepared:
+☑ Two patient identifiers verified (name + DOB)
+☑ Allergies rechecked: NKDA
+☑ Each medication checked against MAR
+☑ Expiration dates verified
+☑ High-alert medications double-checked: Potassium 40mEq (double dose) - second RN verification obtained
+
+Administration sequence (strategic):
+1. Pantoprazole 40mg PO - Given first to protect GI tract
+2. Metoprolol 50mg PO - Cardiac med, vital signs appropriate
+3. Lisinopril 10mg PO - ACE inhibitor
+4. Atorvastatin 80mg PO - Statin for lipid management
+5. Aspirin 81mg PO - Antiplatelet
+6. Potassium Chloride 40mEq PO - HIGH ALERT: Given with full glass of water, patient instructed to sit upright x30min to prevent esophageal irritation
+7. Docusate 100mg PO - Stool softener (important post-op with opioids)
+
+FUROSEMIDE HELD:
+- Documented reason: K+ 3.3, per provider hold until recheck
+- Patient educated on why diuretic held today
+- Family aware
+
+PATIENT EDUCATION DURING ADMINISTRATION:
+☑ Explained purpose of each medication
+☑ Emphasized importance of Potassium replacement
+☑ Reviewed cardiac medication compliance for home
+☑ Discussed sitting upright after K+ to prevent throat irritation
+☑ Reviewed pain management plan (acetaminophen around-the-clock, oxycodone for breakthrough)
+☑ Encouraged adequate hydration
+
+POST-ADMINISTRATION MONITORING (09:30):
+- Cardiac rhythm: Normal sinus, rate 68 bpm
+- BP: 112/68 mmHg (appropriate response to medications)
+- No complaints of nausea, GI upset, or palpitations
+- Patient tolerating oral intake well
+- No adverse effects noted
+
+PAIN REASSESSMENT (10:00):
+- Pain: 2/10 (improved from 3/10)
+- Acetaminophen 650mg given at 06:00 providing adequate baseline pain control
+- Patient ambulated in hallway x10 minutes with PT without increased pain
+- Oxycodone not needed this morning
+
+DOCUMENTATION:
+☑ All medications documented with time, route, response
+☑ Held furosemide with reason documented
+☑ Provider communication documented
+☑ Patient education documented
+☑ High-alert medication co-signature obtained
+☑ Vital signs documented in flowsheet
+☑ Pain reassessment documented
+
+UPCOMING CONSIDERATIONS:
+- Monitor telemetry for any arrhythmias related to low K+
+- Strict I&O (input/output) monitoring for kidney function assessment
+- Repeat BMP in AM to reassess K+ and renal function
+- Resume furosemide when K+ normalizes per provider
+- Continue cardiac rehab with PT/OT
+- Discharge planning: medication reconciliation, patient education on home meds
+
+SAFETY PEARLS DEMONSTRATED:
+✓ Lab review before medication administration
+✓ Critical thinking about medication interactions and contraindications
+✓ Appropriate holding of medication with provider communication
+✓ High-alert medication (K+) double-checked
+✓ Strategic administration order (GI protection first, K+ with precautions)
+✓ Comprehensive patient education during medication pass
+✓ Post-administration monitoring
+✓ Thorough documentation
+
+This case demonstrates safe, evidence-based medication administration with clinical judgment, critical thinking, and patient-centered care.
+```
+
+Example 6: End-of-Life Care & Family Support
+```
+COMFORT CARE SCENARIO - TRANSITIONING TO HOSPICE
+Patient: Margaret O'Connor, Age 84, MRN: 23456789
+Diagnosis: Metastatic pancreatic cancer, liver failure, acute renal failure
+Code Status: DNR/DNI, Comfort Measures Only
+Date: 12/15/2024
+Primary Nurse: Amanda Roberts, RN, CHPN (Certified Hospice and Palliative Nurse)
+
+BACKGROUND:
+Mrs. O'Connor admitted 3 days ago with increased confusion, jaundice, and abdominal pain. Scans revealed progression of known pancreatic cancer with extensive liver metastases. Labs show worsening liver and kidney function. Family meeting held yesterday with palliative care team - decision made to transition to comfort measures only with hospice referral.
+
+FAMILY MEETING OUTCOMES (12/14/2024):
+Present: Patient (intermittently alert), daughter Susan, son Michael, granddaughter Emily, hospice liaison, primary oncologist, palliative care physician, primary nurse
+Goals of Care Discussion:
+- Patient's wishes: Previously stated she does not want aggressive measures, wants to be comfortable
+- Family understanding: Cancer progressing, treatments no longer beneficial, focus on quality time
+- Plan: Stop all non-comfort medications, optimize symptom management, transfer to inpatient hospice or home with hospice services based on family preference
+
+SYMPTOM ASSESSMENT (12/15/2024 08:00):
+Pain: 7/10, described as constant deep aching in abdomen and back
+- Quality: Dull, constant, worsening with movement
+- Location: Epigastric region radiating to back
+- Current regimen: Morphine 4mg IV q4h scheduled + 2mg IV q1h PRN
+- Assessment: Inadequate pain control, needs adjustment
+
+Dyspnea: Respiratory rate 24/min, slightly labored, O2 sat 89% on room air
+- Patient reports feeling "can't catch breath"
+- Lung sounds: Decreased bilaterally bases, likely pleural effusions
+- Anxiety component present
+
+Nausea: Patient reports intermittent nausea 4/10, no vomiting
+- Last bowel movement: 3 days ago
+- Abdomen distended, hypoactive bowel sounds
+- Likely multifactorial: opioids, bowel obstruction, liver failure
+
+Restlessness/Agitation: Periods of confusion and restlessness noted overnight
+- Oriented to person only
+- Pulling at lines, attempting to get out of bed
+- Family reports "not herself"
+
+MEDICATION OPTIMIZATION (Palliative Care Orders):
+Pain Management:
+- Increased to Morphine 6mg IV q2h scheduled (around-the-clock coverage)
+- Morphine 3mg IV q30min PRN breakthrough pain
+- Rationale: Increase baseline dosing to prevent pain before it starts
+
+Dyspnea Management:
+- Morphine also addresses dyspnea (dual benefit)
+- Add: Scopolamine patch 1.5mg topically q72h (to reduce secretions/"death rattle")
+- Oxygen for comfort (not for saturation goals): 2L NC
+
+Nausea Management:
+- Ondansetron 4mg IV q8h scheduled
+- Prochlorperazine 10mg IV q6h PRN for breakthrough nausea
+
+Terminal Restlessness/Agitation:
+- Lorazepam 0.5mg IV/SL q4h PRN for anxiety/restlessness
+- If inadequate: May add haloperidol 0.5-1mg IV/SL q4h PRN
+
+Secretions:
+- Scopolamine patch (ordered above)
+- Position patient on side for drainage
+- Gentle oral suctioning only if causing distress (not routine)
+
+DISCONTINUED MEDICATIONS (Non-comfort):
+☑ All cardiac medications (no longer beneficial)
+☑ Diuretics (comfort priority over fluid management)
+☑ Antibiotics (treating infection not aligned with comfort goals)
+☑ Diabetes medications (no need for tight glucose control)
+☑ Routine lab draws stopped
+
+CONTINUED MEDICATIONS (Comfort-focused):
+☑ Pain management (morphine, PRN medications)
+☑ Anti-anxiety (lorazepam)
+☑ Anti-nausea (ondansetron, prochlorperazine)
+☑ Secretion management (scopolamine)
+
+NURSING CARE PLAN (Comfort Measures Only):
+Physical Comfort:
+☑ Pain assessment q2h and with any restlessness
+☑ Administer pain medication around-the-clock, not waiting for patient request
+☑ Mouth care q2h with moistened swabs (NPO, mouth breathing causing dryness)
+☑ Gentle repositioning q2-4h for comfort (pressure ulcer prevention less priority, comfort primary)
+☑ Cool cloths to forehead if febrile
+☑ Light, soft blankets per patient preference
+☑ Quiet, dimly lit room per family request
+
+Spiritual/Emotional Care:
+☑ Chaplain visit arranged (patient is Catholic, requested priest for Anointing of the Sick)
+☑ Family encouraged to share memories, read favorite passages, play favorite music
+☑ Photos of family members and pets placed at bedside
+☑ Recorded messages from grandchildren played at bedside
+
+Family Support:
+☑ Private room arranged for family to stay overnight
+☑ Sleeping chairs/cots provided for family members
+☑ Family meal vouchers provided
+☑ Unrestricted visiting hours, children/grandchildren welcome
+☑ Grief support resources provided
+☑ Social work consult for bereavement support and practical matters
+
+Psychosocial/Cultural:
+☑ Respect for patient's Catholic faith (rosary at bedside, priest visit arranged)
+☑ Family traditions honored (favorite perfume applied, Irish music playing softly)
+☑ Legacy project: Family creating memory book at bedside
+
+FAMILY EDUCATION PROVIDED:
+What to Expect:
+☑ Explained dying process gently and honestly
+- Decreased responsiveness normal and expected
+- Changes in breathing pattern (Cheyne-Stokes, apnea periods)
+- Decreased urine output
+- Changes in skin color (mottling, coolness of extremities)
+- Terminal secretions ("death rattle") - distressing for family but not patient
+☑ Reassured family that hearing is last sense to go - encouraged continued talking, music, presence
+
+How to Provide Comfort:
+☑ Hold hand, gentle touch, say goodbye
+☑ Talk to her even if she doesn't respond
+☑ Keep mouth moist with swabs
+☑ Call nurse if she appears uncomfortable
+
+Signs Actively Dying:
+☑ Irregular breathing, long pauses between breaths
+☑ Decreased response to voice or touch
+☑ Mottled skin, cool extremities
+☑ Changes in vital signs
+☑ Reassurance: We will keep her comfortable
+
+HOURLY ASSESSMENTS (Sample):
+10:00 - Pain reassessment: Patient appears restful, no grimacing. Family reports she seems more comfortable since morphine dose increased. RR 20, no apparent distress. Repositioned to right side.
+
+12:00 - Given morphine 3mg IV PRN for slight grimacing with movement. Patient settled. Granddaughter arrived, holding her hand and talking softly.
+
+14:00 - Patient less responsive, arousable only to deep stimulation. RR 18, irregular pattern noted with occasional apnea 10-15 seconds. Family at bedside. Priest arrived for Anointing of the Sick - time provided for sacrament.
+
+16:00 - Noted increased secretions, slight gurgling sound. Scopolamine patch applied. Positioned on side, gentle oral suctioning performed. Lorazepam 0.5mg IV given for slight restlessness. Family educated this is normal part of process.
+
+18:00 - Patient unresponsive. Breathing irregular, Cheyne-Stokes pattern. Extremities cool, mottling noted on lower legs. Family all present at bedside. RN remaining nearby for support.
+
+19:30 - Breathing pattern shows longer apneic periods. Family holding hands around bed, saying goodbyes. Music playing softly. RN present in room offering quiet support.
+
+20:15 - Patient took last breath peacefully, family at bedside. Family given time alone with patient. Physician notified, time of death pronounced.
+
+POST-DEATH CARE:
+☑ Family given time alone with patient (1 hour)
+☑ Gentle preparation of body with family participation (daughter helped wash and dress mother)
+☑ Jewelry, dentures, belongings handled per family wishes
+☑ Photographs offered (family accepted, photos taken with patient)
+☑ Memory-making: Hand/footprints, lock of hair offered
+☑ Bereavement packet provided with grief resources
+☑ Follow-up bereavement call scheduled for 1 week
+☑ Social work contacted for funeral arrangements support
+
+DOCUMENTATION:
+☑ Comfort measures order set activated
+☑ Symptom assessments and interventions documented hourly
+☑ Family communications and education documented
+☑ Spiritual care documented
+☑ Medication administration documented with effectiveness
+☑ Death note completed: Time of death, persons present, physician notified, family response, body care provided
+☑ Bereavement plan documented
+
+REFLECTION:
+This case demonstrates comprehensive end-of-life care:
+- Aggressive symptom management to ensure comfort and dignity
+- Family-centered approach with education and support
+- Respect for cultural and spiritual preferences
+- Creating meaningful final moments for family
+- Expert palliative nursing care
+- Death with dignity achieved
+
+Family expressed gratitude for compassionate care: "You made sure Mom was comfortable and we could be with her. She died peacefully, just as she wanted."
+
+This is the essence of hospice and palliative nursing - ensuring quality of life until the very end, supporting families through the dying process, and honoring the patient's wishes.
+```
+
 8) Vocabulary and standards
 
 Key Terms:
 - **HIPAA**: Health Insurance Portability and Accountability Act (patient privacy)
 - **SBAR**: Situation, Background, Assessment, Recommendation (communication tool)
+- **I-PASS**: Illness severity, Patient summary, Action list, Situational awareness, Synthesis by receiver (handoff tool)
 - **PRN**: Pro re nata ("as needed" medication/treatment)
 - **NPO**: Nil per os ("nothing by mouth")
-- **ADLs**: Activities of Daily Living
+- **ADLs**: Activities of Daily Living (bathing, dressing, eating, toileting, transferring, continence)
 - **I&O**: Intake and Output monitoring
-- **VS**: Vital Signs
+- **VS**: Vital Signs (BP, HR, RR, Temp, SpO2, Pain)
 - **SOB**: Shortness of Breath
 - **DNR/DNI**: Do Not Resuscitate/Do Not Intubate
+- **DNI**: Do Not Intubate
+- **CMO**: Comfort Measures Only
 - **NANDA-I**: North American Nursing Diagnosis Association International
 - **EBP**: Evidence-Based Practice
 - **Scope of Practice**: Legal boundaries of nursing practice per licensure
+- **ROSC**: Return of Spontaneous Circulation
+- **ETCO2**: End-Tidal Carbon Dioxide (confirmation of endotracheal tube placement)
+- **GCS**: Glasgow Coma Scale (neurological assessment, 3-15)
+- **PERRLA**: Pupils Equal, Round, Reactive to Light and Accommodation
+- **ABCs**: Airway, Breathing, Circulation (primary survey priority)
+- **qSOFA**: Quick Sequential Organ Failure Assessment (sepsis screening)
+- **MAP**: Mean Arterial Pressure (target ≥65 mmHg in sepsis)
+- **Braden Scale**: Pressure injury risk assessment tool (6-23, lower=higher risk)
+- **Morse Fall Scale**: Fall risk assessment tool (0-125, ≥45=high risk)
+- **FLACC**: Face, Legs, Activity, Cry, Consolability (pediatric pain scale)
+- **NPSG**: National Patient Safety Goals (The Joint Commission)
+- **CLABSI**: Central Line-Associated Bloodstream Infection
+- **CAUTI**: Catheter-Associated Urinary Tract Infection
+- **VAP**: Ventilator-Associated Pneumonia
+- **HAI**: Healthcare-Associated Infection
+- **SSI**: Surgical Site Infection
+- **HAPI**: Hospital-Acquired Pressure Injury
+- **Code Blue**: Cardiopulmonary arrest
+- **Code Stroke**: Stroke alert for rapid intervention
+- **Rapid Response**: Activation for patient deterioration (before arrest)
+- **Sepsis**: Life-threatening organ dysfunction from infection
+- **Septic Shock**: Sepsis with persistent hypotension requiring vasopressors
+- **High-Alert Medications**: Medications with heightened risk of harm (insulin, heparin, potassium, opioids)
+- **Never Events**: Serious preventable adverse events (wrong-site surgery, medication errors)
+- **Sentinel Event**: Unexpected death or serious injury requiring investigation
+- **MAR**: Medication Administration Record
+- **EMAR**: Electronic Medication Administration Record
+- **CPOE**: Computerized Provider Order Entry
+- **PACU**: Post-Anesthesia Care Unit
+- **ICU**: Intensive Care Unit
+- **CVICU**: Cardiovascular Intensive Care Unit
+- **MICU**: Medical Intensive Care Unit
+- **SICU**: Surgical Intensive Care Unit
+- **CCU**: Cardiac Care Unit or Critical Care Unit
+- **ED**: Emergency Department
+- **OR**: Operating Room
+- **SNF**: Skilled Nursing Facility
+- **LTC**: Long-Term Care
+- **Home Health**: Skilled nursing care provided in patient's home
+- **Hospice**: End-of-life care focused on comfort and quality of life
+- **Palliative Care**: Specialized care for serious illness to improve quality of life (not limited to end-of-life)
+- **Advance Directive**: Legal document stating healthcare wishes
+- **Healthcare Power of Attorney**: Person designated to make healthcare decisions if patient unable
+- **Living Will**: Document specifying end-of-life care wishes
+- **Informed Consent**: Patient's voluntary agreement to treatment after understanding risks/benefits
+- **Scope and Standards**: ANA framework defining nursing practice expectations
 
 Standards & Frameworks (2024):
 - **ANA Standards of Professional Nursing Practice**: Core competencies and expectations
