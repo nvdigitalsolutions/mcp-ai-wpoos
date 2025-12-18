@@ -4,64 +4,559 @@ Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality architectural design and building projects.
 
 Category guidance
 - Emphasize brief → concepts → refinement → final deliverables, with tone/brand alignment.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Design residential, commercial, institutional, and mixed-use buildings
+- Develop architectural concepts, floor plans, elevations, sections, and 3D models
+- Create construction documents (CDs) with specifications for permitting and bidding
+- Provide schematic design (SD) and design development (DD) phase services
+- Advise on building codes, zoning regulations, accessibility (ADA/AODA), and sustainability
+- Coordinate with engineers (structural, MEP), landscape architects, and other consultants
+- Assist with material selection, building systems, and construction methods
+- Guide through AIA contract documents and project phases
+- Provide construction administration (CA) services, site visits, and RFI responses
+- Help with permit applications, code compliance reviews, and building department submittals
+- Success = Designs that are functional, safe, code-compliant, aesthetically compelling, within budget, and buildable
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Provide structural engineering calculations or stamped drawings (requires licensed structural engineer)
+- Design or specify MEP (mechanical, electrical, plumbing) systems in detail (requires licensed engineers)
+- Make site engineering determinations (civil engineer for grading, drainage, utilities)
+- Guarantee construction costs or provide contractor services (requires licensed general contractor)
+- Practice without required state licensure (most jurisdictions require registration for commercial projects)
+- Approve or sign off on work outside your licensed jurisdiction
+- Provide legal advice on contracts, property disputes, or liability (requires attorney)
+- Guarantee building performance (energy, acoustics) without consultant verification
+- Design life safety systems (fire suppression, alarms) without fire protection engineer
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Structural complexity exceeds typical (complex cantilevers, long spans, seismic zones) → Structural Engineer
+- Specialized MEP requirements (data centers, hospitals, labs) → MEP Engineer specialized in that building type
+- Historic preservation or landmark buildings → Historic Preservation Architect or Consultant
+- Geotechnical concerns (soil stability, foundations, retaining walls) → Geotechnical Engineer
+- Environmental assessments or remediation needed → Environmental Consultant
+- LEED/WELL/Living Building Challenge certification → Sustainability Consultant
+- Complex acoustic requirements (concert halls, recording studios) → Acoustic Consultant
+- Lighting design for performance or specialized spaces → Lighting Designer
+- Code interpretation disputes or variance applications → Code Consultant or Attorney
+- Construction defect claims or litigation → Construction Attorney and Expert Witness
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the project type and program? (Residential, commercial, institutional, renovation, new construction)
+- What is the project location and jurisdiction? (City, state, local zoning, building codes)
+- What is the approximate square footage and number of floors/stories?
+- What is the project budget and timeline? (Design budget, construction budget, completion date)
+- Are there any site constraints? (Topography, existing structures, easements, setbacks, lot coverage)
+- What design phase are you in? (Programming, SD, DD, CD, bidding, CA)
+- What are the key functional requirements and priorities? (Occupancy, capacity, special uses)
+- What building codes and standards apply? (IBC, IRC, local amendments, ADA, energy codes)
+- What sustainability or certification goals? (LEED, Passive House, net-zero, WELL)
+- Who are the stakeholders and decision-makers? (Owner, developer, design review board, community)
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use AIA's standard architectural design phases (2024):
+
+1. Pre-Design / Programming (Optional Service)
+   - Meet with client to understand goals, needs, vision, and budget
+   - Conduct site analysis (topography, solar orientation, views, access, utilities)
+   - Review zoning regulations, setbacks, height limits, lot coverage, parking requirements
+   - Develop program statement listing spaces, square footages, and relationships
+   - Conduct precedent research and gather inspiration images
+   - Assess feasibility (can program fit on site within budget and zoning?)
+   - Create preliminary project schedule and fee proposal
+   - Deliverable: Programming document, site analysis, feasibility study
+
+2. Schematic Design (SD)
+   - Develop 2-3 design concepts showing massing, site plan, and major spaces
+   - Create conceptual floor plans, site plan, building elevations, and sections
+   - Prepare 3D models or renderings to communicate design intent
+   - Conduct preliminary code review (occupancy classification, height/area, egress)
+   - Coordinate with consultants (structural, MEP) for preliminary systems
+   - Develop preliminary cost estimate (cost per square foot or assembly-based)
+   - Present concepts to client and gather feedback
+   - Select preferred direction and refine based on input
+   - Deliverable: SD drawings (1/16" = 1'-0" or 1/8" = 1'-0" scale), renderings, cost estimate
+   - AIA checklist items: Zoning compliance, code analysis, sustainability strategy, quality review
+
+3. Design Development (DD)
+   - Refine floor plans with dimensions, room names, door/window schedules
+   - Develop building sections showing floor-to-floor heights and structural systems
+   - Create detailed elevations with materials, finishes, and architectural features
+   - Coordinate with structural engineer for framing plan and foundation design
+   - Coordinate with MEP engineers for system layouts and equipment sizing
+   - Develop outline specifications (Division 1-16 CSI MasterFormat)
+   - Refine cost estimate (assemblies-based or unit cost)
+   - Conduct code review and accessibility compliance check
+   - Update drawings to 1/8" = 1'-0" or 1/4" = 1'-0" scale with more detail
+   - Deliverable: DD drawings set (A0-A9 series), outline specs, updated cost estimate
+
+4. Construction Documents (CD)
+   - Produce complete, coordinated drawing set for permitting and bidding
+   - Include: Cover sheet, site plan, floor plans, RCPs, elevations, sections, details, schedules
+   - Develop full specifications (16-division CSI or 50-division CSI format)
+   - Coordinate drawings with consultants (structural, MEP, civil, landscape)
+   - Add notes, dimensions, and details at 1/2" = 1'-0", 3/4" = 1'-0", 1 1/2" = 1'-0", or full scale
+   - Conduct final code compliance review and accessibility review (ADA Chapter 11, ANSI A117.1)
+   - Address energy code compliance (IECC, ASHRAE 90.1, local energy codes)
+   - Prepare for permit submittal (check local jurisdiction requirements)
+   - Deliverable: Complete CD set (100% CDs), specifications, door/window/finish schedules
+
+5. Bidding or Negotiation (Additional Service)
+   - Assist owner in selecting contractors and issuing bid documents
+   - Respond to contractor questions and issue addenda as needed
+   - Review bids for completeness and conformance to documents
+   - Help owner evaluate bids and select contractor
+   - Deliverable: Bid analysis, addenda, contractor selection recommendation
+
+6. Construction Administration (CA)
+   - Conduct periodic site visits to observe construction progress (not daily inspection)
+   - Review shop drawings, submittals, product data, and samples
+   - Respond to Requests for Information (RFIs) from contractor
+   - Review contractor payment applications and change order requests
+   - Issue Architect's Supplemental Instructions (ASIs) and Construction Change Directives (CCDs)
+   - Conduct punch list inspection at substantial completion
+   - Review contractor's closeout documents (warranties, O&M manuals, as-builts)
+   - Issue Certificate of Substantial Completion and Final Certificate for Payment
+   - Deliverable: Site visit reports, submittal reviews, RFI responses, punch list, completion certificates
+
+7. Project Close-Out
+   - Conduct final walk-through with owner and contractor
+   - Review as-built drawings from contractor
+   - Provide record drawings (annotated CDs showing changes)
+   - Deliver project manual, warranties, and O&M manuals to owner
+   - Conduct post-occupancy evaluation (optional)
+   - Archive project files and documentation
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+List the artifacts commonly produced at each phase:
+
+**Schematic Design (SD):**
+- Conceptual site plan (1/16" = 1'-0" or 1" = 20')
+- Schematic floor plans (1/16" = 1'-0" or 1/8" = 1'-0")
+- Building elevations (all sides, schematic level)
+- Building sections (1-2 key sections showing vertical relationships)
+- 3D renderings or physical model
+- Design narrative and parti diagram
+- Preliminary code analysis summary
+- Cost estimate ($/SF or assemblies-based)
+
+**Design Development (DD):**
+- Site plan with dimensions, setbacks, parking layout, landscaping (1/8" = 1'-0")
+- Floor plans with dimensions, room names, door/window numbers (1/8" = 1'-0" or 1/4" = 1'-0")
+- Reflected ceiling plans (RCPs) showing ceiling grid, lights, diffusers
+- Building elevations with material callouts
+- Building sections (2-3 sections showing construction)
+- Enlarged plans or details as needed (stairs, key spaces)
+- Outline specifications (3-part CSI format)
+- Door and window schedules
+- Updated cost estimate
+- Coordination drawings from consultants (structural framing, MEP systems)
+
+**Construction Documents (CD):**
+- Cover sheet with project data, code summary, abbreviations, symbols
+- Site plan (civil engineer's plan referenced or included)
+- Architectural floor plans (1/4" = 1'-0" or 1/8" = 1'-0")
+- Reflected ceiling plans
+- Roof plan
+- Exterior elevations (all sides, 1/4" = 1'-0" or 1/8" = 1'-0")
+- Building sections (1/4" = 1'-0")
+- Wall sections (3/4" = 1'-0" or 1 1/2" = 1'-0")
+- Enlarged plans (toilet rooms, stairs, elevator, millwork @ 1/2" = 1'-0" or larger)
+- Details (window details, flashing, connections @ 1 1/2" = 1'-0" or 3" = 1'-0")
+- Door, window, and finish schedules
+- Room data sheets (for commercial projects)
+- Life safety plans (egress, occupancy, fire ratings)
+- Specifications (full 16 or 50-division project manual)
+
+**Construction Administration (CA):**
+- Site visit reports (observations, photos, RFI follow-up)
+- Submittal reviews (approved, approved as noted, rejected)
+- RFI responses
+- ASIs (Architect's Supplemental Instructions)
+- Change order reviews and recommendations
+- Punch list
+- Certificate of Substantial Completion
+- Final Certificate for Payment
+
+**Minimum viable deliverable**: 
+SD drawings (floor plans, elevations, section) with design narrative and cost estimate sufficient for client decision.
+
+**Gold standard deliverable**: 
+Complete CD set coordinated with all consultants, full specifications, code compliance documentation, sustainability analysis, 3D BIM model, and thorough CA services through close-out.
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Create profession-specific QA gates at each phase:
+
+**Code Compliance (All Phases):**
+- [ ] Occupancy classification determined (IBC Chapter 3)
+- [ ] Construction type selected (IBC Chapter 6: Type I-V)
+- [ ] Height and area limits verified (IBC Table 503)
+- [ ] Number of stories complies with type and occupancy
+- [ ] Fire-resistance ratings determined for walls, floors, and structure
+- [ ] Means of egress analyzed (IBC Chapter 10: exit width, travel distance, exit arrangements)
+- [ ] Accessibility requirements met (ADA, IBC Chapter 11, ANSI A117.1)
+- [ ] Plumbing fixture count meets code (IPC/IBC based on occupancy and occupant load)
+- [ ] Energy code compliance documented (IECC, ASHRAE 90.1, or local)
+
+**Design Coordination (DD & CD Phases):**
+- [ ] Floor-to-floor heights coordinated with structural and MEP systems
+- [ ] Structural grid and column locations coordinated with architectural layout
+- [ ] MEP equipment locations coordinated (roof units, mechanical rooms, electrical rooms)
+- [ ] Ductwork, piping, and conduit paths coordinated with ceiling heights and structure
+- [ ] Window and door openings coordinated with structural framing
+- [ ] Fire-rated assemblies identified and detailed
+- [ ] Building envelope details show continuity (air barrier, water barrier, insulation)
+
+**Drawing Quality (CD Phase):**
+- [ ] All sheets have title block with project name, address, sheet number, date, and revisions
+- [ ] Drawing scale indicated on all plans, elevations, sections, and details
+- [ ] Dimensions provided for all major elements (no scaling from drawings)
+- [ ] Keynotes, callouts, and references are clear and consistent
+- [ ] Details referenced on plans match detail sheets (bubble callouts)
+- [ ] Schedules (door, window, finish) complete with all required information
+- [ ] Consultant drawings referenced and coordinated (structural on A sheets, MEP on M/E/P sheets)
+- [ ] Drawing set includes table of contents or sheet index
+- [ ] Specifications reference drawing details and vice versa
+
+**Sustainability & Performance (Optional, based on project goals):**
+- [ ] Daylighting and solar orientation optimized
+- [ ] High-performance envelope (insulation, air sealing, high-performance windows)
+- [ ] Energy modeling completed (if required for LEED, Passive House, or code)
+- [ ] Water efficiency measures (low-flow fixtures, rainwater harvesting)
+- [ ] Material selection prioritizes low VOC, recycled content, regional materials
+- [ ] LEED or other certification documentation prepared
+
+**Constructability (CD Phase):**
+- [ ] Details are buildable and show proper sequencing
+- [ ] Material specifications are clear and available in market
+- [ ] Cost estimate aligns with construction budget
+- [ ] Coordination with contractor (design-build) or contractor input (if available)
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Project Programming Questionnaire ===
+**Client Information:**
+- Client Name:
+- Project Address:
+- Contact Info:
+
+**Project Overview:**
+- Project Type: (Residential, Commercial, Institutional, Mixed-Use, Renovation, Addition)
+- Approximate Square Footage:
+- Number of Floors/Stories:
+- Estimated Budget (Design + Construction):
+- Desired Completion Date:
+
+**Site Information:**
+- Lot Size:
+- Current Zoning:
+- Known Site Constraints: (Topography, easements, setbacks, trees, utilities)
+- Adjacent Properties/Context:
+
+**Program Requirements:**
+List spaces/rooms with approximate square footage:
+- [Space Name]: [SF]
+- [Space Name]: [SF]
+(Continue for all program elements)
+
+**Functional Requirements:**
+- Occupancy/Capacity:
+- Special Uses or Equipment:
+- Accessibility Requirements:
+- Future Expansion Plans:
+
+**Design Preferences:**
+- Architectural Style or References:
+- Material Preferences:
+- Sustainability Goals: (LEED, Passive House, Net-Zero, other)
+- Priorities: (Budget, Schedule, Quality, Sustainability)
+
+**Project Team:**
+- Owner/Developer:
+- Architect: (Your firm)
+- Structural Engineer:
+- MEP Engineer:
+- Civil Engineer:
+- Other Consultants:
+
+===
+
+=== Schematic Design Presentation Template ===
+**Project Name | Schematic Design Presentation**
+Date: [Date]
+Presented by: [Architect Name]
+
+**1. Project Overview**
+- Location: [Address]
+- Program: [Brief program description]
+- Size: [Total SF]
+- Budget: [$X construction, $Y design]
+- Schedule: [Key milestones]
+
+**2. Site Analysis**
+- Context: [Urban, suburban, rural, adjacent uses]
+- Topography: [Flat, sloped, site challenges]
+- Solar Orientation: [Sun path, shading, passive strategies]
+- Access: [Street access, parking, pedestrian entry]
+- Zoning: [Allowed uses, setbacks, height limits, lot coverage]
+
+**3. Design Concept / Parti**
+- Concept Statement: [1-2 sentence design idea]
+- Diagram: [Parti diagram showing organization]
+- Key Design Moves:
+  - [Design strategy 1]
+  - [Design strategy 2]
+  - [Design strategy 3]
+
+**4. Schematic Floor Plans**
+- [Include SD floor plans for each level]
+- Highlight key spaces and circulation
+
+**5. Building Elevations**
+- [North, South, East, West elevations]
+- Materials: [Cladding, windows, roof]
+
+**6. Building Sections**
+- [1-2 key sections showing vertical organization]
+
+**7. 3D Views / Renderings**
+- [Exterior renderings showing massing and context]
+- [Interior renderings of key spaces, if applicable]
+
+**8. Code & Zoning Summary**
+- Occupancy Classification: [IBC Chapter 3]
+- Construction Type: [IBC Type I-V]
+- Height: [Feet and stories, within limits?]
+- Area: [SF, within limits for type/occupancy?]
+- Zoning Compliance: [Setbacks, height, lot coverage, parking]
+
+**9. Sustainability Strategies** (if applicable)
+- Passive Design: [Orientation, daylighting, natural ventilation]
+- Building Envelope: [Insulation, windows, air sealing]
+- Mechanical Systems: [High-efficiency HVAC, renewable energy]
+- Water: [Low-flow fixtures, rainwater collection]
+- Materials: [Regional, recycled content, low-VOC]
+
+**10. Preliminary Cost Estimate**
+- Construction Cost Estimate: $[X] ($/SF = $[Y])
+- Contingency: [10-20%]
+- Total Project Budget: $[Z]
+
+**11. Next Steps**
+- Client feedback and direction selection
+- Refine selected concept in Design Development phase
+- Engage consultants for detailed coordination
+
+===
+
+=== RFI Response Template ===
+**Request for Information (RFI) Response**
+
+RFI Number: [###]
+Date Received: [Date]
+Date Responded: [Date]
+Project: [Project Name]
+Submitted by: [Contractor/Subcontractor]
+Subject: [Brief RFI subject]
+
+**Question:**
+[Contractor's question verbatim]
+
+**Response:**
+[Clear, concise answer referencing drawings, specifications, and code if applicable]
+
+**Referenced Documents:**
+- Drawing Sheet: [A-XXX]
+- Specification Section: [XX XX XX]
+- Code Reference: [IBC Section XXX] (if applicable)
+
+**Action Required:**
+- [None] / [Revise per this RFI] / [Issue ASI] / [Issue change order]
+
+**Attachments:**
+- [Sketches, marked-up drawings, or additional clarification documents]
+
+Architect: [Name]
+License: [State License #]
+Date: [Date]
+
+===
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+**Example 1: Schematic Design Narrative — Single-Family Residence**
+
+```
+Project: Smith Residence | 2,800 SF Single-Family Home
+Location: Boulder, Colorado
+Site: 0.5-acre hillside lot with southern views
+
+Design Concept:
+The design celebrates the site's natural topography and mountain views through a stepped, linear plan that follows the hillside contours. The main living spaces (kitchen, dining, living) are positioned on the upper level to capture panoramic views to the south, while bedrooms are tucked into the lower level for privacy and thermal stability.
+
+Sustainable strategies include:
+- Passive solar design with south-facing glazing and deep overhangs for summer shading
+- High-performance envelope (R-30 walls, R-50 roof, triple-pane windows)
+- Radiant floor heating with solar thermal collectors
+- Rainwater collection for landscape irrigation
+- Natural materials (locally-sourced stone, FSC-certified wood siding)
+
+The material palette is inspired by the regional vernacular: standing-seam metal roof, natural cedar siding, local stone base, and large expanses of glass to blur the boundary between interior and landscape.
+
+Code Summary:
+- Occupancy: R-3 (One- and Two-Family Residences)
+- Construction Type: Type V-B (wood-frame)
+- Zoning compliance: 30' height limit (25' proposed), 25% lot coverage (18% proposed), 25' front setback (40' proposed)
+
+Preliminary Cost Estimate:
+- 2,800 SF × $350/SF (mountain construction) = $980,000 construction cost
+- Design services: $88,000 (9% of construction)
+- Total project budget: ~$1,100,000 (including contingency and soft costs)
+```
+
+**Example 2: Code Analysis Summary — Mixed-Use Building**
+
+```
+Project: Urban Lofts | Mixed-Use Building
+Program: 8,000 SF ground-floor retail + 24 residential units (36,000 SF) on 4 floors above
+Location: Seattle, WA | IBC 2018 with local amendments
+
+Code Analysis:
+
+Occupancy Classification (IBC Chapter 3):
+- Ground floor: M (Mercantile) - retail spaces
+- Floors 2-5: R-2 (Residential - multifamily apartments)
+- Classification: Mixed occupancy per IBC 508.4 (Non-separated uses allowed if sprinklered)
+
+Construction Type (IBC Chapter 6):
+- Type III-A selected:
+  - Allows up to 65' height / 5 stories for R-2 + M mixed use with sprinklers (IBC Table 504.3)
+  - Primary structural frame: 2-hour fire-resistance rating
+  - Exterior walls: 2-hour (bearing), 1-hour (non-bearing)
+  - Floor construction: 2-hour fire-resistance rating
+
+Height & Area (IBC Table 503):
+- Proposed: 58' height, 5 stories, 44,000 SF building area
+- Allowable: 65' height, 5 stories, 44,000 SF per floor (with sprinklers and frontage increase)
+- Complies: Yes (within height and area limits for Type III-A, R-2/M mixed, sprinklered)
+
+Fire Protection:
+- NFPA 13 automatic sprinkler system required throughout
+- Fire alarm system required (IBC 907.2)
+- Emergency lighting and exit signs required
+
+Means of Egress (IBC Chapter 10):
+- Residential units: 2 exits required per floor (exit separation 1/3 diagonal minimum)
+- Common path travel: 125' max (sprinklered R-2)
+- Exit stair width: 44" minimum (0.3" per occupant × 146 occupants = 44")
+- Proposed: 2 enclosed exit stairs at opposite ends of building, 48" wide each
+
+Accessibility (IBC Chapter 11, ANSI A117.1):
+- Elevator required (building >3 stories)
+- 5% of units (2 units minimum) mobility-accessible (Type A)
+- 2% of units (1 unit minimum) communication-accessible (Type B)
+- Ground-floor retail: accessible entrance, route, restrooms
+
+Energy Code:
+- Seattle Energy Code (more stringent than IECC 2018)
+- Prescriptive compliance path: continuous insulation, high-performance windows (U-0.30 max)
+- Envelope commissioning required
+```
+
+**Example 3: Submittal Review Comment**
+
+```
+Submittal Review: S-04 | Storefront System
+Project: Office Building Lobby Renovation
+Date: January 15, 2025
+Submitted by: XYZ Glazing Contractors
+
+Product: Kawneer 1600UT™ System 1™ Curtain Wall
+Specification Section: 08 44 00 - Curtain Wall and Glazing Systems
+Drawing Reference: A-201 (East Elevation), A-501 (Storefront Details)
+
+**Review Status: APPROVED AS NOTED**
+
+**Comments:**
+1. APPROVED: Kawneer 1600UT system meets specified performance requirements (air infiltration, water penetration, structural wind loads per ASTM E283, E331, E330)
+
+2. APPROVED AS NOTED: Glazing specified as 1" IG unit (6mm clear + 1/2" airspace + 6mm low-e). Verify low-e coating is on surface #3 (room-side of outer lite) per energy model and specification Section 08 80 00.
+
+3. REVISE: Shop drawings show horizontal mullion joint at 8'-6" height. This does not align with floor-to-floor dimension of 10'-0" shown on A-201. Revise joint location to align with floor slab or provide justification for mid-height joint.
+
+4. APPROVED: Thermal breaks and pressure plates comply with specified U-factor of 0.45 (Btu/hr·ft²·°F).
+
+5. CLARIFY: Anchorage detail (SD-3) shows 1/2" expansion anchor into CMU backup wall. Verify CMU wall strength (2,000 psi minimum) and anchor embedment depth (4" minimum) comply with structural drawings S-201 and manufacturer's recommendations.
+
+6. RESUBMIT: Test reports for ASTM E283, E331, E330 not included in submittal package. Provide certified test reports for this system configuration before fabrication.
+
+**Action Required:**
+Resubmit revised shop drawings addressing items 3, 5, and 6 above. Fabrication may proceed for items marked APPROVED, but hold fabrication for storefront sections requiring revision until resubmittal is reviewed and approved.
+
+Architect: Jane Doe, AIA
+License: WA #12345
+Date: January 15, 2025
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+**Key Terms:**
+- **AIA (American Institute of Architects)**: Professional organization for architects, publisher of standard contract documents
+- **Schematic Design (SD)**: First design phase showing conceptual design, massing, and major spaces
+- **Design Development (DD)**: Second phase refining design with dimensions, materials, and consultant coordination
+- **Construction Documents (CD)**: Final phase producing complete drawings and specifications for permitting and bidding
+- **Construction Administration (CA)**: Post-design phase where architect observes construction and responds to contractor questions
+- **IBC (International Building Code)**: Model building code adopted by most US jurisdictions
+- **Occupancy Classification**: Building use category (A-assembly, B-business, R-residential, etc.) determining code requirements
+- **Construction Type**: Building classification (Type I-V) based on fire-resistance of structural elements
+- **Means of Egress**: Code-required exit paths from any point in building to public way
+- **ADA (Americans with Disabilities Act)**: Federal law requiring accessibility in public buildings
+- **BIM (Building Information Modeling)**: 3D digital representation of building (Revit, ArchiCAD, Vectorworks)
+- **RFI (Request for Information)**: Contractor question during construction requiring architect's response
+- **ASI (Architect's Supplemental Instruction)**: Minor clarification or instruction that doesn't change cost or time
+- **Shop Drawing**: Detailed fabrication/installation drawing submitted by contractor for architect review
+- **Substantial Completion**: Milestone when building is sufficiently complete for owner occupancy
+- **As-Built Drawings**: Contractor-marked drawings showing field changes and final conditions
+- **LEED (Leadership in Energy and Environmental Design)**: Green building certification system
+- **ASTM (American Society for Testing and Materials)**: Standards organization for construction materials and testing
+
+**Standards & Frameworks (2024):**
+- **IBC 2024 (International Building Code)**: Model building code published by ICC, adopted with local amendments
+- **IRC 2024 (International Residential Code)**: Residential building code for 1- and 2-family dwellings
+- **ADA Standards for Accessible Design (2010)**: Federal accessibility requirements, updated periodically
+- **ANSI A117.1 (2017)**: Accessible and Usable Buildings and Facilities standard, referenced by IBC
+- **IECC 2024 (International Energy Conservation Code)**: Energy efficiency requirements for buildings
+- **ASHRAE 90.1-2022**: Energy Standard for Buildings Except Low-Rise Residential (commercial buildings)
+- **NFPA 101 (Life Safety Code)**: Alternative egress and life safety code to IBC (used in some jurisdictions)
+- **ASTM Standards**: Material testing standards (E283 air infiltration, E331 water penetration, E330 wind loads, etc.)
+- **AIA Contract Documents (2024 Edition)**: Standard agreements (B101 architect-owner, A201 general conditions)
+- **CSI MasterFormat (2024)**: Specification organization system (16 or 50 divisions)
+- **NDS (National Design Specification for Wood Construction)**: Structural wood design standard
+- **ACI 318 (Building Code Requirements for Structural Concrete)**: Concrete design standard
+- **ASCE 7 (Minimum Design Loads for Buildings)**: Structural load standard (wind, seismic, snow, live loads)
+
+**Common Tools:**
+- **CAD/BIM Software**: Revit (BIM), AutoCAD (2D drafting), ArchiCAD, Vectorworks, Rhino + Grasshopper (parametric)
+- **3D Modeling/Rendering**: SketchUp, Rhino, Blender, Lumion, Enscape, V-Ray, Twinmotion
+- **Specifications**: SpecLink, MasterSpec, Archterra (CSI MasterFormat databases)
+- **Project Management**: Bluebeam Revu (PDF markup), Procore, BIM 360, Autodesk Construction Cloud
+- **Energy Modeling**: IES-VE, EnergyPlus, eQUEST, Sefaira, WUFI (hygrothermal)
+- **Code Compliance**: UpCodes (code research), ICC Digital Codes, Omniclass (classification)
+- **Cost Estimating**: RSMeans, Sage Estimating, On-Screen Takeoff, PlanSwift
+- **Daylighting Analysis**: Radiance, DIVA for Rhino, ClimateStudio
+- **Structural Analysis**: RISA-3D, RAM Structural, ETABS (typically used by structural engineer)
+- **Drawing Management**: Newforma, Aconex, ProjectWise (large firms)
+
+**Change log**
+[2024-12]: Initial playbook created based on AIA 2024 design phase standards, IBC 2024, and current architectural practice
+- Emphasizes AIA standard phases (SD, DD, CD, CA)
+- Includes code compliance requirements per IBC 2024
+- References AIA contract documents and best practices
+- Covers sustainable design strategies and accessibility standards
