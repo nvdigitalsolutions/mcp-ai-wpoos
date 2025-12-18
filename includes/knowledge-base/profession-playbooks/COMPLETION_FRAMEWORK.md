@@ -32,6 +32,22 @@ This document provides methodology, templates, and guidelines for completing the
 - Target: 35-45KB, 800-1000 lines
 - Estimated Time: ~4-5 hours
 
+## 📋 Phase 6 - Continued Template Expansion (PLANNED)
+
+**Priority #1: hvac_technician** (Trades/Skilled Labor Template Expansion)
+- Purpose: Continue expanding trades category with established trades template
+- Research Focus: EPA Section 608 refrigerant certification, HVAC codes (IMC, IRC), energy efficiency standards, system diagnostics
+- Key Elements: Heating/cooling systems, refrigeration cycle, ductwork design, maintenance schedules, troubleshooting, safety protocols
+- Target: 25-35KB, 600-800 lines
+- Estimated Time: ~3-4 hours
+
+**Priority #2: school_counselor** (Education Template Expansion)
+- Purpose: Continue expanding education category with validated teacher template
+- Research Focus: ASCA National Model, student development standards, crisis intervention, college/career readiness
+- Key Elements: Individual counseling, group counseling, academic advising, mental health support, IEP/504 collaboration
+- Target: 35-45KB, 800-1000 lines
+- Estimated Time: ~4-5 hours
+
 ## ✅ Phase 4 - Template Validation (COMPLETED)
 
 **Priority #1: plumber** (Trades/Skilled Labor Template Validation) ✅
@@ -55,6 +71,7 @@ This document provides methodology, templates, and guidelines for completing the
 **Phase 3 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 4 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 5 Status**: 🔄 IN PROGRESS (Dec 18, 2024)
+**Phase 6 Status**: 📋 PLANNED (Next: hvac_technician, school_counselor)
 
 ## Phase Summary
 
@@ -98,6 +115,11 @@ Additional technical professions following software_engineer template:
 24. **college_professor** (Education template expansion)
 25. **welder** (Trades/Skilled Labor template expansion)
 26. **special_education_teacher** (Education template expansion)
+
+### Phase 6 - Continued Template Expansion (2 planned) 📋
+**Status**: PLANNED
+27. **hvac_technician** (Trades/Skilled Labor template expansion)
+28. **school_counselor** (Education template expansion)
 
 ## Exemplar Professions by Category
 
@@ -395,12 +417,13 @@ Group similar professions to reuse research:
 - Stakeholder management
 - Change management processes
 
-### Trades/Skilled Labor (~15) 🔄 4 IN PROGRESS
+### Trades/Skilled Labor (~15) 🔄 6 IN PROGRESS/PLANNED
 **Templates**: electrician (22KB), plumber (32KB)
-**Status**: Template expansion in progress 🔄 Phase 5 - carpenter and welder next
+**Status**: Template expansion in progress 🔄 Phase 5 - carpenter and welder in progress; Phase 6 - hvac_technician planned
 **Completed**: electrician, plumber
 **In Progress**: carpenter, welder
-**Remaining**: ~11 professions (automotive_mechanic, HVAC_technician, mason, roofer, heavy_equipment_operator, etc.)
+**Planned**: hvac_technician (Phase 6)
+**Remaining**: ~10 professions (automotive_mechanic, mason, roofer, heavy_equipment_operator, etc.)
 
 **Key Adaptations**:
 - Safety protocols (OSHA)
@@ -410,12 +433,13 @@ Group similar professions to reuse research:
 - Hands-on vs. advisory boundaries
 - Emergency response procedures
 
-### Education (~10) 🔄 4 IN PROGRESS
+### Education (~10) 🔄 6 IN PROGRESS/PLANNED
 **Templates**: high_school_teacher (31KB), elementary_school_teacher (40KB)
-**Status**: Template expansion in progress 🔄 Phase 5 - college_professor and special_education_teacher next
+**Status**: Template expansion in progress 🔄 Phase 5 - college_professor and special_education_teacher in progress; Phase 6 - school_counselor planned
 **Completed**: high_school_teacher, elementary_school_teacher
 **In Progress**: college_professor, special_education_teacher
-**Remaining**: ~6 professions (instructional_designer, school_counselor, esl_teacher, educational_administrator, etc.)
+**Planned**: school_counselor (Phase 6)
+**Remaining**: ~5 professions (instructional_designer, esl_teacher, educational_administrator, etc.)
 
 **Key Adaptations**:
 - Pedagogical approaches
@@ -482,6 +506,11 @@ Group similar professions to reuse research:
 - **welder** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
 - **special_education_teacher** (Education template expansion): ~4-5 hours (target: 35-45KB, 800-1000 lines)
 - **Phase 5 Total (estimated)**: ~14-18 hours
+
+**Phase 6 (Planned)**:
+- **hvac_technician** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
+- **school_counselor** (Education template expansion): ~4-5 hours (target: 35-45KB, 800-1000 lines)
+- **Phase 6 Total (estimated)**: ~7-9 hours
 
 ## Quality Standards
 
@@ -625,10 +654,15 @@ Copilot AI Assistant:
 - welder - Trades/Skilled Labor template expansion
 - special_education_teacher - Education template expansion
 
-Phase 6+: [Future contributors - 156 professions remaining after Phase 5]
+### Phase 6 (Continued Template Expansion) - Planned 📋
+Copilot AI Assistant:
+- hvac_technician - Trades/Skilled Labor template expansion
+- school_counselor - Education template expansion
+
+Phase 7+: [Future contributors - 154 professions remaining after Phase 6]
 
 ---
 
 **Last Updated**: December 18, 2024
-**Framework Version**: 1.6
-**Status**: Phase 5 in progress 🔄 - 22/182 professions complete (12.1%), 4 planned (carpenter, college_professor, welder, special_education_teacher)
+**Framework Version**: 1.7
+**Status**: Phase 5 in progress 🔄, Phase 6 planned 📋 - 22/182 professions complete (12.1%), 4 in progress (carpenter, college_professor, welder, special_education_teacher), 2 planned (hvac_technician, school_counselor)
