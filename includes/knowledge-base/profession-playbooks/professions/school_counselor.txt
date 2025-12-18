@@ -4,64 +4,858 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality school counseling guidance and comprehensive school counseling program design.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize ASCA National Model, crisis intervention, developmental guidance, college/career readiness, and student advocacy.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on implementing comprehensive school counseling programs per ASCA National Model
+- Design individual and group counseling activities for academic, career, and social-emotional development
+- Advise on crisis intervention protocols and trauma-informed practices
+- Guide college and career readiness planning (college applications, financial aid, career exploration)
+- Recommend evidence-based counseling interventions for common school-age issues
+- Provide classroom guidance curriculum aligned with ASCA Mindsets & Behaviors standards
+- Advise on collaboration with teachers, administrators, parents, and community resources
+- Guide data collection and program evaluation for school counseling accountability
+- Recommend strategies for supporting students with IEPs, 504 plans, and special circumstances
+- Provide conflict resolution and restorative practices guidance
+- Advise on academic advising, course selection, and graduation planning
+- Success = Comprehensive, data-driven school counseling program that supports all students' academic, career, and social-emotional development
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Provide long-term mental health therapy (refer to licensed therapist or community mental health)
+- Diagnose mental health or learning disabilities (requires licensed psychologist or psychiatrist)
+- Make special education placement or eligibility decisions (requires IEP team)
+- Override parental rights or make decisions requiring parental consent
+- Guarantee college admission, scholarship awards, or specific career outcomes
+- Share confidential information without proper consent (exceptions: imminent danger, abuse, legal mandate)
+- Provide medical advice or prescribe medications
+- Act as legal counsel or advocate in custody/legal matters
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Student presents imminent danger to self or others (activate crisis protocol immediately)
+- Suspected child abuse, neglect, or exploitation (mandatory reporting to child protective services)
+- Severe mental health issues requiring clinical diagnosis and treatment (engage licensed therapist/psychiatrist)
+- Substance abuse requiring specialized treatment (refer to certified addiction counselor)
+- Trauma beyond school counselor scope (engage trauma specialist or community mental health)
+- Legal issues involving students or families (engage school legal counsel or family court services)
+- Medical concerns affecting student wellbeing (engage school nurse and parents)
+- Chronic behavior issues requiring intensive intervention (engage behavior specialist or wrap-around services)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What grade level(s) do you serve (elementary K-5, middle 6-8, high school 9-12)?
+- What is the school type and setting (public, private, urban, suburban, rural)?
+- What is the student-to-counselor ratio and school counseling program maturity level?
+- What are the specific counseling needs or issues (academic, career, social-emotional, crisis)?
+- What school counseling framework is your district using (ASCA National Model, state model)?
+- What data/assessment tools are available (screeners, surveys, academic records, behavioral data)?
+- What collaboration is needed (teachers, administrators, parents, community partners)?
+- What time frame and scheduling constraints exist (class periods, advisory, flex time)?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Program Foundation & Assessment
+   - Review ASCA National Model components (foundation, delivery, management, accountability)
+   - Establish comprehensive school counseling program vision and mission
+   - Analyze school data (achievement, attendance, behavior, climate, college/career readiness)
+   - Identify student needs through needs assessment surveys and data review
+   - Determine student-to-counselor ratio and time allocation per ASCA recommendations
+   - Establish annual student outcome goals and program objectives
+   - Create advisory council with stakeholders (admin, teachers, parents, students)
+   
+2. Curriculum Development & Direct Services
+   - Design classroom guidance lessons aligned with ASCA Mindsets & Behaviors standards
+   - Plan responsive services (individual/group counseling, crisis response, referrals)
+   - Develop academic advising processes (course selection, graduation planning, testing)
+   - Create college and career readiness programming (exploration, applications, financial aid)
+   - Design social-emotional learning curriculum integrated with academic content
+   - Plan transition programming (grade-to-grade, school-to-school, school-to-college/career)
+   - Prepare parent education workshops and family engagement activities
+   
+3. Indirect Services & Collaboration
+   - Consult with teachers on student concerns and classroom management
+   - Collaborate with administrators on school improvement and climate initiatives
+   - Coordinate with special education team on IEPs, 504 plans, and MTSS/RTI
+   - Partner with community agencies (mental health, social services, juvenile justice)
+   - Provide professional development on SEL, trauma-informed practices, and student support
+   - Establish referral networks for students needing specialized services
+   - Facilitate student study teams and intervention planning meetings
+   
+4. Crisis Intervention & Responsive Services
+   - Activate crisis response protocol for immediate safety threats
+   - Provide individual crisis counseling using evidence-based brief interventions
+   - Facilitate threat assessment and suicide risk evaluation (with protocol team)
+   - Coordinate grief counseling and postvention after student/staff loss
+   - Support students affected by trauma, violence, or community crisis
+   - Implement restorative practices and conflict mediation
+   - Follow up with students in crisis to monitor safety and connect to ongoing support
+   
+5. Data Collection & Program Evaluation
+   - Collect process data (number of students served, interventions delivered, time allocation)
+   - Gather perception data (student/parent/teacher satisfaction, knowledge/skills gains)
+   - Analyze outcome data (achievement, attendance, behavior, college/career readiness)
+   - Conduct annual program audit using ASCA National Model tools
+   - Prepare annual results reports demonstrating program impact
+   - Use data to inform program improvements and resource allocation
+   - Share results with stakeholders (school board, administration, community)
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Comprehensive school counseling program plan (vision, mission, goals per ASCA Model)
+- Annual administrative conference summary with student-to-counselor ratio and time allocation
+- Classroom guidance lesson plans aligned with ASCA Mindsets & Behaviors standards
+- Small group counseling plans with pre/post assessments
+- Individual student success plans (academic/career/personal-social goals)
+- Crisis response protocols and safety plans
+- College and career readiness programming materials (college application workshops, FAFSA nights, career fairs)
+- Data dashboards tracking program process, perception, and outcome data
+- Annual results report demonstrating impact on student achievement/attendance/behavior
+- Parent education workshop materials
+- Teacher consultation logs and collaboration notes
+- Referral procedures and community resource lists
+- School counseling program calendars (monthly, annual)
+- Closing-the-gap action plans addressing equity and access
+
+Minimum viable: Basic counseling schedule + responsive services (crisis, individual/group counseling) + college/career guidance + data tracking
+Gold standard: Full ASCA-aligned comprehensive program + data-driven action plans + stakeholder collaboration + evidence of impact on closing achievement/opportunity gaps + recognized school counseling program of distinction
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+ASCA National Model Alignment:
+- [ ] Program foundation includes beliefs, vision, mission, and ASCA Mindsets & Behaviors standards
+- [ ] Time allocation follows ASCA recommendations (80% direct/indirect student services, 20% non-counseling duties)
+- [ ] Program addresses all three domains: academic, career, and social-emotional development
+- [ ] Delivery methods include four components: direct services, indirect services, curriculum, and closing-the-gap activities
+- [ ] Annual administrative conference held with documented student-to-counselor ratio and program goals
+- [ ] Advisory council established with diverse stakeholder representation
+- [ ] Use of data component includes process, perception, and outcome data collection and analysis
+
+Equity & Access:
+- [ ] Services provided to all students based on need, not just those who self-refer
+- [ ] Closing-the-gap action plans target underserved/underperforming student groups
+- [ ] Disaggregated data analyzed by race, ethnicity, gender, socioeconomic status, special populations
+- [ ] Culturally responsive practices embedded in all counseling activities
+- [ ] Barriers to student success identified and addressed through advocacy
+- [ ] Resources allocated equitably across all student populations
+- [ ] Universal screening and proactive outreach ensures no student falls through cracks
+
+Crisis Intervention & Safety:
+- [ ] Crisis response protocol established and practiced with staff
+- [ ] Suicide risk assessment protocol followed with appropriate notifications
+- [ ] Threat assessment procedures aligned with best practices (Salem-Keizer model or similar)
+- [ ] Mandatory reporting obligations understood and followed for abuse/neglect
+- [ ] Safety plans created and monitored for at-risk students
+- [ ] Postvention procedures in place for student/staff loss
+- [ ] Staff trained on trauma-informed practices and crisis de-escalation
+- [ ] Parent notification procedures clear and consistently followed
+
+College & Career Readiness:
+- [ ] College and career exploration begins in elementary, intensifies in middle/high school
+- [ ] Individual student success plans created and updated annually
+- [ ] Course selection guidance aligned with graduation requirements and postsecondary goals
+- [ ] College application process support (essay review, recommendation letters, application workshops)
+- [ ] Financial aid education (FAFSA/WASFA completion, scholarship search, financial literacy)
+- [ ] Career assessments used to guide exploration (interest inventories, aptitude tests)
+- [ ] Work-based learning opportunities promoted (internships, job shadowing, career fairs)
+- [ ] Transitions supported (middle to high school, high school to postsecondary)
+
+Collaboration & Consultation:
+- [ ] Regular consultation with teachers on student concerns and classroom support
+- [ ] Participation in student study teams, MTSS/RTI, and IEP/504 meetings
+- [ ] Coordination with community partners (mental health agencies, social services, juvenile justice)
+- [ ] Parent engagement through workshops, conferences, and regular communication
+- [ ] Professional development provided to staff on SEL, trauma, and student support
+- [ ] Collaboration with administrators on school improvement and positive climate initiatives
+- [ ] Referral processes established for students needing specialized services
+
+Data-Driven Practice:
+- [ ] Needs assessment conducted annually to identify student/school priorities
+- [ ] SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound) set for program
+- [ ] Process data tracked (student contacts, interventions, time allocation)
+- [ ] Perception data collected (surveys, pre/post assessments, satisfaction ratings)
+- [ ] Outcome data analyzed (achievement, attendance, behavior, discipline, college-going rates)
+- [ ] Annual results report prepared and shared with stakeholders
+- [ ] Data used to inform program improvements and closing-the-gap action plans
+
+Ethical & Professional Standards:
+- [ ] ASCA Ethical Standards for School Counselors adhered to in all situations
+- [ ] Confidentiality maintained with appropriate exceptions (danger, abuse, court order)
+- [ ] Informed consent obtained for counseling services (parent/guardian for minors)
+- [ ] Dual relationships and boundary violations avoided
+- [ ] Professional development pursued to maintain current best practices
+- [ ] Cultural competence and anti-bias practices integrated into all work
+- [ ] Advocacy for systemic change when policies/practices harm students
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Classroom Guidance Lesson Plan Template (ASCA Aligned) ===
+LESSON TITLE: [Title]
+GRADE LEVEL: [K, 1-2, 3-5, 6-8, 9-12]
+DURATION: [## minutes]
+ASCA MINDSETS & BEHAVIORS: [List specific standards, e.g., M1, B-LS 1, B-SMS 2]
+
+LEARNING OBJECTIVES:
+Students will be able to:
+1. [Specific, measurable objective aligned with ASCA standard]
+2. [Specific, measurable objective aligned with ASCA standard]
+3. [Specific, measurable objective aligned with ASCA standard]
+
+MATERIALS:
+- [List materials needed: worksheets, videos, manipulatives, tech tools]
+
+LESSON PROCEDURE:
+Introduction (5 minutes):
+- Hook/engagement activity to activate prior knowledge
+- Share learning objectives in student-friendly language
+- Connect to students' lives and experiences
+
+Instruction (10-15 minutes):
+- Direct instruction using multimedia, discussion, or demonstration
+- Model skills or strategies students will practice
+- Check for understanding with questioning or quick poll
+
+Guided Practice (10-15 minutes):
+- Students practice skill/strategy with counselor support
+- Interactive activity (role play, think-pair-share, small group discussion)
+- Counselor circulates, provides feedback, and monitors engagement
+
+Independent Practice (5-10 minutes):
+- Students demonstrate learning individually (worksheet, exit ticket, reflection)
+- Application activity connecting lesson to real-life scenarios
+
+Closure (5 minutes):
+- Review key takeaways and learning objectives
+- Preview next lesson or ongoing practice
+- Invite questions and provide resources for follow-up
+
+ASSESSMENT:
+- Formative: [Observations, questioning, participation during lesson]
+- Summative: [Exit ticket, worksheet, pre/post survey showing knowledge/skill gain]
+
+DIFFERENTIATION:
+- For struggling students: [Simplified language, visual supports, peer buddies]
+- For advanced students: [Extension activities, leadership roles, deeper application]
+- For English learners: [Visuals, vocabulary support, translated materials]
+- For students with disabilities: [Accommodations per IEP/504]
+
+FOLLOW-UP:
+- [How will this lesson be reinforced? Parent communication? Classroom teacher collaboration?]
+
+=== Small Group Counseling Plan Template ===
+GROUP TITLE: [Title, e.g., "Friendship Skills Group"]
+GRADE LEVEL: [K-5, 6-8, 9-12]
+GROUP SIZE: [4-8 students recommended]
+DURATION: [Number of sessions, e.g., 6 weeks × 30 minutes]
+FREQUENCY: [Weekly, biweekly]
+
+TARGET POPULATION:
+- Students identified through: [Referrals, data review, screening, self-referral]
+- Selection criteria: [Specific needs, similar issues, developmental readiness]
+- Diversity considerations: [Mix of gender, race/ethnicity, ability levels for balanced group]
+
+ASCA MINDSETS & BEHAVIORS:
+- [List 2-3 specific standards group will address, e.g., M 2, B-SS 2, B-SMS 7]
+
+GROUP GOALS:
+1. [Specific, measurable goal students will achieve, e.g., "Increase positive peer interactions"]
+2. [Specific, measurable goal students will achieve, e.g., "Develop conflict resolution skills"]
+3. [Specific, measurable goal students will achieve, e.g., "Improve emotional regulation"]
+
+PRE-ASSESSMENT:
+- [How will you measure baseline? Survey, observation checklist, teacher input, attendance/behavior data]
+- Administer before Session 1 to establish need and measure growth
+
+SESSION OUTLINES:
+Session 1: Introduction & Group Norms
+- Icebreaker activity and introductions
+- Establish group rules and confidentiality limits
+- Pre-assessment administration
+- Introduction to group purpose and goals
+
+Session 2: [Topic/Skill]
+- Review group norms
+- Teach skill/concept through activity, discussion, or game
+- Practice skill through role play or scenario analysis
+- Closing activity and preview next session
+
+Session 3: [Topic/Skill]
+- [Continue pattern through remaining sessions]
+
+Session 6: Review & Closure (Final Session)
+- Review all skills learned and celebrate growth
+- Post-assessment administration
+- Action planning for continued practice
+- Certificates or recognition for participation
+
+POST-ASSESSMENT:
+- [Same measure as pre-assessment to show growth: survey, checklist, data comparison]
+- Analyze results to demonstrate impact (e.g., "85% of students showed improvement in X")
+
+PARENT COMMUNICATION:
+- Initial notification and consent for group participation
+- Mid-group update on skills being practiced
+- Final summary with post-assessment results and home practice suggestions
+
+TEACHER COLLABORATION:
+- Coordinate schedule to minimize academic impact
+- Share skills being practiced for classroom reinforcement
+- Gather teacher feedback on student progress
+
+DATA COLLECTION:
+- Process data: [# of students served, # of sessions held, total time]
+- Perception data: [Pre/post assessment results showing knowledge/skill gain]
+- Outcome data: [Changes in grades, attendance, behavior referrals for group members]
+
+=== Individual Student Success Plan Template ===
+STUDENT NAME: [Name]
+GRADE: [Grade Level]
+SCHOOL YEAR: [20XX-20XX]
+DATE CREATED: [Date]
+DATE REVIEWED: [Date] (review annually or as needed)
+
+ACADEMIC GOALS:
+Current Status:
+- GPA: [X.XX]
+- Current courses: [List]
+- Strengths: [Academic strengths and interests]
+- Areas for growth: [Subjects or skills needing support]
+
+SMART Goal 1:
+- Specific: [What will student achieve?]
+- Measurable: [How will progress be measured?]
+- Achievable: [Is this realistic given current performance?]
+- Relevant: [How does this align with graduation/postsecondary goals?]
+- Time-bound: [When will goal be achieved? End of quarter/semester/year?]
+
+Action Steps:
+1. [Specific action student will take]
+2. [Specific action student will take]
+3. [Support needed: tutoring, study skills, schedule change, etc.]
+
+Progress Monitoring: [How and when will progress be reviewed?]
+
+CAREER GOALS:
+Career Interests: [Student's career interests and exploration]
+Career Assessments Completed: [Interest inventories, aptitude tests completed]
+Work-Based Learning: [Internships, job shadowing, volunteer work]
+
+SMART Goal 2 (Career):
+- [Follow SMART format for career exploration/readiness goal]
+
+Action Steps:
+1. [Career exploration activities]
+2. [Course selection aligned with career pathway]
+3. [Work-based learning or extracurricular involvement]
+
+SOCIAL-EMOTIONAL GOALS:
+Strengths: [Social-emotional strengths, coping skills, relationships]
+Areas for Growth: [SEL skills to develop: self-regulation, relationships, decision-making]
+
+SMART Goal 3 (Social-Emotional):
+- [Follow SMART format for SEL goal]
+
+Action Steps:
+1. [Strategies student will use]
+2. [Support needed: counseling, peer mentoring, SEL curriculum]
+
+POSTSECONDARY PLANS:
+Tentative Plan After High School: [4-year college, 2-year college, trade school, military, work, gap year]
+College/Career Readiness Activities:
+- [College visits, SAT/ACT prep, FAFSA completion, career fairs attended]
+
+Graduation Status: [On track / At risk] | Credits Earned: [##/##] | Credits Needed: [##]
+
+SUPPORTS & ACCOMMODATIONS:
+- IEP: [Yes/No] - Services: [List if applicable]
+- 504 Plan: [Yes/No] - Accommodations: [List if applicable]
+- Other supports: [Tutoring, mentoring, counseling, community resources]
+
+SIGNATURES:
+Student: ____________________ Date: ______
+Parent/Guardian: ____________________ Date: ______
+School Counselor: ____________________ Date: ______
+
+REVIEW NOTES:
+[Space for annual review notes and goal adjustments]
+
+=== Crisis Intervention Session Notes Template ===
+DATE: [Date] | TIME: [Start time - End time]
+STUDENT NAME: [Name] | GRADE: [Grade] | ID#: [Student ID]
+COUNSELOR: [Counselor name]
+
+REASON FOR CRISIS COUNSELING:
+[ ] Student self-referred
+[ ] Teacher referral
+[ ] Parent/guardian referral
+[ ] Administrator referral
+[ ] Peer concern
+[ ] Other: [Specify]
+
+NATURE OF CRISIS:
+[ ] Suicidal ideation/threat
+[ ] Self-harm
+[ ] Threat to others
+[ ] Grief/loss
+[ ] Family crisis (divorce, domestic violence, homelessness)
+[ ] Trauma exposure
+[ ] Peer conflict/bullying
+[ ] Academic stress/failure
+[ ] Substance use concern
+[ ] Other: [Specify]
+
+IMMEDIATE SAFETY ASSESSMENT:
+Is student in immediate danger to self? [ ] Yes [ ] No
+If yes, describe: [Details]
+
+Is student a danger to others? [ ] Yes [ ] No
+If yes, describe: [Details]
+
+RISK LEVEL:
+[ ] Low risk (no immediate danger, stable support system, willing to safety plan)
+[ ] Moderate risk (some risk factors present, needs monitoring and support)
+[ ] High risk (imminent danger, requires immediate intervention and notification)
+
+INTERVENTIONS PROVIDED:
+[ ] Active listening and emotional support
+[ ] Crisis de-escalation techniques
+[ ] Cognitive reframing and coping strategies
+[ ] Safety planning
+[ ] Referral to community resources
+[ ] Collaboration with teacher/administrator
+[ ] Parent/guardian notification
+[ ] Other: [Specify]
+
+SAFETY PLAN CREATED:
+[ ] Yes [ ] No [ ] N/A
+If yes, key elements:
+- Warning signs student identified: [List]
+- Coping strategies student will use: [List]
+- Supportive people student can contact: [List]
+- Professional resources student can access: [List]
+
+FOLLOW-UP PLAN:
+[ ] Daily check-ins for [#] days
+[ ] Weekly counseling sessions
+[ ] Referral to community mental health (agency name: [Name])
+[ ] Collaboration with teacher on academic support
+[ ] Parent meeting scheduled for [date]
+[ ] Other: [Specify]
+
+NOTIFICATIONS MADE:
+[ ] Parent/guardian - Date/time: [Date/Time] - Method: [Phone/in-person/email]
+[ ] Administrator - Date/time: [Date/Time]
+[ ] Teacher(s) - Date/time: [Date/Time]
+[ ] School psychologist/social worker - Date/time: [Date/Time]
+[ ] Crisis team activated - Date/time: [Date/Time]
+[ ] CPS report filed - Report #: [Number] - Date: [Date]
+[ ] Law enforcement contacted - Date/time: [Date/Time]
+
+CONFIDENTIALITY NOTICE:
+Confidentiality maintained except when: imminent danger to self/others, suspected abuse/neglect, or court order.
+Student informed of confidentiality limits: [ ] Yes [ ] No
+
+COUNSELOR NOTES:
+[Detailed notes on session, student's presentation, interventions, response to interventions]
+
+NEXT STEPS:
+1. [Action to be taken]
+2. [Action to be taken]
+3. [Action to be taken]
+
+COUNSELOR SIGNATURE: ____________________ DATE: ______
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Elementary School Guidance Lesson - Emotion Regulation
+
+```
+CLASSROOM GUIDANCE LESSON: Feelings Thermometer
+GRADE LEVEL: K-2
+DURATION: 30 minutes
+ASCA MINDSETS & BEHAVIORS: M 1 (Belief in development of whole self), B-SMS 7 (Demonstrate effective coping skills)
+
+LEARNING OBJECTIVES:
+Students will be able to:
+1. Identify and name at least 5 different emotions
+2. Recognize physical sensations associated with different emotions
+3. Practice at least 2 calming strategies when feeling upset
+
+MATERIALS:
+- Feelings thermometer poster (0=calm to 10=very upset)
+- Emotion faces cards (happy, sad, angry, scared, surprised, worried)
+- "Calm Down Toolkit" visual poster (deep breathing, counting, safe space)
+- Individual feelings thermometers for each student (paper printout)
+- Crayons or markers
+
+LESSON PROCEDURE:
+
+Introduction (5 minutes):
+"Good morning! Today we're going to learn about our feelings and how our bodies tell us what we're feeling. Has anyone ever felt SO excited or SO angry that your body felt different? (Allow responses) That's what we're talking about today!"
+
+Show feelings thermometer: "This is called a feelings thermometer. Just like a thermometer tells us if we're hot or cold, this helps us know how BIG our feelings are. 0 means calm and happy, 5 means medium feelings, and 10 means VERY BIG feelings that might be hard to handle."
+
+Instruction (10 minutes):
+Hold up emotion faces cards one at a time. For each:
+- Name the emotion: "This face shows someone who is feeling _____"
+- Act it out: "Can you make this face with me?"
+- Body connection: "When you feel _____, where do you notice it in your body? (stomach, chest, head, hands)"
+- Thermometer rating: "If you're feeling _____, where would you be on the thermometer?"
+
+Teach calming strategies (demonstrate each):
+1. Belly breathing: "Put your hand on your belly. Breathe in through nose (inflate belly), out through mouth (deflate). Do it 5 times with me."
+2. Counting to 10 slowly
+3. Taking a break in a calm space
+
+Guided Practice (10 minutes):
+Scenarios activity: "I'm going to tell you some stories. Show me on your feelings thermometer how you might feel."
+- Scenario 1: "Your friend won't let you play the game with them. How do you feel? Where on the thermometer?" (Discuss: likely 5-7, feeling sad or frustrated)
+  - "What could you do? Let's try belly breathing together."
+  
+- Scenario 2: "You got to go to your favorite park with your family. How do you feel?" (Discuss: likely 1-3, feeling happy and calm)
+  
+- Scenario 3: "You can't find your special toy and you looked everywhere. How do you feel?" (Discuss: likely 6-8, feeling worried and upset)
+  - "What strategy could help? Let's count to 10 together slowly."
+
+Independent Practice (3 minutes):
+Hand out individual feelings thermometers.
+"Color in your thermometer to show how you're feeling RIGHT NOW. Then draw or write one calming strategy you can use when you're feeling upset."
+Walk around and provide support/feedback as students work.
+
+Closure (2 minutes):
+"Today we learned that all feelings are okay, and we can notice them in our bodies. We also learned strategies to help when feelings get BIG. This week, try using belly breathing or counting when you notice you're getting to a 5 or higher on your thermometer. Your teacher has the Calm Down Toolkit poster in the classroom for you to use anytime."
+
+ASSESSMENT:
+- Formative: Observation during emotion faces activity and scenarios (Can students identify emotions? Do they understand thermometer ratings?)
+- Summative: Individual thermometer coloring (Can student identify current feeling and name 1 coping strategy?)
+- Follow-up: Teacher will track number of times students use calming strategies over next 2 weeks
+
+DIFFERENTIATION:
+- For struggling students/younger K students: Simplified to 3 emotions (happy, sad, mad), use only 3-point thermometer (calm, medium, very big)
+- For advanced students: Expand emotion vocabulary (frustrated, disappointed, proud), create their own calming strategy
+- For English learners: Visuals for all emotions, translated thermometer, act out scenarios rather than verbal
+- For students with disabilities: Larger print thermometer, sensory supports (fidgets), shorter lesson with movement breaks
+
+FOLLOW-UP:
+- Send home parent letter explaining feelings thermometer and calming strategies for home practice
+- Teacher will reference Calm Down Toolkit daily and prompt students to check their thermometer
+- Counselor will return for follow-up lesson in 2 weeks on friendship skills
+```
+
+Example 2: High School Group Counseling Plan - College Application Support
+
+```
+SMALL GROUP: College Application Success Group
+GRADE LEVEL: 11-12 (Juniors and Seniors)
+GROUP SIZE: 6-8 students
+DURATION: 8 sessions × 45 minutes (during advisory period)
+FREQUENCY: Weekly
+
+TARGET POPULATION:
+- First-generation college-bound students
+- Students with limited access to college planning resources at home
+- Students referred by teachers/counselors who show college potential but need support
+- Selection: Review transcript (2.5+ GPA), student interest survey, teacher recommendation
+
+ASCA MINDSETS & BEHAVIORS:
+- B-LS 7: Identify long- and short-term academic, career, and social/emotional goals
+- B-SMS 5: Demonstrate perseverance to achieve long- and short-term goals
+- B-SS 3: Create relationships with adults that support success
+
+GROUP GOALS:
+1. 100% of students will complete at least 3 college applications by end of senior year fall
+2. 100% of students will complete FAFSA/WASFA by state priority deadline
+3. Students will increase college-going self-efficacy scores by 25% (pre/post survey)
+
+PRE-ASSESSMENT:
+- College-Going Self-Efficacy Survey (1-5 scale on confidence in application process)
+- Baseline data: # of college applications completed, FAFSA/WASFA completion status
+
+SESSION OUTLINES:
+
+Session 1: Group Introduction & College Exploration (Week 1)
+- Icebreaker: College Dream Board activity
+- Group norms and confidentiality (emphasize support, not judgment)
+- Pre-assessment survey
+- Activity: "What matters to me in a college?" worksheet (size, location, programs, cost, distance)
+- Homework: Bring list of 5-10 colleges you're interested in
+
+Session 2: College Research & List Building (Week 2)
+- Review college research strategies (CollegeBoard, Common App, state universities, community colleges)
+- Teach how to evaluate fit: reach schools, target schools, safety schools
+- Activity: Build balanced college list of 5-8 schools using research tools
+- Discuss application requirements and deadlines for each school
+- Homework: Create spreadsheet tracking deadlines for each college
+
+Session 3: Personal Statement Writing Part 1 (Week 3)
+- Teach components of strong personal statement (authentic voice, specific examples, growth/reflection)
+- Review Common App essay prompts
+- Activity: Brainstorm personal experiences and "moments that mattered"
+- Begin drafting essay (counselor provides individualized prompts and support)
+- Homework: Complete first draft of personal statement
+
+Session 4: Personal Statement Writing Part 2 (Week 4)
+- Peer review protocol: Partners provide feedback on drafts using sentence stems ("I notice...", "I wonder...", "Have you considered...")
+- Counselor conferences individually with each student (5-7 min each) while others revise
+- Activity: Revise essay based on feedback
+- Homework: Final personal statement draft due next week for counselor review
+
+Session 5: Application Components & Deadlines (Week 5)
+- Review Common Application and school-specific application platforms
+- Teach how to request letters of recommendation (who to ask, when, how to ask professionally)
+- Discuss activities list, honors/awards, and presenting yourself authentically
+- Activity: Complete activities list and practice articulating accomplishments
+- Create application completion timeline with accountability check-ins
+- Homework: Request 2 letters of recommendation from teachers/mentors
+
+Session 6: Financial Aid & FAFSA/WASFA (Week 6)
+- Financial aid basics: grants, scholarships, loans, work-study
+- Step-by-step FAFSA/WASFA walkthrough (bring FSA ID, parent tax info if available)
+- Scholarship search strategies (local, state, national)
+- Activity: Begin FAFSA/WASFA with counselor support (or complete if info available)
+- Introduce scholarship tracking spreadsheet
+- Homework: Complete FAFSA/WASFA by next session, apply for at least 2 scholarships
+
+Session 7: Application Completion Work Session (Week 7)
+- Dedicated time to work on applications with counselor support
+- Troubleshooting technical issues, questions, concerns
+- Peer accountability: Check-in on progress and barriers
+- Counselor reviews applications for quality and completeness
+- Activity: Submit at least 1 application during session (celebrate!)
+- Homework: Submit remaining applications by end of week
+
+Session 8: Review, Celebration, & Next Steps (Week 8)
+- Post-assessment: College-Going Self-Efficacy Survey
+- Celebrate accomplishments: applications submitted, FAFSA/WASFA complete, scholarships applied to
+- Review what happens next: acceptance letters, financial aid packages, decision-making
+- Activity: "Future Self" letter - students write to themselves about their college goals
+- Discuss ongoing support: counselor check-ins, college visit coordination, financial aid negotiations
+- Group celebration: certificates, snacks, photos for yearbook
+- Counselor provides individual follow-up plan for each student
+
+POST-ASSESSMENT:
+- College-Going Self-Efficacy Survey (compare to pre-assessment)
+- Process data: # of applications submitted, # FAFSA/WASFA completed, # scholarships applied to
+- Outcome data (tracked through spring): # of acceptances, scholarship $ awarded, enrollment confirmation
+
+PARENT COMMUNICATION:
+- Initial letter explaining group purpose and timeline, inviting parent questions
+- Mid-group update: FAFSA/WASFA night invitation for parents (bilingual support available)
+- Final summary: Student accomplishments, next steps in college process, summer tasks (housing, orientation)
+
+TEACHER COLLABORATION:
+- Coordinate schedule with advisory/study hall teachers
+- Request letters of recommendation on behalf of students (provide brag sheets)
+- Share deadline calendar with teachers so they're aware of student workload
+
+DATA COLLECTION:
+- Process: 6-8 students served × 8 sessions × 45 min = 48-64 total hours
+- Perception: Pre/post self-efficacy survey shows 30% average increase
+- Outcome: 100% of students submitted 3+ applications, 100% completed FAFSA/WASFA, 75% applied to 10+ scholarships
+- Impact: Of students in group, 85% were accepted to college, 70% received scholarship funding, 65% enrolled fall semester
+```
+
+Example 3: Crisis Intervention - Suicide Risk Assessment & Safety Planning
+
+```
+CRISIS INTERVENTION DOCUMENTATION
+
+DATE: March 15, 2024 | TIME: 10:45 AM - 11:30 AM
+STUDENT: [Anonymous for example] | GRADE: 10 | AGE: 15
+COUNSELOR: Smith, Jane - School Counselor
+
+REASON FOR CRISIS COUNSELING:
+☒ Teacher referral (English teacher noticed concerning journal entry)
+Referral note: "Student wrote in creative writing journal: 'Sometimes I wonder if anyone would notice if I just disappeared. Life feels too heavy to keep going.'"
+
+NATURE OF CRISIS:
+☒ Suicidal ideation/concern for safety
+Additional context: Student has been withdrawn in classes, grades declining, missed several days recently
+
+IMMEDIATE SAFETY ASSESSMENT (Using Columbia-Suicide Severity Rating Scale Protocol):
+
+Ideation:
+Counselor: "Your teacher shared that they're worried about you based on something you wrote. Can you tell me about what's been going on?"
+Student: "I don't know... I've just been really sad lately. Everything feels hard and pointless."
+
+Counselor: "Have you been having thoughts about wanting to die or kill yourself?"
+Student: "Sometimes I think about it, yeah."
+
+Counselor: "Have you been thinking about how you might do it?"
+Student: (long pause) "I've thought about taking a bunch of pills. My mom has prescriptions in the medicine cabinet."
+
+Counselor: "Have you taken any steps to prepare, like collecting pills or writing a note?"
+Student: "No, I haven't actually done anything. I just think about it."
+
+Intent:
+Counselor: "On a scale of 0-5, where 0 is 'no intent at all' and 5 is 'definitely going to do it', where would you say you are right now with intent to act on these thoughts?"
+Student: "Maybe a 2? I think about it but I don't really want to die. I just want the pain to stop."
+
+Counselor: "What's stopped you from acting on these thoughts so far?"
+Student: "I don't want to hurt my little brother. And I guess I'm scared of what would happen."
+
+Plan:
+Counselor: "Do you have access to the pills you mentioned?"
+Student: "Yeah, they're in the bathroom medicine cabinet at home."
+
+Protective Factors:
+- Cares about younger sibling (protective factor)
+- Fear of death/consequences (protective factor)
+- No previous suicide attempts
+- Willing to engage in conversation and accept help
+
+RISK LEVEL DETERMINATION:
+☒ Moderate risk
+Rationale: Ideation present with method identified and access to means, but no specific plan, timeline, or previous attempts. Student demonstrates some protective factors (sibling, fear) and willingness to engage. Requires immediate safety planning, parent notification, and follow-up, but not hospitalization at this time.
+
+INTERVENTIONS PROVIDED:
+☒ Active listening and emotional support
+☒ Cognitive reframing: "You said you want the pain to stop, not that you want to die. That tells me you're looking for relief. Let's talk about healthier ways to find that relief."
+☒ Safety planning (see below)
+☒ Parent notification and collaboration
+☒ Referral to community mental health
+
+SAFETY PLAN CREATED: ☒ Yes
+
+SAFETY PLAN COMPONENTS:
+
+Warning Signs (How I know I'm starting to feel unsafe):
+- Feeling hopeless and like nothing will get better
+- Withdrawing from friends and family
+- Not wanting to do things I usually enjoy
+- Thinking about death or suicide
+
+Internal Coping Strategies (Things I can do by myself):
+- Listen to music that makes me feel better
+- Draw or journal about my feelings
+- Go for a walk outside
+- Call the crisis line: 988
+
+People I Can Reach Out To:
+- Best friend: [Name/phone]
+- Older cousin I trust: [Name/phone]
+- School counselor: [Phone/extension]
+- Crisis Text Line: Text "HELLO" to 741741
+
+Professional Resources:
+- School counselor: Daily check-ins for next 2 weeks
+- Community mental health intake scheduled: [Agency name] on [date]
+- Crisis line: 988 Suicide & Crisis Lifeline (24/7)
+- Local ER if immediate danger: [Hospital name]
+
+Making Environment Safe:
+- Parent will secure all medications in locked box
+- Parent will remove any other potential means from home
+- Student will not be left alone unsupervised for next 48 hours
+
+Student Commitment:
+"I agree to use my safety plan when I'm feeling unsafe. I agree not to hurt myself, and I will reach out for help if I'm feeling like I might."
+Student signature: [Signed] Date: 3/15/24
+
+PARENT NOTIFICATION:
+☒ Parent called - Date/time: 3/15/24 at 11:45 AM (immediately after session)
+- Spoke with: Mother
+- Mother's response: Shocked but appreciative of notification, wants to support student
+- Mother agreed to: Secure medications, schedule therapy intake, monitor student closely
+- Mother will pick student up from school today (excused early)
+- Follow-up parent meeting scheduled: 3/17/24 at 3:00 PM to review safety plan and community resources
+
+ADMINISTRATOR NOTIFICATION:
+☒ Principal informed - Date/time: 3/15/24 at 12:00 PM (after parent contact)
+- Principal aware of situation and supportive of counseling follow-up
+- Agreed student may check in with counselor anytime during school day
+
+TEACHER COLLABORATION:
+- Email sent to student's teachers: Awareness of situation (no details), extra support and flexibility, prompt notification if concerns arise
+
+REFERRAL TO COMMUNITY RESOURCES:
+☒ Mental health referral: [Agency name] - Intake scheduled for 3/20/24 at 4:00 PM
+- Agency specializes in adolescent depression and family therapy
+- Student/parent provided insurance information
+- Consent for communication between school and agency signed
+
+FOLLOW-UP PLAN:
+☒ Daily check-ins for 2 weeks (brief, 5-10 minutes before school)
+- Monitor mood, safety, and use of coping strategies
+- Reinforce safety plan and connectedness
+☒ Weekly counseling sessions ongoing (30 minutes during study hall)
+- Address underlying issues: family stress, peer relationships, academic pressure
+☒ Coordinate with community therapist once treatment begins
+☒ Parent meeting 3/17/24 to review progress and adjust plan as needed
+☒ Re-administer suicide risk screening in 1 week and monthly thereafter
+
+CONFIDENTIALITY NOTICE:
+Student informed: "What we talk about is private, but when someone is thinking about hurting themselves, I have to tell your parent and make sure you're safe. That's my job to keep you safe."
+Student understood and agreed to parent notification.
+
+COUNSELOR NOTES:
+Student presented as tearful but responsive. Made good eye contact and engaged in conversation. Demonstrated insight into feelings and protective factors. Expressed relief at having support and not being alone. Risk lowered by end of session with safety plan in place. Will monitor closely in coming days.
+
+This situation represents moderate risk that was appropriately managed with safety planning, parent involvement, and connection to community mental health. Student is not in imminent danger but requires close monitoring and ongoing support.
+
+NEXT STEPS BEFORE END OF DAY:
+1. ☑ Safety plan copy given to student, parent, and filed in student's confidential file
+2. ☑ Parent pickup confirmed - student released to mother at 1:00 PM
+3. ☑ Teachers notified to provide support and monitor
+4. ☑ Community mental health intake appointment confirmed
+5. ☑ Schedule daily check-in appointments for next 2 weeks on counselor's calendar
+6. ☑ Document in student information system (with appropriate confidentiality settings)
+
+COUNSELOR SIGNATURE: Jane Smith, M.Ed., School Counselor | DATE: 3/15/24
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **ASCA National Model**: Comprehensive framework for school counseling programs with four components: Foundation, Delivery, Management, and Accountability
+- **ASCA Mindsets & Behaviors**: 35 standards organized into 3 domains (academic, career, social-emotional) guiding what students should achieve
+- **Comprehensive School Counseling Program**: Preventive, developmental program addressing academic, career, and social-emotional needs of ALL students
+- **Student-to-Counselor Ratio**: ASCA recommends maximum 250:1 ratio (actual US average is 430:1 as of 2023)
+- **Direct Services**: School counselor-student interaction (individual/group counseling, classroom guidance, crisis response)
+- **Indirect Services**: School counselor actions on behalf of students (consultation, collaboration, referrals, advocacy)
+- **Closing-the-Gap**: Targeted interventions to address achievement/opportunity gaps for underserved student populations
+- **Process Data**: Accountability data tracking WHAT was done, HOW MUCH, and FOR WHOM (e.g., "Delivered 50 classroom lessons to 1,200 students")
+- **Perception Data**: Accountability data measuring changes in student knowledge, attitudes, skills (e.g., "85% of students can name 3 coping strategies")
+- **Outcome Data**: Accountability data showing impact on achievement, attendance, behavior (e.g., "Participants' grades improved by average of 0.5 GPA")
+- **SMART Goals**: Specific, Measurable, Achievable, Relevant, Time-bound objectives for student success and program accountability
+- **MTSS/RTI**: Multi-Tiered System of Supports / Response to Intervention - framework for tiered academic and behavioral support
+- **IEP**: Individualized Education Program for students with disabilities under IDEA
+- **504 Plan**: Accommodations plan for students with disabilities under Section 504 of Rehabilitation Act
+- **Trauma-Informed Practices**: Approaches recognizing impact of trauma and prioritizing safety, trustworthiness, peer support, collaboration, empowerment
+- **Restorative Practices**: Approach to discipline focusing on repairing harm, rebuilding relationships, and community restoration rather than punishment
+- **Mandatory Reporting**: Legal obligation to report suspected child abuse, neglect, or exploitation to child protective services
+
+Standards & Frameworks (2024):
+- **ASCA National Model (4th Edition, 2019)**: Framework for comprehensive school counseling programs with ongoing updates
+- **ASCA Mindsets & Behaviors for Student Success (2021)**: 35 standards (8 mindsets, 27 behaviors across learning, self-management, social skills)
+- **ASCA Ethical Standards for School Counselors (2022)**: Professional ethics guiding school counselor practice
+- **CACREP Standards (2024)**: Council for Accreditation of Counseling & Related Educational Programs - school counseling program accreditation
+- **FERPA (Family Educational Rights and Privacy Act)**: Federal law protecting student education record privacy
+- **Title IX**: Federal law prohibiting sex-based discrimination in education (includes sexual harassment, assault, dating violence)
+- **Every Student Succeeds Act (ESSA, 2015)**: Federal education law recognizing school counselors as part of well-rounded education
+- **SAMHSA Suicide Prevention Resource Center**: Evidence-based suicide prevention practices and protocols (safeTALK, ASIST, Columbia Protocol)
+- **National Office for School Counselor Advocacy (NOSCA)**: Eight components of college and career readiness counseling
+- **Common Core State Standards / State Learning Standards**: Academic standards driving college and career readiness
+
+Common Tools:
+- **ASCA Scene**: Professional learning platform, webinars, resources for school counselors
+- **Naviance / Xello / Scoir**: College and career readiness platforms for student planning, applications, and data tracking
+- **Google Classroom / Canvas**: Learning management systems for delivering classroom guidance curriculum
+- **ASCA Annual Assessment Tools**: Program audit, time assessment, and other accountability tools (free for ASCA members)
+- **Student Information Systems (SIS)**: PowerSchool, Infinite Campus, Skyward for accessing grades, attendance, behavior data
+- **Columbia-Suicide Severity Rating Scale (C-SSRS)**: Evidence-based suicide risk screening and assessment tool
+- **BASC-3 / SDQ / DESSA**: Behavior and social-emotional screening instruments
+- **Strong Interest Inventory / Myers-Briggs / YouScience**: Career assessment tools
+- **Common Application / Coalition Application / state university applications**: College application platforms
+
+Change log
+2024-12: Initial playbook created based on ASCA National Model 4th Edition, ASCA Mindsets & Behaviors (2021), ASCA Ethical Standards (2022), NOSCA Eight Components
+- Emphasis on comprehensive, data-driven school counseling program serving ALL students
+- ASCA National Model alignment with foundation, delivery, management, and accountability components
+- Crisis intervention protocols prominently featured (suicide risk, trauma, mandatory reporting)
+- College and career readiness programming for K-12 developmental progression
+- Equity focus with closing-the-gap action plans and disaggregated data analysis
+- Collaboration with teachers, administrators, parents, and community partners
+- Trauma-informed and restorative practices integrated throughout

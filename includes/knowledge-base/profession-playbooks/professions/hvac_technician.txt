@@ -4,64 +4,543 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality HVAC system guidance and planning.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize safety protocols, code compliance, EPA certification requirements, hands-on limitations, and clear planning steps.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on HVAC system design, planning, sizing, and specifications
+- Explain IMC (International Mechanical Code) and IRC mechanical provisions requirements
+- Help plan heating, cooling, and ventilation system installations and upgrades
+- Advise on equipment selection, sizing calculations, and energy efficiency standards
+- Recommend appropriate tools, refrigerants, and safety equipment
+- Explain OSHA HVAC safety standards and EPA Section 608 refrigerant regulations
+- Guide troubleshooting methodology for common HVAC problems
+- Provide documentation templates for load calculations, equipment specs, and maintenance schedules
+- Advise on ductwork design, airflow balancing, and system commissioning
+- Explain energy efficiency standards (SEER, EER, HSPF, AFUE ratings)
+- Success = Properly sized, code-compliant HVAC systems with correct equipment selection and safety protocols
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Perform hands-on HVAC work (AI cannot physically install, repair, or service equipment)
+- Guarantee code approval or pass/fail inspection outcomes
+- Override local jurisdiction requirements or building official decisions
+- Recommend work that violates IMC, IRC, EPA, OSHA, or manufacturer specifications
+- Advise on refrigerant handling without proper EPA Section 608 certification
+- Make decisions about existing systems without proper testing and inspection
+- Recommend bypassing safety controls or modifying UL-listed equipment
+- Guarantee specific energy savings or utility cost reductions
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Hazardous conditions exist (refrigerant leaks, carbon monoxide, electrical hazards, gas leaks)
+- Gas line work needed (engage licensed gas fitter or specialized HVAC contractor)
+- Complex commercial systems or chillers above 100 tons (engage mechanical engineer)
+- Building automation systems (BAS) programming required (engage controls specialist)
+- Major ductwork modifications affecting structural integrity (engage structural engineer and HVAC engineer)
+- Refrigerant recovery or reclamation beyond technician scope (engage EPA-certified recovery specialist)
+- Indoor air quality issues or mold contamination (engage IAQ specialist and industrial hygienist)
+- Asbestos insulation on old HVAC systems (engage certified abatement specialist)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the project type (new installation, replacement, repair, maintenance, troubleshooting, upgrade)?
+- What is the building type and use (residential, light commercial, industrial, healthcare)?
+- What is the building size, layout, and insulation levels (for sizing calculations)?
+- What are the local mechanical codes and climate zone (IMC, IRC, ASHRAE climate)?
+- What is the existing HVAC system type and condition (forced air, radiant, heat pump, package unit)?
+- What is the fuel source available (electric, natural gas, propane, oil)?
+- What are specific comfort requirements (temperature range, humidity control, air filtration)?
+- What is the EPA Section 608 certification level of technician (Type I, II, III, Universal)?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Assessment & Load Calculation
+   - Perform Manual J load calculation for heating and cooling (residential)
+   - Measure building envelope (square footage, ceiling height, window area, insulation R-values)
+   - Assess existing HVAC system capacity, age, and efficiency
+   - Identify code requirements for project type and jurisdiction
+   - Evaluate utility infrastructure (electrical service, gas line size)
+   - Check indoor air quality and ventilation requirements per IMC/IRC
+   
+2. System Design & Equipment Selection
+   - Size equipment based on Manual J calculations (never more than 115-125% of load)
+   - Select equipment efficiency levels meeting or exceeding minimum standards
+   - Design duct system using Manual D (residential) or ACCA standards
+   - Calculate required airflow (CFM) and static pressure
+   - Plan proper refrigerant line sizing per manufacturer specs
+   - Design condensate drainage system with proper slope and traps
+   - Plan thermostat and control locations
+   - Specify air filtration appropriate for application (MERV ratings)
+   
+3. Documentation & Permits
+   - Prepare HVAC equipment specifications and cut sheets
+   - Create duct layout plans with sizes and CFM requirements
+   - Complete Manual J load calculations for permit submission
+   - Prepare permit applications with jurisdiction
+   - Document refrigerant type and charge amounts
+   - Create equipment schedules and control sequences
+   - Prepare safety procedures for refrigerant handling
+   
+4. Installation Guidance (for EPA-certified technicians)
+   - Verify all equipment is UL-listed and meets code requirements
+   - Follow EPA Section 608 regulations for refrigerant handling
+   - Install per IMC/IRC requirements and manufacturer instructions
+   - Maintain proper clearances around equipment per code (combustion air, service access)
+   - Use appropriate PPE (safety glasses, gloves, refrigerant monitor)
+   - Install refrigerant lines with proper insulation and pitch for oil return
+   - Pressure test refrigerant lines before charging (nitrogen, 150-350 PSI)
+   - Evacuate system to 500 microns or lower before charging
+   
+5. Testing, Balancing & Commissioning
+   - Verify proper refrigerant charge using superheat/subcooling method
+   - Measure supply and return airflow at each register (duct traverse)
+   - Test temperature split across evaporator coil (typically 18-22°F cooling)
+   - Verify proper combustion for gas furnaces (CO₂ levels, draft pressure)
+   - Check electrical connections and amp draw against nameplate
+   - Balance airflow to within 10% of design CFM per room
+   - Test safety controls (high/low pressure switches, limit switches)
+   - Program and test thermostat operations and setpoints
+   - Document commissioning results and baseline performance
+   - Provide owner training on system operation and maintenance
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Manual J load calculations (heating and cooling)
+- HVAC equipment specifications and cut sheets
+- Duct layout plans with CFM requirements
+- Refrigerant line sizing calculations
+- Equipment schedules and model numbers
+- Material lists with equipment and duct fittings
+- Electrical requirements and disconnect sizing
+- Maintenance schedules and filter replacement intervals
+- Commissioning reports with baseline performance data
+- Safety procedures for refrigerant handling
+
+Minimum viable: Equipment specifications, basic sizing calculations, and safety requirements
+Gold standard: Complete Manual J/S/D calculations, detailed duct layout, commissioning reports, comprehensive maintenance plan, and indoor air quality assessment
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Equipment Sizing & Selection:
+- [ ] Manual J load calculation completed per ACCA standards
+- [ ] Equipment capacity within 115-125% of calculated load (not oversized)
+- [ ] Equipment efficiency meets or exceeds minimum code requirements (SEER/EER/HSPF/AFUE)
+- [ ] Equipment properly matched (evaporator coil matched to condensing unit)
+- [ ] Refrigerant type compatible with equipment and EPA-approved
+- [ ] Backup heat source specified for heat pump systems in cold climates
+- [ ] Equipment rated for climate zone and application
+
+Code Compliance:
+- [ ] All work complies with IMC (commercial) or IRC (residential) as applicable
+- [ ] Combustion air requirements met per IMC 701 (50 CFM per 1000 BTU input)
+- [ ] Minimum ventilation rates met per IMC 403 or IRC M1507 (typically 15 CFM/person + 0.01 CFM/sq ft)
+- [ ] Equipment clearances meet code minimums (service access, combustion air)
+- [ ] Condensate drainage properly trapped and piped to approved location
+- [ ] Gas line sizing adequate for equipment BTU input per IFGC
+- [ ] Electrical disconnects properly sized and located within sight of equipment
+- [ ] Refrigerant lines protected from physical damage and UV exposure
+
+Ductwork Design:
+- [ ] Manual D duct design completed with friction rate analysis
+- [ ] Duct sizes appropriate for airflow requirements (typically 400 CFM per ton)
+- [ ] Supply register throw patterns appropriate for room layout
+- [ ] Return air pathways adequate (1 sq in per CFM or transfer grilles/jumper ducts)
+- [ ] Duct insulation R-values meet code minimums for location (R-6 or R-8)
+- [ ] Duct sealing to required leakage class (typically 4% or less for new construction)
+- [ ] Filter rack sized for proper face velocity (typically 300-500 FPM)
+- [ ] Outdoor air intake located away from contamination sources
+
+Refrigerant System:
+- [ ] EPA Section 608 certification verified for technician performing work
+- [ ] Refrigerant line sizes per manufacturer specs (suction and liquid lines)
+- [ ] Line set insulation adequate to prevent condensation (typically R-4 minimum)
+- [ ] Refrigerant lines pitched for proper oil return (1/4" per 10 feet)
+- [ ] Pressure test completed with nitrogen (no leaks at test pressure for 15 minutes)
+- [ ] Vacuum pulled to 500 microns or lower (triple evacuation recommended)
+- [ ] Proper refrigerant charge verified (superheat/subcooling within manufacturer specs)
+- [ ] Refrigerant recovery equipment on-site if servicing existing system
+
+Safety:
+- [ ] Electrical disconnects within sight of equipment and properly rated
+- [ ] Gas shutoff valve accessible and properly labeled
+- [ ] Carbon monoxide detectors installed per code (within 10 feet of bedrooms)
+- [ ] Condensate overflow switches installed on systems above finished spaces
+- [ ] High/low pressure safety switches functional and tested
+- [ ] Equipment properly grounded and bonded
+- [ ] Lockout/tagout procedures followed for service work
+- [ ] Personal protective equipment worn (safety glasses, gloves, refrigerant monitor)
+- [ ] Adequate ventilation maintained when working with refrigerants
+- [ ] Fire extinguisher accessible when brazing or soldering
+
+Energy Efficiency:
+- [ ] Equipment SEER/EER ratings meet or exceed minimum standards (14 SEER minimum most US regions)
+- [ ] Programmable or smart thermostat installed for optimized scheduling
+- [ ] Duct system sealed to minimize leakage (4% or less total)
+- [ ] Proper refrigerant charge (efficiency drops 5-10% per 10% undercharge)
+- [ ] Air filters specified with appropriate MERV rating without excessive pressure drop
+- [ ] Zoning considered for multi-level homes or large commercial spaces
+- [ ] Economizer mode utilized where appropriate (outside air cooling)
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Manual J Load Calculation Summary Template ===
+PROJECT: [Building Address]
+DATE: [Date]
+CALCULATED BY: [Name and Company]
+
+BUILDING INFORMATION:
+- Building Type: [Residential/Commercial]
+- Square Footage: [####] sq ft
+- Climate Zone: [ASHRAE Zone #]
+- Design Temperatures: [##°F cooling / ##°F heating]
+- Wall Insulation: R-[##]
+- Ceiling Insulation: R-[##]
+- Window U-Factor: [#.##] | SHGC: [#.##]
+- Infiltration Rate: [####] CFM50 (from blower door test or estimate)
+
+CALCULATED LOADS:
+Cooling Load (Manual J):
+- Sensible Load: [####] BTU/h
+- Latent Load: [####] BTU/h
+- Total Cooling Load: [####] BTU/h
+- Recommended Equipment: [##] tons (multiply BTU/h by 0.0000833)
+
+Heating Load (Manual J):
+- Total Heating Load: [####] BTU/h
+- Recommended Equipment: [####] BTU/h input
+
+EQUIPMENT RECOMMENDATIONS:
+- Cooling Equipment: [Make/Model], [SEER ##], [##] tons nominal
+- Heating Equipment: [Make/Model], [AFUE ##% or HSPF ##], [####] BTU/h
+- Indoor Unit: [Make/Model], [Variable/Multi-speed]
+- Thermostat: [Programmable/Smart Thermostat Model]
+
+=== Duct Design Worksheet (Manual D) ===
+PROJECT: [Building Address]
+SYSTEM AIRFLOW: [####] CFM total (typically 400 CFM per ton)
+
+SUPPLY DUCTS:
+Room          | CFM Req | Duct Size | Velocity (FPM) | Throw (ft)
+--------------|---------|-----------|----------------|------------
+[Living Room] | [###]   | [#x##]    | [####]         | [##]
+[Bedroom 1]   | [###]   | [#x##]    | [####]         | [##]
+[Bedroom 2]   | [###]   | [#x##]    | [####]         | [##]
+[Kitchen]     | [###]   | [#x##]    | [####]         | [##]
+
+TRUNK DUCT:
+Section       | CFM     | Duct Size | Velocity (FPM) | Friction Loss
+--------------|---------|-----------|----------------|---------------
+[Main Trunk]  | [####]  | [##x##]   | [####]         | [#.##] in WC
+
+RETURN DUCTS:
+Location      | CFM     | Grille Size | Free Area (sq in) | Velocity (FPM)
+--------------|---------|-------------|-------------------|---------------
+[Central Ret] | [####]  | [##x##]     | [###]             | [####]
+
+TOTAL SYSTEM ANALYSIS:
+- Total Supply CFM: [####] CFM
+- Total Return CFM: [####] CFM
+- External Static Pressure: [#.##] in WC (should be < 0.5 in WC residential)
+- Fan Selection: [High/Med/Low Speed] to achieve [####] CFM at [#.##] in WC
+
+=== Refrigerant Charging Worksheet ===
+EQUIPMENT INFORMATION:
+- Manufacturer: [Brand]
+- Model Number: [Model]
+- Serial Number: [Serial]
+- Refrigerant Type: [R-410A / R-32 / R-22]
+- Factory Charge: [##] lbs / [##] oz
+
+CHARGING CONDITIONS:
+- Outdoor Temperature: [##°F]
+- Indoor Temperature: [##°F] DB / [##°F] WB
+- Indoor Humidity: [##%] RH
+- Target Superheat: [##°F] (from manufacturer chart)
+- Target Subcooling: [##°F] (from manufacturer chart)
+
+MEASURED VALUES:
+- Suction Line Temperature: [##°F]
+- Suction Pressure: [###] PSI ([##°F] saturated)
+- Actual Superheat: [##°F] (Line Temp - Saturated Temp)
+- Liquid Line Temperature: [##°F]
+- Liquid Pressure: [###] PSI ([##°F] saturated)
+- Actual Subcooling: [##°F] (Saturated Temp - Line Temp)
+
+ADJUSTMENTS:
+- Charge Status: [Correct / Undercharged by [##] oz / Overcharged by [##] oz]
+- Refrigerant Added/Recovered: [##] lbs / [##] oz
+- Final Superheat: [##°F] (target: [##°F] ±2°F)
+- Final Subcooling: [##°F] (target: [##°F] ±2°F)
+
+SYSTEM PERFORMANCE:
+- Supply Air Temperature: [##°F]
+- Return Air Temperature: [##°F]
+- Temperature Split: [##°F] (should be 18-22°F cooling, 30-40°F heating)
+- Airflow (measured): [####] CFM
+- Compressor Amps: [##.#] A (nameplate: [##.#] A)
+
+=== HVAC Maintenance Checklist Template ===
+EQUIPMENT: [Make/Model]
+SERVICE DATE: [Date]
+TECHNICIAN: [Name]
+
+MONTHLY (Homeowner):
+- [ ] Replace or clean air filter (1" filter monthly, 4" filter quarterly)
+- [ ] Check thermostat operation and battery
+- [ ] Inspect condensate drain for clogs
+- [ ] Clear debris from outdoor unit (leaves, grass clippings)
+- [ ] Listen for unusual noises from equipment
+
+QUARTERLY (Technician):
+- [ ] Inspect and clean evaporator coil
+- [ ] Inspect and clean condenser coil
+- [ ] Check refrigerant pressures and charge
+- [ ] Lubricate motors and bearings (if not sealed)
+- [ ] Test all safety controls and switches
+- [ ] Inspect electrical connections and tighten terminals
+- [ ] Check condensate drain and trap operation
+- [ ] Measure supply/return air temperatures and airflow
+
+ANNUAL (Heating Season):
+- [ ] Inspect heat exchanger for cracks or corrosion (visual and CO test)
+- [ ] Test gas valve and ignition system operation
+- [ ] Measure gas input (clock meter and manifold pressure)
+- [ ] Inspect venting system and draft pressure
+- [ ] Test flame sensor and limit switches
+- [ ] Check and adjust combustion air (measure CO₂ in flue)
+- [ ] Inspect blower wheel and clean if dirty
+- [ ] Test carbon monoxide detectors
+
+ANNUAL (Cooling Season):
+- [ ] Check refrigerant charge (superheat/subcooling)
+- [ ] Inspect refrigerant lines for leaks (soap bubbles or electronic detector)
+- [ ] Test compressor start capacitor and run capacitor
+- [ ] Measure amp draw on all motors (compressor, condenser fan, blower)
+- [ ] Clean evaporator and condenser coils
+- [ ] Check indoor/outdoor fan motors and lubricate if needed
+- [ ] Test low and high pressure safety switches
+- [ ] Verify proper airflow across evaporator coil (temperature split)
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Residential AC Replacement Specification
+
+```
+RESIDENTIAL AC REPLACEMENT - 1,800 SQ FT HOME
+
+LOAD CALCULATION SUMMARY:
+- Manual J Cooling Load: 29,400 BTU/h (2.45 tons)
+- Manual J Heating Load: 38,000 BTU/h
+- Climate Zone: 4A (Mixed-Humid)
+- Design Temperatures: 92°F cooling / 15°F heating
+
+EQUIPMENT SPECIFICATIONS:
+Cooling Equipment:
+- Outdoor Unit: Carrier 24APB630 (16 SEER, 2.5 ton, R-410A)
+- Indoor Coil: Carrier CNPVP3017 (A-coil, upflow/horizontal)
+- Refrigerant Line Set: 3/8" liquid, 3/4" suction, 25 ft with R-4 insulation
+- Condensate Pump: Little Giant VCMA-15ULS (if needed)
+
+Heating Equipment:
+- Gas Furnace: Carrier 58MVP080 (80% AFUE, 80,000 BTU input)
+- Gas Line: 3/4" black iron, 40 ft run from meter
+- Flue Vent: 4" Category I vent, double-wall to existing chimney
+
+Controls & Accessories:
+- Thermostat: Ecobee SmartThermostat Premium (WiFi, multi-stage)
+- Air Filter: 16x25x4 MERV 13 pleated, 6-month replacement
+- Emergency Drain Pan: 30x30" with float switch under air handler
+
+DUCTWORK MODIFICATIONS:
+- Replace supply trunk: 14x20" rectangular, 30 ft run in basement
+- Add return air grille: 20x20" in central hallway, ducted to air handler
+- Seal all duct joints with mastic (target <4% total leakage)
+- Insulate all supply ducts in unconditioned space (R-8 duct wrap)
+
+ELECTRICAL REQUIREMENTS:
+- Outdoor unit: 240V, 30A, 10/2 with ground, 60A disconnect
+- Indoor unit: 120V, 15A dedicated circuit
+- Total load: 7,200W cooling, 1,200W heating (blower and controls)
+
+ESTIMATED PERFORMANCE:
+- SEER 16 seasonal efficiency: ~$450/year cooling cost (estimate)
+- 80% AFUE heating efficiency: ~$850/year heating cost (estimate)
+- Expected temperature split: 19°F cooling, 35°F heating
+- Expected payback vs. old 10 SEER unit: 6-8 years
+```
+
+Example 2: Commercial HVAC Troubleshooting Guide
+
+```
+PACKAGED ROOFTOP UNIT NOT COOLING - SYSTEMATIC DIAGNOSIS
+
+UNIT INFORMATION:
+- Make/Model: Trane WeatherTron TCD120A4
+- Capacity: 10 tons (120,000 BTU/h)
+- Refrigerant: R-410A
+- Compressor: 3-phase scroll, 460V
+
+INITIAL OBSERVATIONS:
+- Compressor running, but building not cooling
+- Condenser fan motor running
+- Blower motor running, airflow present
+- Thermostat calling for cooling
+
+STEP 1: VERIFY AIRFLOW
+✓ Supply air temperature: 78°F (should be 50-58°F)
+✓ Return air temperature: 76°F
+✗ Temperature split: 2°F (should be 18-22°F) - INSUFFICIENT COOLING
+✓ Measured airflow: 4,200 CFM (acceptable for 10 tons)
+- Conclusion: Airflow OK, but no cooling occurring
+
+STEP 2: CHECK REFRIGERANT PRESSURES
+✗ Suction pressure: 40 PSI (saturated temp = 0°F for R-410A)
+✗ Discharge pressure: 90 PSI (saturated temp = 45°F for R-410A)
+- Normal pressures: Suction ~118 PSI (50°F), Discharge ~318 PSI (120°F)
+- Conclusion: SEVERELY LOW PRESSURES - likely refrigerant leak
+
+STEP 3: LEAK DETECTION
+✓ Electronic leak detector scan of all joints
+✗ LEAK FOUND: Schrader valve on suction service port leaking
+- Bubble test confirms leak at valve core
+- Conclusion: Replace valve core, evacuate, and recharge system
+
+REPAIR PROCEDURE:
+1. Recover remaining refrigerant per EPA Section 608 (estimated 2 lbs remaining)
+2. Replace leaking Schrader valve core with brass core and locking cap
+3. Pressure test system with nitrogen to 350 PSI for 15 minutes
+4. Evacuate system to 500 microns (triple evacuation recommended)
+5. Recharge with R-410A to factory specification (28 lbs total charge)
+6. Verify charge with subcooling method (target: 10°F ±2°F)
+7. Measure final performance and document
+
+FINAL VERIFICATION:
+✓ Suction pressure: 118 PSI (50°F saturated)
+✓ Discharge pressure: 318 PSI (120°F saturated)
+✓ Subcooling: 11°F (within spec)
+✓ Superheat: 8°F (within spec)
+✓ Supply air: 54°F
+✓ Temperature split: 22°F (excellent cooling)
+✓ Compressor amps: 28.5A (nameplate: 31A max)
+- System operating normally, cooling restored
+```
+
+Example 3: Duct Sealing and Balancing Report
+
+```
+DUCT SEALING AND AIRFLOW BALANCING REPORT
+
+PROJECT: 2,400 sq ft two-story home
+EQUIPMENT: 3-ton heat pump with variable-speed air handler
+TARGET AIRFLOW: 1,200 CFM total (400 CFM per ton)
+
+PRE-SEALING MEASUREMENTS:
+- Blower door test (house pressurized to 50 Pa): 2,850 CFM50
+- Duct leakage test (duct pressurized to 25 Pa): 245 CFM25 (20% total leakage)
+- Total supply airflow measured: 1,080 CFM (90% of target - 10% loss to leaks)
+- External static pressure: 0.62" WC (exceeds 0.50" recommended max)
+
+DUCT SEALING WORK PERFORMED:
+- Sealed all accessible duct joints with mastic (basement and attic)
+- Sealed register boots to drywall with caulk
+- Sealed plenum-to-furnace connection with mastic and metal tape
+- Sealed return air leaks at filter rack and return grilles
+
+POST-SEALING MEASUREMENTS:
+- Duct leakage test: 72 CFM25 (6% total leakage - excellent result)
+- Total supply airflow measured: 1,195 CFM (99.5% of target - minimal loss)
+- External static pressure: 0.38" WC (within acceptable range)
+
+AIRFLOW BALANCING BY ROOM:
+
+FIRST FLOOR:
+Room              | Design CFM | Measured CFM | Adjustment        | Final CFM
+------------------|------------|--------------|-------------------|----------
+Living Room       | 320        | 285          | Opened damper 50% | 318
+Kitchen           | 180        | 165          | Opened damper 25% | 178
+Dining Room       | 120        | 110          | Opened damper 15% | 119
+Half Bath         | 50         | 58           | Closed damper 10% | 51
+SUBTOTAL          | 670        | -            | -                 | 666
+
+SECOND FLOOR:
+Room              | Design CFM | Measured CFM | Adjustment        | Final CFM
+------------------|------------|--------------|-------------------|----------
+Master Bedroom    | 200        | 175          | Opened damper 30% | 198
+Bedroom 2         | 140        | 128          | Opened damper 20% | 139
+Bedroom 3         | 140        | 152          | Closed damper 10% | 141
+Bathroom          | 50         | 62           | Closed damper 15% | 49
+SUBTOTAL          | 530        | -            | -                 | 527
+
+TOTAL SYSTEM      | 1,200      | -            | -                 | 1,193 (99.4%)
+
+RETURN AIR:
+- Main return grille (hallway): 1,180 CFM
+- Transfer grille (master bedroom): 15 CFM
+- Total return: 1,195 CFM (balanced with supply)
+
+FINAL VERIFICATION:
+✓ All rooms within ±10% of design CFM
+✓ Total system airflow within 5% of target
+✓ Static pressure reduced from 0.62" to 0.38" WC
+✓ Duct leakage reduced from 20% to 6%
+✓ Homeowner reports improved comfort and reduced noise
+✓ Estimated energy savings: 15-20% on heating/cooling costs
+
+RECOMMENDATIONS:
+- Replace 1" filter with 4" pleated filter (MERV 13) for better filtration and lower pressure drop
+- Install programmable thermostat with multi-stage control
+- Seal remaining attic duct joints during future attic insulation upgrade
+- Schedule annual maintenance to verify continued performance
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **SEER (Seasonal Energy Efficiency Ratio)**: Cooling efficiency rating, BTU output per watt-hour input over cooling season (minimum 14 most US regions as of 2023)
+- **AFUE (Annual Fuel Utilization Efficiency)**: Heating efficiency for furnaces, percentage of fuel converted to heat (minimum 80% for new non-condensing, 90%+ for condensing)
+- **HSPF (Heating Seasonal Performance Factor)**: Heat pump heating efficiency rating (minimum 8.2 for new systems)
+- **EER (Energy Efficiency Ratio)**: Cooling efficiency at specific conditions (95°F outdoor), used for sizing and comparing equipment
+- **Manual J**: ACCA residential load calculation standard for determining heating and cooling loads
+- **Manual D**: ACCA residential duct design standard for determining duct sizes and airflow requirements
+- **Manual S**: ACCA equipment selection standard for matching equipment to load calculations
+- **BTU (British Thermal Unit)**: Amount of heat required to raise 1 lb of water by 1°F, used to measure heating/cooling capacity
+- **CFM (Cubic Feet per Minute)**: Measure of airflow, typically 400 CFM per ton of cooling
+- **Ton**: 12,000 BTU/h of cooling capacity (originated from melting 1 ton of ice in 24 hours)
+- **Superheat**: Temperature of refrigerant vapor above its saturation temperature (used to verify proper charge)
+- **Subcooling**: Temperature of refrigerant liquid below its saturation temperature (used to verify proper charge)
+- **Static Pressure**: Resistance to airflow in duct system, measured in inches of water column (in WC)
+- **MERV (Minimum Efficiency Reporting Value)**: Air filter efficiency rating, higher number = better filtration (typical range 8-13 residential)
+- **EPA Section 608**: Federal regulations for refrigerant handling, requires certification (Type I, II, III, or Universal)
+
+Standards & Frameworks (2024):
+- **IMC 2021 (International Mechanical Code)**: Model code for mechanical systems in commercial buildings
+- **IRC 2021 (International Residential Code)**: Model code including mechanical provisions for one/two-family dwellings (Chapter 14)
+- **ASHRAE 62.1/62.2**: Ventilation standards for commercial (62.1) and residential (62.2) buildings
+- **ACCA Manual J/S/D/T**: Industry standards for residential HVAC load calculation, equipment selection, duct design, and air distribution
+- **AHRI 210/240**: Standard for performance rating of air-conditioning and heat pump equipment
+- **EPA Section 608**: Refrigerant handling and certification requirements (Clean Air Act regulations)
+- **NFPA 90A/90B**: Installation standards for air conditioning and ventilation systems (commercial/residential)
+- **SMACNA (Sheet Metal and Air Conditioning Contractors' National Association)**: Duct construction and installation standards
+
+Common Tools:
+- **Manifold gauge set**: Pressure measurement for refrigerant systems (R-410A, R-32, R-22)
+- **Vacuum pump**: Evacuating refrigerant systems to remove air and moisture (achieve 500 microns)
+- **Refrigerant scale**: Accurately measuring refrigerant charge by weight
+- **Clamp-on ammeter**: Measuring electrical current to verify motor and compressor operation
+- **Digital thermometer**: Measuring air and refrigerant temperatures (superheat/subcooling calculations)
+- **Manometer**: Measuring static pressure, gas pressure, and draft (digital models preferred)
+- **Combustion analyzer**: Measuring flue gas composition (CO₂, O₂, CO) for furnace efficiency and safety
+- **Leak detector**: Electronic refrigerant leak detection (heated diode or infrared sensors)
+- **Duct blower**: Measuring duct leakage and total system airflow (Minneapolis Blower Door or Ductblaster)
+- **Hygrometer**: Measuring relative humidity and calculating enthalpy for load calculations
+
+Change log
+2024-12: Initial playbook created based on IMC 2021, IRC 2021, ACCA standards (Manual J 8th Edition, Manual D), ASHRAE 62.2-2022, EPA Section 608 regulations
+- Emphasis on proper equipment sizing (Manual J/S) to prevent oversizing
+- EPA Section 608 refrigerant certification requirements prominently featured
+- Hands-on vs. planning boundaries clearly defined (AI limitations)
+- Safety protocols for refrigerant handling, gas work, and electrical systems
+- Energy efficiency standards updated for 2023+ minimum ratings (14 SEER)
+- Indoor air quality and ventilation requirements per ASHRAE 62.2
