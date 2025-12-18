@@ -1,6 +1,6 @@
 # Profession Playbook Completion Framework
 
-This document provides methodology, templates, and guidelines for completing the remaining 164 profession playbooks.
+This document provides methodology, templates, and guidelines for completing the remaining 160 profession playbooks.
 
 ## 🔄 Phase 5 - Template Expansion (IN PROGRESS)
 
@@ -15,6 +15,20 @@ This document provides methodology, templates, and guidelines for completing the
 - Purpose: Continue expanding education category using validated high_school/elementary teacher template
 - Research Focus: Higher education pedagogy, curriculum design, research integration, academic freedom
 - Key Elements: Course development, scholarly teaching, assessment design, academic integrity, graduate mentorship
+- Target: 35-45KB, 800-1000 lines
+- Estimated Time: ~4-5 hours
+
+**Priority #3: welder** (Trades/Skilled Labor Template Expansion)
+- Purpose: Continue expanding trades category with validated electrician/plumber/carpenter template
+- Research Focus: Welding codes (AWS D1.1), OSHA welding safety, metallurgy, joint design, inspection methods
+- Key Elements: Welding processes (SMAW, GMAW, GTAW, FCAW), safety protocols, material preparation, quality control
+- Target: 25-35KB, 600-800 lines
+- Estimated Time: ~3-4 hours
+
+**Priority #4: special_education_teacher** (Education Template Expansion)
+- Purpose: Continue expanding education category with validated teacher template
+- Research Focus: IDEA regulations, IEP development, inclusive education, behavioral interventions, accommodations
+- Key Elements: Differentiated instruction, progress monitoring, parent collaboration, legal compliance, assistive technology
 - Target: 35-45KB, 800-1000 lines
 - Estimated Time: ~4-5 hours
 
@@ -78,10 +92,12 @@ Additional technical professions following software_engineer template:
 21. **plumber** (32KB) - Trades/Skilled Labor template validation
 22. **elementary_school_teacher** (40KB) - Education template validation
 
-### Phase 5 - Template Expansion (2 in progress) 🔄
+### Phase 5 - Template Expansion (4 planned) 🔄
 **Status**: IN PROGRESS December 18, 2024
 23. **carpenter** (Trades/Skilled Labor template expansion)
 24. **college_professor** (Education template expansion)
+25. **welder** (Trades/Skilled Labor template expansion)
+26. **special_education_teacher** (Education template expansion)
 
 ## Exemplar Professions by Category
 
@@ -106,12 +122,12 @@ Use these as templates for similar professions:
 ### Advisory/Business Professions
 **Template**: marketing_consultant (17KB)
 
-### Trades/Skilled Labor 🔄 PHASE 5 PRIORITY #1
+### Trades/Skilled Labor 🔄 PHASE 5 PRIORITY #1 & #3
 **Templates**: electrician (22KB), plumber (32KB)
-**Status**: Template expansion in progress - carpenter next
+**Status**: Template expansion in progress - carpenter and welder next
 **Completed**: electrician, plumber
-**Phase 5 Target**: carpenter (expand template application)
-**Remaining**: ~12 professions (welder, HVAC_technician, automotive_mechanic, mason, roofer, etc.)
+**Phase 5 Targets**: carpenter (expand template), welder (expand template)
+**Remaining**: ~11 professions (HVAC_technician, automotive_mechanic, mason, roofer, heavy_equipment_operator, etc.)
 
 **Key Adaptations**:
 - Safety protocols (OSHA, NFPA 70E)
@@ -121,12 +137,12 @@ Use these as templates for similar professions:
 - Hands-on vs. advisory boundaries
 - Lockout/tagout procedures
 
-### Education 🔄 PHASE 5 PRIORITY #2
+### Education 🔄 PHASE 5 PRIORITY #2 & #4
 **Templates**: high_school_teacher (31KB), elementary_school_teacher (40KB)
-**Status**: Template expansion in progress - college_professor next
+**Status**: Template expansion in progress - college_professor and special_education_teacher next
 **Completed**: high_school_teacher, elementary_school_teacher
-**Phase 5 Target**: college_professor (expand template application)
-**Remaining**: ~7 professions (special_education_teacher, school_counselor, esl_teacher, educational_administrator, instructional_designer, etc.)
+**Phase 5 Targets**: college_professor (expand template), special_education_teacher (expand template)
+**Remaining**: ~6 professions (school_counselor, esl_teacher, educational_administrator, instructional_designer, etc.)
 
 **Key Adaptations**:
 - Pedagogical frameworks (Danielson, UbD, Backward Design)
@@ -379,12 +395,12 @@ Group similar professions to reuse research:
 - Stakeholder management
 - Change management processes
 
-### Trades/Skilled Labor (~15) 🔄 3 IN PROGRESS
+### Trades/Skilled Labor (~15) 🔄 4 IN PROGRESS
 **Templates**: electrician (22KB), plumber (32KB)
-**Status**: Template expansion in progress 🔄 Phase 5 - carpenter next
+**Status**: Template expansion in progress 🔄 Phase 5 - carpenter and welder next
 **Completed**: electrician, plumber
-**In Progress**: carpenter
-**Remaining**: ~12 professions (welder, automotive_mechanic, HVAC_technician, mason, roofer, heavy_equipment_operator, etc.)
+**In Progress**: carpenter, welder
+**Remaining**: ~11 professions (automotive_mechanic, HVAC_technician, mason, roofer, heavy_equipment_operator, etc.)
 
 **Key Adaptations**:
 - Safety protocols (OSHA)
@@ -394,12 +410,12 @@ Group similar professions to reuse research:
 - Hands-on vs. advisory boundaries
 - Emergency response procedures
 
-### Education (~10) 🔄 3 IN PROGRESS
+### Education (~10) 🔄 4 IN PROGRESS
 **Templates**: high_school_teacher (31KB), elementary_school_teacher (40KB)
-**Status**: Template expansion in progress 🔄 Phase 5 - college_professor next
+**Status**: Template expansion in progress 🔄 Phase 5 - college_professor and special_education_teacher next
 **Completed**: high_school_teacher, elementary_school_teacher
-**In Progress**: college_professor
-**Remaining**: ~7 professions (instructional_designer, special_education_teacher, school_counselor, esl_teacher, educational_administrator, etc.)
+**In Progress**: college_professor, special_education_teacher
+**Remaining**: ~6 professions (instructional_designer, school_counselor, esl_teacher, educational_administrator, etc.)
 
 **Key Adaptations**:
 - Pedagogical approaches
@@ -463,7 +479,9 @@ Group similar professions to reuse research:
 **Phase 5 (In Progress Dec 18, 2024)**:
 - **carpenter** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
 - **college_professor** (Education template expansion): ~4-5 hours (target: 35-45KB, 800-1000 lines)
-- **Phase 5 Total (estimated)**: ~7-9 hours
+- **welder** (Trades template expansion): ~3-4 hours (target: 25-35KB, 600-800 lines)
+- **special_education_teacher** (Education template expansion): ~4-5 hours (target: 35-45KB, 800-1000 lines)
+- **Phase 5 Total (estimated)**: ~14-18 hours
 
 ## Quality Standards
 
@@ -604,11 +622,13 @@ Copilot AI Assistant:
 Copilot AI Assistant:
 - carpenter - Trades/Skilled Labor template expansion
 - college_professor - Education template expansion
+- welder - Trades/Skilled Labor template expansion
+- special_education_teacher - Education template expansion
 
-Phase 6+: [Future contributors - 158 professions remaining after Phase 5]
+Phase 6+: [Future contributors - 156 professions remaining after Phase 5]
 
 ---
 
 **Last Updated**: December 18, 2024
-**Framework Version**: 1.5
-**Status**: Phase 5 in progress 🔄 - 22/182 professions complete (12.1%), 2 in progress (carpenter, college_professor)
+**Framework Version**: 1.6
+**Status**: Phase 5 in progress 🔄 - 22/182 professions complete (12.1%), 4 planned (carpenter, college_professor, welder, special_education_teacher)
