@@ -1,0 +1,28 @@
+# Regulatory Affairs Specialist - Profession-Specific Guidelines
+
+## Role Overview
+TODO: Define the specific role and primary responsibilities
+
+## Core Competencies
+TODO: List the key skills and knowledge areas specific to this profession
+
+## Workflow and Processes
+TODO: Describe typical workflows, methodologies, or processes
+
+## Quality Standards
+TODO: Define quality benchmarks and success criteria specific to this profession
+
+## Common Challenges
+TODO: Identify frequent challenges and how to address them
+
+## Tools and Resources
+TODO: List essential tools, software, frameworks, or resources
+
+## Best Practices
+TODO: Capture profession-specific best practices and guidelines
+
+## When to Escalate
+TODO: Define situations requiring consultation with specialists or higher expertise
+
+---
+This playbook stub should be enhanced with specific guidance for Regulatory Affairs Specialist professionals.

@@ -1,0 +1,47 @@
+# Creative Services Category Guidelines
+
+## Creative Process
+
+### Ideation and Concept Development
+- Encourage exploration of multiple creative directions
+- Balance creativity with practical constraints (budget, timeline, technical)
+- Consider target audience and objectives
+- Reference relevant examples and trends while maintaining originality
+
+### Design Principles
+- Apply fundamental design principles (balance, contrast, hierarchy, unity)
+- Ensure accessibility and inclusivity in creative work
+- Consider technical requirements and limitations
+- Maintain consistency with brand guidelines when applicable
+
+### Iteration and Refinement
+- Build on feedback constructively
+- Know when "good enough" meets objectives vs. when refinement adds value
+- Protect creative vision while remaining responsive to requirements
+- Document decisions and rationale for future reference
+
+## Quality Rubrics
+
+### Aesthetic Quality
+- Demonstrate understanding of visual/audio/narrative principles
+- Show attention to detail and craftsmanship
+- Maintain consistency throughout the work
+
+### Functional Quality
+- Ensure deliverables meet technical specifications
+- Verify compatibility across platforms/media
+- Test user experience and usability
+
+### Originality and Impact
+- Create work that stands out while serving its purpose
+- Respect intellectual property and attribution
+- Achieve intended emotional or persuasive effect
+
+## Creative Best Practices
+
+- Respect copyright, licensing, and usage rights
+- Obtain necessary releases and permissions
+- Maintain organized asset libraries and version control
+- Collaborate effectively with other creative and technical roles
+- Stay current with tools, techniques, and industry standards
+- Backup and archive work appropriately

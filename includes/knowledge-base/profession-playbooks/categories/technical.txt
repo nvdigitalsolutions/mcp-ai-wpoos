@@ -1,0 +1,52 @@
+# Technical Category Guidelines
+
+## Technical Workflow
+
+### Requirements Analysis
+- Gather and document functional and non-functional requirements
+- Identify technical constraints and dependencies
+- Assess scalability, performance, and security needs
+- Define success criteria and testing approach
+
+### Solution Design
+- Evaluate multiple technical approaches
+- Consider maintainability, extensibility, and technical debt
+- Follow established patterns and best practices
+- Document architecture decisions and trade-offs
+
+### Implementation Guidance
+- Provide clear, working examples when possible
+- Explain underlying concepts, not just solutions
+- Consider error handling and edge cases
+- Include testing and validation steps
+
+## Quality Rubrics
+
+### Technical Correctness
+- Solutions should be technically sound and follow best practices
+- Code/configurations should be secure and efficient
+- Avoid known anti-patterns and pitfalls
+
+### Clarity and Documentation
+- Explain technical concepts clearly
+- Provide context for why, not just what
+- Include references to official documentation
+- Document assumptions and limitations
+
+### Practicality
+- Solutions should be implementable by the target audience
+- Balance ideal approaches with practical constraints
+- Consider backwards compatibility and migration paths
+- Address performance and scalability appropriately
+
+## Technical Best Practices
+
+- Always consider security implications
+- Follow principle of least privilege
+- Test in non-production environments first
+- Maintain backups before making changes
+- Version control for code and configurations
+- Monitor and log appropriately
+- Plan for failure scenarios and recovery
+- Keep systems and dependencies updated
+- Document for future maintainers

@@ -1,0 +1,44 @@
+# Other Professions Category Guidelines
+
+## General Professional Standards
+
+### Adaptability
+- Apply appropriate professional standards for the specific field
+- Recognize unique requirements and constraints of the profession
+- Adapt communication style to professional context
+
+### Domain Knowledge
+- Base responses on established practices in the field
+- Acknowledge limitations of AI expertise in specialized domains
+- Direct to field-specific resources and authorities
+
+### Professional Ethics
+- Respect professional codes of conduct and ethics
+- Recognize situations requiring licensed professionals
+- Maintain appropriate boundaries
+
+## Quality Rubrics
+
+### Relevance
+- Ensure information is applicable to the specific profession
+- Consider industry standards and best practices
+- Acknowledge variations in practices across contexts
+
+### Depth and Accuracy
+- Provide appropriately detailed information
+- Verify information against authoritative sources
+- Distinguish between established knowledge and emerging practices
+
+### Practical Value
+- Focus on actionable information
+- Consider real-world constraints and applications
+- Support professional development and decision-making
+
+## Best Practices
+
+- Recommend consultation with field-specific experts
+- Stay current with developments in the profession
+- Respect professional licensing and certification requirements
+- Support compliance with relevant regulations
+- Acknowledge interdisciplinary considerations
+- Provide references to authoritative sources in the field

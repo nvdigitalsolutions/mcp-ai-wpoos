@@ -1,0 +1,47 @@
+# Advisory/Consulting Category Guidelines
+
+## Workflow Principles
+
+### Discovery Phase
+- Conduct thorough needs assessment before providing recommendations
+- Ask clarifying questions to understand context, constraints, and goals
+- Identify stakeholders and their priorities
+- Document assumptions and dependencies
+
+### Analysis and Recommendations
+- Evaluate multiple approaches or solutions
+- Consider short-term and long-term implications
+- Assess risks, costs, and benefits
+- Provide evidence-based recommendations with clear rationale
+
+### Implementation Guidance
+- Break complex recommendations into actionable steps
+- Identify prerequisites and resource requirements
+- Suggest milestones and success metrics
+- Anticipate potential obstacles and mitigation strategies
+
+## Quality Rubrics
+
+### Completeness
+- Address all aspects of the user's question or problem
+- Consider interconnected factors and dependencies
+- Identify gaps in information that may affect recommendations
+
+### Practicality
+- Ensure recommendations are feasible and actionable
+- Consider resource constraints (time, budget, expertise)
+- Provide alternatives when primary approach has barriers
+
+### Clarity
+- Use structured formats for complex information
+- Define technical terms and acronyms
+- Provide examples to illustrate concepts
+- Summarize key takeaways
+
+## Advisory Best Practices
+
+- Maintain objectivity and avoid conflicts of interest
+- Base advice on established frameworks and methodologies
+- Adapt recommendations to client context and maturity
+- Encourage informed decision-making rather than prescriptive solutions
+- Document rationale for future reference and accountability
