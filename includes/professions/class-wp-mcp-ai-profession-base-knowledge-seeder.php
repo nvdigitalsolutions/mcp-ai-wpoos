@@ -22,6 +22,12 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 	const SEEDED_OPTION = 'wp_mcp_ai_profession_base_knowledge_seeded';
 
 	/**
+	 * Admin init priority for seeding.
+	 * Must run after profession seeding (priority 20).
+	 */
+	const ADMIN_INIT_PRIORITY = 30;
+
+	/**
 	 * Initialize the seeder.
 	 * Runs once after profession seeding completes.
 	 */
@@ -31,8 +37,8 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 			return;
 		}
 
-		// Seed base knowledge after professions are seeded (priority 30, after profession seeding at 20).
-		add_action( 'admin_init', array( __CLASS__, 'seed_base_knowledge' ), 30 );
+		// Seed base knowledge after professions are seeded.
+		add_action( 'admin_init', array( __CLASS__, 'seed_base_knowledge' ), self::ADMIN_INIT_PRIORITY );
 	}
 
 	/**
@@ -230,8 +236,8 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 			wp_mkdir_p( $target_dir );
 		}
 
-		// Use wp_upload_bits to create the file.
-		$upload = wp_upload_bits( $filename, null, $content, gmdate( 'Y/m' ) );
+		// Use wp_upload_bits to create the file (without time subdirectory).
+		$upload = wp_upload_bits( $filename, null, $content, null );
 
 		if ( $upload['error'] ) {
 			return new WP_Error( 'upload_error', $upload['error'] );
@@ -248,7 +254,10 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 
 		// Copy to target directory.
 		if ( ! copy( $source_file, $target_file ) ) {
-			return new WP_Error( 'copy_error', 'Failed to copy file to target directory' );
+			return new WP_Error(
+				'copy_error',
+				sprintf( 'Failed to copy file from %s to %s', $source_file, $target_file )
+			);
 		}
 
 		// Remove source file.

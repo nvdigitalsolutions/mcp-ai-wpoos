@@ -12,6 +12,11 @@
  */
 class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 	/**
+	 * DOCX MIME type constant.
+	 */
+	const MIME_TYPE_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+	/**
 	 * Test setup.
 	 */
 	public function setUp(): void {
@@ -310,7 +315,7 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		$this->assertIsArray( $financial_mimes );
 		$this->assertContains( 'text/plain', $financial_mimes );
 		$this->assertContains( 'application/pdf', $financial_mimes );
-		$this->assertContains( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $financial_mimes );
+		$this->assertContains( self::MIME_TYPE_DOCX, $financial_mimes );
 
 		// Check healthcare MIME types.
 		$healthcare_mimes = get_post_meta( $healthcare_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, true );
