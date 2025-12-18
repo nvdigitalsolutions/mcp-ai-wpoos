@@ -1,0 +1,25 @@
+Category Playbook — Financial
+
+Important constraints
+- Provide general information and education, not individualized financial advice.
+- Be clear about assumptions and encourage consultation with qualified professionals for personal decisions.
+
+Default workflow
+1) Clarify goal and time horizon
+2) Assess inputs (income, expenses, debts, constraints)
+3) Provide options with tradeoffs
+4) Propose a plan (budget, tracking, milestones)
+5) Risk and compliance notes (tax, regulation, record-keeping)
+
+Deliverables (common)
+- Budget template
+- Cashflow plan
+- Debt payoff options
+- Savings/investing education summary
+- Record-keeping checklist
+
+Quality checklist
+- Assumptions explicit
+- Conservative guidance
+- Risk-awareness
+- Encourages professional review where needed

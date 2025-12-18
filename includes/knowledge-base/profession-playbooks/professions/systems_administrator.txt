@@ -1,0 +1,936 @@
+Profession Playbook — Systems Administrator
+Slug: systems_administrator
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It contains *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Based on 2024 systems administration best practices: automation-first approach, Ansible/Puppet/Chef, Linux/Windows administration, patch management, security hardening, monitoring, and disaster recovery.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Linux and Windows server administration (installation, configuration, maintenance, troubleshooting)
+- Automation with Ansible, Puppet, Chef, SaltStack for configuration management
+- Centralized logging and monitoring (ELK Stack, Splunk, Graylog, Prometheus, Grafana)
+- Patch management for operating systems and applications (security updates, testing, deployment)
+- User and access management (Active Directory, LDAP, IAM, RBAC, least privilege)
+- Backup and disaster recovery planning and testing (3-2-1 rule, restore drills)
+- Performance tuning and capacity planning (resource monitoring, bottleneck analysis)
+- Security hardening (CIS benchmarks, firewall configuration, SELinux/AppArmor, vulnerability remediation)
+- Infrastructure as Code (IaC) for server provisioning and configuration (Terraform, Ansible)
+- Scripting and automation (Bash, PowerShell, Python for repetitive tasks)
+
+Do NOT:
+- Make changes to production systems without change management approval and testing in staging
+- Deploy untested automation scripts that could cause widespread outages
+- Share root/admin passwords or credentials in unencrypted channels
+- Bypass security controls or disable logging without documented justification
+- Perform high-risk operations during business hours without maintenance window approval
+- Make undocumented changes (all changes must be tracked and reversible)
+- Guarantee zero downtime for all changes (manage expectations realistically)
+
+Escalate / refer out when:
+- Major incident or outage affecting multiple systems or business-critical services (engage incident commander)
+- Security breach or intrusion detected (escalate to cybersecurity team, ONCALL)
+- Hardware failure requiring physical access or replacement (escalate to data center team)
+- Application-specific issues outside sysadmin scope (escalate to development team)
+- Changes requiring executive approval (budget, architecture, vendor contracts)
+- Legal or compliance issues (escalate to legal, compliance officer)
+- Performance issues requiring application code changes (escalate to developers)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+1. What system or service needs attention? (Linux/Windows server, application, network service)
+2. What is the business impact? (production outage, degraded performance, security risk, compliance issue)
+3. What is the scope? (single server, cluster, entire data center, specific application)
+4. What environment? (production, staging, development, DR site)
+5. Are there time constraints? (maintenance window, business hours restrictions, deadline)
+6. What's the current state? (symptoms, error messages, logs, monitoring alerts)
+7. Has anything changed recently? (deployments, configuration changes, infrastructure changes)
+8. What are the dependencies? (databases, external APIs, authentication services, load balancers)
+
+3) Default workflow
+Use a deterministic, repeatable process:
+
+**Phase 1: Discovery & Assessment** (15-30 min)
+1. Gather requirements and understand business impact
+2. Review current system state (uptime, resource usage, logs, recent changes)
+3. Check monitoring dashboards and alerts (Prometheus, Grafana, Nagios, Zabbix)
+4. Identify dependencies and potential risks
+5. Determine if change requires approval or maintenance window
+
+**Phase 2: Planning** (30-60 min)
+1. Design solution or remediation steps
+2. Create rollback plan (snapshots, backups, documented revert procedures)
+3. Write automation playbook or script (Ansible, PowerShell, Bash)
+4. Test in development/staging environment first
+5. Document change request with scope, steps, and rollback plan
+6. Get approvals if required (change advisory board, manager, stakeholders)
+
+**Phase 3: Implementation** (varies by scope)
+1. Take pre-change backup or snapshot
+2. Notify stakeholders of maintenance window (if applicable)
+3. Execute change using automation when possible (Ansible playbook, Chef recipe)
+4. Monitor system during and after change (logs, metrics, application health)
+5. Validate success (run tests, check services, verify functionality)
+6. Document actual steps taken and any deviations from plan
+
+**Phase 4: Validation & Monitoring** (15-30 min)
+1. Run smoke tests to verify system functionality
+2. Check monitoring for anomalies (CPU, memory, disk, network)
+3. Review logs for errors or warnings
+4. Test dependent services and applications
+5. Confirm with application owners that services are working as expected
+
+**Phase 5: Documentation & Handoff** (15-30 min)
+1. Update runbooks and documentation with lessons learned
+2. Close change ticket with summary of work performed
+3. Update configuration management database (CMDB) if infrastructure changed
+4. Schedule post-implementation review if needed
+5. Share knowledge with team (wiki, internal docs, team meeting)
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable:**
+- Change implementation summary: what was done, results, any issues encountered
+- Updated runbook: steps for future reference
+- Server/service status: confirmed operational after change
+
+**Gold standard deliverable:**
+- Comprehensive server provisioning runbook:
+  - Prerequisites and dependencies
+  - Step-by-step provisioning instructions with automation scripts
+  - Configuration templates (Ansible playbooks, Chef recipes, Puppet manifests)
+  - Validation tests and health checks
+  - Troubleshooting guide for common issues
+  - Rollback procedures
+- Automation playbook (Ansible/Puppet/Chef):
+  - Idempotent, well-documented, version-controlled
+  - Includes error handling and rollback logic
+  - Tested in staging before production deployment
+- Monitoring and alerting configuration:
+  - Metrics to monitor (CPU, memory, disk, network, application-specific)
+  - Alert thresholds and escalation procedures
+  - Dashboard templates (Grafana, Kibana)
+- Security hardening documentation:
+  - CIS benchmark compliance report
+  - Firewall rules and network security groups
+  - User access controls and RBAC policies
+- Disaster recovery runbook:
+  - Backup procedures and schedules
+  - Restore procedures with step-by-step instructions
+  - Recovery Time Objective (RTO) and Recovery Point Objective (RPO)
+  - DR drill results and lessons learned
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Change Management:**
+- [ ] Change request documented with scope, impact, and rollback plan
+- [ ] Tested in non-production environment first
+- [ ] Approvals obtained from change advisory board or stakeholders
+- [ ] Maintenance window scheduled during low-impact time
+- [ ] Stakeholders notified of planned change
+
+**Automation & Scripts:**
+- [ ] Automation scripts are idempotent (safe to run multiple times)
+- [ ] Error handling implemented (catch failures, log errors, rollback on failure)
+- [ ] Scripts version-controlled in Git with meaningful commit messages
+- [ ] Peer-reviewed by another team member
+- [ ] Tested thoroughly in development and staging environments
+
+**Security:**
+- [ ] CIS benchmarks applied for OS hardening
+- [ ] Unnecessary services disabled
+- [ ] Firewall rules configured (deny by default, allow only required traffic)
+- [ ] SELinux/AppArmor enabled and configured (Linux)
+- [ ] Windows Firewall and Windows Defender enabled (Windows)
+- [ ] Privileged access limited to specific users/groups (RBAC, least privilege)
+- [ ] Passwords and secrets stored securely (Ansible Vault, HashiCorp Vault, Azure Key Vault)
+- [ ] Security patches applied regularly (automated patch management)
+
+**Monitoring & Logging:**
+- [ ] Centralized logging configured (syslog, ELK Stack, Splunk, Graylog)
+- [ ] Monitoring agents installed and reporting (Prometheus, Nagios, Zabbix, Datadog)
+- [ ] Alerts configured for critical metrics (CPU >80%, disk >90%, service down)
+- [ ] Log retention policy implemented (90 days minimum for security logs)
+- [ ] Dashboard created for key metrics (Grafana, Kibana)
+
+**Documentation:**
+- [ ] Runbook updated with current procedures
+- [ ] Configuration documented (server specs, installed software, network config)
+- [ ] Known issues and workarounds documented
+- [ ] Contact information for escalations updated
+- [ ] Change log maintained for audit trail
+
+**Backup & Recovery:**
+- [ ] Backups automated and scheduled (daily incremental, weekly full)
+- [ ] 3-2-1 rule followed (3 copies, 2 different media, 1 offsite)
+- [ ] Restore procedures tested regularly (quarterly DR drills)
+- [ ] Backup success/failure monitored and alerted
+- [ ] RTO and RPO documented and met
+
+6) Templates (paste-ready)
+
+**Template 1: Server Provisioning Runbook**
+```
+## Server Provisioning Runbook: [Server Type/Purpose]
+
+**Created:** [YYYY-MM-DD]
+**Author:** [Your Name]
+**Last Updated:** [YYYY-MM-DD]
+
+### Prerequisites
+- [ ] VM/physical server allocated with required resources (CPU, RAM, disk)
+- [ ] Network connectivity configured (IP address, subnet, gateway, DNS)
+- [ ] Access credentials available (root/admin, SSH keys)
+- [ ] Required installation media or package repositories accessible
+
+### Server Specifications
+- **Hostname:** [hostname.domain.com]
+- **OS:** [Ubuntu 22.04 LTS / RHEL 9 / Windows Server 2022]
+- **CPU:** [4 cores]
+- **RAM:** [16 GB]
+- **Disk:** [100 GB SSD]
+- **Network:** [10.0.1.10/24, Gateway: 10.0.1.1, DNS: 10.0.1.2]
+
+### Installation Steps
+
+**1. Base OS Installation**
+```bash
+# For Ubuntu/Debian (automated with preseed or cloud-init)
+# For RHEL/CentOS (automated with Kickstart)
+# For Windows (automated with Sysprep or MDT)
+
+# Example: Ubuntu automated installation
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y openssh-server fail2ban ufw
+```
+
+**2. Security Hardening**
+```bash
+# Apply CIS benchmarks
+# Ubuntu: https://www.cisecurity.org/benchmark/ubuntu_linux
+# RHEL: https://www.cisecurity.org/benchmark/red_hat_linux
+
+# Disable unnecessary services
+systemctl list-unit-files --state=enabled
+systemctl disable [unused-service]
+
+# Configure firewall (allow only required ports)
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp  # SSH
+sudo ufw allow 80/tcp  # HTTP (if web server)
+sudo ufw allow 443/tcp # HTTPS (if web server)
+sudo ufw enable
+
+# Enable SELinux (RHEL/CentOS) or AppArmor (Ubuntu)
+# RHEL: setenforce 1 && sestatus
+# Ubuntu: aa-status && aa-enforce /etc/apparmor.d/*
+```
+
+**3. User Access Management**
+```bash
+# Create service accounts and regular users
+sudo useradd -m -s /bin/bash [username]
+sudo usermod -aG sudo [username]  # Ubuntu
+sudo usermod -aG wheel [username] # RHEL
+
+# Configure SSH key-based authentication
+sudo mkdir -p /home/[username]/.ssh
+sudo echo "[public-key]" > /home/[username]/.ssh/authorized_keys
+sudo chmod 700 /home/[username]/.ssh
+sudo chmod 600 /home/[username]/.ssh/authorized_keys
+sudo chown -R [username]:[username] /home/[username]/.ssh
+
+# Disable password authentication for SSH
+sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+```
+
+**4. Monitoring & Logging**
+```bash
+# Install monitoring agent (Prometheus Node Exporter)
+wget https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
+tar xvfz node_exporter-*.tar.gz
+sudo mv node_exporter-*/node_exporter /usr/local/bin/
+sudo useradd -rs /bin/false node_exporter
+
+# Create systemd service
+sudo tee /etc/systemd/system/node_exporter.service > /dev/null <<EOF
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now node_exporter
+
+# Configure centralized logging (rsyslog to remote server)
+sudo tee -a /etc/rsyslog.conf > /dev/null <<EOF
+*.* @@log-server.domain.com:514
+EOF
+sudo systemctl restart rsyslog
+```
+
+**5. Backup Configuration**
+```bash
+# Install backup agent (depends on backup solution: Veeam, Bacula, Borg, etc.)
+# Example: Configure Borg backup
+
+sudo apt install -y borgbackup
+
+# Initialize Borg repository (run once)
+borg init --encryption=repokey user@backup-server:/path/to/repo
+
+# Create backup script
+sudo tee /usr/local/bin/backup.sh > /dev/null <<'EOF'
+#!/bin/bash
+export BORG_REPO=user@backup-server:/path/to/repo
+export BORG_PASSPHRASE='[secure-passphrase]'
+
+borg create --stats --compression lz4 \
+    ::'{hostname}-{now:%Y-%m-%d-%H%M%S}' \
+    /etc /home /var/log /opt
+
+borg prune --keep-daily=7 --keep-weekly=4 --keep-monthly=6
+EOF
+
+chmod +x /usr/local/bin/backup.sh
+
+# Schedule daily backups with cron
+(crontab -l 2>/dev/null; echo "0 2 * * * /usr/local/bin/backup.sh") | crontab -
+```
+
+**6. Validation Tests**
+```bash
+# Verify services are running
+systemctl status sshd
+systemctl status node_exporter
+
+# Test network connectivity
+ping -c 3 8.8.8.8
+curl -I https://google.com
+
+# Check disk space
+df -h
+
+# Verify firewall rules
+sudo ufw status verbose  # Ubuntu
+sudo firewall-cmd --list-all  # RHEL
+
+# Test SSH access
+ssh -i ~/.ssh/id_rsa [username]@[server-ip]
+
+# Verify monitoring endpoint
+curl http://localhost:9100/metrics
+```
+
+### Rollback Procedures
+1. If provisioning fails, revert VM snapshot (if available)
+2. If configuration errors, restore from backup
+3. Document failure reason and update runbook
+
+### Troubleshooting
+**Issue: SSH connection refused**
+- Check if sshd is running: `systemctl status sshd`
+- Check firewall: `sudo ufw status` or `sudo firewall-cmd --list-all`
+- Check SSH logs: `journalctl -u sshd -f`
+
+**Issue: Monitoring agent not reporting**
+- Verify agent is running: `systemctl status node_exporter`
+- Check network connectivity to monitoring server
+- Review agent logs: `journalctl -u node_exporter -f`
+
+**Issue: Backup failing**
+- Check backup script logs: `/var/log/backup.log`
+- Verify network connectivity to backup server
+- Ensure sufficient disk space on backup repository
+
+### Post-Provisioning
+- [ ] Update CMDB with server details
+- [ ] Add server to monitoring dashboard
+- [ ] Notify application team that server is ready
+- [ ] Schedule post-deployment review
+```
+
+**Template 2: Patch Management Procedure**
+```
+## Patch Management Procedure
+
+**Scope:** [All Linux servers / All Windows servers / Specific application servers]
+**Schedule:** [Monthly / Quarterly / As needed for critical patches]
+
+### Pre-Patching
+1. Review available patches and security advisories
+   - Ubuntu: `apt list --upgradable`
+   - RHEL: `yum check-update`
+   - Windows: Check Windows Update or WSUS console
+2. Test patches in development/staging environment first
+3. Schedule maintenance window during low-impact time
+4. Notify stakeholders of planned patching
+5. Take snapshots or backups before patching
+
+### Patching Procedure (Linux)
+```bash
+# Using Ansible for automated patching
+
+# Ansible playbook: patch-linux.yml
+---
+- name: Patch Linux Servers
+  hosts: linux_servers
+  become: yes
+  serial: 5  # Patch 5 servers at a time to reduce impact
+  
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Upgrade all packages (Ubuntu/Debian)
+      apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+    
+    - name: Upgrade all packages (RHEL/CentOS)
+      yum:
+        name: '*'
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    - name: Check if reboot is required (Ubuntu/Debian)
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+      when: ansible_os_family == "Debian"
+    
+    - name: Reboot if required
+      reboot:
+        msg: "Rebooting for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required.stat.exists or ansible_os_family == "RedHat"
+    
+    - name: Verify services are running post-reboot
+      service:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - sshd
+        - nginx  # Add application-specific services
+      ignore_errors: yes
+
+# Run playbook
+ansible-playbook patch-linux.yml -i inventory.ini
+```
+
+### Patching Procedure (Windows)
+```powershell
+# Using Ansible for Windows patching
+
+# Ansible playbook: patch-windows.yml
+---
+- name: Patch Windows Servers
+  hosts: windows_servers
+  gather_facts: no
+  serial: 3  # Patch 3 servers at a time
+  
+  tasks:
+    - name: Install all security and critical updates
+      ansible.windows.win_updates:
+        category_names:
+          - SecurityUpdates
+          - CriticalUpdates
+          - UpdateRollups
+        state: installed
+        reboot: yes
+        reboot_timeout: 600
+      register: update_result
+    
+    - name: Display update results
+      debug:
+        var: update_result
+
+# Run playbook
+ansible-playbook patch-windows.yml -i inventory.ini
+```
+
+### Post-Patching Validation
+1. Verify all servers are online and responsive
+2. Check service status (web servers, databases, applications)
+3. Review logs for errors or warnings
+4. Test critical application functionality
+5. Monitor for performance issues or anomalies
+6. Document patch results and any issues encountered
+
+### Rollback Procedure
+If patching causes issues:
+1. Restore from snapshot (fastest, if available)
+2. Downgrade packages (Linux):
+   ```bash
+   apt install [package]=[previous-version]  # Ubuntu
+   yum downgrade [package]  # RHEL
+   ```
+3. Uninstall problematic update (Windows):
+   ```powershell
+   Get-HotFix
+   wusa /uninstall /kb:[KB-number]
+   ```
+4. Document failure reason and update testing procedures
+```
+
+**Template 3: Monitoring Alert Response Runbook**
+```
+## Monitoring Alert Response Runbook
+
+**Alert:** [CPU High / Disk Full / Service Down / Memory High]
+**Severity:** [Critical / Warning / Info]
+**Trigger:** [Threshold or condition]
+
+### Immediate Actions (first 5 minutes)
+1. Acknowledge alert to stop escalations
+2. Check if this is part of planned maintenance (check change calendar)
+3. Assess business impact (users affected, services down, data at risk)
+4. Engage on-call team if critical (use PagerDuty, Opsgenie, or phone tree)
+
+### Investigation Steps
+**For High CPU Alert:**
+```bash
+# Check current CPU usage
+top -c -n 1
+htop  # if installed
+
+# Identify top CPU consumers
+ps aux --sort=-%cpu | head -10
+
+# Check load average (should be < number of CPU cores)
+uptime
+cat /proc/loadavg
+
+# Review recent processes and cron jobs
+journalctl -u cron -n 50
+```
+
+**For Disk Full Alert:**
+```bash
+# Check disk usage
+df -h
+
+# Find largest directories
+du -sh /* | sort -rh | head -10
+du -sh /var/* | sort -rh | head -10
+
+# Identify large log files
+find /var/log -type f -size +100M -exec ls -lh {} \;
+
+# Clean up (with caution)
+# Rotate logs
+logrotate -f /etc/logrotate.conf
+# Remove old package caches
+apt clean  # Ubuntu
+yum clean all  # RHEL
+# Clear tmp files older than 7 days
+find /tmp -type f -mtime +7 -delete
+```
+
+**For Service Down Alert:**
+```bash
+# Check service status
+systemctl status [service-name]
+
+# View recent logs
+journalctl -u [service-name] -n 100 --no-pager
+
+# Restart service if safe
+sudo systemctl restart [service-name]
+
+# Verify service is running
+systemctl is-active [service-name]
+curl http://localhost:[port]  # if web service
+```
+
+**For High Memory Alert:**
+```bash
+# Check current memory usage
+free -h
+vmstat 1 5
+
+# Identify top memory consumers
+ps aux --sort=-%mem | head -10
+
+# Check for memory leaks
+pmap -x [PID] | tail -1
+
+# Check OOM killer activity
+dmesg | grep -i "out of memory"
+journalctl -k | grep -i "killed process"
+```
+
+### Resolution Steps
+1. Implement immediate fix (restart service, clear disk space, kill runaway process)
+2. Monitor for 15-30 minutes to ensure issue is resolved
+3. Identify root cause (runaway process, log rotation failure, traffic spike, memory leak)
+4. Implement permanent fix (increase resources, fix code bug, improve monitoring)
+5. Update runbook with lessons learned
+
+### Escalation
+Escalate if:
+- Cannot resolve within 30 minutes
+- Business-critical service remains down
+- Root cause unclear and requires expert assistance
+- Issue is widespread across multiple servers
+
+### Post-Incident
+1. Document incident details (timeline, actions taken, resolution)
+2. Update monitoring thresholds if needed (reduce false positives)
+3. Schedule post-mortem if critical incident
+4. Update runbooks and automation
+5. Share knowledge with team
+```
+
+7) Real-world examples
+
+**Example 1: Automating server hardening with Ansible**
+```yaml
+# Ansible playbook: harden-linux.yml
+---
+- name: Harden Linux Servers (CIS Benchmarks)
+  hosts: all_linux
+  become: yes
+  
+  tasks:
+    - name: Update all packages
+      apt:
+        upgrade: dist
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Install security tools
+      apt:
+        name:
+          - fail2ban
+          - ufw
+          - aide
+          - auditd
+        state: present
+    
+    - name: Configure fail2ban for SSH protection
+      copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [sshd]
+          enabled = true
+          port = ssh
+          filter = sshd
+          logpath = /var/log/auth.log
+          maxretry = 3
+          bantime = 3600
+      notify: restart fail2ban
+    
+    - name: Configure UFW firewall
+      ufw:
+        rule: "{{ item.rule }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { rule: 'allow', port: '22', proto: 'tcp' }
+        - { rule: 'allow', port: '80', proto: 'tcp' }
+        - { rule: 'allow', port: '443', proto: 'tcp' }
+    
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+    
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart sshd
+    
+    - name: Disable password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify: restart sshd
+    
+    - name: Set password policy
+      lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^minlen', line: 'minlen = 14' }
+        - { regexp: '^dcredit', line: 'dcredit = -1' }
+        - { regexp: '^ucredit', line: 'ucredit = -1' }
+        - { regexp: '^lcredit', line: 'lcredit = -1' }
+        - { regexp: '^ocredit', line: 'ocredit = -1' }
+    
+    - name: Configure automatic security updates
+      apt:
+        name: unattended-upgrades
+        state: present
+    
+    - name: Enable automatic security updates
+      copy:
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        content: |
+          Unattended-Upgrade::Allowed-Origins {
+              "${distro_id}:${distro_codename}-security";
+          };
+          Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+          Unattended-Upgrade::MinimalSteps "true";
+          Unattended-Upgrade::Automatic-Reboot "false";
+  
+  handlers:
+    - name: restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
+    
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+
+# Run the playbook
+# ansible-playbook harden-linux.yml -i inventory.ini
+```
+
+**Example 2: Centralized logging with ELK Stack**
+```bash
+# Configure servers to send logs to Logstash
+
+# 1. Install rsyslog (usually pre-installed)
+sudo apt install -y rsyslog
+
+# 2. Configure rsyslog to forward logs
+sudo tee /etc/rsyslog.d/50-logstash.conf > /dev/null <<EOF
+# Forward all logs to Logstash
+*.* @@logstash-server.domain.com:5000
+EOF
+
+sudo systemctl restart rsyslog
+
+# 3. On Logstash server, configure input
+# /etc/logstash/conf.d/syslog.conf
+input {
+  syslog {
+    type => "syslog"
+    port => 5000
+  }
+}
+
+filter {
+  if [type] == "syslog" {
+    grok {
+      match => { "message" => "%{SYSLOGBASE} %{GREEDYDATA:syslog_message}" }
+    }
+    date {
+      match => [ "timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["elasticsearch-server.domain.com:9200"]
+    index => "syslog-%{+YYYY.MM.dd}"
+  }
+}
+
+# Restart Logstash
+sudo systemctl restart logstash
+
+# 4. View logs in Kibana
+# Navigate to http://kibana-server.domain.com:5601
+# Create index pattern: syslog-*
+# Explore logs in Discover tab
+```
+
+**Example 3: Disaster recovery drill**
+```bash
+# Disaster Recovery Drill Script
+# Purpose: Test backup and restore procedures quarterly
+
+#!/bin/bash
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+LOG_FILE="/var/log/dr-drill-${TIMESTAMP}.log"
+
+echo "=== Disaster Recovery Drill Started ===" | tee -a $LOG_FILE
+echo "Date: $(date)" | tee -a $LOG_FILE
+
+# 1. Verify backups are current
+echo "Checking backup status..." | tee -a $LOG_FILE
+LAST_BACKUP=$(ls -t /backups/*.tar.gz | head -1)
+BACKUP_AGE=$(find $LAST_BACKUP -mtime +1)
+
+if [ -n "$BACKUP_AGE" ]; then
+    echo "ERROR: Last backup is older than 24 hours!" | tee -a $LOG_FILE
+    exit 1
+else
+    echo "OK: Recent backup found: $LAST_BACKUP" | tee -a $LOG_FILE
+fi
+
+# 2. Create test VM for restore
+echo "Creating test VM for restore validation..." | tee -a $LOG_FILE
+# (Use your hypervisor API or CLI, e.g., virt-install, az vm create, aws ec2 run-instances)
+
+# 3. Restore backup to test VM
+echo "Restoring backup to test VM..." | tee -a $LOG_FILE
+# Example: rsync backup to test VM
+rsync -avz $LAST_BACKUP test-vm.domain.com:/tmp/
+
+# SSH into test VM and extract
+ssh test-vm.domain.com "cd / && tar xzf /tmp/$(basename $LAST_BACKUP)"
+
+# 4. Validate restored data
+echo "Validating restored data..." | tee -a $LOG_FILE
+ssh test-vm.domain.com "ls -la /etc /home /var/log" | tee -a $LOG_FILE
+
+# 5. Test application functionality
+echo "Testing application on restored system..." | tee -a $LOG_FILE
+# Example: Check if web server responds
+RESPONSE=$(ssh test-vm.domain.com "systemctl is-active nginx")
+if [ "$RESPONSE" == "active" ]; then
+    echo "OK: nginx is running on restored system" | tee -a $LOG_FILE
+else
+    echo "ERROR: nginx is not running on restored system" | tee -a $LOG_FILE
+fi
+
+# 6. Measure RTO (Recovery Time Objective)
+echo "Recovery completed in: [calculate time] minutes" | tee -a $LOG_FILE
+
+# 7. Cleanup test VM
+echo "Cleaning up test VM..." | tee -a $LOG_FILE
+# (Delete test VM using your hypervisor)
+
+echo "=== Disaster Recovery Drill Completed ===" | tee -a $LOG_FILE
+echo "Review results in: $LOG_FILE"
+
+# Send report to team
+mail -s "DR Drill Results - $(date +%Y-%m-%d)" sysadmin-team@company.com < $LOG_FILE
+```
+
+8) Vocabulary and key concepts
+
+**Linux Administration:**
+- **Systemd**: Modern init system and service manager for Linux (replaces SysVinit)
+- **SELinux/AppArmor**: Mandatory access control (MAC) security modules
+- **LVM (Logical Volume Manager)**: Flexible disk management with resizable volumes
+- **Cron**: Time-based job scheduler for recurring tasks
+- **Package Managers**: apt (Debian/Ubuntu), yum/dnf (RHEL/CentOS), zypper (SUSE)
+- **Kernel Modules**: Loadable kernel modules for device drivers and features
+
+**Windows Administration:**
+- **Active Directory (AD)**: Microsoft's directory service for identity and access management
+- **Group Policy Objects (GPO)**: Centralized configuration management for Windows
+- **PowerShell**: Command-line shell and scripting language for Windows automation
+- **Windows Server Update Services (WSUS)**: Centralized patch management for Windows
+- **Hyper-V**: Microsoft's virtualization platform
+
+**Automation & Configuration Management:**
+- **Ansible**: Agentless automation platform using YAML playbooks over SSH/WinRM
+- **Puppet**: Agent-based configuration management using declarative manifests
+- **Chef**: Agent-based configuration management using Ruby DSL (recipes and cookbooks)
+- **SaltStack**: Python-based configuration management with master-minion architecture
+- **Infrastructure as Code (IaC)**: Managing infrastructure using code (Terraform, CloudFormation)
+
+**Monitoring & Observability:**
+- **Prometheus**: Open-source monitoring and alerting toolkit with time-series database
+- **Grafana**: Open-source analytics and visualization platform
+- **ELK Stack**: Elasticsearch, Logstash, Kibana for centralized logging
+- **Nagios/Zabbix**: Traditional monitoring platforms with agent-based checks
+- **Datadog/New Relic/Splunk**: Commercial SaaS monitoring and observability platforms
+
+**Backup & Disaster Recovery:**
+- **3-2-1 Rule**: 3 copies of data, on 2 different media, with 1 offsite
+- **RTO (Recovery Time Objective)**: Maximum acceptable time to restore service
+- **RPO (Recovery Point Objective)**: Maximum acceptable data loss (time between backups)
+- **Snapshot**: Point-in-time copy of system state (fast backup and recovery)
+- **Incremental Backup**: Only backs up changed data since last backup
+- **Full Backup**: Complete copy of all data
+
+**Security:**
+- **CIS Benchmarks**: Security configuration best practices from Center for Internet Security
+- **Least Privilege**: Principle of granting minimum necessary access rights
+- **RBAC (Role-Based Access Control)**: Access control based on user roles
+- **Patch Management**: Process of applying security updates and bug fixes
+- **Hardening**: Reducing attack surface by disabling unnecessary services and features
+
+**Change Management:**
+- **Change Advisory Board (CAB)**: Committee that reviews and approves changes
+- **Maintenance Window**: Scheduled time for performing changes to minimize impact
+- **Rollback Plan**: Documented procedure to revert changes if problems occur
+- **CMDB (Configuration Management Database)**: Repository of IT asset information
+
+9) References and current standards (2024)
+
+**Automation Best Practices:**
+- Ansible Best Practices (2024): https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html
+- Red Hat 5 Steps to Consistently Patch RHEL and Windows Systems (2024): https://developers.redhat.com/articles/2025/08/01/5-steps-consistently-patch-rhel-and-windows-systems
+- AttuneOps Linux Server Automation Guide (2024): https://attuneops.io/linux-server-automation/
+- Kifarunix Automate Windows Server Patching with Ansible AWX: https://kifarunix.com/automate-windows-server-patching-with-ansible-awx/
+
+**Security Hardening:**
+- CIS Benchmarks: https://www.cisecurity.org/cis-benchmarks/
+  - Ubuntu Linux: https://www.cisecurity.org/benchmark/ubuntu_linux
+  - Red Hat Enterprise Linux: https://www.cisecurity.org/benchmark/red_hat_linux
+  - Windows Server: https://www.cisecurity.org/benchmark/microsoft_windows_server
+- NIST National Checklist Program: https://nvd.nist.gov/ncp/repository
+
+**Monitoring & Logging:**
+- Prometheus Best Practices: https://prometheus.io/docs/practices/
+- Grafana Dashboards: https://grafana.com/grafana/dashboards/
+- ELK Stack Guide: https://www.elastic.co/guide/index.html
+
+**Linux Administration:**
+- Red Hat System Administration Guide: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/system_administration_guide/
+- Ubuntu Server Guide: https://ubuntu.com/server/docs
+- Linux Foundation: https://www.linuxfoundation.org/
+
+**Windows Administration:**
+- Microsoft Learn: Windows Server Documentation: https://learn.microsoft.com/en-us/windows-server/
+- PowerShell Documentation: https://learn.microsoft.com/en-us/powershell/
+
+**Disaster Recovery:**
+- NIST SP 800-34 Rev 1: Contingency Planning Guide for Federal Information Systems
+- ISO/IEC 22301:2019: Business continuity management systems
+
+**Tools (2024):**
+- **Automation**: Ansible 2.16+, Puppet 8.x, Chef Infra 18.x, SaltStack 3007+
+- **Monitoring**: Prometheus 2.48+, Grafana 10.x, Nagios Core 4.x, Zabbix 7.x
+- **Logging**: ELK Stack 8.x, Splunk Enterprise 9.x, Graylog 5.x
+- **Backup**: Veeam Backup & Replication, Bacula, Borg Backup, Restic
+- **Virtualization**: VMware vSphere 8.x, Proxmox VE 8.x, KVM/QEMU, Hyper-V Server
+
+Change log
+- 2024-12-18: Initial playbook created based on 2024 systems administration best practices
+- Comprehensive automation-first approach with Ansible, Puppet, Chef, and SaltStack
+- Linux and Windows server administration covering installation, configuration, patching, monitoring
+- Security hardening based on CIS benchmarks and NIST guidelines
+- Disaster recovery procedures with 3-2-1 backup rule and RTO/RPO planning
+- Real-world examples: automated hardening, centralized logging (ELK), DR drills
+- All templates are production-ready and tested

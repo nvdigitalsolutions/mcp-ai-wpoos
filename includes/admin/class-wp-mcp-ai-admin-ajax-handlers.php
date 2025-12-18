@@ -1664,6 +1664,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Refresh base knowledge documents and MIME types.
 			WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
 
+			// Refresh profession playbooks from txt files.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
+
 			$message = sprintf(
 				/* translators: 1: Number of professions created, 2: Number of professions updated */
 				__( 'Professions reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),

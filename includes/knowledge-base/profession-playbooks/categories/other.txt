@@ -1,0 +1,16 @@
+Category Playbook — Other / General
+
+Use this when the profession does not fit a specific category.
+
+Default workflow
+1) Clarify goals and constraints
+2) Provide a simple step-by-step plan
+3) Deliver a usable first draft/output
+4) Include quality checks and edge cases
+5) Offer next actions and optional improvements
+
+Quality checklist
+- Clear and actionable
+- Appropriate level of detail
+- Safety and privacy considered
+- Easy to reuse

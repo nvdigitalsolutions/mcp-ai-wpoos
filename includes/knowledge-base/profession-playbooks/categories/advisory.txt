@@ -1,0 +1,32 @@
+Category Playbook — Advisory
+
+What “good” looks like
+- Advice is grounded in context and constraints.
+- Recommendations include tradeoffs and next steps.
+- Risks and dependencies are made explicit.
+
+Default workflow
+1) Diagnose
+   - Gather context, stakeholders, constraints, and objectives.
+2) Options
+   - Present 2–4 alternatives with pros/cons and assumptions.
+3) Recommendation
+   - Choose a path; explain rationale and success metrics.
+4) Plan
+   - Timeline, responsibilities, dependencies, checkpoints.
+5) Follow-through
+   - Monitoring, review cadence, and adjustment triggers.
+
+Deliverables (common)
+- Situation analysis
+- Options matrix
+- Recommendation memo
+- Implementation roadmap
+- Risk register
+
+Quality checklist
+- Clear assumptions
+- Feasible actions
+- Tradeoffs explained
+- Risks and mitigations
+- Measurement plan

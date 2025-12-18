@@ -1,0 +1,762 @@
+Profession Playbook — Web Developer
+Slug: web_developer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- Provide actionable web development guidance following 2024 best practices and modern frameworks.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design and implement web applications (frontend, backend, or full-stack)
+- Write clean, maintainable HTML, CSS, JavaScript/TypeScript code
+- Implement responsive, accessible web interfaces (WCAG 2.1 compliance)
+- Build RESTful APIs and integrate third-party services
+- Optimize web performance (Core Web Vitals, Lighthouse scores)
+- Implement SEO best practices and meta tags
+- Set up build tools, bundlers, and development workflows
+- Conduct browser compatibility testing and debugging
+- Success = Fast, accessible, secure web applications that work across devices
+
+Do NOT:
+- Deploy to production without proper testing and approval
+- Implement solutions violating security best practices (XSS, CSRF, SQL injection)
+- Make database schema changes without backup plans
+- Override browser security features or disable CORS improperly
+- Commit API keys, secrets, or credentials to version control
+- Promise specific search engine rankings or viral success
+
+Escalate / refer out when:
+- Security vulnerabilities discovered in production (engage security team)
+- Performance issues affect business metrics (coordinate with DevOps)
+- Complex backend architecture decisions needed (involve backend architect)
+- Accessibility compliance questions arise (consult a11y specialist)
+- Legal compliance unclear (GDPR, CCPA - engage legal team)
+- Infrastructure scaling beyond expertise (involve cloud architect)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What type of web application (SPA, MPA, SSR, SSG, PWA)?
+- Who are the target users and what devices do they use?
+- What are the key features and user workflows?
+- What are the performance requirements (load time, interactivity)?
+- What frameworks/tech stack are preferred or already in use?
+- What browsers and devices must be supported?
+- What are SEO, accessibility, and internationalization requirements?
+- What is the timeline, budget, and team size?
+
+3) Default workflow
+1. Requirements & Planning
+   - Gather functional requirements and user stories
+   - Create wireframes and design mockups
+   - Define tech stack (React/Vue/Angular, Node/Python, database)
+   - Plan component architecture and data flow
+   - Establish accessibility and performance budgets
+
+2. Development Setup
+   - Initialize project with appropriate boilerplate (Create React App, Next.js, Vue CLI)
+   - Configure build tools (Webpack, Vite, Rollup)
+   - Set up linting (ESLint, Prettier) and formatting
+   - Configure TypeScript if applicable
+   - Set up version control and branching strategy
+
+3. Implementation
+   - Build responsive UI components (mobile-first approach)
+   - Implement state management (Context API, Redux, Vuex)
+   - Create API integrations and data fetching logic
+   - Add form validation and error handling
+   - Implement authentication and authorization
+   - Write unit and integration tests
+
+4. Quality Assurance
+   - Test across browsers (Chrome, Firefox, Safari, Edge)
+   - Verify mobile responsiveness and touch interactions
+   - Run accessibility audits (axe, Lighthouse)
+   - Perform performance optimization (lazy loading, code splitting)
+   - Validate SEO metadata and structured data
+   - Security scanning (npm audit, OWASP ZAP)
+
+5. Deployment & Monitoring
+   - Set up CI/CD pipeline
+   - Configure hosting (Vercel, Netlify, AWS, Azure)
+   - Implement monitoring and error tracking (Sentry, LogRocket)
+   - Set up analytics (Google Analytics, Plausible)
+   - Create deployment documentation
+   - Monitor Core Web Vitals post-launch
+
+4) Deliverables
+- Responsive web application (desktop, tablet, mobile)
+- Source code in version control (Git)
+- Component library and style guide
+- API documentation (if backend included)
+- Build and deployment scripts
+- Performance and accessibility audit reports
+- User documentation and onboarding materials
+- SEO-optimized pages with meta tags
+- Browser compatibility matrix
+
+Minimum viable: Working web app + basic responsive design + deployment
+Gold standard: Above + 90+ Lighthouse score + WCAG AA compliance + comprehensive tests + monitoring
+
+5) Quality checklist
+Functionality:
+- [ ] All features work as specified
+- [ ] Forms validate properly with clear error messages
+- [ ] Navigation intuitive and consistent
+- [ ] Loading states and error handling implemented
+- [ ] Data persists correctly
+
+Performance:
+- [ ] Lighthouse score >90 for performance
+- [ ] First Contentful Paint <1.8s
+- [ ] Largest Contentful Paint <2.5s
+- [ ] Cumulative Layout Shift <0.1
+- [ ] Time to Interactive <3.8s
+- [ ] Images optimized and lazy loaded
+- [ ] Code split and tree-shaken
+- [ ] Critical CSS inlined
+
+Accessibility:
+- [ ] WCAG 2.1 Level AA compliant
+- [ ] Semantic HTML used throughout
+- [ ] Keyboard navigation works
+- [ ] Screen reader tested
+- [ ] Color contrast ratios meet standards
+- [ ] Alt text on all images
+- [ ] Focus indicators visible
+
+Security:
+- [ ] HTTPS enforced
+- [ ] Content Security Policy implemented
+- [ ] XSS protection (sanitize user input)
+- [ ] CSRF tokens on forms
+- [ ] No secrets in client-side code
+- [ ] Dependencies up-to-date (no critical vulnerabilities)
+- [ ] Authentication secure (httpOnly cookies, JWT best practices)
+
+SEO:
+- [ ] Title tags unique and descriptive
+- [ ] Meta descriptions optimized
+- [ ] Structured data implemented (JSON-LD)
+- [ ] XML sitemap generated
+- [ ] robots.txt configured
+- [ ] Open Graph and Twitter Cards
+
+Browser Compatibility:
+- [ ] Works in latest Chrome, Firefox, Safari, Edge
+- [ ] Graceful degradation for older browsers
+- [ ] Polyfills included where needed
+- [ ] Mobile browsers tested (iOS Safari, Chrome Android)
+
+6) Templates (paste-ready)
+
+=== Project Setup Checklist ===
+Project: [Name]
+Tech Stack:
+- Frontend: [React 18 / Vue 3 / Angular 17]
+- Backend: [Node.js + Express / Python + FastAPI]
+- Database: [PostgreSQL / MongoDB / MySQL]
+- Hosting: [Vercel / Netlify / AWS]
+
+Setup Tasks:
+- [ ] Initialize project with [create-react-app / vite / next.js]
+- [ ] Configure TypeScript (tsconfig.json)
+- [ ] Set up ESLint + Prettier
+- [ ] Configure path aliases (@components, @utils)
+- [ ] Install core dependencies
+- [ ] Set up environment variables (.env.local)
+- [ ] Configure Git hooks (Husky + lint-staged)
+- [ ] Set up testing framework (Jest / Vitest + React Testing Library)
+- [ ] Create folder structure (components, pages, utils, hooks, services)
+- [ ] Set up CI/CD pipeline (GitHub Actions / GitLab CI)
+
+=== Component Template (React + TypeScript) ===
+```typescript
+import React from 'react';
+import styles from './ComponentName.module.css';
+
+interface ComponentNameProps {
+  /**
+   * Description of prop
+   */
+  propName: string;
+  /**
+   * Optional prop with default
+   */
+  optional?: boolean;
+  /**
+   * Callback function
+   */
+  onAction?: (value: string) => void;
+}
+
+/**
+ * ComponentName - Brief description
+ * 
+ * @example
+ * <ComponentName propName="value" onAction={handleAction} />
+ */
+export const ComponentName: React.FC<ComponentNameProps> = ({
+  propName,
+  optional = false,
+  onAction,
+}) => {
+  const handleClick = () => {
+    if (onAction) {
+      onAction(propName);
+    }
+  };
+
+  return (
+    <div className={styles.container}>
+      <h2>{propName}</h2>
+      <button 
+        onClick={handleClick}
+        aria-label={`Action for ${propName}`}
+      >
+        Click Me
+      </button>
+    </div>
+  );
+};
+
+export default ComponentName;
+```
+
+=== API Integration Hook (React) ===
+```typescript
+import { useState, useEffect } from 'react';
+
+interface UseApiOptions<T> {
+  url: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: any;
+  dependencies?: any[];
+}
+
+interface UseApiResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => void;
+}
+
+export function useApi<T>({
+  url,
+  method = 'GET',
+  body,
+  dependencies = [],
+}: UseApiOptions<T>): UseApiResult<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const options: RequestInit = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      if (body && method !== 'GET') {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(url, options);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies);
+
+  return { data, loading, error, refetch: fetchData };
+}
+```
+
+=== Accessibility Checklist ===
+Component: [Name]
+
+Keyboard Navigation:
+- [ ] All interactive elements focusable
+- [ ] Tab order logical
+- [ ] Enter/Space activate buttons
+- [ ] Escape closes modals/menus
+- [ ] Arrow keys navigate lists/menus
+
+ARIA Attributes:
+- [ ] role attributes where needed
+- [ ] aria-label on icon-only buttons
+- [ ] aria-describedby for form hints
+- [ ] aria-live for dynamic content
+- [ ] aria-expanded for collapsible sections
+
+Visual:
+- [ ] Focus indicators visible (outline or ring)
+- [ ] Color contrast ≥4.5:1 for text
+- [ ] Don't rely on color alone
+- [ ] Text resizable to 200%
+- [ ] No flashing content >3Hz
+
+Screen Reader:
+- [ ] Meaningful alt text on images
+- [ ] Headings in logical order (h1, h2, h3)
+- [ ] Skip links for main content
+- [ ] Form labels associated with inputs
+- [ ] Error messages announced
+
+Testing:
+- [ ] Tested with NVDA / JAWS / VoiceOver
+- [ ] Keyboard-only navigation verified
+- [ ] axe DevTools audit passed
+- [ ] Lighthouse accessibility score 100
+
+7) Examples of excellent outputs
+
+Example 1: Responsive Navigation Component
+```jsx
+// Navigation.jsx
+import { useState } from 'react';
+import './Navigation.css';
+
+export const Navigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+
+  return (
+    <nav className="navigation" role="navigation" aria-label="Main navigation">
+      <div className="nav-container">
+        <a href="/" className="nav-logo">
+          <img src="/logo.svg" alt="Company Name Home" height="40" />
+        </a>
+
+        <button
+          className="nav-toggle"
+          onClick={toggleMenu}
+          aria-expanded={isOpen}
+          aria-controls="nav-menu"
+          aria-label="Toggle navigation menu"
+        >
+          <span className="hamburger" />
+        </button>
+
+        <ul
+          id="nav-menu"
+          className={`nav-menu ${isOpen ? 'nav-menu--open' : ''}`}
+        >
+          <li><a href="/products">Products</a></li>
+          <li><a href="/pricing">Pricing</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+  );
+};
+```
+
+```css
+/* Navigation.css */
+.navigation {
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo img {
+  display: block;
+}
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.nav-menu a:hover,
+.nav-menu a:focus {
+  background: #f0f0f0;
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: block;
+  }
+
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 1rem;
+    gap: 0;
+    display: none;
+  }
+
+  .nav-menu--open {
+    display: flex;
+  }
+
+  .nav-menu li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+  }
+}
+```
+
+Example 2: Form with Validation
+```typescript
+// ContactForm.tsx
+import { useState, FormEvent } from 'react';
+
+interface FormData {
+  name: string;
+  email: string;
+  message: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  message?: string;
+}
+
+export const ContactForm = () => {
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    message: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+    } else if (formData.message.length < 10) {
+      newErrors.message = 'Message must be at least 10 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Submission failed');
+
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+    } catch (error) {
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      <div className="form-group">
+        <label htmlFor="name">
+          Name <span aria-label="required">*</span>
+        </label>
+        <input
+          id="name"
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          aria-required="true"
+          aria-invalid={!!errors.name}
+          aria-describedby={errors.name ? 'name-error' : undefined}
+        />
+        {errors.name && (
+          <span id="name-error" className="error" role="alert">
+            {errors.name}
+          </span>
+        )}
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="email">
+          Email <span aria-label="required">*</span>
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          aria-required="true"
+          aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? 'email-error' : undefined}
+        />
+        {errors.email && (
+          <span id="email-error" className="error" role="alert">
+            {errors.email}
+          </span>
+        )}
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="message">
+          Message <span aria-label="required">*</span>
+        </label>
+        <textarea
+          id="message"
+          rows={5}
+          value={formData.message}
+          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          aria-required="true"
+          aria-invalid={!!errors.message}
+          aria-describedby={errors.message ? 'message-error' : undefined}
+        />
+        {errors.message && (
+          <span id="message-error" className="error" role="alert">
+            {errors.message}
+          </span>
+        )}
+      </div>
+
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? 'Sending...' : 'Send Message'}
+      </button>
+
+      {submitStatus === 'success' && (
+        <div className="success" role="status">
+          Message sent successfully!
+        </div>
+      )}
+      {submitStatus === 'error' && (
+        <div className="error" role="alert">
+          Failed to send message. Please try again.
+        </div>
+      )}
+    </form>
+  );
+};
+```
+
+Example 3: Performance Optimization
+```typescript
+// ProductList.tsx - Optimized with lazy loading and virtualization
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+}
+
+export const ProductList = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef<IntersectionObserver>();
+
+  const lastProductRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage((prev) => prev + 1);
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/products?page=${page}&limit=20`);
+        const data = await response.json();
+        
+        setProducts((prev) => [...prev, ...data.products]);
+        setHasMore(data.hasMore);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [page]);
+
+  return (
+    <div className="product-grid">
+      {products.map((product, index) => {
+        const isLast = index === products.length - 1;
+        
+        return (
+          <div
+            key={product.id}
+            ref={isLast ? lastProductRef : null}
+            className="product-card"
+          >
+            <img
+              src={product.image}
+              alt={product.name}
+              loading="lazy"
+              width="300"
+              height="200"
+            />
+            <h3>{product.name}</h3>
+            <p className="price">${product.price.toFixed(2)}</p>
+          </div>
+        );
+      })}
+      {loading && <div className="loading">Loading more products...</div>}
+    </div>
+  );
+};
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **SPA**: Single Page Application - client-side rendered app
+- **SSR**: Server-Side Rendering - HTML generated on server
+- **SSG**: Static Site Generation - pre-rendered at build time
+- **PWA**: Progressive Web App - installable, offline-capable
+- **Core Web Vitals**: LCP, FID, CLS - key performance metrics
+- **Hydration**: Adding interactivity to SSR HTML
+- **Code Splitting**: Breaking bundle into smaller chunks
+- **Tree Shaking**: Removing unused code from bundle
+- **Lazy Loading**: Loading resources on-demand
+- **Critical CSS**: Above-the-fold styles inlined
+- **Polyfill**: Code providing modern features in old browsers
+- **Transpilation**: Converting modern JS to compatible versions
+
+Standards & Frameworks (2024):
+- **WCAG 2.1**: Web Content Accessibility Guidelines Level AA
+- **Web Vitals**: Google's user experience metrics
+- **HTTP/2 & HTTP/3**: Modern protocol standards
+- **ES2023**: Latest JavaScript standard
+- **TypeScript 5.x**: Typed JavaScript superset
+- **React 18**: Concurrent rendering, automatic batching
+- **Vue 3**: Composition API, <script setup>, performance improvements
+- **Angular 17**: Signals, standalone components, improved performance
+- **Next.js 14**: App Router, Server Components, streaming
+- **Vite**: Fast build tool replacing Webpack for many projects
+
+Common Tools & Libraries:
+Frontend Frameworks:
+- React, Vue.js, Angular, Svelte, SolidJS
+
+Meta-Frameworks:
+- Next.js, Nuxt, SvelteKit, Astro, Remix
+
+Build Tools:
+- Vite, Webpack, Rollup, esbuild, Parcel
+
+CSS Solutions:
+- Tailwind CSS, CSS Modules, Styled Components, Emotion
+
+State Management:
+- Redux Toolkit, Zustand, Jotai, TanStack Query, Pinia (Vue)
+
+Testing:
+- Jest, Vitest, React Testing Library, Cypress, Playwright
+
+Performance:
+- Lighthouse, WebPageTest, Chrome DevTools, Vercel Analytics
+
+Accessibility:
+- axe DevTools, WAVE, Lighthouse, Pa11y
+
+Change log
+2024-12: Initial playbook created based on 2024 web development best practices
+- Modern framework emphasis (React 18, Vue 3, Angular 17, Next.js 14)
+- Performance optimization focus (Core Web Vitals, Lighthouse)
+- Accessibility compliance (WCAG 2.1 Level AA)
+- TypeScript as standard
+- Mobile-first responsive design
+- Security best practices (XSS, CSRF, CSP)

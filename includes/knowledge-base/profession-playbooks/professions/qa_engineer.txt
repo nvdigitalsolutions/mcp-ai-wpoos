@@ -1,0 +1,406 @@
+Profession Playbook — Quality Assurance Engineer
+Slug: qa_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- Actionable instructions for QA engineers practicing shift-left testing, test automation, and quality assurance.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design and implement test strategies (shift-left, test pyramid)
+- Create automated test suites (unit, integration, E2E, API)
+- Perform manual exploratory testing for edge cases
+- Design and execute performance/load tests
+- Implement CI/CD test automation pipelines
+- Conduct security testing (SAST, DAST, dependency scanning)
+- Create test data management strategies
+- Perform accessibility testing (WCAG 2.1)
+- Track and report quality metrics (defect density, test coverage)
+- Conduct risk-based testing and prioritization
+
+Do NOT:
+- Approve production releases without proper test evidence
+- Skip testing due to timeline pressure without escalation
+- Test in production without proper safeguards
+- Ignore security vulnerabilities or accessibility issues
+- Make production deployments without proper access/approval
+- Guarantee zero defects or 100% test coverage
+
+Escalate when:
+- Critical security vulnerabilities found
+- Systemic quality issues blocking release
+- Test environments inadequate for proper testing
+- Lack of testability in architecture/design
+- Insufficient time/resources for adequate testing
+- Regulatory compliance testing requirements unclear
+
+2) Quick intake questions
+1. **Testing scope**: What are we testing? New feature, bug fix, regression, full system?
+2. **Quality requirements**: What's the acceptable defect rate? Performance requirements?
+3. **Test environment**: What environments are available? Prod-like data?
+4. **Automation level**: Existing test automation? CI/CD pipeline integration?
+5. **Timeline**: When's the target release? Testing window available?
+6. **Risk areas**: What are the highest-risk features/components?
+7. **Compliance needs**: Any regulatory testing requirements (508, WCAG, HIPAA)?
+8. **Test data**: Is test data available? PII/PHI handling requirements?
+
+3) Default workflow
+1. **Test Planning** (Sprint Planning / Week 1)
+   - Review requirements and acceptance criteria
+   - Identify testable requirements and edge cases
+   - Assess risk areas and prioritize testing
+   - Design test strategy (manual vs automated, levels)
+   - Estimate testing effort and timeline
+   - Set up test environments and data
+
+2. **Test Design** (Early Sprint / Week 1-2)
+   - Write test cases and test scenarios
+   - Design automated test scripts (TDD/BDD)
+   - Create test data sets
+   - Set up mocks/stubs for dependencies
+   - Design performance test scenarios
+   - Plan exploratory testing sessions
+
+3. **Test Implementation** (Mid Sprint / Week 2-3)
+   - Implement automated tests (unit, integration, E2E)
+   - Integrate tests into CI/CD pipeline
+   - Execute manual test cases
+   - Perform exploratory testing
+   - Run performance and load tests
+   - Execute security scans (SAST/DAST)
+   - Test accessibility compliance
+
+4. **Defect Management** (Throughout Sprint)
+   - Log defects with clear reproduction steps
+   - Prioritize by severity and impact
+   - Verify fixes and perform regression testing
+   - Track defect metrics and trends
+   - Communicate status to stakeholders
+
+5. **Release Readiness** (End Sprint / Week 3-4)
+   - Execute regression test suite
+   - Verify all critical defects resolved
+   - Review test coverage and gaps
+   - Perform smoke tests in staging
+   - Sign off on release quality
+   - Document known issues and workarounds
+
+4) Deliverables
+**Minimum Viable:**
+- Test plan document
+- Critical path test cases
+- Defect report summary
+- Basic automated smoke tests
+- Release sign-off
+
+**Gold Standard:**
+- Comprehensive test strategy document
+- Full test case repository (manual + automated)
+- Automated test suite (unit, integration, E2E, API)
+- Performance test results with benchmarks
+- Security scan reports
+- Accessibility compliance report (WCAG 2.1)
+- Test coverage metrics dashboard
+- Defect trend analysis
+- Release readiness report with risk assessment
+- Test automation CI/CD integration
+
+5) Quality checklist
+**Test Pyramid Coverage:**
+- [ ] Unit tests: 70%+ of total tests (fast, isolated, many)
+- [ ] Integration tests: 20% of total tests (API, service integration)
+- [ ] E2E/UI tests: 10% of total tests (critical user journeys)
+- [ ] API tests: Contract testing, error handling, security
+
+**Shift-Left Testing:**
+- [ ] Requirements reviewed for testability
+- [ ] Test cases written before/during development
+- [ ] Automated tests run on every commit (CI/CD)
+- [ ] Developers running tests locally before commit
+- [ ] Static analysis integrated into IDE/CI
+
+**Functional Testing:**
+- [ ] All acceptance criteria tested
+- [ ] Happy path scenarios covered
+- [ ] Error handling and edge cases tested
+- [ ] Data validation tested (boundary values, invalid input)
+- [ ] User workflows tested end-to-end
+- [ ] Cross-browser/device testing completed
+
+**Non-Functional Testing:**
+- [ ] Performance: Load testing under expected traffic
+- [ ] Performance: Stress testing to find breaking points
+- [ ] Security: SAST/DAST scans completed, critical issues resolved
+- [ ] Security: Dependency vulnerability scanning
+- [ ] Accessibility: WCAG 2.1 Level AA compliance verified
+- [ ] Usability: Key user flows tested with real users (if possible)
+
+**Test Data & Environment:**
+- [ ] Test data representative of production scenarios
+- [ ] PII/PHI properly masked or synthetic
+- [ ] Test environment configuration matches production
+- [ ] Test data reset/refresh process documented
+
+**Automation Quality:**
+- [ ] Tests are reliable (no flaky tests)
+- [ ] Tests have clear assertions and error messages
+- [ ] Tests are maintainable (DRY, page objects, reusable utilities)
+- [ ] Tests run in reasonable time (<10 min for smoke, <1 hour for full suite)
+- [ ] Test reports generated automatically
+
+6) Templates (paste-ready)
+
+**Test Case Template:**
+```
+Test Case ID: TC-001
+Feature: [Feature Name]
+Priority: High | Medium | Low
+Type: Functional | Performance | Security | Accessibility
+
+Preconditions:
+- [Setup required]
+
+Test Steps:
+1. [Action]
+2. [Action]
+3. [Action]
+
+Expected Result:
+- [Expected outcome]
+
+Actual Result:
+- [Filled during execution]
+
+Status: Pass | Fail | Blocked | Skip
+Notes: [Any observations]
+```
+
+**Defect Report Template:**
+```
+Defect ID: DEF-001
+Severity: Critical | High | Medium | Low
+Priority: P0 | P1 | P2 | P3
+Status: New | In Progress | Fixed | Verified | Closed
+
+Summary:
+[One-line description]
+
+Environment:
+- Browser/OS: [e.g., Chrome 120 / macOS 14]
+- Build: [version number]
+- Test Environment: [staging/QA]
+
+Steps to Reproduce:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+Expected Result:
+[What should happen]
+
+Actual Result:
+[What actually happens]
+
+Screenshots/Logs:
+[Attach evidence]
+
+Impact:
+[User impact and business risk]
+
+Suggested Fix:
+[If known]
+```
+
+**Test Plan Template:**
+```
+# Test Plan - [Feature/Release Name]
+
+## Scope
+In Scope:
+- [Feature 1]
+- [Feature 2]
+
+Out of Scope:
+- [Excluded area]
+
+## Test Strategy
+- Unit Testing: 70% coverage target, Jest/JUnit
+- Integration Testing: API testing with Postman/REST Assured
+- E2E Testing: Critical paths with Playwright/Cypress
+- Performance Testing: Load testing with JMeter/k6
+- Security Testing: SAST with SonarQube, DAST with OWASP ZAP
+- Accessibility Testing: axe-core, manual WCAG 2.1 AA review
+
+## Test Environment
+- QA: qa.example.com
+- Staging: staging.example.com
+- Test Data: Synthetic data, no production PII
+
+## Schedule
+- Test Planning: Week 1
+- Test Execution: Week 2-3
+- Regression Testing: Week 4
+- Release: Week 5
+
+## Entry Criteria
+- Code complete and deployed to QA
+- Test environment available and stable
+- Test data loaded
+
+## Exit Criteria
+- All critical/high defects resolved
+- 80%+ test coverage achieved
+- No P0/P1 open defects
+- Performance benchmarks met
+- Security scan passed
+- Stakeholder sign-off
+
+## Risks
+- Risk 1: [description and mitigation]
+- Risk 2: [description and mitigation]
+```
+
+**Automation Test (Playwright Example):**
+```javascript
+// tests/login.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('User Authentication', () => {
+  test('successful login with valid credentials', async ({ page }) => {
+    await page.goto('/login');
+    
+    // Fill login form
+    await page.fill('[data-testid="email"]', 'test@example.com');
+    await page.fill('[data-testid="password"]', 'SecurePass123!');
+    await page.click('[data-testid="login-button"]');
+    
+    // Verify successful login
+    await expect(page).toHaveURL('/dashboard');
+    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+    await expect(page.locator('[data-testid="welcome-message"]'))
+      .toContainText('Welcome, Test User');
+  });
+  
+  test('login fails with invalid credentials', async ({ page }) => {
+    await page.goto('/login');
+    
+    await page.fill('[data-testid="email"]', 'test@example.com');
+    await page.fill('[data-testid="password"]', 'WrongPassword');
+    await page.click('[data-testid="login-button"]');
+    
+    // Verify error message
+    await expect(page.locator('[data-testid="error-message"]'))
+      .toContainText('Invalid email or password');
+    await expect(page).toHaveURL('/login');
+  });
+  
+  test('validates required fields', async ({ page }) => {
+    await page.goto('/login');
+    await page.click('[data-testid="login-button"]');
+    
+    // Check validation messages
+    await expect(page.locator('[data-testid="email-error"]'))
+      .toContainText('Email is required');
+    await expect(page.locator('[data-testid="password-error"]'))
+      .toContainText('Password is required');
+  });
+});
+```
+
+7) Examples
+
+**Example 1: Test Strategy for E-commerce Checkout**
+```
+Feature: Checkout Flow
+Risk Level: Critical (revenue impact)
+
+Test Pyramid Distribution:
+- Unit Tests (60%): Payment calculation, tax calculation, discount logic
+- Integration Tests (30%): Payment gateway API, inventory updates, order creation
+- E2E Tests (10%): Complete checkout flow for guest and logged-in users
+
+Critical Scenarios:
+1. Happy path: Add to cart → checkout → payment → order confirmation
+2. Error handling: Payment declined, out of stock, network timeout
+3. Edge cases: Multiple items, promo codes, international shipping
+4. Performance: Checkout completes in <3 seconds under 1000 concurrent users
+5. Security: PCI-DSS compliance, no credit card data logged
+
+Automation Priority:
+- Automate: Happy path, common error scenarios, smoke tests
+- Manual: Exploratory testing of UI/UX, edge cases, usability
+- Performance: Weekly load tests simulating Black Friday traffic
+
+Quality Gates:
+- No P0/P1 defects
+- 90%+ code coverage for payment logic
+- Checkout success rate >99.5% in staging
+- Performance <3s at 95th percentile
+```
+
+**Example 2: Defect Triage and Prioritization**
+```
+Defect: User unable to submit form after validation error
+
+Severity Assessment:
+- Frequency: 100% reproducible
+- Impact: Blocks primary user workflow
+- Users Affected: All users
+- Workaround: None
+- Data Loss: No
+
+Priority: P0 (Critical) - Block release
+
+Reproduction:
+1. Fill form with invalid email
+2. Click submit
+3. See validation error
+4. Correct email format
+5. Click submit again
+6. Button disabled, form not submitted
+
+Root Cause: Form validation state not reset after error
+
+Fix Verification:
+- Verify fix in all supported browsers
+- Regression test: Other form validations still work
+- Add automated test to prevent regression
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- Shift-Left Testing: Moving testing earlier in SDLC
+- Test Pyramid: Many unit tests, fewer integration, minimal E2E
+- TDD (Test-Driven Development): Write tests before code
+- BDD (Behavior-Driven Development): Tests based on user behavior
+- Flaky Test: Test that passes/fails inconsistently
+- Smoke Test: Basic tests to verify system is working
+- Regression Test: Re-testing to ensure fixes didn't break existing functionality
+- Test Coverage: Percentage of code exercised by tests
+
+**Standards & Frameworks (2024):**
+- **Testing**: ISTQB (International Software Testing Qualifications Board)
+- **Accessibility**: WCAG 2.1 Level AA, Section 508
+- **Security**: OWASP Top 10, OWASP Testing Guide v4.2
+- **Performance**: Web Vitals (LCP, FID, CLS), RAIL model
+- **Test Automation**: Page Object Model, Screenplay Pattern
+- **CI/CD**: Test automation integrated into pipeline, quality gates
+
+**Tools:**
+- **Unit Testing**: Jest, JUnit, pytest, NUnit, Mocha
+- **E2E Testing**: Playwright, Cypress, Selenium WebDriver
+- **API Testing**: Postman, REST Assured, Supertest
+- **Performance**: JMeter, k6, Gatling, Locust
+- **Security**: SonarQube, OWASP ZAP, Burp Suite, Snyk
+- **Accessibility**: axe-core, WAVE, Lighthouse
+- **Test Management**: TestRail, Zephyr, qTest, Azure Test Plans
+- **CI/CD**: Jenkins, GitHub Actions, GitLab CI, CircleCI
+- **Mocking**: WireMock, Mockito, Sinon.js, MSW
+
+Change log
+- 2024-12: Initial playbook based on 2024 shift-left and test automation best practices

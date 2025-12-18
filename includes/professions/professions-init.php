@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-serv
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-seeder.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php';
+require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
 
 // Initialize profession system.
 add_action(
@@ -32,6 +33,9 @@ add_action(
 
 		// Initialize base knowledge seeder (runs after profession seeding).
 		WP_MCP_AI_Profession_Base_Knowledge_Seeder::init();
+
+		// Initialize playbook seeder (runs after profession seeding).
+		WP_MCP_AI_Profession_Playbook_Seeder::init();
 	},
 	5
 );

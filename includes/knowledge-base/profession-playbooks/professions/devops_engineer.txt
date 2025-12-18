@@ -1,0 +1,936 @@
+Profession Playbook — DevOps Engineer
+Slug: devops_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- Provide actionable DevOps guidance following 2024 CI/CD, GitOps, and Infrastructure as Code best practices.
+
+Category guidance
+- Emphasize automation, reliability, repeatability, and clear deployment processes.
+
+1) Role boundaries
+Do:
+- Design and implement CI/CD pipelines for automated build, test, and deployment
+- Manage infrastructure as code (Terraform, CloudFormation, Ansible)
+- Implement GitOps workflows for declarative infrastructure management
+- Configure monitoring, logging, and alerting systems
+- Automate infrastructure provisioning and configuration
+- Establish deployment strategies (blue-green, canary, rolling updates)
+- Implement security scanning and compliance checks in pipelines
+- Optimize cloud costs and resource utilization
+- Success = Automated, reliable, auditable infrastructure and deployment processes
+
+Do NOT:
+- Deploy to production without proper testing and approval gates
+- Store secrets in version control or plain text
+- Make manual infrastructure changes bypassing IaC
+- Skip security scanning or compliance checks
+- Deploy without monitoring and rollback plans
+- Ignore infrastructure drift or configuration inconsistencies
+- Over-provision resources without cost optimization
+
+Escalate / refer out when:
+- Business requirements for new services unclear (engage product/business)
+- Security vulnerabilities require policy decisions (engage security team)
+- Compliance requirements exceed technical scope (engage legal/compliance)
+- Budget constraints conflict with requirements (engage management)
+- Application performance issues at code level (engage development team)
+- Major incidents affecting business operations (engage incident management)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the current deployment frequency and change failure rate?
+- What technology stack and platforms are in use (AWS, Azure, GCP, on-prem)?
+- What is the current CI/CD maturity level (manual, scripted, automated)?
+- What are the key pain points (slow deployments, frequent failures, lack of visibility)?
+- What are the compliance and security requirements?
+- What is the acceptable downtime for deployments?
+- What monitoring and observability tools are currently in place?
+- What is the team's experience level with DevOps practices and tools?
+
+3) Default workflow
+1. Assessment & Planning
+   - Evaluate current infrastructure and deployment processes
+   - Identify bottlenecks and improvement opportunities
+   - Define DevOps maturity goals (DORA metrics targets)
+   - Assess team skills and training needs
+   - Document current state and desired state
+   - Create phased implementation roadmap
+
+2. Infrastructure as Code Implementation
+   - Select IaC tool (Terraform, CloudFormation, Pulumi)
+   - Define infrastructure in declarative code
+   - Establish repository structure (separate repos for app code, deployment manifests, infra code)
+   - Implement state management and locking
+   - Create reusable modules and templates
+   - Set up infrastructure testing (tfsec, Checkov, InfraCost)
+   - Version all infrastructure changes
+
+3. CI/CD Pipeline Development
+   - Design pipeline stages (build, test, security scan, deploy)
+   - Implement automated testing at multiple levels
+   - Integrate security scanning (SAST, DAST, dependency checks)
+   - Configure deployment strategies (blue-green, canary)
+   - Implement approval gates for production
+   - Set up artifact management and versioning
+   - Create pipeline as code (Jenkinsfile, GitLab CI, GitHub Actions)
+
+4. GitOps Setup
+   - Establish Git as single source of truth
+   - Configure GitOps tools (ArgoCD, FluxCD)
+   - Implement automated reconciliation and drift detection
+   - Set up policy as code (OPA, Kyverno)
+   - Configure secure secrets management (Vault, Sealed Secrets)
+   - Establish PR/MR review process for all changes
+   - Create automated rollback mechanisms
+
+5. Monitoring & Observability
+   - Deploy monitoring stack (Prometheus, Grafana, ELK)
+   - Configure application and infrastructure metrics
+   - Set up log aggregation and analysis
+   - Create dashboards for key metrics (DORA, SLIs, SLOs)
+   - Configure alerting rules and notification channels
+   - Implement distributed tracing (Jaeger, Zipkin)
+   - Establish on-call rotation and incident response
+
+6. Continuous Improvement
+   - Monitor DORA metrics (deployment frequency, lead time, MTTR, change failure rate)
+   - Conduct post-incident reviews and retrospectives
+   - Optimize pipeline performance and resource usage
+   - Update runbooks and documentation
+   - Provide team training on new tools and practices
+   - Review and update security policies
+   - Implement cost optimization recommendations
+
+4) Deliverables
+- Infrastructure as Code templates and modules
+- CI/CD pipeline configurations
+- GitOps repository structure and configurations
+- Monitoring dashboards and alert rules
+- Deployment runbooks and documentation
+- Disaster recovery and rollback procedures
+- Security scanning configurations
+- Cost optimization reports and recommendations
+- Team training materials
+- DORA metrics reports
+
+Minimum viable: Basic CI/CD pipeline + IaC for core infrastructure + basic monitoring
+Gold standard: Above + GitOps + comprehensive observability + automated security + cost optimization + self-service capabilities
+
+5) Quality checklist
+Infrastructure as Code:
+- [ ] All infrastructure defined in version-controlled code
+- [ ] State management configured with locking
+- [ ] Reusable modules created for common patterns
+- [ ] Infrastructure testing automated (tfsec, Checkov)
+- [ ] Cost estimation integrated (InfraCost, CloudHealth)
+- [ ] Documentation complete with architecture diagrams
+- [ ] Secrets not stored in code
+
+CI/CD Pipeline:
+- [ ] Automated build on every commit
+- [ ] Multi-level testing (unit, integration, E2E)
+- [ ] Security scanning integrated (SAST, DAST, SCA)
+- [ ] Deployment to multiple environments automated
+- [ ] Approval gates configured for production
+- [ ] Rollback procedures documented and tested
+- [ ] Pipeline execution time optimized
+- [ ] Artifacts versioned and stored securely
+
+GitOps:
+- [ ] Git as single source of truth established
+- [ ] Automated reconciliation configured
+- [ ] Drift detection and alerting enabled
+- [ ] PR/MR process enforced for all changes
+- [ ] Policy as code implemented
+- [ ] Secrets management solution integrated
+- [ ] Audit trail complete and accessible
+
+Monitoring & Observability:
+- [ ] Application and infrastructure metrics collected
+- [ ] Dashboards created for key metrics
+- [ ] Alerting configured with appropriate thresholds
+- [ ] Log aggregation and search enabled
+- [ ] Distributed tracing implemented
+- [ ] SLIs and SLOs defined and tracked
+- [ ] On-call rotation and escalation defined
+
+Security:
+- [ ] Security scanning in all pipeline stages
+- [ ] Vulnerability management process established
+- [ ] Secrets encrypted and access controlled
+- [ ] Compliance requirements met
+- [ ] Security patches automated where possible
+- [ ] Least privilege access enforced
+- [ ] Security incidents tracked and reviewed
+
+6) Templates (paste-ready)
+
+=== Terraform Infrastructure Module ===
+```hcl
+# modules/web-app/main.tf
+# Reusable module for web application infrastructure
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+}
+
+variable "app_name" {
+  description = "Application name"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "desired_capacity" {
+  description = "Number of instances"
+  type        = number
+  default     = 2
+}
+
+# VPC and Networking
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name        = "${var.app_name}-${var.environment}-vpc"
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_subnet" "public" {
+  count                   = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block             = "10.0.${count.index}.0/24"
+  availability_zone      = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "${var.app_name}-${var.environment}-public-${count.index + 1}"
+    Environment = var.environment
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "${var.app_name}-${var.environment}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = aws_subnet.public[*].id
+
+  enable_deletion_protection = var.environment == "prod" ? true : false
+
+  tags = {
+    Name        = "${var.app_name}-${var.environment}-alb"
+    Environment = var.environment
+  }
+}
+
+# Auto Scaling Group
+resource "aws_autoscaling_group" "main" {
+  name                = "${var.app_name}-${var.environment}-asg"
+  vpc_zone_identifier = aws_subnet.public[*].id
+  target_group_arns   = [aws_lb_target_group.main.arn]
+  health_check_type   = "ELB"
+  health_check_grace_period = 300
+
+  min_size         = 1
+  max_size         = 10
+  desired_capacity = var.desired_capacity
+
+  launch_template {
+    id      = aws_launch_template.main.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.app_name}-${var.environment}-instance"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "Environment"
+    value               = var.environment
+    propagate_at_launch = true
+  }
+}
+
+# Outputs
+output "load_balancer_dns" {
+  description = "DNS name of the load balancer"
+  value       = aws_lb.main.dns_name
+}
+
+output "vpc_id" {
+  description = "VPC ID"
+  value       = aws_vpc.main.id
+}
+```
+
+=== GitLab CI/CD Pipeline ===
+```yaml
+# .gitlab-ci.yml
+# Complete CI/CD pipeline with security scanning
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  TERRAFORM_VERSION: "1.6.0"
+
+stages:
+  - build
+  - test
+  - security
+  - deploy-staging
+  - deploy-prod
+
+# Build stage
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $DOCKER_IMAGE .
+    - docker push $DOCKER_IMAGE
+  only:
+    - branches
+
+# Unit tests
+unit-test:
+  stage: test
+  image: node:20
+  script:
+    - npm ci
+    - npm run test:unit
+    - npm run test:coverage
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+# Integration tests
+integration-test:
+  stage: test
+  image: $DOCKER_IMAGE
+  services:
+    - postgres:15
+  variables:
+    DATABASE_URL: "postgresql://test:test@postgres:5432/testdb"
+  script:
+    - npm run test:integration
+
+# SAST Security Scanning
+sast:
+  stage: security
+  image: returntocorp/semgrep
+  script:
+    - semgrep scan --config auto --json -o semgrep-report.json
+  artifacts:
+    reports:
+      sast: semgrep-report.json
+
+# Dependency Scanning
+dependency-scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --format json -o trivy-report.json $DOCKER_IMAGE
+  artifacts:
+    reports:
+      dependency_scanning: trivy-report.json
+
+# IaC Security Scanning
+iac-scan:
+  stage: security
+  image: bridgecrew/checkov:latest
+  script:
+    - checkov -d terraform/ --output json > checkov-report.json
+  artifacts:
+    paths:
+      - checkov-report.json
+
+# Deploy to Staging
+deploy-staging:
+  stage: deploy-staging
+  image: hashicorp/terraform:$TERRAFORM_VERSION
+  environment:
+    name: staging
+    url: https://staging.example.com
+  script:
+    - cd terraform/staging
+    - terraform init -backend-config="key=staging/terraform.tfstate"
+    - terraform plan -out=tfplan
+    - terraform apply -auto-approve tfplan
+  only:
+    - develop
+
+# Deploy to Production (manual approval)
+deploy-prod:
+  stage: deploy-prod
+  image: hashicorp/terraform:$TERRAFORM_VERSION
+  environment:
+    name: production
+    url: https://www.example.com
+  script:
+    - cd terraform/prod
+    - terraform init -backend-config="key=prod/terraform.tfstate"
+    - terraform plan -out=tfplan
+    - terraform apply -auto-approve tfplan
+  when: manual
+  only:
+    - main
+```
+
+=== ArgoCD Application Manifest ===
+```yaml
+# argocd/application.yaml
+# GitOps application configuration
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/myorg/myapp-config
+    targetRevision: HEAD
+    path: k8s/overlays/production
+    
+    # Kustomize configuration
+    kustomize:
+      images:
+        - myapp=myregistry/myapp:v1.2.3
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: myapp-prod
+  
+  syncPolicy:
+    automated:
+      prune: true      # Remove resources not in Git
+      selfHeal: true   # Sync when cluster state deviates
+      allowEmpty: false
+    
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Health assessment
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore HPA-managed replicas
+  
+  # Notifications
+  notifications:
+    - trigger: on-sync-succeeded
+      destinations:
+        - slack:engineering-deploys
+    - trigger: on-sync-failed
+      destinations:
+        - slack:engineering-alerts
+```
+
+=== Prometheus Alert Rules ===
+```yaml
+# prometheus/alerts.yaml
+# Production-ready alert rules
+
+groups:
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+      
+      # High latency
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency detected"
+          description: "P95 latency is {{ $value }}s (threshold: 1s)"
+      
+      # Pod restart loop
+      - alert: PodRestartLoop
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} is restarting"
+          description: "Pod has restarted {{ $value }} times in 15 minutes"
+      
+      # Deployment rollout stuck
+      - alert: DeploymentRolloutStuck
+        expr: |
+          kube_deployment_status_condition{condition="Progressing",status="false"} == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} rollout is stuck"
+          description: "Deployment has not progressed for 10 minutes"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% (threshold: 80%)"
+      
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanize }}% (threshold: 85%)"
+      
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanize }}% (threshold: 85%)"
+```
+
+=== GitHub Actions Workflow ===
+```yaml
+# .github/workflows/ci-cd.yml
+# Modern CI/CD with security and quality gates
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint
+      
+      - name: Run unit tests
+        run: npm run test:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    permissions:
+      security-events: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to staging
+        run: |
+          # Update image tag in GitOps repo
+          gh pr create --repo myorg/gitops-repo \
+            --title "Update staging to ${{ github.sha }}" \
+            --body "Automated deployment from ${{ github.repository }}" \
+            --base main \
+            --head staging-${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+  
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://www.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to production
+        run: |
+          gh pr create --repo myorg/gitops-repo \
+            --title "Update production to ${{ github.sha }}" \
+            --body "Automated deployment from ${{ github.repository }}" \
+            --base main \
+            --head prod-${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+```
+
+7) Examples of excellent outputs
+
+Example 1: Complete Terraform State Management
+```hcl
+# backend.tf
+# S3 backend with DynamoDB locking
+
+terraform {
+  required_version = ">= 1.6.0"
+  
+  backend "s3" {
+    bucket         = "mycompany-terraform-state"
+    key            = "prod/infrastructure.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+    
+    # Enable versioning
+    versioning = true
+    
+    # Server-side encryption
+    kms_key_id = "arn:aws:kms:us-east-1:123456789:key/abc-123"
+  }
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+# State locking table
+resource "aws_dynamodb_table" "terraform_lock" {
+  name           = "terraform-state-lock"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "LockID"
+  
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+  
+  tags = {
+    Name        = "Terraform State Lock"
+    Environment = "shared"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Remote state outputs for cross-stack references
+data "terraform_remote_state" "network" {
+  backend = "s3"
+  
+  config = {
+    bucket = "mycompany-terraform-state"
+    key    = "shared/network.tfstate"
+    region = "us-east-1"
+  }
+}
+
+# Use remote state outputs
+resource "aws_instance" "app" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.medium"
+  subnet_id     = data.terraform_remote_state.network.outputs.private_subnet_ids[0]
+  
+  tags = {
+    Name = "app-server"
+  }
+}
+```
+
+Example 2: Blue-Green Deployment Script
+```bash
+#!/bin/bash
+# blue-green-deploy.sh
+# Zero-downtime blue-green deployment
+
+set -euo pipefail
+
+# Configuration
+APP_NAME="myapp"
+ENVIRONMENT="prod"
+NEW_VERSION=$1
+LB_NAME="${APP_NAME}-${ENVIRONMENT}-alb"
+TARGET_GROUP_BLUE="${APP_NAME}-${ENVIRONMENT}-blue"
+TARGET_GROUP_GREEN="${APP_NAME}-${ENVIRONMENT}-green"
+
+echo "Starting blue-green deployment for ${APP_NAME} version ${NEW_VERSION}"
+
+# Determine current active target group
+CURRENT_TG=$(aws elbv2 describe-target-health \
+  --target-group-arn $(aws elbv2 describe-target-groups \
+    --names ${TARGET_GROUP_BLUE} --query 'TargetGroups[0].TargetGroupArn' --output text) \
+  --query 'TargetHealthDescriptions[0].TargetHealth.State' --output text)
+
+if [ "$CURRENT_TG" == "healthy" ]; then
+  ACTIVE_TG="blue"
+  INACTIVE_TG="green"
+else
+  ACTIVE_TG="green"
+  INACTIVE_TG="blue"
+fi
+
+echo "Current active: ${ACTIVE_TG}, deploying to: ${INACTIVE_TG}"
+
+# Deploy new version to inactive target group
+echo "Deploying ${NEW_VERSION} to ${INACTIVE_TG}..."
+aws autoscaling update-auto-scaling-group \
+  --auto-scaling-group-name "${APP_NAME}-${ENVIRONMENT}-${INACTIVE_TG}-asg" \
+  --launch-template LaunchTemplateName="${APP_NAME}-${NEW_VERSION}"
+
+# Wait for new instances to be healthy
+echo "Waiting for new instances to be healthy..."
+aws elbv2 wait target-in-service \
+  --target-group-arn $(aws elbv2 describe-target-groups \
+    --names "${APP_NAME}-${ENVIRONMENT}-${INACTIVE_TG}" \
+    --query 'TargetGroups[0].TargetGroupArn' --output text)
+
+# Run smoke tests
+echo "Running smoke tests..."
+INACTIVE_TG_DNS=$(aws elbv2 describe-target-groups \
+  --names "${APP_NAME}-${ENVIRONMENT}-${INACTIVE_TG}" \
+  --query 'TargetGroups[0].LoadBalancerArns[0]' --output text)
+
+curl -f "http://${INACTIVE_TG_DNS}/health" || {
+  echo "Smoke tests failed, aborting deployment"
+  exit 1
+}
+
+# Switch traffic to new version
+echo "Switching traffic to ${INACTIVE_TG}..."
+LISTENER_ARN=$(aws elbv2 describe-listeners \
+  --load-balancer-arn $(aws elbv2 describe-load-balancers \
+    --names ${LB_NAME} --query 'LoadBalancers[0].LoadBalancerArn' --output text) \
+  --query 'Listeners[0].ListenerArn' --output text)
+
+aws elbv2 modify-listener \
+  --listener-arn ${LISTENER_ARN} \
+  --default-actions Type=forward,TargetGroupArn=$(aws elbv2 describe-target-groups \
+    --names "${APP_NAME}-${ENVIRONMENT}-${INACTIVE_TG}" \
+    --query 'TargetGroups[0].TargetGroupArn' --output text)
+
+echo "Traffic switched successfully"
+
+# Monitor for issues (5 minute soak period)
+echo "Monitoring new deployment for 5 minutes..."
+sleep 300
+
+# Check error rate
+ERROR_RATE=$(aws cloudwatch get-metric-statistics \
+  --namespace AWS/ApplicationELB \
+  --metric-name HTTPCode_Target_5XX_Count \
+  --dimensions Name=TargetGroup,Value="${INACTIVE_TG}" \
+  --start-time $(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+  --period 300 \
+  --statistics Sum \
+  --query 'Datapoints[0].Sum' --output text)
+
+if [ "$ERROR_RATE" -gt "10" ]; then
+  echo "High error rate detected, rolling back..."
+  aws elbv2 modify-listener \
+    --listener-arn ${LISTENER_ARN} \
+    --default-actions Type=forward,TargetGroupArn=$(aws elbv2 describe-target-groups \
+      --names "${APP_NAME}-${ENVIRONMENT}-${ACTIVE_TG}" \
+      --query 'TargetGroups[0].TargetGroupArn' --output text)
+  echo "Rolled back to ${ACTIVE_TG}"
+  exit 1
+fi
+
+echo "Deployment successful! New version running on ${INACTIVE_TG}"
+echo "Old version still available on ${ACTIVE_TG} for quick rollback if needed"
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **CI/CD**: Continuous Integration/Continuous Delivery - automated build, test, deploy pipeline
+- **GitOps**: Git as single source of truth for infrastructure and application configuration
+- **IaC**: Infrastructure as Code - managing infrastructure through code
+- **Declarative Configuration**: Specify desired state, not imperative steps
+- **Idempotence**: Operations produce same result regardless of how many times executed
+- **Drift Detection**: Identifying differences between actual and desired state
+- **Reconciliation**: Automatically correcting drift to match desired state
+- **Immutable Infrastructure**: Replace rather than modify infrastructure
+- **Blue-Green Deployment**: Run two identical environments, switch traffic between them
+- **Canary Deployment**: Gradually roll out changes to subset of users
+- **DORA Metrics**: DevOps Research and Assessment key performance metrics
+- **MTTR**: Mean Time To Recovery
+- **SLI/SLO**: Service Level Indicator/Objective
+- **Policy as Code**: Express policies in code for automated enforcement
+
+Standards & Frameworks (2024):
+- **DORA Metrics**: Deployment frequency, lead time, MTTR, change failure rate
+- **GitOps Principles**: Declarative, versioned, automated, reconciled
+- **Twelve-Factor App**: Methodology for building SaaS applications
+- **Site Reliability Engineering (SRE)**: Google's approach to operations
+- **DevSecOps**: Integrating security into DevOps practices
+- **CALMS**: Culture, Automation, Lean, Measurement, Sharing
+- **Well-Architected Framework**: AWS/Azure/GCP best practices
+
+Common Tools & Technologies:
+CI/CD:
+- GitLab CI, GitHub Actions, Jenkins, Azure DevOps, CircleCI
+- Spinnaker (multi-cloud CD), Tekton (Kubernetes-native)
+
+Infrastructure as Code:
+- Terraform, CloudFormation, Pulumi, Ansible
+- CDK (Cloud Development Kit) for AWS/Azure/GCP
+
+GitOps:
+- ArgoCD, FluxCD, Rancher Fleet
+- Kustomize, Helm for Kubernetes packaging
+
+Containers & Orchestration:
+- Docker, Kubernetes, ECS/EKS, AKS, GKE
+- Istio, Linkerd (service mesh)
+
+Monitoring & Observability:
+- Prometheus, Grafana, Datadog, New Relic
+- ELK Stack (Elasticsearch, Logstash, Kibana)
+- Jaeger, Zipkin (distributed tracing)
+- OpenTelemetry (observability framework)
+
+Security:
+- Trivy, Snyk, Checkmarx (vulnerability scanning)
+- OPA, Kyverno (policy as code)
+- HashiCorp Vault, AWS Secrets Manager (secrets management)
+- Falco (runtime security)
+
+Best Practices (2024):
+- **Shift Left Security**: Integrate security early in pipeline
+- **Everything as Code**: Infrastructure, policy, configuration, pipeline
+- **Fail Fast**: Detect and fix issues early in pipeline
+- **Automate Everything**: Minimize manual intervention
+- **Single Source of Truth**: Git for all configuration
+- **Monitoring First**: Observability built into deployments
+- **Immutable Infrastructure**: Never modify, always replace
+- **Small Batch Deployments**: Deploy frequently with small changes
+
+Change log
+2024-12: Initial playbook created based on 2024 DevOps best practices
+- CI/CD automation emphasis (GitLab CI, GitHub Actions patterns)
+- GitOps workflows (ArgoCD, FluxCD, declarative configuration)
+- Infrastructure as Code (Terraform modules, state management, testing)
+- Security integration (SAST, DAST, dependency scanning in pipelines)
+- Monitoring and observability (Prometheus, Grafana, alert rules)
+- DORA metrics and SRE principles
+- Modern deployment strategies (blue-green, canary, GitOps-driven)
+- 2024 tool landscape (Terraform 1.6+, Kubernetes 1.28+, ArgoCD 2.9+)

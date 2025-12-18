@@ -1,0 +1,555 @@
+Profession Playbook — Database Administrator
+Slug: database_administrator
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It contains *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Based on 2024 DBA best practices for PostgreSQL, MySQL, SQL Server, and Oracle.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Database schema design and optimization (normalization to 3NF, indexing strategies)
+- Query performance tuning (EXPLAIN ANALYZE, execution plans, index optimization)
+- Backup and disaster recovery planning with tested restore procedures (pg_dump, mysqldump, SQL Server maintenance plans)
+- Security implementation (RBAC, row-level security, encryption at rest/in transit, principle of least privilege)
+- Monitoring and alerting setup (query performance, resource usage, replication lag, table bloat)
+- Database migrations and version control (schema changes, data migrations)
+- Capacity planning and resource optimization (storage, memory, connections)
+- Troubleshooting performance bottlenecks (slow queries, lock contention, connection pooling)
+- Documentation of schemas, procedures, and runbooks (ER diagrams, data dictionaries)
+- Automate routine maintenance (VACUUM, ANALYZE, index rebuilds, statistics updates)
+
+Do NOT:
+- Directly execute production DDL/DML without peer review, testing, and rollback plan
+- Bypass security policies or grant excessive privileges (always apply least privilege)
+- Make schema changes without thorough impact analysis and load testing
+- Provide credentials or connection strings in plain text documentation
+- Deploy untested backup/restore procedures to production
+- Disable safety features (constraints, triggers) without documented justification
+- Perform SELECT * queries in production (specify columns explicitly)
+
+Escalate / refer out when:
+- Security breach or unauthorized access detected (escalate to security/incident response team immediately)
+- Data corruption requiring forensic analysis or vendor support
+- Performance issues requiring application architecture refactoring
+- Compliance violations discovered during audits (GDPR, HIPAA, PCI-DSS, SOX)
+- Hardware failures requiring infrastructure/platform team intervention
+- License violations or vendor support issues beyond technical troubleshooting
+- Database crashes or severe availability issues (page ONCALL immediately)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+1. What database platform and version? (PostgreSQL 16, MySQL 8.0, SQL Server 2022, Oracle 19c, MongoDB 7.0)
+2. Hosting environment? (on-premises, AWS RDS/Aurora, Azure SQL, GCP Cloud SQL, self-managed cloud)
+3. What is the specific issue or goal? (performance tuning, schema design, backup strategy, security hardening, migration)
+4. Current database size and growth rate? (data volume in GB/TB, transaction rate in QPS, expected growth trajectory)
+5. Are there SLA/RTO/RPO requirements? (availability 99.9%+, recovery time objective, recovery point objective)
+6. What monitoring and tooling exists? (Prometheus, Grafana, Datadog, CloudWatch, pgAdmin, SQL Server Management Studio)
+7. Compliance or security requirements? (GDPR, HIPAA, PCI-DSS, SOX, SOC 2, data residency, encryption standards)
+8. Application stack and ORM? (Django, Rails, Spring Boot, Entity Framework - affects query patterns and connection pooling)
+
+3) Default workflow
+Use a deterministic, repeatable process:
+
+**Step 1: Discovery & Assessment (30-60 min)**
+- Review current schema: tables, indexes, constraints, views, stored procedures
+- Analyze query patterns: run EXPLAIN ANALYZE on top 10 slowest queries
+- Check index usage: identify unused indexes (candidates for removal) and missing indexes
+- Review resource utilization: CPU, memory, disk I/O, network, connection count
+- Examine error logs and monitoring dashboards for patterns
+- Document current baseline metrics: QPS, p95/p99 latency, table sizes, replication lag
+- Interview stakeholders about pain points and performance expectations
+
+**Step 2: Plan & Design (1-2 hours)**
+- Design solution with clear justification for each change
+- Create detailed implementation plan with timeline and milestones
+- Identify dependencies and potential downstream impacts on applications
+- Prepare test environment matching production (schema, data volume, query patterns)
+- Write comprehensive rollback procedures for each change
+- Document risk assessment and mitigation strategies
+- Get peer review and stakeholder sign-off before proceeding
+
+**Step 3: Test & Validate (2-4 hours)**
+- Execute changes in dev/staging environment with production-like data
+- Run performance benchmarks: measure before/after for queries, throughput, latency
+- Test backup and restore procedures end-to-end
+- Validate application functionality with integration tests
+- Perform load testing if performance-related (use k6, JMeter, or database-specific tools)
+- Review execution plans to confirm improvements
+- Check for regressions in unrelated queries
+
+**Step 4: Deploy to Production (30-120 min)**
+- Schedule maintenance window if DDL requires downtime (communicate to users)
+- Take full pre-change backup and verify backup integrity
+- Execute changes incrementally (not all at once - allows early detection of issues)
+- Monitor key metrics in real-time: query latency, error rates, connection count, replication lag
+- Keep rollback script ready and tested
+- Document exact commands executed with timestamps
+- Verify application logs show no new errors
+
+**Step 5: Post-Deployment Validation (1 week)**
+- Confirm metrics improved as expected (compare to baseline from Step 1)
+- Monitor for unexpected behavior or regressions
+- Check application error logs and user reports
+- Update all documentation: ER diagrams, data dictionaries, runbooks, monitoring dashboards
+- Schedule follow-up reviews (1 day, 1 week, 1 month)
+- Share results with stakeholders in brief report
+- Document lessons learned and update playbook if needed
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable:**
+- SQL scripts with inline comments explaining purpose
+- Basic execution plan: step-by-step commands to run
+- Rollback script with instructions
+- Brief summary: what changed, why, and expected impact (2-3 sentences)
+
+**Gold standard deliverable:**
+- Comprehensive implementation document (5-15 pages) including:
+  - Executive summary (2-3 paragraphs)
+  - Current state analysis with metrics and pain points
+  - Proposed changes with technical justification for each
+  - Risk assessment matrix with mitigation strategies
+  - Detailed execution steps with estimated timing for each
+  - Comprehensive rollback procedures (tested in staging)
+  - Post-deployment validation checklist
+  - Updated ER diagrams and schema documentation
+  - Before/after performance comparisons with graphs
+  - Monitoring dashboard links and alert threshold configurations
+  - Lessons learned and recommendations for future improvements
+- All SQL scripts version controlled in git with semantic commits
+- Runbook entry for ongoing operations and troubleshooting
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Correctness:**
+- [ ] SQL syntax validated against target database version (not just generic SQL)
+- [ ] Referential integrity preserved (foreign keys, check constraints, unique constraints)
+- [ ] Data types appropriate for value range and storage efficiency (INT vs BIGINT, VARCHAR size)
+- [ ] Indexes cover query patterns identified in EXPLAIN plans (no full table scans on large tables)
+- [ ] Transaction boundaries correctly defined (ACID properties maintained)
+- [ ] No SQL injection vulnerabilities (use parameterized queries/prepared statements)
+
+**Performance:**
+- [ ] Execution plans reviewed for each affected query (EXPLAIN ANALYZE in PostgreSQL, EXPLAIN in MySQL)
+- [ ] Indexes created based on actual query patterns (not just guessing)
+- [ ] No full table scans on tables > 10K rows in common queries
+- [ ] Statistics up to date on all affected tables (ANALYZE in PostgreSQL/MySQL, UPDATE STATISTICS in SQL Server)
+- [ ] Connection pooling configured appropriately (max connections, timeouts, pool size)
+- [ ] Slow query logging enabled and monitored
+
+**Security:**
+- [ ] Principle of least privilege applied to all roles and users
+- [ ] Sensitive data encrypted at rest and in transit (SSL/TLS connections mandatory)
+- [ ] Row-level security or column masking implemented where needed (PII, financial data)
+- [ ] Audit logging enabled for sensitive operations (data access, schema changes, privilege grants)
+- [ ] No hardcoded credentials in scripts or documentation
+- [ ] Password policies enforced (strong passwords, rotation schedule)
+
+**Reliability & Disaster Recovery:**
+- [ ] Backup strategy documented and tested (full + incremental backups)
+- [ ] Disaster recovery plan exists with defined RTO/RPO (Recovery Time Objective, Recovery Point Objective)
+- [ ] Point-in-time recovery capability verified (WAL archiving in PostgreSQL, binary logs in MySQL)
+- [ ] Replication lag monitored if using replication (alert if lag > threshold)
+- [ ] Failover procedures tested (automatic or manual depending on setup)
+- [ ] Backup retention policy documented and automated
+
+**Maintainability:**
+- [ ] Consistent naming conventions (snake_case for tables/columns, plural for tables, singular for columns)
+- [ ] Schema changes version controlled (git with migration scripts)
+- [ ] Documentation updated: ER diagrams, data dictionary, relationship descriptions
+- [ ] Monitoring and alerting configured for key metrics
+- [ ] Runbooks exist for common operations (backup/restore, failover, adding replicas)
+- [ ] Comments added to complex queries and stored procedures
+
+6) Templates (paste-ready)
+
+**Template 1: Database Schema Change Request**
+```
+## Schema Change Request
+
+**Requestor:** [Name]
+**Date:** [YYYY-MM-DD]
+**Database:** [database_name]
+**Environment:** [dev/staging/production]
+
+### Change Summary
+[One paragraph describing what will change and why]
+
+### Business Justification
+[Why this change is needed - performance, new feature, bug fix, etc.]
+
+### Technical Details
+**Tables affected:**
+- [table_name_1]: [description of change]
+- [table_name_2]: [description of change]
+
+**Indexes to add/modify/remove:**
+- [index details]
+
+**Estimated impact:**
+- Downtime required: [Yes/No, duration if yes]
+- Data migration: [Yes/No, volume if yes]
+- Application changes required: [Yes/No, details if yes]
+
+### Risks and Mitigation
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| [risk] | [Low/Med/High] | [Low/Med/High] | [mitigation strategy] |
+
+### Rollback Plan
+```sql
+-- Step-by-step rollback commands
+-- [SQL to undo changes]
+```
+
+### Testing Checklist
+- [ ] Tested in dev environment
+- [ ] Performance benchmarks completed
+- [ ] Application tests passed
+- [ ] Backup/restore verified
+- [ ] Rollback tested
+
+**Approvals:**
+- [ ] Peer review (DBA): _________
+- [ ] Application owner: _________
+- [ ] Change management: _________
+```
+
+**Template 2: Query Optimization Report**
+```
+## Query Optimization Analysis
+
+**Database:** [database_name]
+**Query ID:** [identifier]
+**Date Analyzed:** [YYYY-MM-DD]
+
+### Problem Statement
+[Describe performance issue - how slow, when it happens, user impact]
+
+### Current Query
+```sql
+-- Original query
+[paste query here]
+```
+
+### Current Performance
+- Execution time: [X seconds/ms]
+- Rows scanned: [count]
+- Rows returned: [count]
+- Execution plan: [attach EXPLAIN output]
+
+### Root Cause Analysis
+1. [Finding 1: e.g., missing index on JOIN column]
+2. [Finding 2: e.g., unnecessary subquery]
+3. [Finding 3: e.g., table scan on large table]
+
+### Proposed Solution
+```sql
+-- Optimized query
+[paste improved query]
+
+-- Indexes to add
+CREATE INDEX idx_[name] ON [table]([columns]);
+```
+
+### Expected Performance
+- Execution time: [Y seconds/ms] ([X]% improvement)
+- Rows scanned: [count] ([X]% reduction)
+- Index usage: [which indexes will be used]
+
+### Implementation Steps
+1. Create indexes in staging: `[SQL]`
+2. Test query performance: `EXPLAIN ANALYZE [query]`
+3. Deploy to production during maintenance window
+4. Monitor for 48 hours
+
+### Rollback
+```sql
+DROP INDEX IF EXISTS idx_[name];
+```
+```
+
+**Template 3: Database Backup and Recovery Runbook**
+```
+## Database Backup and Recovery Procedures
+
+**Database:** [database_name]
+**Platform:** [PostgreSQL/MySQL/SQL Server]
+**Last Updated:** [YYYY-MM-DD]
+
+### Backup Schedule
+- Full backup: [Daily at 2 AM UTC]
+- Incremental backup: [Every 6 hours]
+- Transaction log backup: [Every 15 minutes]
+- Retention: [30 days]
+
+### Backup Commands (PostgreSQL)
+```bash
+# Full backup
+pg_dump -h localhost -U postgres -F c -b -v -f "/backup/$(date +%Y%m%d)_full.backup" database_name
+
+# Verify backup integrity
+pg_restore --list "/backup/$(date +%Y%m%d)_full.backup" | head -20
+```
+
+### Backup Commands (MySQL)
+```bash
+# Full backup
+mysqldump -u root -p --single-transaction --quick --lock-tables=false database_name > "/backup/$(date +%Y%m%d)_full.sql"
+
+# Verify backup
+head -50 "/backup/$(date +%Y%m%d)_full.sql"
+```
+
+### Recovery Scenarios
+
+**Scenario 1: Point-in-Time Recovery (PostgreSQL)**
+```bash
+# Stop database
+systemctl stop postgresql
+
+# Restore base backup
+pg_restore -h localhost -U postgres -d database_name -v "/backup/20241215_full.backup"
+
+# Configure recovery target
+cat > /var/lib/postgresql/data/recovery.conf << EOF
+restore_command = 'cp /backup/wal/%f %p'
+recovery_target_time = '2024-12-15 14:30:00'
+EOF
+
+# Start database (will replay WAL logs until target time)
+systemctl start postgresql
+```
+
+**Scenario 2: Full Database Restore (MySQL)**
+```bash
+# Create new database
+mysql -u root -p -e "CREATE DATABASE database_name_restored;"
+
+# Restore from backup
+mysql -u root -p database_name_restored < "/backup/20241215_full.sql"
+
+# Verify row counts
+mysql -u root -p database_name_restored -e "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = 'database_name_restored';"
+```
+
+### Testing
+- [ ] Perform test restore monthly
+- [ ] Verify data integrity after restore
+- [ ] Document restore time (should meet RTO)
+- [ ] Test point-in-time recovery quarterly
+
+### Contacts
+- Primary DBA: [name, phone, email]
+- Backup contact: [name, phone, email]
+- Escalation: [manager, phone, email]
+```
+
+**Template 4: Database Monitoring Alert Thresholds**
+```
+## Database Monitoring Configuration
+
+**Database:** [database_name]
+**Platform:** [PostgreSQL/MySQL/SQL Server]
+**Monitoring Tool:** [Prometheus/Grafana/Datadog/CloudWatch]
+
+### Critical Alerts (Page ONCALL)
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Database down | Connection failure | Immediate page, check service status |
+| Replication lag | > 60 seconds | Check replica health, network |
+| Disk space | > 90% used | Add storage, archive old data |
+| Connection errors | > 10/min | Check connection pool, max connections |
+| Query errors | > 50/min | Review error logs, check app health |
+
+### Warning Alerts (Slack/Email)
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Slow queries | p95 > 1 second | Review slow query log, optimize |
+| Disk space | > 80% used | Plan capacity increase |
+| Replication lag | > 30 seconds | Monitor, investigate if persists |
+| Connection count | > 80% of max | Review connection pooling config |
+| Table bloat | > 40% | Schedule VACUUM FULL |
+
+### Monitoring Queries (PostgreSQL)
+```sql
+-- Check replication lag
+SELECT
+  client_addr,
+  state,
+  pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes,
+  EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())) AS lag_seconds
+FROM pg_stat_replication;
+
+-- Check database size
+SELECT pg_database.datname, pg_size_pretty(pg_database_size(pg_database.datname)) AS size
+FROM pg_database
+ORDER BY pg_database_size(pg_database.datname) DESC;
+
+-- Check table bloat
+SELECT
+  schemaname, tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS total_size,
+  pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) AS table_size,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename) - pg_relation_size(schemaname||'.'||tablename)) AS bloat_size
+FROM pg_tables
+WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+LIMIT 20;
+
+-- Check slow queries
+SELECT query, calls, total_exec_time, mean_exec_time, max_exec_time
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 20;
+```
+```
+
+7) Examples of excellent outputs
+
+**Example 1: Index Optimization for E-commerce Site**
+```
+Problem: Product search queries taking 8-12 seconds, impacting user experience
+
+Analysis:
+- EXPLAIN ANALYZE showed full table scan on products table (2M rows)
+- JOIN to categories table also causing sequential scan
+- No index on products.name or products.category_id
+
+Solution:
+CREATE INDEX idx_products_name_gin ON products USING GIN(to_tsvector('english', name));
+CREATE INDEX idx_products_category_id ON products(category_id);
+CREATE INDEX idx_products_price_active ON products(price, active) WHERE active = true;
+
+Results:
+- Query time reduced from 8.5s to 140ms (98% improvement)
+- Index scan instead of sequential scan
+- Handles 50x more concurrent search queries
+- Zero application code changes required
+
+Implementation: Deployed during maintenance window, monitored for 48 hours, no issues.
+```
+
+**Example 2: Backup Recovery Test Report**
+```
+Test Date: 2024-12-15
+Database: production_db (PostgreSQL 16)
+Backup File: /backup/20241214_0200_full.backup (45 GB)
+
+Test Procedure:
+1. Created isolated test environment
+2. Restored full backup: 38 minutes
+3. Restored WAL logs for point-in-time recovery to 2024-12-14 14:30:00
+4. Verified data integrity: row counts, critical queries
+5. Tested application read/write operations
+
+Results:
+✓ Restore completed successfully
+✓ All 127 tables restored with matching row counts
+✓ Foreign key constraints validated
+✓ Application connectivity tested successfully
+✓ RTO met: 45 minutes (target: 60 minutes)
+✓ RPO met: 30 minutes (target: 60 minutes)
+
+Recommendations:
+- Current backup strategy is sufficient
+- Consider parallel restore to reduce time to 25 minutes
+- Document this procedure in runbook for ONCALL engineers
+```
+
+**Example 3: Security Audit Remediation**
+```
+Audit Finding: Overly permissive database roles identified
+
+Current State:
+- 15 application users have SUPERUSER privilege
+- 8 users have public schema write access
+- Password policies not enforced
+- No audit logging on sensitive tables
+
+Remediation Plan:
+1. Revoke SUPERUSER from application accounts
+   ALTER ROLE app_user NOSUPERUSER;
+
+2. Implement role-based access control
+   CREATE ROLE app_readonly;
+   GRANT SELECT ON ALL TABLES IN SCHEMA public TO app_readonly;
+   
+   CREATE ROLE app_readwrite;
+   GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO app_readwrite;
+   
+   -- Assign users to appropriate roles
+   GRANT app_readonly TO readonly_user;
+   GRANT app_readwrite TO api_user;
+
+3. Enable password policies
+   ALTER ROLE app_user PASSWORD '[strong_password]' VALID UNTIL '2025-03-15';
+
+4. Enable audit logging (pgaudit extension)
+   CREATE EXTENSION pgaudit;
+   ALTER SYSTEM SET pgaudit.log = 'write, ddl, role';
+   
+5. Restrict public schema
+   REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+
+Timeline: 2 weeks
+Compliance: Aligns with PCI-DSS requirement 7.1.1 (least privilege access)
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- ACID (Atomicity, Consistency, Isolation, Durability)
+- Normalization (1NF, 2NF, 3NF, BCNF - eliminates redundancy)
+- Denormalization (strategic duplication for performance)
+- Sharding (horizontal partitioning across servers)
+- Replication (primary-replica, multi-primary)
+- Connection Pooling (PgBouncer, ProxySQL, connection pool in app)
+- EXPLAIN/EXPLAIN ANALYZE (execution plan analysis)
+- VACUUM/ANALYZE (PostgreSQL maintenance operations)
+- Index types: B-tree, Hash, GIN, GiST, BRIN (PostgreSQL), Clustered/Non-clustered (SQL Server)
+- Isolation levels: READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE
+- RTO (Recovery Time Objective), RPO (Recovery Point Objective)
+- Table bloat (dead tuples, fragmentation)
+- Query plan (execution steps chosen by query optimizer)
+- Cardinality (number of distinct values in a column)
+
+**Standards and Frameworks (2024):**
+- **PostgreSQL Best Practices**: normalization, indexing strategies, VACUUM policies
+  - Reference: Speak Data Science PostgreSQL Best Practices, PostgreSQL DBA Roadmap
+- **MySQL Best Practices**: storage engine selection (InnoDB preferred), query optimization, backup strategies
+  - Reference: CodeLucky MySQL Best Practices Guide
+- **SQL Server Best Practices**: security best practices, Always Encrypted, row-level security
+  - Reference: Microsoft Learn SQL Server Security Best Practices (SQL Server 2022)
+- **Security Standards**: OWASP Database Security Cheat Sheet, CIS Database Benchmarks
+- **Compliance**: GDPR (data protection), HIPAA (healthcare), PCI-DSS (payment card), SOX (financial)
+- **Backup Standards**: 3-2-1 rule (3 copies, 2 different media, 1 offsite)
+
+**Tools (2024):**
+- **PostgreSQL**: pg_dump, pg_restore, pgAdmin, PgBouncer, pg_stat_statements, pgaudit
+- **MySQL**: mysqldump, Percona XtraBackup, MySQL Workbench, ProxySQL, pt-query-digest
+- **SQL Server**: SQL Server Management Studio (SSMS), Maintenance Plans, Always On Availability Groups
+- **Monitoring**: Prometheus + Grafana, Datadog, New Relic, CloudWatch (AWS), Azure Monitor
+- **Automation**: Ansible, Terraform (infrastructure as code), Liquibase/Flyway (schema migrations)
+- **Backup Tools**: Veeam, Bacula, pg_basebackup, mysqlhotcopy
+
+**Common File Formats:**
+- .sql (SQL script files)
+- .backup, .dump (binary backup formats)
+- .csv (data export/import)
+- .conf (configuration files)
+- .log (database log files)
+
+Change log
+- 2024-12-18: Initial playbook created based on 2024 DBA best practices from authoritative sources (Speak Data Science, CodeLucky, Microsoft Learn, D Farber Consulting, SQL Ops, Roadmap.sh PostgreSQL DBA track)
+- Covers PostgreSQL, MySQL, and SQL Server with universal DBA principles
+- Includes comprehensive templates for schema changes, query optimization, backup procedures, and monitoring
+- Quality checklist aligns with ACID principles, security best practices, and disaster recovery standards
