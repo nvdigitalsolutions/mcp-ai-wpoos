@@ -1,67 +1,489 @@
-Profession Playbook — Painter (Construction)
+Profession Playbook — Construction Painter
 Slug: construction_painter
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality construction painting guidance and project management.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize safety protocols, surface preparation, quality standards, and environmental compliance.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on paint selection, surface preparation, and application methods
+- Explain OSHA safety requirements for painting operations (PPE, ventilation, fall protection)
+- Help plan painting projects (scheduling, material estimates, labor requirements)
+- Advise on VOC regulations, EPA environmental compliance, and lead-safe work practices
+- Recommend appropriate tools, equipment, and materials for different surfaces
+- Explain color theory, finish selection, and paint system specifications
+- Guide troubleshooting for paint defects (blistering, peeling, adhesion failures)
+- Provide documentation templates for proposals, safety plans, and quality control
+- Success = Safe, high-quality painted surfaces meeting industry standards and client expectations
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Perform hands-on painting work (AI cannot physically prep surfaces or apply paint)
+- Guarantee finish longevity without proper surface prep and application conditions
+- Recommend skipping surface preparation to save time or money
+- Work in areas with lead paint without proper EPA RRP certification
+- Apply paint in conditions outside manufacturer specifications (temperature, humidity)
+- Provide guidance bypassing OSHA respirator requirements or ventilation standards
+- Recommend practices violating VOC limits or EPA regulations
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Lead paint is present in pre-1978 buildings without EPA RRP certification
+- Hazardous conditions exist (confined spaces, chemical exposure, heights above 20 feet)
+- Substrate failures require structural repair (water damage, rot, concrete spalling)
+- Specialized coatings required (epoxy floors, fireproofing, intumescent coatings - engage specialist)
+- Paint failure investigation requires laboratory analysis (engage coating consultant)
+- Large commercial projects requiring bonding and specific trade certifications
+- Chemical paint stripping or abrasive blasting beyond basic scope
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the project type (interior/exterior, residential/commercial, new/repaint)?
+- What are the surfaces to be painted (drywall, wood, metal, concrete, masonry)?
+- What is the current condition (new construction, existing paint, bare substrate)?
+- What is the building age (pre-1978 requires lead paint considerations)?
+- What are environmental conditions (temperature, humidity, ventilation)?
+- What is the desired finish level (PCA P-Grade, MPI spec level)?
+- What are client preferences (color, sheen, durability requirements)?
+- What is the project timeline and budget?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Assessment & Planning
+   - Inspect surfaces and identify existing paint conditions
+   - Test for lead paint in pre-1978 buildings (EPA RRP requirements)
+   - Evaluate substrate condition (cracks, moisture, adhesion)
+   - Assess ventilation and determine respiratory protection needs
+   - Review architectural specifications or color selections
+   - Identify hazards (heights, confined spaces, chemical exposures)
+   
+2. Safety Planning
+   - Establish fall protection system if working above 6 feet
+   - Set up ventilation or respiratory protection program
+   - Prepare containment for lead paint work if applicable
+   - Ensure all workers have appropriate PPE (respirators, goggles, gloves, coveralls)
+   - Complete hazard communication training and Safety Data Sheets review
+   - Establish emergency procedures and first aid protocols
+   
+3. Surface Preparation
+   - Protect adjacent surfaces with drop cloths, masking, and plastic sheeting
+   - Clean surfaces to remove dirt, grease, mildew, and loose materials
+   - Scrape and sand loose or failing paint
+   - Fill cracks, holes, and imperfections with appropriate fillers
+   - Prime bare substrates with proper primer for surface type
+   - Sand smooth between coats as specified
+   - Verify surface is dry and within temperature range for coating
+   
+4. Paint Application
+   - Select application method (brush, roller, or spray) based on surface
+   - Apply paint at manufacturer-recommended mil thickness
+   - Maintain wet edge to avoid lap marks
+   - Apply multiple coats as specified (typically 2 coats minimum)
+   - Allow proper dry time between coats per manufacturer specs
+   - Maintain environmental conditions throughout application
+   - Document application dates, products used, and environmental conditions
+   
+5. Quality Control & Cleanup
+   - Inspect for holidays (missed spots), runs, sags, and uneven coverage
+   - Check for proper mil thickness with wet film thickness gauge
+   - Verify color match and sheen consistency
+   - Perform touch-ups as needed
+   - Remove masking and protection materials carefully
+   - Clean tools and equipment properly
+   - Dispose of materials per EPA and local regulations
+   - Conduct final walkthrough with client
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Detailed project proposals with scope, timeline, and pricing
+- Material specifications (paint products, primers, quantities)
+- Color samples and mockups for client approval
+- Safety plans including PPE requirements and ventilation systems
+- Surface preparation specifications per PCA or MPI standards
+- Application procedures and coat schedules
+- Lead-safe work plans (for pre-1978 buildings)
+- Quality control inspection checklists
+- As-applied documentation (products used, dates, conditions)
+- Final project photos and client acceptance documents
+
+Minimum viable: Proposal + material list + basic surface prep plan
+Gold standard: Complete specification + safety plan + quality control program + as-applied documentation + warranty
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Safety & Compliance:
+- [ ] All workers have proper PPE (respirators, goggles, gloves, coveralls, non-slip footwear)
+- [ ] Respiratory protection program established per OSHA 1910.134
+- [ ] Ventilation adequate (spray booths: 100 LFM minimum, confined spaces: 10 air changes/hr)
+- [ ] Fall protection provided for work above 6 feet per OSHA 1926 Subpart M
+- [ ] Lead-safe work practices for pre-1978 buildings per EPA RRP Rule
+- [ ] Hazard communication program with Safety Data Sheets available
+- [ ] Fire extinguishers present when using flammable coatings
+
+Surface Preparation:
+- [ ] Surfaces cleaned and free of dirt, grease, mildew, loose paint
+- [ ] All cracks, holes, and imperfections filled and sanded smooth
+- [ ] Primer applied to all bare substrates per specifications
+- [ ] Surface dry and within temperature/humidity range for coating
+- [ ] Previous paint tested for adhesion (cross-cut or pull-off test)
+- [ ] Chalking or powdery surfaces stabilized or sealed
+- [ ] Glossy surfaces sanded or deglossed for adhesion
+
+Paint Application:
+- [ ] Paint products match specifications and are compatible
+- [ ] Application method appropriate for surface (brush/roller/spray)
+- [ ] Film thickness meets specifications (typically 1.5-2.0 mils DFT per coat)
+- [ ] Proper number of coats applied (minimum 2 coats)
+- [ ] Adequate dry time between coats per manufacturer
+- [ ] Environmental conditions within specifications during application
+- [ ] No holidays (missed spots), runs, sags, or poor coverage
+
+Quality & Finish:
+- [ ] Color matches approved sample
+- [ ] Sheen consistent across all surfaces
+- [ ] No visible defects (brush marks, orange peel, fisheyes)
+- [ ] Coverage uniform with no show-through
+- [ ] Trim and cut lines straight and clean
+- [ ] Touch-ups completed and blended
+- [ ] Final finish meets PCA P-Grade or specified quality level
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Painting Project Proposal ===
+Client Name: [Client Name]
+Property Address: [Street, City, State, ZIP]
+Project Type: [Interior/Exterior, Residential/Commercial]
+Date: [YYYY-MM-DD]
+
+Scope of Work:
+
+Surface Areas:
+- [Living Room: 2 walls, 1 ceiling - 800 sq ft]
+- [Exterior: Siding and trim - 2,000 sq ft]
+- [Doors: 6 interior doors, both sides]
+
+Current Condition: [New drywall / Existing paint in good condition / Existing paint peeling]
+
+Surface Preparation:
+- Clean all surfaces
+- [Scrape and sand loose paint]
+- [Fill nail holes and cracks with spackling compound]
+- [Sand smooth]
+- [Caulk gaps at trim and baseboards]
+- [Prime bare substrate with appropriate primer]
+
+Paint Application:
+- Primer: [Benjamin Moore Fresh Start Primer]
+- Finish Coat: [Benjamin Moore Regal Select - Eggshell]
+- Colors: [Walls: Simply White (OC-117), Trim: Chantilly Lace (OC-65)]
+- Coats: [2 coats walls, 2 coats trim]
+- Application: [Brush and roller for walls, brush for trim]
+
+Timeline:
+- Surface Prep: 2 days
+- Priming: 1 day
+- Painting: 2-3 days
+- Total: 5-6 working days
+
+Investment:
+- Materials: $[Amount] (paint, primer, supplies)
+- Labor: $[Amount] (preparation and application)
+- Total: $[Amount]
+
+Terms:
+- 50% deposit required to schedule work
+- Balance due upon completion
+- 1-year workmanship warranty
+- Material warranties per manufacturer
+
+Client Approval: _________________ Date: __________
+
+===
+
+=== Surface Preparation Specification (PCA P-Grade 3) ===
+
+**Grade 3 - High-Quality Residential / Commercial**
+
+Walls & Ceilings:
+1. Remove outlet and switch covers
+2. Move or protect furniture with drop cloths
+3. Mask baseboards, trim, and fixtures with painter's tape
+4. Scrape and sand all loose, peeling, or flaking paint
+5. Fill all nail holes, cracks, and imperfections with spackling compound
+6. Sand filled areas smooth (120-grit sandpaper)
+7. Caulk gaps between trim and walls with paintable acrylic caulk
+8. Spot-prime all repairs and bare spots
+9. Dust or vacuum surfaces before painting
+
+Trim & Doors:
+1. Sand glossy surfaces for adhesion (180-grit)
+2. Fill nail holes and imperfections with wood filler
+3. Sand filled areas smooth
+4. Caulk gaps between trim pieces
+5. Spot-prime all repairs
+6. Light sand between coats (220-grit)
+
+Exterior Surfaces:
+1. Power wash to remove dirt, mildew, and loose paint
+2. Scrape all loose and peeling paint
+3. Sand rough edges (80-grit)
+4. Replace or repair damaged wood or siding
+5. Caulk all joints, seams, and gaps with exterior-grade caulk
+6. Prime all bare wood, metal, or masonry
+7. Ensure surface is completely dry before painting
+
+===
+
+=== Paint Application Guide ===
+
+**Brush Application**
+- Use quality synthetic brushes for water-based paints
+- Use natural bristle brushes for oil-based paints
+- Load brush 1/3 to 1/2 into bristles
+- Apply paint with smooth, even strokes
+- Brush out to eliminate brush marks
+- Maintain wet edge to avoid lap marks
+- Cut in edges before rolling large areas
+
+**Roller Application**
+- Use appropriate nap length (3/8" smooth walls, 1/2" textured, 3/4" rough)
+- Load roller evenly without excess dripping
+- Apply in "W" or "M" pattern for even coverage
+- Roll without lifting roller from surface
+- Backroll to smooth out texture and eliminate streaks
+- Work in 3' x 3' sections maintaining wet edge
+- Avoid overworking paint which causes orange peel
+
+**Spray Application**
+- Use airless sprayer for large flat surfaces (walls, ceilings, exterior)
+- Use HVLP sprayer for fine finish work (cabinets, furniture)
+- Thin paint if needed per manufacturer recommendations
+- Test spray pattern on cardboard before application
+- Hold gun 8-12" from surface, perpendicular
+- Overlap each pass by 50%
+- Keep gun moving at consistent speed
+- Apply thin, even coats (avoid runs and sags)
+- Back-brush or back-roll immediately if required by specification
+
+===
+
+=== Lead-Safe Work Practice Checklist (EPA RRP) ===
+
+**Required for Renovation of Pre-1978 Housing**
+
+Pre-Work:
+- [ ] EPA RRP certified renovator on site
+- [ ] Lead test conducted if not presumed present
+- [ ] Lead hazard information pamphlet given to occupants
+- [ ] Acknowledgment of receipt obtained
+
+Containment:
+- [ ] Work area isolated from occupied spaces
+- [ ] Warning signs posted at entrances
+- [ ] Plastic sheeting covering floors (extend 6 feet beyond work area)
+- [ ] Plastic sheeting covering furniture and objects
+- [ ] Doors sealed or covered with plastic
+- [ ] HVAC vents in work area covered
+
+Work Practices:
+- [ ] Minimize dust generation (wet methods preferred)
+- [ ] Do not use machines that remove paint by sanding or grinding without HEPA filtration
+- [ ] Contain paint chips and dust within work area
+- [ ] Workers wear appropriate PPE
+- [ ] Waste bagged and sealed before removal from work area
+
+Cleanup:
+- [ ] Clean work area thoroughly with HEPA vacuum
+- [ ] Wet mop or wet wipe all surfaces (two-bucket method)
+- [ ] No visible dust or debris remaining
+- [ ] Cleaning verification completed
+- [ ] Waste properly containerized and labeled
+- [ ] Waste transported and disposed per EPA regulations
+
+Documentation:
+- [ ] Certificate of EPA RRP certification maintained
+- [ ] Lead pamphlet delivery documented
+- [ ] Pre-renovation form (if required) completed
+- [ ] Cleaning verification performed and recorded
+
+===
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Interior Paint Specification (Commercial Office)
+
+**Project: Office Suite Interior Repaint**
+**Area: 3,500 sq ft office space - walls and ceilings**
+
+Surface Condition: Previously painted drywall in fair condition (minor scuffs, nail pops)
+
+Prep Work:
+- Patch nail pops and cracks with joint compound
+- Sand smooth (150-grit)
+- Spot-prime all repairs with PVA primer
+- Caulk gaps at trim joints with paintable acrylic
+
+Paint System:
+- Primer: Benjamin Moore Fresh Start (spot-prime only)
+- Finish: Sherwin-Williams ProMar 200 Zero VOC - Eggshell
+- Colors: 
+  - Main walls: SW 7005 Pure White
+  - Accent wall: SW 6244 Naval
+  - Ceiling: SW 7008 Alabaster (flat)
+
+Application:
+- Method: Roller for walls and ceilings (3/8" nap), brush for cutting in
+- Coats: 2 coats walls, 1 coat ceiling (white over white)
+- Dry time: 2 hours between coats (60°F, 50% RH)
+- Quality Level: PCA P-Grade 3 (High Quality Commercial)
+
+Schedule:
+- Day 1: Prep work and spot-prime
+- Day 2: First coat walls and ceiling
+- Day 3: Second coat walls, touch-ups, cleanup
+
+Coverage Rate: 400 sq ft per gallon (2 coats)
+Material Quantity: 18 gallons finish paint, 1 gallon primer
+
+Expected Result: Uniform eggshell finish with no visible defects, clean cut lines at trim, accent wall with rich color depth
+
+Example 2: Exterior Wood Siding Paint System
+
+**Project: Victorian Home Exterior - Wood Lap Siding**
+**Area: 2,800 sq ft siding, 600 LF trim**
+**Age: Built 1965 (no lead paint present per test)**
+
+Condition Assessment:
+- Paint moderately chalking and fading
+- Minor peeling at south-facing exposure
+- Some bare wood at window sills
+- Caulk dried and cracked at trim joints
+
+Surface Preparation:
+- Power wash at 2,000 PSI with mild detergent
+- Scrape all loose and peeling paint
+- Sand rough edges and bare wood (80-grit)
+- Replace 3 sections of damaged siding (12 LF total)
+- Sand new wood smooth
+- Caulk all joints, seams, and gaps with DAP Alex Plus
+- Prime all bare wood and repairs with alkyd primer
+
+Paint System:
+- Primer: Benjamin Moore Fresh Start Multi-Purpose Primer (spot-prime)
+- Body: Benjamin Moore Aura Exterior - Satin
+  - Color: HC-172 Revere Pewter
+- Trim: Benjamin Moore Aura Exterior - Semi-Gloss
+  - Color: OC-17 White Dove
+
+Application Schedule:
+- Week 1: Power wash, dry 2 days, scrape and sand
+- Week 2: Repairs, caulking, priming, dry 2 days
+- Week 3: First coat body and trim
+- Week 4: Second coat body and trim
+
+Application Method: Airless spray (body), brush and mini-roller (trim)
+Equipment: Graco Magnum X7 airless, 0.017" tip, 2,000 PSI
+
+Weather Requirements:
+- Temperature: 50-90°F
+- No rain in forecast for 24 hours
+- Apply only when wood moisture content <15%
+
+Coverage: 300 sq ft/gal body, 400 sq ft/gal trim (2 coats each)
+Materials: 19 gallons body, 3 gallons trim, 2 gallons primer
+
+Expected Lifespan: 7-10 years with proper maintenance
+
+Example 3: VOC-Compliant Paint Selection for California Project
+
+**Project: Multifamily Interior - All Units (20 apartments)**
+**Location: Los Angeles, CA**
+**Requirement: Comply with SCAQMD Rule 1113 (VOC <50 g/L for interior flat)**
+
+Paint System Selection:
+
+Walls (Flat):
+- Product: Sherwin-Williams Harmony Interior Acrylic Latex - Flat
+- VOC Content: 0 g/L (Greenguard Gold Certified)
+- Color: SW 7015 Repose Gray
+- Coverage: 400 sq ft/gal
+- Dry Time: 1 hour between coats
+- Washability: Class III per ASTM D2486
+
+Trim (Semi-Gloss):
+- Product: Benjamin Moore Natura Interior Acrylic - Semi-Gloss
+- VOC Content: 0 g/L (zero VOC)
+- Color: OC-65 Chantilly Lace
+- Coverage: 400 sq ft/gal
+- Dry Time: 2 hours between coats
+- Durability: Excellent resistance to scrubbing
+
+Cabinets (Satin):
+- Product: Benjamin Moore Advance Interior Paint - Satin
+- VOC Content: <50 g/L
+- Color: White
+- Coverage: 350 sq ft/gal
+- Dry Time: 16 hours between coats
+- Finish: Self-leveling alkyd-like finish
+
+Ventilation Plan:
+- Open windows during application
+- Use fans to increase air circulation
+- No mechanical ventilation required due to zero-VOC products
+- Safe for occupancy after 24 hours
+
+Compliance Documentation:
+- Product data sheets with VOC content
+- Safety Data Sheets for all products
+- LEED/Green Building submittal if required
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **DFT (Dry Film Thickness)**: Thickness of applied paint after drying (measured in mils: 1 mil = 0.001")
+- **WFT (Wet Film Thickness)**: Thickness of paint immediately after application
+- **VOC (Volatile Organic Compounds)**: Chemicals that evaporate from paint, regulated by EPA
+- **Mil**: Unit of measurement for film thickness (1 mil = 1/1000 inch = 25.4 microns)
+- **Sheen**: Level of gloss in dried paint (flat, eggshell, satin, semi-gloss, gloss)
+- **Holiday**: Missed spot or area with insufficient coverage
+- **Orange Peel**: Textured surface defect resembling orange skin (usually from spraying)
+- **Fisheye**: Circular defect where paint pulls away from surface (contamination)
+- **Sagging/Running**: Paint defect where material flows downward creating drips
+- **Adhesion**: Ability of paint to stick to substrate
+- **Blocking**: Undesired adhesion between two painted surfaces when pressed together
+- **Chalking**: Powdery surface degradation from UV exposure
+- **Backrolling**: Rolling immediately after spraying to improve adhesion and appearance
+
+Standards & Frameworks (2024):
+- **PCA (Painting Contractors Association) Industry Standards**: Performance and quality specifications
+- **MPI (Master Painters Institute) Standards**: Paint specifications and quality levels
+- **OSHA 1910.134**: Respiratory Protection Standard
+- **OSHA 1910.1200**: Hazard Communication Standard (Safety Data Sheets)
+- **OSHA 1926 Subpart M**: Fall Protection in Construction
+- **EPA RRP Rule**: Lead Renovation, Repair and Painting Rule (pre-1978 housing)
+- **EPA VOC Regulations**: Maximum VOC content for architectural coatings
+- **ASTM D3276**: Guide for Painting Inspectors (Metal Substrates)
+- **ASTM D2486**: Scrub Resistance Test (paint washability rating)
+- **SSPC Standards**: Society for Protective Coatings surface preparation standards
+
+Common Tools & Equipment:
+- **Brushes**: Purdy, Wooster (synthetic for latex, natural bristle for oil)
+- **Rollers**: 9" frames with various nap lengths (3/8"-3/4")
+- **Sprayers**: Graco, Wagner, Titan (airless), Fuji (HVLP)
+- **Paint**: Benjamin Moore, Sherwin-Williams, PPG, Behr
+- **Primers**: Shellac-based (BIN), alkyd (oil-based), acrylic (latex)
+- **Safety**: 3M respirators (6000 series), Tyvek coveralls, safety glasses
+- **Measuring**: Wet film thickness gauges, dry film thickness gauges (Elcometer)
+- **Surface Prep**: Scrapers, sanders (orbital, palm), power washers (2000-3000 PSI)
+
+Change log
+2024-12: Initial playbook created based on 2024 painting industry standards and regulations
+- Emphasis on OSHA safety compliance (respiratory protection, fall protection, hazard communication)
+- EPA RRP lead-safe work practices for pre-1978 buildings
+- VOC regulations and environmental compliance
+- PCA and MPI industry quality standards
+- Surface preparation and application best practices
+- Modern zero-VOC and low-VOC paint technology
