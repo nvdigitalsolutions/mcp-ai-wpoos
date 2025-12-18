@@ -23,6 +23,7 @@
  * - chat-ui-utilities-service.js (DOM helpers)
  * - chat-audio-service.js (TTS/transcription)
  * - chat-attachments-service.js (file upload/attachment handling)
+ * - chat-transcription-service.js (audio recording and transcription)
  * - chat.js (main chat application)
  */
 
@@ -136,6 +137,7 @@ async function buildAll() {
 		'assets/js/chat-ui-utilities-service.js',
 		'assets/js/chat-audio-service.js',
 		'assets/js/chat-attachments-service.js',
+		'assets/js/chat-transcription-service.js',
 		'assets/js/chat.js',
 	];
 

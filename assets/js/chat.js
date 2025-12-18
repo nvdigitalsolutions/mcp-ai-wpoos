@@ -59,6 +59,9 @@
     const attachmentsService = window.wpMcpAiChatAttachments || null;
     let objectUrlRegistry = [];
 
+    // Transcription service compatibility layer - use external service if available
+    const transcriptionService = window.wpMcpAiChatTranscription || null;
+
     // Audio-related constants - use from service if available
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = audioService && audioService.SPEECH_BUTTON_CLASS || 'wp-mcp-ai-speech-button';
@@ -88,11 +91,11 @@
     const SAVE_SUCCESS_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
     // Transcription constants
-    const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
-    const TRANSCRIBE_RECORDING_CLASS = audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
+    const TRANSCRIBE_TOOL_NAME = transcriptionService && transcriptionService.TRANSCRIBE_TOOL_NAME || 'transcribe_openai_audio';
+    const TRANSCRIBE_RECORDING_CLASS = transcriptionService && transcriptionService.TRANSCRIBE_RECORDING_CLASS || audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
     const VOICE_CHAT_RECORDING_CLASS = audioService && audioService.VOICE_CHAT_RECORDING_CLASS || 'wp-mcp-ai-chat__voice-chat--recording';
     const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
-    const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
+    const MAX_TRANSCRIBE_BYTES = transcriptionService && transcriptionService.MAX_TRANSCRIBE_BYTES || audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
@@ -2807,6 +2810,10 @@
     }
 
     function supportsAudioRecording() {
+        if (transcriptionService && transcriptionService.supportsAudioRecording) {
+            return transcriptionService.supportsAudioRecording();
+        }
+
         if (audioService && audioService.supportsAudioRecording) {
             return audioService.supportsAudioRecording();
         }
@@ -2837,6 +2844,11 @@
     }
 
     function setTranscribeRecordingState(state, recording) {
+        if (transcriptionService && transcriptionService.setTranscribeRecordingState) {
+            return transcriptionService.setTranscribeRecordingState(state, recording, getString, setStatus);
+        }
+
+        // Fallback implementation
         if (!state) {
             return;
         }
@@ -2870,6 +2882,10 @@
     }
 
     function updateTranscribeButtonState(state) {
+        if (transcriptionService && transcriptionService.updateTranscribeButtonState) {
+            return transcriptionService.updateTranscribeButtonState(state);
+        }
+
         if (audioService && audioService.updateTranscribeButtonState) {
             return audioService.updateTranscribeButtonState(state);
         }
@@ -2905,6 +2921,14 @@
     }
 
     function handleTranscribeButtonClick(state) {
+        if (transcriptionService && transcriptionService.handleTranscribeButtonClick) {
+            const helpers = {
+                startTranscribeRecording: startTranscribeRecording,
+                stopTranscribeRecording: stopTranscribeRecording,
+            };
+            return transcriptionService.handleTranscribeButtonClick(state, helpers);
+        }
+
         if (audioService && audioService.handleTranscribeButtonClick) {
             const helpers = {
                 getString: getString,
@@ -2956,6 +2980,19 @@
     }
 
     function startTranscribeRecording(state) {
+        if (transcriptionService && transcriptionService.startTranscribeRecording) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                transcribeAudioFile: transcribeAudioFile,
+                stopRecordingStream: stopRecordingStream,
+                setTranscribeRecordingState: setTranscribeRecordingState,
+                updateTranscribeButtonState: updateTranscribeButtonState,
+            };
+            return transcriptionService.startTranscribeRecording(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || !supportsAudioRecording()) {
             return;
         }
@@ -3090,6 +3127,16 @@
     }
 
     function stopTranscribeRecording(state) {
+        if (transcriptionService && transcriptionService.stopTranscribeRecording) {
+            const helpers = {
+                stopRecordingStream: stopRecordingStream,
+                setTranscribeRecordingState: setTranscribeRecordingState,
+                updateTranscribeButtonState: updateTranscribeButtonState,
+            };
+            return transcriptionService.stopTranscribeRecording(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || !state.mediaRecorder) {
             return;
         }
@@ -3108,6 +3155,10 @@
     }
 
     function handleTranscribeFileSelection(event, state) {
+        if (transcriptionService && transcriptionService.handleTranscribeFileSelection) {
+            return transcriptionService.handleTranscribeFileSelection(event, state, transcribeAudioFile);
+        }
+
         if (audioService && audioService.handleTranscribeFileSelection) {
             const helpers = {
                 getString: getString,
