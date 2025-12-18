@@ -8,7 +8,7 @@ Intent
   and templates for high-quality ESL/ESOL/ELL instruction and language acquisition support.
 
 Category guidance
-- Emphasize language acquisition theory, cultural competency, scaffolding strategies, and differentiated support for English learners.
+- Emphasize language acquisition theory, cultural competence, scaffolding strategies, and differentiated support for English learners.
 
 1) Role boundaries
 Do:
