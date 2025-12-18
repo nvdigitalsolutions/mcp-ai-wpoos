@@ -2,18 +2,18 @@
 
 This document provides methodology, templates, and guidelines for completing the remaining 164 profession playbooks.
 
-## 🎯 Phase 3 - Next Two Professions
+## 🎯 Phase 4 - Next Two Professions
 
-**Priority #1: electrician** (Trades/Skilled Labor Template)
-- Purpose: Establish template for ~15 trades/skilled labor professions
-- Research Focus: OSHA standards, National Electrical Code (NEC), licensing requirements
-- Key Elements: Safety protocols, hands-on boundaries, code compliance
+**Priority #1: plumber** (Trades/Skilled Labor Template Validation)
+- Purpose: Validate and refine trades template established by electrician
+- Research Focus: International Plumbing Code (IPC), backflow prevention, water safety
+- Key Elements: Safety protocols, code compliance, system diagnostics, emergency response
 - Estimated Time: 2-3 hours
 
-**Priority #2: high_school_teacher** (Education Template)  
-- Purpose: Establish template for ~10 education professions
-- Research Focus: Common Core, state standards, pedagogical frameworks
-- Key Elements: Lesson planning, assessment strategies, classroom management
+**Priority #2: elementary_school_teacher** (Education Template Validation)  
+- Purpose: Validate and refine education template established by high_school_teacher
+- Research Focus: Age-appropriate pedagogy, early literacy, classroom management for young learners
+- Key Elements: Differentiation strategies, foundational skills development, parent communication
 - Estimated Time: 2-3 hours
 
 ## Status
@@ -21,6 +21,7 @@ This document provides methodology, templates, and guidelines for completing the
 **Completed**: 20/182 professions (Phases 1-3)
 **Remaining**: 162 professions
 **Phase 3 Status**: ✅ COMPLETED (Dec 18, 2024)
+**Phase 4 Status**: 🔄 IN PROGRESS (Next: plumber, elementary_school_teacher)
 
 ## Phase Summary
 
@@ -53,6 +54,10 @@ Additional technical professions following software_engineer template:
 19. **electrician** (22KB) - Trades/Skilled Labor template
 20. **high_school_teacher** (31KB) - Education template
 
+### Phase 4 - Template Validation (0 completed) 🔄
+**Status**: IN PROGRESS
+**Next**: plumber (Trades validation), elementary_school_teacher (Education validation)
+
 ## Exemplar Professions by Category
 
 Use these as templates for similar professions:
@@ -76,11 +81,12 @@ Use these as templates for similar professions:
 ### Advisory/Business Professions
 **Template**: marketing_consultant (17KB)
 
-### Trades/Skilled Labor ✅ 1 COMPLETED
+### Trades/Skilled Labor 🔄 PHASE 4 PRIORITY #1
 **Template**: electrician (22KB)
-**Status**: Template established - ready for expansion
+**Status**: Template validation in progress - plumber next
 **Completed**: electrician
-**Remaining**: ~14 professions (plumber, carpenter, welder, HVAC_technician, automotive_mechanic, mason, roofer, etc.)
+**Phase 4 Target**: plumber (validate template)
+**Remaining**: ~13 professions (carpenter, welder, HVAC_technician, automotive_mechanic, mason, roofer, etc.)
 
 **Key Adaptations**:
 - Safety protocols (OSHA, NFPA 70E)
@@ -90,11 +96,12 @@ Use these as templates for similar professions:
 - Hands-on vs. advisory boundaries
 - Lockout/tagout procedures
 
-### Education ✅ 1 COMPLETED
+### Education 🔄 PHASE 4 PRIORITY #2
 **Template**: high_school_teacher (31KB)
-**Status**: Template established - ready for expansion
+**Status**: Template validation in progress - elementary_school_teacher next
 **Completed**: high_school_teacher
-**Remaining**: ~9 professions (elementary_school_teacher, college_professor, special_education_teacher, school_counselor, esl_teacher, educational_administrator, instructional_designer, etc.)
+**Phase 4 Target**: elementary_school_teacher (validate template)
+**Remaining**: ~8 professions (college_professor, special_education_teacher, school_counselor, esl_teacher, educational_administrator, instructional_designer, etc.)
 
 **Key Adaptations**:
 - Pedagogical frameworks (Danielson, UbD, Backward Design)
@@ -347,11 +354,11 @@ Group similar professions to reuse research:
 - Stakeholder management
 - Change management processes
 
-### Trades/Skilled Labor (~15) 🔄 PHASE 3 PRIORITY #1
-**Template**: electrician (IN PROGRESS)
-**Status**: No template yet - **NEXT TO COMPLETE**
-**Target**: Complete electrician as template profession
-**Include**: plumber, carpenter, welder, automotive_mechanic, HVAC_technician, mason, roofer, heavy_equipment_operator, etc.
+### Trades/Skilled Labor (~15) ✅ 1 COMPLETED → 🔄 PHASE 4 NEXT
+**Template**: electrician (22KB) ✅ COMPLETED
+**Status**: Template established, validation in progress
+**Phase 4 Target**: plumber (validate and refine template)
+**Include**: carpenter, welder, automotive_mechanic, HVAC_technician, mason, roofer, heavy_equipment_operator, etc.
 
 **Key Adaptations**:
 - Safety protocols (OSHA)
@@ -361,11 +368,11 @@ Group similar professions to reuse research:
 - Hands-on vs. advisory boundaries
 - Emergency response procedures
 
-### Education (~10) 🔄 PHASE 3 PRIORITY #2
-**Template**: high_school_teacher (IN PROGRESS)
-**Status**: No template yet - **NEXT TO COMPLETE**
-**Target**: Complete high_school_teacher as template profession
-**Include**: elementary_school_teacher, college_professor, instructional_designer, special_education_teacher, school_counselor, esl_teacher, educational_administrator, etc.
+### Education (~10) ✅ 1 COMPLETED → 🔄 PHASE 4 NEXT
+**Template**: high_school_teacher (31KB) ✅ COMPLETED
+**Status**: Template established, validation in progress
+**Phase 4 Target**: elementary_school_teacher (validate and refine template)
+**Include**: college_professor, instructional_designer, special_education_teacher, school_counselor, esl_teacher, educational_administrator, etc.
 
 **Key Adaptations**:
 - Pedagogical approaches
@@ -420,6 +427,11 @@ Group similar professions to reuse research:
 - **electrician** (Trades template): ~3 hours (new category research, 22KB, 546 lines)
 - **high_school_teacher** (Education template): ~3 hours (new category research, 31KB, 715 lines)
 - **Phase 3 Total**: ~6 hours ✅
+
+**Phase 4 (In Progress)**:
+- **plumber** (Trades template validation): ~2-3 hours (estimated)
+- **elementary_school_teacher** (Education template validation): ~2-3 hours (estimated)
+- **Phase 4 Total**: ~4-6 hours (estimated)
 
 ## Quality Standards
 
@@ -551,10 +563,14 @@ Copilot AI Assistant:
 - electrician (22KB) - Trades/Skilled Labor template
 - high_school_teacher (31KB) - Education template
 
-Phase 4+: [Future contributors - 162 professions remaining]
+### Phase 4 (Template Validation) - In Progress 🔄
+**Next**: plumber, elementary_school_teacher
+**Status**: Ready to begin - templates established in Phase 3
+
+Phase 5+: [Future contributors - 160 professions remaining after Phase 4]
 
 ---
 
 **Last Updated**: December 18, 2024
-**Framework Version**: 1.2
-**Status**: Phase 3 completed - 20/182 professions complete (11.0%)
+**Framework Version**: 1.3
+**Status**: Phase 4 in progress - 20/182 professions complete (11.0%), next 2 defined
