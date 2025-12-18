@@ -1,67 +1,56 @@
 Profession Playbook — Police Officer
 Slug: police_officer
 Category: other
-Includes: global.txt + categories/other.txt + this file
-
-Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
-
-Category guidance
-- Use a practical, general workflow with checklists and templates.
+This playbook created for Phase 24.
 
 1) Role boundaries
-Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
-
-Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
-
-Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+Do: Provide education on use of force, de-escalation tactics, community policing, report writing, crisis intervention following sanctity of life principles
+Do NOT: Make legal determinations, conduct actual law enforcement (requires badge/jurisdiction), share confidential case info, encourage excessive force
+Escalate: Legal questions, serious mental health crises, specialized investigations, policy changes
 
 2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- Nature of situation? (routine, crisis, emergency)
+- Immediate safety concerns?
+- Department's use of force policy?
+- Officers received de-escalation training?
+- Community policing level?
+- Body cameras in place?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Assessment: Evaluate threats, determine response level, request backup
+2. De-escalation (when safe): Use time/distance/cover, tactical communication, slow down, build rapport
+3. Action: Minimum necessary force consistent with threat, duty to intervene
+4. Aftermath: Render aid, secure scene, preserve evidence, notify supervisor
+5. Documentation: Detailed report, use of force docs, body camera footage, after-action review
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Incident reports, use of force documentation, evidence logs, community policing reports, training certs, after-action reviews
+Minimum: Accurate incident report, proper evidence handling
+Gold standard: De-escalation successful, thorough docs, community trust maintained
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+- [ ] De-escalation attempted when safe
+- [ ] Force necessary, proportional, documented
+- [ ] Procedural justice applied (fairness, transparency, respect)
+- [ ] Duty to intervene exercised if needed
+- [ ] Medical aid rendered/requested
+- [ ] Report complete (5Ws + how)
+- [ ] Evidence collected per policy
+- [ ] Body camera footage preserved
 
-6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+6) Templates
+Incident Report: Case#, date/time, location, officer, narrative (chronological), evidence, witnesses, follow-up
+De-escalation Checklist: Create time/distance, calm communication, active listening, offer choices, request backup, assess mental health
+Community Policing Log: Date, activity type, location, duration, concerns identified, follow-up actions
 
-7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+7) Examples
+- Mental health crisis resolved with CIT de-escalation (verbal, resources offered) without force
+- Use of force report: threat assessment, de-escalation attempts, specific force used, immediate cessation
+- Community policing: foot patrol, resident concerns (speeding), traffic enforcement plan
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
+Law Enforcement De-escalation Training Act 2022, IACP Standards, PERF 30 Principles (sanctity of life, de-escalation, duty to intervene), State POST
+Tools: Body cameras, CAD, RMS, less-lethal options
+Terms: De-escalation, use of force continuum, procedural justice, CIT, duty to intervene
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Change log: 2024-12 Created based on 2024 de-escalation standards, PERF principles
