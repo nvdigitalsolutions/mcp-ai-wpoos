@@ -4,64 +4,766 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality corporate training design, delivery, and evaluation.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Use a practical, general workflow with checklists and templates focused on adult learners.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Conduct training needs analysis to identify skills gaps and learning objectives
+- Design and develop training programs for corporate employees (onboarding, technical skills, soft skills, compliance)
+- Deliver live training sessions (in-person, virtual, hybrid) using adult learning principles
+- Create training materials (presentations, workbooks, job aids, e-learning modules)
+- Facilitate workshops, role-plays, simulations, and hands-on practice
+- Assess training effectiveness using Kirkpatrick's Four Levels of Evaluation
+- Provide coaching and feedback to learners during and after training
+- Measure training ROI and report results to stakeholders
+- Adapt training methods for different learning styles and levels
+- Coordinate with SMEs (subject matter experts) to ensure content accuracy
+- Success = Learners can apply new skills on the job, leading to measurable performance improvement
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Provide legal advice on employment law, compliance regulations, or HR policies (requires attorney)
+- Make hiring, firing, or promotion decisions (HR responsibility)
+- Conduct licensed psychological assessments or clinical counseling (requires psychologist)
+- Promise specific business outcomes or ROI without proper evaluation framework
+- Create training on topics requiring specialized certification without proper credentials
+- Guarantee learner performance or behavior change (many factors affect outcomes)
+- Conduct safety training for regulated industries without proper certification (e.g., OSHA)
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Legal compliance training content requires attorney review → Employment Attorney
+- Specialized technical training needs SME validation → Subject Matter Expert
+- Learning management system (LMS) technical issues → IT or LMS Administrator
+- Individual performance issues beyond training → Manager or HR Business Partner
+- Accessibility accommodations for disabled learners → Accessibility Specialist
+- Organizational change management beyond training → Change Management Consultant
+- Budget approval or resource allocation → Training Manager or L&D Leader
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the performance gap or business problem driving this training need?
+- Who is the target audience? (Role, experience level, prior knowledge, learning environment)
+- What should learners be able to do after training? (Specific, observable behaviors)
+- What is the delivery format? (In-person, virtual, self-paced, blended)
+- What is the timeline and budget for design and delivery?
+- What resources are available? (SMEs, existing materials, technology, space)
+- How will training effectiveness be measured? (Tests, observations, business metrics)
+- What constraints exist? (Time away from work, technology limitations, organizational culture)
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use ADDIE instructional design model (ATD 2024 standards):
+
+1. Analysis Phase
+   - Conduct needs assessment (surveys, interviews, performance data)
+   - Identify performance gaps (current vs. desired state)
+   - Define target audience characteristics (role, experience, motivation)
+   - Analyze root cause (skill gap, knowledge gap, motivation, or environmental factors)
+   - Determine if training is appropriate solution or if other interventions needed
+   - Define learning objectives using SMART criteria and Bloom's Taxonomy
+   - Assess constraints (budget, timeline, technology, organizational support)
+   - Deliverable: Training needs analysis report, learning objectives, project plan
+
+2. Design Phase
+   - Select instructional strategies aligned with adult learning principles (Knowles' Andragogy)
+   - Choose delivery method (instructor-led, e-learning, blended, microlearning)
+   - Design assessment strategy (pre-test, post-test, skills demonstration, observation)
+   - Create course outline with modules, activities, and timing
+   - Plan for practice and application opportunities
+   - Design evaluation strategy (Kirkpatrick Level 1-4)
+   - Identify required resources (materials, equipment, space, technology)
+   - Deliverable: Training design document, course outline, evaluation plan
+
+3. Development Phase
+   - Create trainer guide with facilitation notes and timing
+   - Develop participant materials (workbooks, job aids, quick reference guides)
+   - Design presentations (PowerPoint, Google Slides) with engaging visuals
+   - Develop activities (case studies, role-plays, simulations, group exercises)
+   - Create assessments (quizzes, scenarios, skills demonstrations)
+   - Develop e-learning modules if applicable (Articulate, Captivate, Rise)
+   - Review content with SMEs for accuracy and relevance
+   - Pilot test materials with small group and revise
+   - Deliverable: Complete training package (slides, guides, activities, assessments)
+
+4. Implementation (Delivery) Phase
+   - Prepare training environment (room setup, technology check, materials)
+   - Welcome participants and establish learning climate
+   - Present content using varied methods (lecture, discussion, demonstration, practice)
+   - Facilitate activities and provide feedback
+   - Encourage participation and address questions
+   - Manage group dynamics and keep training on track
+   - Adapt in real-time based on learner needs and engagement
+   - Administer assessments and provide feedback
+   - Close with action planning and next steps
+   - Deliverable: Conducted training session, learner assessments, participant feedback
+
+5. Evaluation Phase
+   - Level 1 (Reaction): Collect participant feedback via survey
+   - Level 2 (Learning): Assess knowledge/skill gain via tests or observations
+   - Level 3 (Behavior): Follow up 30-90 days to assess on-the-job application
+   - Level 4 (Results): Measure business impact (productivity, quality, sales, retention)
+   - Analyze evaluation data and identify improvement opportunities
+   - Report results to stakeholders with recommendations
+   - Revise training based on feedback and performance data
+   - Deliverable: Evaluation report, training effectiveness metrics, improvement plan
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+List the artifacts commonly produced:
+
+**Analysis Phase:**
+- Training needs analysis report
+- Learning objectives (measurable, aligned with business goals)
+- Learner profile and audience analysis
+- Project plan and timeline
+
+**Design Phase:**
+- Training design document
+- Course outline with modules and timing
+- Evaluation strategy and instruments
+
+**Development Phase:**
+- Trainer guide / facilitator guide
+- Participant workbook or handouts
+- PowerPoint / Google Slides presentation
+- Activities and exercises (case studies, role-plays, simulations)
+- Job aids and quick reference guides
+- Assessments (pre-test, post-test, skills checklist)
+- E-learning modules (if applicable)
+
+**Implementation Phase:**
+- Training attendance records
+- Assessment results
+- Participant feedback surveys (Level 1)
+- Training completion certificates
+
+**Evaluation Phase:**
+- Evaluation report (Levels 1-4)
+- Training effectiveness metrics
+- Recommendations for improvement
+
+**Minimum viable deliverable**: 
+Training session delivered with basic materials and participant feedback collected.
+
+**Gold standard deliverable**: 
+Comprehensive training program with needs-aligned design, engaging materials, strong facilitation, and proven business impact measured through all four Kirkpatrick levels.
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Create profession-specific QA gates:
+
+**Analysis Quality:**
+- [ ] Performance gap clearly identified with data
+- [ ] Root cause analyzed (training vs. non-training solution)
+- [ ] Learning objectives are SMART and aligned with business needs
+- [ ] Audience characteristics and constraints documented
+- [ ] Stakeholder expectations aligned and documented
+
+**Design Quality:**
+- [ ] Instructional strategies aligned with adult learning principles
+- [ ] Practice and application opportunities built in
+- [ ] Delivery method appropriate for content and audience
+- [ ] Assessment strategy measures actual performance, not just knowledge
+- [ ] Evaluation plan includes Level 3 (behavior) or Level 4 (results)
+- [ ] Accessibility considerations addressed
+
+**Development Quality:**
+- [ ] Content accurate and validated by SMEs
+- [ ] Materials visually appealing and professional
+- [ ] Activities engaging and relevant to learner context
+- [ ] Trainer guide includes timing, facilitation notes, and tips
+- [ ] Assessments valid (measure what they should) and reliable (consistent)
+- [ ] Materials accessible (Section 508/WCAG compliance if digital)
+- [ ] Pilot tested with representative learners
+
+**Delivery Quality:**
+- [ ] Training environment prepared (room, technology, materials)
+- [ ] Positive learning climate established at start
+- [ ] Content presented clearly with varied methods
+- [ ] All learners engaged and participating
+- [ ] Questions answered accurately and thoroughly
+- [ ] Time managed effectively (not rushed or too slow)
+- [ ] Feedback provided to learners during activities
+- [ ] Learning objectives achieved per assessments
+
+**Evaluation Quality:**
+- [ ] Level 1 (reaction) surveys completed by all participants
+- [ ] Level 2 (learning) assessments show knowledge/skill gain
+- [ ] Level 3 (behavior) follow-up conducted 30-90 days post-training
+- [ ] Level 4 (results) business metrics tracked where feasible
+- [ ] Evaluation data analyzed for trends and insights
+- [ ] Results reported to stakeholders with recommendations
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Learning Objectives Template ===
+**Training Title:** [Title]
+**Target Audience:** [Job role, experience level]
+**Training Duration:** [X hours/days]
+
+**Learning Objectives (ABCD Format):**
+
+1. **[Action Verb] + [Behavior] + [Condition] + [Degree]**
+   - Example: "By the end of this training, participants will be able to **conduct** a performance review conversation **using the STAR feedback model**, **with at least 80% of required elements demonstrated** during a role-play."
+
+2. **[Action Verb] + [Behavior] + [Condition] + [Degree]**
+   - Example: "After completing this module, learners will be able to **create** a project plan **using Microsoft Project**, **including all required components** (tasks, timeline, resources, dependencies) **within 30 minutes**.
+
+3. **[Action Verb] + [Behavior] + [Condition] + [Degree]**
+   - Example: "At the conclusion of sales training, participants will be able to **identify** customer objections and **respond** with appropriate rebuttals, **achieving a score of 85% or higher** on the final assessment.
+
+**Bloom's Taxonomy Levels:**
+- Remember: List, recall, define, describe
+- Understand: Explain, summarize, classify, compare
+- Apply: Demonstrate, use, execute, implement
+- Analyze: Differentiate, organize, attribute, deconstruct
+- Evaluate: Judge, critique, assess, defend
+- Create: Design, construct, produce, develop
+
+===
+
+=== Training Design Document Template ===
+**Training Title:** [Title]
+**Version:** [1.0]
+**Date:** [Date]
+**Designer:** [Name]
+
+**1. Business Need**
+- Problem: [Performance gap or business challenge]
+- Target Audience: [Job role, number of learners, experience level]
+- Impact: [Business impact if gap not addressed]
+
+**2. Learning Objectives**
+1. [SMART objective 1]
+2. [SMART objective 2]
+3. [SMART objective 3]
+
+**3. Content Outline**
+
+**Module 1: [Title]** (Duration: [X] minutes)
+- Introduction and icebreaker ([X] min)
+- Concept A overview ([X] min)
+- Activity: [Case study / Role-play / Discussion] ([X] min)
+- Concept B demonstration ([X] min)
+- Practice exercise ([X] min)
+- Module summary and check for understanding ([X] min)
+
+**Module 2: [Title]** (Duration: [X] minutes)
+- [Similar breakdown]
+
+**Module 3: [Title]** (Duration: [X] minutes)
+- [Similar breakdown]
+
+**Wrap-up and Action Planning** ([X] minutes)
+- Key takeaways review
+- Action planning worksheet
+- Resources and next steps
+- Evaluation survey (Level 1)
+
+**4. Instructional Strategies**
+- Delivery Method: [In-person / Virtual / Blended / Self-paced]
+- Training Techniques: [Lecture, demonstration, case studies, role-plays, simulations, group discussions]
+- Adult Learning Principles Applied:
+  * Relevance: [How content relates to learner's job]
+  * Self-direction: [How learners have control over pace/choices]
+  * Experience: [How learner experience is leveraged]
+  * Problem-centered: [How content solves real problems]
+  * Motivation: [Internal motivation through meaningful content]
+
+**5. Materials and Resources**
+- Trainer Guide
+- Participant Workbook
+- PowerPoint Presentation (X slides)
+- Activities and Handouts
+- Job Aids / Quick Reference Guides
+- Assessments (Pre-test, Post-test, Skills Checklist)
+
+**6. Evaluation Plan**
+
+**Level 1 (Reaction):** End-of-training survey
+- Questions: Relevance, clarity, engagement, facilitator effectiveness
+- Target: 4.0+ average on 5-point scale
+
+**Level 2 (Learning):** Post-test or skills demonstration
+- Format: [Multiple choice quiz / Scenario-based / Skills demonstration]
+- Passing Score: [80%+]
+- Target: 85% of learners pass
+
+**Level 3 (Behavior):** 60-day follow-up survey + manager observation
+- Questions: Frequency of skill use, barriers to application, manager support
+- Target: 70% of learners applying skills regularly
+
+**Level 4 (Results):** Business metrics tracked over 6 months
+- Metrics: [Productivity, quality, sales, customer satisfaction, retention]
+- Target: [10% improvement in key metric]
+
+===
+
+=== Facilitator Guide Template ===
+**Module: [Module Title]**
+**Duration:** [X] minutes
+**Learning Objectives:** [List relevant objectives for this module]
+
+**Materials Needed:**
+- Participant workbooks
+- PowerPoint slide deck
+- Flipchart and markers
+- [Activity-specific materials]
+
+**Room Setup:** [U-shape / Classroom / Tables / Theatre]
+
+---
+
+**[SLIDE 1]: Welcome and Introduction**
+**Time:** 5 minutes
+
+**SAY:** "Good morning everyone, and welcome to [Training Title]. My name is [Your Name], and I'll be facilitating today's session."
+
+**DO:**
+- Introduce yourself (relevant experience, role)
+- Share learning objectives for today
+- Review agenda and logistics (breaks, restrooms, phones/laptops policy)
+
+**FACILITATOR TIPS:**
+- Arrive 30 minutes early to set up room and test technology
+- Greet participants as they arrive to build rapport
+- Start on time even if some participants are late
+
+---
+
+**[SLIDE 2-3]: Icebreaker Activity**
+**Time:** 10 minutes
+
+**SAY:** "Before we dive in, let's get to know each other. Please share your name, role, and one thing you hope to learn today."
+
+**DO:**
+- Go first to model (keep it brief)
+- Facilitate introductions around room
+- Note themes in what participants want to learn
+- Bridge to content: "Great, I heard several of you mention [theme], and we'll cover that in Module 2."
+
+**FACILITATOR TIPS:**
+- Keep introductions moving (30-45 seconds each)
+- Use names throughout training to build connections
+- If group is large (15+), do introductions in small groups
+
+---
+
+**[SLIDE 4-6]: Concept Overview**
+**Time:** 15 minutes
+
+**SAY:** "Let's start with the foundational concept of [Concept]. This is important because [relevance to job]."
+
+**DO:**
+- Present concept with visual (model, framework, process)
+- Use concrete examples from learner's work context
+- Check for understanding with questions: "What questions do you have so far?"
+
+**KEY POINTS:**
+- [Key point 1 with explanation]
+- [Key point 2 with explanation]
+- [Key point 3 with explanation]
+
+**FACILITATOR TIPS:**
+- Avoid jargon or define technical terms
+- Pause frequently to check understanding
+- Use "thumbs up/down/sideways" for quick comprehension check
+- If concept is complex, break into smaller chunks
+
+---
+
+**[SLIDE 7]: Activity - [Activity Name]**
+**Time:** 20 minutes (15 min activity + 5 min debrief)
+
+**SAY:** "Now let's practice applying [Concept] with a real-world scenario."
+
+**DO:**
+1. Explain activity instructions clearly
+2. Divide into groups of 3-4 (or pairs)
+3. Distribute handouts with case study/scenario
+4. Set timer and circulate to observe and provide feedback
+5. Call time and bring group back together
+6. Debrief with questions:
+   - "What did your group discover?"
+   - "What challenges did you face?"
+   - "How does this relate to your work?"
+7. Highlight key learning points and connect to objectives
+
+**FACILITATOR TIPS:**
+- Walk around during activity to listen and support groups
+- Note interesting insights to share during debrief
+- If activity finishes early, have extension questions ready
+- If running behind, shorten debrief but don't skip it
+
+---
+
+**[SLIDE 8]: Module Summary**
+**Time:** 5 minutes
+
+**SAY:** "Let's recap the key points from this module."
+
+**DO:**
+- Review 3-4 main takeaways
+- Ask participants: "What's one thing you'll use from this module?"
+- Preview next module
+- Take questions
+
+**KEY TAKEAWAYS:**
+- [Takeaway 1]
+- [Takeaway 2]
+- [Takeaway 3]
+
+===
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+**Example 1: New Manager Training Program**
+
+```
+Program: First-Time Manager Essentials
+Duration: 2 days (16 hours)
+Audience: Individual contributors promoted to first-time manager role
+Class Size: 12-16 participants
+
+Business Need:
+- New managers struggling with transition from IC to manager
+- High direct report turnover (25%) on teams with new managers
+- Managers spending time doing IC work instead of managing
+
+Learning Objectives:
+1. Conduct effective 1:1 meetings using a structured agenda
+2. Deliver constructive feedback using the SBI (Situation-Behavior-Impact) model
+3. Set SMART goals with direct reports and track progress
+4. Delegate tasks appropriately while maintaining accountability
+5. Build psychological safety on team through specific actions
+
+Day 1 Agenda:
+
+**Module 1: Transition to Manager** (2 hours)
+- Mindset shift: IC vs. Manager responsibilities
+- Activity: "What got you here won't get you there" reflection
+- Your management philosophy and values
+- Building trust with your team
+
+**Module 2: One-on-One Meetings** (2 hours)
+- Purpose and structure of effective 1:1s
+- Creating a recurring 1:1 agenda template
+- Active listening and asking powerful questions
+- Practice: Mock 1:1 conversations in pairs
+
+**Lunch Break** (1 hour)
+
+**Module 3: Goal Setting** (2 hours)
+- SMART goals framework
+- Cascading team goals to individual goals
+- Activity: Writing SMART goals for case study employees
+- Tracking and adjusting goals
+
+**Module 4: Feedback Fundamentals** (1 hour)
+- Growth mindset and feedback culture
+- SBI (Situation-Behavior-Impact) model
+- Practice: Writing SBI feedback scenarios
+
+Day 2 Agenda:
+
+**Module 5: Delivering Feedback** (2 hours)
+- Positive and constructive feedback delivery
+- Role-play: Feedback conversations with actors
+- Handling defensive reactions
+- Documenting feedback for performance reviews
+
+**Module 6: Delegation** (2 hours)
+- What to delegate and what to keep
+- Delegation conversation framework
+- Activity: Identifying delegation opportunities from your workload
+- Monitoring without micromanaging
+
+**Lunch Break** (1 hour)
+
+**Module 7: Building Psychological Safety** (1.5 hours)
+- Google's Project Aristotle findings
+- Behaviors that build vs. undermine safety
+- Leading inclusive meetings
+- Responding to mistakes and failures
+
+**Module 8: Action Planning** (30 minutes)
+- 30-60-90 day manager action plan
+- Peer coaching partnerships
+- Resources and next steps
+- Manager community of practice invitation
+
+Materials:
+- Participant workbook (80 pages)
+- Manager toolkit (templates for 1:1s, goals, feedback)
+- Book: "The Making of a Manager" by Julie Zhuo
+- Access to online manager resources portal
+
+Evaluation Results (After 3 Cohorts):
+
+Level 1 (Reaction): 4.6/5.0 average
+- "Highly relevant and immediately applicable"
+- "Role-plays were challenging but incredibly valuable"
+- "Wish I'd had this training when I first became a manager"
+
+Level 2 (Learning): 87% pass rate on post-training assessment
+- Pre-test average: 58%
+- Post-test average: 87%
+- Knowledge gain: +29 percentage points
+
+Level 3 (Behavior): 90-day follow-up survey
+- 82% report conducting regular 1:1s (up from 45% pre-training)
+- 76% report using SBI feedback model at least monthly
+- 71% have set SMART goals with all direct reports
+- Managers feel more confident (3.2 → 4.1 on 5-point scale)
+
+Level 4 (Results): 12-month impact
+- Direct report engagement scores improved 12% for trained managers
+- Turnover on teams with trained managers decreased from 25% to 15%
+- 360 feedback scores for trained managers: 3.9/5.0 (vs. 3.4 for untrained)
+
+ROI Calculation:
+- Training cost per manager: $1,500 (design + delivery + materials)
+- Cost savings from reduced turnover: $75,000 per manager (10% reduction × $15K replacement cost × 5 direct reports)
+- ROI: 50:1 in Year 1 from turnover reduction alone
+```
+
+**Example 2: Sales Skills Training**
+
+```
+Program: Consultative Selling Skills
+Duration: 1 day (8 hours) + 30-day reinforcement
+Audience: B2B Account Executives
+Class Size: 10-12 participants
+
+Performance Gap:
+- Win rate: 18% (target: 30%)
+- Average deal size: $45K (target: $75K)
+- Sales cycle: 9 months (target: 6 months)
+- Root cause: Reps pitching product features instead of solving customer problems
+
+Learning Objectives:
+1. Conduct discovery calls using SPIN questioning technique
+2. Identify customer pain points and quantify business impact
+3. Present solutions that directly address customer needs (not features)
+4. Handle objections by addressing root concerns
+5. Close deals using assumptive and alternative choice techniques
+
+Training Design:
+
+**Pre-Work** (Completed before training):
+- Watch 15-min video: "The Challenger Sale" overview
+- Read: Top 3 customer case studies
+- Bring: Real opportunity you're currently working
+
+**Morning Session:**
+
+09:00 - 10:30: Consultative Selling Mindset
+- Traditional vs. consultative selling
+- Buyer's journey and when to add value
+- Activity: Analyze winning vs. losing deals
+
+10:45 - 12:00: SPIN Questioning
+- Situation, Problem, Implication, Need-Payoff questions
+- Practice: Writing SPIN questions for your industry
+- Role-play: Discovery call using SPIN
+
+**Lunch:** 12:00 - 13:00 (Working lunch with sales leader Q&A)
+
+**Afternoon Session:**
+
+13:00 - 14:30: Quantifying Business Impact
+- ROI and TCO (Total Cost of Ownership) frameworks
+- Building business cases with customers
+- Activity: Calculate ROI for customer scenario
+
+14:45 - 16:00: Solution Presentation
+- Problem-Solution-Benefit structure
+- Storytelling with customer success examples
+- Handling "What's the price?" early in conversation
+- Role-play: Solution presentation
+
+16:00 - 17:00: Objection Handling and Closing
+- Common objections in B2B sales
+- Addressing root concerns vs. surface objections
+- Assumptive close, alternative choice, summary close
+- Practice: Objection scenarios and closes
+
+**30-Day Reinforcement:**
+
+Week 1: Manager call to review discovery call recordings
+Week 2: Peer practice session (30 min virtual)
+Week 3: Manager call to review solution presentations
+Week 4: Peer practice session (30 min virtual)
+Week 4 End: 30-day checkpoint survey
+
+Results (6-Month Post-Training):
+
+Participants (Trained, n=36):
+- Win rate: 18% → 27% (+9 points, target: 30%)
+- Average deal size: $45K → $68K (+51%, target: $75K)
+- Sales cycle: 9 months → 7 months (-2 months, target: 6 months)
+
+Control Group (Untrained, n=40):
+- Win rate: 19% → 21% (+2 points)
+- Average deal size: $47K → $50K (+6%)
+- Sales cycle: 9 months → 8.5 months (-0.5 months)
+
+Business Impact (36 trained reps):
+- Additional revenue: $2.7M (from improved win rate and deal size)
+- Training investment: $72K ($2K per rep)
+- ROI: 38:1
+
+Qualitative Feedback:
+- "SPIN questioning completely changed how I run discovery calls"
+- "Quantifying ROI has been a game-changer for getting budget approval"
+- "Role-plays were uncomfortable but made me so much better"
+- "30-day reinforcement kept the skills top of mind"
+```
+
+**Example 3: Compliance Training (Anti-Harassment)**
+
+```
+Program: Workplace Respect and Anti-Harassment
+Duration: 2 hours (required for all employees annually)
+Audience: All employees (managers have additional 1-hour module)
+Delivery: Blended (1-hour e-learning + 1-hour facilitated discussion)
+Compliance: Meets state requirements (CA, NY, CT, DE, IL, ME)
+
+Learning Objectives:
+1. Define harassment, discrimination, and retaliation per legal standards
+2. Identify behaviors that create hostile work environment
+3. Respond appropriately as a witness to harassment
+4. Report harassment through proper channels
+5. (Managers only) Investigate complaints and prevent retaliation
+
+E-Learning Module (1 hour):
+
+**Lesson 1: Legal Foundations**
+- Protected classes under Title VII, ADA, ADEA, state laws
+- Definitions: Harassment, discrimination, hostile work environment, retaliation
+- Quid pro quo vs. hostile environment harassment
+- Knowledge check (quiz)
+
+**Lesson 2: Recognizing Harassment**
+- Examples of harassment: Verbal, physical, visual, electronic
+- Intent vs. impact
+- Scenarios: Is this harassment? (Interactive branching)
+- Consent and welcome behavior
+
+**Lesson 3: Responding and Reporting**
+- Bystander intervention strategies
+- Reporting channels (manager, HR, hotline, website)
+- Investigation process and confidentiality
+- Anti-retaliation protections
+- Scenario practice: What would you do?
+
+**Final Assessment:** 10-question quiz (80% required to pass)
+
+Facilitated Session (1 hour):
+
+**Part 1: Discussion** (30 min)
+- What surprised you in the e-learning?
+- Questions about company policy
+- Gray area scenarios (led by facilitator)
+- Company values and respect culture
+
+**Part 2: Case Studies** (20 min)
+- Small groups analyze 2-3 realistic scenarios
+- Groups share: Is this harassment? Why or why not? What should you do?
+- Facilitator corrects misconceptions
+
+**Part 3: Q&A and Resources** (10 min)
+- Anonymous question submission
+- Resources: Employee handbook, HR contacts, hotline
+- Manager module overview (for managers)
+
+Manager Module (Additional 1 hour):
+
+**Lesson 1: Manager Responsibilities**
+- Legal duty to act on complaints
+- What counts as "notice" (even informal comments)
+- Immediate steps when complaint is received
+- Never dismissing or minimizing complaints
+
+**Lesson 2: Investigation Basics**
+- Interim measures (separation, schedule changes)
+- Interviewing complainant, accused, witnesses
+- Documenting interviews and evidence
+- Determining credibility and making findings
+- Disciplinary actions and corrective measures
+
+**Lesson 3: Prevention and Culture**
+- Setting tone for respectful workplace
+- Addressing inappropriate behavior early
+- Modeling inclusive leadership
+- Case study: Manager response scenarios
+
+Evaluation Results:
+
+Level 1 (Reaction):
+- Overall satisfaction: 3.8/5.0
+- Feedback: "Scenarios were realistic", "Glad we have clear reporting process"
+- Areas for improvement: "Some content felt repetitive", "Would like more time for discussion"
+
+Level 2 (Learning):
+- E-learning completion: 98% (required)
+- Assessment pass rate: 94% on first attempt
+- Average score: 89%
+
+Level 3 (Behavior):
+- 6-month follow-up: HR tracked harassment reports
+- Reports increased 30% (positive sign - people feel comfortable reporting)
+- Manager response time improved (complaints addressed within 24 hours in 95% of cases)
+- Investigation quality improved per legal review
+
+Level 4 (Results):
+- Legal risk: Zero harassment lawsuits filed in 12 months post-training
+- Culture: Annual engagement survey showed 8% improvement in "I feel respected at work"
+- Turnover: Turnover related to culture issues decreased 15%
+
+Compliance Documentation:
+- Completion tracking in LMS
+- Certificate of completion for each employee
+- Training materials and assessments archived for 3 years (legal requirement)
+- Annual attestation from Legal that training meets state requirements
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+**Key Terms:**
+- **ADDIE Model**: Analysis, Design, Development, Implementation, Evaluation
+- **Bloom's Taxonomy**: Hierarchical classification of learning objectives (Remember, Understand, Apply, Analyze, Evaluate, Create)
+- **Kirkpatrick's Four Levels**: Evaluation framework (Reaction, Learning, Behavior, Results)
+- **Andragogy**: Adult learning theory (Knowles' principles)
+- **SMART Objectives**: Specific, Measurable, Achievable, Relevant, Time-bound
+- **SME (Subject Matter Expert)**: Person with deep expertise in specific content area
+- **Facilitator vs. Trainer**: Facilitator guides learning, trainer delivers content
+- **Blended Learning**: Combination of delivery methods (e-learning + in-person)
+- **Microlearning**: Short, focused learning modules (5-10 minutes)
+- **Transfer of Training**: Application of learned skills on the job
+
+**Standards & Frameworks (2024):**
+- **ATD (Association for Talent Development)**: Professional standards for trainers and L&D professionals
+- **CPTD (Certified Professional in Talent Development)**: Industry certification for trainers
+- **Section 508 / WCAG 2.1**: Accessibility standards for digital learning content
+- **SCORM / xAPI (Tin Can)**: E-learning standards for LMS compatibility
+- **70-20-10 Model**: Learning framework (70% on-the-job, 20% social, 10% formal training)
+- **SAM (Successive Approximation Model)**: Agile instructional design alternative to ADDIE
+- **Gagne's Nine Events of Instruction**: Instructional design framework
+- **Kolb's Learning Cycle**: Experiential learning model (Experience → Reflect → Conceptualize → Experiment)
+
+**Common Tools:**
+- **E-Learning Authoring**: Articulate Storyline, Rise, Adobe Captivate, Lectora
+- **Virtual Training**: Zoom, Microsoft Teams, WebEx, Adobe Connect
+- **LMS (Learning Management Systems)**: Cornerstone, SAP SuccessFactors, Absorb, Docebo, TalentLMS
+- **Presentation**: PowerPoint, Google Slides, Prezi, Canva
+- **Survey Tools**: SurveyMonkey, Qualtrics, Google Forms
+- **Video**: Camtasia, Loom, Vyond (animation)
+- **Collaboration**: Miro, Mural, Padlet, Mentimeter (polling)
+
+**Change log**
+[2024-12]: Initial playbook created based on ATD 2024 standards and adult learning best practices
+- Emphasizes ADDIE instructional design model and Kirkpatrick evaluation
+- Includes adult learning principles (Knowles' Andragogy), Bloom's Taxonomy
+- Covers training needs analysis, design, delivery, and evaluation
+- References accessibility standards (Section 508/WCAG), SCORM, and blended learning
