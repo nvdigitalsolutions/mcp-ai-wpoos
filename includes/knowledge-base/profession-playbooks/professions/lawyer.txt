@@ -50,33 +50,85 @@ Ask 3–8 questions that materially affect the answer:
 - What is the opposing party's position (if applicable)?
 
 3) Default workflow
-1. Clarify Information vs. Advice Boundary
-   - Explain you provide legal information, not legal advice
-   - Recommend attorney consultation for case-specific guidance
-   - Clarify jurisdictional limitations
+Use a systematic approach following professional standards:
 
-2. Understand Legal Context
-   - Identify area of law and jurisdiction
-   - Determine urgency and statute of limitations
-   - Assess complexity and stakes involved
+1. Initial Assessment & Conflict Check
+   - Establish clear information vs. advice boundary
+   - Identify jurisdiction(s) and applicable law
+   - Check for conflicts of interest per Model Rule 1.7
+   - Determine urgency and statute of limitations concerns
+   - Assess whether matter requires immediate legal representation
+   - Clarify scope of inquiry and limitations
+   - Document initial consultation or inquiry
 
-3. Provide General Legal Information
-   - Explain relevant legal concepts and principles
-   - Describe typical processes and procedures
-   - Identify applicable laws and regulations (generally)
-   - Explain legal terminology
+2. Issue Spotting & Legal Analysis
+   - Identify primary area of law (contract, tort, criminal, family, etc.)
+   - Spot potential legal issues and sub-issues
+   - Determine applicable statutes, regulations, and case law
+   - Identify key facts that would affect legal analysis
+   - Consider alternative legal theories
+   - Assess procedural posture if litigation involved
+   - Identify potential defenses or counterclaims
 
-4. Guide to Resources
-   - Recommend types of attorneys to consult
-   - Suggest legal aid resources if cost is concern
-   - Provide information on bar associations and attorney directories
-   - Explain how to prepare for attorney consultation
+3. Legal Research & Investigation
+   - Research controlling authority in relevant jurisdiction
+   - Review primary sources (statutes, regulations, case law)
+   - Consult secondary sources (treatises, law review articles, practice guides)
+   - Shepardize/KeyCite authorities to ensure current validity
+   - Research similar fact patterns and outcomes
+   - Review relevant court rules and procedures
+   - Identify gaps in law or unsettled questions
+   - Document research with proper citations (Bluebook/ALWD)
 
-5. Document and Disclaim
-   - Reiterate information vs. advice distinction
-   - Note jurisdictional limitations
-   - Recommend verification with licensed attorney
-   - Provide general timeline expectations
+4. Strategic Planning & Risk Assessment
+   - Analyze strengths and weaknesses of legal position
+   - Assess likelihood of success on each claim/defense
+   - Identify potential obstacles and challenges
+   - Evaluate costs vs. benefits of different approaches
+   - Consider settlement possibilities and alternatives to litigation
+   - Develop timeline with key deadlines and milestones
+   - Plan for contingencies and worst-case scenarios
+   - Discuss strategy options with client (if representation)
+
+5. Document Drafting & Review
+   - Draft documents using plain language when possible
+   - Include all necessary legal elements and components
+   - Ensure compliance with applicable rules and standards
+   - Incorporate relevant statutory language and case law
+   - Address potential counterarguments
+   - Review for accuracy, clarity, and completeness
+   - Proofread for errors (typos, citation errors, logical flaws)
+   - Obtain necessary signatures and notarizations
+
+6. Communication & Negotiation
+   - Communicate clearly and promptly with all parties
+   - Maintain professional courtesy and civility
+   - Document all substantive communications in writing
+   - Respond to opposing counsel within reasonable time
+   - Negotiate in good faith while zealously advocating for client
+   - Keep client informed of developments and decisions
+   - Manage client expectations regarding outcomes and timeline
+   - Use secure, confidential communication channels
+
+7. Court Proceedings & Representation
+   - File documents timely per court deadlines
+   - Comply with all local court rules and procedures
+   - Prepare thoroughly for hearings, depositions, trial
+   - Present arguments professionally and persuasively
+   - Object appropriately to preserve issues for appeal
+   - Make accurate record through testimony and exhibits
+   - Follow rules of evidence and procedure
+   - Treat court, opposing counsel, and all parties with respect
+
+8. Resolution & Follow-Through
+   - Negotiate favorable settlement when possible
+   - Draft settlement agreements with clear, enforceable terms
+   - If judgment obtained, take necessary steps for enforcement
+   - File post-judgment motions if needed (new trial, appeal)
+   - Complete all administrative requirements (filing, service, recording)
+   - Close out file with proper documentation
+   - Provide client with final accounting and documents
+   - Archive file per records retention requirements
 
 4) Deliverables
 - General legal information and explanations
@@ -120,6 +172,77 @@ Risk Management:
 - [ ] Disclaimers included
 
 6) Templates (paste-ready)
+
+=== Client Intake Questionnaire ===
+CLIENT INTAKE FORM
+Date: [MM/DD/YYYY]
+Attorney/Firm: [Name]
+Matter Type: [ ] Civil Litigation [ ] Criminal [ ] Family [ ] Estate [ ] Real Estate
+[ ] Business [ ] Employment [ ] Other: _____
+
+CLIENT INFORMATION:
+Name: _____________________
+Address: _____________________
+City: _________ State: ___ ZIP: _____
+Phone: (Home) _____ (Cell) _____ (Work) _____
+Email: _____
+Preferred Contact Method: [ ] Phone [ ] Email [ ] Mail
+Date of Birth: _____ Social Security #: _____ (optional)
+Employer: _____ Occupation: _____
+
+CONFLICT CHECK:
+Opposing Party/Parties: _____
+Related Parties: _____
+Prior Representation: [ ] No [ ] Yes - Details: _____
+Referral Source: _____
+
+MATTER DESCRIPTION:
+Nature of Legal Issue: _____
+Date Issue Arose: _____
+Parties Involved: _____
+Current Status: [ ] No action taken [ ] Demand letter sent [ ] Lawsuit filed
+[ ] Other: _____
+
+KEY FACTS (chronological order):
+[Date] - [Event description]
+[Date] - [Event description]
+[Continue as needed]
+
+DESIRED OUTCOME:
+Primary Goal: _____
+Acceptable Alternatives: _____
+
+URGENCY ASSESSMENT:
+Statute of Limitations: [ ] Not applicable [ ] Unknown [ ] Expires: [Date]
+Court Deadlines: [ ] None [ ] Pending: [Date and description]
+Other Time-Sensitive Issues: _____
+
+DOCUMENTS PROVIDED:
+[ ] Contracts/Agreements
+[ ] Correspondence (emails, letters)
+[ ] Court documents
+[ ] Financial records
+[ ] Medical records
+[ ] Police reports
+[ ] Photos/videos
+[ ] Other: _____
+
+QUESTIONS FOR ATTORNEY:
+1. _____
+2. _____
+3. _____
+
+BUDGET/FEE EXPECTATIONS:
+Estimated Budget: $_____
+Ability to Pay Retainer: [ ] Yes [ ] No [ ] Partial
+Payment Plan Interest: [ ] Yes [ ] No
+
+ATTORNEY NOTES:
+Initial Assessment: _____
+Conflicts: [ ] None identified [ ] Waivable [ ] Non-waivable
+Statute of Limitations: _____
+Recommended Next Steps: _____
+Fee Quote: $_____
 
 === Legal Information Disclaimer ===
 IMPORTANT: This is general legal information, not legal advice.
@@ -183,6 +306,519 @@ Free Legal Research Resources:
 - [State] Bar Association website
 - Public law library
 
+=== Engagement Letter/Retainer Agreement Template ===
+[LAW FIRM LETTERHEAD]
+
+ENGAGEMENT LETTER
+
+Date: [MM/DD/YYYY]
+
+[Client Name]
+[Client Address]
+[City, State ZIP]
+
+Re: Legal Representation in [Matter Description]
+
+Dear [Client Name]:
+
+Thank you for consulting with our firm. This letter confirms the terms of our engagement to represent you in the above-referenced matter.
+
+SCOPE OF REPRESENTATION:
+We agree to represent you in connection with: [Specific description of legal matter and scope of services]. This representation includes [list specific services]. This representation does not include [list exclusions].
+
+ATTORNEY RESPONSIBILITIES:
+We will:
+- Provide competent legal representation
+- Keep you reasonably informed of developments
+- Respond to your inquiries promptly
+- Maintain confidentiality
+- Advise you of significant decisions to be made
+- Exercise independent professional judgment
+
+CLIENT RESPONSIBILITIES:
+You agree to:
+- Provide complete and accurate information
+- Keep us informed of developments
+- Respond timely to our communications
+- Make decisions after our advice
+- Pay fees and costs as agreed
+- Inform us immediately of any deadline or time-sensitive matters
+
+FEES:
+Our fee arrangement is: [ ] Hourly [ ] Flat Fee [ ] Contingent [ ] Mixed
+
+Hourly Rate Structure:
+- Partner: $[###]/hour
+- Associate: $[###]/hour
+- Paralegal: $[###]/hour
+Rates subject to annual adjustment with notice.
+
+[OR]
+
+Flat Fee: $[####] for services described above.
+Additional services beyond scope: $[###]/hour
+
+[OR]
+
+Contingent Fee: [##]% of recovery
+- [##]% if settled before filing
+- [##]% if settled after filing
+- [##]% if trial required
+Client responsible for costs regardless of outcome.
+
+RETAINER:
+Initial retainer: $[####] due upon signing this agreement.
+Retainer is [  ] advance payment of fees [ ] security deposit held in trust.
+We will bill against retainer and request replenishment when balance falls below $[###].
+Unused retainer refunded upon conclusion of representation.
+
+COSTS AND EXPENSES:
+Costs advanced by firm and billed to you include:
+- Court filing fees
+- Service of process fees
+- Deposition transcripts
+- Expert witness fees
+- Travel expenses
+- Copying and document production
+- Postage and courier services
+- Online research fees (Westlaw/Lexis)
+
+Estimated costs: $[####] (subject to change)
+
+BILLING AND PAYMENT:
+Invoices sent [monthly/quarterly].
+Payment due within [30] days of invoice date.
+Interest of [#]% per month charged on overdue balances.
+Right to withdraw if fees not paid.
+
+TERMINATION:
+Either party may terminate this representation:
+- Client: At any time, for any reason
+- Attorney: For good cause with reasonable notice, subject to court approval if litigation pending
+
+Upon termination:
+- Client responsible for fees/costs incurred to date
+- We will provide file documents upon request
+- We will cooperate with successor counsel
+
+DISPUTE RESOLUTION:
+Fee disputes subject to [state] bar arbitration program.
+Other disputes subject to mediation before litigation.
+
+FILE RETENTION:
+Files retained for [7] years after case closure, then destroyed.
+Client may request file copies before destruction.
+
+SCOPE LIMITATIONS:
+This engagement does not create ongoing attorney-client relationship for other matters.
+Each new matter requires separate engagement agreement.
+Advice given based on law as of date provided; law changes over time.
+
+COMMUNICATION:
+Preferred methods: [Email/Phone/Mail]
+Response time: We aim to respond within [24-48] business hours.
+Emergencies: Call [phone] and identify as urgent.
+
+ACKNOWLEDGMENT:
+By signing below, you confirm that you have read, understand, and agree to the terms of this engagement letter.
+
+I have reviewed this engagement letter and agree to its terms. I understand:
+- The scope of representation
+- The fee arrangement
+- My responsibilities as a client
+- My right to terminate representation
+
+Client Signature: _______________________ Date: _______
+Print Name: _______________________
+
+Attorney Signature: _______________________ Date: _______
+Print Name: _______________________
+
+Please sign both copies and return one to our office. Keep the other for your records.
+
+=== Demand Letter Template ===
+[ATTORNEY LETTERHEAD or CLIENT ADDRESS if pre-litigation]
+
+Date: [MM/DD/YYYY]
+
+VIA [CERTIFIED MAIL, RETURN RECEIPT REQUESTED / EMAIL]
+
+[Recipient Name]
+[Recipient Address]
+[City, State ZIP]
+
+Re: Demand for [Payment/Performance/Cease and Desist] - [Matter Description]
+
+Dear [Recipient Name]:
+
+PURPOSE:
+This letter serves as formal demand for [payment/performance/cessation of conduct] in connection with [describe the underlying situation or transaction].
+
+BACKGROUND FACTS:
+[Provide chronological narrative of relevant facts]
+
+On [Date], [describe event].
+On [Date], [describe subsequent event].
+[Continue chronologically]
+
+Despite [multiple requests/contract obligations/legal requirements], you have [failed to pay/failed to perform/continued to engage in].
+
+LEGAL BASIS:
+Your [failure to pay/breach/conduct] constitutes [breach of contract/violation of statute/tortious conduct] under [applicable law].
+
+[For Contract Breach:]
+The written agreement dated [Date] requires you to [specific obligation]. Section [#] states: "[quote relevant provision]." You have breached this obligation by [specific breach].
+
+[For Statutory Violation:]
+[State statute citation] prohibits [conduct]. Your actions of [specific actions] violate this statute.
+
+[For Tort:]
+Your [negligent/intentional] conduct of [specific conduct] caused [harm/damages] to my client.
+
+DAMAGES/RELIEF SOUGHT:
+As a result of your [breach/violation/conduct], my client has suffered the following damages:
+1. [Specify damages with amounts]:
+   - Economic losses: $[####]
+   - [Additional damages]: $[####]
+   - Total: $[####]
+
+2. [For non-monetary relief]:
+   - [Specific performance required]
+   - [Cessation of conduct]
+   - [Other equitable relief]
+
+DEMAND:
+We demand that you:
+1. [Specific action required - e.g., Pay $[####] in full]
+2. [Additional requirements if applicable]
+3. [Timeline - e.g., Within 10 business days of receipt of this letter]
+
+Payment/Performance should be made to:
+[Payment instructions or performance specifics]
+
+CONSEQUENCES OF NON-COMPLIANCE:
+If you fail to comply with this demand by [specific date]:
+- We will file a lawsuit against you without further notice
+- You will be liable for all attorney's fees and costs
+- You may be liable for additional damages including interest and penalties
+- This matter will be reported to [credit bureaus/regulatory agencies if applicable]
+- [Other specific consequences]
+
+PRESERVE DOCUMENTS:
+You are on notice to preserve all documents, communications, and records related to this matter. Destruction of evidence may result in sanctions and adverse inferences.
+
+RIGHT TO CURE:
+[Optional - provide opportunity to cure if appropriate]
+If you dispute these claims or wish to discuss resolution, contact me within [5] business days.
+
+This letter is an attempt to resolve this matter without litigation and should not be construed as a waiver of any rights or remedies.
+
+Please govern yourself accordingly.
+
+Sincerely,
+
+[Attorney Signature]
+[Attorney Name, Esq.]
+[Bar Number]
+[Law Firm Name]
+[Address]
+[Phone]
+[Email]
+
+cc: [Client Name]
+
+Enclosures: [List any supporting documents]
+
+=== Motion Template (Federal Court) ===
+[COURT HEADING]
+
+UNITED STATES DISTRICT COURT
+[DISTRICT NAME]
+
+[Plaintiff Name],               )
+                                )
+        Plaintiff,              )  Case No. [#:##-cv-#####-XXX]
+                                )
+v.                              )  MOTION FOR [RELIEF SOUGHT]
+                                )
+[Defendant Name],               )  [Oral Argument Requested]
+                                )
+        Defendant.              )
+
+MOTION FOR [SPECIFIC RELIEF]
+
+[Plaintiff/Defendant], by and through undersigned counsel, hereby moves this Court pursuant to [cite Rule - e.g., Fed. R. Civ. P. 12(b)(6)] for an Order [specifically describe relief sought].
+
+This motion is based upon the accompanying Memorandum of Law, the pleadings and papers on file, and any oral argument the Court may permit.
+
+Respectfully submitted,
+
+Dated: [MM/DD/YYYY]            By: /s/ [Attorney Name]
+                                [Attorney Name, Esq.]
+                                [Bar Number]
+                                [Law Firm Name]
+                                [Address]
+                                [Phone]
+                                [Email]
+                                Attorney for [Plaintiff/Defendant]
+
+CERTIFICATE OF SERVICE
+
+I hereby certify that on [MM/DD/YYYY], a true and correct copy of the foregoing Motion was served upon all counsel of record via [ECF/email/mail] to:
+
+[Opposing Counsel Name, Esq.]
+[Law Firm]
+[Email Address]
+Attorney for [Party]
+
+                                /s/ [Attorney Name]
+                                [Attorney Name, Esq.]
+
+=== Memorandum of Law Template ===
+MEMORANDUM OF LAW IN SUPPORT OF MOTION FOR [RELIEF]
+
+TABLE OF CONTENTS
+I. INTRODUCTION.......................................................1
+II. STATEMENT OF FACTS..................................................1
+III. ARGUMENT...........................................................2
+    A. Standard of Review..............................................2
+    B. [First Legal Argument]...........................................3
+       1. [Sub-argument]...............................................3
+       2. [Sub-argument]...............................................4
+    C. [Second Legal Argument].........................................5
+IV. CONCLUSION..........................................................6
+
+TABLE OF AUTHORITIES
+Cases
+[Case name], [citation] ([court] [year])..............................#
+[Continue alphabetically]
+
+Statutes
+[Statute citation].....................................................#
+
+Rules
+[Rule citation]........................................................#
+
+Other Authorities
+[Secondary sources]....................................................#
+
+I. INTRODUCTION
+
+[Movant] respectfully submits this Memorandum of Law in support of its Motion for [relief sought]. [One-paragraph overview of motion and why it should be granted].
+
+II. STATEMENT OF FACTS
+
+[Chronological, objective recitation of relevant facts with record citations]
+
+[Date]: [Event] ([Citation to record - e.g., Complaint ¶ 12; Smith Aff. ¶ 5]).
+
+[Continue chronologically]
+
+III. ARGUMENT
+
+A. Standard of Review
+
+[State applicable legal standard with citation]
+
+[For example: "A motion to dismiss under Fed. R. Civ. P. 12(b)(6) tests the legal sufficiency of a complaint. [Case cite]. The court must accept all factual allegations as true and draw all reasonable inferences in the plaintiff's favor. [Case cite]."]
+
+B. [First Legal Argument - e.g., "Plaintiff's Complaint Fails to State a Claim"]
+
+[Topic sentence stating legal conclusion]
+
+1. [First Sub-Point]
+
+[Explanation with legal authority]
+
+[Rule statement:] [Quote or paraphrase controlling rule from statute or case law with proper citation].
+
+[Application to facts:] Here, [explain how rule applies to facts of this case].
+
+[Supporting authority:] This result is consistent with [cite cases with similar facts/holdings]. In [Case A], [explain holding]. [Citation]. Similarly, in [Case B], [explain holding]. [Citation].
+
+[Distinguish contrary authority if necessary:] The contrary result in [Case C] is distinguishable because [explain factual/legal distinctions]. [Citation].
+
+2. [Second Sub-Point]
+
+[Continue same analytical framework: Rule-Application-Support]
+
+C. [Second Legal Argument]
+
+[Continue with same analytical structure]
+
+IV. CONCLUSION
+
+For the foregoing reasons, [Movant] respectfully requests that this Court grant its Motion for [relief] and [specific order requested, including costs and attorney's fees if applicable].
+
+Respectfully submitted,
+
+Dated: [MM/DD/YYYY]            By: /s/ [Attorney Name]
+                                [Attorney Name, Esq.]
+                                [Bar Number]
+                                Attorney for [Movant]
+
+=== Discovery Request Template (Interrogatories) ===
+[COURT HEADING]
+
+[PLAINTIFF'S/DEFENDANT'S] FIRST SET OF INTERROGATORIES
+TO [DEFENDANT/PLAINTIFF]
+
+TO:     [Party Name]
+        c/o [Attorney Name, Esq.]
+        [Law Firm]
+        [Address]
+
+Pursuant to Fed. R. Civ. P. 33, [Propounding Party] propounds the following interrogatories to be answered under oath within thirty (30) days of service.
+
+INSTRUCTIONS AND DEFINITIONS
+
+A. "You" or "your" means [responding party] and its agents, employees, and representatives.
+
+B. "Document" means all writings and recordings of any kind, including electronic data.
+
+C. "Identify" when referring to a person means state the person's full name, current address, telephone number, and job title or relationship to this action.
+
+D. "Identify" when referring to a document means state the document's title, date, author, recipients, current location, and provide a brief description of its contents.
+
+E. These interrogatories are continuing in nature. You must supplement your responses if you obtain additional information.
+
+INTERROGATORIES
+
+INTERROGATORY NO. 1:
+State the full name, address, and telephone number of the person(s) answering these interrogatories, and if not a party, identify the party's relationship to the person answering.
+
+ANSWER:
+
+INTERROGATORY NO. 2:
+[Specific question - e.g., "Describe in detail all facts supporting your claim that..."]
+
+ANSWER:
+
+INTERROGATORY NO. 3:
+Identify each person you contend has knowledge of facts relevant to this action, including a brief summary of such person's knowledge.
+
+ANSWER:
+
+INTERROGATORY NO. 4:
+[Continue with specific interrogatories relevant to case]
+
+ANSWER:
+
+[Continue up to 25 interrogatories under federal rules, absent stipulation or court order]
+
+Respectfully submitted,
+
+Dated: [MM/DD/YYYY]            By: /s/ [Attorney Name]
+                                [Attorney Name, Esq.]
+                                Attorney for [Propounding Party]
+
+=== Settlement Agreement Template ===
+SETTLEMENT AGREEMENT AND MUTUAL RELEASE
+
+This Settlement Agreement and Mutual Release ("Agreement") is entered into as of [Date], by and between:
+
+[Party A Name] ("Party A")
+[Address]
+
+and
+
+[Party B Name] ("Party B")
+[Address]
+
+(collectively, the "Parties")
+
+RECITALS
+
+WHEREAS, a dispute has arisen between the Parties concerning [brief description of dispute];
+
+WHEREAS, [if litigation pending: "said dispute is the subject of litigation pending in [Court name], Case No. [####]"];
+
+WHEREAS, the Parties desire to resolve all disputes between them without further litigation;
+
+NOW, THEREFORE, in consideration of the mutual covenants and promises contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:
+
+1. PAYMENT
+
+1.1 Amount: Party [A/B] shall pay to Party [B/A] the sum of [Dollar amount in words and numbers: $####] (the "Settlement Payment").
+
+1.2 Method and Timing: Payment shall be made by [check/wire transfer/etc.] within [##] days of execution of this Agreement.
+
+1.3 Payment Address: [Specify where payment should be sent]
+
+2. DISMISSAL OF LITIGATION (if applicable)
+
+Within [##] days of receipt of the Settlement Payment, the Parties shall file a Stipulation of Dismissal with Prejudice of all claims in Case No. [####], with each party to bear its own attorney's fees and costs.
+
+3. MUTUAL RELEASE
+
+3.1 Release by Party A: Party A, on behalf of itself and its heirs, successors, and assigns, hereby releases and forever discharges Party B and its heirs, successors, and assigns from any and all claims, demands, damages, actions, and causes of action, whether known or unknown, arising out of or related to [describe released claims].
+
+3.2 Release by Party B: Party B, on behalf of itself and its heirs, successors, and assigns, hereby releases and forever discharges Party A and its heirs, successors, and assigns from any and all claims, demands, damages, actions, and causes of action, whether known or unknown, arising out of or related to [describe released claims].
+
+4. NO ADMISSION OF LIABILITY
+
+This Agreement is entered into as a compromise of disputed claims. Nothing in this Agreement shall be construed as an admission of liability, wrongdoing, or fault by any Party. Each Party specifically denies any liability or wrongdoing.
+
+5. CONFIDENTIALITY (optional)
+
+The Parties agree that the terms and existence of this Agreement shall remain strictly confidential and shall not be disclosed to any third party, except:
+a) As required by law or court order
+b) To the Parties' attorneys, accountants, and tax advisors
+c) To immediate family members
+d) As necessary to enforce this Agreement
+
+Breach of this confidentiality provision shall result in [specify remedy - e.g., return of settlement payment, liquidated damages].
+
+6. NON-DISPARAGEMENT (optional)
+
+The Parties agree not to make any negative, disparaging, or derogatory statements about each other, whether written or oral, to any third party.
+
+7. REPRESENTATIONS AND WARRANTIES
+
+Each Party represents and warrants that:
+a) It has full authority to enter into this Agreement
+b) It has consulted with legal counsel or had opportunity to do so
+c) It understands the terms of this Agreement
+d) It is not relying on any representations other than those in this Agreement
+
+8. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between the Parties and supersedes all prior negotiations, understandings, and agreements. This Agreement may not be modified except by written instrument signed by both Parties.
+
+9. GOVERNING LAW AND VENUE
+
+This Agreement shall be governed by the laws of the State of [State], without regard to conflict of law principles. Any dispute arising under this Agreement shall be subject to the exclusive jurisdiction of the courts of [State/County].
+
+10. SEVERABILITY
+
+If any provision of this Agreement is held invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+11. COUNTERPARTS
+
+This Agreement may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one instrument. Electronic signatures shall have the same effect as original signatures.
+
+12. BINDING EFFECT
+
+This Agreement shall be binding upon and inure to the benefit of the Parties and their respective heirs, successors, and assigns.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.
+
+PARTY A:                          PARTY B:
+
+_____________________________    _____________________________
+Signature                        Signature
+
+_____________________________    _____________________________
+Print Name                       Print Name
+
+Date: _______________________    Date: _______________________
+
+
+APPROVED AS TO FORM:             APPROVED AS TO FORM:
+
+_____________________________    _____________________________
+Attorney for Party A             Attorney for Party B
+
 === Common Legal Document Types ===
 Contracts & Agreements:
 - Purchase Agreement: Terms for buying/selling property or goods
@@ -208,7 +844,234 @@ Other Legal Documents:
 
 7) Examples of excellent outputs
 
-Example 1: Explaining Contract Basics
+Example 1: Comprehensive Legal Research Memo
+```
+MEMORANDUM
+
+TO:      Senior Partner
+FROM:    Associate Attorney
+DATE:    December 15, 2024
+RE:      Contract Enforceability - Oral Agreement for Real Estate Commission
+         Client: Sarah Johnson (Real Estate Agent)
+         Matter No.: 2024-1234
+
+QUESTION PRESENTED
+
+Under California law, is an oral agreement between a real estate agent and property seller for a 6% sales commission enforceable when the agent successfully procured a buyer, but no written listing agreement was executed?
+
+BRIEF ANSWER
+
+Probably not. California's Statute of Frauds requires real estate commission agreements to be in writing under Civil Code § 1624(d). While exceptions exist for part performance and promissory estoppel, they are narrowly applied and unlikely to apply here absent additional facts showing detrimental reliance beyond typical agent services.
+
+FACTS
+
+Our client, Sarah Johnson, is a licensed California real estate agent. In March 2024, she attended an open house at 123 Main Street, owned by Tom Henderson. During casual conversation, Henderson mentioned he was considering selling but "didn't want to sign anything." Johnson allegedly responded that she could "help find a buyer for the standard 6%." Henderson said "sounds good" and gave her his phone number.
+
+Over the next two months, Johnson:
+- Showed the property to three potential buyers
+- Arranged professional photography
+- Created marketing materials
+- Conducted two open houses
+- Negotiated with the eventual buyer
+
+In May 2024, Johnson introduced Henderson to the Chen family, who purchased the property for $800,000 (closed June 2024). Expected commission: $48,000.
+
+Henderson now refuses to pay, claiming:
+1. No written agreement was signed
+2. He "never formally hired" Johnson
+3. The Chens found the property online first (disputed)
+
+APPLICABLE LAW
+
+1. Statute of Frauds - California Civil Code § 1624(d)
+
+California Civil Code § 1624(d) requires the following contracts to be in writing:
+
+"An agreement authorizing or employing an agent, broker, or any other person to purchase or sell real estate, or to lease real estate for a longer period than one year, or to procure, introduce, or find a purchaser or seller of real estate or a lessee or lessor of real estate where the lease is for a longer period than one year, for compensation or a commission."
+
+This provision explicitly requires real estate commission agreements to be in writing. Oral agreements are unenforceable. *Sterling v. Taylor*, 40 Cal.4th 757, 766 (2007).
+
+2. Purpose of Writing Requirement
+
+The writing requirement serves to:
+- Prevent fraud and perjury
+- Provide certainty in real estate transactions
+- Protect consumers from unauthorized agents
+- Ensure clear terms of compensation
+
+*Phillippe v. Shapell Industries*, 43 Cal.3d 1247, 1256 (1987).
+
+3. Strict Application
+
+California courts strictly enforce Section 1624(d) against real estate brokers and agents. Unlike other Statute of Frauds provisions, real estate commission agreements receive particularly stringent treatment due to public policy concerns. *Moncharsh v. Heily & Blase*, 3 Cal.4th 1, 9 (1992).
+
+4. Exceptions (Narrow Application)
+
+Limited exceptions exist but are narrowly construed:
+
+a) Part Performance Exception
+
+The part performance exception generally does not apply to broker commission cases. *Sutton v. Warner*, 12 Cal.App.4th 415, 422 (1993). The doctrine requires:
+- Unequivocally referable to the contract
+- Acts beyond what an unlicensed person could do
+- Substantial detrimental reliance
+
+Merely providing broker services, even successfully, does not satisfy part performance. *Id.*
+
+b) Promissory Estoppel Exception
+
+Promissory estoppel may overcome the Statute of Frauds if:
+- Clear and unambiguous promise
+- Reasonable and foreseeable reliance
+- Injury from reliance
+- Justice requires enforcement
+
+*Granadino v. Wells Fargo Bank*, 236 Cal.App.4th 411, 417 (2015).
+
+However, courts rarely apply promissory estoppel to real estate commission disputes. *Monarco v. Lo Greco*, 35 Cal.2d 621, 624 (1950). The agent must show extraordinary circumstances beyond normal broker services.
+
+c) Ratification
+
+Post-transaction conduct acknowledging the agreement may create ratification. *Preis v. American Indemnity Co.*, 220 Cal.App.2d 127, 132 (1963). Examples:
+- Written acknowledgment of debt
+- Part payment of commission
+- Correspondence referring to "my broker"
+
+5. Quantum Meruit (Restitution)
+
+Some jurisdictions allow quantum meruit recovery for value of services provided, even without enforceable contract. *Maglica v. Maglica*, 66 Cal.App.4th 442, 449 (1998).
+
+However, California Real Estate Law § 10136 requires written authorization before services are provided. Agents who work without written agreement may be barred from all recovery, not just commission. *Phillippe*, supra.
+
+6. Licensing Law Implications
+
+Business and Professions Code § 10137 makes it unprofessional conduct to:
+- Claim, demand, or receive compensation without written agreement
+- Fail to comply with disclosure requirements
+
+Johnson could face disciplinary action from California Department of Real Estate, regardless of civil lawsuit outcome.
+
+ANALYSIS
+
+Application to Facts
+
+1. Statute of Frauds Requirement
+
+Johnson's claim fails the threshold writing requirement. The alleged oral "sounds good" statement does not constitute a signed writing. Civil Code § 1624(d) is not satisfied.
+
+Counterargument: Text messages or emails between parties might satisfy writing requirement if they:
+- Confirm agreement to pay commission
+- State material terms (6%, property address)
+- Are "signed" (electronic signature, typed name acceptable under Uniform Electronic Transactions Act)
+
+Required Facts: Review all communications for writings acknowledging agreement.
+
+2. Part Performance Exception
+
+Johnson's services likely do not qualify as part performance because:
+- Showing property and marketing are standard broker services
+- Not unequivocally referable to THIS contract (could be marketing for Henderson generally or seeking buyers for other listings)
+- Henderson did not obtain unique benefit he couldn't get elsewhere
+
+*Sutton*, supra, held similar services insufficient for part performance.
+
+Counterargument: If Johnson can show unique marketing efforts, substantial costs, or promises that induced her to forgo other opportunities, a court might find detrimental reliance.
+
+Required Facts: Document Johnson's specific expenditures, opportunity costs, and any unique actions induced by Henderson's promise.
+
+3. Promissory Estoppel
+
+Promissory estoppel faces steep hurdles:
+
+Strengths:
+- Henderson knew Johnson was working on his behalf
+- Johnson provided substantial services
+- Henderson benefited from the sale
+- Henderson may have induced Johnson to work by his statements
+
+Weaknesses:
+- Professional real estate agents assume risk of oral agreements
+- Johnson should have known writing was required (professional duty)
+- Normal course of broker business, not extraordinary reliance
+- Henderson made no false representations about signing later
+
+*Monarco* suggests courts are unsympathetic to professionals who ignore their own industry's requirements.
+
+Required Facts: Evidence Henderson actively discouraged written agreement or promised to "take care of" Johnson later.
+
+4. Ratification
+
+No evidence of post-sale ratification. Henderson has not:
+- Made any payments
+- Written acknowledgments
+- Referred to Johnson as "his agent"
+
+If such evidence exists, ratification might create written acknowledgment sufficient under Statute of Frauds.
+
+Required Facts: Review all post-sale communications and documents.
+
+5. Quantum Meruit
+
+Even if contract unenforceable, quantum meruit might allow recovery of reasonable value of services.
+
+Challenges:
+- Business & Professions Code § 10137 may bar all recovery for unlicensed-like activity (working without written authorization)
+- California courts split on whether Statute of Frauds bars restitution entirely
+- Risk of regulatory discipline
+
+Amount: If allowed, recovery would be reasonable value of services (potentially less than 6% commission), not contract price.
+
+6. Practical Considerations
+
+Litigation Costs vs. Recovery:
+- Attorney fees could exceed $20,000-$40,000 if case proceeds to trial
+- Uncertain outcome given legal barriers
+- Potential counterclaim by Henderson for unauthorized agency
+
+Reputational Risk:
+- DRE complaint possible
+- Other sellers might avoid Johnson
+- Professional liability insurance implications
+
+Alternative Resolution:
+- Negotiate settlement (25-50% of claimed commission?)
+- Mediation with California Association of Realtors
+- Small claims (limited to $10,000, but lower costs)
+
+CONCLUSION
+
+Johnson's claim faces substantial legal obstacles. The Statute of Frauds clearly requires a written agreement, and exceptions are narrowly construed against real estate professionals. While quantum meruit and promissory estoppel arguments exist, they face unfavorable precedent.
+
+RECOMMENDATION
+
+1. Immediate: Conduct thorough document review for any writings (texts, emails, notes) that might satisfy Statute of Frauds.
+
+2. If no writings found:
+   - Advise Johnson of unfavorable prospects (20-30% success probability)
+   - Discuss potential DRE discipline risk
+   - Recommend demand letter followed by mediation
+   - Consider settlement for $15,000-$25,000 to avoid litigation costs and regulatory risk
+
+3. If writings found or strong estoppel facts:
+   - Consider litigation with contingency arrangement
+   - Pursue multiple theories (estoppel, quantum meruit, ratification)
+   - Be prepared for $30,000-$50,000 in legal fees
+
+4. Preventive Measure:
+   - Remind Johnson of mandatory written listing agreement requirement
+   - Review firm's standard practices to prevent similar situations
+
+Please advise if you would like me to:
+- Research specific jurisdiction's variation (if Henderson or property in different county/state)
+- Draft demand letter
+- Prepare client advisory memo explaining risks and options
+
+Respectfully submitted,
+
+[Associate Name]
+```
+
+Example 2: Explaining Contract Basics
 ```
 Question: What makes a contract legally binding?
 
@@ -325,7 +1188,338 @@ IMPORTANT: This is a general overview. Actual procedures vary by:
 Consult with a litigation attorney for specific guidance.
 ```
 
-Example 3: AI Use in Legal Practice (Based on ABA Opinion 512)
+Example 3: Pre-Trial Motion Strategy and Drafting
+```
+CASE SCENARIO:
+Client sued for breach of contract. Plaintiff alleges client failed to deliver custom software per written agreement. Client claims contract was modified by subsequent oral agreement, and software was delivered per modified terms. Jurisdiction: Federal court (diversity), contract involves >$75,000.
+
+STRATEGIC ANALYSIS MEMO:
+
+TO:      Client
+FROM:    Trial Attorney
+RE:      Motion Strategy - Software Contract Litigation
+
+CURRENT POSTURE:
+Plaintiff filed Complaint (Day 1). We filed Answer (Day 21, admitted some facts, denied breach, asserted affirmative defenses). Discovery deadline in 180 days, trial in 12 months.
+
+POTENTIAL MOTIONS:
+
+1. Motion to Dismiss (12(b)(6)) - Failed to State Claim
+PROS:
+- Early resolution, low cost
+- No discovery needed if successful
+- Plaintiff bears burden
+
+CONS:
+- Must accept plaintiff's facts as true
+- Rarely granted in contract cases with written agreement
+- Plaintiff will likely amend complaint if dismissed
+- Our oral modification defense won't be considered (outside pleadings)
+
+RECOMMENDATION: Do not file. Unlikely to succeed and shows weak defense strategy.
+
+2. Motion for More Definite Statement (12(e))
+PROS:
+- Forces plaintiff to clarify vague allegations
+- Delays discovery obligations slightly
+
+CONS:
+- Complaint appears sufficiently clear
+- Court likely to deny as delaying tactic
+- Wastes filing fee and attorney time
+
+RECOMMENDATION: Do not file. Complaint is adequate.
+
+3. Motion to Compel Arbitration (9)
+PROS:
+- If arbitration clause exists, binding alternative to litigation
+- Private forum, potentially faster
+- Limited discovery typically
+- Limited appeal rights (can be pro or con)
+
+CONS:
+- Contract review shows no arbitration clause
+- Motion would be frivolous
+
+RECOMMENDATION: Not applicable.
+
+4. Motion for Summary Judgment (56) - After Discovery
+PROS:
+- Can win case without trial
+- Forces plaintiff to produce evidence
+- Narrows issues even if partially granted
+- Shows confidence in position
+
+CONS:
+- Requires substantial discovery completion
+- Expensive (attorney time for briefing)
+- Our oral modification defense requires credibility determinations (fact issue for jury)
+- Parol evidence rule complications
+
+TIMING: File after depositions completed (Month 8-9)
+
+STRATEGY: Motion likely appropriate for partial summary judgment on damages calculations, even if liability goes to trial.
+
+RECOMMENDATION: Plan for motion on damages issue after discovery.
+
+5. Motion in Limine (Before Trial)
+PROS:
+- Excludes prejudicial or inadmissible evidence
+- Shapes trial presentation
+- Preserves issues for appeal
+
+ISSUES TO EXCLUDE:
+- Client's financial condition (irrelevant to breach, prejudicial)
+- Subsequent contracts with other vendors (irrelevant)
+- Hearsay statements not within exceptions
+
+TIMING: File 2-3 weeks before trial
+
+RECOMMENDATION: Prepare motions in limine list now; file pre-trial.
+
+SELECTED MOTION STRATEGY:
+
+PHASE 1 (Now - Month 3): Discovery Focus
+- Aggressive written discovery
+- Identify oral modification witnesses
+- Obtain all communications re: contract changes
+- Document client's performance
+
+PHASE 2 (Months 4-7): Depositions
+- Depose plaintiff's representatives re: conversations about modifications
+- Depose witnesses to oral modification
+- Expert on software industry custom and practice (oral modifications common)
+
+PHASE 3 (Month 8): Summary Judgment Motion
+- File partial summary judgment on damages
+- Argue plaintiff's damages calculation flawed
+- Even if liability disputed, reduce exposure
+
+PHASE 4 (Month 10-11): Trial Prep
+- Motion in limine to exclude prejudicial evidence
+- Prepare trial exhibits and witnesses
+- Settlement negotiations (with damages exposure reduced by MSJ)
+
+ESTIMATED COSTS:
+- Summary judgment motion: $15,000-$25,000 (briefing, research, hearing)
+- Motions in limine: $5,000-$8,000
+- Total motion practice: $20,000-$33,000
+
+EXPECTED OUTCOMES:
+- MSJ Success: 40% chance of reducing damages claim by 30-50%
+- MSJ Failure: 60% chance, but narrows trial issues and shows judge our position
+- Overall: Motion practice increases settlement leverage
+
+CLIENT DECISION:
+Approve motion strategy? [ ] Yes [ ] No
+Alternative approach: _____
+
+SAMPLE MOTION (Summary Judgment on Damages):
+
+[See Motion Template in Section 6 above for format]
+
+Key Arguments:
+1. Plaintiff's damages calculation includes speculative lost profits without foundation
+2. Plaintiff failed to mitigate damages by seeking alternative vendor
+3. Contract liquidated damages clause caps recovery at $50,000
+4. Even assuming breach (disputed), consequential damages were not foreseeable
+
+Supporting Evidence:
+- Expert declaration: Software developer's lost profit calculation unreliable
+- Contract Section 12: Liquidated damages clause
+- Plaintiff's deposition: Admitted no attempt to hire replacement vendor for 6 months
+- Industry standard: Consequential damages require specific notice in software contracts
+
+This motion serves multiple purposes:
+a) Reduces potential exposure if unsuccessful at trial
+b) Demonstrates to plaintiff weakness in damages case
+c) Increases settlement value (plaintiff faces reduced recovery even if wins)
+d) Preserves issue for appeal if motion denied
+```
+
+Example 4: Client Advisory - Litigation Decision Tree
+```
+CLIENT ADVISORY MEMORANDUM
+
+TO:      ABC Corporation
+FROM:    Outside Counsel
+RE:      Employment Discrimination Claim - Decision Analysis
+DATE:    December 15, 2024
+
+SITUATION:
+Former employee filed EEOC charge alleging age discrimination (termination at age 62). EEOC issued Right to Sue letter. Employee has 90 days to file federal lawsuit (deadline: January 15, 2025). Employee's attorney sent settlement demand: $250,000.
+
+DECISION TREE ANALYSIS:
+
+OPTION 1: SETTLE NOW ($250,000 demand)
+PROS:
+✓ Certainty - Matter resolved
+✓ Lower total cost than litigation
+✓ No discovery of sensitive company information
+✓ No public trial or publicity
+✓ Preserves management time
+✓ No risk of higher verdict
+✓ Confidential resolution possible
+
+CONS:
+✗ Substantial payment
+✗ May encourage future claims
+✗ Does not establish company's defense
+✗ Still need to pay attorney fees for settlement documents (~$5,000)
+
+ESTIMATED TOTAL COST: $255,000
+
+OPTION 2: NEGOTIATE LOWER SETTLEMENT
+PROS:
+✓ Certainty if successful
+✓ Lower cost than demand
+✓ Confidential resolution
+✓ Avoids litigation expenses
+
+CONS:
+✗ May not succeed (employee may file suit)
+✗ Shows initial willingness to pay (affects later leverage)
+✗ Requires time to negotiate
+✗ Attorney fees for negotiation (~$10,000-$15,000)
+
+ESTIMATED TOTAL COST: $100,000-$150,000 (if successful at 40-60% of demand)
+RISK: If negotiation fails, proceed to Option 3
+
+OPTION 3: LITIGATE (Federal Court)
+STAGE 1: Pre-Answer Motion to Dismiss
+Cost: $20,000-$30,000
+Success Rate: 15-20% (age discrimination cases rarely dismissed early)
+Timeline: 3-4 months
+
+STAGE 2: Discovery (If Motion Fails)
+Cost: $75,000-$125,000
+- Written discovery
+- Document production (extensive HR files, emails)
+- Depositions (plaintiff, HR manager, decision-makers, witnesses)
+- Expert witnesses (vocational, economic damages)
+Timeline: 8-12 months
+
+STAGE 3: Summary Judgment Motion
+Cost: $30,000-$50,000
+Success Rate: 30-40% (if strong evidence of legitimate business reason)
+Timeline: 2-3 months
+
+STAGE 4: Trial (If Summary Judgment Denied/Partial)
+Cost: $100,000-$200,000
+- Trial preparation
+- Jury selection
+- 3-5 day trial
+- Witnesses
+- Exhibits
+Verdict Risk: $0 to $500,000+ (unpredictable jury)
+Timeline: 2-3 weeks
+
+STAGE 5: Post-Trial/Appeal (If Lose)
+Cost: $50,000-$100,000
+Timeline: 1-2 years
+
+ESTIMATED TOTAL COST IF LITIGATE THROUGH TRIAL:
+- Attorney Fees: $275,000-$505,000
+- If Lose: + Judgment ($0-$500,000+) + Plaintiff's Attorney Fees (~$300,000)
+- If Win: $275,000-$505,000 (attorney fees)
+
+BEST CASE: Win at summary judgment = $125,000-$205,000 invested
+WORST CASE: Lose at trial + appeal = $1,075,000+
+LIKELY CASE: Settle during discovery = $100,000-$200,000 + attorney fees $100,000-$150,000 = $200,000-$350,000
+
+OPTION 4: MEDIATION (Before or After Filing)
+PROS:
+✓ Settlement more likely than direct negotiation (65-75% success rate)
+✓ Less expensive than trial
+✓ Neutral mediator helps narrow positions
+✓ Confidential
+✓ Preserves business relationship (if desired)
+
+CONS:
+✗ Costs $2,000-$5,000 for mediator
+✗ Attorney prep and attendance $8,000-$15,000
+✗ May not succeed (then proceeds to litigation)
+✗ Shows willingness to compromise
+
+ESTIMATED COST IF SUCCESSFUL: $75,000-$175,000 (settlement) + $10,000-$20,000 (mediation/legal fees)
+
+CASE EVALUATION:
+
+STRENGTHS OF DEFENSE:
+✓ Legitimate business reason for termination: Position eliminated in reorganization
+✓ Younger employees also terminated in same reorganization
+✓ Performance issues documented before termination
+✓ No direct evidence of age-based comments
+✓ Strong written policies against discrimination
+
+WEAKNESSES OF DEFENSE:
+✗ Plaintiff's performance reviews were "satisfactory" until 6 months before termination
+✗ Replacement hired (age 35) within 3 months
+✗ Manager made comment "need fresh energy" (could be interpreted as age-related)
+✗ Plaintiff was only terminated employee >60 years old
+✗ Statistical evidence: 15 employees terminated, average age 41
+
+RISK ASSESSMENT:
+- Probability Plaintiff Wins at Trial: 40-50%
+- If Wins, Expected Verdict: $300,000-$400,000 (lost wages, emotional distress)
+- + Plaintiff's Attorney Fees: $250,000-$400,000
+- Total Exposure if Lose: $550,000-$800,000
+
+EXPECTED VALUE CALCULATION:
+(Probability Win x $0) + (Probability Lose x Average Verdict + Attorney Fees)
+= (50% x $0) + (50% x $650,000) + Our Attorney Fees $300,000
+= $0 + $325,000 + $300,000
+= $625,000 expected total cost if litigate
+
+RECOMMENDATION:
+
+TIER 1: PREFERRED STRATEGY
+Attempt early mediation with opening offer $75,000-$100,000, authority up to $150,000. If successful, total cost including legal fees: $85,000-$170,000. This is substantially less than expected litigation cost ($625,000) and avoids business disruption.
+
+TIER 2: IF MEDIATION FAILS
+Litigate through discovery (9-12 months), then mandatory mediation. By that point, both sides will have better information and settlement range narrows. Expected resolution: $125,000-$200,000 + legal fees $100,000-$150,000 = $225,000-$350,000 total.
+
+TIER 3: ONLY IF TIER 2 FAILS
+Trial. Given 40-50% win probability and significant cost, trial is least favorable option. However, if discovery reveals strong evidence of legitimate business reason and no discriminatory animus, summary judgment becomes more likely (could win for ~$150,000 total cost).
+
+BUSINESS FACTORS TO CONSIDER:
+1. Precedent: Will paying this claim encourage others? (3 other employees >60 also terminated)
+2. Insurance: Does EPLI policy cover this? (Check policy limits and deductible)
+3. Management Time: CEO and HR Director would spend 50-100 hours in depositions, trial prep, testimony
+4. Publicity: Public trial creates negative press, employee morale issues
+5. Document Preservation: Already in litigation hold; continuing burden
+6. Stress: Management distraction from business operations
+
+TAX CONSIDERATIONS:
+Settlement payments:
+- Emotional distress damages: Taxable to plaintiff
+- Lost wages: Taxable to plaintiff
+- Company: Deductible as ordinary business expense
+- Legal fees: Deductible
+
+DECISION POINTS:
+
+IMMEDIATE (By December 30):
+[ ] Approve mediation (Cost: $10,000-$20,000 investment)
+[ ] Counter-offer directly (e.g., $100,000)
+[ ] Prepare to defend lawsuit
+
+IF LAWSUIT FILED (By January 15, 2025):
+[ ] Motion to dismiss (Cost: $20,000-$30,000, Low success probability)
+[ ] Answer and proceed to discovery
+[ ] Request court-ordered mediation
+
+AUTHORITY NEEDED:
+Settlement authority: $_______ (Recommended: $150,000 maximum)
+Litigation budget if settlement fails: $_______ (Recommended: $200,000 for discovery phase)
+
+Please advise your decision and authority levels. Time is critical - deadline is January 15, 2025.
+
+Respectfully submitted,
+[Attorney Name]
+```
+
+Example 5: AI Use in Legal Practice (Based on ABA Opinion 512)
 ```
 Question: Can lawyers use AI tools like ChatGPT?
 
@@ -383,21 +1577,190 @@ For specifics about your jurisdiction:
 
 8) Vocabulary and standards
 
-Key Terms:
-- **Legal Advice**: Application of law to specific facts requiring professional judgment
-- **Legal Information**: General explanation of laws and legal processes
-- **Attorney-Client Privilege**: Confidential communications protected from disclosure
-- **Statute of Limitations**: Deadline to file lawsuit
-- **Jurisdiction**: Geographic/subject area where court has authority
-- **Precedent**: Prior court decision that guides future cases
-- **Brief**: Written legal argument
-- **Discovery**: Pre-trial evidence gathering process
-- **Motion**: Formal request to court for ruling
-- **Pleading**: Formal court documents (complaint, answer)
-- **Tort**: Civil wrong causing harm (negligence, defamation, etc.)
-- **Liability**: Legal responsibility
-- **Damages**: Money awarded for harm
-- **Injunction**: Court order to do or stop doing something
+Key Terms - Legal Concepts:
+- **Legal Advice**: Application of law to specific facts requiring professional judgment and attorney-client relationship
+- **Legal Information**: General explanation of laws and legal processes available to public
+- **Attorney-Client Privilege**: Confidential communications between attorney and client protected from disclosure
+- **Work Product Doctrine**: Protection for attorney's mental impressions, strategies, and trial preparation materials
+- **Statute of Limitations (SOL)**: Time deadline to file lawsuit (varies by claim type and jurisdiction)
+- **Statute of Repose**: Absolute deadline regardless of when injury discovered
+- **Jurisdiction**: Court's authority over subject matter, parties, or geographic area
+- **Personal Jurisdiction**: Court's power over specific defendant
+- **Subject Matter Jurisdiction**: Court's authority to hear specific type of case
+- **Venue**: Proper geographic location for lawsuit within jurisdiction
+- **Standing**: Plaintiff's legal right to bring lawsuit (injury, causation, redressability)
+- **Justiciability**: Whether dispute is appropriate for court resolution
+
+Key Terms - Civil Procedure:
+- **Complaint/Petition**: Document initiating lawsuit, alleging claims
+- **Answer**: Defendant's response to complaint (admissions, denials, affirmative defenses)
+- **Counterclaim**: Defendant's claim against plaintiff
+- **Cross-Claim**: Claim between co-parties (co-defendants or co-plaintiffs)
+- **Third-Party Complaint (Impleader)**: Defendant brings in new party who may be liable
+- **Pleading**: Formal court documents establishing claims and defenses
+- **Motion**: Formal written request for court order or ruling
+- **Brief**: Written legal argument supporting motion or position
+- **Memorandum of Law**: Detailed legal argument with authorities
+- **Discovery**: Pre-trial process of obtaining evidence from opposing party
+- **Interrogatories**: Written questions requiring sworn written answers
+- **Requests for Production**: Demand for documents and tangible evidence
+- **Requests for Admission**: Statements party must admit or deny
+- **Deposition**: Sworn oral testimony taken before trial
+- **Subpoena**: Court order compelling testimony or document production
+- **Subpoena Duces Tecum**: Subpoena requiring documents
+- **Summary Judgment**: Pre-trial ruling that no genuine dispute of material fact exists
+- **Default Judgment**: Judgment for plaintiff when defendant fails to respond
+- **Judgment**: Court's final determination of case
+- **Appeal**: Request for higher court to review lower court's decision
+- **Writ of Execution**: Order to enforce money judgment
+
+Key Terms - Evidence:
+- **Admissible Evidence**: Evidence court may consider
+- **Relevant Evidence**: Evidence tending to prove/disprove material fact
+- **Material Evidence**: Evidence affecting case outcome
+- **Probative Value**: Evidence's tendency to prove fact
+- **Prejudicial Evidence**: Evidence causing unfair prejudice outweighing probative value
+- **Hearsay**: Out-of-court statement offered for truth of matter asserted
+- **Hearsay Exception**: Categories of hearsay deemed reliable and admissible
+- **Authentication**: Proof that evidence is what proponent claims
+- **Foundation**: Preliminary showing required before evidence admitted
+- **Best Evidence Rule**: Original document required when contents at issue
+- **Presumption**: Rule requiring fact be taken as true absent contrary evidence
+- **Burden of Proof**: Party's responsibility to prove case
+- **Preponderance of Evidence**: Civil standard (more likely than not, >50%)
+- **Clear and Convincing**: Heightened civil standard (substantially more likely than not)
+- **Beyond Reasonable Doubt**: Criminal standard (no reasonable doubt)
+- **Prima Facie Case**: Minimum evidence to avoid dismissal
+- **Circumstantial Evidence**: Indirect evidence requiring inference
+- **Direct Evidence**: Evidence directly proving fact without inference
+- **Demonstrative Evidence**: Evidence illustrating/explaining (charts, models)
+
+Key Terms - Legal Theories:
+- **Tort**: Civil wrong causing harm to person or property
+- **Negligence**: Breach of duty of care causing harm
+- **Strict Liability**: Liability without proof of fault (certain activities, products)
+- **Intentional Tort**: Deliberate harm (assault, battery, false imprisonment)
+- **Breach of Contract**: Failure to perform contractual obligation
+- **Fraud/Misrepresentation**: False statement inducing reliance and causing harm
+- **Unjust Enrichment**: Benefit retained at another's expense without legal basis
+- **Quantum Meruit**: Recovery for value of services provided
+- **Promissory Estoppel**: Enforcement of promise based on detrimental reliance
+- **Specific Performance**: Court order requiring contractual performance (not just damages)
+- **Rescission**: Cancellation of contract returning parties to pre-contract position
+- **Reformation**: Court modification of contract to reflect true agreement
+
+Key Terms - Remedies:
+- **Compensatory Damages**: Money for actual losses (economic and non-economic)
+- **Special Damages**: Specific quantifiable losses (medical bills, lost wages)
+- **General Damages**: Non-quantifiable losses (pain and suffering, emotional distress)
+- **Punitive Damages**: Punishment for egregious conduct (not in all cases/jurisdictions)
+- **Nominal Damages**: Token amount when rights violated but no substantial harm
+- **Liquidated Damages**: Pre-agreed amount in contract for breach
+- **Treble Damages**: Triple actual damages (some statutes)
+- **Injunctive Relief**: Court order to do or cease doing something
+- **Declaratory Relief**: Court declaration of parties' rights without ordering action
+- **Equitable Relief**: Non-monetary remedies (injunction, specific performance)
+- **Attorney's Fees**: Recovering winning party's legal costs (when statute/contract allows)
+- **Costs**: Court filing fees, service fees, deposition costs (usually to winner)
+
+Key Terms - Litigation Stages:
+- **Demand Letter**: Pre-suit letter demanding action or payment
+- **Pre-Litigation**: Period before lawsuit filed
+- **Filing**: Submitting complaint to court initiating case
+- **Service of Process**: Formal delivery of lawsuit to defendant
+- **Responsive Pleading**: Answer or motion in response to complaint
+- **Discovery Phase**: Evidence gathering period (typically months)
+- **Expert Disclosure**: Identification of expert witnesses and their opinions
+- **Dispositive Motion**: Motion potentially resolving case (summary judgment, motion to dismiss)
+- **Pre-Trial Conference**: Meeting with judge to prepare for trial
+- **Settlement Conference**: Court-facilitated negotiation session
+- **Mediation**: Voluntary negotiation with neutral mediator
+- **Arbitration**: Private dispute resolution by arbitrator (binding or non-binding)
+- **Trial**: Formal proceeding before judge or jury
+- **Verdict**: Jury's decision on facts
+- **Judgment**: Court's final ruling incorporating verdict
+- **Post-Trial Motions**: Motions for new trial, judgment notwithstanding verdict (JNOV)
+- **Notice of Appeal**: Document initiating appeal process
+- **Appellate Brief**: Written argument to appellate court
+- **Oral Argument**: Attorneys' presentation to appellate court
+- **Remand**: Appellate court returns case to lower court
+- **Affirmance**: Appellate court upholds lower court decision
+- **Reversal**: Appellate court overturns lower court decision
+
+Key Terms - Legal Practice:
+- **Retainer**: Advance payment for legal services
+- **Hourly Rate**: Attorney fee based on time spent
+- **Flat Fee**: Fixed fee for specific service
+- **Contingency Fee**: Fee based on percentage of recovery
+- **Pro Bono**: Free legal services for public good
+- **Legal Aid**: Free/low-cost services for indigent clients
+- **Conflict of Interest**: Situation where attorney's duties to different clients clash
+- **Engagement Letter**: Contract establishing attorney-client relationship
+- **Scope of Representation**: Boundaries of what attorney will do
+- **Withdrawal**: Attorney ending representation (with court permission if litigation pending)
+- **Disqualification**: Court order removing attorney from case
+- **Malpractice**: Attorney's negligence or breach of duty to client
+- **Vicarious Liability**: Responsibility for another's actions (partner for associate)
+- **Continuing Legal Education (CLE)**: Mandatory ongoing attorney training
+- **Pro Hac Vice**: Admission to practice in jurisdiction where not licensed (specific case)
+
+Key Terms - Criminal Law (if applicable):
+- **Arraignment**: Initial court appearance, defendant enters plea
+- **Bail**: Security for defendant's release pending trial
+- **Grand Jury**: Body determining if probable cause for criminal charges
+- **Indictment**: Formal criminal charge from grand jury
+- **Information**: Criminal charge filed by prosecutor (without grand jury)
+- **Plea Bargain**: Negotiated agreement to plead guilty to lesser charge
+- **Preliminary Hearing**: Hearing to determine if probable cause to proceed
+- **Miranda Rights**: Constitutional rights read upon arrest
+- **Probable Cause**: Reasonable belief crime committed
+- **Reasonable Suspicion**: Lower standard for investigative stop
+- **Search Warrant**: Court authorization to search property
+- **Exclusionary Rule**: Evidence obtained illegally cannot be used
+- **Habeas Corpus**: Petition challenging unlawful detention
+- **Double Jeopardy**: Protection against being tried twice for same offense
+- **Sentencing**: Imposition of punishment after conviction
+
+Key Terms - Contracts:
+- **Offer**: Proposal creating power of acceptance
+- **Acceptance**: Agreement to offer's exact terms
+- **Consideration**: Something of value exchanged
+- **Capacity**: Legal ability to contract
+- **Mutual Assent**: Meeting of the minds
+- **Statute of Frauds**: Certain contracts must be in writing
+- **Parol Evidence Rule**: Extrinsic evidence generally inadmissible to vary written contract
+- **Material Breach**: Substantial failure to perform allowing termination
+- **Minor Breach**: Partial failure not allowing termination
+- **Anticipatory Repudiation**: Clear indication party won't perform
+- **Substantial Performance**: Nearly complete performance sufficient for payment
+- **Force Majeure**: Unforeseeable circumstances excusing performance
+- **Impossibility**: Performance objectively impossible (excuses performance)
+- **Impracticability**: Performance unreasonably difficult (may excuse)
+- **Frustration of Purpose**: Underlying reason for contract destroyed
+
+Legal Latin Terms:
+- **Pro se / Pro per**: Representing oneself
+- **In propria persona**: In one's own person
+- **Amicus curiae**: Friend of the court (non-party brief)
+- **Res judicata**: Matter already judged (bars re-litigation)
+- **Collateral estoppel**: Issue preclusion
+- **Stare decisis**: Following precedent
+- **De novo**: Anew, from the beginning (standard of appellate review)
+- **Prima facie**: On its face, at first appearance
+- **Per se**: By itself, inherently
+- **Sua sponte**: Court's own initiative
+- **In camera**: In private (judge's chambers)
+- **Ex parte**: One-sided, without opposing party present
+- **Voir dire**: Jury selection questioning
+- **Habeas corpus**: Produce the body (challenge detention)
+- **Mandamus**: Court order compelling official action
+- **Certiorari**: Discretionary appellate review (Supreme Court)
+- **Quantum meruit**: As much as deserved
+- **Quid pro quo**: This for that
+- **Status quo**: Existing state
+- **Ipso facto**: By the fact itself
+- **De minimis**: Too trivial for court consideration
+- **Sine qua non**: Essential element
 
 Standards & Frameworks (2024):
 - **ABA Model Rules of Professional Conduct**: Core ethics rules for attorneys
