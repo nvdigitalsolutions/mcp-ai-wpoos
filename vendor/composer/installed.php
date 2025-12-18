@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-profession-playbook-system',
-        'version' => 'dev-copilot/add-profession-playbook-system',
-        'reference' => 'd8f4492acf69e050a24fc8d227a0d0ce7a96862f',
+        'pretty_version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
+        'version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
+        'reference' => 'ef2771e3897bbd265971453924e1916a279a98a8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-profession-playbook-system',
-            'version' => 'dev-copilot/add-profession-playbook-system',
-            'reference' => 'd8f4492acf69e050a24fc8d227a0d0ce7a96862f',
+            'pretty_version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
+            'version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
+            'reference' => 'ef2771e3897bbd265971453924e1916a279a98a8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
