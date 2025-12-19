@@ -161,23 +161,21 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	</p>
 	<p>
 		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong></label>
-		<?php if ( ! empty( $models ) ) : ?>
-			<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
-				<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+		<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
+			<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+			<?php if ( ! empty( $models ) ) : ?>
 				<?php foreach ( $models as $model_id => $model_name ) : ?>
 					<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model, $model_id ); ?>>
 						<?php echo esc_html( $model_name ); ?>
 					</option>
 				<?php endforeach; ?>
-				<?php if ( $model && ! isset( $models[ $model ] ) ) : ?>
-					<option value="<?php echo esc_attr( $model ); ?>" selected="selected">
-						<?php echo esc_html( $model ); ?> (custom)
-					</option>
-				<?php endif; ?>
-			</select>
-		<?php else : ?>
-			<input type="text" id="wp-mcp-ai-model" name="wp_mcp_ai_model" value="<?php echo esc_attr( $model ); ?>" class="widefat" />
-		<?php endif; ?>
+			<?php endif; ?>
+			<?php if ( $model && ( empty( $models ) || ! isset( $models[ $model ] ) ) ) : ?>
+				<option value="<?php echo esc_attr( $model ); ?>" selected="selected">
+					<?php echo esc_html( $model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
+				</option>
+			<?php endif; ?>
+		</select>
 	</p>
 	<p>
 		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong></label>
