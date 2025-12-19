@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-model-5-2-to-dropdown',
+        'version' => 'dev-copilot/add-model-5-2-to-dropdown',
+        'reference' => '58ec8eb18d3d6e7253129724691795fa832eb7eb',
         'pretty_version' => 'dev-copilot/perform-code-review-yet-again',
         'version' => 'dev-copilot/perform-code-review-yet-again',
         'reference' => 'fe1b8c5870a8f9296adbf50c60fc4b61f980e725',
@@ -47,6 +50,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-model-5-2-to-dropdown',
+            'version' => 'dev-copilot/add-model-5-2-to-dropdown',
+            'reference' => '58ec8eb18d3d6e7253129724691795fa832eb7eb',
             'pretty_version' => 'dev-copilot/perform-code-review-yet-again',
             'version' => 'dev-copilot/perform-code-review-yet-again',
             'reference' => 'fe1b8c5870a8f9296adbf50c60fc4b61f980e725',
