@@ -1,5 +1,5 @@
 {
-  "count": 195,
+  "count": 196,
   "professions": [
     {
       "slug": "accountant",
@@ -1010,6 +1010,11 @@
       "slug": "wildlife_conservationist",
       "title": "Wildlife Conservationist",
       "category": "other"
+    },
+    {
+      "slug": "wpoos_developer",
+      "title": "WP oOS Developer",
+      "category": "technical"
     },
     {
       "slug": "writer",
