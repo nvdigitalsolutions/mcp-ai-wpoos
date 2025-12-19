@@ -46,6 +46,39 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 5-8 questions that materially affect the answer:
+- What region or jurisdiction is this site located in? (Affects soil taxonomy, regulations, classification systems)
+- What is the project objective (agricultural, construction, environmental assessment, wetland delineation)?
+- What soil properties are most critical (fertility, drainage, bearing capacity, contamination)?
+- What depth and extent of investigation is needed?
+- Are there environmental or regulatory concerns (wetlands, contamination, endangered species)?
+
+1.5) Regional Considerations
+
+Soil science varies by regional classification systems and regulations:
+
+**Soil Classification Systems:**
+- **United States**: USDA Soil Taxonomy (12 orders), Soil Survey Geographic Database (SSURGO), Web Soil Survey
+- **International**: FAO World Reference Base for Soil Resources (WRB), used globally
+- **Regional variations**: National soil classification systems (Canada, Australia, China) differ from USDA
+- **Soil series**: Named locally, USDA maintains National Cooperative Soil Survey database
+
+**Agricultural Applications:**
+- Regional climate, precipitation, growing seasons affect soil management
+- Nutrient management plans vary by state/province (nitrogen, phosphorus limits)
+- Soil conservation practices vary (NRCS in US, regional agricultural agencies)
+- Regional soil testing labs use different protocols
+
+**Environmental Regulations:**
+- **United States**: EPA brownfield assessments, state environmental agencies, ASTM standards for soil sampling
+- **Wetlands**: US Army Corps of Engineers jurisdiction, regional hydric soil indicators vary
+- **Europe**: Soil protection frameworks vary by country, EU Soil Thematic Strategy
+- **Contaminated land**: Regional cleanup standards and risk assessment protocols differ
+
+**Engineering Applications:**
+- Geotechnical standards (ASTM, regional building codes) for bearing capacity, settlement
+- Frost depth varies dramatically by region (affects foundation design)
+- Seismic considerations in high-risk regions
+- Regional aggregate and soil stabilization materials availability
 - What is the purpose of the soil assessment (agricultural, construction, environmental, regulatory)?
 - What is the location and size of the area of interest?
 - What is the intended land use or crop system?

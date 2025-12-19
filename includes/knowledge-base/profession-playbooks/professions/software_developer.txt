@@ -47,13 +47,39 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 5–8 questions that materially affect the solution:
-1. **Functionality**: What specific feature or problem needs to be solved? What are the success criteria?
-2. **Technical context**: What programming language, framework, and tech stack are being used?
-3. **Constraints**: Are there performance requirements, scalability needs, or technical limitations?
-4. **Environment**: What is the deployment target (web, mobile, desktop, cloud, on-prem)?
-5. **Integration**: What existing systems, APIs, or databases need to be integrated?
-6. **Timeline**: What is the deadline? Is this a quick fix, MVP, or production-ready feature?
-7. **Standards**: Are there specific coding standards, design patterns, or architectural guidelines to follow?
+1. **Region**: What region will this software operate in? (Affects data privacy laws, compliance requirements)
+2. **Functionality**: What specific feature or problem needs to be solved? What are the success criteria?
+3. **Technical context**: What programming language, framework, and tech stack are being used?
+4. **Constraints**: Are there performance requirements, scalability needs, or technical limitations?
+5. **Environment**: What is the deployment target (web, mobile, desktop, cloud, on-prem)?
+6. **Integration**: What existing systems, APIs, or databases need to be integrated?
+7. **Timeline**: What is the deadline? Is this a quick fix, MVP, or production-ready feature?
+8. **Standards**: Are there specific coding standards, design patterns, or architectural guidelines to follow?
+
+1.5) Regional Considerations
+
+Software development practices are largely universal with regional compliance variations:
+
+**Data Privacy & Compliance:**
+- **Europe**: GDPR (consent, data minimization, right to erasure), ePrivacy Directive
+- **United States**: CCPA/CPRA (California), state privacy laws, HIPAA (healthcare), SOX (financial)
+- **Canada**: PIPEDA, provincial variations (Quebec Law 25)
+- **Asia-Pacific**: PDPA (Singapore), Privacy Act (Australia), PIPL (China data localization)
+
+**Cloud & Infrastructure:**
+- Data residency requirements (EU data in EU, China localization, Russia data sovereignty)
+- Cloud provider regional availability and compliance certifications
+- Regional latency considerations for global applications
+
+**Open Source & Licensing:**
+- Open source license enforcement varies by jurisdiction
+- Patent protections for software vary (US allows software patents, EU more restrictive)
+- Export controls on encryption and security software
+
+**Development Practices:**
+- Coding standards and conventions vary by region/company
+- Work culture (European work-life balance vs. US startup intensity)
+- Remote work policies and collaboration across timezones
 8. **Testing**: What level of test coverage is expected? Are there existing test frameworks in use?
 
 3) Default workflow

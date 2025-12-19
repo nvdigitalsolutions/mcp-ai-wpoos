@@ -41,14 +41,41 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and building codes apply? (IMC, IPC, NEC, regional amendments affect system design)
 - What building type and occupancy? (Office, retail, residential, industrial)
 - What is the building size and program? (Square footage, occupant load)
 - What climate zone and location? (Affects HVAC loads and energy code)
 - What energy efficiency goals? (Code minimum, LEED, net-zero)
 - What are the special system requirements? (Server rooms, kitchens, labs)
 - What is the structural system and ceiling heights? (Affects distribution routing)
-- What building codes apply? (IBC, IMC, IPC, NEC, NFPA, IECC editions)
 - What is the utility availability? (Gas, electric, water, sewer capacities)
+
+1.5) Regional Considerations
+
+MEP engineering varies significantly by regional codes and climate:
+
+**Building Codes & Standards:**
+- **United States**: IMC (Mechanical), IPC (Plumbing), NEC (Electrical), NFPA codes, IECC (Energy), state amendments
+- **Canada**: National codes with provincial variations
+- **Europe**: EN standards, national building regulations (Part L in UK for energy)
+- **Regional differences**: Code adoption cycles, interpretation, enforcement rigor
+
+**Climate & Design:**
+- **HVAC loads**: Regional climate data (ASHRAE climatic zones, heating/cooling degree days)
+- **Equipment selection**: Climate affects system types (heat pumps in mild climates, dual fuel in cold)
+- **Energy codes**: ASHRAE 90.1/IECC in US, Part L in UK, regional variations in envelope/system requirements
+- **Humidity control**: Critical in humid regions, less so in arid climates
+
+**Utilities & Infrastructure:**
+- **Electrical**: Voltage standards (120/240V in US, 230/400V in Europe), frequency (50Hz vs 60Hz)
+- **Natural gas**: Availability varies regionally, affects fuel choices
+- **Water quality**: Hardness, treatment requirements vary regionally
+- **District systems**: Steam, chilled water more common in urban areas
+
+**Professional Licensing:**
+- **United States**: PE (Professional Engineer) required for public buildings, varies by state
+- **Europe**: Chartered Engineer (CEng) or equivalent, requirements vary by country
+- **Sealing requirements**: Who can stamp drawings varies by jurisdiction
 
 3) Default workflow
 Use integrated MEP design process:

@@ -57,6 +57,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region will the WordPress site serve? (Affects data privacy, GDPR/CCPA compliance, AI regulations)
 - What is the primary goal? (Build assistant, create integration, extend tools, content workflow)
 - Which AI providers are you using? (OpenAI, Gemini, Ollama, multiple)
 - What WordPress plugins are active? (WooCommerce, JetEngine, Elementor, Rank Math, etc.)
@@ -65,6 +66,30 @@ Ask 3–8 questions that materially affect the answer:
 - What authentication method? (WordPress nonce, bearer token, Auth0, guest token)
 - Is this for frontend (chat UI) or backend (API integration)?
 - What tools are required? (Content, media, e-commerce, forms, analytics, etc.)
+
+1.5) Regional Considerations
+
+WP oOS development must consider regional AI and data privacy regulations:
+
+**AI Regulations:**
+- **Europe**: EU AI Act (risk-based approach), transparency requirements for AI systems
+- **United States**: State-level AI regulations emerging, sector-specific (FTC guidelines)
+- **Canada**: AIDA (Artificial Intelligence and Data Act, proposed)
+
+**Data Privacy (see software_engineer playbook for details):**
+- GDPR (Europe), CCPA/CPRA (California), PIPEDA (Canada) affect chat transcript storage
+- Cookie consent requirements for chat widgets
+- Data residency for AI processing (OpenAI data processing locations)
+
+**WordPress Hosting:**
+- Regional hosting providers and data center locations
+- GDPR-compliant hosting requirements in Europe
+- Performance/CDN considerations for global audiences
+
+**Content & Localization:**
+- Multi-language support for chat interfaces (WPML, Polylang compatibility)
+- Regional content regulations (e.g., medical advice regulations vary)
+- Timezone handling for scheduled tasks and logging
 
 3) Default workflow
 1. Environment Setup & Discovery

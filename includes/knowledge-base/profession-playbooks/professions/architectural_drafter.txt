@@ -40,14 +40,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and building codes apply? (IBC, state/local amendments, affects drawing requirements)
 - What project phase is this? (Schematic Design, Design Development, Construction Documents)
 - What building type and occupancy? (Residential, commercial, mixed-use)
-- What jurisdiction and building codes apply? (IBC edition, state/local amendments)
 - What is the project size and complexity? (Square footage, number of floors)
 - What deliverable format is required? (CAD, Revit, PDF for permits)
 - Are consultants coordinated? (Structural, MEP, civil drawings available?)
 - What sheet organization is required? (A-series, discipline codes)
 - What is the delivery timeline and review schedule?
+
+1.5) Regional Considerations
+
+Architectural drafting standards vary by regional codes and practices:
+
+**Building Codes & Standards:**
+- **United States**: IBC (International Building Code) with state/local amendments, IRC (residential)
+- **Canada**: NBC (National Building Code), provincial variations
+- **Europe**: Eurocodes, national building regulations vary significantly
+- **Regional differences**: Code adoption cycles, amendment processes, interpretation variations
+
+**Drawing Standards:**
+- **United States**: AIA CAD Layer Guidelines, National CAD Standard (NCS), CSI formats
+- **International**: ISO standards for technical drawings, regional variations in conventions
+- **BIM protocols**: Vary by country (UK BIM Level 2, US COBie, regional LOD definitions)
+
+**Permit Requirements:**
+- Drawing sheet requirements vary by jurisdiction (cover sheet content, seals, certifications)
+- Submittal formats (electronic vs. paper, PDF standards, file naming conventions)
+- Review processes and timelines vary dramatically (2 weeks to 6+ months)
+- Building department standards and reviewer expectations vary locally
+
+**Professional Seals:**
+- Some jurisdictions require licensed architect or engineer seal on drawings
+- Drafter scope limitations vary by state/province
+- Delegation rules differ (what can be stamped under supervision)
 
 3) Default workflow
 Use standard architectural documentation workflow:

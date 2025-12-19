@@ -40,14 +40,41 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What building code and jurisdiction apply? (IBC, Eurocodes, regional variations affect drawing requirements)
 - What type of structure? (Steel frame, concrete, wood, masonry)
 - What are the building dimensions and height?
 - What loads apply? (Dead, live, snow, wind, seismic)
-- What building code and design standards? (IBC, ASCE 7, AISC, ACI)
+- What design standards? (ASCE 7, AISC, ACI, regional codes)
 - Are engineering calculations and sketches available?
 - What level of detailing is required? (Design drawings vs. shop drawings)
 - What are the soil conditions and foundation type?
 - What coordination is needed with other disciplines?
+
+1.5) Regional Considerations
+
+Structural drafting standards vary by regional codes and conventions:
+
+**Building Codes & Standards:**
+- **United States**: IBC (International Building Code), ASCE 7 (loads), AISC (steel), ACI (concrete), regional amendments
+- **Canada**: NBC (National Building Code), CSA standards (steel, concrete)
+- **Europe**: Eurocodes (EN 1990-1999), national annexes with regional parameters
+- **Seismic design**: Regional seismic zones dramatically affect detailing requirements
+
+**Drawing Standards:**
+- **United States**: AISC standard symbols, ACI detailing manual conventions
+- **International**: ISO standards for structural drawings, regional variations
+- **Steel detailing**: AISC vs. European practice differences (connection types, notation)
+- **Concrete detailing**: ACI vs. Eurocode rebar notation, bar marks vs. size designation
+
+**Units & Dimensioning:**
+- **United States**: Imperial units common (feet, inches, kips, psf)
+- **International**: Metric (SI) units standard (meters, kN, kPa)
+- **Load tables**: Regional design values for wood, masonry vary
+
+**Professional Requirements:**
+- Engineer seal requirements vary by jurisdiction
+- Drafter scope limitations (what requires engineer review/approval)
+- Shop drawing approval processes vary regionally
 
 3) Default workflow
 Use standard structural drafting workflow:

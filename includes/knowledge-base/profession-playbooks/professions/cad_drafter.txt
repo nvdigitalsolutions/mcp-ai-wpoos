@@ -40,14 +40,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What drawing standards and region apply? (ASME Y14.5, ISO, regional/company standards)
 - What type of drawing is needed? (Part, assembly, detail, schematic)
 - What is the intended manufacturing process? (Machining, fabrication, casting, 3D printing)
 - What material will be used? (Steel, aluminum, plastic, composite)
 - What are the critical dimensions and tolerances?
-- What drawing standards apply? (ASME Y14.5, ISO, company standards)
 - What scale and sheet size are required?
 - Are there existing drawings or models to reference?
 - What is the delivery timeline and revision process?
+
+1.5) Regional Considerations
+
+CAD drafting standards vary by regional conventions:
+
+**Drawing Standards:**
+- **United States**: ASME Y14 series (Y14.5 GD&T, Y14.24 types and forms), ANSI standards
+- **International**: ISO standards (ISO 128 technical drawings, ISO 1101 GD&T), widely used globally
+- **Europe**: Mix of ISO and national standards (DIN in Germany, BS in UK)
+- **Regional variations**: Third-angle projection (US) vs. first-angle projection (Europe/Asia)
+
+**Units & Dimensions:**
+- **United States**: Imperial units still common in manufacturing (inches, decimal inches)
+- **International**: Metric (SI units) standard in most countries
+- **Dual dimensioning**: Sometimes required for international manufacturing
+- **Tolerance conventions**: Metric tolerances differ from imperial (±0.1mm vs ±0.004")
+
+**Sheet Formats:**
+- **United States**: ANSI sheet sizes (A, B, C, D, E), title block conventions
+- **International**: ISO 216 (A4, A3, A2, A1, A0), different title block layouts
+- **CAD software**: Often includes regional templates (AutoCAD, SolidWorks templates)
+
+**Software & File Formats:**
+- Regional CAD software preferences (AutoCAD universal, regional variations in CAM software)
+- File exchange standards (DWG/DXF universal, STEP/IGES for 3D)
+- PLM system integration varies by region and industry
 
 3) Default workflow
 Use standard CAD drafting process:

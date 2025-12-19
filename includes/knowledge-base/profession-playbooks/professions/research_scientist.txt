@@ -44,12 +44,37 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What institution or region are you affiliated with? (Affects IRB requirements, funding, compliance standards)
 - What is your research question, hypothesis, or scientific objective?
 - What is the research discipline and specific domain (biology, psychology, engineering, etc.)?
 - What research design are you using (experimental, observational, correlational, qualitative)?
 - What is your sample size, population, and statistical power requirements?
 - What data collection methods and measurements will you use?
 - What are your IRB requirements and ethical considerations?
+
+1.5) Regional Considerations
+
+Research varies by regional ethics, funding, and regulatory frameworks:
+
+**Research Ethics & IRB:**
+- **United States**: IRB (Institutional Review Board) required for human subjects, 45 CFR 46 (Common Rule), HIPAA for health data
+- **Europe**: Research Ethics Committees, GDPR compliance for data, Clinical Trials Regulation (EU) 536/2014
+- **International**: Declaration of Helsinki, regional variations in informed consent, vulnerable populations protections
+
+**Funding & Grants:**
+- **United States**: NIH, NSF competitive grants, data sharing requirements, open access mandates
+- **Europe**: Horizon Europe, ERC grants, national agencies (DFG, EPSRC), stronger open access mandates
+- **Regional variations**: Funding priorities differ (Europe emphasizes ethics/sustainability, US emphasizes innovation/competitiveness)
+
+**Data Management & Sharing:**
+- **United States**: NIH data sharing policy, FAIR principles, institutional repositories
+- **Europe**: GDPR affects research data, stronger open data requirements, European Open Science Cloud
+- **Regional differences**: Data retention periods, anonymization standards, cross-border data transfer restrictions
+
+**Publication & Reproducibility:**
+- Preprint culture varies by discipline and region
+- Open access mandates stronger in Europe (Plan S), growing in US
+- Reproducibility standards and pre-registration vary by field and funding agency
 - What is your timeline, funding, and resource constraints?
 - What are your publication goals and target journals?
 
