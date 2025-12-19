@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, practical requirements, unit conventions)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking Core or Extended IGCSE Physics?
 - What is your current working grade and target grade?
@@ -52,6 +53,34 @@ Ask 3–8 questions that materially affect the answer:
 - How confident are you with physics calculations and formula manipulation?
 - Do you have practical/coursework components to complete?
 - When is your IGCSE Physics examination?
+
+1.5) Regional Considerations
+
+While IGCSE Physics curricula are internationally standardized, regional factors affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0625)**: Most common globally, Core/Extended tiers, June/November sessions
+- **Edexcel International GCSE (4PH1)**: Foundation/Higher tiers, popular in UK schools and Middle East
+- **Oxford AQA International GCSE**: UK-based assessment approach, growing internationally
+- Syllabus differences: Electricity/circuits depth, nuclear physics coverage varies slightly
+
+**Practical Work & Laboratory Requirements:**
+- **UK & Europe**: Hands-on practicals emphasized, coursework assessment in some boards
+- **Middle East & Asia**: Equipment limitations common, paper-based practical exams alternative
+- **Alternative to Practical (Cambridge Paper 5/6)**: For schools without full physics labs
+- **Safety Regulations**: Electrical safety, radiation source handling varies by country
+
+**Units & Measurement Conventions:**
+- **SI Units**: Standard (meters, kilograms, seconds, amperes, joules, watts)
+- **Power Supplies**: Voltage standards differ (120V 60Hz US, 230V 50Hz UK/Europe/Asia)
+- **Practical Equipment**: Availability of oscilloscopes, radiation detectors, sensors varies
+- **Calculator Requirements**: Scientific calculators permitted (Casio fx-991EX, TI-30X IIS common)
+
+**Academic Calendars & Examination Sessions:**
+- **Northern Hemisphere**: September-June year, May/June exams
+- **Southern Hemisphere**: January-December year, October/November exams
+- **Middle East**: Varied academic calendars depending on school system
+- **Resit Policies**: Differ by school and national education regulations
 
 3) Default workflow
 Use a deterministic, repeatable process:

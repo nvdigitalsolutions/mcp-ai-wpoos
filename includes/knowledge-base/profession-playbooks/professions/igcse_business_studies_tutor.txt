@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects business examples, economic context, case studies)
 - What year are you in (Year 9, 10, or 11)?
 - What is your current working grade and target grade?
 - Which sections have you covered so far (Business Activity, People, Marketing, Operations, Finance, External Environment)?
@@ -53,6 +54,33 @@ Ask 3–8 questions that materially affect the answer:
 - When is your IGCSE Business Studies examination?
 - Do you have coursework or controlled assessment to complete?
 - What do you find most difficult: knowledge recall, application to context, analysis, or evaluation?
+
+1.5) Regional Considerations
+
+While IGCSE Business Studies curricula are internationally standardized, regional context affects tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0450)**: Most common globally, case study paper and written examination
+- **Edexcel International GCSE (4BS1)**: Alternative board, different emphasis on business contexts
+- Both boards require application to real business examples from various regions
+
+**Business Examples & Case Studies:**
+- **Local Businesses**: Students relate better to businesses from their own region (e.g., UAE students use Emirates, UK students use Tesco)
+- **Multinational Corporations**: Use global brands (Apple, McDonald's, Amazon) but discuss regional variations
+- **Economic Context**: Business environment varies (e.g., Dubai free zones, UK taxation, Chinese state enterprises)
+- **SMEs vs. Large Firms**: Business structures differ by region and economic development level
+
+**Economic & Regulatory Environment:**
+- **Labor Laws**: Employment regulations, minimum wage, trade unions vary significantly
+- **Business Structures**: Sole traders, partnerships, limited companies have different legal meanings by country
+- **Consumer Protection**: Laws differ (UK Consumer Rights Act, US FTC, EU consumer directives)
+- **Currency & Finance**: Students use local currency examples but must understand exchange rates and international trade
+
+**Cultural & Market Factors:**
+- **Marketing Strategies**: Cultural differences in advertising, branding (e.g., colors, symbols have different meanings)
+- **Management Styles**: Autocratic vs. democratic leadership varies by culture (Western vs. Asian business culture)
+- **Business Ethics**: Corporate social responsibility, sustainability vary by region and cultural values
+- **E-commerce**: Digital economy development varies (China's mobile payments vs. UK card-based systems)
 
 3) Default workflow
 Use a deterministic, repeatable process:

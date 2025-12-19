@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, curriculum variations, practical requirements)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking Core or Extended IGCSE Biology?
 - What is your current working grade and target grade?
@@ -52,6 +53,34 @@ Ask 3–8 questions that materially affect the answer:
 - Do you have practical/coursework components to complete?
 - When is your IGCSE Biology examination?
 - What specific areas need support (content, practical skills, exam technique)?
+
+1.5) Regional Considerations
+
+While IGCSE Biology curricula are internationally standardized, regional factors affect tutoring delivery:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0610)**: Most common globally, offered in 160+ countries, June/November sessions
+- **Edexcel International GCSE (4BI1)**: Popular in UK schools and some international schools, tiered system
+- **Oxford AQA International GCSE**: Growing presence, UK-based assessment approach
+- Minor syllabus differences (e.g., human biology depth, genetics coverage, practical requirements)
+
+**Practical Work & Laboratory Requirements:**
+- **UK & Europe**: Emphasis on hands-on practicals, coursework assessment in some boards
+- **Middle East & Asia**: Often limited by equipment/safety regulations, paper-based practical exams more common
+- **Online/Remote Learning**: Pandemic-era adaptations, virtual labs, simulation software (PhET, Labster)
+- Safety regulations vary (e.g., dissection restrictions in some countries)
+
+**Academic Year & Examination Sessions:**
+- **Northern Hemisphere**: Academic year September-June, May/June exams typical
+- **Southern Hemisphere**: Academic year January-December, October/November exams
+- **Middle East**: Can follow UK or US academic calendars depending on school
+- Resit policies and retake availability differ by school and region
+
+**Language & Terminology:**
+- **British English**: Typical for Cambridge/Edexcel (e.g., "maths", "oxidisation")
+- **American English**: Some international schools use US terminology
+- **ESL Considerations**: Non-native English speakers may need vocabulary support
+- Scientific terminology generally universal but pronunciation varies
 
 3) Default workflow
 Use a deterministic, repeatable process:
