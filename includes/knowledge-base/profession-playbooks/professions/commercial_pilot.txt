@@ -4,64 +4,505 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This playbook provides actionable guidance for commercial pilots operating aircraft for compensation or hire following FAA regulations (14 CFR), manufacturer procedures, and industry best practices.
+- Focus on safety, regulatory compliance, flight planning, crew resource management, weather decision-making, and emergency procedures for various commercial operations including Part 121 airlines, Part 135 charter, Part 91 corporate, and Part 137 agricultural operations.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize systematic preflight planning, regulatory compliance, risk management, standard operating procedures, and professional airmanship.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Provide guidance on FAA regulations (14 CFR Parts 61, 91, 121, 135), flight planning, and operational procedures
+- Explain aircraft systems, performance calculations, weight and balance, and fuel planning
+- Advise on weather interpretation (METARs, TAFs, charts, radar), go/no-go decisions, and diversion planning
+- Guide on crew resource management (CRM), threat and error management (TEM), and communication protocols
+- Assist with navigation planning (airways, SIDs, STARs, approaches), chart interpretation, and route optimization
+- Help understand emergency procedures, abnormal checklists, and decision-making frameworks
+- Provide guidance on passenger briefings, cabin safety, and crew coordination
+- Explain instrument approaches (ILS, RNAV, VOR, NDB), precision vs. non-precision minima
+- Advise on high altitude operations, pressurization, and physiological factors
+- Success = Safe flight operations completed within regulatory limits; proper planning and decision-making; effective crew coordination; passenger safety maintained
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Provide actual flight instruction or sign off on pilot certifications (requires CFI certificate)
+- Make go/no-go decisions for specific flights (pilot-in-command responsibility, requires full situation awareness)
+- Override or contradict company operations manuals, SOPs, or captain's authority
+- Provide medical advice on pilot fitness or medication interactions (requires Aviation Medical Examiner)
+- Guarantee specific aircraft performance or fuel burn without full operational data
+- Recommend regulatory deviations without proper authorization and documentation
+- Act as legal counsel on FAA enforcement actions, violations, or certificate actions
+- Provide maintenance advice or sign off on aircraft airworthiness (requires A&P certificate)
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Flight training or checkride preparation needed (refer to certified flight instructor, ATP-rated mentor)
+- Medical certification issues or aeromedical concerns (refer to Aviation Medical Examiner, HIMS AME for substance issues)
+- FAA enforcement actions, violations, or certificate suspensions (refer to aviation attorney, ALPA/union representation)
+- Aircraft mechanical issues or maintenance discrepancies (refer to licensed A&P mechanic, director of maintenance)
+- Substance abuse or mental health concerns (refer to HIMS program, EAP, licensed therapist with aviation experience)
+- Labor disputes or contract issues (refer to union representatives, legal counsel)
+- Complex insurance or liability questions (refer to aviation insurance specialist, attorney)
+- Accident or incident investigation (refer to NTSB, FAA Flight Standards, safety officer)
 
 2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+Ask 6-10 questions that materially affect your guidance and approach:
+- What is your pilot certificate level and ratings (Commercial, ATP, type ratings, instrument rating)?
+- What operation type (Part 121 airline, Part 135 charter, Part 91 corporate, cargo, agricultural)?
+- What aircraft type and configuration (single/multi-engine, turboprop, jet, helicopter)?
+- What is the specific flight scenario or question (flight planning, weather, emergency procedure, regulation)?
+- What phase of flight (preflight, takeoff, cruise, approach, landing)?
+- What are the weather conditions (VMC, IMC, thunderstorms, icing, winds)?
+- What airports involved (Class B/C/D, international, special procedures)?
+- What passenger or cargo considerations (number, weight, hazmat, medical)?
+- What are the regulatory constraints (duty/rest limits, currency, recency, special authorizations)?
+- Are there any company or operational-specific procedures involved?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+
+STANDARD FLIGHT PLANNING WORKFLOW (Part 121/135 Operations):
+1. Initial Flight Review (30-60 minutes before duty)
+   - Review flight assignment: route, aircraft type, departure/arrival airports, alternate airports
+   - Check NOTAMs: airport closures, runway/taxiway closures, navaid outages, TFRs
+   - Analyze weather: departure, en route, destination, alternate (METARs, TAFs, winds aloft, significant weather charts)
+   - Review MEL/CDL items: any deferred maintenance affecting flight
+   - Identify special procedures: high terrain, international, ETOPS, special authorizations
+   - Check fuel requirements: minimum, planned, tankering considerations
+
+2. Preflight Planning and Briefing (45-60 minutes before departure)
+   - Complete flight plan: route, altitude, fuel burn, weight and balance
+   - Calculate takeoff and landing performance: runway lengths, weight limits, V-speeds, stop margin
+   - Determine go/no-go: weather minimums, aircraft serviceability, crew legality, fuel
+   - Review emergency procedures relevant to route: single-engine service ceiling, ETOPS diversion points, oceanic procedures
+   - Brief crew: flight plan, weather, threats, CRM, roles and responsibilities, special considerations
+   - Brief cabin crew: flight time, turbulence, service plan, special passengers, emergency review
+   - File flight plan (if not done by dispatch), update company, coordinate ground services
+
+3. Preflight Inspection and Aircraft Preparation (30 minutes before departure)
+   - External walkaround: airframe, engines, tires, fluid levels, control surfaces, lights
+   - Internal checks: cockpit setup, instruments, radios, navigation systems, circuit breakers
+   - Review logbook: previous write-ups, MEL items, recent maintenance, aircraft hours/cycles
+   - Load weight and balance data: passenger count, cargo, fuel, confirm within limits
+   - Program FMS/autopilot: route, SID, airways, STAR, approach, alternate
+   - Complete checklists: preflight, before start, taxi items
+   - Coordinate with ground crew: pushback, towing, fueling, deicing (if required)
+
+4. Flight Operations (duration of flight)
+   - Departure: execute SID, comply with ATC clearances, monitor aircraft systems, climb checklist
+   - Cruise: navigate on route, monitor fuel burn, weather, adjust altitude/route as needed
+   - Descent and arrival: execute STAR, approach briefing, landing performance verification
+   - Approach: instrument or visual approach, stabilized approach criteria (by 1,000 AGL or 500 AGL), go-around decision points
+   - Landing: flare, touchdown, rollout, taxi to gate
+   - Throughout: threat and error management, sterile cockpit below 10,000 feet, CRM callouts, monitor automation
+
+5. Post-Flight Duties (15-30 minutes after landing)
+   - Complete shutdown checklist and secure aircraft
+   - Debrief crew: any issues, CRM lessons, safety concerns
+   - Complete logbook entries: flight time, discrepancies, MEL items, fuel remaining
+   - Report maintenance issues to company, complete write-ups
+   - File reports as required: safety reports (ASAP), passenger incidents, irregularities
+   - Brief company operations if diversion, delay, or significant issue
+   - Update personal logbook for currency and records
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Flight plans with route, fuel, weight and balance, performance calculations
+- Weather briefings with go/no-go decision rationale
+- Crew briefings (flight crew and cabin crew)
+- Passenger briefings (safety, seatbelts, oxygen, exits)
+- Logbook entries (aircraft and personal)
+- Maintenance write-ups and discrepancy reports
+- Company reports (irregularities, delays, diversions)
+- Safety reports (ASAP for Part 121, NASA ASRS)
+- Flight risk assessments (for Part 135/91 operations)
+
+Minimum viable: Safe flight completion + basic documentation + regulatory compliance
+Gold standard: Comprehensive planning + proactive threat management + effective CRM + mentoring first officers + safety culture contribution
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Preflight Planning:
+- [ ] Weather reviewed and within minima (departure, en route, destination, alternate)
+- [ ] NOTAMs reviewed (airports, navaids, airspace, TFRs)
+- [ ] Fuel adequate (minimum + reserve + contingency + alternate + taxi)
+- [ ] Weight and balance within limits (takeoff, landing, zero-fuel weight)
+- [ ] Performance calculations complete (V-speeds, runway requirements, climb gradients)
+- [ ] Crew legal and current (duty/rest, currency, medical, recency)
+- [ ] Aircraft airworthy (no grounding MEL items, inspections current)
+
+Flight Operations:
+- [ ] Checklists completed at appropriate times (no memory items skipped)
+- [ ] ATC clearances correctly received, read back, and complied with
+- [ ] Sterile cockpit observed below 10,000 feet (no non-essential conversation)
+- [ ] Altitude deviations +/- 100 feet (turbulence) or +/- 200 feet (normal cruise)
+- [ ] Airspeed within normal operating range (no stall margin violations)
+- [ ] Stabilized approach criteria met (by 1,000 AGL IMC or 500 AGL VMC)
+- [ ] Go-around executed if unstable or unsafe (no landing at all costs)
+- [ ] Threat and error management actively applied (anticipate, identify, mitigate)
+
+CRM and Communication:
+- [ ] Crew briefed on roles, threats, and procedures
+- [ ] Callouts clear and timely ("airspeed alive", "V1", "rotate", "positive rate", "gear up")
+- [ ] Concerns voiced assertively if safety questioned ("I'm not comfortable with...")
+- [ ] Captain's authority exercised appropriately (safety first, passenger service second)
+- [ ] Cabin crew informed of flight progress, turbulence, service restrictions
+- [ ] Passengers briefed on safety, delays, and any unusual situations
+
+Documentation:
+- [ ] Logbook entries accurate (flight time, landings, routes)
+- [ ] Maintenance discrepancies properly documented
+- [ ] Company reports submitted timely (delays, diversions, incidents)
+- [ ] Safety reports filed when appropriate (ASAP, ASRS)
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Flight Plan Briefing Template ===
+FLIGHT BRIEFING
+Flight: [Flight Number or Tail Number]
+Date: [Date]
+PIC: [Name]
+SIC: [Name]
+Aircraft: [Type and Registration]
+
+ROUTE:
+From: [Departure Airport (ICAO)]
+To: [Destination Airport (ICAO)]
+Alternate: [Alternate Airport (ICAO)]
+Route: [SID, Airways, STAR]
+Altitude: [Planned cruise altitude]
+
+WEATHER:
+Departure: [METAR summary or "VMC/IMC"]
+En Route: [Significant weather, winds aloft]
+Destination: [METAR/TAF summary, approach expected]
+Alternate: [Weather conditions]
+
+THREATS:
+- [Weather: thunderstorms, icing, turbulence, low visibility]
+- [Terrain: high ground, obstacle departure procedures]
+- [Traffic: busy terminal area, delays expected]
+- [Aircraft: MEL items, system limitations]
+- [Crew: fatigue, unfamiliarity, currency]
+- [Other: international, over-water, special procedures]
+
+FUEL:
+Planned Fuel: [Total gallons/pounds]
+Burn to Destination: [Expected]
+Reserve (45 min): [Amount]
+Alternate: [Fuel for alternate]
+Contingency: [Extra for weather, delays]
+
+WEIGHT & BALANCE:
+Takeoff Weight: [Pounds, within limits]
+Landing Weight: [Pounds, within limits]
+Zero Fuel Weight: [Pounds, within limits]
+
+PERFORMANCE:
+V-Speeds: V1 [___], VR [___], V2 [___]
+Flaps: [Takeoff flap setting]
+Runway: [Number, length available]
+Landing: VREF [___], Flaps [___]
+
+SPECIAL CONSIDERATIONS:
+- [Any unique aspects of this flight]
+
+QUESTIONS: [Open floor for crew questions]
+
+=== Weather Go/No-Go Decision Template ===
+GO/NO-GO DECISION
+Flight: [Flight Number]
+Date/Time: [Date and Time]
+
+DEPARTURE WEATHER:
+Current: [METAR]
+Forecast: [TAF or trend]
+Minimums: [Company/FAA minimums]
+Decision: [ ] GO [ ] NO-GO
+Reason: [Within/below minimums, visibility, ceiling, wind, etc.]
+
+ENROUTE WEATHER:
+Conditions: [Thunderstorms, icing, turbulence, winds aloft]
+Route: [Can route around weather? Alternate route available?]
+Decision: [ ] GO [ ] NO-GO
+Reason: [Acceptable/unacceptable risk, can avoid, must deviate]
+
+DESTINATION WEATHER:
+Current: [METAR]
+Forecast: [TAF]
+Minimums: [Approach minimums for planned approach]
+Decision: [ ] GO [ ] NO-GO
+Reason: [Above minimums at ETA, forecast improvement/deterioration]
+
+ALTERNATE WEATHER:
+Current: [METAR]
+Forecast: [TAF]
+Minimums: [Alternate minimums + 1 hour before to 1 hour after ETA]
+Decision: [ ] GO [ ] NO-GO
+Reason: [Alternate suitable if destination below minimums]
+
+OVERALL DECISION:
+[ ] GO - Proceed with flight as planned
+[ ] GO with modifications - [Describe: different route, more fuel, additional alternate]
+[ ] DELAY - Reason: [Weather improving, awaiting update]
+[ ] NO-GO - Reason: [Weather below minimums, unacceptable risk]
+
+PIC Signature: __________________ Date/Time: __________
+
+=== CRM Threat and Error Briefing ===
+THREAT AND ERROR MANAGEMENT BRIEFING
+Flight: [Flight Number]
+PIC: [Name]
+SIC: [Name]
+
+EXTERNAL THREATS (conditions we cannot control):
+- Weather: [Thunderstorms, icing, turbulence, crosswind]
+- ATC: [Busy terminal, delays, reroutes expected]
+- Airport: [Short runway, mountainous terrain, unfamiliar]
+- Other: [International, unfamiliar country, language barriers]
+
+INTERNAL THREATS (conditions within our control):
+- Crew: [Fatigue, unfamiliarity, lack of currency, interpersonal]
+- Aircraft: [MEL items, system limitations, unfamiliar variant]
+- Company: [Schedule pressure, fuel tankering, irregular operations]
+
+ERROR MANAGEMENT STRATEGIES:
+- Communication: [Clear callouts, assertive communication, question anything unclear]
+- Workload: [Who does what, distribute tasks, aviate-navigate-communicate priority]
+- Automation: [Appropriate use, monitor mode changes, raw data crosscheck]
+- Decision-making: [Captain has final authority, input welcome, time-critical vs. deliberate decisions]
+
+GO-AROUND POLICY:
+- Either pilot can initiate go-around, no questions asked
+- Standard callout: "GO-AROUND, TOGA, FLAPS 15, POSITIVE RATE GEAR UP"
+- Briefing: We will go around if not stabilized by [1,000 AGL IMC / 500 AGL VMC]
+
+QUESTIONS/CONCERNS:
+- [Open floor for any crew member concerns]
+
+=== Post-Flight Safety Report (ASAP) ===
+AVIATION SAFETY ACTION PROGRAM (ASAP) REPORT
+Reporter: [Name, Employee ID]
+Date of Event: [Date]
+Aircraft: [Type and Registration]
+Flight: [Flight Number if applicable]
+
+EVENT SUMMARY:
+[Brief description of what happened]
+
+THREATS:
+[Environmental, operational, or organizational factors that influenced the event]
+
+ERRORS:
+[Any errors made by crew, ATC, maintenance, or others]
+
+UNDESIRED AIRCRAFT STATE:
+[Any situation where aircraft was not where it should be: altitude deviation, airspeed deviation, unstabilized approach, go-around, etc.]
+
+CORRECTIVE ACTIONS TAKEN:
+[What was done to mitigate or correct the situation]
+
+LESSONS LEARNED:
+[What could be done differently in future to prevent recurrence]
+
+RECOMMENDATIONS:
+[Changes to procedures, training, or equipment that might help]
+
+CONFIDENTIALITY NOTE:
+This report is submitted under ASAP protections and should not be used for enforcement action.
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Flight Plan with Weather Analysis
+```
+FLIGHT PLAN SUMMARY
+Flight: N12345
+Route: KORD (Chicago O'Hare) to KDFW (Dallas/Fort Worth)
+Aircraft: Boeing 737-800
+Date: December 19, 2024
+Departure: 0900 CST
+ETE: 2:15
+
+ROUTE:
+KORD (RYNOO2) RYNOO J29 MKC J60 TUL J23 ARG (STAR TBD based on arrival runway) KDFW
+Altitude: FL370
+Distance: 790 nm
+
+WEATHER:
+KORD: VFR - Clear skies, winds 270/08, temp 35°F, altimeter 30.15
+En Route: Light turbulence FL350-390 over Missouri, otherwise smooth. No convective activity.
+KDFW: VFR - Few clouds 6,000, winds 180/12G18, temp 58°F, altimeter 30.05. TAF shows VFR continuing.
+Alternate KHOU: VFR - Scattered 4,000, winds 160/10
+
+FUEL:
+Planned burn: 10,800 lbs
+Reserve (45 min): 2,400 lbs
+Alternate: 1,500 lbs
+Contingency: 600 lbs
+Taxi: 300 lbs
+Total Required: 15,600 lbs
+Planned Fuel Load: 16,000 lbs (400 lbs extra)
+
+W&B:
+Zero Fuel Weight: 112,000 lbs (limit 121,000) ✓
+Takeoff Weight: 128,000 lbs (limit 174,200) ✓
+Landing Weight: 117,200 lbs (limit 146,300) ✓
+
+NOTAMS:
+- KORD: Taxiway B closed for maintenance
+- KDFW: Runway 13R/31L PAPI out of service
+- TFR P-40 (Presidential TFR) active near Dallas, 30nm radius up to 17,999 feet - route clear
+
+THREATS:
+- Turbulence FL350-390: monitor ride reports, request altitude change if needed
+- Wind gusts KDFW: brief stabilized approach criteria, expect possible go-around
+
+DECISION: GO - All conditions within limits, good weather, adequate fuel
+```
+
+Example 2: Emergency Decision-Making
+```
+SCENARIO: Single engine failure shortly after takeoff in twin-engine aircraft
+
+SITUATION:
+V1: 130 knots (decision speed)
+At V1+5 seconds: Right engine fails (loud bang, yaw to right, engine instruments show failure)
+Airspeed: 145 knots
+Altitude: 800 feet AGL
+Configuration: Flaps 15, gear down
+Runway behind: Not usable
+Runway ahead: None suitable within glide range
+
+IMMEDIATE ACTIONS (memory items):
+1. Maintain directional control: Apply left rudder to counter yaw, wings level
+2. Airspeed: Maintain V2 or better (target V2 + 10 = 140 knots)
+3. Attitude: Positive climb attitude
+4. Throttle: Max power on good engine (verify correct engine failed: "dead foot, dead engine")
+5. Gear: Up (reduce drag)
+6. Callout: "Engine failure, securing right engine"
+
+FOLLOW-UP ACTIONS (checklist):
+7. Identify failed engine: Right engine (instruments, rudder pressure)
+8. Verify: Throttle idle (right)
+9. Mixture: Cut off (right)
+10. Fuel: Off (right)
+11. Propeller: Feather (right)
+12. Magnetos: Off (right)
+13. Alternator: Off (right)
+14. Firewall shutoff: Pull (right engine)
+
+COMMUNICATE:
+"Tower, November One Two Three Four Five, right engine failure, maintaining runway heading, climbing"
+
+NAVIGATE:
+Continue straight ahead, establish positive rate of climb on single engine
+Once at safe altitude (1,500 AGL), advise ATC of intentions: return for landing or continue
+
+DECISION FACTORS:
+- Can we maintain altitude on one engine? Yes (weight, density altitude, temperature OK)
+- Fuel jettison needed? No (landing weight within limits after fuel burn)
+- Return to departure airport or divert? Return (familiar, equipment standing by)
+- Can we troubleshoot/restart? No (feathered propeller, engine secured per checklist)
+
+OUTCOME:
+Aircraft under control, climbing slowly on one engine, will return for landing
+```
+
+Example 3: CRM Communication During Approach
+```
+SCENARIO: Captain and First Officer on approach in IMC with deteriorating weather
+
+[Aircraft at 3,000 feet MSL, 10 miles from airport on ILS approach]
+
+FO (monitoring pilot): "Weather just updated. RVR now 4,000, minimums are 5,000 for this approach."
+
+Captain (flying pilot): "Copy, RVR 4,000. We're below minimums. Let's continue the approach and re-evaluate at the outer marker. If it's not improving, we go missed to the alternate."
+
+FO: "Agreed. Approach checklist complete. Flaps 15, gear coming down."
+
+[5 miles out, approaching outer marker]
+
+FO: "1,000 feet above decision altitude. Sink rate 700 feet per minute. Airspeed on target, on glideslope, on localizer. Looking good."
+
+Captain: "Stabilized. Continue."
+
+FO: "RVR now 5,500. We're above minimums."
+
+Captain: "Good. Continue approach."
+
+[At 500 feet above DA]
+
+FO: "500 above. Sink rate 600, airspeed on target, course centered."
+
+Captain: "Stabilized."
+
+[At Decision Altitude]
+
+FO: "Decision altitude."
+
+Captain: [Looks for runway environment, sees approach lights] "Runway in sight, landing."
+
+FO: "Runway in sight, continue."
+
+CRM ELEMENTS DEMONSTRATED:
+- Clear communication of weather change and minimums
+- Joint decision-making (Captain sets plan, FO acknowledges)
+- Monitoring pilot calls out deviations and status
+- Sterile cockpit discipline (only essential callouts)
+- Either pilot can call go-around if runway not in sight at DA
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Pilot in Command (PIC)**: Pilot with final authority and responsibility for operation and safety of flight
+- **V-Speeds**: Critical airspeeds (V1 decision speed, VR rotation, V2 takeoff safety speed, VREF landing reference speed)
+- **MEL (Minimum Equipment List)**: List of equipment that can be inoperative and still allow legal flight with restrictions
+- **NOTAMs**: Notices to Airmen - time-critical aeronautical information
+- **Sterile Cockpit**: No non-essential conversation below 10,000 feet (14 CFR 121.542 / 135.100)
+- **Stabilized Approach**: Aircraft on proper path, speed, and configuration by specified altitude (1,000 AGL IMC or 500 AGL VMC)
+- **ETOPS**: Extended Twin-engine Operations - authorization for twin-engine aircraft to fly long routes over water
+- **TFR (Temporary Flight Restriction)**: Temporary airspace restriction (VIP, sporting event, emergency, disaster)
+- **CRM (Crew Resource Management)**: Use of all available resources (people, equipment, information) for safe flight operations
+- **TEM (Threat and Error Management)**: Proactive identification and mitigation of threats and errors
+
+FAA Regulations (14 CFR):
+- **Part 61**: Certification: Pilots, Flight Instructors, and Ground Instructors (licensing requirements)
+- **Part 91**: General Operating and Flight Rules (applies to all aircraft)
+- **Part 121**: Operating Requirements: Domestic, Flag, and Supplemental Operations (airlines)
+- **Part 135**: Operating Requirements: Commuter and On Demand Operations (charter, air taxi)
+- **Part 117**: Flight and Duty Limitations and Rest Requirements (crew rest rules for Part 121)
+
+Flight Planning Standards:
+- **FAR 91.103**: Preflight action - know all available information concerning the flight
+- **FAR 91.151/167**: Fuel requirements (VFR: day 30 min, night 45 min; IFR: to destination, alternate, 45 min reserve)
+- **FAR 91.175**: IFR approach minimums and procedures
+- **FAR 121.639/135.219**: Fuel requirements for commercial operations (more restrictive than Part 91)
+
+Safety Reporting:
+- **ASAP (Aviation Safety Action Program)**: Voluntary reporting system for Part 121 airlines with immunity protections
+- **ASRS (Aviation Safety Reporting System)**: NASA-run voluntary incident reporting for all pilots
+- **NTSB 830**: Accident and incident reporting requirements (within 10 days)
+
+Aircraft Performance:
+- **Aircraft Flight Manual (AFM)**: Official performance data and limitations from manufacturer
+- **Runway Analysis**: Takeoff and landing distance calculations considering weight, winds, temperature, altitude, runway condition
+- **V1 (Decision Speed)**: Speed beyond which takeoff must continue even if engine fails
+- **Balanced Field Length**: Runway length where accelerate-stop distance equals accelerate-go distance
+
+Common Aircraft Systems:
+- **FMS (Flight Management System)**: Computerized navigation and flight planning system
+- **TCAS (Traffic Alert and Collision Avoidance System)**: Automated traffic warning system
+- **GPWS/EGPWS**: Ground Proximity Warning System - terrain and obstacle alerts
+- **RNAV/RNP**: Area Navigation / Required Navigation Performance - GPS-based precision navigation
+
+Professional Organizations:
+- **ALPA (Air Line Pilots Association)**: Largest airline pilot union in North America
+- **NBAA (National Business Aviation Association)**: Business aviation association
+- **RAA (Regional Airline Association)**: Regional airline industry group
+- **FAA Flight Standards**: FAA division responsible for pilot certification and air carrier oversight
+
+Change log
+2024-12: Initial playbook created based on 14 CFR Parts 61/91/121/135, FAA advisory circulars, and commercial pilot best practices
+- Flight planning and preflight preparation workflows
+- Weather decision-making and risk assessment frameworks
+- Crew resource management (CRM) and threat and error management (TEM)
+- Emergency procedures and decision-making under pressure
+- Regulatory compliance and operational standards
+- Safety reporting systems (ASAP, ASRS)

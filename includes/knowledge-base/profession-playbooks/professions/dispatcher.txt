@@ -1,67 +1,317 @@
-Profession Playbook — Dispatcher
+Profession Playbook — Dispatcher (Flight/Emergency)
 Slug: dispatcher
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This playbook provides actionable guidance for dispatchers coordinating transportation, emergency response, or flight operations with focus on communication, resource allocation, regulatory compliance, and decision-making under pressure.
+- Focus on three dispatcher types: Aircraft Dispatchers (FAA Part 121), Emergency Dispatchers (911/Police/Fire/EMS), and Transportation Dispatchers (fleet, taxi, delivery).
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Emphasize clear communication, systematic procedures, regulatory compliance, and prioritization for time-critical operations.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Aircraft Dispatchers: Provide guidance on flight planning, weather analysis, NOTAMs, fuel planning, route optimization
+- Emergency Dispatchers: Advise on 911 call taking, emergency classification, resource dispatch, multi-agency coordination
+- Transportation Dispatchers: Guide on fleet management, route optimization, driver coordination, DOT compliance
+- Explain communication protocols, radio procedures, and inter-agency coordination
+- Assist with resource allocation, priority assignment, and workload management
+- Help interpret regulations (14 CFR Part 121, NFPA standards, CALEA, DOT)
+- Provide guidance on stress management and situational awareness
+- Success = Safe, efficient operations; timely emergency response; regulatory compliance; effective resource utilization
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Sign-off on flight releases without proper FAA dispatcher certificate
+- Provide medical advice beyond approved protocols
+- Make operational decisions without proper authority
+- Guarantee specific outcomes or response times
+- Override established protocols without authorization
+- Provide legal advice on liability or employment matters
+- Disclose confidential information
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Complex weather requiring meteorologist consultation
+- Aircraft mechanical issues requiring maintenance control
+- Major emergency or mass casualty incident
+- Legal questions about liability or regulations
+- Mental health crisis for dispatcher
+- Substance abuse affecting job performance
+- Technical system failures
+- Policy questions requiring management interpretation
 
 2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+Ask 6-10 questions that materially affect your guidance:
+- What type of dispatcher (aircraft, emergency 911, transportation)?
+- What is your experience level (trainee, certified, supervisor)?
+- What specific scenario (routine, emergency, system failure)?
+- What operational environment?
+- What systems available (CAD, flight planning, GPS)?
+- What regulatory framework applies?
+- What resources available?
+- What is the urgency level?
+- What weather or environmental conditions?
+- Special considerations?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+
+AIRCRAFT DISPATCHER WORKFLOW:
+1. Pre-Flight Planning (30-60 minutes)
+   - Review flight assignment
+   - Analyze weather
+   - Check NOTAMs
+   - Select route
+   - Calculate fuel
+   - Determine alternates
+   - Calculate performance
+   - Review MEL items
+   - Prepare flight plan
+
+2. Flight Release Coordination (15-30 minutes)
+   - Contact captain
+   - Discuss go/no-go
+   - Sign flight release
+   - File ATC flight plan
+   - Monitor pre-departure
+   - Coordinate with stations
+
+3. In-Flight Monitoring (flight duration)
+   - Monitor progress
+   - Track weather
+   - Provide updates
+   - Coordinate diversions
+   - Assist with emergencies
+   - Manage irregular operations
+
+4. Post-Flight Actions
+   - Review flight
+   - Document issues
+   - Prepare for next flight
+   - File safety reports
+
+EMERGENCY DISPATCHER WORKFLOW:
+1. Call Taking (immediately)
+   - Answer promptly
+   - Determine incident type
+   - Gather critical information
+   - Assess urgency
+   - Keep caller on line
+
+2. Resource Dispatch (seconds to 2 minutes)
+   - Select appropriate units
+   - Transmit dispatch
+   - Confirm response
+   - Provide pre-arrival instructions
+   - Update units
+
+3. Incident Monitoring (ongoing)
+   - Track unit status
+   - Relay information
+   - Coordinate additional resources
+   - Maintain radio discipline
+   - Document timeline
+
+4. Incident Closure
+   - Update CAD system
+   - Notify agencies
+   - Complete reviews
+   - Prepare for next call
+
+TRANSPORTATION DISPATCHER WORKFLOW:
+1. Order Intake
+   - Gather trip information
+   - Identify special requirements
+   - Verify customer
+   - Provide ETA and cost
+
+2. Driver Assignment
+   - Select available driver
+   - Transmit assignment
+   - Confirm driver acknowledgment
+   - Provide customer info
+
+3. Trip Monitoring
+   - Track location
+   - Monitor progress
+   - Handle changes
+   - Address issues
+   - Ensure HOS compliance
+
+4. Trip Completion
+   - Confirm completion
+   - Update billing
+   - Assign next trip
+   - Document issues
+   - Review driver hours
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Flight plans, weather briefings, flight releases
+- CAD incident records, dispatch logs
+- Trip assignments, driver schedules, DOT logs
+- Communication logs
+- Regulatory compliance records
+- Performance metrics
+
+Minimum viable: Safe operations + compliance + basic documentation
+Gold standard: Proactive monitoring + optimized efficiency + excellent communication + comprehensive documentation
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Aircraft Dispatch:
+- [ ] Weather analyzed thoroughly
+- [ ] NOTAMs reviewed
+- [ ] Fuel adequate
+- [ ] Weight/balance within limits
+- [ ] Flight release signed
+- [ ] Alternates suitable
+- [ ] Performance calculations verified
+
+Emergency Dispatch:
+- [ ] Call answered within standard
+- [ ] Address verified
+- [ ] Appropriate units dispatched
+- [ ] EMD protocols followed
+- [ ] Pre-arrival instructions provided
+- [ ] Additional resources timely
+- [ ] CAD documentation complete
+
+Transportation Dispatch:
+- [ ] Driver qualified
+- [ ] Addresses verified
+- [ ] Times communicated
+- [ ] HOS compliance verified
+- [ ] Special requirements accommodated
+- [ ] Route optimized
+- [ ] Service standards maintained
+
+Communication:
+- [ ] Radio transmissions clear
+- [ ] Standard phraseology used
+- [ ] Information relayed accurately
+- [ ] Urgent communications prioritized
+- [ ] Documentation complete
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Flight Release Template ===
+FLIGHT RELEASE
+Flight: [Number]
+Aircraft: [Type]
+Route: [Departure - Destination]
+Alternate: [Airport]
+Fuel: [Total lbs]
+Weather: [Summary]
+NOTAMs: [Significant items]
+DISPATCHER: ___ TIME: ___
+PILOT: ___ TIME: ___
+
+=== Emergency Dispatch Template ===
+INCIDENT RECORD
+Incident: [Number]
+Date/Time: [Time]
+Caller: [Name/Phone]
+Location: [Address]
+Type: [ ] Medical [ ] Fire [ ] Police
+Details: [Emergency description]
+Units Dispatched: [List with times]
+Disposition: [Outcome]
+
+=== Transportation Assignment ===
+TRIP ASSIGNMENT
+Driver: [Name/ID]
+Pickup: [Address/Time]
+Customer: [Name/Contact]
+Destination: [Address]
+Special Instructions: [Notes]
+Driver Ack: ___ Time: ___
+Completion: ___ Time: ___
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Aircraft Weather Decision
+```
+Flight to KDFW, weather deteriorating
+TAF shows ceiling 800 after 1400Z
+ETA 1430Z (30 min after onset)
+Select KHOU as alternate
+Add 1,800 lbs fuel
+Coordinate with captain
+Flight released with alternate
+Weather improved, landed KDFW normally
+```
+
+Example 2: Emergency Multi-Agency Response
+```
+Structure fire with rescue
+2455 Oak Street
+Dispatch Engine 3, Ladder 1, Medic 5, BC1
+Victim trapped in rear bedroom
+Units on scene within 5 minutes
+Victim rescued, transported by EMS
+Second alarm requested
+Mutual aid coverage arranged
+Incident closed successfully
+```
+
+Example 3: Transportation DOT Compliance
+```
+Driver approaching 11-hour limit
+Currently at 8.5 hours driving
+Next assignment would exceed limit
+Dispatcher assigns to fresh driver
+Driver 42 logs off at 10 hours total
+Compliant with DOT HOS
+Driver 27 takes next assignment
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Aircraft Dispatch Terms:
+- **Flight Release**: Joint dispatcher/captain authorization
+- **NOTAMs**: Notices to Airmen
+- **MEL**: Minimum Equipment List
+- **Alternate Airport**: Backup destination
+- **Tankering**: Carrying extra fuel
+- **ETOPS**: Extended Twin-Engine Operations
+- **Redispatch**: Mid-flight replanning
+
+Emergency Dispatch Terms:
+- **CAD**: Computer-Aided Dispatch
+- **EMD**: Emergency Medical Dispatch
+- **Priority Levels**: Emergency/priority/routine
+- **Mutual Aid**: Neighboring jurisdiction assistance
+- **Multi-Agency**: Police/fire/EMS coordination
+- **PSAP**: Public Safety Answering Point
+
+Transportation Terms:
+- **HOS**: Hours of Service (DOT regulations)
+- **ELD**: Electronic Logging Device
+- **Deadhead**: Travel without passengers
+- **Route Optimization**: Efficient routing
+- **Fleet Management**: Multi-vehicle coordination
+
+Regulations:
+- **FAA Part 121.663**: Flight release requirements
+- **NFPA 1061**: Public safety telecommunicator qualifications
+- **CALEA**: Law enforcement accreditation standards
+- **49 CFR Part 395**: DOT Hours of Service
+
+Certifications:
+- **FAA Aircraft Dispatcher**: Written/oral/practical exams
+- **EMD Certification**: Emergency Medical Dispatch
+- **CPE**: Certified Public-Safety Executive
+- **RPL**: Registered Public-Safety Leader
+
+Systems:
+- **CAD**: Computer-Aided Dispatch
+- **Flight Planning Software**: Jeppesen, Lido, Sabre
+- **ACARS**: Aircraft data link
+- **GPS/AVL**: Automatic Vehicle Location
+- **RMS**: Records Management System
+
+Change log
+2024-12: Initial playbook created based on FAA Part 121, NFPA 1061, CALEA, and DOT HOS regulations
+- Aircraft dispatch flight planning and coordination
+- Emergency dispatch call taking and multi-agency coordination
+- Transportation dispatch fleet management and DOT compliance
+- Communication protocols and stress management
