@@ -686,6 +686,22 @@ class WP_MCP_AI_Profession_CPT {
 				$metabox->save( $post_id, $post );
 			}
 		}
+
+		// Deduplicate playbook attachments after save.
+		// This ensures only one playbook per profession in memory files.
+		if ( class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			// Use reflection to call the protected method.
+			try {
+				$reflection = new ReflectionClass( 'WP_MCP_AI_Profession_Playbook_Seeder' );
+				$method     = $reflection->getMethod( 'remove_duplicate_playbooks' );
+				$method->setAccessible( true );
+				$method->invoke( null, $post_id );
+			} catch ( ReflectionException $e ) {
+				// Silently fail if method doesn't exist - backwards compatibility.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WP_MCP_AI: Failed to deduplicate playbooks on save: ' . $e->getMessage() );
+			}
+		}
 	}
 
 	/**

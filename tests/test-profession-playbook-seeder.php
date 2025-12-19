@@ -531,4 +531,82 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	/**
+	 * Test deduplication on profession save_post.
+	 */
+	public function test_save_post_deduplication() {
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
+		// Create test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'post_title'  => 'Test Profession Save',
+			'post_name'   => 'test_profession_save',
+			'post_status' => 'publish',
+			'category'    => 'technical',
+		);
+
+		$post_id = $repository->save( $profession_data );
+
+		// Create 3 duplicate attachments.
+		$attachment_ids = array();
+		for ( $i = 0; $i < 3; $i++ ) {
+			$attachment_id = $this->factory->post->create(
+				array(
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
+					'post_title'  => 'Test Playbook Save ' . $i,
+				)
+			);
+			update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', $post_id );
+
+			// Add to memory files.
+			$memory_files   = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+			$memory_files   = is_array( $memory_files ) ? $memory_files : array();
+			$memory_files[] = $attachment_id;
+			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
+
+			$attachment_ids[] = $attachment_id;
+			usleep( 1000 ); // Ensure different timestamps.
+		}
+
+		// Verify we have 3 attachments before save.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Profession_Playbook_Seeder' );
+		$method     = $reflection->getMethod( 'find_all_playbook_attachments' );
+		$method->setAccessible( true );
+		$attachments = $method->invoke( null, $post_id );
+		$this->assertCount( 3, $attachments, 'Should have 3 attachments before save' );
+
+		// Trigger save_post hook (simulating admin save).
+		$_POST['wp_mcp_ai_profession_nonce'] = wp_create_nonce( 'wp_mcp_ai_save_profession' );
+		$cpt_instance                        = new WP_MCP_AI_Profession_CPT();
+		$profession                          = get_post( $post_id );
+		$cpt_instance->save_post( $post_id, $profession );
+		unset( $_POST['wp_mcp_ai_profession_nonce'] );
+
+		// Verify only 1 attachment remains associated with profession.
+		$attachments = $method->invoke( null, $post_id );
+		$this->assertCount( 1, $attachments, 'Should have only 1 attachment after save' );
+
+		// Verify memory files only contains 1 attachment.
+		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$this->assertIsArray( $memory_files );
+		$this->assertCount( 1, $memory_files, 'Memory files should contain only 1 attachment' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		foreach ( $attachment_ids as $attachment_id ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
+	}
 }
