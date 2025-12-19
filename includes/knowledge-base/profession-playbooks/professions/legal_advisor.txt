@@ -42,14 +42,87 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdictions are involved? (Legal compliance requirements vary significantly by region)
 - What is the business objective or problem you're trying to solve?
 - What are the legal risks and potential liabilities involved?
 - What is the timeline and business urgency (board meeting, deal closing, regulatory deadline)?
-- What jurisdictions are involved (multi-state, international)?
 - What is the budget or cost constraint for legal support?
 - Who are the key stakeholders and decision-makers?
 - What contracts, regulations, or prior legal advice apply?
 - Have outside counsel or other advisors been consulted?
+
+1.5) Regional Variations - In-House Legal Practice
+
+**NOTE**: In-house legal advisors must be familiar with jurisdictional legal systems (see lawyer playbook for details).
+
+**United States:**
+- Bar Admission: Must be licensed attorney in at least one state; corporate counsel rules allow limited multi-state practice
+- Professional Conduct: Model Rules apply; duty to organization (not individuals); up-the-ladder reporting
+- Privilege: Attorney-client privilege applies; work product doctrine protects strategic materials
+- Regulatory: SEC (public companies), FTC, DOJ, state AGs, industry-specific regulators
+- Corporate Governance: SOX compliance (public), Dodd-Frank, FCPA (anti-corruption), antitrust
+- Employment Law: Federal (Title VII, FLSA, FMLA, ADA) + state employment laws (vary significantly)
+- Contracts: State-specific contract law; UCC for commercial transactions
+- IP: Federal (patents, trademarks, copyrights); state (trade secrets)
+- Data Privacy: State laws (CCPA California, others); no comprehensive federal law
+- Professional Org: Association of Corporate Counsel (ACC)
+
+**United Kingdom:**
+- Qualification: Solicitor (Law Society) or barrister; qualified lawyers from other jurisdictions can requalify
+- Professional Conduct: SRA Code of Conduct (solicitors); in-house exemption from some requirements
+- Privilege: Legal professional privilege (advice and litigation privilege)
+- Regulatory: FCA (financial services), CMA (competition), ICO (data protection), HSE, sector regulators
+- Corporate Governance: Companies Act 2006, UK Corporate Governance Code (listed companies)
+- Employment Law: Employment Rights Act 1996, Equality Act 2010, TUPE, Working Time Regulations
+- Contracts: English common law; some consumer protection EU-derived
+- IP: UK IPO; European Patent Office; post-Brexit UK-specific regime
+- Data Privacy: UK GDPR, Data Protection Act 2018
+- Professional Org: The In-House Lawyers Group, Law Society In-House Division
+
+**European Union:**
+- Qualification: National bar admission; Lawyers' Services Directive allows cross-border practice
+- Professional Conduct: CCBE Code of Conduct; national codes
+- Privilege: Varies by member state; EU law recognizes lawyer-client confidentiality (limited)
+- Regulatory: EU-level (competition, data protection, financial services) + national regulators
+- Corporate Governance: Company Law Directive, Shareholder Rights Directive, national company laws
+- Employment Law: EU directives (working time, equal treatment, collective redundancies) + national laws
+- Contracts: National contract law varies (civil law codes)
+- IP: EU trademarks, EU designs; European Patent Convention
+- Data Privacy: GDPR (EU Regulation 2016/679) - directly applicable; national DPAs enforce
+- Compliance: GDPR, Anti-Money Laundering Directives, sanctions compliance
+
+**Canada:**
+- Qualification: Provincial law society admission; typically qualify in province of employment
+- Professional Conduct: Federation of Law Societies Model Code; provincial variations
+- Privilege: Solicitor-client privilege protected; Wigmore test
+- Regulatory: Federal (competition, securities (OSC), privacy) + provincial regulators
+- Corporate Governance: CBCA (federal), provincial corporation acts, securities laws
+- Employment Law: Federal (Canada Labour Code) for federally regulated; provincial employment standards
+- Contracts: Provincial contract law (common law except Quebec civil law)
+- IP: Federal (patents, trademarks, copyright, industrial designs)
+- Data Privacy: PIPEDA (federal commercial), provincial laws (Quebec, BC, Alberta)
+- Bilingual: Federal government and some provincially regulated entities require bilingual capacity
+
+**Australia:**
+- Qualification: State/territory admission; automatic national mutual recognition
+- Professional Conduct: Australian Solicitors' Conduct Rules; state-based regulation
+- Privilege: Legal professional privilege (advice and litigation privilege)
+- Regulatory: ASIC (corporations, financial services), ACCC (competition), OAIC (privacy), state/territory regulators
+- Corporate Governance: Corporations Act 2001, ASX Corporate Governance Principles (listed)
+- Employment Law: Fair Work Act 2009 (national system); state systems for some industries
+- Contracts: Common law (state-based but nationally consistent)
+- IP: Federal (IP Australia) for patents, trademarks, designs, copyright
+- Data Privacy: Privacy Act 1988 (Australian Privacy Principles), Notifiable Data Breaches scheme
+- Professional Org: Corporate Lawyers Association of Australia
+
+**Key Regional Differences for In-House Counsel:**
+- **Bar Admission**: US multi-state flexibility; others require qualification in jurisdiction
+- **Privilege**: US strong attorney-client privilege; EU more limited; varies by jurisdiction
+- **Regulatory Landscape**: US federal + 50 states complex; EU harmonized in some areas; varies
+- **Data Privacy**: EU/UK GDPR comprehensive; US state-by-state patchwork; Canada PIPEDA; Australia Privacy Act
+- **Employment Law**: Varies significantly (US at-will employment with exceptions; EU/UK stronger protections)
+- **Corporate Governance**: US (SOX for public, state corporate law); UK (Companies Act); EU directives; Canada CBCA/provincial
+- **Professional Obligations**: All have duty to organization, confidentiality; specifics vary
 
 3) Default workflow
 Use ACC standards for in-house legal management:

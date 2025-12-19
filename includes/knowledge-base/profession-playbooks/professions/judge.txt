@@ -42,14 +42,77 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and court level? (Judicial procedures and authority vary significantly by jurisdiction)
 - What type of court proceeding is involved (trial, motion hearing, sentencing, appellate argument)?
-- What jurisdiction and court level (state trial, federal district, appellate, supreme court)?
 - What area of law (civil, criminal, family, administrative, constitutional)?
 - What is the procedural posture (pre-trial, trial, post-trial, appeal)?
 - What legal standards apply (beyond reasonable doubt, preponderance, clear and convincing)?
 - What is the specific legal or procedural question?
 - Are there controlling statutes, regulations, or precedents?
 - What is the purpose of the inquiry (educational, research, understanding legal process)?
+
+1.5) Regional Variations - Judicial Systems & Procedures
+
+**NOTE**: Judicial systems mirror the legal systems covered in lawyer playbook. Key regional differences:
+
+**United States:**
+- Court Structure: Federal (Article III) and state court systems (dual sovereignty)
+- Federal: District Courts (trial), Circuit Courts of Appeals (11 circuits + DC + Federal), Supreme Court
+- State: Varies by state (trial courts, intermediate appellate, supreme court); unified vs bifurcated criminal/civil
+- Judicial Selection: Federal (presidential appointment, Senate confirmation, life tenure); state varies (election, appointment, merit selection, retention)
+- Jury System: Constitutional right to jury trial (civil >$20, criminal); 6-12 jurors
+- Standard of Review: Abuse of discretion, de novo, clearly erroneous (varies by issue type)
+- Precedent: Binding within jurisdiction; persuasive from other circuits/states
+- Judicial Conduct: Code of Conduct for United States Judges; state codes of judicial conduct
+
+**United Kingdom:**
+- Court Structure: Magistrates' Courts, County Courts (civil), Crown Court (criminal), High Court, Court of Appeal, Supreme Court
+- Judicial Appointment: Judicial Appointments Commission; merit-based; security of tenure
+- Magistrates: Lay magistrates (volunteers) and district judges (professional); handle 95% of criminal cases
+- Jury: Crown Court for serious criminal ("indictable") offenses; rare in civil cases
+- Legal Traditions: England & Wales vs Scotland (separate system, Court of Session) vs Northern Ireland
+- Wigs and Gowns: Traditional court dress (barristers, judges); varies by court level
+- Judicial Conduct: Judicial Conduct Investigations Office; Guide to Judicial Conduct
+
+**Canada:**
+- Court Structure: Provincial/territorial courts, superior courts, courts of appeal, Federal Court, Supreme Court of Canada
+- Judicial Appointment: Federal judges (Governor in Council); provincial judges (provincial appointment commissions)
+- Bilingual: Federal courts operate in English and French; judges must understand both
+- Jury: Available for serious criminal offenses and some civil cases (varies by province)
+- Indigenous Courts: Specialized courts addressing Indigenous offenders (Gladue principles)
+- Judicial Conduct: Canadian Judicial Council; provincial judicial councils
+- Precedent: Supreme Court of Canada binding nationwide; provincial appellate courts bind lower courts in province
+
+**Australia:**
+- Court Structure: Magistrates' Courts, District/County Courts, Supreme Courts (state), Federal Court, Family Court, High Court of Australia
+- Judicial Appointment: Federal (Governor-General on government advice); state (Governor on government advice)
+- Jury: Serious criminal offenses; some civil cases (varies by state)
+- Indigenous Courts: Koori Courts (Victoria), Murri Courts (Queensland) for Indigenous offenders
+- Judicial Conduct: Judicial Commission (NSW, others); complaint and performance review
+- Precedent: High Court binding nationwide; state supreme courts bind lower courts in state
+
+**Civil Law Jurisdictions:**
+- Judicial Role: More inquisitorial; judges actively investigate and question (vs adversarial common law)
+- Career Judiciary: Enter judiciary early in career (vs practicing lawyers appointed as judges)
+- Codes: Comprehensive legal codes primary source; case law persuasive but not binding (no stare decisis)
+- Panels: Multi-judge panels common; single judge for minor matters
+- Written Decisions: Often shorter, cite code provisions primarily
+- Examples: France (magistrature), Germany (career judges), Japan (hybrid civil/common)
+
+**International & Specialized Courts:**
+- International Court of Justice (ICJ): UN principal judicial organ; state disputes
+- International Criminal Court (ICC): War crimes, crimes against humanity, genocide
+- European Court of Justice (ECJ): EU law interpretation; binding on member states
+- European Court of Human Rights (ECHR): Human rights violations under ECHR convention
+- Permanent Court of Arbitration (PCA): International arbitration
+
+**Key Regional Judicial Differences:**
+- **Selection Method**: US (appointment/election), UK/Commonwealth (appointment commissions), civil law (career path)
+- **Role**: Common law (neutral arbiter), civil law (active investigator)
+- **Precedent**: Common law (binding stare decisis), civil law (persuasive only)
+- **Juries**: Common law (constitutional right), civil law (rare or absent)
+- **Tenure**: US federal (life), others (mandatory retirement age 65-75)
+- **Conduct Standards**: All have judicial conduct codes; enforcement mechanisms vary
 
 3) Default workflow
 Use systematic judicial decision-making process:
