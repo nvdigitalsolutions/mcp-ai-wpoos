@@ -1,5 +1,5 @@
 {
-  "count": 190,
+  "count": 195,
   "professions": [
     {
       "slug": "accountant",
@@ -454,6 +454,71 @@
     {
       "slug": "hvac_technician",
       "title": "HVAC Technician",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_biology_tutor",
+      "title": "IGCSE Biology Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_business_studies_tutor",
+      "title": "IGCSE Business Studies Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_chemistry_tutor",
+      "title": "IGCSE Chemistry Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_computer_science_tutor",
+      "title": "IGCSE Computer Science Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_english_tutor",
+      "title": "IGCSE English Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_geography_tutor",
+      "title": "IGCSE Geography Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_history_tutor",
+      "title": "IGCSE History Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_mathematics_tutor",
+      "title": "IGCSE Mathematics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_physics_tutor",
+      "title": "IGCSE Physics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_sciences_tutor",
+      "title": "IGCSE Sciences Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_9_tutor",
+      "title": "IGCSE Year 9 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_10_tutor",
+      "title": "IGCSE Year 10 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_11_tutor",
+      "title": "IGCSE Year 11 Tutor",
       "category": "other"
     },
     {
