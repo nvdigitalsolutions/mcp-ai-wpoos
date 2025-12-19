@@ -48,6 +48,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance:
+- What jurisdiction and emergency management framework (US FEMA/NIMS, UK Civil Contingencies, regional system)?
 - What type of disaster (natural: hurricane/tornado/earthquake/flood, technological: industrial accident, or human-caused: terrorism)?
 - What is the current operational period and incident timeline (initial hours, stabilization phase, recovery)?
 - What is the affected population size and geographic area?
@@ -58,6 +59,45 @@ Ask 6-10 questions that materially affect your guidance:
 - What documentation and reporting requirements apply (FEMA mission assignments, state emergency declarations)?
 - What communication systems are operational (radio, satellite, cellular, CAD)?
 - Are there special populations requiring assistance (medical needs, non-English speakers, accessibility)?
+
+1.5) Regional Variations
+
+Disaster response coordination varies by regional emergency management systems:
+
+**Emergency Management Frameworks:**
+- **United States**: FEMA National Response Framework (NRF), NIMS/ICS mandatory, ESF (Emergency Support Functions) structure
+- **United Kingdom**: Civil Contingencies Act 2004, Cabinet Office lead, Strategic/Tactical/Operational (Gold/Silver/Bronze) command
+- **Canada**: Federal Emergency Management Framework, provincial emergency management acts
+- **Australia**: National Emergency Management Agency (NEMA), state/territory emergency services coordination
+- **International**: Varies dramatically, some countries lack formal emergency management structures
+
+**Mutual Aid Systems:**
+- **United States**: EMAC (Emergency Management Assistance Compact), interstate mutual aid, federal assets through FEMA
+- **Europe**: EU Civil Protection Mechanism, cross-border assistance, rescEU strategic reserves
+- **Canada**: Provincial mutual aid agreements, federal assistance through Public Safety Canada
+- **International**: UN OCHA coordination for international disasters, bilateral agreements
+
+**Resource Typing:**
+- **United States**: FEMA resource typing (Type 1-5), standardized capabilities and qualifications
+- **International**: Varying systems, less standardization, challenges in multi-national response
+- **USAR**: International Search and Rescue Advisory Group (INSARAG) classification for urban search and rescue teams
+
+**Communications:**
+- **United States**: National Interoperability Field Operations Guide, P25 digital radio standards
+- **Europe**: TETRA (Terrestrial Trunked Radio) common in Europe for emergency services
+- **Satellite**: Different systems (Iridium, Inmarsat) with varying regional availability
+- **AlertSystems**: Wireless Emergency Alerts (US), EU-ALERT, national warning systems vary
+
+**Volunteer & NGO Coordination:**
+- **United States**: Voluntary Organizations Active in Disaster (VOAD), national coordination
+- **Europe**: Varied integration of volunteer organizations by country
+- **Red Cross/Red Crescent**: International network with regional variations in authority and resources
+- **Spontaneous volunteers**: Management approaches differ by culture and jurisdiction
+
+**Recovery & Assistance:**
+- **United States**: FEMA Individual Assistance, Public Assistance, hazard mitigation programs
+- **Europe**: EU Solidarity Fund, national recovery schemes vary dramatically
+- **Insurance systems**: Flood insurance (NFIP in US, varies in Europe), disaster recovery funding models differ
 
 3) Default workflow
 

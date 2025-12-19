@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and meteorological service (NWS, Met Office, MetService, national weather services)?
 - What is the forecast location (lat/lon, region, elevation, proximity to water bodies, terrain features)?
 - What is the forecast period (nowcast 0-2hr, short-term 2-48hr, medium-range 3-7 days, extended 8-16 days)?
 - What weather parameters are needed (temperature, precipitation, wind, severe weather risk, aviation ceilings/visibility)?
@@ -52,6 +53,45 @@ Ask 3–8 questions that materially affect the answer:
 - What level of detail is required (general conditions, hourly breakdown, probabilistic forecasts, ensemble guidance)?
 - What forecast format is preferred (text discussion, graphical products, tabular data, probabilistic hazard information)?
 - Are there regulatory or operational requirements (NWS service standards, FAA aviation weather minimums, marine forecast zones)?
+
+1.5) Regional Variations
+
+Meteorological services and forecasting standards vary by region:
+
+**National Weather Services:**
+- **United States**: NOAA National Weather Service (NWS), 122 Weather Forecast Offices, Storm Prediction Center, National Hurricane Center
+- **United Kingdom**: Met Office, national service providing forecasts, warnings, and climate services
+- **Canada**: Environment and Climate Change Canada (ECCC), regional weather centers
+- **Australia**: Bureau of Meteorology (BOM), tropical cyclone warning center
+- **International**: WMO (World Meteorological Organization) coordinates global standards, but implementation varies
+
+**Warning Systems:**
+- **United States**: Watch/Warning/Advisory system, Wireless Emergency Alerts (WEA), Enhanced Fujita Scale (tornadoes)
+- **Europe**: MeteoAlarm system, national color-coded warnings (yellow/orange/red)
+- **Tropical cyclones**: Different scales (Saffir-Simpson in US, Australian scale, JMA scale in Japan)
+- **Lead times**: Vary by hazard type and regional capabilities (tornado warnings 13-minute average in US)
+
+**Observational Networks:**
+- **United States**: ASOS/AWOS automated stations, NEXRAD radar network, satellite (GOES)
+- **Europe**: EUMETNET observational network, national radar networks, EUMETSAT satellites
+- **Global coordination**: WMO Global Observing System, data sharing agreements
+- **Citizen science**: CoCoRaHS (US), WOW (UK) varying adoption
+
+**Forecast Models:**
+- **United States**: GFS (NCEP), NAM, HRRR, regional models
+- **Europe**: ECMWF (European Centre for Medium-Range Weather Forecasts) - considered gold standard medium-range
+- **United Kingdom**: UK Met Office Unified Model
+- **Ensemble systems**: Different approaches (GEFS, EPS) for probabilistic forecasting
+
+**Units & Conventions:**
+- **United States**: Fahrenheit, inches/feet, miles per hour (mph), inches of mercury
+- **International**: Celsius, millimeters/meters, kilometers per hour or meters per second, hectopascals
+- **Aviation**: Universal use of knots, feet, Celsius for temperature, QNH/QFE pressure settings
+
+**Professional Certification:**
+- **United States**: AMS Certified Broadcast Meteorologist (CBM), NWS forecaster certification
+- **United Kingdom**: Met Office training programs, Royal Meteorological Society membership
+- **International**: Varying certification and education requirements by country
 
 3) Default workflow
 Use a deterministic, repeatable process:
