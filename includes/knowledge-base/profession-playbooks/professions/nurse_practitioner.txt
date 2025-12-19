@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/state/country? (NP scope of practice and prescribing authority vary dramatically)
 - What is the patient's chief complaint and symptom duration/severity?
 - What is the patient's relevant medical history (chronic conditions, surgeries, hospitalizations)?
 - What medications is the patient currently taking (including OTC, herbals, supplements)?
@@ -52,6 +53,54 @@ Ask 3–8 questions that materially affect the answer:
 - What diagnostic information is available (vital signs, labs, imaging, prior records)?
 - What are the patient's health goals, concerns, and barriers to care?
 - What is the state's scope of practice for NPs (prescriptive authority, practice agreements)?
+
+1.5) Regional Variations - Nurse Practitioner Practice Authority
+
+**United States:**
+- Licensing: State boards of nursing; MSN or DNP with NP certification (FNP, AGNP, PNP, PMHNP, etc.)
+- Certification: National certification via AANP or ANCC
+- Scope: **VARIES DRAMATICALLY BY STATE** - 3 authority models:
+  - Full Practice Authority (26+ states): Independent practice, no physician collaboration required
+  - Reduced Practice Authority: Physician collaboration/consultation required
+  - Restricted Practice Authority: Physician supervision required
+- Prescribing: DEA registration required; controlled substance authority varies by state
+- Reimbursement: Medicare pays 85% of physician rate; private insurance varies
+- Organizations: AANP (American Association of Nurse Practitioners), specialty organizations
+
+**United Kingdom:**
+- Title: Advanced Nurse Practitioner (ANP) or Advanced Clinical Practitioner (ACP)
+- Regulation: NMC (Nursing & Midwifery Council); no separate NP registration (yet)
+- Education: Master's level advanced practice program
+- Scope: Broad scope including diagnosis, treatment, prescribing (with V300 qualification)
+- Prescribing: Independent and supplementary prescribing with additional qualification
+- System: NHS employed; autonomous practice in many settings
+- Organizations: RCN (Royal College of Nursing) ANP forum
+
+**Canada:**
+- Licensing: Provincial/territorial regulatory authorities
+- Education: Master's degree; NP education program
+- Scope: **VARIES BY PROVINCE**:
+  - Most provinces: Full practice authority with prescribing
+  - Some provinces: Collaborative agreements required
+- Prescribing: Controlled substances authority (provincial variation)
+- System: Universal healthcare; NPs in primary care, specialty, hospital settings
+- Organizations: CANP (Canadian Association of Nurse Practitioners), provincial associations
+
+**Australia:**
+- Title: Nurse Practitioner (protected title)
+- Regulation: NMBA (Nursing and Midwifery Board of Australia) via AHPRA
+- Education: Master's degree + endorsement requirements
+- Scope: Autonomous practice with prescribing, ordering diagnostics, hospital admitting privileges
+- Prescribing: PBS (Pharmaceutical Benefits Scheme) prescribing authority; Schedule 8 (controlled) with authorization
+- Medicare: NP Medicare provider numbers; bulk billing available
+- System: Public/private mix; growing role in primary care and specialty
+- Organizations: ACNP (Australian College of Nurse Practitioners)
+
+**Key Differences:**
+- Practice authority: US state-by-state variation; other countries more uniform nationally
+- Prescribing: Widely variable in US; more standardized in other countries
+- Reimbursement: 85% in US Medicare; parity in other systems
+- Title protection: Varies (US no national protection; protected in Australia/Canada)
 
 3) Default workflow
 Use a systematic advanced practice nursing process:

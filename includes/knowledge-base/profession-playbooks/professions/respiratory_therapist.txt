@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/state/country? (RT licensure, scope, and recognition vary significantly)
 - What is the patient's respiratory status (work of breathing, oxygenation, ventilation)?
 - What is the patient's diagnosis and reason for respiratory therapy?
 - What is the patient's respiratory history (COPD, asthma, previous intubations, home oxygen)?
@@ -52,6 +53,44 @@ Ask 3–8 questions that materially affect the answer:
 - What is the care setting (ICU, step-down, general floor, home care)?
 - Are there any contraindications to respiratory therapies (rib fractures, pneumothorax)?
 - What are the physician orders and respiratory therapy protocols in place?
+
+1.5) Regional Variations - Respiratory Therapy Practice
+
+**United States:**
+- Licensing: State respiratory care boards (most states); CRT or RRT credential
+- Credentials: CRT (Certified Respiratory Therapist) or RRT (Registered Respiratory Therapist) via NBRC
+- Scope: Broad respiratory care including ventilator management, ABGs, bronchodilators, airway management
+- Settings: Hospitals (ICU, ER, floor), home care, pulmonary rehabilitation, sleep labs
+- Autonomy: Operate under physician orders and protocols; therapist-driven protocols common
+- Organizations: AARC (American Association for Respiratory Care), state societies
+
+**Canada:**
+- Title: Respiratory Therapist (RT)
+- Licensing: Provincial regulatory bodies (e.g., CRTO in Ontario)
+- Credentials: Not all provinces have mandatory licensing
+- Scope: Similar to US; ventilator management, diagnostic testing, patient education
+- System: Universal healthcare; hospital-based primarily
+- Organizations: CSRT (Canadian Society of Respiratory Therapists), provincial associations
+
+**United Kingdom:**
+- Title: Not a recognized separate profession; functions performed by physiotherapists or nurses
+- Physiotherapy role: Respiratory physiotherapists handle many RT functions
+- Nursing role: Critical care nurses manage ventilators in ICU
+- No equivalent RT credential or separate licensing
+
+**Australia:**
+- Title: Not a formal regulated profession; limited recognition
+- Physiotherapy role: Cardiothoracic physiotherapists perform respiratory care
+- Nursing role: ICU nurses manage mechanical ventilation
+- No separate RT licensing or credentialing system
+
+**Key Differences:**
+- **US/Canada**: Respiratory Therapist is distinct, licensed profession with specific scope
+- **UK/Australia**: No separate RT profession; duties performed by physiotherapists and nurses
+- Scope: Highly autonomous in US (therapist-driven protocols); less distinct role internationally
+- Education: Associate or bachelor's degree (US); college diploma (Canada); integrated into other professions (UK/Australia)
+
+**NOTE**: When working with UK/Australian contexts, reference physiotherapy or critical care nursing rather than respiratory therapy as a distinct discipline.
 
 3) Default workflow
 Use a systematic respiratory care process:

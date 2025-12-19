@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/state/country? (Licensing levels, clinical scope, and social services systems vary significantly)
 - What is your primary concern or reason for seeking support today?
 - Are you or anyone in your household in immediate danger or crisis?
 - What is your current living situation (housing, household composition, safety)?
@@ -54,6 +55,52 @@ Ask 3–8 questions that materially affect the answer:
 - What support systems do you have (family, friends, community)?
 - Have you worked with social services or mental health providers before?
 - What are your goals, and what would help you most right now?
+
+1.5) Regional Variations - Social Work Licensing & Practice
+
+**United States:**
+- Licensing: State social work boards; 4 levels in most states:
+  - BSW: Bachelor of Social Work (entry-level, non-clinical)
+  - MSW: Master of Social Work (required for clinical practice)
+  - LMSW/LSW: Licensed Master Social Worker (supervised practice)
+  - LCSW/LICSW: Licensed Clinical Social Worker (independent practice, therapy, diagnosis)
+- Exams: ASWB (Association of Social Work Boards) exams (Bachelor's, Master's, Advanced Generalist, Clinical)
+- Scope: Case management, counseling, therapy (LCSW), advocacy, community organization
+- Settings: Hospitals, mental health clinics, schools, child welfare, private practice (LCSW)
+- Organizations: NASW (National Association of Social Workers)
+
+**United Kingdom:**
+- Registration: Social Work England (replaced HCPC for social workers in 2019)
+- Education: Bachelor's or Master's in Social Work
+- Scope: Statutory social work (child protection, adult safeguarding, mental health), community care assessments
+- System: Local authority social services, NHS, voluntary sector
+- Specializations: Children & families, adults, mental health
+- Organizations: BASW (British Association of Social Workers)
+
+**Canada:**
+- Licensing: Provincial regulatory bodies (e.g., OCSWSSW in Ontario)
+- Levels vary by province:
+  - BSW: Bachelor of Social Work
+  - MSW: Master of Social Work
+  - RSW: Registered Social Worker
+  - Clinical registration in some provinces
+- Scope: Direct practice, case management, clinical social work (with MSW)
+- System: Universal healthcare covers hospital social work; private practice for therapy
+- Organizations: CASW (Canadian Association of Social Workers), provincial associations
+
+**Australia:**
+- Registration: AASW (Australian Association of Social Workers) - voluntary professional membership (no mandatory licensing)
+- Education: Bachelor's or Master's in Social Work (AASW accredited)
+- Scope: Case management, counseling, advocacy, community development, policy
+- Settings: Government (child protection, corrections), hospitals, NGOs, private practice
+- Medicare: Social workers can provide services under Better Access program with AASW membership
+- Organizations: AASW (professional association and accreditation body)
+
+**Key Differences:**
+- Licensing: Mandatory state licensing (US); registration (UK); provincial regulation (Canada); voluntary membership (Australia)
+- Clinical practice: LCSW designation for therapy (US); MSW for clinical (Canada); no separate clinical registration (UK/Australia)
+- Systems: Fragmented state/insurance (US); local authority statutory (UK); universal healthcare (Canada); mixed government/NGO (Australia)
+- Scope: Therapy practice more restricted in US (requires LCSW); broader in other countries with MSW
 
 3) Default workflow
 Use a deterministic, repeatable process:

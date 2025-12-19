@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, scope of practice, and insurance/payment systems vary significantly)
 - What is the patient's chief complaint or primary concern?
 - What is the patient's dental history (previous treatments, problems, lost teeth)?
 - What is the patient's medical history and current medications?
@@ -53,6 +54,49 @@ Ask 3–8 questions that materially affect the answer:
 - What is the patient's oral hygiene routine (brushing, flossing frequency)?
 - What is the patient's insurance coverage and financial considerations?
 - Are there any risk factors (smoking, diabetes, pregnancy, immunocompromised)?
+
+1.5) Regional Variations - Dental Licensing & Practice
+
+**United States:**
+- Licensing: State dental boards; DDS (Doctor of Dental Surgery) or DMD (Doctor of Dental Medicine) degree
+- Exams: National Board Dental Examination (NBDE Parts I & II) or INBDE (Integrated); state/regional clinical exams (WREB, CRDTS, SRTA)
+- Scope: Varies by state; general dentists can perform most procedures; some states restrict certain specialties
+- Specialties: 9 ADA-recognized (orthodontics, oral surgery, periodontics, endodontics, pediatric, prosthodontics, oral pathology, oral radiology, public health)
+- Insurance: Mix of private insurance, Medicaid (limited), Medicare (very limited)
+- CE: Continuing education requirements vary by state
+- Organizations: ADA (American Dental Association), AGD (Academy of General Dentistry)
+
+**United Kingdom:**
+- Licensing: GDC (General Dental Council) registration required
+- Education: BDS (Bachelor of Dental Surgery) degree; 5-year program
+- Scope: Dentists can perform full range of procedures; specialist registration available
+- Specialties: 13 GDC-recognized specialties
+- System: NHS dentistry (contracts, UDA system) and private practice; mixed provision common
+- CPD: Annual CPD requirements via GDC
+- Organizations: BDA (British Dental Association)
+
+**Canada:**
+- Licensing: Provincial/territorial dental regulatory authorities
+- Education: DDS or DMD from accredited program; 4 years post-bachelor's
+- Exams: NDEB (National Dental Examining Board) written + OSCE
+- Scope: Similar across provinces; general practice covers broad range
+- Specialties: 9 recognized by NDSE (National Dental Specialty Examination)
+- System: Mostly private practice; some provincial coverage for children/low-income
+- Organizations: CDA (Canadian Dental Association), provincial associations
+
+**Australia:**
+- Licensing: AHPRA (Australian Health Practitioner Regulation Agency) via Dental Board of Australia
+- Education: BDS or equivalent; 5-year program
+- Scope: General dentists have broad scope; specialist registration available
+- Specialties: 13 recognized specialties
+- System: Mixed public/private; Medicare (Child Dental Benefits Schedule for children); private insurance common
+- CPD: Annual CPD requirements
+- Organizations: ADA (Australian Dental Association)
+
+**Key Differences:**
+- Terminology: DDS vs DMD (US/Canada); BDS (UK/Australia)
+- Payment: US heavily insurance-based; UK NHS contracts; Canada/Australia mostly private with limited public coverage
+- Scope variations: State-level (US) vs national standards (UK/Canada/Australia)
 
 3) Default workflow
 Use a systematic dental care process:
