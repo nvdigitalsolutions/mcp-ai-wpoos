@@ -5,6 +5,17 @@
  * Intelligently recommends tools for professions based on their category,
  * role, and specific needs. Provides contextual guidance for tool usage.
  *
+ * Uses a three-tier recommendation system:
+ * 1. Core tools (recommended for all professions)
+ * 2. Category-specific tools (based on profession category)
+ * 3. Profession-specific tools (tailored to individual professions)
+ *
+ * Key features:
+ * - Automatic tool filtering based on tool registry availability
+ * - Contextual, profession-specific usage guidance
+ * - Functional categorization (Core, Media, Admin, etc.)
+ * - Support for 40+ professions across 7 categories
+ *
  * @package WP_MCP_AI
  */
 
@@ -224,7 +235,11 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 	 */
 	protected function filter_available_tools( $tool_slugs ) {
 		if ( null === $this->tool_registry ) {
-			// If no registry provided, assume all tools are available.
+			// If no registry provided, log warning and return all slugs.
+			// This should only happen in testing scenarios.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'WP_MCP_AI: Tool recommender initialized without registry. Tool availability cannot be verified.' );
+			}
 			return $tool_slugs;
 		}
 
@@ -293,6 +308,7 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 			'External Data & APIs'       => array(),
 			'Communication'              => array(),
 			'Automation & Scheduling'    => array(),
+			'Other Tools'                => array(),
 		);
 
 		$category_map = array(

@@ -36,8 +36,11 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $playbook_base_path Optional path to playbook directory.
-	 * @param WP_MCP_AI_Profession_Tool_Recommender $tool_recommender Optional tool recommender instance.
+	 * @param string                                 $playbook_base_path Optional path to playbook directory.
+	 * @param WP_MCP_AI_Profession_Tool_Recommender|null $tool_recommender Optional tool recommender instance.
+	 *                                                                     If null, a new instance will be created automatically.
+	 *                                                                     This parameter is backward compatible - existing code
+	 *                                                                     that doesn't pass it will continue to work.
 	 */
 	public function __construct( $playbook_base_path = null, $tool_recommender = null ) {
 		if ( null === $playbook_base_path ) {
