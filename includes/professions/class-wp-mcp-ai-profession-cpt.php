@@ -74,6 +74,13 @@ class WP_MCP_AI_Profession_CPT {
 	const META_ASSOCIATED_ASSISTANT = '_wp_mcp_ai_profession_associated_assistant';
 
 	/**
+	 * Meta key for primary region/jurisdiction.
+	 *
+	 * @since 1.7.0
+	 */
+	const META_REGION = '_wp_mcp_ai_profession_region';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -305,6 +312,21 @@ class WP_MCP_AI_Profession_CPT {
 				'sanitize_callback' => 'absint',
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
+			)
+		);
+
+		// Primary region or jurisdiction.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_REGION,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Primary region or jurisdiction for this profession (e.g., "North America", "Europe", "Caribbean", "Global")', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '',
 			)
 		);
 	}
