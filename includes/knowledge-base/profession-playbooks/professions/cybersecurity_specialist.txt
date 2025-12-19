@@ -46,14 +46,48 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-1. What is the security concern or goal? (vulnerability assessment, incident response, compliance, architecture review)
-2. What systems/applications are in scope? (cloud infrastructure, on-prem servers, SaaS applications, endpoints)
-3. What is your current security posture? (existing controls, SIEM, EDR, vulnerability management tools)
-4. Are there compliance requirements? (NIST CSF, ISO 27001, SOC 2, PCI-DSS, HIPAA, GDPR, CMMC)
-5. What is the threat model? (external attackers, insider threats, supply chain risks, specific threat actors)
-6. What is the business impact of security incidents? (downtime costs, data breach consequences, reputation risk)
-7. What is the timeline and budget? (urgent remediation vs. strategic program build-out)
-8. Who are the stakeholders? (CISO, IT leadership, compliance team, business owners)
+1. What region(s) and jurisdictions operate in? (Affects breach notification laws, data protection, regulatory requirements)
+2. What is the security concern or goal? (vulnerability assessment, incident response, compliance, architecture review)
+3. What systems/applications are in scope? (cloud infrastructure, on-prem servers, SaaS applications, endpoints)
+4. What is your current security posture? (existing controls, SIEM, EDR, vulnerability management tools)
+5. Are there compliance requirements? (NIST CSF, ISO 27001, SOC 2, PCI-DSS, HIPAA, GDPR, CMMC)
+6. What is the threat model? (external attackers, insider threats, supply chain risks, specific threat actors)
+7. What is the business impact of security incidents? (downtime costs, data breach consequences, reputation risk)
+8. What is the timeline and budget? (urgent remediation vs. strategic program build-out)
+9. Who are the stakeholders? (CISO, IT leadership, compliance team, business owners)
+
+1.5) Regional Considerations
+
+Cybersecurity requirements and threat landscapes vary significantly by region:
+
+**Data Protection & Breach Notification:**
+- **Europe (EU/EEA)**: GDPR 72-hour breach notification to supervisory authority, NIS2 Directive (network security for critical infrastructure)
+- **United States**: State-specific breach laws (all 50 states), federal sector-specific (HIPAA breach notification, Gramm-Leach-Bliley)
+- **Canada**: PIPEDA breach notification requirements, provincial variations
+- **Australia**: Notifiable Data Breaches scheme, 30-day window
+- **Asia-Pacific**: Varying requirements (Singapore PDPA, China PIPL, Japan APPI amendments)
+
+**Cybersecurity Frameworks & Standards:**
+- **United States**: NIST Cybersecurity Framework, NIST 800-53 (federal), CMMC (defense contractors), CIS Controls
+- **Europe**: ISO 27001 widely adopted, ENISA guidelines, NIS2 Directive requirements
+- **International**: ISO 27001/27002, CIS Controls, COBIT applicable globally
+- **Industry-specific**: PCI-DSS (payments, global), SWIFT CSP (banking), NERC CIP (energy, North America)
+
+**Critical Infrastructure Protection:**
+- **United States**: CISA coordination, sector-specific agencies (e.g., FDA for medical devices)
+- **Europe**: NIS2 Directive, critical infrastructure designation by member state
+- **China**: Multi-Level Protection Scheme (MLPS), cybersecurity reviews for data processing
+- **Regional cooperation**: EU-US cyber cooperation, Five Eyes intelligence sharing
+
+**Encryption & Cryptography:**
+- Export controls on strong encryption (Wassenaar Arrangement, US EAR)
+- Some countries restrict or require backdoors (China cybersecurity law, Australia Assistance and Access Act)
+- Regional certificate authorities and trust anchors vary
+
+**Threat Actor Landscape:**
+- Different threat actors target different regions (e.g., nation-state APTs, organized crime groups)
+- Attack methodologies and TTP (Tactics, Techniques, Procedures) vary regionally
+- MITRE ATT&CK framework is globally applicable but adversary focus varies
 
 3) Default workflow
 Use a deterministic, repeatable process:

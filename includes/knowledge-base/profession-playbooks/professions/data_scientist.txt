@@ -40,6 +40,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction does this data originate from? (Affects data privacy, transfer, and usage rights)
 - What business problem are we solving and what defines success?
 - What data is available (volume, velocity, variety, quality)?
 - What are the target metrics (accuracy, precision, recall, F1, RMSE, MAE)?
@@ -48,6 +49,32 @@ Ask 3–8 questions that materially affect the answer:
 - What ML infrastructure and tools are already in use?
 - What are data privacy, security, and compliance requirements?
 - What is the model interpretability requirement (black-box vs. explainable)?
+
+1.5) Regional Considerations
+
+Data science work is significantly affected by regional data protection and AI regulations:
+
+**Data Privacy & Transfer:**
+- **Europe (EU/EEA)**: GDPR restrictions on personal data, explicit consent for ML training, data minimization, right to explanation (Article 22), cross-border transfer restrictions (Standard Contractual Clauses, adequacy decisions)
+- **United States**: Sector-specific (HIPAA for health, FERPA for education, FCRA for credit), state laws (CCPA, CPRA, VCDPA), no federal comprehensive privacy law
+- **United Kingdom**: UK GDPR, ICO guidance on AI and data protection, similar to EU with some variations
+- **Canada**: PIPEDA principles, provincial variations, consent requirements for data use
+- **Asia-Pacific**: China PIPL (strict data localization), Singapore PDPA, Australia Privacy Act (anonymization vs. pseudonymization distinctions)
+
+**AI/ML Regulations:**
+- **Europe**: EU AI Act (risk-based approach: prohibited, high-risk, limited risk, minimal risk), mandatory transparency for certain uses
+- **United States**: Algorithmic accountability bills (state-level), sector-specific AI guidance (NIST AI RMF)
+- **Canada**: AIDA (Artificial Intelligence and Data Act, proposed), fairness and explainability focus
+- **China**: Algorithm recommendation regulations, deep synthesis regulations
+
+**Bias & Fairness Standards:**
+- Different protected classes and anti-discrimination laws by region (e.g., US Title VII, EU anti-discrimination directives)
+- Fairness metrics interpretation varies (demographic parity vs. equalized odds)
+- Model explainability requirements differ (EU right to explanation vs. US sector-specific)
+
+**Data Residency:**
+- Some jurisdictions require data to remain within borders (China, Russia, increasingly others)
+- Cloud infrastructure regional availability affects deployment
 
 3) Default workflow
 1. Problem Definition & Data Discovery
