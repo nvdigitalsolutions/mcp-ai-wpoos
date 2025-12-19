@@ -199,8 +199,23 @@ public static function cleanup_all_duplicates() {
 
 ### Automatic Cleanup (Recommended)
 
-Duplicates are automatically cleaned up when running any sync operation:
+Duplicates are automatically cleaned up in multiple scenarios:
 
+#### 1. On Profession Save
+When you save a profession in the admin, deduplication runs automatically:
+- Edit any profession in WordPress admin
+- Make changes and click "Update" or "Publish"
+- Duplicates are automatically removed after save
+
+#### 2. Via Sync Buttons (Admin UI)
+Navigate to **Settings → WP oOS → Advanced → Playbook Management**:
+
+1. **Sync Changed Playbooks** - Updates only changed playbooks and removes duplicates (fast, safe)
+2. **Force Regenerate All Playbooks** - Regenerates all playbooks and removes duplicates (slower, use after major updates)
+
+Both buttons now explicitly mention duplicate removal in their descriptions and success messages.
+
+#### 3. Programmatically via PHP
 ```php
 // Sync all playbooks - duplicates are cleaned automatically
 WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
@@ -208,6 +223,9 @@ WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
 // Force regenerate all - duplicates are cleaned automatically
 WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 ```
+
+#### 4. On Metabox Display
+When viewing a profession's playbook metabox in the admin, duplicates are automatically cleaned before display.
 
 ### Manual Cleanup (One-Time)
 
@@ -219,12 +237,6 @@ $result = WP_MCP_AI_Profession_Playbook_Seeder::cleanup_all_duplicates();
 echo "Professions processed: " . $result['professions_processed'];
 echo "Duplicates removed: " . $result['duplicates_removed'];
 ```
-
-### Via AJAX (Admin UI)
-
-The admin UI provides buttons to trigger sync operations:
-1. **Sync Changed Playbooks** - Updates only changed playbooks (cleans duplicates)
-2. **Force Regenerate All Playbooks** - Regenerates all playbooks (cleans duplicates)
 
 ## Expected Results
 
@@ -335,10 +347,37 @@ These numbers should match if there are no duplicates.
 
 ## Related Files
 
-- `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` - Main implementation
-- `tests/test-profession-playbook-seeder.php` - Unit tests
-- `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` - AJAX handlers
-- `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` - Admin UI
+- `includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php` - Main deduplication implementation
+- `includes/professions/class-wp-mcp-ai-profession-cpt.php` - save_post deduplication hook
+- `includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-playbook.php` - Display-time deduplication
+- `tests/test-profession-playbook-seeder.php` - Unit tests including save_post test
+- `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` - AJAX handlers with updated messages
+- `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` - Admin UI with updated button descriptions
+
+## Changelog
+
+### Version 1.7.1 (December 2025) - Enhanced Deduplication
+**Issue:** Duplicates not being removed on save and inconsistent messaging about deduplication.
+
+**Changes:**
+1. **Added save_post deduplication** - Automatically removes duplicates when saving a profession
+2. **Added metabox deduplication** - Cleans duplicates before displaying playbook info
+3. **Updated sync button UI** - Explicitly mentions duplicate removal in descriptions
+4. **Updated success messages** - Confirms duplicates were removed after sync operations
+5. **Added test coverage** - New test for save_post deduplication scenario
+
+**Files Modified:**
+- `includes/professions/class-wp-mcp-ai-profession-cpt.php` - Added deduplication after save
+- `includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-playbook.php` - Added deduplication before display
+- `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` - Updated button descriptions
+- `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` - Updated success messages
+- `tests/test-profession-playbook-seeder.php` - Added save_post test
+
+**Impact:**
+- Users now see confirmation that duplicates are being removed
+- Duplicates are automatically cleaned up in more scenarios
+- More transparent about what operations do
+- Better test coverage
 
 ## Future Enhancements
 

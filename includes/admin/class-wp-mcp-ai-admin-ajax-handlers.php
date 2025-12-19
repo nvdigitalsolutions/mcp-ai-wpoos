@@ -2217,8 +2217,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			update_option( 'wp_mcp_ai_playbooks_last_sync', current_time( 'timestamp' ) );
 
 			$message = $force
-				? __( 'All profession playbooks regenerated successfully!', 'wp-mcp-ai' )
-				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated.', 'wp-mcp-ai' );
+				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'wp-mcp-ai' )
+				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'wp-mcp-ai' );
 
 			wp_send_json_success(
 				array(
