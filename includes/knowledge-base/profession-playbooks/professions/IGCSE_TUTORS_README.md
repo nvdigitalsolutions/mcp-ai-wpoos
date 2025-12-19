@@ -209,12 +209,12 @@ These professions integrate with the existing profession playbook system:
 | Chemistry Tutor | 25KB | 679 | Moles, equations, bonding, organic chemistry |
 | Physics Tutor | 21KB | 566 | Forces, electricity, energy, calculations |
 | **Humanities** ||||
-| History Tutor | 8KB | 184 | Source analysis, essays, 20th century topics |
-| Geography Tutor | 6KB | 134 | Physical/human geography, case studies |
+| History Tutor | 37KB | 787 | Source analysis, essays, 20th century topics, depth studies |
+| Geography Tutor | 29KB | 582 | Physical/human geography, case studies, PEEL structure |
 | **Business & Technology** ||||
-| Computer Science Tutor | 6KB | 129 | Python, algorithms, theory, practical exam |
-| Business Studies Tutor | 5KB | 117 | Marketing, finance, operations, analysis |
-| **Total** | **~245KB** | **6,544 lines** | Complete IGCSE support Years 9-11, all major subjects |
+| Computer Science Tutor | 34KB | 959 | Python, algorithms, theory, practical exam preparation |
+| Business Studies Tutor | 36KB | 745 | Marketing, finance, operations, analysis, calculations |
+| **Total** | **~355KB** | **9,393 lines** | Complete IGCSE support Years 9-11, all major subjects |
 
 ## Alignment with Existing System
 
@@ -249,7 +249,16 @@ Potential additions:
 
 ## Change Log
 
-### December 19, 2024
+### December 19, 2024 - Expansion of Stub Playbooks
+- **Expanded 4 stub playbooks to comprehensive guides:**
+  - **Geography Tutor**: 69 → 582 lines (29KB) - Added complete theme coverage, case study templates, PEEL essay structure
+  - **Business Studies Tutor**: 82 → 745 lines (36KB) - Added all 6 sections, calculations formulas, AO1-AO4 exam technique
+  - **History Tutor**: 103 → 787 lines (37KB) - Added depth studies, international relations, source analysis techniques
+  - **Computer Science Tutor**: 117 → 959 lines (34KB) - Added complete Python curriculum, algorithms, theory topics
+- Total expansion: +2,702 lines (+110KB)
+- All 4 playbooks now meet COMPLETION_FRAMEWORK quality standards with 8 complete sections
+
+### December 19, 2024 - Initial Creation
 - Initial creation of 13 IGCSE tutor professions
 - Comprehensive coverage of Years 9-11
 - **Core subjects**: Mathematics, English, Sciences (Combined)
@@ -257,7 +266,8 @@ Potential additions:
 - **Humanities**: History, Geography
 - **Business & Technology**: Computer Science, Business Studies
 - Aligned with Cambridge IGCSE syllabuses (0450, 0460, 0470, 0478, 0500, 0580, 0610, 0620, 0625, 0653, 0990, 0992)
-- ~245KB of tutoring guidance content across 13 professions
+- Initial release: ~245KB across 13 professions
+- Final total: ~355KB of tutoring guidance content across 13 professions
 
 ## Resources
 
