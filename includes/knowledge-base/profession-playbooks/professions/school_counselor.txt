@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and school counseling framework (US ASCA, UK pastoral care, other)?
 - What grade level(s) do you serve (elementary K-5, middle 6-8, high school 9-12)?
 - What is the school type and setting (public, private, urban, suburban, rural)?
 - What is the student-to-counselor ratio and school counseling program maturity level?
@@ -55,6 +56,31 @@ Ask 3–8 questions that materially affect the answer:
 - What data/assessment tools are available (screeners, surveys, academic records, behavioral data)?
 - What collaboration is needed (teachers, administrators, parents, community partners)?
 - What time frame and scheduling constraints exist (class periods, advisory, flex time)?
+
+1.5) Regional Considerations
+
+School counseling roles and frameworks vary by region:
+
+**Professional Models:**
+- **United States**: ASCA National Model (foundation, delivery, management, accountability), 80% direct/indirect services
+- **United Kingdom**: Pastoral care system, form tutors/heads of year, less emphasis on college counseling
+- **Canada**: Provincial variations, comprehensive guidance programs, career development emphasis
+- **International schools**: Often follow US ASCA model or UK pastoral care approaches
+
+**Certification & Credentialing:**
+- **US**: State-specific school counselor licenses, master's degree required, supervised experience, exams (Praxis)
+- **UK**: No universal school counselor credential, BACP accreditation for counselors, teaching background common
+- **Student-to-counselor ratios**: ASCA recommends 250:1, reality varies (US average 430:1, varies dramatically by state)
+
+**Role & Responsibilities:**
+- **US**: Academic, career, social-emotional counseling, college admissions support, crisis intervention
+- **UK**: Pastoral care focus, safeguarding responsibilities, less college counseling (UCAS applications different process)
+- **Legal/ethical**: FERPA (US), GDPR (EU), mandated reporting laws vary by jurisdiction
+
+**Career & College Counseling:**
+- **US**: Heavy emphasis on college admissions, SAT/ACT, FAFSA, Common App
+- **UK**: UCAS system, A-level choices, apprenticeship pathways
+- **International**: Wide variation in post-secondary systems and application processes
 
 3) Default workflow
 Use a deterministic, repeatable process:

@@ -48,6 +48,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and education governance structure (US state, UK local authority, other system)?
 - What is your administrative role and level (principal, assistant principal, district administrator, superintendent)?
 - What grade levels do you serve (elementary Pre-K-5, middle 6-8, high school 9-12, K-12 district)?
 - What is the school/district context (urban/suburban/rural, student demographics, socioeconomic status)?
@@ -56,6 +57,32 @@ Ask 3–8 questions that materially affect the answer:
 - What governance structure exists (school board, district central office, state education agency requirements)?
 - What stakeholders need to be involved (teachers, staff, students, families, community, board)?
 - What timeline and constraints exist (school year calendar, budget cycles, state deadlines, collective bargaining)?
+
+1.5) Regional Considerations
+
+Educational administration structures and requirements vary by region:
+
+**Leadership Standards:**
+- **United States**: PSEL (Professional Standards for Educational Leaders), ISLLC standards, state-specific adaptations
+- **United Kingdom**: National Professional Qualification for Headship (NPQH), leadership standards framework
+- **Canada**: Provincial leadership frameworks, emphasis on Indigenous education in some provinces
+- **International**: International School Leadership Development Network, IB leadership standards
+
+**Certification & Preparation:**
+- **US**: State administrative licenses, master's/specialist degrees, leadership experience required, exams vary by state
+- **UK**: NPQH for headteachers, no universal principal certification, teaching experience required
+- **Career pathways**: US typically department head → AP → principal, UK senior leadership team progression varies
+
+**Governance & Accountability:**
+- **US**: Elected school boards (local control), state education agencies, federal requirements (ESSA)
+- **UK**: Academy trusts, maintained schools (local authority), Ofsted inspections, Multi-Academy Trusts (MATs)
+- **Charter/academy**: US charter schools have different governance, UK academies more autonomous
+- **Superintendent/CEO**: US district superintendents report to boards, UK academy trust CEOs similar role
+
+**Labor Relations:**
+- **US**: Teacher unions strong in many states, collective bargaining, tenure protections vary
+- **UK**: National pay scales, performance management, different union landscape
+- **Administrator contracts**: Vary dramatically (US at-will in many states, UK employment law protections)
 
 3) Default workflow
 Use PSEL (Professional Standards for Educational Leaders) framework:
