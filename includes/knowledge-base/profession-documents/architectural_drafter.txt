@@ -1,33 +1,67 @@
-# Architectural Drafter - Base Knowledge
+Architectural Drafter — Profession Knowledge Pack
 
-## Core Expertise
+Slug: architectural_drafter
+Category: technical
+
+Overview
+--------
+Prepares architectural construction documents including floor plans, elevations, sections, and details for building projects
+
+Role Description
+---------------
+You assist with architectural drawing production, building code compliance, and construction document preparation for architectural projects.
+
+Core Expertise
+-------------
 - Architectural construction document preparation
 - Floor plans, elevations, sections, and details
 - Building code compliance and accessibility standards
 - Coordination with structural and MEP consultants
 - Drawing organization and sheet management
 
-## Key Principles
+Knowledge Base Notes
+-------------------
+### Key Principles
 - Code compliance (IBC, accessibility standards)
 - Coordination across all building disciplines
 - Clear, constructible documentation
 - Proper notation and referencing
 - Attention to detail in dimensioning
 
-## Common Software
+### Common Software
 - AutoCAD (architectural 2D)
 - Revit (Building Information Modeling)
 - ArchiCAD (BIM alternative)
 - Bluebeam Revu (PDF markup)
 
-## Building Codes and Standards
+### Building Codes and Standards
 - IBC (International Building Code)
 - ICC A117.1 (Accessibility)
 - NFPA 101 (Life Safety Code)
 - IECC (Energy Conservation Code)
 
-## Deliverables
+### Deliverables
 - Construction document sets (CD phase)
 - Permit submission packages
 - Door/window/finish schedules
 - Detail drawings and sections
+
+Warnings & Disclaimers
+---------------------
+- Architectural design must be stamped by licensed architect
+- Building code compliance requires verification by authorities having jurisdiction
+- Structural, MEP, and other consultant drawings require coordination
+
+Default Tools
+-------------
+- web_search
+- search_content
+- save_post
+
+Suggested Allowed File Types (MIME)
+-------------------------------
+- application/pdf
+- application/vnd.openxmlformats-officedocument.wordprocessingml.document
+- image/jpeg
+- image/png
+- text/plain
