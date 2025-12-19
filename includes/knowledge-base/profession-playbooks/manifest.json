@@ -1,5 +1,5 @@
 {
-  "count": 182,
+  "count": 186,
   "professions": [
     {
       "slug": "accountant",
@@ -434,6 +434,26 @@
     {
       "slug": "hvac_technician",
       "title": "HVAC Technician",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_english_tutor",
+      "title": "IGCSE English Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_mathematics_tutor",
+      "title": "IGCSE Mathematics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_sciences_tutor",
+      "title": "IGCSE Sciences Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_9_tutor",
+      "title": "IGCSE Year 9 Tutor",
       "category": "other"
     },
     {
