@@ -27,15 +27,34 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	protected $playbook_base_path;
 
 	/**
+	 * Tool recommender instance.
+	 *
+	 * @var WP_MCP_AI_Profession_Tool_Recommender
+	 */
+	protected $tool_recommender;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $playbook_base_path Optional path to playbook directory.
+	 * @param WP_MCP_AI_Profession_Tool_Recommender $tool_recommender Optional tool recommender instance.
 	 */
-	public function __construct( $playbook_base_path = null ) {
+	public function __construct( $playbook_base_path = null, $tool_recommender = null ) {
 		if ( null === $playbook_base_path ) {
 			$this->playbook_base_path = WP_MCP_AI_PATH . 'includes/knowledge-base/profession-playbooks/';
 		} else {
 			$this->playbook_base_path = trailingslashit( $playbook_base_path );
+		}
+
+		if ( null === $tool_recommender ) {
+			// Load tool recommender if not provided.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Tool_Recommender' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-tool-recommender.php';
+			}
+			$tool_registry          = WP_MCP_AI_Tool_Registry::get_instance();
+			$this->tool_recommender = new WP_MCP_AI_Profession_Tool_Recommender( $tool_registry );
+		} else {
+			$this->tool_recommender = $tool_recommender;
 		}
 	}
 
@@ -160,6 +179,13 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 		if ( ! empty( $profession_text ) ) {
 			$sections[] = "## {$title} Specific Guidelines\n";
 			$sections[] = trim( $profession_text ) . "\n";
+			$sections[] = "---\n";
+		}
+
+		// Tool recommendations section.
+		$tool_reference = $this->tool_recommender->get_tool_reference_section( $slug, $category );
+		if ( ! empty( $tool_reference ) ) {
+			$sections[] = trim( $tool_reference ) . "\n";
 			$sections[] = "---\n";
 		}
 
