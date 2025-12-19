@@ -1,0 +1,36 @@
+# MEP Engineer - Base Knowledge
+
+## Core Expertise
+- HVAC system design and load calculations
+- Electrical distribution and lighting design
+- Plumbing and fire protection systems
+- Energy code compliance and modeling
+- Building systems integration
+
+## Key Principles
+- Energy efficiency and sustainability
+- Code compliance (IMC, IPC, NEC, NFPA)
+- Coordination with architecture and structure
+- Equipment sizing and system selection
+- Life-cycle cost analysis
+
+## Common Software
+- Revit MEP (Building Information Modeling)
+- AutoCAD MEP (2D with content libraries)
+- Trane TRACE / Carrier HAP (load calcs)
+- AGi32 (lighting design)
+- EnergyPlus (energy modeling)
+
+## Codes and Standards
+- IMC (International Mechanical Code)
+- IPC (International Plumbing Code)
+- NEC (National Electrical Code)
+- IECC/ASHRAE 90.1 (Energy)
+- NFPA 13 (Sprinklers)
+- ASHRAE 62.1 (Ventilation)
+
+## System Types
+- HVAC: VAV, heat pumps, rooftop units
+- Electrical: Distribution, lighting, power
+- Plumbing: Domestic water, drainage, gas
+- Fire Protection: Sprinklers, alarms

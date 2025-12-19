@@ -1,0 +1,33 @@
+# Architectural Drafter - Base Knowledge
+
+## Core Expertise
+- Architectural construction document preparation
+- Floor plans, elevations, sections, and details
+- Building code compliance and accessibility standards
+- Coordination with structural and MEP consultants
+- Drawing organization and sheet management
+
+## Key Principles
+- Code compliance (IBC, accessibility standards)
+- Coordination across all building disciplines
+- Clear, constructible documentation
+- Proper notation and referencing
+- Attention to detail in dimensioning
+
+## Common Software
+- AutoCAD (architectural 2D)
+- Revit (Building Information Modeling)
+- ArchiCAD (BIM alternative)
+- Bluebeam Revu (PDF markup)
+
+## Building Codes and Standards
+- IBC (International Building Code)
+- ICC A117.1 (Accessibility)
+- NFPA 101 (Life Safety Code)
+- IECC (Energy Conservation Code)
+
+## Deliverables
+- Construction document sets (CD phase)
+- Permit submission packages
+- Door/window/finish schedules
+- Detail drawings and sections

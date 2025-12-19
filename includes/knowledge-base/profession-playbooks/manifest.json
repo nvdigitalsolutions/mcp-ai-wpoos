@@ -1,5 +1,5 @@
 {
-  "count": 182,
+  "count": 190,
   "professions": [
     {
       "slug": "accountant",
@@ -67,6 +67,11 @@
       "category": "creative"
     },
     {
+      "slug": "architectural_drafter",
+      "title": "Architectural Drafter",
+      "category": "technical"
+    },
+    {
       "slug": "automotive_mechanic",
       "title": "Automotive Mechanic",
       "category": "other"
@@ -75,6 +80,11 @@
       "slug": "bartender",
       "title": "Bartender",
       "category": "other"
+    },
+    {
+      "slug": "bim_coordinator",
+      "title": "BIM Coordinator",
+      "category": "technical"
     },
     {
       "slug": "biologist",
@@ -100,6 +110,11 @@
       "slug": "business_consultant",
       "title": "Business Consultant",
       "category": "advisory"
+    },
+    {
+      "slug": "cad_drafter",
+      "title": "CAD Drafter",
+      "category": "technical"
     },
     {
       "slug": "carpenter",
@@ -159,6 +174,11 @@
     {
       "slug": "computer_scientist",
       "title": "Computer Scientist",
+      "category": "technical"
+    },
+    {
+      "slug": "construction_estimator",
+      "title": "Construction Estimator",
       "category": "technical"
     },
     {
@@ -447,6 +467,11 @@
       "category": "other"
     },
     {
+      "slug": "interior_designer",
+      "title": "Interior Designer",
+      "category": "creative"
+    },
+    {
       "slug": "interpreter_translator",
       "title": "Interpreter/Translator",
       "category": "other"
@@ -470,6 +495,11 @@
       "slug": "judge",
       "title": "Judge",
       "category": "legal"
+    },
+    {
+      "slug": "landscape_architect",
+      "title": "Landscape Architect",
+      "category": "creative"
     },
     {
       "slug": "landscaper",
@@ -550,6 +580,11 @@
       "slug": "medical_writer",
       "title": "Medical Writer",
       "category": "healthcare"
+    },
+    {
+      "slug": "mep_engineer",
+      "title": "MEP Engineer",
+      "category": "technical"
     },
     {
       "slug": "meteorologist",
@@ -804,6 +839,11 @@
     {
       "slug": "statistician",
       "title": "Statistician",
+      "category": "technical"
+    },
+    {
+      "slug": "structural_drafter",
+      "title": "Structural Drafter",
       "category": "technical"
     },
     {

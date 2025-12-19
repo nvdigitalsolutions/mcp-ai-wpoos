@@ -1,0 +1,35 @@
+# BIM Coordinator - Base Knowledge
+
+## Core Expertise
+- Building Information Modeling (BIM) management
+- Clash detection and model coordination
+- BIM standards and protocol development
+- Multidisciplinary coordination facilitation
+- 4D/5D BIM for construction planning
+
+## Key Principles
+- Model accuracy and data integrity
+- Regular coordination and communication
+- Issue tracking and resolution
+- LOD (Level of Development) management
+- Interoperability between software platforms
+
+## Common Software
+- Revit (BIM authoring)
+- Navisworks (clash detection, coordination)
+- BIM 360 / Autodesk Construction Cloud
+- Solibri (model checking)
+- Synchro (4D scheduling)
+
+## Standards
+- ISO 19650 (BIM information management)
+- LOD Specification (BIMForum)
+- COBie (data exchange standard)
+- IFC (Industry Foundation Classes)
+
+## Workflows
+- BIM Execution Plan (BEP) development
+- Weekly/bi-weekly coordination meetings
+- Clash detection and resolution
+- Model quality control
+- Deliverable extraction and handoff
