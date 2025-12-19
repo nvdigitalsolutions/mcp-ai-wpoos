@@ -8313,10 +8313,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Check if this is a pending status (e.g., HTTP 202 from web search)
 					// rather than a hard error. Pending statuses should be handled differently
 					// to allow the LLM to gracefully respond using alternative sources.
-					$error_data   = $result->get_error_data();
-					$is_pending   = is_array( $error_data ) && ! empty( $error_data['is_pending'] );
-					$error_code   = $result->get_error_code();
-					$is_pending   = $is_pending || 'wp_mcp_ai_search_pending' === $error_code;
+					$error_data = $result->get_error_data();
+					$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] );
+					$error_code = $result->get_error_code();
+					$is_pending = $is_pending || 'wp_mcp_ai_search_pending' === $error_code;
 
 					// In agentic loop, if sync execution failed and tool supports async,
 					// provide helpful error message instead of returning WP_Error object

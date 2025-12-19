@@ -530,7 +530,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 	public static function cleanup_old_records( $days = 90 ) {
 		global $wpdb;
 
-		$days       = absint( $days );
+		$days = absint( $days );
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( self::get_table_name() );
 

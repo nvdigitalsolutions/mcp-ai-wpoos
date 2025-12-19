@@ -679,9 +679,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( isset( $resolved['metadata'] ) && is_array( $resolved['metadata'] ) ) {
 					$metadata = $resolved['metadata'];
 					if ( ! empty( $metadata['filename'] ) ) {
-						$filename                       = sanitize_text_field( $metadata['filename'] );
-						$segment_payload['file_name']   = $filename;
-						$segment_payload['name']        = $filename; // Compatibility field.
+						$filename                     = sanitize_text_field( $metadata['filename'] );
+						$segment_payload['file_name'] = $filename;
+						$segment_payload['name']      = $filename; // Compatibility field.
 					}
 					if ( ! empty( $metadata['mime_type'] ) ) {
 						$segment_payload['mime_type'] = sanitize_text_field( $metadata['mime_type'] );
@@ -1107,7 +1107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$serialized_pattern = sprintf( '"file_id";s:%d:"%s"', strlen( $file_id ), $file_id );
 			$serialized_like    = '%' . $wpdb->esc_like( $serialized_pattern ) . '%';
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$results            = $wpdb->get_col(
+			$results = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id DESC LIMIT 25",
 					self::OPENAI_FILE_META_KEY,

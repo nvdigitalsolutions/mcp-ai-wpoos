@@ -50,12 +50,12 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 
 		// Create data containing a WP_Post object.
 		$data = array(
-			'status'     => 'completed',
-			'result'     => array(
+			'status' => 'completed',
+			'result' => array(
 				'post'       => $post,
 				'attachment' => $post,
 			),
-			'nested'     => array(
+			'nested' => array(
 				'deep' => array(
 					'post' => $post,
 				),
@@ -92,7 +92,7 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 		// JSON encode the normalized data - should succeed.
 		$json_after = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json_after, 'Normalized data should be JSON encodable' );
-		
+
 		// Verify the normalized data is properly structured (doesn't guarantee smaller, but should be simpler).
 		$decoded_after = json_decode( $json_after, true );
 		$this->assertIsArray( $decoded_after );
@@ -121,7 +121,7 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 		);
 
 		// Normalize the data.
-		$service = $this->get_cron_status_service_with_normalization();
+		$service    = $this->get_cron_status_service_with_normalization();
 		$normalized = $this->call_protected_method( $service, 'normalize_data_recursive', array( $data ) );
 
 		// WP_Query should be normalized to a simple array.
@@ -152,7 +152,7 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 		);
 
 		// Normalize the data.
-		$service = $this->get_cron_status_service_with_normalization();
+		$service    = $this->get_cron_status_service_with_normalization();
 		$normalized = $this->call_protected_method( $service, 'normalize_data_recursive', array( $data ) );
 
 		// Resource should be replaced with a string marker.
@@ -171,16 +171,16 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 	 */
 	public function test_recursion_depth_limit() {
 		// Create deeply nested array.
-		$data = array( 'level' => 0 );
+		$data    = array( 'level' => 0 );
 		$current = &$data;
 
 		for ( $i = 1; $i <= 25; $i++ ) {
 			$current['nested'] = array( 'level' => $i );
-			$current = &$current['nested'];
+			$current           = &$current['nested'];
 		}
 
 		// Normalize the data.
-		$service = $this->get_cron_status_service_with_normalization();
+		$service    = $this->get_cron_status_service_with_normalization();
 		$normalized = $this->call_protected_method( $service, 'normalize_data_recursive', array( $data ) );
 
 		// Navigate to level 20 - should exist.
@@ -222,7 +222,7 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 
 		// Test with a resource (will fail JSON encoding in strict mode).
 		$temp_file = tmpfile();
-		$bad_data = array(
+		$bad_data  = array(
 			'status'   => 'completed',
 			'resource' => $temp_file,
 		);
@@ -264,7 +264,7 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 	 */
 	private function call_protected_method( $object, $method_name, array $parameters = array() ) {
 		$reflection = new ReflectionClass( get_class( $object ) );
-		$method = $reflection->getMethod( $method_name );
+		$method     = $reflection->getMethod( $method_name );
 		$method->setAccessible( true );
 
 		return $method->invokeArgs( $object, $parameters );

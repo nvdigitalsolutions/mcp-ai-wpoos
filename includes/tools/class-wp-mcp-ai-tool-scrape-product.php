@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			__( 'Product scraped: %s', 'wp-mcp-ai' ),
 			isset( $product_data['title'] ) ? $product_data['title'] : __( 'Unknown product', 'wp-mcp-ai' )
 		);
-		
+
 		$product_data = array_merge(
 			array( 'summary' => $summary ),
 			$product_data

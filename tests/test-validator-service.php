@@ -44,7 +44,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test basic validation with NotBlank constraint.
 	 */
 	public function test_not_blank_validation() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
 			public $name = '';
 		};
@@ -58,7 +58,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test validation passes with valid data.
 	 */
 	public function test_validation_passes_with_valid_data() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
 			#[\Symfony\Component\Validator\Constraints\Length( min: 3 )]
 			public $name = 'John Doe';
@@ -73,7 +73,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test email validation constraint.
 	 */
 	public function test_email_validation() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Email]
 			public $email = 'invalid-email';
 		};
@@ -90,7 +90,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test format_errors returns WP_Error.
 	 */
 	public function test_format_errors_returns_wp_error() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank( message: 'Name is required' )]
 			public $name = '';
 		};
@@ -112,7 +112,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test multiple validation constraints.
 	 */
 	public function test_multiple_validation_constraints() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\NotBlank]
 			#[\Symfony\Component\Validator\Constraints\Length( min: 5, max: 10 )]
 			public $username = 'ab';
@@ -131,7 +131,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test Choice constraint.
 	 */
 	public function test_choice_constraint() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Choice( choices: array( 'draft', 'publish', 'pending' ) )]
 			public $status = 'invalid';
 		};
@@ -148,7 +148,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 	 * Test Type constraint.
 	 */
 	public function test_type_constraint() {
-		$test_object = new class {
+		$test_object = new class() {
 			#[\Symfony\Component\Validator\Constraints\Type( type: 'integer' )]
 			public $count = 'not-an-integer';
 		};

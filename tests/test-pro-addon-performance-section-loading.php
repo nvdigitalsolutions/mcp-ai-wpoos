@@ -137,4 +137,3 @@ class Test_Pro_Addon_Performance_Section_Loading extends WP_UnitTestCase {
 		);
 	}
 }
-

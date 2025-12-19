@@ -23,7 +23,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_resize_image_capability_flags() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-resize-image.php';
-		
+
 		$tool  = new WP_MCP_AI_Tool_Resize_Image();
 		$flags = $tool->get_capability_flags();
 
@@ -40,7 +40,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_crop_image_capability_flags() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php';
-		
+
 		$tool  = new WP_MCP_AI_Tool_Crop_Image();
 		$flags = $tool->get_capability_flags();
 
@@ -57,7 +57,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_rotate_image_capability_flags() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php';
-		
+
 		$tool  = new WP_MCP_AI_Tool_Rotate_Image();
 		$flags = $tool->get_capability_flags();
 
@@ -74,7 +74,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_convert_image_format_capability_flags() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php';
-		
+
 		$tool  = new WP_MCP_AI_Tool_Convert_Image_Format();
 		$flags = $tool->get_capability_flags();
 
@@ -91,7 +91,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_remove_background_capability_flags_without_api_key() {
 		require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-remove-background.php';
-		
+
 		// Ensure no API key is set.
 		delete_option( 'wp_mcp_ai_removebg_api_key' );
 
@@ -118,7 +118,7 @@ class WP_MCP_AI_Image_Tools_Capability_Flags_Test extends WP_UnitTestCase {
 	 */
 	public function test_remove_background_capability_flags_with_api_key() {
 		require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-remove-background.php';
-		
+
 		// Set an API key.
 		update_option( 'wp_mcp_ai_removebg_api_key', 'test-api-key' );
 

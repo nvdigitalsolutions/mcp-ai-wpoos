@@ -93,7 +93,7 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 		$team_id = $this->create_team_post( 'Test Team' );
 
 		// Make request as subscriber.
-		$request = $this->create_authenticated_request(
+		$request  = $this->create_authenticated_request(
 			'GET',
 			'/mcp-ai/v1/teams/' . $team_id . '/members'
 		);
@@ -123,7 +123,7 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 		);
 
 		// Make authenticated request.
-		$request = $this->create_authenticated_request(
+		$request  = $this->create_authenticated_request(
 			'GET',
 			'/mcp-ai/v1/teams/' . $team_id . '/members'
 		);
@@ -166,7 +166,7 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 		$team_id = $this->create_team_post( 'Empty Team' );
 
 		// Make authenticated request.
-		$request = $this->create_authenticated_request(
+		$request  = $this->create_authenticated_request(
 			'GET',
 			'/mcp-ai/v1/teams/' . $team_id . '/members'
 		);
@@ -185,7 +185,7 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 	 */
 	public function test_get_team_members_invalid_id() {
 		// Make request with non-existent team ID.
-		$request = $this->create_authenticated_request(
+		$request  = $this->create_authenticated_request(
 			'GET',
 			'/mcp-ai/v1/teams/999999/members'
 		);
@@ -218,7 +218,7 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 		wp_delete_post( $profession2_id, true );
 
 		// Make request.
-		$request = $this->create_authenticated_request(
+		$request  = $this->create_authenticated_request(
 			'GET',
 			'/mcp-ai/v1/teams/' . $team_id . '/members'
 		);

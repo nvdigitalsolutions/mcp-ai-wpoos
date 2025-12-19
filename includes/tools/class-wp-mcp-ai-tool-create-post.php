@@ -151,8 +151,8 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 
 		// Set post status.
-		$status                  = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'draft';
-		$valid_statuses          = array( 'publish', 'draft', 'pending', 'private' );
+		$status                   = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'draft';
+		$valid_statuses           = array( 'publish', 'draft', 'pending', 'private' );
 		$post_data['post_status'] = in_array( $status, $valid_statuses, true ) ? $status : 'draft';
 
 		// Create the post.

@@ -36,7 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 			}
 
 			// Group flags by category for better display.
-			$grouped_flags = self::group_capability_flags( $capability_flags );
+			$grouped_flags   = self::group_capability_flags( $capability_flags );
 			$available_flags = WP_MCP_AI_Tool_Settings_Manager::get_available_capability_flags();
 
 			ob_start();
@@ -85,9 +85,9 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 					<div style="margin-bottom: 10px;">
 						<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
 							<input type="checkbox" 
-								   class="wp-mcp-ai-force-sync-checkbox" 
-								   data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
-								   <?php checked( $force_sync ); ?>>
+									class="wp-mcp-ai-force-sync-checkbox" 
+									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
+									<?php checked( $force_sync ); ?>>
 							<strong style="color: #d63638;"><?php esc_html_e( 'Force Synchronous Execution', 'wp-mcp-ai' ); ?></strong>
 							<span class="dashicons dashicons-info-outline" style="font-size: 16px; color: #666;" title="<?php esc_attr_e( 'When enabled, this tool will always execute synchronously, bypassing async orchestration. Use this for tools that must complete immediately within the same request.', 'wp-mcp-ai' ); ?>"></span>
 						</label>
@@ -111,10 +111,10 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 									<?php foreach ( $group_data['flags'] as $flag_key => $flag_label ) : ?>
 										<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
 											<input type="checkbox" 
-												   class="wp-mcp-ai-capability-flag-checkbox" 
-												   name="capability_flags[]" 
-												   value="<?php echo esc_attr( $flag_key ); ?>"
-												   <?php checked( in_array( $flag_key, $capability_flags, true ) ); ?>>
+													class="wp-mcp-ai-capability-flag-checkbox" 
+													name="capability_flags[]" 
+													value="<?php echo esc_attr( $flag_key ); ?>"
+													<?php checked( in_array( $flag_key, $capability_flags, true ) ); ?>>
 											<span><?php echo esc_html( $flag_label ); ?></span>
 										</label>
 									<?php endforeach; ?>
@@ -151,7 +151,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 					);
 				}
 			);
-			$network_flags = array_filter(
+			$network_flags     = array_filter(
 				$capability_flags,
 				function ( $flag ) {
 					return in_array(
@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 					);
 				}
 			);
-			$data_flags = array_filter(
+			$data_flags        = array_filter(
 				$capability_flags,
 				function ( $flag ) {
 					return in_array(
@@ -171,7 +171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 					);
 				}
 			);
-			$tier_flags = array_filter(
+			$tier_flags        = array_filter(
 				$capability_flags,
 				function ( $flag ) {
 					return in_array(

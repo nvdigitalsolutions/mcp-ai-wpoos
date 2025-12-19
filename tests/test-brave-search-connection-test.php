@@ -45,7 +45,7 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_brave_search_test_button_renders_without_saved_key() {
 		// Clear any saved API key.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['brave_search_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -98,7 +98,7 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_brave_search_test_button_renders_with_saved_key() {
 		// Set a saved API key.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['brave_search_api_key'] = 'test-api-key-12345';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -146,7 +146,7 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_brave_search_ajax_handler_requires_api_key() {
 		// Set up valid nonce.
-		$_POST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
+		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['api_key'] = '';
 
 		// Create instance and call handler.
@@ -179,7 +179,7 @@ class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 		unset( $_GET['connection'] );
 		unset( $_POST['nonce'] );
 		unset( $_POST['api_key'] );
-		
+
 		parent::tearDown();
 	}
 }

@@ -32,13 +32,13 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 	 */
 	public function test_get_playbook_statistics_structure() {
 		$section = new WP_MCP_AI_Section_Advanced();
-		
+
 		// Use reflection to access private method.
 		$method = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
 		$method->setAccessible( true );
-		
+
 		$stats = $method->invoke( $section );
-		
+
 		// Verify return structure.
 		$this->assertIsArray( $stats );
 		$this->assertArrayHasKey( 'total_attachments', $stats );
@@ -53,13 +53,13 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 	public function test_statistics_with_no_playbooks() {
 		// Ensure clean slate.
 		$this->delete_all_playbook_attachments();
-		
+
 		$section = new WP_MCP_AI_Section_Advanced();
 		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
 		$method->setAccessible( true );
-		
+
 		$stats = $method->invoke( $section );
-		
+
 		$this->assertEquals( 0, $stats['total_attachments'] );
 		$this->assertEquals( 0, $stats['professions_with_playbooks'] );
 	}
@@ -79,16 +79,16 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 
 		// Create playbook attachment.
 		$attachment_id = $this->create_test_playbook_attachment( $profession_id );
-		
+
 		$section = new WP_MCP_AI_Section_Advanced();
 		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
 		$method->setAccessible( true );
-		
+
 		$stats = $method->invoke( $section );
-		
+
 		$this->assertEquals( 1, $stats['total_attachments'] );
 		$this->assertEquals( 1, $stats['professions_with_playbooks'] );
-		
+
 		// Clean up.
 		wp_delete_post( $attachment_id, true );
 		wp_delete_post( $profession_id, true );
@@ -101,16 +101,16 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 		// Set last sync timestamp.
 		$timestamp = current_time( 'timestamp' ) - DAY_IN_SECONDS;
 		update_option( 'wp_mcp_ai_playbooks_last_sync', $timestamp );
-		
+
 		$section = new WP_MCP_AI_Section_Advanced();
 		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
 		$method->setAccessible( true );
-		
+
 		$stats = $method->invoke( $section );
-		
+
 		$this->assertNotEmpty( $stats['last_sync'] );
 		$this->assertStringContainsString( 'ago', $stats['last_sync'] );
-		
+
 		// Clean up.
 		delete_option( 'wp_mcp_ai_playbooks_last_sync' );
 	}
@@ -121,19 +121,19 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 	public function test_seeded_status() {
 		// Test not seeded.
 		delete_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION );
-		
+
 		$section = new WP_MCP_AI_Section_Advanced();
 		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
 		$method->setAccessible( true );
-		
+
 		$stats = $method->invoke( $section );
 		$this->assertFalse( $stats['seeded'] );
-		
+
 		// Test seeded.
 		update_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, true );
 		$stats = $method->invoke( $section );
 		$this->assertTrue( $stats['seeded'] );
-		
+
 		// Clean up.
 		delete_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION );
 	}

@@ -105,13 +105,13 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
-		
+
 		// Performance section is only available with Pro addon.
 		$performance_section = $container->get( 'section.performance' );
 		if ( null !== $performance_section ) {
 			WP_MCP_AI_Settings_Registry::register_section( $performance_section );
 		}
-		
+
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
@@ -119,7 +119,6 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
 
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
-
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.
@@ -132,7 +131,6 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// $GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );.
 
 		// $GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );.
-
 
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.

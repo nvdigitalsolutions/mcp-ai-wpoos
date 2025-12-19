@@ -161,11 +161,13 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		if ( $show_critical_issues && $health['critical_issues'] > 0 ) {
 			echo '<div class="wp-mcp-ai-system-health__critical-alert">';
 			echo '<span class="dashicons dashicons-warning"></span>';
-			echo '<span>' . esc_html( sprintf(
+			echo '<span>' . esc_html(
+				sprintf(
 				/* translators: %d: Number of critical issues */
-				_n( '%d critical issue requires immediate attention', '%d critical issues require immediate attention', $health['critical_issues'], 'wp-mcp-ai' ),
-				$health['critical_issues']
-			) ) . '</span>';
+					_n( '%d critical issue requires immediate attention', '%d critical issues require immediate attention', $health['critical_issues'], 'wp-mcp-ai' ),
+					$health['critical_issues']
+				)
+			) . '</span>';
 			echo '</div>';
 		}
 

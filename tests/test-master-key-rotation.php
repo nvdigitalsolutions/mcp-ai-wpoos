@@ -121,7 +121,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 	 */
 	public function test_rotate_master_key_with_secrets() {
 		// Create test post with encrypted secret.
-		$post_id           = $this->factory->post->create();
+		$post_id            = $this->factory->post->create();
 		$this->test_posts[] = $post_id;
 
 		$secret1    = 'api-key-secret-1';
@@ -174,7 +174,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 	 */
 	public function test_rotate_master_key_rollback_on_decrypt_failure() {
 		// Create test post with corrupted encrypted data.
-		$post_id           = $this->factory->post->create();
+		$post_id            = $this->factory->post->create();
 		$this->test_posts[] = $post_id;
 
 		// Store invalid encrypted data that will fail to decrypt.
@@ -241,7 +241,7 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 	 */
 	public function test_failed_decrypt_not_re_encrypted() {
 		// Create test post with corrupted data.
-		$post_id           = $this->factory->post->create();
+		$post_id            = $this->factory->post->create();
 		$this->test_posts[] = $post_id;
 
 		// This will fail to decrypt.

@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
  */
 class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+
 	const DEFAULT_MAX_RECIPIENTS = 100;
 
 	/**

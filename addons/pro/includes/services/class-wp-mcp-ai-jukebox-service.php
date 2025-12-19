@@ -72,12 +72,12 @@ class WP_MCP_AI_Jukebox_Service {
 
 		// Check Python availability using Process Service.
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		
+
 		$python_result = $process_service->run_silent(
 			array( $python_path, '--version' ),
 			array( 'timeout' => 5 )
 		);
-		
+
 		if ( ! $python_result['success'] || empty( $python_result['output'] ) || false === strpos( strtolower( $python_result['output'] ), 'python' ) ) {
 			return array(
 				'installed'    => false,
@@ -251,7 +251,7 @@ class WP_MCP_AI_Jukebox_Service {
 		// Consider running this in async mode or as a background job.
 		// The timeout is set generously to allow for processing.
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		
+
 		$result = $process_service->run(
 			array(
 				$python_path,

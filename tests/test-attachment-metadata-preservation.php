@@ -39,7 +39,7 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		// Should return a valid segment with complete metadata.
 		$this->assertNotInstanceOf( WP_Error::class, $segment );
 		$this->assertIsArray( $segment );
-		
+
 		// Check basic fields.
 		$this->assertArrayHasKey( 'type', $segment );
 		$this->assertSame( 'input_image', $segment['type'] );
@@ -96,7 +96,7 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		// Should return a valid segment with complete metadata.
 		$this->assertNotInstanceOf( WP_Error::class, $segment );
 		$this->assertIsArray( $segment );
-		
+
 		// Check basic fields.
 		$this->assertArrayHasKey( 'type', $segment );
 		$this->assertSame( 'input_file', $segment['type'] );
@@ -145,7 +145,7 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		// Should return a valid segment with metadata preserved.
 		$this->assertNotInstanceOf( WP_Error::class, $segment );
 		$this->assertIsArray( $segment );
-		
+
 		// Check that metadata was preserved.
 		$this->assertArrayHasKey( 'url', $segment );
 		$this->assertSame( $test_url, $segment['url'] );
@@ -186,7 +186,7 @@ class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 		// Should return a valid segment with metadata preserved.
 		$this->assertNotInstanceOf( WP_Error::class, $segment );
 		$this->assertIsArray( $segment );
-		
+
 		// Check that metadata was preserved.
 		$this->assertArrayHasKey( 'url', $segment );
 		$this->assertSame( $test_url, $segment['url'] );

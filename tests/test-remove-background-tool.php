@@ -259,7 +259,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Ensure API key is not set.
-		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                     = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['removebg_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -352,7 +352,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 	 * Test that wp_mcp_ai_remove_image_background rejects files outside uploads via symlink.
 	 */
 	public function test_remove_background_rejects_symlink_outside_uploads() {
-		$upload_dir = wp_upload_dir();
+		$upload_dir   = wp_upload_dir();
 		$uploads_path = $upload_dir['path'];
 
 		// Create a symlink to a file outside uploads.
@@ -390,7 +390,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 	 * Test that wp_mcp_ai_remove_image_background rejects files with path traversal.
 	 */
 	public function test_remove_background_rejects_path_traversal() {
-		$upload_dir = wp_upload_dir();
+		$upload_dir   = wp_upload_dir();
 		$uploads_path = $upload_dir['path'];
 
 		// Try path traversal to access wp-config.php.
@@ -407,7 +407,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 	 * Test that wp_mcp_ai_remove_image_background accepts files in uploads directory.
 	 */
 	public function test_remove_background_accepts_files_in_uploads() {
-		$upload_dir = wp_upload_dir();
+		$upload_dir   = wp_upload_dir();
 		$uploads_path = $upload_dir['path'];
 
 		// Create a test file in uploads directory.
@@ -425,7 +425,7 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 		imagedestroy( $image );
 
 		// Test with no API key configured (will fail for that reason, not path validation).
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                     = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['removebg_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -468,12 +468,12 @@ class Test_Remove_Background_Tool extends WP_UnitTestCase {
 	 */
 	public function test_remove_background_rejects_similar_directory_bypass() {
 		// Create a temporary directory that starts with similar name to uploads.
-		$upload_dir = wp_upload_dir();
+		$upload_dir      = wp_upload_dir();
 		$uploads_basedir = $upload_dir['basedir'];
-		
+
 		// Try a path that starts with uploads basedir but has extra characters.
 		// For example, if uploads is /var/www/uploads, try /var/www/uploads_malicious/file.txt.
-		$malicious_dir = dirname( $uploads_basedir ) . '/' . basename( $uploads_basedir ) . '_malicious';
+		$malicious_dir  = dirname( $uploads_basedir ) . '/' . basename( $uploads_basedir ) . '_malicious';
 		$malicious_file = $malicious_dir . '/test.txt';
 
 		// Create the directory and file temporarily.
