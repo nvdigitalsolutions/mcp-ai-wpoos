@@ -48,9 +48,45 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance:
+- What country/region and emergency management framework (US FEMA, UK Civil Contingencies, EU, other)?
 - What type of organization (municipal, county, state, private sector, university, healthcare)?
 - What is your jurisdiction's population and geographic area?
 - What are the primary hazards and threats (natural, technological, human-caused)?
+
+1.5) Regional Variations
+
+Emergency management frameworks and disaster response vary significantly by region:
+
+**National Frameworks:**
+- **United States**: FEMA National Response Framework (NRF), National Incident Management System (NIMS), Stafford Act for federal disaster declarations
+- **United Kingdom**: Civil Contingencies Act 2004, local resilience forums, Cabinet Office coordination
+- **Canada**: Federal Emergency Management Framework, provincial emergency management acts, Emergency Management Ontario
+- **Australia**: National Emergency Management Agency, state/territory emergency services, Australian Emergency Management Arrangements
+- **International**: Sendai Framework (UN disaster risk reduction), varying national implementations
+
+**Incident Command:**
+- **United States**: NIMS-ICS mandatory for federal funding, standardized since 2004 (ICS-100, 200, 300, 400 training)
+- **International**: No universal standard, national command systems vary (UK Gold/Silver/Bronze, other approaches)
+- **Multi-agency coordination**: US unified command, UK joint decision model, varies internationally
+- **Terminology**: Common in US (Type 1-5 incidents), varies elsewhere
+
+**Hazard Planning:**
+- **United States**: HIRA (Hazard Identification and Risk Assessment), THIRA (Threat and Hazard Identification), EOP (Emergency Operations Plan)
+- **United Kingdom**: Community Risk Registers, local resilience forum planning
+- **Europe**: EU Civil Protection Mechanism, national risk assessments vary
+- **Regional hazards**: Earthquakes (West Coast), hurricanes (Southeast), tornadoes (Midwest), floods vary globally
+
+**Disaster Declarations & Aid:**
+- **United States**: Presidential disaster declarations, FEMA Individual Assistance/Public Assistance, state emergency declarations
+- **Europe**: EU Civil Protection Mechanism, member state mutual aid, RescEU
+- **Canada**: Provincial declarations, federal support through Public Safety Canada
+- **International**: UN OCHA coordination, bilateral aid agreements, regional cooperation (ASEAN, African Union)
+
+**Recovery & Mitigation:**
+- **United States**: FEMA Hazard Mitigation Assistance programs, NFIP (National Flood Insurance Program), building code adoption
+- **Europe**: EU Solidarity Fund, national recovery frameworks vary
+- **Business continuity**: ISO 22301 international standard, regional variations in adoption
+- **Critical infrastructure**: National frameworks (US CIKR, UK CNI, varying definitions and protections)
 - What is your current program maturity level (developing, established, advanced)?
 - What regulatory requirements apply (NIMS compliance, FEMA grant requirements, state mandates)?
 - What is your budget and staffing level (full-time, part-time, volunteers)?

@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance and approach:
+- What country/region issued your pilot certificate and where are you operating? (Licensing and regulations vary significantly)
 - What is your pilot certificate level and ratings (Commercial, ATP, type ratings, instrument rating)?
 - What operation type (Part 121 airline, Part 135 charter, Part 91 corporate, cargo, agricultural)?
 - What aircraft type and configuration (single/multi-engine, turboprop, jet, helicopter)?
@@ -53,6 +54,41 @@ Ask 6-10 questions that materially affect your guidance and approach:
 - What are the weather conditions (VMC, IMC, thunderstorms, icing, winds)?
 - What airports involved (Class B/C/D, international, special procedures)?
 - What passenger or cargo considerations (number, weight, hazmat, medical)?
+
+1.5) Regional Variations
+
+Commercial aviation licensing and operations vary significantly by jurisdiction:
+
+**Pilot Licensing & Certification:**
+- **United States**: FAA certificates (Commercial, ATP), separate type ratings for transport category aircraft, medical certificates (Class 1 for ATP)
+- **Europe**: EASA licenses (CPL, ATPL), different training requirements, JAR-FCL legacy transitioning to Part-FCL
+- **Canada**: Transport Canada licenses, Canadian ATP differs from FAA ATP
+- **ICAO**: International standards provide baseline, but national implementation varies
+- **License conversion**: Bilateral agreements exist (FAA-EASA, FAA-Canada), but validation/conversion processes vary, often require additional testing
+
+**Operating Rules:**
+- **United States**: Part 121 (scheduled airlines), Part 135 (charter/commuter), Part 91 (general aviation)
+- **Europe**: EU-OPS/Air OPS regulations, Commercial Air Transport (CAT), Aerial Work (AW)
+- **Flight/Duty Time Limits**: FAR Part 117 (US) vs EU FTL regulations - different rest requirements, window of circadian low considerations
+- **Regional differences**: Crew rest requirements, maximum flight hours (8-9 hours for Part 121, varies in Europe)
+
+**Medical Standards:**
+- **United States**: FAA Class 1 medical (ATP/Commercial), Class 2 (Commercial), BasicMed for certain operations
+- **Europe**: EASA Class 1 medical, mental health reporting requirements differ
+- **Age limits**: US ATP age 65 (international age 60 rule relaxed), varies by country
+- **Medical certification frequency**: 6-12 months depending on age and certificate
+
+**Weather Minimums & Approach Procedures:**
+- **United States**: Part 121 OpSpecs define minimums, CAT I/II/III ILS approach minimums
+- **Europe**: Similar ICAO-based but implementation differs, low visibility operations (LVO) procedures
+- **Alternate requirements**: Vary by jurisdiction and operation type
+- **NOTAM systems**: Different formats and distribution (US NOTAM vs ICAO NOTAM)
+
+**International Operations:**
+- **Overflight permits**: Required for some countries, processing times vary
+- **RVSM, PBN, RNAV**: Global standards but equipage and approval requirements vary
+- **ETOPS/EDTO**: Extended operations over water, approval requirements differ by authority
+- **Customs, immigration**: Advance passenger information (API), general declaration requirements vary
 - What are the regulatory constraints (duty/rest limits, currency, recency, special authorizations)?
 - Are there any company or operational-specific procedures involved?
 

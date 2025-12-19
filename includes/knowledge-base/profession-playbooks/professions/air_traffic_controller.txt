@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance and approach:
+- What country/region and regulatory authority governs your ATC operations? (FAA, EASA, ICAO standards vary significantly)
 - What is your ATC experience level (trainee, CPC, supervisor, facility type)?
 - What facility type are you working or preparing for (Tower, TRACON, Center, FSS)?
 - What airspace class and complexity (Class B/C/D tower, busy TRACON, en route center)?
@@ -53,6 +54,41 @@ Ask 6-10 questions that materially affect your guidance and approach:
 - Are you preparing for training, certification, or addressing a specific operational question?
 - What equipment and automation are available (STARS, ERAM, manual backup)?
 - What weather or special conditions apply (IMC, thunderstorms, low visibility, icing)?
+
+1.5) Regional Variations
+
+Air traffic control is highly regulated with significant regional differences:
+
+**Regulatory Authorities & Standards:**
+- **United States**: FAA (Federal Aviation Administration) - FAA Order JO 7110.65 (ATC procedures), rigorous certification process
+- **Europe**: EASA (European Aviation Safety Agency) + national ANSPs (NATS UK, DFS Germany, DSNA France), Eurocontrol coordination
+- **Canada**: Nav Canada (privatized ATC), Transport Canada oversight, bilingual operations (English/French)
+- **International**: ICAO standards provide baseline, national implementation varies significantly
+- **Regional differences**: Phraseology, separation standards, operational procedures vary despite ICAO harmonization
+
+**Training & Certification:**
+- **United States**: FAA Academy (Oklahoma City), facility-based OJT, CPC certification, facility ratings (Tower, TRACON, Center)
+- **Europe**: National ATC training schools (NATS Swanwick, DFS Langen), competency-based licensing, single European sky initiatives
+- **Canada**: Nav Canada Training Institute, bilingual proficiency requirements
+- **Certification portability**: Limited international recognition, significant retraining typically required
+- **Medical standards**: Class 2 or 3 medical certificates, frequency varies (annual, biennial)
+
+**Airspace Classification:**
+- **United States**: Class A-G airspace, Class B around major airports, Class D at towered airports
+- **Europe**: Similar ICAO-based classification but implementation differs, lower Class A floor (FL195 vs FL180)
+- **Controlled vs uncontrolled**: Varies dramatically (US has more uncontrolled airspace, Europe more controlled)
+- **Special use airspace**: Military operating areas, restricted areas vary by country/region
+
+**Operations & Procedures:**
+- **Separation standards**: RVSM (Reduced Vertical Separation Minimum) above FL290 globally, but lateral/longitudinal varies
+- **Phraseology**: English mandatory for international, regional variations (US "cleared to land" vs UK "land runway XX")
+- **Equipment**: STARS/ERAM (US), Skyguide (Switzerland), regional ATC automation systems differ
+- **Shift schedules**: 8-hour vs 10-hour shifts, break requirements vary by country/union agreements
+
+**Safety Culture & Reporting:**
+- **United States**: ATSAP (voluntary safety reporting), FAA enforcement vs corrective action philosophy
+- **Europe**: Just Culture principles widespread, mandatory occurrence reporting (EU Regulation 376/2014)
+- **Fatigue management**: Work hour limitations vary (US max 10-hour shifts, 2-hour max position time, break requirements)
 - Are there any special operations involved (military, VIP TFRs, special events, search and rescue)?
 - Is this for routine operations or an unusual/emergency situation?
 

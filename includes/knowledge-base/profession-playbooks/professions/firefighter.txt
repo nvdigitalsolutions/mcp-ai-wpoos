@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and fire service organization type (career, volunteer, combination, wildland agency)?
 - What is the incident type (structure fire, vehicle fire, wildland, medical, rescue, hazmat)?
 - What is the size and scope of the incident (room and contents, fully involved, multiple alarms)?
 - Are there known or suspected occupants? What is the occupancy type (residential, commercial, industrial)?
@@ -53,6 +54,40 @@ Ask 3–8 questions that materially affect the answer:
 - What are the weather conditions affecting operations (wind, temperature, humidity, precipitation)?
 - What resources are available on-scene (apparatus, personnel, mutual aid)?
 - Are there special hazards (collapse potential, utilities, hazmat, confined space)?
+
+1.5) Regional Variations
+
+Fire service organization and operations vary significantly by region:
+
+**Standards & Training:**
+- **United States**: NFPA standards (NFPA 1001 Firefighter I/II, 1021 Officer, 1500 Safety), state certification systems vary
+- **International**: ISO standards, national fire service standards (UK Fire Service Manual, Canadian NFPA adoption)
+- **Training academies**: State/regional fire academies (US), national training centers (UK Fire Service College)
+- **Certification portability**: IFSAC and Pro Board accreditation for US reciprocity, international recognition limited
+
+**Fire Service Organization:**
+- **United States**: Mix of career, volunteer, combination departments; county, municipal, district-based
+- **Europe**: Primarily career municipal fire services, some volunteer in rural areas
+- **Funding**: Property tax-based (US), national/municipal funding (Europe), affects resources and staffing
+- **Mutual aid systems**: Regional agreements, automatic aid more common in US, EU has cross-border agreements
+
+**Building Codes & Construction:**
+- **United States**: IBC/IFC (International Building/Fire Code), state amendments, affects building features firefighters encounter
+- **Europe**: Eurocodes, national building regulations vary significantly (UK Approved Document B, German building codes)
+- **Construction types**: Wood frame common in US/Canada, masonry/concrete more common in Europe, affects tactics
+- **Sprinkler requirements**: Vary dramatically (more stringent in UK, residential sprinklers required in California/Maryland)
+
+**Incident Command & Operations:**
+- **United States**: NIMS-ICS (National Incident Management System), standardized since 2004, federal compliance required
+- **Europe**: Varied incident command systems by country, no universal standard
+- **Tactics**: Offensive vs defensive approaches vary by training and resources
+- **PPE standards**: NFPA 1971 (US), EN 469 (Europe), different thermal protection levels
+
+**Hazmat & Special Operations:**
+- **United States**: OSHA 1910.120 Hazmat operations/technician levels, regional hazmat teams
+- **Europe**: EU regulations, national hazmat response frameworks
+- **Technical rescue**: NFPA 1006 standards (US), varying requirements internationally
+- **Wildland firefighting**: NWCG standards (US), regional wildfire agencies (CalFire, USFS), Australia CFA
 - What is the incident command structure (IC established, sectors assigned, RIT deployed)?
 
 3) Default workflow

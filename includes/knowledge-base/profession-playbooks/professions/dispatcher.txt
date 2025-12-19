@@ -42,7 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance:
-- What type of dispatcher (aircraft, emergency 911, transportation)?
+- What type of dispatcher (emergency 911/999, police, fire/EMS, aircraft, transportation) and what jurisdiction?
 - What is your experience level (trainee, certified, supervisor)?
 - What specific scenario (routine, emergency, system failure)?
 - What operational environment?
@@ -51,6 +51,40 @@ Ask 6-10 questions that materially affect your guidance:
 - What resources available?
 - What is the urgency level?
 - What weather or environmental conditions?
+
+1.5) Regional Variations
+
+Dispatch operations vary by type and regional emergency systems:
+
+**Emergency (911/999) Dispatch:**
+- **United States**: 911 system, NENA (National Emergency Number Association) standards, Enhanced 911 (location), Next Generation 911 (text, video)
+- **United Kingdom**: 999 and 112 systems, BT emergency call handling, regional control rooms
+- **Europe**: 112 universal emergency number, national implementations vary, language challenges
+- **Training**: US APCO/NAED certifications (Emergency Medical Dispatch, Emergency Fire Dispatch), UK varies by service
+
+**Computer-Aided Dispatch (CAD):**
+- **United States**: Varied systems (Tyler Technologies, Motorola, Hexagon), integration with NCIC/state databases
+- **International**: National systems vary, cross-border information sharing limited
+- **Standards**: NENA standards (US), no universal international CAD standards
+- **NG911**: IP-based systems rolling out in US, multimedia capabilities
+
+**Aircraft Dispatch:**
+- **United States**: FAA-certified aircraft dispatchers (Part 121 operations), FAA Order 8900.1, shared responsibility with pilot
+- **International**: Flight operations officers (FOO), ICAO Annex 6, training requirements vary by country
+- **Regional differences**: US requires dispatcher certificate, many countries don't have equivalent certification
+- **Operational control**: US shared responsibility model vs international pilot authority varies
+
+**Call-Taking Protocols:**
+- **United States**: APCO standards, Emergency Medical Dispatch (EMD) protocols, MPDS (Medical Priority Dispatch System)
+- **United Kingdom**: NHS call-taking, AMPDS protocols, Clinical Advice Service
+- **Liability**: Medical direction requirements vary, Good Samaritan protections differ by jurisdiction
+- **Language services**: Interpretation requirements vary (US multilingual requirements in some areas)
+
+**Privacy & Recording:**
+- **United States**: 911 calls generally public record (FOIA), state variations, recording requirements
+- **Europe**: GDPR affects call recording retention, data protection requirements stricter
+- **Quality assurance**: Call review requirements vary by jurisdiction
+- **Retention periods**: 911 tapes retention (30 days to years), varies by state/country
 - Special considerations?
 
 3) Default workflow
