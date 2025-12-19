@@ -63,6 +63,19 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 			wp_die( esc_html__( 'You do not have permission to edit this profession.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
 		}
 
+		// Deduplicate playbook attachments before displaying.
+		// This ensures we always show the most recent playbook.
+		if ( class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			try {
+				$reflection = new ReflectionClass( 'WP_MCP_AI_Profession_Playbook_Seeder' );
+				$method     = $reflection->getMethod( 'remove_duplicate_playbooks' );
+				$method->setAccessible( true );
+				$method->invoke( null, $post->ID );
+			} catch ( ReflectionException $e ) {
+				// Silently fail if method doesn't exist - backwards compatibility.
+			}
+		}
+
 		// Find existing playbook attachment.
 		$playbook_attachment = $this->find_playbook_attachment( $post->ID );
 

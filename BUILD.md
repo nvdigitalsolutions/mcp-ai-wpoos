@@ -451,8 +451,11 @@ Artifacts are retained for 30 days after the workflow run.
 To create plugin ZIP files locally for testing:
 
 ```bash
-# Build all three versions (default)
+# Build all three main versions (base, pro, combined) - default
 ./bin/build-plugin-zip.sh
+
+# Build ALL versions including core-only (4 versions total)
+./bin/rebuild-all-zips.sh
 
 # Build only the base version
 ./bin/build-plugin-zip.sh --base
@@ -462,6 +465,9 @@ To create plugin ZIP files locally for testing:
 
 # Build the base + pro combined version
 ./bin/build-plugin-zip.sh --combined
+
+# Build only the core plugin (lightweight)
+./bin/build-plugin-zip.sh --core-only
 
 # Specify a version number
 ./bin/build-plugin-zip.sh --version 1.0.0
@@ -473,7 +479,8 @@ To create plugin ZIP files locally for testing:
 Or use npm scripts:
 
 ```bash
-npm run build:zip           # All three versions
+npm run build:zip           # All three main versions (base, pro, combined)
+npm run rebuild:all         # ALL versions including core-only
 npm run build:zip:base      # Base version only
 npm run build:zip:pro       # Pro add-on only
 npm run build:zip:combined  # Base + Pro combined
@@ -483,6 +490,7 @@ ZIP files will be created in the `build/` directory:
 - `build/mcp-ai-wpoos-base-X.Y.Z.zip` - Standalone base version
 - `build/mcp-ai-wpoos-pro-X.Y.Z.zip` - Pro add-on
 - `build/mcp-ai-wpoos-X.Y.Z.zip` - Base + Pro combined
+- `build/mcp-ai-wpoos-core-X.Y.Z.zip` - Core plugin (lightweight)
 
 **Note:** Local builds require:
 - Node.js and npm (for asset building)

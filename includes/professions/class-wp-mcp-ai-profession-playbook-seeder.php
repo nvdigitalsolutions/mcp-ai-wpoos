@@ -113,6 +113,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * Sync playbook for a single profession.
 	 *
 	 * Creates or updates playbook attachment based on content hash.
+	 * Automatically removes duplicate playbook attachments.
 	 *
 	 * @param WP_Post                              $profession Profession post object.
 	 * @param WP_MCP_AI_Profession_Playbook_Loader $loader     Playbook loader instance.
@@ -120,6 +121,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 */
 	protected static function sync_profession_playbook( $profession, $loader, $force = false ) {
 		$slug = $profession->post_name;
+
+		// First, remove any duplicate playbook attachments for this profession.
+		self::remove_duplicate_playbooks( $profession->ID );
 
 		// Build playbook content.
 		$content = $loader->build_playbook( $profession->ID );
@@ -172,6 +176,8 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	/**
 	 * Find existing playbook attachment for a profession.
 	 *
+	 * Returns the most recent attachment if duplicates exist.
+	 *
 	 * @param int $profession_id Profession post ID.
 	 * @return WP_Post|null Attachment post or null if not found.
 	 */
@@ -180,6 +186,8 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
+			'orderby'        => 'ID',
+			'order'          => 'DESC',
 			'meta_query'     => array(
 				array(
 					'key'     => '_wp_mcp_ai_playbook_profession_id',
@@ -196,6 +204,96 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Find all existing playbook attachments for a profession.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @return array Array of WP_Post objects.
+	 */
+	protected static function find_all_playbook_attachments( $profession_id ) {
+		$args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => -1,
+			'orderby'        => 'ID',
+			'order'          => 'DESC',
+			'meta_query'     => array(
+				array(
+					'key'     => '_wp_mcp_ai_playbook_profession_id',
+					'value'   => $profession_id,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$query = new WP_Query( $args );
+
+		return $query->posts;
+	}
+
+	/**
+	 * Remove duplicate playbook attachments for a profession.
+	 *
+	 * Keeps only the most recent attachment associated with the profession.
+	 * Older duplicate attachments are removed from the profession's memory files
+	 * but remain in the media library for reference.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @return int Number of duplicates removed from profession.
+	 */
+	protected static function remove_duplicate_playbooks( $profession_id ) {
+		$attachments = self::find_all_playbook_attachments( $profession_id );
+
+		if ( count( $attachments ) <= 1 ) {
+			// No duplicates to remove.
+			return 0;
+		}
+
+		$removed_count = 0;
+
+		// Keep the first (most recent) attachment, remove the rest from profession.
+		$keep_attachment_id = $attachments[0]->ID;
+
+		for ( $i = 1; $i < count( $attachments ); $i++ ) {
+			$attachment_id = $attachments[ $i ]->ID;
+
+			// Remove from profession's memory files.
+			self::remove_attachment_from_memory_files( $profession_id, $attachment_id );
+
+			// Remove the profession association meta, but keep the attachment in media library.
+			delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+
+			$removed_count++;
+		}
+
+		// Ensure the kept attachment is in memory files.
+		self::ensure_attachment_in_memory_files( $profession_id, $keep_attachment_id );
+
+		return $removed_count;
+	}
+
+	/**
+	 * Remove attachment ID from profession's memory files meta.
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @param int $attachment_id Attachment post ID.
+	 */
+	protected static function remove_attachment_from_memory_files( $profession_id, $attachment_id ) {
+		$memory_files = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+
+		if ( ! is_array( $memory_files ) ) {
+			return;
+		}
+
+		$key = array_search( $attachment_id, $memory_files, true );
+		if ( false !== $key ) {
+			unset( $memory_files[ $key ] );
+			// Re-index array to maintain sequential keys.
+			$memory_files = array_values( $memory_files );
+			update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
+		}
 	}
 
 	/**
@@ -300,11 +398,16 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			$memory_files = array();
 		}
 
+		// Deduplicate existing array to clean up any existing duplicates.
+		$memory_files = array_values( array_unique( array_map( 'absint', $memory_files ) ) );
+
 		// Add attachment if not already present (idempotent).
 		if ( ! in_array( $attachment_id, $memory_files, true ) ) {
 			$memory_files[] = $attachment_id;
-			update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 		}
+
+		// Always update to ensure deduplication is saved.
+		update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 	}
 
 	/**
@@ -356,5 +459,47 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		foreach ( $professions as $profession ) {
 			self::sync_profession_playbook( $profession, $loader, $force );
 		}
+	}
+
+	/**
+	 * Clean up all duplicate playbook attachments.
+	 *
+	 * Removes duplicate playbook attachments across all professions,
+	 * keeping only the most recent attachment for each profession.
+	 *
+	 * @return array Statistics about the cleanup operation.
+	 */
+	public static function cleanup_all_duplicates() {
+		// Load repository if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
+		}
+
+		$repository  = new WP_MCP_AI_Profession_Repository();
+		$professions = $repository->find_all();
+
+		if ( empty( $professions ) ) {
+			return array(
+				'professions_processed' => 0,
+				'duplicates_removed'    => 0,
+			);
+		}
+
+		$total_removed         = 0;
+		$professions_processed = 0;
+
+		foreach ( $professions as $profession ) {
+			$removed = self::remove_duplicate_playbooks( $profession->ID );
+			$total_removed += $removed;
+
+			if ( $removed > 0 ) {
+				$professions_processed++;
+			}
+		}
+
+		return array(
+			'professions_processed' => $professions_processed,
+			'duplicates_removed'    => $total_removed,
+		);
 	}
 }
