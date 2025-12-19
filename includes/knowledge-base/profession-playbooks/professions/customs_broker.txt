@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region or country? (US, Canada, UK, EU, other - customs procedures vary significantly)
 - What is being imported? (Product description, intended use, materials)
 - What is the country of origin? (Manufacturing location, value-added operations)
 - What is the commercial value? (Invoice price, currency, Incoterms)
@@ -55,8 +56,82 @@ Ask 3–8 questions that materially affect the answer:
 - Do you have a customs bond? (Existing bond or need new one)
 - Have you imported this product before? (Prior classifications, compliance history)
 
+1.5) Regional Variations
+
+**United States:**
+- Customs Authority: U.S. Customs and Border Protection (CBP)
+- Entry System: Automated Commercial Environment (ACE)
+- Classification: Harmonized Tariff Schedule of the United States (HTSUS)
+- Key Regulations: 19 USC, 19 CFR
+- Customs Bond: Required (single transaction or continuous)
+- Entry Types: Formal (>$2,500), Informal (<$2,500)
+- Trade Agreements: USMCA (formerly NAFTA), various FTAs
+- Partner Agencies: FDA, USDA, EPA, DOT, CPSC, FCC, etc.
+- Special Programs: C-TPAT, ISA, First Sale valuation, Duty Drawback (19 USC 1313)
+- Key Forms: CBP Form 7501, CF 28/29, CF 19 (protest)
+
+**Canada:**
+- Customs Authority: Canada Border Services Agency (CBSA)
+- Entry System: Canadian Single Window (CSW), EDI via CBSA Assessment and Revenue Management (CARM)
+- Classification: Canadian Customs Tariff based on HS
+- Key Regulations: Customs Act, Customs Tariff
+- Customs Bond: Required for most commercial imports
+- Entry Types: Formal (>CAD $3,300), Informal
+- Trade Agreements: CUSMA (USMCA), CETA, CPTPP
+- Partner Agencies: CFIA, Health Canada, Transport Canada
+- Special Programs: Partners in Protection (PIP), Free and Secure Trade (FAST)
+- Key Forms: B3 (Canada Customs Coding Form), B2 (Adjustment Request)
+
+**European Union:**
+- Customs Authority: National customs authorities coordinated by European Commission DG TAXUD
+- Entry System: Union Customs Code (UCC), Customs Decision System (CDS), Import Control System 2 (ICS2)
+- Classification: Combined Nomenclature (CN) based on HS
+- Key Regulations: Union Customs Code (EU) No 952/2013
+- Customs Bond: Guarantee required for certain procedures
+- Entry Types: Import declaration (H1, H7), simplified procedures
+- Trade Agreements: Various EU FTAs, EU-UK Trade and Cooperation Agreement
+- Partner Agencies: Varies by member state (e.g., Trading Standards, health authorities)
+- Special Programs: Authorised Economic Operator (AEO), customs warehousing, inward processing
+- Key Forms: Single Administrative Document (SAD), supplementary declarations
+- Brexit Impact: UK no longer in EU customs union; new border procedures
+
+**United Kingdom (Post-Brexit):**
+- Customs Authority: HM Revenue & Customs (HMRC)
+- Entry System: Customs Declaration Service (CDS), replacing CHIEF
+- Classification: UK Global Tariff (UKGT) based on HS
+- Key Regulations: Taxation (Cross-border Trade) Act 2018, UK customs law
+- Customs Bond: Duty deferment accounts, guarantees for certain procedures
+- Entry Types: Full declaration, simplified declaration, staged customs controls
+- Trade Agreements: UK-EU TCA, rollover FTAs, new UK FTAs (Australia, etc.)
+- Partner Agencies: FSA, DEFRA, MHRA, etc.
+- Special Programs: Freeports, customs warehousing, inward processing relief
+- Key Forms: Import declaration, C88, supplementary declarations
+- Note: Northern Ireland Protocol creates special status for NI
+
+**Asia-Pacific (General):**
+- ASEAN Single Window (ASW) for member states
+- APEC Cross-Border Privacy Rules (CBPR)
+- Regional Comprehensive Economic Partnership (RCEP) trade agreement
+- Varied customs systems: China (GACC), Japan (Japan Customs), Singapore (Singapore Customs)
+- HS-based classification systems with national variations
+- Strong focus on trade facilitation and single window systems
+
+**Latin America & Caribbean:**
+- Varied customs systems, many use ASYCUDA (see asycuda_specialist playbook)
+- Regional agreements: CARICOM, Mercosur, Pacific Alliance
+- HS-based classification with regional variations
+- Growing adoption of electronic customs systems
+- Customs brokers often required by law for commercial imports
+
+**Key Regional Differences to Note:**
+- **Valuation Methods**: Generally consistent (WTO Valuation Agreement) but application varies
+- **Classification**: All based on HS but national variations exist (6-digit HS uniform, 8-10 digit national)
+- **Documentation**: Electronic systems increasingly common but paper still accepted in many regions
+- **Broker Licensing**: Requirements vary (mandatory in US, Canada; registration/authorization in EU/UK)
+- **Terminology**: "Customs broker" (US), "Customs agent/freight forwarder" (EU/UK), "Licensed customs broker" (Canada)
+
 3) Default workflow
-Use structured customs clearance methodology (CBP regulations 2024):
+Use structured customs clearance methodology (adapt to regional system - example below uses US/CBP):
 
 1. Pre-Clearance Planning & Documentation Review (Before Arrival)
    - Review commercial invoice, packing list, bill of lading/airway bill
