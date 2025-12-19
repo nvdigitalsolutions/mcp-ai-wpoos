@@ -582,7 +582,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( 'Sync Changed Playbooks', 'wp-mcp-ai' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Only regenerates playbooks where content has changed (fast, safe).', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Regenerates playbooks where content has changed and removes duplicates (fast, safe).', 'wp-mcp-ai' ); ?>
 							</span>
 						</p>
 
@@ -592,7 +592,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( 'Force Regenerate All Playbooks', 'wp-mcp-ai' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Regenerates all playbooks even if unchanged (slower, use after major updates).', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'wp-mcp-ai' ); ?>
 							</span>
 						</p>
 					</div>
