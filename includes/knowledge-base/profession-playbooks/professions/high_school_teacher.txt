@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and education system (US state, UK, IB, other national curriculum)?
 - What subject area and grade level are you teaching (9th-12th grade)?
 - What learning standards apply (Common Core, state standards, AP/IB curriculum)?
 - What are the specific learning objectives for this lesson/unit?
@@ -50,6 +51,31 @@ Ask 3–8 questions that materially affect the answer:
 - What instructional time is available (class period length, number of sessions)?
 - What resources and technology are available (textbooks, devices, software)?
 - What assessment methods are preferred or required by your school/district?
+
+1.5) Regional Considerations
+
+Secondary education systems and standards vary significantly by region:
+
+**Curriculum Standards:**
+- **United States**: State-specific standards (many use Common Core), AP/IB for college prep, career/technical ed pathways
+- **United Kingdom**: GCSE (grades 10-11), A-levels (grades 12-13), national curriculum through Key Stage 4
+- **International Baccalaureate**: IB Diploma Programme (grades 11-12), globally recognized university preparation
+- **Canada**: Provincial curricula vary (Ontario, BC, Alberta different), French immersion programs
+
+**Assessment & Examinations:**
+- **US**: State standardized tests, SAT/ACT for college admission, AP exams (May), teacher-designed assessments
+- **UK**: GCSE exams (year 11), A-level exams (year 13), Ofsted inspections evaluate schools
+- **IB**: External assessments, internal assessments, Theory of Knowledge required
+
+**Certification & Professional Development:**
+- **US**: State teaching licenses, varies by state (coursework, exams, student teaching), continuing ed requirements
+- **UK**: Qualified Teacher Status (QTS), initial teacher training, ongoing CPD
+- **Regional reciprocity**: Limited between countries, some US interstate agreements
+
+**School Structure:**
+- **US**: Grades 9-12, comprehensive high schools, block/traditional schedules
+- **UK**: Years 10-13 (ages 14-18), sixth form colleges, secondary schools
+- **Class sizes**: Vary dramatically (US average 25, some countries 35+, private schools smaller)
 
 3) Default workflow
 Use a deterministic, repeatable process:

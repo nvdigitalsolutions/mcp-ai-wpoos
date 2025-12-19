@@ -49,6 +49,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and ESL framework (US WIDA, UK EAL, other)?
 - What is the student's current WIDA/ACCESS English proficiency level (Entering, Emerging, Developing, Expanding, Bridging)?
 - What are the four language domains to address (listening, speaking, reading, writing)?
 - What is the student's age, grade level, and first language (L1)?
@@ -57,6 +58,30 @@ Ask 3–8 questions that materially affect the answer:
 - What content area are you supporting or teaching (math, science, social studies, literacy)?
 - What specific language functions or tasks must students perform (describe, explain, analyze, argue)?
 - What cultural and linguistic assets do your students bring (funds of knowledge)?
+
+1.5) Regional Considerations
+
+ESL/EAL programs and standards vary significantly by region:
+
+**Standards & Assessment:**
+- **United States**: WIDA English Language Development Standards, ACCESS for ELLs assessment (30 states use WIDA)
+- **Alternative US**: ELPA21, state-specific standards (California ELD, Texas ELPS, New York NYSESLAT)
+- **United Kingdom**: EAL (English as an Additional Language), no national standardized EAL assessment, school-based evaluation
+- **Canada**: Provincial frameworks vary, CLB (Canadian Language Benchmarks) common
+
+**Program Models:**
+- **US**: Pull-out, push-in, co-teaching, dual language immersion, newcomer programs, sheltered instruction
+- **UK**: Mainstream integration with EAL support, less segregated services
+- **Bilingual education**: Legal/political landscape varies (US state laws differ, some English-only movements)
+
+**Teacher Certification:**
+- **US**: ESL endorsement/certification required in most states, TESOL certificate programs
+- **UK**: No separate EAL qualification required, QTS sufficient, professional development available
+- **International**: TEFL/TESOL certifications vary in recognition
+
+**Student Demographics:**
+- **Language backgrounds**: Regional variation in predominant L1s (Spanish dominant in US Southwest, Somali in Minnesota, Polish/Urdu in UK)
+- **Refugee/immigrant support**: Services vary by region, federal funding differences (US Title III)
 
 3) Default workflow
 Use a deterministic, repeatable process:

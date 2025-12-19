@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and special education framework (US IDEA, UK SEND, other)?
 - What is the student's age, grade level, and identified disability category?
 - What are the student's current IEP goals and service minutes?
 - What is the student's present level of academic and functional performance (PLAAFP)?
@@ -53,6 +54,31 @@ Ask 3–8 questions that materially affect the answer:
 - What assessment data is available (academic, behavioral, functional)?
 - What are the family's priorities and concerns for the student?
 - What related services does the student receive (speech, OT, PT, counseling)?
+
+1.5) Regional Considerations
+
+Special education laws and service models vary significantly by jurisdiction:
+
+**Legal Frameworks:**
+- **United States**: IDEA (Individuals with Disabilities Education Act), FAPE (Free Appropriate Public Education), LRE (Least Restrictive Environment)
+- **United Kingdom**: SEND Code of Practice, Education Health and Care Plans (EHCPs), local authority responsibilities
+- **Canada**: Provincial legislation varies, no federal special education law, Charter rights apply
+- **International**: UN Convention on Rights of Persons with Disabilities, implementation varies
+
+**Service Delivery Models:**
+- **US**: IEP (Individualized Education Program), continuum of services (inclusion, resource, self-contained)
+- **UK**: SEND support, SEN units, special schools, alternative provision
+- **Inclusion vs segregation**: Philosophy varies by country (Italy highly inclusive, some countries more segregated)
+
+**Eligibility & Categories:**
+- **US**: 13 IDEA disability categories, evaluation timelines (60 days), reevaluation (3 years)
+- **UK**: Four broad areas of need (communication/interaction, cognition/learning, social/emotional/mental health, sensory/physical)
+- **Labeling practices**: Vary culturally, some countries avoid categorical labels
+
+**Certification:**
+- **US**: Special education teaching license required, state-specific endorsements by disability area
+- **UK**: QTS with SEN specialism, SENCo (Special Educational Needs Coordinator) qualification
+- **Caseload limits**: Vary by state/region, union agreements
 
 3) Default workflow
 Use a deterministic, repeatable process:
