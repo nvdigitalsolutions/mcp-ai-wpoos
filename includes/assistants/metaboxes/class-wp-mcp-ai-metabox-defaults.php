@@ -79,6 +79,29 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
 		}
 
+		// Enqueue model selector JavaScript.
+		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
+			wp_enqueue_script(
+				'wp-mcp-ai-model-selector',
+				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
+			// Localize script for AJAX (only once).
+			wp_localize_script(
+				'wp-mcp-ai-model-selector',
+				'wpMcpAiModelSelector',
+				array(
+					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
+					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
 		wp_nonce_field( 'wp_mcp_ai_defaults_meta', 'wp_mcp_ai_defaults_meta_nonce' );
 
 		$provider      = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_PROVIDER, true );
@@ -103,10 +126,17 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$temperature = '';
 		}
 
+		// Load model service if available.
+		$models = array();
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $provider );
+		}
+
 		?>
 	<p>
 		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></strong></label>
-		<select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat">
+		<select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-model">
 			<?php
 			foreach ( $provider_choices as $choice ) {
 				$choice = sanitize_key( $choice );
@@ -131,7 +161,23 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	</p>
 	<p>
 		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong></label>
-		<input type="text" id="wp-mcp-ai-model" name="wp_mcp_ai_model" value="<?php echo esc_attr( $model ); ?>" class="widefat" />
+		<?php if ( ! empty( $models ) ) : ?>
+			<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
+				<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+				<?php foreach ( $models as $model_id => $model_name ) : ?>
+					<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model, $model_id ); ?>>
+						<?php echo esc_html( $model_name ); ?>
+					</option>
+				<?php endforeach; ?>
+				<?php if ( $model && ! isset( $models[ $model ] ) ) : ?>
+					<option value="<?php echo esc_attr( $model ); ?>" selected="selected">
+						<?php echo esc_html( $model ); ?> (custom)
+					</option>
+				<?php endif; ?>
+			</select>
+		<?php else : ?>
+			<input type="text" id="wp-mcp-ai-model" name="wp_mcp_ai_model" value="<?php echo esc_attr( $model ); ?>" class="widefat" />
+		<?php endif; ?>
 	</p>
 	<p>
 		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong></label>

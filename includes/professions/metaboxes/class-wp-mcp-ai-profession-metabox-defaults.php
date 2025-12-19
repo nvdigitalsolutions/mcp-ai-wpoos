@@ -59,6 +59,29 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function render( $post ) {
+		// Enqueue model selector JavaScript.
+		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
+			wp_enqueue_script(
+				'wp-mcp-ai-model-selector',
+				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
+			// Localize script for AJAX (only once).
+			wp_localize_script(
+				'wp-mcp-ai-model-selector',
+				'wpMcpAiModelSelector',
+				array(
+					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
+					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
 		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
 
 		$default_provider     = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
@@ -87,6 +110,13 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			)
 		);
 
+		// Load model service if available.
+		$models = array();
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $default_provider );
+		}
+
 		?>
 		<div class="wp-mcp-ai-profession-defaults">
 			<p class="description">
@@ -114,7 +144,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 				<label for="profession_default_provider">
 					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
 				</label><br>
-				<select name="profession_default_provider" id="profession_default_provider" class="widefat">
+				<select name="profession_default_provider" id="profession_default_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#profession_default_model">
 					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
 					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
 					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
@@ -127,7 +157,23 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 				<label for="profession_default_model">
 					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
 				</label><br>
-				<input type="text" name="profession_default_model" id="profession_default_model" class="widefat" value="<?php echo esc_attr( $default_model ); ?>" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
+				<?php if ( ! empty( $models ) ) : ?>
+					<select name="profession_default_model" id="profession_default_model" class="widefat">
+						<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+						<?php foreach ( $models as $model_id => $model_name ) : ?>
+							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
+								<?php echo esc_html( $model_name ); ?>
+							</option>
+						<?php endforeach; ?>
+						<?php if ( $default_model && ! isset( $models[ $default_model ] ) ) : ?>
+							<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
+								<?php echo esc_html( $default_model ); ?> (custom)
+							</option>
+						<?php endif; ?>
+					</select>
+				<?php else : ?>
+					<input type="text" name="profession_default_model" id="profession_default_model" class="widefat" value="<?php echo esc_attr( $default_model ); ?>" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
+				<?php endif; ?>
 			</p>
 
 			<p>
