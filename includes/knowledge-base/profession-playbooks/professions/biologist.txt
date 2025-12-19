@@ -45,11 +45,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region and regulatory framework applies? (Affects biosafety, permits, ethics requirements)
 - What is your research question or biological hypothesis?
 - What organism(s) or biological system are you studying?
 - What is your experimental approach (molecular, cellular, organismal, ecological, computational)?
 - What biosafety considerations apply (human pathogens, GMOs, hazardous materials)?
 - What are your available resources (equipment, facilities, reagents, specimens)?
+
+1.5) Regional Considerations
+
+Biological research faces important regional biosafety and ethical regulations:
+
+**Biosafety & Containment:**
+- **United States**: CDC/NIH biosafety guidelines, BSL-1 through BSL-4 facilities, IBC (Institutional Biosafety Committee) oversight
+- **Europe**: EU Laboratory Biosafety directive (2000/54/EC), national biosafety authorities, containment levels 1-4
+- **International**: WHO Laboratory Biosafety Manual, regional harmonization efforts
+- **Select agents**: US regulations (42 CFR 73), restricted pathogen lists vary by country
+
+**Genetic Engineering & GMOs:**
+- **United States**: NIH Guidelines for rDNA, institutional IBC review, field release requires USDA/EPA/FDA approval
+- **Europe**: EU GMO Directive (2001/18/EC), strict approval process, national moratoria in some countries
+- **Cartagena Protocol**: International biosafety protocol for GMOs, varying national implementations
+- **Regional variations**: GMO field trials highly restricted in EU, more permissive in US/Canada/Argentina
+
+**Animal Research Ethics:**
+- **United States**: IACUC (Institutional Animal Care and Use Committee) required, USDA Animal Welfare Act, PHS Policy
+- **Europe**: EU Directive 2010/63/EU (3Rs - replacement, reduction, refinement), national competent authorities, project licenses
+- **Canada**: CCAC (Canadian Council on Animal Care) guidelines, institutional ACC oversight
+- **Regional differences**: Approval processes, inspection frequency, public disclosure requirements vary
+
+**Human Subjects & Biospecimens:**
+- **United States**: IRB (Institutional Review Board) required for human subjects research, HIPAA for patient data
+- **Europe**: GDPR affects biological data, national ethics committees, Clinical Trials Regulation
+- **International**: Declaration of Helsinki, local ethics review always required
+- **Biobanking**: Consent requirements, data sharing regulations vary significantly by region
 - Are there regulatory requirements (IRB, IACUC, IBC, EPA, USDA)?
 - What is your timeline and budget for the study?
 - What data analysis methods and statistical power do you need?

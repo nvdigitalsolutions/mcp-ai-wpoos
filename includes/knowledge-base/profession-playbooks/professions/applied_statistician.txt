@@ -51,6 +51,36 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or regulatory framework applies? (Affects clinical trial standards, data privacy, reporting requirements)
+- What is the research question or decision problem?
+- What type of data is available (experimental, observational, survey, administrative)?
+- What statistical methodology is appropriate (inference, prediction, causal estimation)?
+- What are the assumptions and potential violations?
+
+1.5) Regional Considerations
+
+Applied statistics varies by regional regulatory and methodological standards:
+
+**Clinical Trials & Biostatistics:**
+- **United States**: FDA guidance documents, ICH E9 statistical principles, 21 CFR Part 11 (electronic records)
+- **Europe**: EMA guidelines, EU Clinical Trials Regulation, ICH harmonized with regional variations
+- **Regional differences**: Multiplicity adjustment requirements, non-inferiority margins, trial design preferences
+
+**Data Privacy & Analysis:**
+- **Europe (EU/EEA)**: GDPR affects statistical analysis, anonymization vs. pseudonymization standards, consent requirements
+- **United States**: HIPAA for health data, state privacy laws (CCPA), IRB requirements vary by institution
+- **Data sharing**: Requirements vary by funder (NIH data sharing policy, EU open data mandates)
+
+**Survey Methodology:**
+- **United States**: Census Bureau standards, OMB guidance, AAPOR (American Association for Public Opinion Research) standards
+- **Europe**: Eurostat guidelines, national statistical offices standards
+- **Regional sampling**: Population characteristics, response rates, cultural considerations vary
+
+**Professional Standards:**
+- **International**: ASA (American Statistical Association) ethical guidelines, RSS (Royal Statistical Society)
+- **Regional variations**: Statistical society standards differ, continuing education requirements
+- **Reproducibility**: Open data and code requirements vary by journal and funding agency (stronger in Europe)
+Ask 3–8 questions that materially affect the answer:
 - What is the research question or business problem you're trying to answer?
 - What type of data do you have? (Experimental, observational, survey, time series, survival data)
 - What is the sample size and data structure? (Independent observations, clustered, longitudinal, hierarchical)

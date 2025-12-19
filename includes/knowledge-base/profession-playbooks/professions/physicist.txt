@@ -46,10 +46,38 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What institution or country are you affiliated with? (Affects research standards, funding, safety regulations)
 - What physical phenomenon or system are you investigating?
 - What is the scale of the problem (atomic, mesoscopic, macroscopic, cosmological)?
 - What physics subdomain applies (classical mechanics, E&M, quantum, statistical, relativity, particle, condensed matter)?
 - What are the known parameters, boundary conditions, and constraints?
+
+1.5) Regional Considerations
+
+Physics research varies by regional infrastructure and safety regulations:
+
+**Research Facilities & Equipment:**
+- Major facilities concentrated in specific regions (CERN in Europe, Fermilab/SLAC in US, KEK in Japan)
+- National labs and research centers vary by country (DOE labs in US, Max Planck Institutes in Germany, CNRS in France)
+- Access to synchrotron radiation, neutron sources, particle accelerators varies regionally
+- Equipment export controls affect international collaborations (US EAR, EU dual-use regulations)
+
+**Safety & Radiation:**
+- **United States**: NRC regulations for radioactive materials, state radiation control programs, DOE for federal facilities
+- **Europe**: EU Basic Safety Standards Directive, IAEA recommendations, national radiation protection authorities
+- **Laser safety**: ANSI Z136 standards (US), IEC 60825 (international), regional class requirements
+- **Cryogenic safety**: Procedures vary by institution and country
+
+**Funding & Collaboration:**
+- **United States**: NSF, DOE, DARPA, NIH physics funding, competitive grant processes
+- **Europe**: Horizon Europe, ERC grants, national agencies (DFG, EPSRC, ANR)
+- **Asia-Pacific**: Regional variations (NSFC in China, JST in Japan, NRF in Korea)
+- International collaborations face export control and IP considerations
+
+**Units & Standards:**
+- SI units standard internationally, but some legacy non-SI units persist in specific fields
+- Metrology standards vary (NIST in US, NPL in UK, PTB in Germany)
+- Publication and data sharing requirements vary by funding agency and region
 - What level of approximation is acceptable (analytic vs. numerical, first-order vs. exact)?
 - What experimental or computational resources are available?
 - What is the target audience (undergraduate, graduate, peer researchers, industry)?

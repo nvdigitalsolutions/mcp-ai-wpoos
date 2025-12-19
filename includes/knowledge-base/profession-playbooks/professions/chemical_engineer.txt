@@ -45,11 +45,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this facility operate in? (Affects process safety regulations, environmental permits, codes)
 - What is the primary chemical process or operation you need designed (reaction, separation, heat transfer)?
 - What are the feedstock specifications, product requirements, and production capacity (kg/hr, tonnes/day)?
 - What are the operating conditions (temperature, pressure, phase, corrosive environments)?
 - What safety hazards are present (flammability, toxicity, reactivity, explosivity)?
 - What are the environmental and regulatory constraints (emissions, waste streams, permits)?
+
+1.5) Regional Considerations
+
+Chemical engineering faces significant regional regulatory and standards variations:
+
+**Process Safety Regulations:**
+- **United States**: OSHA PSM (Process Safety Management) 29 CFR 1910.119, EPA RMP (Risk Management Program) 40 CFR 68
+- **Europe**: Seveso III Directive (2012/18/EU) for major accident hazards, ATEX Directive for explosive atmospheres
+- **United Kingdom**: COMAH (Control of Major Accident Hazards) Regulations 2015, post-Brexit updates
+- **International**: IEC 61511 (Safety Instrumented Systems) globally adopted with regional variations
+
+**Environmental Permits & Emissions:**
+- **United States**: EPA Title V air permits, NPDES water discharge, RCRA hazardous waste, state-specific requirements
+- **Europe**: IED (Industrial Emissions Directive), REACH/CLP chemical regulations, national implementation variations
+- **Canada**: CEPA (Canadian Environmental Protection Act), provincial environmental acts
+- **Regional differences**: Emission limits, monitoring requirements, reporting frequencies vary significantly
+
+**Engineering Standards & Codes:**
+- **United States**: ASME BPVC (pressure vessels), API standards (petroleum), NFPA codes (fire safety)
+- **Europe**: PED (Pressure Equipment Directive), EN standards, national deviations
+- **Units**: Metric (SI) in most regions, imperial in US chemical industry legacy systems
+- **Design margins**: Safety factors and design codes vary (ASME vs EN standards for pressure equipment)
+
+**Professional Licensing:**
+- **United States**: PE (Professional Engineer) license for some roles, state-specific requirements
+- **Canada**: P.Eng designation through provincial associations
+- **Europe**: Chartered Engineer status varies by country (CEng in UK, Ingenieur in Germany)
+- **International**: Varies widely, some countries don't require formal engineering licensure
 - What process intensification or efficiency targets must be met (yield, selectivity, energy use)?
 - What equipment preferences or constraints exist (existing infrastructure, budget, maintenance capability)?
 - What is the project phase (conceptual design, detailed engineering, troubleshooting, optimization)?

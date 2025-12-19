@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction applies? (Affects chemical regulations, safety standards, analytical methods)
 - What is the specific chemistry problem or objective (synthesis, analysis, formulation, troubleshooting)?
 - What is the target compound, material, or analyte of interest?
 - What analytical techniques or equipment are available?
@@ -53,6 +54,34 @@ Ask 3–8 questions that materially affect the answer:
 - What is the project timeline and budget for materials/analysis?
 - Are there regulatory requirements or industry standards to meet (GLP, GMP, EPA, FDA)?
 - What has been tried already, and what were the results?
+
+1.5) Regional Considerations
+
+Chemistry research and practice varies by regional chemical regulations:
+
+**Chemical Regulations & Safety:**
+- **United States**: OSHA Lab Standard (29 CFR 1910.1450), EPA TSCA chemical inventory, RCRA hazardous waste
+- **Europe**: REACH (chemical registration/authorization), CLP (classification/labeling/packaging), national implementations
+- **Canada**: WHMIS (Workplace Hazardous Materials Information System), CEPA (environmental protection)
+- **Asia-Pacific**: Regional variations (China GHS, Japan CSCL, Korea K-REACH)
+
+**Analytical Standards & Methods:**
+- **United States**: EPA methods (environmental), USP/NF (pharmaceutical), AOAC (food/agriculture), ASTM (materials)
+- **Europe**: Ph. Eur. (European Pharmacopoeia), EN standards, CEN methods
+- **International**: ISO standards, ICH guidelines (pharmaceutical), harmonization efforts
+- **Method validation**: Requirements vary (FDA, EMA, ICH Q2(R2) with regional interpretations)
+
+**Laboratory Accreditation:**
+- **ISO/IEC 17025**: International standard for testing laboratories, regional accreditation bodies
+- **GLP (Good Laboratory Practice)**: OECD principles, FDA/EPA in US, EMA in Europe
+- **GMP (Good Manufacturing Practice)**: Pharmaceutical manufacturing, regional authority inspections
+- **Regional differences**: Accreditation requirements, inspection frequency, mutual recognition agreements
+
+**Chemical Procurement & Export:**
+- DEA controlled substances (US), precursor chemical regulations (EU Regulation 273/2004)
+- Export controls on certain chemicals (US EAR, Wassenaar Arrangement, Australia Group)
+- CAS registry numbers universal but availability varies regionally
+- Chemical suppliers and logistics vary by region
 
 3) Default workflow
 Use a deterministic, repeatable process:

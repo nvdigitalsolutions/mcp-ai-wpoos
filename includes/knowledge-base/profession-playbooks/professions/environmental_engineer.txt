@@ -46,10 +46,39 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your approach:
+- What jurisdiction and regulatory framework applies? (EPA, state DEP, EU directives, provincial regulations)
 - What is the environmental challenge or project goal (compliance, remediation, pollution prevention, sustainability)?
 - What are the applicable environmental regulations (federal EPA, state DEP/DEQ, local ordinances)?
 - What environmental media are involved (soil, groundwater, surface water, air, sediment)?
 - What contaminants or pollutants are present or regulated (VOCs, metals, nutrients, particulates, GHGs)?
+
+1.5) Regional Considerations
+
+Environmental engineering is heavily influenced by regional regulatory frameworks:
+
+**Environmental Regulations:**
+- **United States**: EPA regulations (Clean Air Act, Clean Water Act, RCRA, CERCLA), state DEP/DEQ variations, NEPA environmental review
+- **Europe**: EU directives (Water Framework, IED, Waste Framework, Habitats), national transposition with variations
+- **Canada**: CEPA (Canadian Environmental Protection Act), provincial environmental acts, Fisheries Act
+- **Regional standards**: Cleanup levels, discharge limits, emission standards vary significantly by jurisdiction
+
+**Permitting & Compliance:**
+- **United States**: NPDES permits (water discharge), Title V air permits, RCRA hazardous waste, state program delegation
+- **Europe**: Environmental permits under IED, water abstraction licenses, waste permits, IPPC (Integrated Pollution Prevention Control)
+- **Site investigation**: ASTM E1527 Phase I ESA (US), ISO 14015 (international), regional environmental audit protocols
+- **Reporting**: Toxics Release Inventory (US), European Pollutant Release and Transfer Register (EU), regional variations
+
+**Remediation Standards:**
+- **United States**: EPA cleanup standards, state voluntary cleanup programs, brownfield redevelopment programs
+- **Europe**: Contaminated land frameworks vary by country (Part 2A in UK, BBodSchG in Germany)
+- **Risk-based approaches**: Site-specific risk assessment protocols differ, background concentrations vary regionally
+- **Monitoring requirements**: Frequency, parameters, and methods vary by jurisdiction
+
+**Water & Wastewater:**
+- **United States**: SDWA (Safe Drinking Water Act), primary and secondary MCLs, state-specific standards
+- **Europe**: Drinking Water Directive, Urban Waste Water Treatment Directive, bathing water standards
+- **Treatment standards**: Effluent limits vary (secondary vs tertiary treatment requirements)
+- **Emerging contaminants**: PFAS, microplastics regulations evolving differently by region
 - What is the site setting (industrial, commercial, residential, sensitive receptors nearby)?
 - What permits or approvals are required (NPDES, Title V, RCRA, wetlands 404 permit)?
 - What is the project timeline and budget constraints?
