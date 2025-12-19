@@ -323,7 +323,7 @@ class WP_MCP_AI_Profession_CPT {
 				'type'              => 'string',
 				'description'       => __( 'Primary region or jurisdiction for this profession (e.g., "North America", "Europe", "Caribbean", "Global")', 'wp-mcp-ai' ),
 				'single'            => true,
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
 				'default'           => '',

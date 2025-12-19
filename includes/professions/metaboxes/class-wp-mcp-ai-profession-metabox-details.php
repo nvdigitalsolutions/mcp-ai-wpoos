@@ -177,7 +177,27 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 
 		// Save region.
 		if ( isset( $_POST['profession_region'] ) ) {
-			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_REGION, sanitize_key( wp_unslash( $_POST['profession_region'] ) ) );
+			$region = sanitize_key( wp_unslash( $_POST['profession_region'] ) );
+			
+			// Validate against allowed region values.
+			$allowed_regions = array(
+				'',
+				'north_america',
+				'united_states',
+				'canada',
+				'europe',
+				'european_union',
+				'united_kingdom',
+				'asia_pacific',
+				'latin_america_caribbean',
+				'caribbean',
+				'middle_east_africa',
+				'africa',
+			);
+			
+			if ( in_array( $region, $allowed_regions, true ) ) {
+				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_REGION, $region );
+			}
 		}
 
 		// Save role description.
