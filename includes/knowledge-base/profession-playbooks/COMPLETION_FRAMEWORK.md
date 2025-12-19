@@ -374,10 +374,17 @@ Escalate / refer out when:
 Ask 3–8 questions that materially affect the answer:
 - [Question about goals/objectives]
 - [Question about context/environment]
+- [Question about region/jurisdiction - CRITICAL for regulatory/standards-based professions]
 - [Question about constraints/timeline]
 - [Question about resources/tools]
 - [Question about stakeholders]
 - [Profession-specific technical questions]
+
+**Region Question Examples:**
+- "What is your region or jurisdiction?" (Legal, healthcare, financial)
+- "Where is this project located?" (Construction, engineering)
+- "Which country/region are you operating in?" (Customs, trade, compliance)
+- "What standards apply to your region?" (Technical, healthcare)
 ```
 
 ### 3) Default workflow
@@ -683,6 +690,135 @@ Every completed playbook must:
 - [x] Use professional, actionable language
 - [x] Be free of TODOs and placeholders
 
+## Regional Considerations (NEW - 2024)
+
+### When to Include Regional Variations
+
+**CRITICAL for these professions** (must have explicit regional sections):
+- Legal (lawyer, paralegal, judge) - Law is jurisdiction-specific
+- Healthcare (physician, nurse, pharmacist) - Licensing and standards vary
+- Financial (accountant, tax_advisor) - Tax laws and regulations differ
+- Customs & Trade (customs_broker, import_export, ASYCUDA) - Regulations vary dramatically
+- Construction (architect, engineer) - Building codes vary by region
+
+**HIGH PRIORITY for these professions** (should have regional notes):
+- Education (teachers, tutors) - Curriculum standards vary
+- Safety/Emergency (firefighter, EMT, police) - Procedures differ by jurisdiction
+- Consulting (business_consultant, hr_consultant) - Regulations and practices vary
+
+**MODERATE for these professions** (mention when relevant):
+- Technical (software_engineer, data_scientist) - Some regional data privacy laws
+- Creative (designer, photographer) - Some regional copyright/licensing differences
+
+### How to Structure Regional Content
+
+**Option 1: Regional Variations Section** (recommended for critical professions)
+Add after Section 2 (Quick intake questions):
+```
+1.5) Regional Variations
+
+**North America (United States):**
+- [US-specific regulations, standards, procedures]
+- [Key federal agencies: FDA, SEC, OSHA, etc.]
+- [State-level variations if applicable]
+
+**North America (Canada):**
+- [Canadian-specific content]
+- [Provincial variations if applicable]
+
+**Europe (European Union):**
+- [EU-specific regulations, directives]
+- [Key EU agencies and standards]
+
+**Europe (United Kingdom):**
+- [UK-specific post-Brexit content]
+
+**Asia-Pacific:**
+- [Regional standards, key country examples]
+
+**Latin America & Caribbean:**
+- [Regional considerations]
+- [CARICOM for Caribbean-specific content]
+
+**Middle East & Africa:**
+- [Regional standards and variations]
+
+**Global/International:**
+- [International standards applicable everywhere]
+- [WHO, WTO, ISO standards]
+```
+
+**Option 2: Inline Regional Notes** (for moderate importance)
+- Add region notes within existing sections
+- Example: "In the US, this is regulated by... In the EU, refer to..."
+
+### Region Taxonomy
+
+Use these standardized region identifiers:
+- **north_america** - North America (general)
+- **united_states** - United States
+- **canada** - Canada
+- **europe** - Europe (general)
+- **european_union** - European Union
+- **united_kingdom** - United Kingdom
+- **asia_pacific** - Asia-Pacific
+- **caribbean** - Caribbean (CARICOM)
+- **latin_america_caribbean** - Latin America & Caribbean
+- **africa** - Africa
+- **middle_east_africa** - Middle East & Africa
+
+### Examples by Profession Type
+
+**Legal Example (lawyer.txt):**
+```
+2) Quick intake questions
+- What is your jurisdiction? (US federal/state, UK, EU, other common law/civil law)
+- What area of law? (Corporate, criminal, family, immigration)
+- [Rest of questions...]
+
+1.5) Regional Variations
+**United States:**
+- Federal vs. state jurisdiction
+- Model Rules of Professional Conduct (ABA)
+- State bar requirements
+...
+```
+
+**Healthcare Example (physician.txt):**
+```
+2) Quick intake questions
+- What is your region and licensing jurisdiction?
+- What medical specialty?
+- [Rest of questions...]
+
+1.5) Regional Variations
+**United States:**
+- USMLE licensing, board certification
+- CMS/Medicare guidelines
+- State medical boards
+...
+```
+
+**ASYCUDA Example (asycuda_specialist.txt):**
+```
+2) Quick intake questions
+- Which ASYCUDA version? (ASYCUDA++, World)
+- Which country/region implementation?
+- What module?
+- [Rest of questions...]
+
+1.5) Regional Variations
+**Caribbean (CARICOM):**
+- CARICOM Single Market integration
+- Regional customs procedures
+...
+
+**Africa (ECOWAS/SADC):**
+- Regional trade protocols
+- Country-specific implementations
+...
+```
+
 ## Common Pitfalls to Avoid
 
 1. **Too Generic**: Don't just adapt exemplar verbatim - add profession-specific details
@@ -693,6 +829,7 @@ Every completed playbook must:
 6. **Tool Overload**: Focus on widely-used, current tools
 7. **Jargon Without Explanation**: Define technical terms in Vocabulary section
 8. **Missing Escalation**: Always define when to refer to specialists
+9. **Missing Regional Context**: For regulatory/standards-based professions, always address regional variations
 
 ## Research Resources
 

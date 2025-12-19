@@ -135,7 +135,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	 * Build complete playbook for a profession.
 	 *
 	 * Assembles playbook from global, category, and profession-specific sections.
-	 * Reads profession slug and category from post meta.
+	 * Reads profession slug, category, and region from post meta.
 	 *
 	 * @param int $profession_post_id Profession post ID.
 	 * @return string Complete playbook content in plain text (UTF-8).
@@ -151,6 +151,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 		$slug     = $profession->post_name;
 		$title    = $profession->post_title;
 		$category = get_post_meta( $profession_post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+		$region   = get_post_meta( $profession_post_id, WP_MCP_AI_Profession_CPT::META_REGION, true );
 
 		// Build playbook sections.
 		$sections = array();
@@ -158,6 +159,13 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 		// Add header.
 		$sections[] = "# {$title} - Professional Playbook\n";
 		$sections[] = "Generated: " . gmdate( 'Y-m-d H:i:s' ) . " UTC\n";
+		
+		// Add region context if specified.
+		if ( ! empty( $region ) ) {
+			$region_label = $this->get_region_label( $region );
+			$sections[]   = "Primary Region/Jurisdiction: {$region_label}\n";
+		}
+		
 		$sections[] = "---\n";
 
 		// Global section.
@@ -183,6 +191,19 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 			$sections[] = "## {$title} Specific Guidelines\n";
 			$sections[] = trim( $profession_text ) . "\n";
 			$sections[] = "---\n";
+		}
+
+		// Add region context note if specified.
+		if ( ! empty( $region ) ) {
+			$region_label = $this->get_region_label( $region );
+			$sections[]   = "## Region-Specific Context\n";
+			$sections[]   = "This playbook is optimized for: **{$region_label}**\n\n";
+			$sections[]   = "When providing guidance:\n";
+			$sections[]   = "- Prioritize standards, regulations, and practices relevant to {$region_label}\n";
+			$sections[]   = "- Reference region-appropriate frameworks and authorities\n";
+			$sections[]   = "- Note when practices differ significantly in other regions\n";
+			$sections[]   = "- Always ask about the user's specific location if it materially affects the answer\n";
+			$sections[]   = "---\n";
 		}
 
 		// Tool recommendations section.
@@ -218,5 +239,29 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 		);
 
 		return isset( $labels[ $category ] ) ? $labels[ $category ] : ucfirst( $category );
+	}
+
+	/**
+	 * Get human-readable region label.
+	 *
+	 * @param string $region Region slug.
+	 * @return string Region label.
+	 */
+	protected function get_region_label( $region ) {
+		$labels = array(
+			'north_america'            => 'North America',
+			'united_states'            => 'United States',
+			'canada'                   => 'Canada',
+			'europe'                   => 'Europe',
+			'european_union'           => 'European Union',
+			'united_kingdom'           => 'United Kingdom',
+			'asia_pacific'             => 'Asia-Pacific',
+			'latin_america_caribbean'  => 'Latin America & Caribbean',
+			'caribbean'                => 'Caribbean (CARICOM)',
+			'middle_east_africa'       => 'Middle East & Africa',
+			'africa'                   => 'Africa',
+		);
+
+		return isset( $labels[ $region ] ) ? $labels[ $region ] : ucwords( str_replace( '_', ' ', $region ) );
 	}
 }

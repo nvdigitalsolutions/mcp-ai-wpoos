@@ -54,6 +54,7 @@ Reusable templates (paste-ready)
 1) Clarifying questions
 - What are you trying to achieve and by when?
 - Who is the audience / stakeholder?
+- What is your region or jurisdiction? (Important for regulations, standards, and practices)
 - What constraints matter (budget, tools, policies, compliance)?
 - What inputs do we have (data, docs, examples)?
 - What does success look like?
