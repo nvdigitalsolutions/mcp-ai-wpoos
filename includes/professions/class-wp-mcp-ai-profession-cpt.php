@@ -117,6 +117,7 @@ class WP_MCP_AI_Profession_CPT {
 			'expertise'      => new WP_MCP_AI_Profession_Metabox_Expertise(),
 			'base-knowledge' => new WP_MCP_AI_Profession_Metabox_Base_Knowledge(),
 			'defaults'       => new WP_MCP_AI_Profession_Metabox_Defaults(),
+			'playbook'       => new WP_MCP_AI_Profession_Metabox_Playbook(),
 		);
 	}
 
