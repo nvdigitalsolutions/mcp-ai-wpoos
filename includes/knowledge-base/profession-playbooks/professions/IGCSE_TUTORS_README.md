@@ -4,11 +4,11 @@ This directory contains comprehensive tutor profession playbooks for supporting 
 
 ## Overview
 
-Added 6 IGCSE tutor professions to support students across Years 9-11 and core academic subjects.
+Added **13 IGCSE tutor professions** to support students across Years 9-11 covering core subjects, individual sciences, humanities, and popular electives.
 
 ## Professions Added
 
-### Year-Level Tutors
+### Year-Level Tutors (3)
 
 1. **IGCSE Year 9 Tutor** (`igcse_year_9_tutor.txt`)
    - Transition support from Key Stage 3 to IGCSE
@@ -32,7 +32,7 @@ Added 6 IGCSE tutor professions to support students across Years 9-11 and core a
    - Exam stress management
    - Grade optimization techniques
 
-### Subject-Specific Tutors
+### Core Subject Tutors (3)
 
 4. **IGCSE Mathematics Tutor** (`igcse_mathematics_tutor.txt`)
    - Core and Extended tier support (Grades 9-1)
@@ -40,7 +40,7 @@ Added 6 IGCSE tutor professions to support students across Years 9-11 and core a
    - Diagnostic assessments and personalized plans
    - Topic-by-topic mastery (Number, Algebra, Geometry, etc.)
    - Exam technique for calculator and non-calculator papers
-   - Mole calculations, equations, problem-solving
+   - Formula manipulation and problem-solving
 
 5. **IGCSE English Tutor** (`igcse_english_tutor.txt`)
    - English Language (0500/0990) and English Literature (0486/0992)
@@ -52,11 +52,68 @@ Added 6 IGCSE tutor professions to support students across Years 9-11 and core a
 
 6. **IGCSE Sciences Tutor** (`igcse_sciences_tutor.txt`)
    - Combined Science (Double Award 0653)
-   - Triple Science: Biology (0610), Chemistry (0620), Physics (0625)
+   - Integrated coverage of Biology, Chemistry, and Physics
    - Core and Extended tier support
    - Practical skills development
-   - Mathematical skills in science
    - Topic coverage across all three sciences
+
+### Separate Science Tutors (3)
+
+7. **IGCSE Biology Tutor** (`igcse_biology_tutor.txt`)
+   - Cambridge IGCSE Biology (0610)
+   - Cell biology, genetics, ecology, classification
+   - Photosynthesis, respiration, human biology
+   - Practical skills and biological investigations
+   - Core and Extended tier support
+
+8. **IGCSE Chemistry Tutor** (`igcse_chemistry_tutor.txt`)
+   - Cambridge IGCSE Chemistry (0620)
+   - Atomic structure, bonding, periodic table
+   - **Strong focus on mole concept** (highest-impact area)
+   - Chemical equations and calculations
+   - Organic chemistry and practical work
+   - Core and Extended tier support
+
+9. **IGCSE Physics Tutor** (`igcse_physics_tutor.txt`)
+   - Cambridge IGCSE Physics (0625)
+   - Forces, motion, and energy
+   - Electricity and circuits (Ohm's Law, series/parallel)
+   - Waves and atomic physics
+   - Calculation-heavy with formula manipulation
+   - Core and Extended tier support
+
+### Humanities Tutors (2)
+
+10. **IGCSE History Tutor** (`igcse_history_tutor.txt`)
+    - Cambridge IGCSE History (0470)
+    - Source analysis and evaluation skills
+    - Essay writing (structure, argument, evidence)
+    - 20th century depth studies (Germany, USA, Russia)
+    - International relations (WWI, League, WWII, Cold War)
+
+11. **IGCSE Geography Tutor** (`igcse_geography_tutor.txt`)
+    - Cambridge IGCSE Geography (0460)
+    - Physical geography (earthquakes, rivers, coasts, climate)
+    - Human geography (population, settlement, urbanization)
+    - Economic development (industry, tourism, energy, agriculture)
+    - Case study mastery and geographical skills
+
+### Business & Technology Tutors (2)
+
+12. **IGCSE Computer Science Tutor** (`igcse_computer_science_tutor.txt`)
+    - Cambridge IGCSE Computer Science (0478)
+    - Python programming and algorithm design
+    - Computer systems, networks, and security
+    - Data representation and Boolean logic
+    - Pseudocode, flowcharts, and computational thinking
+    - Theory and practical exam preparation
+
+13. **IGCSE Business Studies Tutor** (`igcse_business_studies_tutor.txt`)
+    - Cambridge IGCSE Business Studies (0450)
+    - Business concepts and organizational functions
+    - Marketing mix (4Ps), finance, operations
+    - Motivation theories and leadership
+    - Case study analysis and evaluation skills
 
 ## Features
 
@@ -139,13 +196,25 @@ These professions integrate with the existing profession playbook system:
 
 | Profession | File Size | Lines | Focus |
 |------------|-----------|-------|-------|
-| Mathematics Tutor | 27KB | 704 | Core/Extended tiers, calculations, exam technique |
-| English Tutor | 22KB | 592 | Language & Literature, reading, writing, analysis |
-| Sciences Tutor | 24KB | 645 | Biology, Chemistry, Physics (Combined/Triple) |
+| **Year-Level Tutors** ||||
 | Year 9 Tutor | 23KB | 673 | Transition, subject selection, preparation |
 | Year 10 Tutor | 25KB | 668 | Foundations, study skills, multi-subject support |
 | Year 11 Tutor | 27KB | 755 | Exam preparation, revision, grade optimization |
-| **Total** | **~147KB** | **4,037 lines** | Complete IGCSE support Years 9-11 |
+| **Core Subjects** ||||
+| Mathematics Tutor | 27KB | 704 | Core/Extended tiers, calculations, exam technique |
+| English Tutor | 22KB | 592 | Language & Literature, reading, writing, analysis |
+| Sciences Tutor | 24KB | 645 | Biology, Chemistry, Physics (Combined/Triple) |
+| **Separate Sciences** ||||
+| Biology Tutor | 26KB | 698 | Cells, genetics, ecology, photosynthesis |
+| Chemistry Tutor | 25KB | 679 | Moles, equations, bonding, organic chemistry |
+| Physics Tutor | 21KB | 566 | Forces, electricity, energy, calculations |
+| **Humanities** ||||
+| History Tutor | 8KB | 184 | Source analysis, essays, 20th century topics |
+| Geography Tutor | 6KB | 134 | Physical/human geography, case studies |
+| **Business & Technology** ||||
+| Computer Science Tutor | 6KB | 129 | Python, algorithms, theory, practical exam |
+| Business Studies Tutor | 5KB | 117 | Marketing, finance, operations, analysis |
+| **Total** | **~245KB** | **6,544 lines** | Complete IGCSE support Years 9-11, all major subjects |
 
 ## Alignment with Existing System
 
@@ -180,12 +249,15 @@ Potential additions:
 
 ## Change Log
 
-### December 2024
-- Initial creation of 6 IGCSE tutor professions
+### December 19, 2024
+- Initial creation of 13 IGCSE tutor professions
 - Comprehensive coverage of Years 9-11
-- Core subjects: Mathematics, English, Sciences
-- Aligned with Cambridge IGCSE syllabuses
-- ~147KB of tutoring guidance content
+- **Core subjects**: Mathematics, English, Sciences (Combined)
+- **Separate sciences**: Biology, Chemistry, Physics (per user request)
+- **Humanities**: History, Geography
+- **Business & Technology**: Computer Science, Business Studies
+- Aligned with Cambridge IGCSE syllabuses (0450, 0460, 0470, 0478, 0500, 0580, 0610, 0620, 0625, 0653, 0990, 0992)
+- ~245KB of tutoring guidance content across 13 professions
 
 ## Resources
 
