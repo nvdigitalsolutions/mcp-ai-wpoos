@@ -1,0 +1,540 @@
+WP oOS Developer - Professional Knowledge Base
+
+=== OVERVIEW ===
+
+WP oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 65+ built-in tools for content management, media generation, e-commerce, forms, and system automation.
+
+=== ARCHITECTURE ===
+
+Core Components:
+1. Profession System (Custom Post Type)
+   - Defines AI assistant specializations
+   - Includes playbooks (structured instructions)
+   - Contains knowledge bases for RAG (Retrieval Augmented Generation)
+   - Specifies default tool sets
+   
+2. Assistant System (Custom Post Type)
+   - Links to professions for configuration inheritance
+   - Configures AI provider (OpenAI/Gemini/Ollama)
+   - Sets model parameters (temperature, max_tokens, streaming)
+   - Manages authentication credentials (bearer tokens)
+   
+3. Tool Registry
+   - Central management of 65+ built-in tools
+   - Extension system for custom tools
+   - Capability-based access control
+   - Structured parameter validation with Symfony Validator
+   
+4. REST API
+   - MCP-compliant endpoints at /wp-json/mcp-ai/v1/
+   - Server-Sent Events (SSE) for streaming responses
+   - Multiple authentication methods (nonce, bearer, Auth0, guest)
+   - Tool execution and assistant management
+
+=== AI PROVIDERS ===
+
+OpenAI Integration:
+- Models: GPT-4, GPT-4 Turbo, GPT-4o, o1-preview, o1-mini
+- Image Generation: DALL-E 3 (1024x1024, 1792x1024, 1024x1792)
+- Video Generation: Sora (5-60 seconds, 480p-1080p, 24/30/60fps)
+- Speech: TTS with 6 voices (alloy, echo, fable, onyx, nova, shimmer)
+- Transcription: Whisper model for audio transcription/translation
+- Configuration: Settings → WP oOS → OpenAI API Settings
+
+Google Gemini Integration:
+- Models: Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini 2.0 Experimental
+- Image Generation: Imagen 3 with aspect ratio control
+- Video Generation: Veo 2.0, Veo 3.1 (1920x1080, 5-8 seconds)
+- Music Generation: Lyria model for instrumental audio
+- Long Context: Gemini 1.5 Pro supports up to 1M tokens
+- Configuration: Settings → WP oOS → Gemini API Settings
+
+Ollama Integration:
+- Local AI deployment for privacy and offline use
+- Supports llama3, mistral, codellama, and other open models
+- No external API costs or rate limits
+- Configuration: Settings → WP oOS → Ollama Settings
+
+=== TOOL CATEGORIES ===
+
+Content Management (10 tools):
+- search_content: Keyword search across post types with taxonomy/meta filters
+- get_recent_posts: Latest published entries with metadata
+- save_post: Create/update posts with Gutenberg blocks, capability checks
+- search_attachments: Media Library search with access control
+- get_site_summary: Site info, content counts, admin email
+- get_user_info: User profile data with multisite support
+- submit_document_prompt: Upload attachments for AI reasoning
+- get_elementor_templates: Elementor template library access
+- get_jetengine_items: JetEngine custom post type items
+- web_search: External web search capability
+
+Media Generation (9 tools):
+- generate_openai_image: DALL-E 3 image generation
+- generate_gemini_image: Gemini Imagen 3 generation
+- edit_gemini_image: Imagen-based image editing
+- generate_sora_video: OpenAI Sora video generation
+- generate_veo_video: Google Veo video generation
+- check_video_status: Async video job status
+- generate_openai_speech: TTS audio generation
+- transcribe_openai_audio: Whisper audio transcription
+- generate_music: Gemini Lyria music generation
+
+E-Commerce (3 tools):
+- get_woo_products: WooCommerce catalog with filtering
+- get_woo_recent_orders: Recent order summaries
+- create_woo_product: Draft product creation with metadata
+
+Forms & Data (3 tools):
+- get_jetformbuilder_forms: JetFormBuilder form listing
+- get_jetformbuilder_submissions: Form entry records
+- get_quickbooks_report: QuickBooks financial data (Pro addon)
+
+SEO & Performance (4 tools):
+- get_rankmath_seo: Rank Math SEO analysis and scores
+- purge_cache: Multi-layer cache invalidation orchestrator
+- purge_cloudflare_cache: CDN edge cache clearing
+- purge_varnish_cache: Reverse proxy cache purging
+
+System Management (6 tools):
+- create_cron_job: Schedule WordPress cron tasks
+- list_cron_jobs: View scheduled background jobs
+- get_cron_job: Inspect specific cron job details
+- delete_cron_job: Remove scheduled tasks
+- generate_simple_jwt_token: JWT bearer token generation
+- check_plugin_status: Plugin activation and version info (custom)
+
+Professions (4 tools):
+- list_professions: All profession definitions with metadata
+- get_profession: Single profession details with playbooks
+- save_profession: Create/update profession configuration
+- profession_stats: Usage analytics and metrics
+
+Assistants (2 tools):
+- create_assistant: Programmatic assistant creation
+- list_assistants: All assistants with configurations
+
+=== REST API ENDPOINTS ===
+
+GET /wp-json/mcp-ai/v1/assistants
+- List all available assistants
+- Returns: ID, name, profession, model, provider, tools
+- Authentication: WordPress nonce or bearer token
+
+POST /wp-json/mcp-ai/v1/chat
+- Send messages to assistant with streaming
+- Parameters: assistant_id, message, stream (boolean)
+- Returns: SSE stream or JSON response
+- Authentication: WordPress nonce, bearer token, Auth0, or guest token
+
+POST /wp-json/mcp-ai/v1/tools
+- Execute tools directly without assistant context
+- Parameters: tool_slug, arguments
+- Returns: Tool execution result
+- Authentication: WordPress nonce or bearer token
+
+GET /wp-json/mcp-ai/v1/sse
+- Server-Sent Events endpoint for streaming
+- Used internally by chat endpoint
+- Authentication: Same as chat endpoint
+
+=== AUTHENTICATION METHODS ===
+
+1. WordPress Nonce (Same-Origin):
+   Header: X-WP-Nonce: abc123xyz
+   Usage: Frontend JavaScript on same WordPress site
+   Validity: 12-24 hours (WordPress default)
+   
+2. Bearer Token (Plugin-Issued):
+   Header: Authorization: Bearer cred_xxxxx.SECRET
+   Usage: Headless apps, external integrations
+   Format: credential_slug.SECRET_KEY
+   Generation: Settings → WP oOS → Authentication → Create Credential
+   
+3. Auth0 Token (Enterprise):
+   Header: Authorization: Bearer <Auth0-JWT>
+   Usage: Enterprise SSO integrations
+   Configuration: Settings → WP oOS → Auth0 Settings
+   
+4. Guest Token (Public Chat):
+   Header: X-WP-MCP-AI-Guest: temporary_token
+   Usage: Public-facing chat surfaces without login
+   Validity: Session-based, expires after 24 hours
+
+=== PROFESSION STRUCTURE ===
+
+Required Fields:
+- title: Display name (e.g., "Software Developer")
+- slug: Unique identifier (e.g., "software_developer")
+- description: Brief summary of profession
+- category: Classification (technical/creative/advisory/healthcare/financial/legal/other)
+- role_description: AI system instructions for this role
+- expertise: Array of knowledge areas
+- warnings: Array of boundaries and restrictions
+- default_tools: Array of tool slugs to enable
+
+Optional Fields:
+- knowledge_base: Markdown text for RAG
+- memory_files: Attachment IDs for additional context
+- supported_mime_types: Array of MIME types for file handling
+
+Playbook Format:
+- Stored in includes/knowledge-base/profession-playbooks/professions/
+- Naming: [slug].txt
+- Structure: 8 sections (role boundaries, intake, workflow, deliverables, quality, templates, examples, vocabulary)
+
+=== ASSISTANT CONFIGURATION ===
+
+Creation Methods:
+1. Admin UI: Add Assistant page with form inputs
+2. create_assistant tool: Programmatic creation via AI
+3. Direct repository: WP_MCP_AI_Assistant_Repository
+
+Key Settings:
+- name: Assistant display name
+- profession_id: Link to profession (inherits tools, playbooks, knowledge)
+- provider: openai | gemini | ollama
+- model: Provider-specific model name
+- temperature: 0.1 (factual) to 2.0 (creative), default 0.7
+- max_tokens: Response length limit (1000-128000)
+- stream: Enable/disable streaming responses (recommended: true)
+- tools: Array of tool slugs (inherits from profession if empty)
+- system_instructions: Custom instructions (merged with profession playbooks)
+
+Model Selection Guidelines:
+- Factual/Technical: GPT-4o, temperature 0.1-0.3
+- Creative Writing: GPT-4 Turbo, temperature 0.7-1.2
+- Complex Reasoning: o1-preview, o1-mini (no temperature)
+- Fast/Economical: Gemini 2.0 Flash, temperature 0.5-1.0
+- Long Context: Gemini 1.5 Pro (1M tokens)
+- Local/Private: Ollama (llama3, mistral)
+
+=== CUSTOM TOOL DEVELOPMENT ===
+
+File Location: includes/tools/class-wp-mcp-ai-tool-[slug].php
+
+Required Methods:
+1. get_slug(): Return unique tool identifier
+2. get_definition(): Return tool metadata and JSON schema
+3. execute($arguments, $context): Implement tool logic
+
+Registration: Add to includes/tools/tools-init.php
+
+Best Practices:
+- Extend WP_MCP_AI_Tool_Base
+- Validate all inputs (Symfony Validator)
+- Check capabilities before execution
+- Sanitize inputs (sanitize_text_field, absint)
+- Escape outputs (esc_html, esc_url)
+- Return array or WP_Error
+- Write PHPUnit tests in tests/test-[tool].php
+- Document in docs/tool-reference.md
+
+=== STREAMING IMPLEMENTATION ===
+
+Server-Side (PHP):
+- Use WP_MCP_AI_Stream_Handler for SSE formatting
+- Set Content-Type: text/event-stream
+- Disable output buffering
+- Send data: prefix for each chunk
+- Send data: [DONE] to signal completion
+
+Client-Side (JavaScript):
+- Use fetch() with response.body.getReader()
+- Parse SSE format (lines starting with "data: ")
+- Handle [DONE] signal for completion
+- Update UI progressively as chunks arrive
+- Implement error handling and reconnection
+
+Benefits:
+- Real-time response rendering (better UX)
+- Reduced perceived latency
+- Early feedback on long responses
+- Token-by-token display for transparency
+
+=== WORDPRESS INTEGRATION PATTERNS ===
+
+Content Workflows:
+1. AI generates draft → save_post tool → Editor reviews → Publish
+2. User uploads image → AI analyzes → generate_openai_image for variations
+3. Scheduled task → create_cron_job → AI generates report → Email admins
+4. Form submission → JetFormBuilder → AI processes → save_post creates ticket
+
+E-Commerce Workflows:
+1. Product data → create_woo_product → AI writes description → SEO optimization
+2. Order received → get_woo_recent_orders → AI analyzes → Sends summary
+3. Inventory low → Cron job → AI generates restock report → Notifies admin
+
+Media Workflows:
+1. Text prompt → generate_openai_image → Media Library attachment
+2. Video script → generate_sora_video → Upload to site
+3. Audio narration → generate_openai_speech → Podcast episode
+4. Background music → generate_music → Video soundtrack
+
+=== SECURITY BEST PRACTICES ===
+
+Input Validation:
+- Use sanitize_text_field() for text inputs
+- Use absint() for integer IDs
+- Use esc_url() for URLs
+- Use wp_kses_post() for HTML content
+- Validate file uploads (MIME type, size, extension)
+
+Output Escaping:
+- Use esc_html() for text display
+- Use esc_url() for link attributes
+- Use esc_js() for JavaScript strings
+- Use esc_attr() for HTML attributes
+- Never echo unescaped user input
+
+Capability Checks:
+- Always check current_user_can() before privileged operations
+- Common capabilities: edit_posts, manage_options, activate_plugins
+- Tool definitions include required_capability field
+- REST endpoints validate permissions
+
+API Key Management:
+- Store keys in WordPress options (wp_options table)
+- Never commit keys to version control
+- Use environment variables for production
+- Rotate keys regularly
+- Monitor usage and set quotas
+
+Rate Limiting:
+- Respect provider rate limits (OpenAI, Gemini)
+- Implement exponential backoff for retries
+- Cache results when possible
+- Queue long-running tasks
+- Monitor usage to prevent quota exhaustion
+
+=== PERFORMANCE OPTIMIZATION ===
+
+Caching Strategy:
+1. Object Cache: WordPress transients for API responses
+2. Page Cache: Full-page HTML caching for frontend
+3. CDN Cache: Cloudflare/Varnish for static assets
+4. Database: Query result caching with transients
+
+Cache Management:
+- Use purge_cache tool after content updates
+- Implement cache warming for high-traffic content
+- Set appropriate TTLs (Time To Live)
+- Monitor cache hit rates
+- Exclude admin areas from page caching
+
+Streaming Benefits:
+- Reduces Time to First Byte (TTFB)
+- Progressive rendering improves perceived performance
+- Lower memory usage on server
+- Better UX for long responses
+
+Background Processing:
+- Use create_cron_job for deferred tasks
+- Implement async mode for video generation
+- Queue batch operations
+- Monitor cron execution with list_cron_jobs
+
+=== TESTING & DEBUGGING ===
+
+PHPUnit Tests:
+- Location: tests/test-*.php
+- Run: composer run test
+- Coverage: vendor/bin/phpunit --coverage-html coverage/
+- WordPress test suite setup: composer run test:install
+
+Linting:
+- PHP: composer run lint (WPCS)
+- JavaScript: npm run lint:js (ESLint)
+- PHP Compatibility: composer run lint:compat (PHP 7.4-8.3)
+
+Debugging Tools:
+- Enable logging: Settings → WP oOS → Enable Logging
+- Check errors: wp option get wp_mcp_ai_recent_errors --format=json
+- Check activity: wp option get wp_mcp_ai_recent_activity --format=json
+- PHP error log: tail -f /path/to/php-error.log | grep "WP_MCP_AI"
+- WP_DEBUG: define('WP_DEBUG', true) in wp-config.php
+
+Admin Test Pages:
+- Test Assistant: Settings → WP oOS → Test Assistant
+- Test Profession: Settings → WP oOS → Test Profession
+- Test Team: Settings → WP oOS → Test Team
+
+Browser DevTools:
+- Network tab: Monitor SSE streaming
+- Console: Check JavaScript errors
+- Application tab: Inspect localStorage (transcripts)
+
+=== DEPLOYMENT CHECKLIST ===
+
+Pre-Deployment:
+- [ ] All tests pass (composer run test)
+- [ ] Code lints clean (composer run lint, npm run lint:js)
+- [ ] API keys configured in settings (not in code)
+- [ ] Database migrations tested
+- [ ] Multisite compatibility verified
+- [ ] PHP compatibility checked (7.4-8.3)
+- [ ] Dependencies updated (composer update, npm update)
+
+Configuration:
+- [ ] AI provider API keys set
+- [ ] Authentication credentials created
+- [ ] Professions seeded or imported
+- [ ] Assistants configured and tested
+- [ ] Tool presets reviewed
+- [ ] Caching configured (object, page, CDN)
+- [ ] Error logging enabled
+- [ ] Rate limits set
+
+Security:
+- [ ] API keys stored securely
+- [ ] Capability checks on all tools
+- [ ] Input validation implemented
+- [ ] Output escaping applied
+- [ ] File upload validation active
+- [ ] HTTPS enforced
+- [ ] CORS configured if needed
+
+Documentation:
+- [ ] API endpoints documented
+- [ ] Authentication guide created
+- [ ] Custom tool documentation written
+- [ ] User training materials prepared
+- [ ] Troubleshooting guide available
+
+Post-Deployment:
+- [ ] Monitor error logs
+- [ ] Check API usage and costs
+- [ ] Verify caching effectiveness
+- [ ] Test authentication flows
+- [ ] Review user feedback
+- [ ] Monitor performance metrics
+
+=== COMMON USE CASES ===
+
+1. Content Creation Assistant:
+   - Profession: content_creator
+   - Tools: web_search, search_content, save_post, generate_openai_image
+   - Model: GPT-4 Turbo, temperature 0.8
+   - Use: Blog posts, social media, marketing copy
+
+2. E-Commerce Product Manager:
+   - Profession: Product Manager (custom)
+   - Tools: get_woo_products, create_woo_product, get_rankmath_seo
+   - Model: GPT-4o, temperature 0.5
+   - Use: Product descriptions, SEO optimization, inventory management
+
+3. Developer Assistant:
+   - Profession: wpoos_developer
+   - Tools: search_content, save_post, web_search, check_plugin_status
+   - Model: GPT-4 Turbo, temperature 0.3
+   - Use: Code help, plugin development, troubleshooting
+
+4. Customer Support Agent:
+   - Profession: customer_service_rep
+   - Tools: search_content, web_search, get_user_info
+   - Model: Gemini 2.0 Flash, temperature 0.6
+   - Use: Answer questions, knowledge base search, ticket resolution
+
+5. Visual Content Creator:
+   - Profession: graphic_designer
+   - Tools: generate_openai_image, generate_gemini_image, edit_gemini_image
+   - Model: GPT-4 Turbo, temperature 1.0
+   - Use: Social graphics, blog headers, ad creatives
+
+=== TROUBLESHOOTING ===
+
+Assistant Not Responding:
+- Check AI provider API key validity
+- Verify assistant is published (not draft)
+- Check user permissions and capabilities
+- Review error logs for API failures
+- Confirm model is available (not deprecated)
+
+Tool Not Working:
+- Verify tool is enabled for assistant
+- Check required capability for tool
+- Validate tool arguments match schema
+- Review tool execution errors in logs
+- Test tool in isolation via REST API
+
+Streaming Issues:
+- Verify stream parameter is true
+- Check server output buffering settings
+- Ensure proper SSE headers sent
+- Test with curl to isolate client issues
+- Review nginx/Apache SSE configuration
+
+Authentication Failures:
+- Verify nonce is fresh (not expired)
+- Check bearer token format (cred_slug.SECRET)
+- Confirm Auth0 configuration
+- Test with different auth method
+- Review authentication logs
+
+Performance Problems:
+- Enable caching (object, page, CDN)
+- Reduce max_tokens if responses too long
+- Use Gemini Flash for faster responses
+- Implement async processing for heavy tasks
+- Monitor database query performance
+
+=== RESOURCES ===
+
+Official Documentation:
+- Plugin Docs: /docs/ directory (32 files)
+- Tool Reference: /docs/tool-reference.md
+- REST API: /docs/rest-api.md
+- Quick Reference: /docs/QUICK_REFERENCE.md
+- Best Practices: /docs/BEST_PRACTICES.md
+
+External Links:
+- OpenAI API Docs: https://platform.openai.com/docs
+- Google Gemini API: https://ai.google.dev/docs
+- Ollama Documentation: https://ollama.ai/docs
+- WordPress Developer Handbook: https://developer.wordpress.org
+- WordPress REST API: https://developer.wordpress.org/rest-api/
+
+Community:
+- GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
+- WordPress.org Plugin: https://wordpress.org/plugins/mcp-ai-wpoos
+- Support Forum: https://wordpress.org/support/plugin/mcp-ai-wpoos
+
+Development:
+- Repository: https://github.com/nvdigitalsolutions/mcp-ai-wpoos
+- Contributing: /CONTRIBUTING.md
+- Security: /SECURITY.md
+- License: GPLv3 or later
+
+=== VERSION INFORMATION ===
+
+WP oOS Versions:
+- Base Version: 35 core tools, no third-party dependencies
+- Full Version: 65+ tools including integrations
+- Pro Addon: Video processing tools (FFmpeg required)
+
+WordPress Requirements:
+- WordPress: 6.0 or higher
+- PHP: 7.4 - 8.3
+- MySQL: 5.7 or higher / MariaDB 10.3 or higher
+
+Optional Plugin Dependencies:
+- WooCommerce: E-commerce tools (3 tools)
+- JetEngine: Custom post types, CCT storage (5 tools)
+- JetFormBuilder: Form management (2 tools)
+- Elementor: Page builder integration (1 tool + widgets)
+- Rank Math: SEO optimization (1 tool)
+- WPCode: Code snippet management (1 tool)
+
+=== CHANGELOG ===
+
+2024-12-19: Created comprehensive WP oOS Developer knowledge base
+- Complete architecture overview and component descriptions
+- All 65+ tools documented with categories and use cases
+- Multi-provider AI integration details (OpenAI, Gemini, Ollama)
+- REST API endpoint documentation with authentication methods
+- Security best practices and performance optimization guides
+- Custom tool development patterns and examples
+- Testing and debugging procedures
+- Deployment checklist and troubleshooting guide
+- Common use cases and workflow examples
+- Complete resource links and external documentation
