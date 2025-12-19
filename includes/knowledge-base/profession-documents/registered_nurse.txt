@@ -22,12 +22,78 @@ Core Expertise
 
 Knowledge Base Notes
 -------------------
-### Nursing Standards
-- Prioritize patient safety and comfort
-- Maintain accurate documentation
-- Follow infection control protocols
-- Use evidence-based nursing practices
-- Communicate effectively with healthcare team
+### Nursing Standards and Scope of Practice
+- Follow state Nurse Practice Act and scope of practice regulations
+- Adhere to ANA (American Nurses Association) Code of Ethics
+- Maintain current nursing license and required certifications (BLS, ACLS, PALS as appropriate)
+- Practice within scope of education, training, and competency
+- Prioritize patient safety, dignity, and comfort in all care activities
+- Use evidence-based nursing practices and clinical guidelines
+- Maintain accurate, timely, and comprehensive documentation
+
+### Core Nursing Process (ADPIE)
+- **Assessment**: Collect comprehensive patient data through interview, observation, physical examination, and review of medical records
+- **Diagnosis**: Identify nursing diagnoses using NANDA-I taxonomy based on assessment findings
+- **Planning**: Develop individualized care plans with measurable, patient-centered goals
+- **Implementation**: Execute nursing interventions including medication administration, treatments, patient education, and coordination of care
+- **Evaluation**: Assess patient outcomes, modify care plans as needed, and document progress
+
+### Patient Assessment and Monitoring
+- Vital signs monitoring (temperature, pulse, respiration, blood pressure, oxygen saturation, pain level)
+- Physical assessment using inspection, palpation, percussion, and auscultation
+- Neurological assessment (Glasgow Coma Scale, pupil response, motor function)
+- Cardiac monitoring and rhythm interpretation
+- Respiratory assessment (breath sounds, oxygen requirements, ventilator settings)
+- Skin integrity assessment (Braden Scale for pressure injury risk)
+- Intake and output monitoring
+- Laboratory value interpretation and trending
+- Recognition of clinical deterioration and early warning signs
+
+### Medication Administration
+- Six Rights: Right patient, right drug, right dose, right route, right time, right documentation
+- Knowledge of drug classifications, actions, side effects, and contraindications
+- Safe medication preparation and administration techniques
+- IV therapy management (peripheral and central lines)
+- Medication reconciliation and patient education
+- High-alert medication protocols (insulin, anticoagulants, opioids, chemotherapy)
+- Controlled substance handling and documentation
+
+### Infection Control and Safety
+- Standard precautions (hand hygiene, PPE, respiratory hygiene)
+- Transmission-based precautions (contact, droplet, airborne)
+- Sterile technique for procedures
+- Healthcare-associated infection (HAI) prevention
+- Sharps safety and needlestick injury prevention
+- Patient fall risk assessment and prevention strategies
+- Pressure injury prevention (repositioning, support surfaces, skin care)
+
+### Patient and Family Education
+- Health literacy assessment and teaching strategies
+- Disease process and symptom management education
+- Medication instructions (purpose, dosing, side effects)
+- Discharge planning and home care instructions
+- Self-care techniques and lifestyle modifications
+- Warning signs requiring medical attention
+- Community resources and support services
+
+### Care Coordination and Communication
+- Interdisciplinary team collaboration (physicians, therapists, social workers, case managers)
+- Handoff communication using SBAR (Situation, Background, Assessment, Recommendation)
+- Patient advocacy and ensuring informed consent
+- Care transitions and discharge planning
+- Family involvement in care decisions
+- Documentation in electronic health records (EHR)
+
+### Nursing Specialties and Settings
+- Acute care (medical-surgical, ICU, emergency department)
+- Perioperative nursing (preop, intraop, PACU)
+- Maternal-child health (labor and delivery, postpartum, NICU, pediatrics)
+- Community health and public health nursing
+- Home health and hospice care
+- Long-term care and rehabilitation
+- Psychiatric and mental health nursing
+- School nursing
+- Ambulatory and clinic settings
 
 Warnings & Disclaimers
 ---------------------
