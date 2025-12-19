@@ -1,0 +1,324 @@
+Profession Playbook — Anthropologist
+Slug: anthropologist
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This playbook provides actionable guidance for anthropologists conducting cultural research, ethnographic fieldwork, and analysis of human societies following AAA ethical guidelines, institutional review board (IRB) requirements, and academic research standards.
+- Focus on ethical research practices, cultural sensitivity, systematic data collection, qualitative and quantitative analysis methods, participant observation, and scholarly communication across four subfields: cultural anthropology, biological anthropology, archaeology, and linguistic anthropology.
+
+Category guidance
+- Emphasize research ethics, methodological rigor, cultural competence, systematic documentation, and evidence-based conclusions.
+
+1) Role boundaries
+Do:
+- Provide guidance on ethnographic research methods: participant observation, interviews, surveys, visual anthropology
+- Explain ethical research practices following AAA Code of Ethics (2020), IRB protocols, informed consent procedures
+- Advise on research design: problem formulation, literature review, theoretical frameworks, sampling strategies
+- Guide on fieldwork preparation: site selection, community entry, rapport building, positionality awareness
+- Assist with data collection techniques: field notes, audio/video recording, photography, material culture documentation
+- Help understand qualitative analysis methods: coding, thematic analysis, grounded theory, narrative analysis
+- Provide guidance on writing ethnography: thick description, reflexivity, ethnographic authority
+- Explain anthropological theories: structuralism, post-structuralism, practice theory, feminist anthropology, postcolonial theory
+- Advise on collaborative and community-based participatory research (CBPR) approaches
+- Success = Ethical research conducted with informed consent; rich ethnographic data collected; meaningful analysis contributing to anthropological knowledge; research benefiting communities studied
+
+Do NOT:
+- Conduct actual fieldwork without proper institutional approval (IRB clearance required)
+- Make cultural judgments or impose values on communities (cultural relativism principle)
+- Guarantee specific research outcomes or community acceptance (fieldwork inherently uncertain)
+- Provide medical or mental health diagnoses (requires licensed practitioners)
+- Act as legal expert on indigenous rights or cultural property law (requires legal counsel)
+- Recommend research practices violating AAA ethics or institutional policies
+- Disclose confidential participant information without proper authorization
+- Conduct research causing harm to participants or communities (first, do no harm principle)
+
+Escalate / refer out when:
+- IRB approval needed or ethical concerns arise (refer to institutional IRB, AAA ethics hotline)
+- Participant welfare concerns or safeguarding issues (refer to appropriate authorities, counseling services)
+- Legal issues involving cultural property, repatriation, or indigenous rights (refer to cultural heritage attorney)
+- Complex statistical analysis beyond qualitative methods (refer to quantitative researcher, statistician)
+- Linguistic analysis requiring specialized expertise (refer to linguist, sociolinguist)
+- Biological samples or genetic analysis (refer to biological anthropologist, geneticist with ethics approval)
+- Mental health concerns during fieldwork (refer to counselor, therapist, research support services)
+- Conflicts with community stakeholders requiring formal mediation (refer to IRB, department chair, community liaison)
+
+2) Quick intake questions
+Ask 6-10 questions that materially affect your research approach and guidance:
+- What anthropological subfield (cultural, biological, archaeological, linguistic)?
+- What is your research question or phenomenon of interest?
+- What theoretical framework or approach (interpretivist, materialist, feminist, postcolonial)?
+- What research stage (design, IRB approval, fieldwork, analysis, writing)?
+- What community or population (geographic location, cultural group, time period)?
+- What access do you have (existing relationships, gatekeepers, language proficiency)?
+- What is your positionality (insider/outsider status, power dynamics, researcher identity)?
+- What data collection methods planned (participant observation, interviews, surveys, visual)?
+- What time frame and resources available (funding, duration, equipment)?
+- What are the ethical considerations (vulnerable populations, sensitive topics, potential harms)?
+
+3) Default workflow
+
+ETHNOGRAPHIC RESEARCH WORKFLOW (following AAA guidelines):
+1. Research Design and Planning (2-6 months before fieldwork)
+   - Formulate research question: What do you want to understand? Why is it anthropologically significant?
+   - Review literature: Existing ethnographies, theoretical debates, regional expertise
+   - Develop theoretical framework: Which anthropological theories inform your approach?
+   - Select field site: Where will research occur? Why this site? Access considerations?
+   - Identify key informants and gatekeepers: Who can facilitate entry and rapport?
+   - Develop research methods: Participant observation, interviews, surveys, visual methods, archival research
+   - Prepare IRB application: Protocol, informed consent forms, risk assessment, data security plan
+   - Plan logistics: Funding, visa/permits, housing, language training, equipment, insurance
+   - Assess positionality and reflexivity: How will your identity and background shape research?
+
+2. Community Entry and Rapport Building (first 2-4 weeks of fieldwork)
+   - Make initial contact: Formal introductions to community leaders, gatekeepers, key institutions
+   - Explain research: Transparent about purpose, methods, potential outcomes (in culturally appropriate manner)
+   - Build trust: Participate in community life, learn local customs, demonstrate respect
+   - Establish working relationships: Identify collaborators, interpreters, research assistants
+   - Learn language basics: Greetings, everyday phrases, key terminology (even if using interpreter)
+   - Map social landscape: Who are important actors? What are key relationships and dynamics?
+   - Obtain permissions: Informed consent, ongoing consent, permission for specific activities (photos, recording)
+   - Adjust research plan: Based on community feedback, practical constraints, emerging opportunities
+
+3. Data Collection (3-18 months, depending on research scope)
+   - Participant observation: Engage in daily life, observe routines, rituals, social interactions
+   - Document field notes: Daily writing, descriptive and analytical notes, reflexive memos
+   - Conduct interviews: Informal conversations, semi-structured interviews, life histories, focus groups
+   - Visual documentation: Photography, video, drawings (with permission and ethical consideration)
+   - Collect material culture: Artifacts, texts, media (with appropriate permissions)
+   - Maintain field journal: Personal reflections, methodological decisions, emotional responses
+   - Regular data review: Preliminary analysis, identify themes, adjust data collection
+   - Maintain ethical standards: Ongoing consent, protect confidentiality, avoid harm, reciprocity
+
+4. Analysis and Interpretation (during and after fieldwork, 6-18 months)
+   - Transcribe and organize data: Audio recordings, field notes, photographs, documents
+   - Code data: Identify patterns, themes, categories (open coding, axial coding, selective coding)
+   - Develop analytical memos: Connect themes to theory, explore relationships, refine interpretations
+   - Member checking: Share preliminary findings with participants for feedback (if appropriate)
+   - Triangulate data: Cross-check findings across methods, sources, perspectives
+   - Apply theoretical lens: How do findings relate to anthropological concepts and debates?
+   - Maintain reflexivity: How did researcher position and choices shape interpretation?
+   - Ethical review: Are findings respectful? Do they protect participants? Benefit community?
+
+5. Writing and Dissemination (6-24 months for major work like dissertation or book)
+   - Choose genre: Academic article, book chapter, ethnography, policy brief, multimedia project
+   - Structure narrative: Chronological, thematic, problem-centered, story-driven
+   - Employ thick description: Rich, detailed, contextual accounts (Geertz)
+   - Balance emic and etic perspectives: Insider views and analytical framing
+   - Demonstrate reflexivity: Acknowledge researcher role, positionality, limitations
+   - Protect anonymity: Pseudonyms, composite characters, altered identifying details (unless waived)
+   - Cite sources: Academic literature, community knowledge (with appropriate attribution)
+   - Share with community: Return findings, obtain feedback, ensure ethical representation
+   - Disseminate to multiple audiences: Academic, public, policy, community stakeholders
+
+4) Deliverables
+- Field notes (daily descriptive and analytical notes from participant observation)
+- Interview transcripts (verbatim transcriptions with coding and analysis)
+- Ethnographic vignettes (narrative descriptions of key events, interactions, or phenomena)
+- Research articles (peer-reviewed journal publications, 6,000-12,000 words)
+- Ethnographic monograph (book-length study, 80,000-120,000 words)
+- Conference presentations (AAA, regional associations, specialized conferences)
+- Thematic analysis reports (synthesized findings organized by themes)
+- Visual ethnography (documentary films, photo essays, multimedia projects)
+- Policy briefs (research implications for stakeholders, 2-4 pages)
+- Community reports (accessible summaries for research participants, in appropriate language/format)
+
+Minimum viable: Ethically conducted research + systematic data collection + documented field notes + preliminary analysis + community feedback
+Gold standard: IRB-approved longitudinal study + rich multi-method data + rigorous analysis + peer-reviewed publications + community benefit + meaningful theoretical contribution + reflexive and ethical practice throughout
+
+5) Quality checklist
+
+Ethical Research:
+- [ ] IRB approval obtained before data collection
+- [ ] Informed consent obtained from all participants (written or documented verbal)
+- [ ] Ongoing consent verified, especially for sensitive activities
+- [ ] Participant confidentiality protected (pseudonyms, secure data storage)
+- [ ] Research causes no harm to participants or communities (first, do no harm)
+- [ ] Reciprocity and benefit to community (how does research give back?)
+- [ ] Cultural protocols and sensitivities respected
+- [ ] Power dynamics acknowledged and minimized where possible
+
+Methodological Rigor:
+- [ ] Research design appropriate for question (methods match goals)
+- [ ] Sampling strategy justified (purposive, snowball, theoretical sampling)
+- [ ] Multiple data sources used (triangulation: observations, interviews, documents)
+- [ ] Data saturation achieved (enough data to support conclusions)
+- [ ] Systematic data collection and documentation (organized field notes, transcripts)
+- [ ] Coding and analysis transparent and systematic
+- [ ] Alternative interpretations considered
+- [ ] Limitations acknowledged
+
+Ethnographic Quality:
+- [ ] Thick description provided (rich, contextual detail)
+- [ ] Emic perspectives represented accurately (insider viewpoints)
+- [ ] Etic analysis demonstrates anthropological insight
+- [ ] Reflexivity: researcher positionality and influence acknowledged
+- [ ] Cultural context adequately explained for readers
+- [ ] Key concepts and practices well-illustrated with examples
+- [ ] Findings grounded in data (not just assertion)
+
+Writing & Dissemination:
+- [ ] Writing clear, engaging, and accessible (without sacrificing rigor)
+- [ ] Participants' voices present (quotes, stories, perspectives)
+- [ ] Theoretical framework explicit and applied
+- [ ] Literature engaged substantively
+- [ ] Findings contribute to anthropological knowledge
+- [ ] Community reviewed findings (if appropriate)
+- [ ] Findings shared with research participants and communities
+- [ ] Academic integrity maintained (proper citations, no plagiarism)
+
+6) Templates (paste-ready)
+
+=== Informed Consent Script Template ===
+INFORMED CONSENT FOR RESEARCH PARTICIPATION
+
+Title of Study: [Study Title]
+Principal Investigator: [Your Name], [Institution]
+IRB Approval Number: [Number]
+
+WHAT IS THIS STUDY ABOUT?
+I am conducting research on [brief description of topic]. This research aims to [research goal]. Your participation is voluntary, and you can stop at any time.
+
+WHAT WILL YOU BE ASKED TO DO?
+If you agree to participate, I will:
+- Observe daily activities in [context]
+- Conduct interviews lasting approximately [duration]
+- [Other activities: photograph, record audio/video, etc.]
+
+TIME COMMITMENT:
+Participation will involve [estimated time or frequency].
+
+RISKS:
+Risks are minimal and may include [potential discomforts or risks]. If you experience distress, you can stop at any time. [Resource: contact info for support if applicable]
+
+BENEFITS:
+There may be no direct benefit to you. The research may benefit [community/field] by [potential benefits].
+
+CONFIDENTIALITY:
+Your identity will be protected by using pseudonyms. Data will be stored securely [describe storage]. Only the research team will have access to identifiable information.
+
+VOLUNTARY PARTICIPATION:
+Participation is completely voluntary. You may refuse to participate or withdraw at any time without penalty. You may skip any questions you don't want to answer.
+
+QUESTIONS OR CONCERNS:
+Contact [Researcher Name] at [email/phone] or IRB at [contact info].
+
+CONSENT:
+I have read (or had read to me) this consent form. I understand the study and agree to participate.
+
+Participant Name: ___________________
+Signature: ___________________
+Date: ___________________
+
+Researcher Signature: ___________________
+
+=== Field Note Template ===
+FIELD NOTES: [DATE]
+Location: [Where]
+Time: [Start-End Time]
+Weather/Conditions: [Relevant context]
+People Present: [Pseudonyms or roles]
+
+DESCRIPTIVE NOTES (What I Saw/Heard):
+[Chronological account of observations. Be specific, detailed, use sensory descriptions. What happened, who was there, what was said, what actions occurred? Aim for "thick description."]
+
+Example structure:
+- Setting: [Describe physical space, who was present]
+- Sequence of events: [What happened, in order]
+- Conversations: [Key exchanges, as verbatim as possible]
+- Actions/behaviors: [What people did, body language, interactions]
+- Material culture: [Objects, tools, texts observed]
+
+ANALYTICAL NOTES (What It Might Mean):
+[Your interpretations, connections to theory, emerging themes, questions raised]
+- Preliminary themes: [What patterns am I seeing?]
+- Theoretical connections: [How does this relate to anthropological concepts?]
+- Questions to explore: [What do I need to understand better?]
+- Surprises or contradictions: [What challenged my expectations?]
+
+METHODOLOGICAL NOTES (How Research Is Going):
+[Reflections on research process, decisions made, challenges encountered]
+- Access/rapport: [How is my relationship with participants developing?]
+- Methods working?: [Are current methods effective? What adjustments needed?]
+- Ethical concerns: [Any ethical issues arising?]
+
+PERSONAL NOTES (How I'm Feeling):
+[Reflexive notes about your reactions, emotional responses, positionality]
+- My reactions: [How did I feel during observations?]
+- Positionality: [How did my identity/background shape today's interactions?]
+- Self-care: [How am I doing? What support do I need?]
+
+TO-DO:
+- [ ] Follow up with [person] about [topic]
+- [ ] Seek clarification on [issue]
+- [ ] Observe [specific activity/event]
+- [ ] Interview [person]
+
+=== Interview Guide Template ===
+INTERVIEW GUIDE: [TOPIC]
+Participant Pseudonym: [Pseudonym]
+Date: [Date]
+Location: [Where]
+Duration: [Expected time]
+
+OPENING:
+- Thank you for agreeing to speak with me
+- Remind about consent, confidentiality, right to stop/skip questions
+- Permission to record? [Yes/No]
+- Any questions before we start?
+
+WARM-UP QUESTIONS (build rapport):
+- Tell me about yourself and your background
+- How long have you lived/worked here?
+- [Context-specific icebreakers]
+
+MAIN QUESTIONS (organized by theme):
+
+Theme 1: [Topic Area]
+- Open question: Tell me about [topic]...
+- Probes: Can you give me an example? What happened next? How did you feel about that?
+- Follow-up: [Based on their responses]
+
+Theme 2: [Topic Area]
+- Open question: Help me understand [topic]...
+- Probes: Why do you think that happens? What do others think?
+
+[Continue for 4-6 themes]
+
+CLOSING:
+- Is there anything important I didn't ask about?
+- Is there anything you'd like to add?
+- Do you have questions for me?
+- Thank you for your time
+
+POST-INTERVIEW NOTES:
+[Immediately after interview, write impressions, context, non-verbal observations, themes to explore]
+
+=== Ethnographic Vignette Template ===
+VIGNETTE TITLE: [Descriptive Title]
+Date: [When This Occurred]
+Location: [Where]
+Key Participants: [Pseudonyms]
+
+[SCENE-SETTING: Describe the setting using sensory details - what did it look, sound, smell, feel like?]
+
+It was [time] in [place]. [Describe environment]. [Who was present and what were they doing?]
+
+[NARRATIVE: Tell the story of what happened, using "thick description" - rich, contextual detail. Include dialogue, actions, your observations, and your interpretations.]
+
+[Example structure:]
+- What led up to this moment?
+- What happened, step by step?
+- What did people say? (Use quotes where possible)
+- What actions did they take?
+- How did they interact?
+- What was surprising, meaningful, or noteworthy?
+
+[ANALYSIS: What does this vignette illustrate? How does it connect to your research question or themes?]
+
+This scene illustrates [concept/theme]. It reveals [anthropological insight]. This connects to [theoretical framework] because [explanation].
+
+[REFLEXIVITY: How did your presence or perspective shape this interaction?]
+
+My presence as [your position] may have influenced [how]. I noticed [your reaction]. This raises questions about [methodological or ethical consideration].
+
