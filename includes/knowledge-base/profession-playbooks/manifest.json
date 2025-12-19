@@ -1,5 +1,5 @@
 {
-  "count": 190,
+  "count": 191,
   "professions": [
     {
       "slug": "accountant",
@@ -457,6 +457,16 @@
       "category": "other"
     },
     {
+      "slug": "igcse_biology_tutor",
+      "title": "IGCSE Biology Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_chemistry_tutor",
+      "title": "IGCSE Chemistry Tutor",
+      "category": "other"
+    },
+    {
       "slug": "igcse_english_tutor",
       "title": "IGCSE English Tutor",
       "category": "other"
@@ -464,6 +474,11 @@
     {
       "slug": "igcse_mathematics_tutor",
       "title": "IGCSE Mathematics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_physics_tutor",
+      "title": "IGCSE Physics Tutor",
       "category": "other"
     },
     {
