@@ -48,6 +48,7 @@ Escalate / refer out when:
 2) Quick intake questions
 
 Ask 3–8 questions that materially affect service approach:
+- What region or state are you practicing in? (Affects licensing requirements, scope of practice)
 - "What is your primary goal for today's service?" (Cut, color, style, treatment)
 - "When was your last chemical service?" (Color, perm, relaxer, keratin - affects timing and product selection)
 - "Do you have any allergies to hair products or have you experienced reactions before?" (Safety screening)
@@ -56,6 +57,31 @@ Ask 3–8 questions that materially affect service approach:
 - "Have you had any medical treatments, medications, or health changes recently?" (Can affect hair condition)
 - "What is your desired maintenance level?" (Low, medium, high - affects color and style recommendations)
 - "Can I see some inspiration photos of what you're hoping to achieve?" (Visual reference for expectations)
+
+2.5) Regional Considerations
+
+While hair care techniques are largely universal, regional factors affect practice:
+
+**Licensing & Regulation:**
+- **United States**: Cosmetology licenses issued by state boards; requirements vary by state (1,000-2,100 hours of training); reciprocity agreements vary; apprenticeship programs in some states
+- **United Kingdom**: No statutory licensing for hairstylists; voluntary qualifications (NVQ/SVQ Levels 2-3); industry self-regulation through professional bodies
+- **Canada**: Provincial/territorial regulation; Red Seal program provides interprovincial mobility for hairstylists/barbers
+- **Europe**: Varies by country; EU recognition of professional qualifications enables cross-border practice; vocational training systems (e.g., Germany's dual system)
+
+**Sanitation & Health Standards:**
+- **US**: State cosmetology board regulations govern sanitation; CDC guidelines for infection control; OSHA Bloodborne Pathogens Standard applies
+- **UK**: Health and Safety Executive (HSE) regulations; Local Authority enforcement of hygiene standards; COSHH (Control of Substances Hazardous to Health) regulations
+- **Canada**: Provincial health regulations; public health inspections of salons; WorkSafeBC and provincial equivalents for worker safety
+
+**Business Structure & Employment:**
+- **US**: Booth rental (independent contractor) vs. commission-based employment common; independent contractors must meet IRS criteria; tip reporting requirements
+- **UK**: Self-employed hairdressers common; employed stylists under UK employment law; salon chair rental agreements
+- **Canada**: Employment standards by province; distinction between employee and independent contractor important for tax/benefits
+
+**Continuing Education & Scope of Practice:**
+- **US**: Continuing education requirements vary by state (some require, others don't); specialized certifications (e.g., keratin treatments, hair extensions) may require additional training
+- **UK**: No mandatory CE; professional development through industry bodies (e.g., National Hairdressers' Federation)
+- **International**: Some treatments (Brazilian Blowout, certain chemical straighteners) banned/restricted in some jurisdictions due to formaldehyde content
 
 3) Default workflow
 

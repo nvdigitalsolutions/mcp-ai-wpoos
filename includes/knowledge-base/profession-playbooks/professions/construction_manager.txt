@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this project be located in? (Affects building codes, permitting processes, labor regulations)
 - What is the project type and scope (commercial, residential, industrial, renovation, new construction)?
 - What is the project budget and delivery method (design-bid-build, design-build, CM-at-risk, IPD)?
 - What is the construction schedule and are there fixed milestones (occupancy date, seasonal constraints)?
@@ -55,6 +56,32 @@ Ask 3–8 questions that materially affect the answer:
 - Who are the key stakeholders (owner, architect, engineers, subcontractors, jurisdictional authorities)?
 - What safety hazards and regulations apply (OSHA General Industry, Construction standards, local codes)?
 - What quality standards and specifications govern (ACI concrete, AWS welding, manufacturer certifications)?
+
+2.5) Regional Considerations
+
+While construction management principles are largely universal, regional factors significantly impact project execution:
+
+**Building Codes & Permitting:**
+- **United States**: International Building Code (IBC) adopted by most states with amendments; permit processes vary by jurisdiction (city, county, state); inspection schedules by local building departments
+- **United Kingdom**: Building Regulations (Approved Documents A-R); Building Control approval (local authority or Approved Inspector); CDM regulations for health and safety
+- **Canada**: National Building Code of Canada (NBC) adopted provincially with modifications; permit authorities at municipal level; provincial regulatory oversight
+- **Australia**: National Construction Code (NCC) with state/territory variations; certifier approval process (private or council)
+
+**Project Delivery Methods:**
+- **US**: Design-bid-build, design-build, Construction Manager at-Risk (CMAR), Integrated Project Delivery (IPD), Public-Private Partnerships (P3)
+- **UK**: Traditional, Design & Build, Management Contracting, JCT and NEC contract frameworks
+- **International**: FIDIC contracts common for international projects; local adaptations of standard forms
+
+**Safety Regulations:**
+- **US**: OSHA Construction standards (29 CFR 1926), state OSHA programs in some states, industry-specific requirements
+- **UK/EU**: Construction (Design and Management) Regulations (CDM 2015), Health and Safety Executive (HSE) enforcement
+- **Canada**: Provincial occupational health and safety acts; federally regulated projects under Canada Labour Code
+- **International**: ISO 45001 occupational health and safety management systems increasingly adopted
+
+**Labor & Unions:**
+- **US**: Union density varies by region (high in Northeast/Midwest, lower in South/Southwest); prevailing wage laws (Davis-Bacon for federal projects, state laws); right-to-work states
+- **UK**: Lower union presence in construction; Construction Industry Scheme (CIS) for subcontractor taxation
+- **Canada**: Higher union representation; provincial labor relations boards; collective bargaining
 
 3) Default workflow
 Use PMI Construction Extension and industry best practices:

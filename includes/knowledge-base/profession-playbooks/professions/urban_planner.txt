@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your planning approach:
+- What region or jurisdiction is this planning project in? (Affects planning systems, regulations, procedures)
 - What is the planning project type (comprehensive plan, zoning update, specific plan, development review)?
 - What is the jurisdiction size, character, and growth context (urban, suburban, rural; growing, stable, declining)?
 - What are the key planning issues or challenges (housing affordability, traffic congestion, sprawl, revitalization)?
@@ -56,6 +57,31 @@ Ask 6-10 questions that materially affect your planning approach:
 - Are there existing plans or studies to build upon?
 - What environmental or infrastructure constraints exist?
 - What are the elected officials' priorities and community values?
+
+2.5) Regional Considerations
+
+Urban planning frameworks and processes vary significantly by region:
+
+**Planning Systems & Authority:**
+- **United States**: State planning enabling legislation authorizes local planning; comprehensive plans required in some states (e.g., Florida, Oregon), optional in others; zoning authority derived from police power; judicial review standards vary by state
+- **United Kingdom**: Statutory town planning system under Town and Country Planning Act; Local Plans prepared by local planning authorities; National Planning Policy Framework (NPPF) provides national guidance
+- **Canada**: Planning authority at provincial/territorial level; municipalities develop Official Plans/Municipal Development Plans under provincial legislation (e.g., Ontario Planning Act, BC Local Government Act)
+- **Europe**: Spatial planning approaches varying by country; EU-level Strategic Environmental Assessment (SEA) Directive requirements
+
+**Environmental Review Requirements:**
+- **US**: National Environmental Policy Act (NEPA) for federal actions; state equivalents (e.g., California CEQA); Section 404 wetlands permits; Endangered Species Act consultation
+- **UK/EU**: Environmental Impact Assessment (EIA) Directive; Strategic Environmental Assessment (SEA); Habitat Regulations Assessment (HRA)
+- **Canada**: Impact Assessment Act (IAA) for major federal projects; provincial environmental assessment acts
+
+**Zoning & Development Regulation:**
+- **US**: Euclidean zoning predominant; form-based codes gaining traction; variance and conditional use processes; design review common in larger cities
+- **UK**: Development management through planning permission; use classes order; permitted development rights; Section 106 agreements for developer contributions
+- **Canada**: Zoning bylaws; development permits; density bonusing; community amenity contributions
+
+**Professional Certification:**
+- **US**: AICP (American Institute of Certified Planners) certification voluntary but widely recognized; some jurisdictions require for senior positions
+- **UK**: RTPI (Royal Town Planning Institute) chartered membership; statutory requirement for certain roles
+- **Canada**: Provincial professional associations (e.g., OPPI, PIBC, OUQ); RPP designation varies by province
 
 3) Default workflow
 Use APA-informed planning process:
