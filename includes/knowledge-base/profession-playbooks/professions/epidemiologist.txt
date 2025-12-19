@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Public health infrastructure, surveillance systems, and reporting requirements vary)
 - What is the public health concern or disease under investigation?
 - What is the affected population (size, demographics, geographic distribution)?
 - What is the timeline of the event (index case, outbreak curve, ongoing transmission)?
@@ -52,6 +53,51 @@ Ask 3–8 questions that materially affect the answer:
 - What control measures have been implemented (isolation, vaccination, environmental)?
 - Who are the key stakeholders (health department, hospitals, community leaders)?
 - What are the resources and constraints (staffing, laboratory capacity, funding)?
+
+1.5) Regional Variations - Public Health & Epidemiology Systems
+
+**United States:**
+- Agencies: CDC (federal), state health departments, local health departments
+- Surveillance: NNDSS (National Notifiable Diseases Surveillance System), syndromic surveillance
+- Authority: State and local public health powers; CDC provides guidance, not enforcement
+- Training: EIS (Epidemic Intelligence Service) fellowship; MPH degrees
+- Data: HIPAA considerations; public health exception for reportable diseases
+- Organizations: CSTE (Council of State and Territorial Epidemiologists), APHA
+
+**United Kingdom:**
+- Agencies: UKHSA (UK Health Security Agency, replaced PHE), NHS public health teams
+- Surveillance: National surveillance systems (NOIDS); regional health protection teams
+- Authority: Public Health England powers; Health Protection Regulations
+- Training: FETP (Field Epidemiology Training Programme); Faculty of Public Health
+- Data: GDPR compliance for public health surveillance
+- Organizations: FPH (Faculty of Public Health), Royal Society for Public Health
+
+**Canada:**
+- Agencies: PHAC (Public Health Agency of Canada), provincial/territorial health departments
+- Surveillance: Canadian Notifiable Disease Surveillance System (CNDSS)
+- Authority: Provincial/territorial jurisdiction; federal for border/quarantine
+- Training: FETP programs; MPH from Canadian universities
+- Data: PIPEDA and provincial privacy laws; public health exemptions
+- Organizations: CPHA (Canadian Public Health Association), provincial associations
+
+**Australia:**
+- Agencies: Department of Health, state/territory health departments, CDNA (Communicable Diseases Network Australia)
+- Surveillance: NNDSS (National Notifiable Diseases Surveillance System); state-based systems
+- Authority: State/territory public health acts; national coordination via CDNA
+- Training: MAE (Master of Applied Epidemiology) program; MPH programs
+- Data: Privacy Act with public health exemptions
+- Organizations: PHAA (Public Health Association of Australia), ASID
+
+**International:**
+- WHO: IHR (International Health Regulations) reporting; GOARN (Global Outbreak Alert and Response Network)
+- ECDC: European CDC for EU coordination
+- Regional bodies: PAHO (Americas), AFRO (Africa), WPRO (Western Pacific)
+
+**Key Differences:**
+- Structure: Federal/state/local (US); national agencies (UK/Australia); provincial (Canada)
+- Authority: State-based (US); national (UK); provincial/territorial (Canada); state/territory (Australia)
+- Surveillance: Varied systems but increasing international coordination via WHO IHR
+- Training: EIS fellowship unique to US; FETP programs in multiple countries
 
 3) Default workflow
 Use a systematic outbreak investigation process per CDC Field Epidemiology Manual:

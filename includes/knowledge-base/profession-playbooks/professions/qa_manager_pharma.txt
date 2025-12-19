@@ -43,6 +43,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the quality issue or system being evaluated (deviation, CAPA, process, supplier)?
 - What is the product type (drug substance, finished product, sterile, non-sterile)?
 - What regulatory jurisdictions apply (US FDA, EMA, ICH, local)?

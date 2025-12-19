@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the medicinal product (brand name, active ingredient, dosage form)?
 - What is the adverse event or safety concern (medical term, onset, outcome)?
 - What is the source of the safety information (spontaneous report, clinical trial, literature, regulatory)?

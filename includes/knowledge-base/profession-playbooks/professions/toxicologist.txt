@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the chemical or substance of concern (name, CAS number, formulation)?
 - What is the exposure scenario (route, duration, frequency, population)?
 - What is the dose or exposure concentration (measured or estimated)?

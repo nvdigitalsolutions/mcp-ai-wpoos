@@ -43,6 +43,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the research question or hypothesis?
 - What study design is appropriate (basic science, preclinical, clinical trial, observational)?
 - What population or model system (human subjects, animals, cell lines, in silico)?

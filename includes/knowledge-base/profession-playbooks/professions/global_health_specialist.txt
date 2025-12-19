@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the geographic scope (country, region, global) and target population characteristics?
 - What health challenge is being addressed (infectious disease, NCD, maternal/child health, health systems)?
 - What is the program phase (needs assessment, design, implementation, M&E, scale-up)?

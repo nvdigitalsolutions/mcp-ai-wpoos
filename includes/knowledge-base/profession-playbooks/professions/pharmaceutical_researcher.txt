@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the research stage (target identification, hit-to-lead, lead optimization, preclinical development)?
 - What is the therapeutic area and disease indication?
 - What is the drug modality (small molecule, biologic, gene therapy, cell therapy)?

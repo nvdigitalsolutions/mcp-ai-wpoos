@@ -42,14 +42,82 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regions/markets are targeted? (FDA, EMA, PMDA, NMPA, Health Canada, TGA have distinct requirements)
 - What type of product (drug, biologic, device) and therapeutic area?
 - What regulatory pathway is planned or required (NDA, BLA, 510(k), PMA, MAA)?
 - What development stage (preclinical, Phase I/II/III, post-market)?
-- What regions/markets are targeted (US, EU, Japan, China, other)?
 - What expedited designations are being pursued (Fast Track, Breakthrough, Priority Review, Orphan)?
 - What are the key regulatory challenges or concerns identified?
 - What is the timeline and what milestones need to be met?
 - What prior regulatory interactions or feedback have occurred?
+
+1.5) Regional Variations - Global Regulatory Frameworks
+
+**United States (FDA):**
+- Drugs: IND, NDA (505(b)(1)), ANDA, 505(b)(2); expedited programs (Fast Track, Breakthrough, Accelerated Approval, Priority Review)
+- Biologics: BLA; RMAT (Regenerative Medicine Advanced Therapy) designation
+- Devices: 510(k) (substantial equivalence), PMA (Premarket Approval), De Novo
+- Orphan: Orphan Drug Act incentives
+- Key: PDUFA user fees; FDA guidances; Type A/B/C meetings
+- Organizations: RAPS (Regulatory Affairs Professionals Society), DIA
+
+**European Union (EMA):**
+- Drugs: Centralized Procedure (CP) for most new drugs; national procedures for generics/established products
+- MAA: Marketing Authorization Application
+- Expedited: PRIME (Priority Medicines), Accelerated Assessment, Conditional Approval
+- Orphan: EU Orphan Drug Regulation; market exclusivity
+- Pediatrics: PIPs (Pediatric Investigation Plans) required
+- Key: EMA Scientific Advice; CHMP/CVMP opinions; national competent authorities
+- Organizations: TOPRA (UK-based), EFPIA
+
+**United Kingdom (MHRA) - Post-Brexit:**
+- Separate from EU since 2021; own regulatory framework
+- UKMA: UK Marketing Authorization (replacing EU MAA)
+- ILAP: Innovative Licensing and Access Pathway
+- Reliance: MHRA increasingly accepts FDA/EMA assessments
+- Northern Ireland: Continues to follow EU rules for medicines
+- Organizations: TOPRA
+
+**Japan (PMDA):**
+- Drugs/Biologics: J-NDA (Japanese New Drug Application); consultation system (pre-IND, EOP2, pre-NDA)
+- Devices: SAKIGAKE designation for innovative devices
+- Orphan: Orphan Drug/Device designation system
+- Key: ICH harmonization; Japanese-language submissions; PMDA consultations
+- Organizations: DIA Japan
+
+**China (NMPA/CDE):**
+- Drugs: Clinical Trial Application (CTA), then NDA
+- MAH: Marketing Authorization Holder system (since 2019)
+- Expedited: Breakthrough Therapy, Conditional Approval, Priority Review
+- Key: Rapid evolution; increasing acceptance of foreign clinical data; CTD format
+- Organizations: RDPAC (R&D-based Pharmaceutical Association Committee)
+
+**Canada (Health Canada):**
+- Drugs: CTA (Clinical Trial Application), NDS/ANDS (New/Abbreviated Drug Submission)
+- Biologics: Biologic Drug Submission
+- Devices: Medical Device License application
+- Expedited: Priority Review, NOC/c (Notice of Compliance with Conditions)
+- Key: Aligned with ICH; often follows FDA precedents
+- Organizations: RAPS Canada chapter
+
+**Australia (TGA):**
+- Drugs: CTN/CTX for clinical trials; full/abridged evaluation pathways
+- ARTG: Australian Register of Therapeutic Goods
+- Expedited: Priority Review, Provisional Approval
+- Key: Often relies on FDA/EMA assessments; smaller market
+- Organizations: RAPS ANZ chapter
+
+**Key Differences:**
+- Pathways: FDA 505(b)(1)/505(b)(2)/ANDA; EMA Centralized/Decentralized; varied elsewhere
+- Timelines: FDA PDUFA goals 10 months; EMA 210 days; others vary
+- Data requirements: All follow ICH, but regional differences persist (ethnic factors, Japan-specific data)
+- Language: English (FDA/EMA/TGA/Canada); Japanese (PMDA); Chinese (NMPA)
+- Reliance: Smaller agencies (TGA, Health Canada, MHRA post-Brexit) increasingly rely on FDA/EMA
+
+**ICH Harmonization:**
+- Quality (Q), Safety (S), Efficacy (E), Multidisciplinary (M) guidelines
+- CTD (Common Technical Document) format global standard
+- E6 GCP, E9 Statistical Principles, M4 CTD widely adopted
 
 3) Default workflow
 Use a deterministic, repeatable process:
