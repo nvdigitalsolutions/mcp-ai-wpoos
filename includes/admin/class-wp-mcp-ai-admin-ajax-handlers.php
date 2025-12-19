@@ -79,6 +79,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
+				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
 			);
 
 			$action         = current_action();
@@ -2222,6 +2223,78 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $message,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to get models for a provider.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_get_models_for_provider() {
+			// Verify nonce for security.
+			check_ajax_referer( 'wp-mcp-ai-model-selector', 'nonce' );
+
+			// Check user capabilities.
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Get provider from request.
+			$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
+
+			if ( empty( $provider ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Provider is required.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Validate provider.
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ) );
+			if ( ! in_array( $provider, $allowed_providers, true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid provider.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load model service if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+			}
+
+			// Get models for the provider.
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $provider );
+
+			if ( empty( $models ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: provider name */
+							__( 'No models available for provider: %s. Please configure API keys in settings.', 'wp-mcp-ai' ),
+							ucfirst( str_replace( '_', ' ', $provider ) )
+						),
+					)
+				);
+				return;
+			}
+
+			// Return models as success response.
+			wp_send_json_success(
+				array(
+					'models' => $models,
 				)
 			);
 		}
