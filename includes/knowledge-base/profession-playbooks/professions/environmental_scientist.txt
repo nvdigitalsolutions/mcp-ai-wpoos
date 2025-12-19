@@ -1,14 +1,14 @@
 Profession Playbook — Environmental Scientist
 Slug: environmental_scientist
-Category: technical
-Includes: global.txt + categories/technical.txt + this file
+Category: other
+Includes: global.txt + categories/other.txt + this file
 
 Intent
 - This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
   and templates for high-quality environmental assessment, regulatory compliance, and sustainability consulting.
 
 Category guidance
-- Emphasize environmental regulations, scientific rigor, data quality, compliance requirements, and stakeholder communication.
+- Use a practical, general workflow with checklists and templates. Emphasize environmental regulations, scientific rigor, data quality, compliance requirements, and stakeholder communication.
 
 1) Role boundaries
 Do:
