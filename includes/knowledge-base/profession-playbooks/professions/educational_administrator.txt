@@ -4,64 +4,785 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
+- This file is the profession-specific playbook for educational administrators (principals, assistant principals, district administrators).
+- It should contain actionable instructions, SOPs, checklists, and templates for high-quality educational leadership.
 - Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Use a practical, general workflow with checklists and templates appropriate for educational leadership.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Lead schools and districts following Professional Standards for Educational Leaders (PSEL/ISLLC) framework
+- Develop and implement school/district vision, mission, and strategic plans aligned with state standards
+- Provide instructional leadership through teacher observation, evaluation, and professional development
+- Manage school operations: budget, facilities, scheduling, student discipline, safety/security
+- Ensure compliance with federal/state education law (IDEA, Title IX, Section 504, FERPA, ESSA)
+- Foster positive school climate and culture supporting all students' academic and social-emotional needs
+- Engage families and community partners in supporting student success
+- Use data-driven decision-making for school improvement (student achievement, attendance, behavior)
+- Supervise and evaluate staff (teachers, support staff, administrators)
+- Coordinate curriculum implementation aligned with state/Common Core standards
+- Lead equity initiatives addressing achievement gaps and culturally responsive education
+- Success = High-performing schools with strong student outcomes, engaged staff, satisfied families, and compliance with all regulations
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Make personnel decisions that violate collective bargaining agreements or employment law
+- Override IEP team decisions or deny special education services without proper legal process
+- Discipline students in ways that violate due process rights or discriminatory practices
+- Guarantee specific student outcomes (test scores, college acceptance, graduation) without acknowledging variables
+- Share confidential student records without FERPA-compliant authorization
+- Make budget commitments exceeding authorized spending limits
+- Implement policies that conflict with board policies or state/federal regulations
+- Practice outside administrative credential/license scope (teaching, counseling, nursing without proper certification)
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Legal issues arise (student rights violations, employment disputes, discrimination claims - engage district legal counsel)
+- Budget crises require board/superintendent intervention or emergency measures
+- Serious safety threats (active shooter, natural disaster) require emergency response coordination with law enforcement
+- Personnel issues involve potential termination or complex grievances (engage HR and legal counsel)
+- Special education disputes require due process hearings or mediation (engage SPED director and legal)
+- Community conflicts escalate beyond building level (engage superintendent and public relations)
+- Facility emergencies require engineering or contractor expertise (engage facilities director)
+- Student mental health crises requiring hospitalization or intensive intervention (engage crisis team, parents, mental health providers)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is your administrative role and level (principal, assistant principal, district administrator, superintendent)?
+- What grade levels do you serve (elementary Pre-K-5, middle 6-8, high school 9-12, K-12 district)?
+- What is the school/district context (urban/suburban/rural, student demographics, socioeconomic status)?
+- What specific leadership challenge or initiative are you addressing (instruction, culture, operations, compliance)?
+- What data is available for decision-making (student achievement, teacher evaluations, budget, climate surveys)?
+- What governance structure exists (school board, district central office, state education agency requirements)?
+- What stakeholders need to be involved (teachers, staff, students, families, community, board)?
+- What timeline and constraints exist (school year calendar, budget cycles, state deadlines, collective bargaining)?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use PSEL (Professional Standards for Educational Leaders) framework:
+
+1. Vision, Mission, and Strategic Planning
+   - Collaborate with stakeholders to develop shared vision for student success
+   - Analyze school/district data to identify strengths, challenges, and priorities (SWOT analysis)
+   - Establish SMART goals aligned with state/district priorities and equity commitments
+   - Develop multi-year strategic plan with measurable objectives and action steps
+   - Communicate vision through multiple channels (staff meetings, newsletters, community forums, social media)
+   - Align resources (budget, staffing, time, professional development) to strategic priorities
+   - Monitor progress toward goals using data dashboard and adjust strategies as needed
+   
+2. Instructional Leadership & Teacher Support
+   - Conduct regular classroom walkthroughs and formal observations per evaluation cycle
+   - Provide actionable feedback on instruction using evaluation framework (Danielson, Marzano, state model)
+   - Facilitate professional learning communities (PLCs) focused on student learning and data analysis
+   - Arrange targeted professional development based on teacher needs and school goals
+   - Support teacher collaboration through common planning time and grade-level/department meetings
+   - Monitor curriculum implementation and fidelity to instructional frameworks
+   - Review student work and assessment data with teachers to refine instruction
+   - Provide coaching and mentoring for new teachers and those needing support
+   - Recognize and celebrate effective teaching practices (teacher of the month, peer observations)
+   
+3. School Operations & Management
+   - Develop master schedule optimizing instructional time and teacher assignments
+   - Manage school budget ensuring alignment with strategic priorities and compliance with fiscal policies
+   - Oversee facility maintenance, safety protocols, and emergency preparedness plans
+   - Implement student discipline systems that are fair, consistent, and restorative
+   - Coordinate student support services (counseling, special education, ELL, Title I, interventions)
+   - Manage enrollment, attendance tracking, and student records per FERPA requirements
+   - Supervise non-instructional operations (transportation, food service, custodial, clerical)
+   - Ensure technology infrastructure supports teaching and learning (devices, networks, software)
+   - Maintain compliance with health and safety regulations (fire drills, lockdowns, facility inspections)
+   
+4. Culture, Climate, and Equity
+   - Foster inclusive, culturally responsive school environment valuing all students and families
+   - Implement Multi-Tiered System of Supports (MTSS/RTI) for academic and behavioral interventions
+   - Address discipline disparities and disproportionality in special education referrals
+   - Provide social-emotional learning (SEL) programming integrated with academic curriculum
+   - Establish clear behavioral expectations and restorative practices reducing suspensions/expulsions
+   - Engage student voice through student government, advisory councils, and leadership opportunities
+   - Conduct climate surveys (students, staff, families) and act on feedback
+   - Lead equity audits examining policies, practices, and outcomes for bias and barriers
+   - Celebrate diversity through multicultural events, heritage months, and inclusive curriculum
+   
+5. Family & Community Engagement
+   - Establish two-way communication systems (newsletters, websites, apps, social media, phone/email)
+   - Host family engagement events (open houses, conferences, curriculum nights, family literacy)
+   - Create welcoming school environment with translated materials and cultural responsiveness
+   - Develop partnerships with community organizations (businesses, nonprofits, higher ed, faith communities)
+   - Facilitate parent advisory councils and solicit family input on school decisions
+   - Address parent concerns through accessible complaint procedures and responsive follow-up
+   - Engage families as partners in student learning (homework support, reading at home, attendance)
+   - Build trust through transparency, accessibility, and authentic relationship-building
 
 4) Deliverables
 List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Strategic plans (school improvement plan, district strategic plan with goals, objectives, action steps)
+- Teacher evaluation documentation (observation notes, summative evaluations, professional development plans)
+- School schedules (master schedule, bell schedule, duty rosters, calendar)
+- Budget reports (annual budget, monthly financial reports, purchase orders, budget justifications)
+- Policy drafts and updates (student handbook, staff handbook, board policies)
+- Data analysis reports (achievement data, attendance trends, discipline data, graduation rates)
+- Professional development agendas and materials (PD plans, workshop content, training evaluations)
+- Communication documents (newsletters, memos, emails, letters to families, press releases)
+- Emergency response plans (crisis protocols, safety plans, lockdown/evacuation procedures)
+- Compliance documentation (Title IX coordinators, 504/IEP compliance, FERPA training, state reports)
+- Meeting agendas and minutes (staff meetings, leadership team, department chairs, PLC notes)
+- Student discipline records (behavior incident reports, suspension letters, behavior intervention plans)
+- Grant applications and reports (Title I, Title II, 21st Century, state/federal grants)
+- Equity audits and action plans (achievement gap analysis, discipline disparity reports, equity initiatives)
+
+Minimum viable: Basic operations management (schedule, budget, discipline), minimal instructional leadership
+Gold standard: Comprehensive instructional leadership, data-driven decision-making, strong family/community engagement, robust equity initiatives, collaborative culture, high staff morale, improving student outcomes
 
 5) Quality checklist
 Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Instructional Leadership:
+- [ ] Regular classroom walkthroughs completed (minimum 2-3 per week per administrator)
+- [ ] Formal teacher evaluations conducted per district/state timeline with documented observations
+- [ ] Actionable feedback provided to teachers within 48 hours of observation
+- [ ] Professional development aligned with school goals and teacher needs
+- [ ] PLCs meeting regularly (weekly or bi-weekly) with agendas and data analysis protocols
+- [ ] Student achievement data reviewed quarterly with teachers to adjust instruction
+- [ ] New teacher mentoring and induction program implemented
+- [ ] Instructional resources and curriculum materials available and aligned with standards
+
+Compliance & Legal:
+- [ ] Special education services provided per IEPs with required meetings and timelines
+- [ ] Section 504 plans implemented with accommodations documented and monitored
+- [ ] Title IX policies and procedures followed with designated coordinator and training
+- [ ] FERPA compliance ensured with signed consents and secure records management
+- [ ] Mandated reporting training completed by all staff with protocols in place
+- [ ] Student discipline procedures follow due process (notice, hearing, appeal rights)
+- [ ] English Learner (EL) services provided per state and federal requirements
+- [ ] Homeless student support provided per McKinney-Vento Act
+
+Operations & Safety:
+- [ ] Budget balanced with expenditures tracking within authorized limits
+- [ ] Emergency drills conducted per state requirements (fire, lockdown, evacuation, severe weather)
+- [ ] Crisis response plan current with assigned roles and communication protocols
+- [ ] Facility inspections completed (fire marshal, health department, ADA compliance)
+- [ ] Student attendance monitored with interventions for chronic absenteeism
+- [ ] Background checks completed for all staff and volunteers per state law
+- [ ] Insurance certificates and liability coverage current
+- [ ] Technology acceptable use policies in place and enforced
+
+Culture & Climate:
+- [ ] Climate surveys conducted annually (students, staff, families) with results shared
+- [ ] Behavioral expectations taught explicitly and reinforced consistently
+- [ ] Restorative practices implemented reducing suspensions and improving relationships
+- [ ] SEL curriculum integrated into daily instruction and schoolwide activities
+- [ ] Equity data reviewed (achievement gaps, discipline disparities, special ed disproportionality)
+- [ ] Inclusive practices supporting LGBTQ+, ELL, SPED, and marginalized students
+- [ ] Staff morale positive with opportunities for input and recognition
+- [ ] Student voice included in decision-making through advisory councils or student government
+
+Family & Community Engagement:
+- [ ] Two-way communication systems established and used regularly
+- [ ] Family engagement events held quarterly (open house, conferences, curriculum nights)
+- [ ] Translation services available for non-English speaking families
+- [ ] Parent/family advisory council meeting regularly with meaningful input
+- [ ] Community partnerships established with measurable student benefits
+- [ ] Accessibility barriers removed (physical, linguistic, cultural)
+- [ ] Parent concerns addressed promptly with documented follow-up
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Teacher Observation - Informal Walkthrough Notes ===
+Teacher: [Name]
+Grade/Subject: [Grade and Subject]
+Date: [YYYY-MM-DD]
+Time: [HH:MM - HH:MM] (Duration: [Minutes])
+Observer: [Administrator Name]
+
+Lesson Objective/Standard:
+[What students were learning - as posted or stated by teacher]
+
+Observed Instructional Strategies:
+- [Strategy 1, e.g., Direct instruction, Cooperative learning, Inquiry-based]
+- [Strategy 2]
+- [Strategy 3]
+
+Student Engagement:
+- [ ] High - Most/all students actively engaged
+- [ ] Medium - Some students engaged, some off-task
+- [ ] Low - Many students disengaged or off-task
+
+Commendations (Glows):
+- [Specific positive observed, e.g., "Effective use of questioning to check for understanding"]
+- [Positive observation 2]
+
+Suggestions for Growth (Grows):
+- [Specific area for improvement with actionable suggestion]
+- [Growth area 2]
+
+Questions for Reflection:
+- [Question to prompt teacher thinking, e.g., "How might you differentiate for struggling learners?"]
+
+Follow-Up:
+- [ ] Brief conversation after class
+- [ ] Scheduled follow-up meeting
+- [ ] No follow-up needed - informal observation only
+
+Administrator Signature: ______________________ Date: _______
+
+=== School Improvement Plan (SIP) Template ===
+School: [School Name]
+School Year: [2024-2025]
+Principal: [Name]
+Date Approved: [YYYY-MM-DD]
+
+Vision Statement:
+[Clear, inspiring vision for student success]
+
+Mission Statement:
+[Concise statement of school's purpose and approach]
+
+Core Values:
+- [Value 1, e.g., Equity, Excellence, Community]
+- [Value 2]
+- [Value 3]
+
+Student Demographics & Context:
+- Total Enrollment: [Number]
+- Free/Reduced Lunch: [%]
+- Special Education: [%]
+- English Learners: [%]
+- Race/Ethnicity Breakdown: [Data]
+- [Other relevant context]
+
+Data Summary (Baseline):
+- State Assessment Proficiency: [% proficient in ELA, Math, Science]
+- Attendance Rate: [%]
+- Chronic Absenteeism: [%]
+- Suspension Rate: [%]
+- Graduation Rate (if HS): [%]
+- [Other key metrics]
+
+Goal 1: [Increase student achievement in literacy]
+- Baseline: [Current ELA proficiency: 45%]
+- Target: [ELA proficiency: 55% by end of year]
+- Strategies:
+  * [Strategy 1: Implement balanced literacy framework with daily guided reading]
+  * [Strategy 2: Provide reading intervention for students 2+ years below grade level]
+  * [Strategy 3: Professional development on literacy instruction (monthly PLC focus)]
+- Resources Needed: [Intervention materials ($5,000), PD facilitator, PLC time]
+- Responsible Parties: [Principal, Literacy Coach, Grade-level teachers]
+- Timeline: [August 2024 - May 2025]
+- Progress Monitoring: [Quarterly benchmark assessments, monthly data meetings]
+
+Goal 2: [Improve school climate and reduce suspensions]
+- Baseline: [Current suspension rate: 12%]
+- Target: [Reduce suspension rate to 7%]
+- Strategies:
+  * [Strategy 1: Implement PBIS with positive behavioral expectations]
+  * [Strategy 2: Train staff in restorative practices and de-escalation]
+  * [Strategy 3: Establish student check-in/check-out mentoring program]
+- Resources Needed: [PBIS coach, SEL curriculum ($2,000), mentor training]
+- Responsible Parties: [Assistant Principal, Counselor, PBIS team]
+- Timeline: [August 2024 - May 2025]
+- Progress Monitoring: [Monthly discipline data review, quarterly climate surveys]
+
+Goal 3: [Increase family engagement]
+- Baseline: [Parent attendance at conferences: 60%]
+- Target: [Parent attendance: 80%]
+- Strategies:
+  * [Strategy 1: Host quarterly family engagement events (literacy night, STEM night, etc.)]
+  * [Strategy 2: Implement two-way communication app (ClassDojo, Remind)]
+  * [Strategy 3: Establish Parent Advisory Council meeting monthly]
+- Resources Needed: [Event supplies ($1,500), communication platform (free), translation services]
+- Responsible Parties: [Principal, Community Liaison, Teachers]
+- Timeline: [September 2024 - May 2025]
+- Progress Monitoring: [Event attendance logs, communication app engagement metrics]
+
+Stakeholder Involvement:
+- Teachers: [Monthly staff meetings reviewing SIP progress]
+- Students: [Student advisory council input on Goal 2]
+- Families: [Parent survey conducted, input incorporated into Goal 3]
+- Community Partners: [Partnership with local library for literacy events]
+
+Budget Alignment:
+- Total SIP Budget: [$15,000]
+- Sources: [Title I ($10,000), General Fund ($5,000)]
+
+Evaluation Plan:
+- Mid-Year Review: [January 2025 - assess progress, adjust strategies if needed]
+- End-of-Year Review: [June 2025 - final data analysis, determine carryover goals]
+
+Approval Signatures:
+Principal: ________________________ Date: _______
+Superintendent: ___________________ Date: _______
+Board Approval: ___________________ Date: _______
+
+=== Staff Meeting Agenda Template ===
+Staff Meeting Agenda
+Date: [YYYY-MM-DD]
+Time: [HH:MM - HH:MM]
+Location: [Room/Location]
+Facilitator: [Principal/Administrator Name]
+
+Norms:
+- Start/end on time
+- Stay focused on agenda
+- Listen actively
+- Be solution-oriented
+- Share airtime
+
+1. Welcome & Celebrations (5 minutes)
+   - [Highlight staff or student achievements]
+   - [Upcoming events or positive news]
+
+2. Student Data Review (15 minutes)
+   - [Share recent assessment data, attendance, behavior trends]
+   - [Celebrate growth areas, identify areas for improvement]
+   - [Discussion: What patterns do you see? What adjustments might we make?]
+
+3. Instructional Focus (20 minutes)
+   - Topic: [e.g., Differentiation Strategies]
+   - [Brief PD or modeling of strategy]
+   - [Grade-level or department discussion on implementation]
+   - [Questions and clarifications]
+
+4. Operational Updates (10 minutes)
+   - [Schedule changes, field trip approvals, facilities updates]
+   - [Upcoming deadlines (progress reports, evaluations, etc.)]
+   - [Policy reminders or new procedures]
+
+5. Committee/Team Reports (5 minutes)
+   - [PBIS team update]
+   - [Technology committee update]
+   - [Other relevant committees]
+
+6. Open Forum / Questions (5 minutes)
+   - [Staff questions or concerns]
+   - [Clarifications needed]
+
+7. Closing (2 minutes)
+   - [Preview next meeting topic]
+   - [Appreciations or encouragement]
+
+Next Meeting: [Date, Time, Topic]
+
+Action Items:
+| Task | Responsible Party | Due Date |
+|------|-------------------|----------|
+| [Action item 1] | [Person] | [Date] |
+| [Action item 2] | [Person] | [Date] |
+
+Notes:
+[Space for meeting notes or key takeaways]
+
+=== Student Discipline Letter - Suspension ===
+[School Letterhead]
+
+Date: [YYYY-MM-DD]
+
+Dear [Parent/Guardian Name]:
+
+Re: Out-of-School Suspension for [Student Name], Grade [#]
+
+This letter is to inform you that [Student Name] has been suspended from school for [#] days, from [Start Date] through [End Date], for the following reason(s):
+
+Incident Description:
+[Detailed, factual description of the incident including date, time, location, individuals involved, and specific behaviors observed or reported. Example: "On [Date] at approximately [Time], [Student Name] engaged in a physical altercation with another student in the cafeteria. Witnesses reported that [Student] threw a punch at the other student, resulting in minor injury requiring nurse attention."]
+
+Policy Violation:
+[Student Name]'s actions violated the following school policies as outlined in the Student Handbook:
+- [Policy Section X.X: Physical Aggression - page #]
+- [Specific rule violated]
+
+Previous Interventions:
+[List prior interventions, warnings, or consequences for related behaviors:]
+- [Date]: [Intervention, e.g., Parent conference, counselor referral, detention]
+- [Date]: [Intervention]
+
+Suspension Details:
+- Suspension Dates: [Start Date] through [End Date]
+- [Student Name] may not be on school property during school hours or attend school-sponsored activities during the suspension period.
+- [Student Name] is expected to complete assigned work during the suspension. Please contact teachers at [email] to arrange for assignments.
+- [Student Name] may return to school on [Return Date] at the regular start time.
+
+Conditions for Return:
+- [Student Name] and parent/guardian must attend a re-entry conference on [Date] at [Time].
+- [Student Name] will be placed on a Behavior Intervention Plan to support positive behavior.
+- [Other conditions as appropriate]
+
+Your Rights:
+You have the right to appeal this suspension decision. To request an appeal, you must submit a written request to [Superintendent Name] at [Address] within [#] days of receiving this letter. The appeal process is outlined in Board Policy [Section Number].
+
+Next Steps:
+Please contact me at [Phone] or [Email] to schedule the re-entry conference. We are committed to supporting [Student Name]'s success and want to partner with you to address this behavior and prevent future incidents.
+
+Sincerely,
+
+[Administrator Name]
+[Title]
+[School Name]
+[Phone] | [Email]
+
+cc: Student File, Superintendent, School Counselor
+
+=== Budget Justification Template ===
+Budget Request Justification
+Fiscal Year: [2024-2025]
+School/Department: [Name]
+Administrator: [Name]
+
+Requested Item/Program: [Description]
+Amount Requested: $[Amount]
+Funding Source: [General Fund / Title I / Grant / Other]
+
+Alignment with Strategic Plan:
+This request directly supports [School Improvement Plan Goal #X] which focuses on [Goal description, e.g., "improving literacy achievement for all students"].
+
+Rationale/Need:
+[Explain the problem or gap this addresses. Use data when possible.]
+Example: "Current benchmark data shows 35% of 3rd graders are below grade level in reading. Our current intervention materials are outdated (2015) and do not align with our new literacy framework. Research-based intervention programs have demonstrated average gains of 1.5 years growth in one school year for struggling readers."
+
+Expected Outcomes:
+- [Outcome 1: Increase reading proficiency from 65% to 75% by end of year]
+- [Outcome 2: Reduce students needing Tier 3 intervention from 35% to 25%]
+- [Outcome 3: Improve teacher confidence in delivering differentiated literacy instruction]
+
+Cost Breakdown:
+- [Item/Service 1]: [Quantity] x [Unit Cost] = $[Amount]
+- [Item/Service 2]: [Quantity] x [Unit Cost] = $[Amount]
+- [Training/PD costs if applicable]: $[Amount]
+- [Ongoing costs (if multi-year)]: $[Amount per year]
+Total: $[Amount]
+
+Alternatives Considered:
+- [Alternative 1: Description, cost, reason not selected]
+- [Alternative 2: Description, cost, reason not selected]
+
+Implementation Plan:
+- [Timeline for purchase and deployment]
+- [Training plan for staff]
+- [Monitoring and evaluation plan]
+
+Return on Investment:
+[Quantify benefits when possible]
+Example: "This program serves 50 students. If successful in raising proficiency rates by 10%, we will have an additional 15 students meeting grade-level standards. This aligns with state accountability goals and reduces need for more intensive interventions in future years."
+
+Sustainability:
+[How will this be sustained in future years?]
+- [One-time purchase with no recurring costs]
+- [Annual subscription budgeted in base budget]
+- [Grant funding secured for 3 years, then re-evaluate need]
+
+Impact if Not Funded:
+[Describe the consequences of not approving this request]
+Example: "Without updated intervention materials, we will continue to see stagnant reading scores for our most struggling students. This perpetuates the achievement gap and may result in state designation as a Focus School requiring more intensive interventions."
+
+Approval:
+Principal: ____________________________ Date: _______
+Budget Manager: ______________________ Date: _______
+Superintendent: _______________________ Date: _______
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Data-Driven Instructional Decision - Math Achievement Gap
+```
+Data Analysis Summary
+School: Lincoln Elementary
+Date: November 2024
+Prepared by: Principal Martinez
+
+Data Source: Fall MAP Math Assessment (Grades 3-5)
+
+Key Findings:
+1. Overall Math Proficiency: 62% (on track to meet annual goal of 65%)
+2. Achievement Gap Identified:
+   - Asian students: 85% proficient
+   - White students: 75% proficient
+   - Hispanic students: 48% proficient (GAP: 27 points)
+   - Black students: 42% proficient (GAP: 33 points)
+3. Specific Skill Deficits (for students below proficiency):
+   - Fractions operations: 78% of below-proficient students struggle
+   - Multi-step word problems: 65% struggle
+   - Place value/number sense: 45% struggle
+
+Root Cause Analysis (Teacher Input + Observation Data):
+- Insufficient time for re-teaching and intervention (15 min/day currently)
+- Limited manipulatives and visual models for fractions instruction
+- Word problem instruction lacks explicit strategy teaching (CUBES, tape diagrams)
+- Fewer opportunities for discourse and student explanation of thinking
+- Less parental support with math homework in some households (language barriers, parent math anxiety)
+
+Immediate Action Plan (Implemented Dec 2024):
+1. Increase Intervention Time (45 min/day, 4x per week)
+   - Create rotation schedule during specials time
+   - Deploy Title I math specialist to work with small groups (6-8 students)
+   - Focus on fractions and word problems
+
+2. Enhance Core Instruction
+   - Purchase fraction manipulatives for all classrooms ($800)
+   - PD session on concrete-representational-abstract (CRA) model (Dec PD day)
+   - Implement CUBES word problem strategy schoolwide (visual posters, teacher modeling)
+
+3. Increase Math Discourse
+   - Teachers implement daily "math talks" (10 min) using routines (Number Talks, Which One Doesn't Belong?)
+   - Sentence stems provided for student explanation ("I know because...", "Another way to think about it...")
+
+4. Family Engagement
+   - Host "Math Family Night" in January (teach parents strategies to support homework)
+   - Provide translated math vocabulary resources for home use (Spanish, Vietnamese)
+   - Weekly math homework designed to be accessible without parental assistance
+
+Progress Monitoring:
+- Weekly formative assessments (exit tickets) on targeted skills
+- Monthly mini-assessments (15 min) to track growth
+- Winter MAP assessment (January) to measure progress toward goal
+- Adjust intervention groups based on data every 4 weeks
+
+Expected Outcomes:
+- Reduce achievement gap by 10 points by Spring MAP assessment (May 2025)
+- Increase overall proficiency to 68% (exceeding annual goal)
+- 80% of students receiving targeted intervention show 20+ percentile point growth
+
+Budget Allocation:
+- Manipulatives: $800 (Title I)
+- PD materials/consultant: $500 (Title II)
+- Family Night supplies: $200 (PTO funds)
+Total: $1,500
+
+Review Date: February 2025 Leadership Team Meeting
+```
+
+Example 2: Teacher Evaluation - Growth Plan for Struggling Teacher
+```
+Teacher Growth Plan
+Teacher: Ms. Johnson (3rd grade, 2nd year teacher)
+Evaluator: Principal Davis
+Date Plan Initiated: October 15, 2024
+Review Date: December 15, 2024
+
+Evaluation Framework: Danielson Framework for Teaching
+
+Areas of Concern (from observations and data):
+1. Domain 2c - Managing Classroom Procedures (Developing)
+   - Observed: Transitions between activities take 5-8 minutes with many students off-task
+   - Impact: Loss of 30-40 minutes of instructional time per day
+   
+2. Domain 3b - Using Questioning and Discussion Techniques (Developing)
+   - Observed: Questions are primarily recall-level (who/what/when), minimal higher-order thinking
+   - Impact: Students not developing critical thinking and analysis skills
+   
+3. Domain 3d - Using Assessment in Instruction (Developing)
+   - Observed: Assessments not used to adjust instruction; continues with planned lesson regardless of student understanding
+   - Impact: Students who don't grasp concept continue to fall behind
+
+Student Performance Data:
+- Fall benchmark reading: 45% proficient (school average: 62%)
+- Classroom climate survey: 3.2/5 (school average: 4.1/5)
+- Parent concerns: 3 emails re: lack of communication, student confusion about homework
+
+Commendations (Areas of Strength):
+- Strong content knowledge and enthusiasm for teaching
+- Positive relationships with students - students like Ms. Johnson
+- Willingness to learn and receptive to feedback
+
+Growth Plan Objectives:
+
+Objective 1: Improve classroom procedures and transitions
+Target: Reduce transition time to 2-3 minutes, 90% of students engaged
+Support Provided:
+- Mentor teacher pairing with Ms. Rodriguez (model classroom) - 2 observations by Nov 1
+- PD: Responsive Classroom approach to procedures and signals - Oct 25 after-school session
+- Practice specific procedures: Teach, model, practice, reinforce system
+- Administrator will conduct 3 brief walkthroughs per week with feedback
+Actions by Teacher:
+- Observe Ms. Rodriguez's transitions and adopt 2-3 strategies by Nov 1
+- Implement visual timer and attention signal (Nov 1)
+- Practice transition routines with students daily for 2 weeks
+- Self-reflect using video recording of lessons (Nov 15)
+
+Objective 2: Increase rigor of questioning
+Target: 50% of questions are higher-order (analysis, evaluation, creation) per Bloom's Taxonomy
+Support Provided:
+- PD: Effective Questioning workshop - Nov 8
+- Provide Question Stems chart for Bloom's Taxonomy levels
+- Instructional coach will co-plan 2 lessons modeling higher-order questions (Nov 10, Nov 17)
+- Administrator will observe and provide specific feedback on questioning (weekly)
+Actions by Teacher:
+- Pre-plan 3-5 higher-order questions for each lesson starting Nov 1
+- Use wait time (5+ seconds) to allow student thinking before calling on student
+- Implement think-pair-share for complex questions
+- Review and reflect on lesson questioning using video or audio recording (bi-weekly)
+
+Objective 3: Use formative assessment to adjust instruction
+Target: Evidence of within-lesson adjustments based on student understanding in 80% of observed lessons
+Support Provided:
+- PD: Formative Assessment Strategies - Dec 5
+- Instructional coach will model check-for-understanding strategies in Ms. Johnson's classroom (Nov 20)
+- Provide toolkit of quick formative assessments (exit tickets, thumbs up/down, mini whiteboards)
+Actions by Teacher:
+- Implement 2-3 formative assessment strategies per lesson starting Nov 15
+- Pause instruction when <70% of students demonstrate understanding; re-teach using different approach
+- Keep log of when/how instruction was adjusted based on formative data
+- Share examples of instructional adjustments at bi-weekly check-in meetings with principal
+
+Progress Monitoring:
+- Weekly informal observations (10 min) by principal or instructional coach with written feedback
+- Bi-weekly check-in meetings (30 min) to discuss progress, problem-solve, adjust plan
+- Mid-point review: Dec 15, 2024 (formal observation + data review)
+- End-of-plan review: Feb 15, 2025 (formal observation + student achievement data)
+
+Resources:
+- Release time for observations (2 half-days)
+- Instructional coach support (4 hours over 8 weeks)
+- Professional development (provided at no cost)
+- Video recording equipment for self-reflection
+
+Expected Outcomes:
+By February 15, 2025:
+- Classroom management rating moves from Developing to Proficient
+- Questioning rating moves from Developing to Proficient
+- Assessment rating moves from Developing to Proficient
+- Student achievement: 60%+ proficient on winter benchmark (15-point gain)
+- Parent communication: No new concerns, increased positive feedback
+
+Consequence if Growth Not Demonstrated:
+If Ms. Johnson does not demonstrate sufficient growth by end of plan (Feb 15), she will be placed on a formal improvement plan for remainder of school year with potential non-renewal of contract for next school year per district policy.
+
+Signatures:
+Teacher: _____________________________ Date: _______ (I have received and understand this plan)
+Principal: ____________________________ Date: _______
+Union Representative (optional): ________________ Date: _______
+```
+
+Example 3: Crisis Response - Student Suicide Threat Protocol
+```
+Crisis Incident Report - Suicide Threat
+School: Washington High School
+Date: November 12, 2024
+Time: 10:45 AM
+Reported by: Ms. Chen, English Teacher
+Crisis Coordinator: Assistant Principal Martinez
+
+Incident Summary:
+Student (Jake M., 10th grade) submitted a creative writing assignment containing concerning content suggesting suicidal ideation. Wrote: "Sometimes I think everyone would be better off if I just disappeared. The pain would finally stop." Teacher immediately referred to crisis team.
+
+Immediate Actions Taken (10:45 AM - 11:15 AM):
+1. Student removed from class to private location (counselor's office) - accompanied by counselor
+2. Crisis team notified (AP Martinez, school counselor, school psychologist)
+3. Parent/guardian contacted - mother answered, agreed to come to school immediately (ETA 11:30 AM)
+4. Do NOT leave student alone at any time - continuous adult supervision
+
+Suicide Risk Assessment (Counselor Lopez, 10:50 AM - 11:10 AM):
+Student Interview:
+- Jake confirmed he has been having thoughts about suicide for "the past few weeks"
+- States he feels "hopeless" and that "things will never get better"
+- Recent trigger: Parents' divorce finalized last month, moved to new home, misses father
+- Social isolation: "I don't really have friends here anymore. Nobody would care if I was gone."
+- When asked directly about plan/intent: Paused, then said "I've thought about it but I don't think I'd actually do it. It's just...thoughts."
+- Denying immediate plan or access to means (no weapons, pills, etc. identified)
+- Reluctant to safety contract but agreed to not harm self until meeting with parent and therapist
+
+Risk Level Assessment:
+- Moderate-High Risk (ideation present, triggering life stressors, social isolation)
+- Protective factors: No immediate plan, willing to talk, some ambivalence about suicide, agreed to safety plan
+
+Risk Level: MODERATE-HIGH - Requires immediate parent notification, safety plan, and referral to mental health professional
+
+Parent Conference (11:30 AM - 12:15 PM):
+Attendees: Jake, Mother, AP Martinez, Counselor Lopez, School Psychologist
+
+- Informed mother of Jake's statements and counselor's risk assessment
+- Mother shocked but receptive - stated she noticed Jake has been "withdrawn and sad" but didn't realize severity
+- Reviewed warning signs, suicide risk factors, and protective factors
+- Provided list of community mental health providers (3 agencies that accept their insurance)
+- Mother agreed to:
+  * Take Jake to Crisis Center for professional evaluation TODAY (referral given)
+  * Schedule therapy intake within 48 hours (if not admitted from Crisis Center)
+  * Remove/secure any potential means (medications, weapons, ropes) at home
+  * Increase supervision - Jake will not be left alone
+  * Follow up with school within 24 hours after Crisis Center evaluation
+
+Safety Plan Developed (with Jake's input):
+- Warning signs Jake will watch for: "Feeling really hopeless, thinking everyone hates me, wanting to isolate"
+- Coping strategies: "Listening to music, drawing, texting my cousin, playing with my dog"
+- People/places for distraction: "Hang out with my cousin, go to the gym, talk to my mom"
+- People Jake can ask for help: "Mom, school counselor, cousin Mia, therapist (when I get one)"
+- Professionals/agencies: "School counselor, Crisis Line 988, Crisis Center"
+- Making environment safe: "Mom is locking up medications and checking on me regularly"
+
+Crisis Line Information Provided:
+- National Suicide Prevention Lifeline: 988 (call or text)
+- Crisis Text Line: Text HOME to 741741
+- Local Crisis Center: [Phone number, address]
+
+Follow-Up Plan:
+- Jake will not return to regular classes until professional evaluation completed
+- Mother to call AP Martinez by end of day with update from Crisis Center
+- School counselor will check in with Jake daily upon return
+- Teachers notified (without details) to monitor and report any concerning statements or behaviors
+- 30-day check-in scheduled with parent to review progress and supports
+
+Documentation:
+- Crisis incident form completed and filed (secure location)
+- Suicide risk assessment form in student confidential file
+- Safety plan signed by Jake and mother - copies to family and school file
+- Teacher notified (minimal details): "Jake is being supported by crisis team for mental health concerns. Please let counselor know if you observe any concerning changes in mood or statements."
+
+Outcome:
+- Jake was evaluated at Crisis Center - no hospitalization required
+- Started outpatient therapy (intake Nov 14)
+- Returned to school Nov 15 with safety plan in place
+- Counselor check-ins (weekly for 4 weeks, then bi-weekly)
+- Follow-up parent conference Dec 10 - Jake showing improvement, engaged in therapy
+
+Lessons Learned:
+- Teacher training on recognizing warning signs was effective - Ms. Chen acted quickly and appropriately
+- Having community mental health referral list readily available facilitated quick parent action
+- Safety planning process was collaborative and student felt heard
+- Need to improve communication with teachers without violating confidentiality - generic "support statement" was helpful
+
+Report Completed by: AP Martinez
+Date: November 12, 2024, 2:00 PM
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **PSEL (Professional Standards for Educational Leaders)**: National framework outlining competencies for school and district administrators (formerly ISLLC)
+- **MTSS (Multi-Tiered System of Supports)**: Framework providing academic and behavioral interventions at increasing levels of intensity (Tiers 1, 2, 3)
+- **IEP (Individualized Education Program)**: Legally binding document outlining special education services for eligible students per IDEA
+- **504 Plan**: Accommodation plan for students with disabilities who don't require special education services per Section 504 of Rehabilitation Act
+- **FERPA (Family Educational Rights and Privacy Act)**: Federal law protecting privacy of student education records
+- **Title IX**: Federal civil rights law prohibiting sex-based discrimination in education, including sexual harassment and assault
+- **ESSA (Every Student Succeeds Act)**: Federal education law requiring states to set standards and assess student progress
+- **PLC (Professional Learning Community)**: Collaborative teams of teachers focused on improving student learning through data analysis and shared practices
+- **Danielson Framework**: Teacher evaluation framework based on 4 domains of teaching practice (most widely used evaluation system)
+- **Restorative Practices**: Discipline approach focusing on repairing harm and building relationships rather than punishment alone
+- **SEL (Social-Emotional Learning)**: Instruction focused on developing students' self-awareness, self-management, social awareness, relationship skills, responsible decision-making
+- **Achievement Gap**: Disparity in academic performance between different student groups (race/ethnicity, income, ELL status)
+
+Standards & Frameworks (2024):
+- **PSEL 2015 (Professional Standards for Educational Leaders)**: Ten standards covering vision/mission, ethics, equity, curriculum, community, professional capacity, operations, and improvement
+- **ISLLC Standards**: Original Interstate School Leaders Licensure Consortium standards (now evolved into PSEL)
+- **FERPA**: Family Educational Rights and Privacy Act - governs student record privacy and parental access
+- **IDEA 2004**: Individuals with Disabilities Education Act - federal special education law ensuring FAPE (free appropriate public education)
+- **Section 504 of Rehabilitation Act 1973**: Civil rights law prohibiting discrimination based on disability
+- **Title IX of Education Amendments 1972**: Prohibits sex-based discrimination including sexual harassment and assault in schools
+- **ESSA 2015 (Every Student Succeeds Act)**: Federal education law replacing NCLB, requiring state standards and assessments
+- **PBIS (Positive Behavioral Interventions and Supports)**: Evidence-based framework for teaching and reinforcing positive behaviors
+- **Danielson Framework for Teaching (2022 edition)**: Teacher evaluation model with 4 domains: Planning, Classroom Environment, Instruction, Professional Responsibilities
+- **Marzano Teacher Evaluation Model**: Alternative evaluation framework focused on 4 domains and 60 elements of effective teaching
+- **Common Core State Standards (CCSS)**: Academic standards in English language arts and mathematics adopted by most states
+- **CASEL Framework**: Collaborative for Academic, Social, and Emotional Learning framework defining 5 SEL competencies
+
+Common Tools:
+- **Student Information Systems (SIS)**: PowerSchool, Infinite Campus, Skyward, Aeries (student records, grades, attendance, scheduling)
+- **Teacher Evaluation**: BloomBoard, Teachscape, Frontline Insights (observation documentation, goal-setting, professional development)
+- **Assessment & Data**: NWEA MAP, iReady, Renaissance STAR, Illuminate Education (benchmark assessments, data dashboards)
+- **Communication**: ParentSquare, ClassDojo, Remind, Seesaw (family communication, newsletters, announcements)
+- **Professional Development**: PD Planner, Eduplanet21, MyLearningPlan (PD registration, tracking, evaluation)
+- **Budget Management**: Munis, Skyward Finance, Oracle PeopleSoft (budget planning, purchase orders, payroll)
+- **School Improvement Planning**: AdvancED/Cognia, Indistar, SchoolCity (strategic planning, goal tracking, accreditation)
+- **Scheduling**: Master Schedule, Scheduler123, Arena Scheduling (master schedule creation, room assignments)
+
+Change log
+2024-12: Initial playbook created based on PSEL 2015 standards and federal/state education law
+- Emphasis on instructional leadership, data-driven decision-making, equity, and family engagement
+- Comprehensive templates for teacher observation, school improvement plans, staff meetings, discipline, budgets
+- Real-world examples for data analysis/action planning, teacher growth plans, and crisis response
+- Compliance focus on IDEA, Section 504, Title IX, FERPA, ESSA requirements
