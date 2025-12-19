@@ -554,6 +554,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php esc_html_e( 'Regenerate playbook attachments from the modular text files. This is useful after editing playbook content in includes/knowledge-base/profession-playbooks/', 'wp-mcp-ai' ); ?>
 					</p>
 
+					<?php
+					// Get playbook statistics.
+					$playbook_stats = $this->get_playbook_statistics();
+					?>
+
+					<div class="wp-mcp-ai-playbook-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Playbook Status', 'wp-mcp-ai' ); ?></h4>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
+							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'wp-mcp-ai' ); ?></strong> 
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
+									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' ) ); ?>
+								</span>
+							</li>
+							<?php if ( $playbook_stats['last_sync'] ) : ?>
+								<li><strong><?php esc_html_e( 'Last Sync:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
+							<?php endif; ?>
+						</ul>
+					</div>
+
 					<div style="margin: 15px 0;">
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-playbooks-btn">
@@ -1070,6 +1091,70 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</script>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get playbook statistics for display.
+		 *
+		 * @return array Array with playbook statistics.
+		 */
+		private function get_playbook_statistics() {
+			global $wpdb;
+
+			// Load required class if not loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+
+			// Get total number of playbook attachments.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total_attachments = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT p.ID)
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					WHERE p.post_type = %s
+					AND p.post_status = %s
+					AND pm.meta_key = %s",
+					'attachment',
+					'inherit',
+					'_wp_mcp_ai_playbook_profession_id'
+				)
+			);
+
+			// Get number of unique professions with playbooks.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$professions_with_playbooks = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT pm.meta_value)
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					WHERE p.post_type = %s
+					AND p.post_status = %s
+					AND pm.meta_key = %s
+					AND pm.meta_value != ''",
+					'attachment',
+					'inherit',
+					'_wp_mcp_ai_playbook_profession_id'
+				)
+			);
+
+			// Check if playbooks were seeded.
+			$playbooks_seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );
+
+			// Get last sync timestamp if available.
+			$last_sync_timestamp = get_option( 'wp_mcp_ai_playbooks_last_sync', 0 );
+			$last_sync           = '';
+			if ( $last_sync_timestamp ) {
+				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'wp-mcp-ai' );
+			}
+
+			return array(
+				'total_attachments'          => absint( $total_attachments ),
+				'professions_with_playbooks' => absint( $professions_with_playbooks ),
+				'seeded'                     => $playbooks_seeded,
+				'last_sync'                  => $last_sync,
+			);
 		}
 	}
 }
