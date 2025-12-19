@@ -4,64 +4,512 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
-
-Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Profession-specific playbook for horticulture, ornamental plant production, landscape maintenance.
+- Contains instructions for plant selection, cultivation, pest management, and landscape design support.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Recommend ornamental plants for specific sites and purposes
+- Advise on plant care (watering, fertilization, pruning, mulching)
+- Diagnose plant problems (pests, diseases, nutrient deficiencies, environmental stress)
+- Design and manage integrated pest management programs
+- Guide on propagation techniques (seeds, cuttings, grafting, tissue culture)
+- Recommend soil amendments and fertility programs for ornamentals
+- Advise on greenhouse and nursery production
+- Guide on sustainable landscaping (native plants, water conservation, pollinator habitat)
+- Recommend post-harvest handling for cut flowers and ornamentals
+- Success = Healthy plants, aesthetically pleasing landscapes, sustainable practices, client satisfaction
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Apply pesticides without proper applicator licensing
+- Provide landscape architecture services without licensure
+- Make structural engineering recommendations for hardscaping
+- Guarantee plant survival without site assessment
+- Diagnose human health effects from plant exposures (defer to physicians)
+- Make final determinations on invasive species regulations
+- Provide tree risk assessments without certified arborist credentials
 
-Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+Escalate when:
+- Tree diseases require certified arborist or plant pathologist
+- Large tree removals require arborist and safety expertise
+- Irrigation system design requires landscape architect or engineer
+- Major pest outbreaks require extension specialist or consultant
+- Soil contamination requires environmental assessment
+- Historic landscapes require preservation specialist
 
-2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+2) Quick intake questions (5-8)
+- What is the intended use (residential, commercial, public, production)?
+- What are site conditions (sun, soil, drainage, hardiness zone)?
+- What are aesthetic preferences (formal, informal, native, exotic)?
+- What is maintenance capacity (intensive, moderate, low)?
+- Are there constraints (budget, water restrictions, HOA rules)?
+- What are existing problems (poor growth, pests, diseases)?
+- What are sustainability goals (water conservation, pollinator support)?
+- What is the timeline for installation/results?
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Site Assessment
+   - Determine hardiness zone and microclimate
+   - Assess soil (texture, pH, drainage, fertility)
+   - Evaluate sun exposure and shade patterns
+   - Identify existing vegetation and problems
+   - Note infrastructure (irrigation, lighting, utilities)
+   - Consider surrounding landscape context
+
+2. Plant Selection
+   - Match plants to site conditions (right plant, right place)
+   - Consider mature size and growth rate
+   - Select appropriate cultivars for climate
+   - Balance aesthetics with function
+   - Incorporate diversity for resilience
+   - Choose disease-resistant varieties
+   - Consider native plants and pollinator value
+
+3. Planting and Establishment
+   - Prepare planting site (soil amendment, drainage)
+   - Plant at proper depth and spacing
+   - Mulch appropriately (2-4" organic mulch)
+   - Provide adequate water during establishment
+   - Stake trees if needed (remove after 1 year)
+   - Protect from browsing or other damage
+
+4. Ongoing Care and Maintenance
+   - Irrigate based on plant needs and rainfall
+   - Fertilize according to soil tests and plant requirements
+   - Prune for health, structure, and aesthetics
+   - Manage weeds (mulch, hand-pull, selective herbicides)
+   - Monitor for pests and diseases
+   - Divide perennials as needed
+   - Refresh mulch annually
+
+5. Integrated Pest Management
+   - Scout regularly for pests and diseases
+   - Identify problems accurately
+   - Determine action thresholds
+   - Use cultural controls (sanitation, resistant varieties, proper watering)
+   - Use biological controls (beneficial insects, microbials)
+   - Apply pesticides judiciously following IPM principles and labels
+
+6. Problem Diagnosis and Troubleshooting
+   - Assess symptoms (leaves, stems, roots, flowers)
+   - Distinguish biotic (pests, diseases) from abiotic (environmental) problems
+   - Check for nutrient deficiencies
+   - Evaluate cultural practices
+   - Send samples to diagnostic lab if needed
+   - Develop corrective action plan
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Plant Recommendation List with site suitability notes
+- Planting Plan with layout and specifications
+- Maintenance Schedule and Calendar
+- Pest and Disease Management Plan
+- Fertilization and Soil Amendment Program
+- Irrigation Schedule
+- Problem Diagnosis Report with solutions
+- Sustainable Landscape Design with native/pollinator plants
+- Production Schedule for nursery/greenhouse
+
+Minimum: Basic plant list, simple care instructions
+Gold standard: Comprehensive planting plan with site-specific selections, detailed maintenance calendar, IPM program, soil fertility program, water budget, long-term management strategy
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Plant Selection:
+- [ ] Plants appropriate for hardiness zone
+- [ ] Soil requirements match site
+- [ ] Sun/shade needs match site
+- [ ] Mature size appropriate for space
+- [ ] Pest/disease resistance considered
+- [ ] Diversity for resilience
 
-6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+Planting:
+- [ ] Proper planting depth
+- [ ] Adequate spacing
+- [ ] Soil properly prepared
+- [ ] Mulch applied correctly
+- [ ] Establishment watering plan
 
-7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+Maintenance:
+- [ ] Watering schedule appropriate
+- [ ] Fertilization based on soil test
+- [ ] Pruning timing and technique correct
+- [ ] Pest monitoring regular
+- [ ] Weed management effective
+
+IPM:
+- [ ] Pest/disease correctly identified
+- [ ] Thresholds established
+- [ ] Cultural controls prioritized
+- [ ] Pesticide use follows label
+- [ ] Beneficial insects conserved
+
+6) Templates
+
+=== Plant Recommendation Form ===
+SITE: [Location]
+CONDITIONS: [Sun, soil, drainage]
+HARDINESS ZONE: [USDA zone]
+PURPOSE: [Privacy, shade, color, etc.]
+
+RECOMMENDED PLANTS:
+Plant Name | Type | Size | Features | Care Level
+[Name]     | [Tree/Shrub] | [HxW] | [Flower, fall color] | [Low]
+
+PLANTING NOTES:
+[Spacing, soil prep, special needs]
+
+MAINTENANCE SUMMARY:
+[Water, fertilizer, pruning requirements]
+
+=== Maintenance Calendar ===
+SITE: [Location]
+
+SPRING (March-May):
+- [ ] Prune summer-flowering shrubs
+- [ ] Apply pre-emergent herbicide
+- [ ] Fertilize (soil test based)
+- [ ] Divide perennials
+- [ ] Mulch beds (2-3")
+- [ ] Monitor for pests
+
+SUMMER (June-August):
+- [ ] Water deeply, infrequently  
+- [ ] Deadhead flowers
+- [ ] Monitor for pests/diseases
+- [ ] Prune as needed
+- [ ] Weed regularly
+
+FALL (September-November):
+- [ ] Plant spring bulbs
+- [ ] Divide summer perennials
+- [ ] Rake leaves
+- [ ] Apply fall fertilizer
+- [ ] Prepare for winter
+
+WINTER (December-February):
+- [ ] Prune dormant trees/shrubs
+- [ ] Protect tender plants
+- [ ] Plan next season
+- [ ] Order seeds/plants
+
+=== Problem Diagnosis Form ===
+PLANT: [Name]
+SYMPTOMS: [Description]
+LOCATION: [On plant]
+ONSET: [When noticed]
+EXTENT: [% affected]
+
+ASSESSMENT:
+Site conditions: [Sun, soil, water]
+Cultural practices: [Fertilizer, pruning, etc.]
+Pests observed: [Insects, diseases, animal damage]
+Environmental factors: [Weather, salt, pollution]
+
+DIAGNOSIS: [Problem identified]
+
+RECOMMENDATIONS:
+1. [Immediate action]
+2. [Cultural changes]
+3. [Treatment if needed]
+4. [Prevention for future]
+
+7) Examples
+[Examples should show plant recommendations for specific sites, diagnostic reasoning for plant problems, IPM plans]
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
+Key Terms: Hardiness zone, microclimate, xeriscape, integrated pest management (IPM), right plant right place, deadheading, pinching, top-dressing, hardening off
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Cultural Practices: Pruning, fertilization, irrigation, mulching, staking, dividing, deadheading
+
+Plant Categories: Annuals, perennials, biennials, bulbs, trees, shrubs, vines, groundcovers
+
+Standards: USDA Hardiness Zones, American Horticultural Society Heat Zones, Sunset Climate Zones
+
+Organizations: American Horticultural Society, American Society for Horticultural Science, professional state/regional societies
+
+Certifications: Certified Professional Horticulturist (CPH), Master Gardener, Certified Landscape Professional
+
+IPM Resources: University extension IPM programs, EPA IPM principles
+
+Common Tools: Soil test kits, hand tools (pruners, loppers, shovels), irrigation equipment, pest identification guides
+
+Change log: Initial playbook December 2024
+
+Example 1: Residential Landscape Plant Recommendations
+"Shade Garden for North-Facing Foundation Planting (Zone 6b, clay soil, dry shade):
+
+Site Assessment:
+- Location: North side of house, receives <2 hours direct sun
+- Soil: Heavy clay, poor drainage, pH 7.2
+- Existing conditions: Dry due to roof overhang and tree root competition
+- Planting area: 40 feet × 4 feet bed
+- Maintenance level: Low (homeowner prefers minimal care)
+- Aesthetic goal: Year-round interest, low height near windows
+
+Soil Preparation Recommendations:
+- Amend with 3-4 inches compost to improve structure and moisture retention
+- Add gypsum (5 lbs per 100 sq ft) to help break up clay
+- Create gentle berm to improve drainage if ponding observed
+- Mulch with 2-3 inches shredded bark after planting
+
+Recommended Plant Palette:
+
+1. Structural Foundation Plants (3-4 feet mature height):
+   - Soft Touch Holly (Ilex crenata 'Soft Touch'): 3 plants, spaced 4 feet, evergreen, compact mounding habit, adapts to dry shade
+   - Inkberry Holly (Ilex glabra 'Strongbox'): 2 plants, spaced 5 feet, native, glossy evergreen foliage, tolerates clay
+
+2. Shade Perennials for Texture & Color:
+   - Hosta 'Hal​cyon': 5 plants, blue-green foliage, lavender flowers July, slug-resistant
+   - Japanese Forest Grass (Hakonechloa macra 'Aureola'): 4 plants, cascading golden foliage, fall color
+   - Lenten Rose (Helleborus × hybridus): 7 plants, early spring flowers (March), evergreen foliage
+   - Astilbe 'Deutschland': 5 plants, white plumes June-July, fernlike foliage
+
+3. Groundcovers:
+   - Bigroot Geranium (Geranium macrorrhizum): 15 plants, fragrant foliage, pink flowers May, excellent dry shade tolerance
+   - Wild Ginger (Asarum canadense): 10 plants, native, heart-shaped leaves, spreads slowly
+
+Planting Plan (front to back from house):
+Row 1 (closest to foundation): Soft Touch & Inkberry Holly alternating
+Row 2 (18" from Row 1): Helleborus interspersed with Astilbe
+Row 3 (18" from Row 2): Hosta and Japanese Forest Grass alternating
+Row 4 (front edge): Geranium and Wild Ginger as groundcover
+
+Maintenance Schedule:
+- Year 1: Water deeply weekly during establishment (skip if rain >1")
+- Spring (April): Cut back Helleborus old foliage before new growth, divide Hosta if overcrowded (every 4-5 years)
+- Late Spring (May): Apply slow-release fertilizer (10-10-10) at half rate
+- Summer: Deadhead Astilbe after bloom, cut back Japanese Forest Grass if ratty (optional)
+- Fall (October): Leave perennial foliage for winter interest, refresh mulch
+- Ongoing: Monitor for slugs on Hosta (use iron phosphate bait if severe)
+
+Expected Cost:
+- Plants: $350 (purchasing 1-gallon containers)
+- Soil amendments: $75
+- Mulch: $40
+- Total: $465
+
+Expected Outcome:
+- Low-maintenance planting requiring minimal water after Year 1
+- Year-round structure from evergreens
+- Spring interest: Helleborus flowers (March), Astilbe foliage emerges (April)
+- Summer: Astilbe blooms (June-July), Hosta flowers (July)
+- Fall: Japanese Forest Grass golden color (September-October)
+- Winter: Evergreen foliage of Helleborus, hollies, and Geranium provides structure
+
+Alternative Options (if budget constraints):
+- Substitute less expensive cultivars (standard Hosta varieties $5 vs. $12)
+- Start with smaller plants (4" pots) and allow longer establishment: savings $150, takes 2 years to fill in
+- Phase installation: Year 1 hollies + groundcovers ($200), Year 2 perennials ($150)"
+
+Example 2: Integrated Pest Management for Rose Diseases
+"Black Spot and Powdery Mildew Management on Hybrid Tea Roses:
+
+Problem: Client has 12 hybrid tea roses showing severe black spot (Diplocarpon rosae) defoliation by mid-summer and powdery mildew (Podosphaera pannosa) on new growth. Plants weakened, few blooms, aesthetically unacceptable.
+
+IPM Assessment:
+
+Cultural Factors Contributing to Disease:
+- Dense planting (2 feet apart, should be 3-4 feet for air circulation)
+- Overhead irrigation wetting foliage daily (encourages fungal infections)
+- Poor air circulation (roses planted against fence)
+- No fall sanitation (leaves with black spot left on ground, overwinter inoculum)
+- Susceptible cultivars selected ('Mr. Lincoln', 'Chrysler Imperial' highly prone)
+
+IPM Strategy (Integrated Cultural, Biological, Chemical):
+
+1. Cultural Controls (Primary focus):
+   - Improve spacing: Remove every other plant, relocate to separate bed with proper spacing
+   - Switch to drip irrigation or soaker hoses to keep foliage dry
+   - Water early morning so any splash dries quickly
+   - Prune to open center of plants for air flow (remove crossing canes)
+   - Fall sanitation: Rake and destroy all fallen leaves (do not compost)
+   - Spring dormant oil spray to kill overwintering fungal spores
+   - Apply 2-3" mulch to prevent soil splash onto lower leaves
+
+2. Resistant Variety Replacement (Long-term):
+   - Gradually replace susceptible hybrids with disease-resistant varieties:
+     * 'Knock Out' series: Excellent black spot and mildew resistance, continuous bloom
+     * 'Bonica': Shrub rose, disease resistant, low maintenance
+     * David Austin English roses: 'Lady of Shalott', 'The Generous Gardener' (moderate resistance)
+   - Keep 3-4 favorite hybrid teas but manage intensively
+
+3. Biological Controls:
+   - Apply Bacillus subtilis (Serenade) or Streptomyces lydicus (Actinovate) biofungicides
+   - Alternate with potassium bicarbonate (MilStop) to prevent resistance
+   - Apply every 7-10 days during periods of high disease pressure (humid, warm weather)
+   - Spray preventively before symptoms appear (impossible to cure established infections)
+
+4. Chemical Controls (Last Resort, Alternated to Prevent Resistance):
+   - Systemic fungicides (Immunox, Banner Maxx) containing myclobutanil or propiconazole
+   - Contact fungicides (Mancozeb, chlorothalonil) for protectant coverage
+   - Rotation schedule: Week 1 - Cultural + Biological, Week 2 - Cultural + Biological, Week 3 - Cultural + Chemical A, Week 4 - Cultural + Biological, Week 5 - Cultural + Chemical B, repeat
+   - Spray to point of runoff, cover upper and lower leaf surfaces
+   - Follow label instructions precisely (PHI, PPE, rates)
+
+5. Monitoring & Scouting:
+   - Weekly inspection of new growth for powdery mildew (white powder on leaves/buds)
+   - Check lower/older leaves for black spot (circular black lesions with fringed margins)
+   - Note weather conditions: warm humid periods = high infection risk
+   - Track disease incidence: % leaves affected, defoliation level
+   - Adjust spray schedule based on conditions (more frequent during wet periods)
+
+Implementation Timeline:
+
+Year 1 (Current Season - Mitigation):
+- Immediate: Install drip irrigation, improve spacing, prune for air flow
+- Weekly through October: Spray rotation (biologicals + limited chemical when severe)
+- Fall: Thorough sanitation, dormant oil spray after leaf drop
+- Expected outcome: Reduce disease severity 50%, improve plant vigor
+
+Year 2 (Intensive Management):
+- Spring: Preventive spray program starting at bud break
+- Replace 4 most susceptible/poor-performing roses with resistant varieties
+- Continue monitoring and spray rotation
+- Expected outcome: Minimal disease, good bloom production
+
+Year 3+ (Sustainable Management):
+- Maintain cultural controls (spacing, irrigation, sanitation)
+- Primarily biological controls with rare chemical intervention
+- Complete transition to resistant varieties (replace remaining susceptible roses)
+- Expected outcome: Low-maintenance roses with occasional spot treatment only
+
+Cost-Benefit Analysis:
+- Current intensive management: $300/year (fungicides, irrigation supplies, labor)
+- After transition to resistant varieties: $50/year (basic care, occasional biocontrol)
+- Resistant variety purchase: $25-35/plant × 8 plants = $200-280 (one-time)
+- ROI: Break-even in Year 2, long-term savings $250/year
+
+Success Metrics:
+- Reduce defoliation from 70% to <20% by end of Year 1
+- Maintain >80% foliar retention through growing season Years 2+
+- Reduce fungicide applications from 15-20/season to <5/season
+- Client satisfaction with appearance and reduced maintenance burden"
+
+Example 3: Greenhouse Production Schedule for Spring Annuals
+"10,000 sq ft Commercial Greenhouse - Spring Bedding Plant Production:
+
+Production Goal: Produce 50,000 units (flats and 4" pots) of spring annuals for retail sales April 15 - June 1
+
+Crop Planning:
+
+1. Crop Mix (Based on Market Demand):
+   - Petunias: 15,000 units (30%) - High demand, long bloom
+   - Impatiens: 10,000 units (20%) - Shade bedding staple
+   - Marigolds: 8,000 units (16%) - Easy, reliable
+   - Geraniums: 7,000 units (14%) - Higher value, cuttings
+   - Tomato transplants: 5,000 units (10%) - Vegetable starts
+   - Specialty annuals: 5,000 units (10%) - Salvia, verbena, calibrachoa
+
+2. Sowing Schedule (Working Backward from Sale Date):
+
+Crop         | Weeks to Finish | Seed/Start Date | Sale Date Range
+Tomatoes     | 6-7 weeks      | March 1         | April 15-May 15
+Petunias     | 10-12 weeks    | February 1      | April 20-June 1
+Impatiens    | 12-14 weeks    | January 15      | May 1-June 1
+Marigolds    | 7-8 weeks      | March 1         | April 20-May 30
+Geraniums    | 12-14 weeks*   | January 1*      | April 15-May 30
+Salvia       | 8-10 weeks     | February 15     | April 25-May 30
+
+*Geraniums from rooted cuttings received January 1
+
+3. Growing Conditions by Crop:
+
+Petunias (Petunia × hybrida):
+- Germination: 70-75°F, 5-7 days, light required
+- Growing: 62-65°F nights, 70-75°F days
+- Fertilization: 150-200 ppm N constant liquid feed (20-10-20)
+- Pinch once at 4-5 true leaves for branching
+- Growth regulators: B-Nine 2500 ppm if stretching
+- Common issues: Botrytis if too wet/humid, aphids, whiteflies
+
+Impatiens (Impatiens walleriana):
+- Germination: 72-75°F, 7-10 days, needs light
+- Growing: 65-68°F nights, consistent moisture critical
+- Fertilization: 100-150 ppm N constant feed (20-10-20)
+- Shade required (50% shadecloth) to prevent leaf scorch
+- Pinch for branching, use growth retardant (B-Nine) sparingly
+- Common issues: Impatiens downy mildew (use resistant varieties), pythium root rot if overwatered
+
+Tomatoes (Solanum lycopersicum):
+- Germination: 75-80°F, 5-7 days
+- Growing: 60-65°F nights, 70-75°F days, high light
+- Fertilization: 200-250 ppm N (20-10-20), transition to 15-5-15 at transplant
+- Transplant from plug tray to 4" pot at 2-3 true leaves
+- Harden off 7-10 days before sale (reduce temperature, water stress)
+- Provide plant tags with variety info and care instructions
+
+4. Integrated Pest Management:
+
+Monitoring:
+- Weekly scouting with yellow sticky cards (monitor for fungus gnats, whiteflies, aphids)
+- Inspect new plant shipments for pests before placing in greenhouse
+- Check for disease symptoms during irrigation (botrytis, root rots)
+
+Prevention:
+- Sanitation: Clean benches, remove plant debris daily, disinfect pots/flats
+- Proper spacing for air circulation (avoid overcrowding)
+- Water early in day so foliage dries before evening
+- Screen vents to exclude pests
+- Quarantine suspect plants immediately
+
+Biological Controls:
+- Release beneficial insects preventively:
+  * Encarsia formosa (parasitoid wasp) for whitefly control
+  * Aphidius colemani (parasitoid wasp) for aphids
+  * Hypoaspis miles (predatory mite) for fungus gnats
+- Apply Bacillus thuringiensis var. israelensis (Gnatrol) for fungus gnat larvae in growing media
+
+Chemical Controls (Spot Treatment Only):
+- Rotate insecticides to prevent resistance (Safari, Conserve, Endeavor)
+- Use selective products compatible with biological controls when possible
+- Follow label strictly for PHI, application rates, PPE
+
+5. Production Costs & Pricing:
+
+Input Costs (per unit average):
+- Seed or cutting: $0.15
+- Growing media: $0.10
+- Container (4" pot or cell pack): $0.12
+- Fertilizer & chemicals: $0.08
+- Labor (sowing, transplanting, care): $0.30
+- Utilities (heat, electric): $0.15
+- Overhead (depreciation, insurance): $0.10
+Total cost per unit: $1.00
+
+Wholesale Pricing:
+- 4" pots: $1.75 (75% margin)
+- 6-cell flats: $3.50 (75% margin)
+- 4-packs: $2.00 (50% margin)
+
+Revenue Projection:
+- 50,000 units × $1.75 average wholesale = $87,500 gross revenue
+- Cost of production: $50,000
+- Gross profit: $37,500
+- Net profit margin: 43% (after fixed costs)
+
+6. Post-Harvest & Sales:
+
+Quality Control at Sale:
+- Plants fully rooted, no root-bound specimens
+- Compact, well-branched habit
+- Free of pests and diseases
+- Color showing (buds or flowers present)
+- Proper labeling with variety and care instructions
+
+Retail Display:
+- Group by sun requirements (sun, part-shade, shade)
+- Maintain consistent watering (automated drip for displays)
+- Monitor for stress and cull substandard plants
+- Rotate stock (first in, first out)
+
+Unsold Inventory Management:
+- Discount end-of-season inventory (June) by 30-50%
+- Transplant select specimens to larger containers for later summer sales
+- Dispose of poor-quality plants (do not sell substandard material)
+
+Lessons Learned from Season:
+- Early petunia sales strongest (start additional crop 2 weeks earlier next year)
+- Impatiens downy mildew resistant varieties (SunPatiens) in high demand - expand production
+- Tomato transplants sold out quickly - increase production 20%
+- Geranium zonal varieties outperform seed geraniums - consider all cutting-propagated next year
+- Automated watering system ROI positive - reduced labor 15%"
+
