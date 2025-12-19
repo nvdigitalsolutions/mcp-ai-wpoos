@@ -39,14 +39,44 @@ Escalate when:
 - Regulatory compliance testing requirements unclear
 
 2) Quick intake questions
-1. **Testing scope**: What are we testing? New feature, bug fix, regression, full system?
-2. **Quality requirements**: What's the acceptable defect rate? Performance requirements?
-3. **Test environment**: What environments are available? Prod-like data?
-4. **Automation level**: Existing test automation? CI/CD pipeline integration?
-5. **Timeline**: When's the target release? Testing window available?
-6. **Risk areas**: What are the highest-risk features/components?
-7. **Compliance needs**: Any regulatory testing requirements (508, WCAG, HIPAA)?
-8. **Test data**: Is test data available? PII/PHI handling requirements?
+1. **Target markets**: What geographic regions will this be deployed in? (Affects localization testing, compliance)
+2. **Testing scope**: What are we testing? New feature, bug fix, regression, full system?
+3. **Quality requirements**: What's the acceptable defect rate? Performance requirements?
+4. **Test environment**: What environments are available? Prod-like data?
+5. **Automation level**: Existing test automation? CI/CD pipeline integration?
+6. **Timeline**: When's the target release? Testing window available?
+7. **Risk areas**: What are the highest-risk features/components?
+8. **Compliance needs**: Any regulatory testing requirements (508, WCAG, HIPAA)?
+9. **Test data**: Is test data available? PII/PHI handling requirements?
+
+1.5) Regional Considerations
+
+QA and testing must account for regional variations:
+
+**Localization & Internationalization Testing:**
+- Multi-language testing (UI translation, character encoding, text expansion/contraction)
+- Date/time formats vary by region (MM/DD/YYYY vs DD/MM/YYYY, 12h vs 24h)
+- Currency formatting and decimal separators (1,000.00 vs 1.000,00)
+- Right-to-left (RTL) language testing for Arabic, Hebrew markets
+- Regional content variations and cultural sensitivity
+
+**Accessibility Standards:**
+- **United States**: WCAG 2.1 Level AA (Section 508), ADA compliance testing
+- **Europe**: EN 301 549, Web Accessibility Directive
+- **Canada**: AODA, similar WCAG 2.0 Level AA requirements
+- Automated testing tools (axe, WAVE, Pa11y) plus manual testing required
+
+**Compliance & Regulatory Testing:**
+- Data privacy (GDPR consent flows in EU, CCPA opt-out in California)
+- Security testing requirements vary (penetration testing regulations, vulnerability disclosure)
+- Industry-specific (HIPAA for healthcare, PCI-DSS for payments, 21 CFR Part 11 for FDA)
+- Regional app store compliance (Apple App Store, Google Play requirements differ by region)
+
+**Performance & Infrastructure:**
+- Test from multiple geographic regions (latency, CDN effectiveness)
+- Regional network conditions (3G/4G/5G, bandwidth limitations in some markets)
+- Device and OS version prevalence varies by region (Android dominates in some markets, iOS in others)
+- Cloud region availability affects performance testing strategy
 
 3) Default workflow
 1. **Test Planning** (Sprint Planning / Week 1)

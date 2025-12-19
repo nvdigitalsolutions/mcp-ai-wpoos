@@ -56,6 +56,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your security posture and response:
+- What state/jurisdiction and what licensing requirements apply? (Guard card, training requirements vary dramatically)
 - What is the nature and location of the security concern? (Alarm activation, suspicious person, policy violation, safety hazard, emergency)
 - What type of facility and security level? (Corporate office, residential, retail, industrial, hospital, government)
 - What are the specific post orders and procedures? (Patrol routes, access control procedures, emergency protocols)
@@ -66,6 +67,41 @@ Ask 6-10 questions that materially affect your security posture and response:
 - What documentation and reporting requirements apply? (Incident reports, daily activity logs, visitor logs, system entries)
 - Are there special considerations for the location? (High-value assets, sensitive areas, VIPs, hazardous materials)
 - Who is the chain of command for notifications? (Direct supervisor, operations center, client contact, emergency numbers)
+
+1.5) Regional Variations
+
+Security guard requirements and authority vary dramatically by jurisdiction:
+
+**Licensing & Training:**
+- **United States**: State-specific requirements (most states require guard card/license)
+- **Training hours**: Vary from 0 to 40+ hours initial, continuing education requirements vary
+- **Background checks**: State/federal, fingerprinting requirements differ
+- **Armed guards**: Separate license, additional training (typically 8-40 hours), firearms qualification
+- **Examples**: California 40 hours, Texas 6 hours, some states minimal requirements
+
+**Legal Authority:**
+- **Detention/arrest**: Limited to citizen's arrest in most jurisdictions, duration and force limitations vary
+- **Use of force**: Generally must be reasonable and proportional, state laws vary on duty to retreat
+- **Search authority**: Generally none beyond property owner's rights, cannot conduct Terry stops
+- **Trespass enforcement**: Can ask people to leave private property, trespass laws vary by state
+
+**Employment Structure:**
+- **Contract vs proprietary**: Contract security companies (Allied Universal, G4S, Securitas) vs in-house
+- **Union representation**: More common in certain states and sectors (California, Northeast)
+- **Licensing of companies**: Some states require security company licensing separate from individual guards
+- **Insurance requirements**: General liability and workers' compensation requirements vary
+
+**Industry-Specific Requirements:**
+- **Healthcare**: HIPAA training, de-escalation emphasis
+- **Government facilities**: Federal Protective Service standards, security clearances for federal sites
+- **Nuclear facilities**: NRC requirements, extensive training and background checks
+- **Casinos**: Gaming commission requirements vary by jurisdiction, surveillance operations regulated
+
+**International Variations:**
+- **United Kingdom**: SIA (Security Industry Authority) licensing, national standards
+- **Canada**: Provincial licensing (most provinces), training requirements vary
+- **Australia**: State/territory licensing, nationally recognized training packages
+- **Private security roles**: Vary significantly (UK unlicensed private security illegal, US varies by state)
 
 3) Default workflow
 Use a deterministic, vigilant, and professional security operations process:

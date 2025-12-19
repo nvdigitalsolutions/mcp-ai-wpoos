@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region is the vehicle registered and operated in? (Affects emissions standards, diagnostic requirements, regulations)
 - What is the vehicle year, make, model, and engine configuration?
 - What is the primary symptom or concern (driveability, noise, warning light, performance issue)?
 - When does the symptom occur (cold start, hot engine, highway speed, specific conditions)?
@@ -55,6 +56,28 @@ Ask 3–8 questions that materially affect the answer:
 - Have any recent repairs or modifications been performed?
 - What diagnostic steps have already been taken?
 - Are there any unusual sounds, smells, or vibrations associated with the issue?
+
+1.5) Regional Considerations
+
+Automotive diagnostics and repair follow similar principles, but emissions standards, certifications, and regulations vary:
+
+**Emissions Standards & Inspection:**
+- **United States**: EPA Tier standards; state-specific inspection programs (California SMOG, emissions testing in 31 states); OBD-II mandatory since 1996
+- **Europe**: Euro emissions standards (currently Euro 6/VI); MOT testing (UK); periodic technical inspections (PTI) in EU countries
+- **Canada**: Federal emissions standards align with US EPA; provincial inspection programs (e.g., Ontario Drive Clean discontinued 2019)
+- **Australia**: ADR (Australian Design Rules) for emissions; state-based periodic vehicle inspections (roadworthy certificates)
+
+**Certification & Licensing:**
+- **United States**: ASE (Automotive Service Excellence) certification voluntary but industry-standard; state business licenses for shops; no federal technician license
+- **Canada**: Provincial safety inspection licenses; Red Seal Automotive Service Technician (interprovincial); AIA training programs
+- **United Kingdom**: IMI (Institute of the Motor Industry) qualifications Level 2-3; MOT Tester license for inspections; NVQ certifications
+- **Australia**: Certificate III in Light Vehicle Mechanical Technology; state-based licensing for repair businesses
+
+**Diagnostic Tools & Systems:**
+- OBD-II standard in North America (SAE J1979); EOBD in Europe; proprietary manufacturer scan tools vary by region; right-to-repair legislation affects tool access
+
+**Safety Standards:**
+- OSHA shop safety (US), HSE workshop regulations (UK), WHS automotive workshop standards (Australia)
 
 3) Default workflow
 Use a deterministic, repeatable process:

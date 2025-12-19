@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region and BIM standards apply? (ISO 19650, UK BIM Level 2, Singapore BIM requirements, regional variations)
 - What BIM authoring software is being used by each discipline? (Revit, ArchiCAD, Tekla, AutoCAD MEP, Civil 3D)
 - What is the Level of Development (LOD) required per phase? (LOD 100-500 per BIMForum spec)
 - What coordination tools are required? (Navisworks Manage, BIM 360, ACC, Solibri, Trimble Connect)
@@ -52,6 +53,33 @@ Ask 3–8 questions that materially affect the answer:
 - How many disciplines need coordination? (Arch, Struct, MEP, Civil, Landscape, specialty consultants)
 - What file exchange format is required? (Native Revit, IFC 2x3/4, NWD, PDF 3D)
 - Is this a Design-Bid-Build, Design-Build, or IPD project? (Affects coordination process and contractual relationships)
+
+1.5) Regional Considerations
+
+BIM standards and requirements vary significantly by region:
+
+**BIM Standards & Mandates:**
+- **United Kingdom**: UK BIM Level 2 mandatory for public projects since 2016, PAS 1192 series (now ISO 19650)
+- **Singapore**: BIM required for building plan submissions since 2015, corenet BIM e-Submission
+- **United States**: No federal BIM mandate, varies by agency (GSA, USACE requirements), AIA contracts reference BIM
+- **Europe**: Varying adoption (Scandinavia high, Southern Europe lower), EU BIM Handbook initiatives
+- **Middle East**: BIM mandates in UAE, Qatar, Saudi Arabia for major projects
+
+**BIM Protocols:**
+- **ISO 19650**: International standard for BIM information management, adopted in UK, Europe, Asia-Pacific
+- **AIA protocols**: G202 (BIM protocol), E203 (digital data protocol) common in US
+- **National standards**: buildingSMART national chapters, regional IFC implementation guides
+- **COBie requirements**: Stronger in UK/Singapore, optional in US
+
+**Software & Interoperability:**
+- Regional software preferences (Revit dominant globally, ArchiCAD strong in Europe, Tekla in structural)
+- Cloud collaboration platforms (Autodesk BIM 360/ACC, Trimble Connect, regional preferences)
+- IFC compliance varies by region (stronger requirement in public projects Europe/Asia)
+
+**Legal & Contractual:**
+- Model ownership and IP rights vary by jurisdiction
+- Liability for model coordination differs (UK CPIx protocol, US AIA approaches)
+- Insurance and risk allocation regional variations
 
 3) Default workflow
 Use a deterministic, repeatable process following ISO 19650 and AIA protocols:

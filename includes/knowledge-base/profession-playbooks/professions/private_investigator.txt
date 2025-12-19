@@ -56,6 +56,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your investigative approach and legal parameters:
+- What state/jurisdiction are you licensed in and where will investigation occur? (Licensing laws vary dramatically)
 - What is the purpose and objective of the investigation? (Legal case, insurance claim, due diligence, personal matter)
 - Who is the client and what is their relationship to the matter? (Attorney, insurance company, business, individual)
 - What specific information or evidence is being sought? (Proof of activity, location of person, background information, assets)
@@ -66,6 +67,39 @@ Ask 6-10 questions that materially affect your investigative approach and legal 
 - What jurisdictions are involved? (State licensing requirements, multi-state issues, international concerns)
 - What information is already known about the subject? (Name, address, description, vehicle, employment, habits)
 - Are there safety concerns or risk factors? (Dangerous subject, weapons, criminal history, hostile environment)
+
+1.5) Regional Variations
+
+Private investigation is heavily regulated with major state/jurisdiction differences:
+
+**Licensing Requirements:**
+- **United States**: State-specific licensing (47 states require license, Alabama/Colorado/Idaho/Wyoming/South Dakota exempt)
+- **Requirements vary**: Background checks, experience (0-3 years), exams, insurance, bond, fees
+- **Reciprocity**: Very limited, most states require separate license for multi-state work
+- **Federal**: No federal PI license, but some federal investigations require federal background
+
+**Surveillance Laws:**
+- **United States**: One-party vs two-party consent states for recording (12 states require all-party consent)
+- **GPS tracking**: State laws vary dramatically (some prohibit without vehicle owner consent)
+- **Photography**: Generally legal in public spaces, but harassment/stalking laws apply
+- **Europe**: GDPR significantly restricts surveillance and data collection, stricter privacy protections
+
+**Investigative Authority:**
+- **United States**: No arrest powers (except citizen's arrest where available), no search warrant authority
+- **Access to records**: DPPA (Driver's Privacy Protection Act) limits DMV access, FCRA governs consumer reports
+- **Pretexting**: Illegal under federal law (Gramm-Leach-Bliley for financial records)
+- **Trespass laws**: Vary by state, no special exemptions for PIs
+
+**Practice Restrictions:**
+- **Scope limitations**: Some states restrict types of work (domestic only, no criminal defense)
+- **Armed PI licenses**: Separate requirements in most states, training and background checks
+- **Business entity rules**: Some states require PI business ownership by licensed PI
+- **Continuing education**: Required in many states (8-40 hours biennially)
+
+**Professional Standards:**
+- **Ethics codes**: National associations (NALI, WAD) have codes, not legally binding
+- **Confidentiality**: Attorney work product protections vary by state and case type
+- **Testifying**: Fact witness vs expert witness rules, admissibility standards vary by jurisdiction
 
 3) Default workflow
 Use a deterministic, legal, and thorough investigative process:

@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this masonry work be performed in? (Affects building codes, standards, measurement systems)
 - What is the project type (new construction, repair, restoration, veneer, structural masonry)?
 - What masonry units are preferred (brick, stone, concrete block, combination)?
 - What is the building type and use (residential, commercial, load-bearing, non-load-bearing)?
@@ -53,6 +54,31 @@ Ask 3–8 questions that materially affect the answer:
 - What is the existing condition of the structure (if repair/restoration work)?
 - What are the exposure conditions (interior, exterior, ground contact, freeze-thaw cycles)?
 - What aesthetic preferences exist (bond pattern, joint finish, color matching)?
+
+1.5) Regional Considerations
+
+Masonry construction follows universal structural principles, but codes, materials, and standards vary:
+
+**Building Codes & Standards:**
+- **United States**: IBC Chapter 21 (Masonry); TMS 402/602 (Building Code Requirements for Masonry Structures); ACI 530; state/local amendments
+- **Canada**: CSA A371 (Masonry Construction); National Building Code masonry provisions; metric units standard
+- **United Kingdom**: BS EN 1996 (Eurocode 6 - Design of Masonry Structures); BS 5628 (older UK code); emphasis on sustainability
+- **Australia**: AS 3700 (Masonry Structures); AS 4773 (Masonry in Small Buildings)
+
+**Measurement Systems:**
+- **United States**: Imperial measurements (8" x 4" x 2⅜" modular brick); mortar joint 3/8" typical
+- **Canada/International**: Metric measurements (190mm x 90mm x 57mm brick); 10mm joint typical
+
+**Materials & Standards:**
+- **North America**: ASTM C55 (Concrete Block), C62/C216 (Clay Brick), C270 (Mortar); Type N/S/M mortar designations
+- **Europe/UK**: EN standards for masonry units; mortar designation by strength (M4, M6, M12); different brick/block sizing
+- **Australia**: AS/NZS 4456 (Masonry Units); AS 3700 mortar designation by compressive strength
+
+**Licensing & Apprenticeship:**
+- **United States**: State licensing varies (contractor license common, trade certification voluntary); NCCER, BAC/IMI training programs
+- **Canada**: Red Seal Bricklayer (interprovincial); provincial apprenticeship programs (typically 3 years)
+- **UK**: NVQ Level 2-3 in Trowel Occupations; CSCS card for construction sites
+- **Australia**: Certificate III in Bricklaying/Blocklaying; state licensing for contractors
 
 3) Default workflow
 Use a deterministic, repeatable process:

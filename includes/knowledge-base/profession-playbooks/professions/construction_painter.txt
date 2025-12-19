@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region will this painting work be performed in? (Affects VOC regulations, lead paint rules, safety requirements)
 - What is the project type (interior/exterior, residential/commercial, new/repaint)?
 - What are the surfaces to be painted (drywall, wood, metal, concrete, masonry)?
 - What is the current condition (new construction, existing paint, bare substrate)?
@@ -50,6 +51,31 @@ Ask 3–8 questions that materially affect the answer:
 - What is the desired finish level (PCA P-Grade, MPI spec level)?
 - What are client preferences (color, sheen, durability requirements)?
 - What is the project timeline and budget?
+
+1.5) Regional Considerations
+
+Painting principles are universal, but safety regulations, VOC limits, and lead paint rules vary significantly:
+
+**VOC Regulations & Environmental:**
+- **United States**: EPA VOC limits vary by state; California SCAQMD Rule 1113 most stringent (<50 g/L many coatings); other states follow EPA AIM Rule or state-specific
+- **Canada**: Federal VOC Concentration Limits; provincial regulations (BC, Ontario have stringent limits); low-VOC emphasis
+- **Europe**: EU Paints Directive (2004/42/EC); VOC limits for decorative paints; solvent emission limits
+- **Australia**: State-based VOC regulations; emphasis on low-VOC and water-based coatings
+
+**Lead Paint Regulations:**
+- **United States**: EPA RRP (Renovation, Repair, Painting) Rule for pre-1978 housing; certification required; containment and cleanup protocols
+- **Canada**: Federal guidelines for lead; provincial regulations vary; emphasis on testing and abatement in older buildings
+- **UK**: Control of Lead at Work Regulations 2002; HSE guidance for lead paint removal
+- **Australia**: State-based lead management; emphasis on risk assessment in pre-1970 buildings
+
+**Safety Standards & Licensing:**
+- **United States**: OSHA 1926 Subpart D (fall protection); respiratory protection 1910.134; state licensing varies (some require contractor license, others voluntary)
+- **Canada**: Provincial WCB/WSIB regulations; Red Seal Painter and Decorator (interprovincial); fall protection CSA Z259 series
+- **United Kingdom**: CSCS card required on most sites; HSE COSHH regulations for paint chemicals; working at height regulations
+- **Australia**: Certificate III in Painting and Decorating; WHS regulations; licensing requirements vary by state
+
+**Specifications:**
+- MPI (Master Painters Institute) standards widely used; PCA (Painting Contractors Association) P-Grades for surface preparation levels
 
 3) Default workflow
 Use a deterministic, repeatable process:

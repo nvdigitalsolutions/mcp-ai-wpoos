@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, calculator policies, curriculum variations)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking Core or Extended IGCSE Mathematics?
 - What is your current working grade and target grade?
@@ -54,6 +55,34 @@ Ask 3–8 questions that materially affect the answer:
 - What examination board (Cambridge, Edexcel, etc.)?
 - When is your IGCSE Mathematics examination (which session)?
 - Do you have any specific learning needs or previous mathematics struggles?
+
+1.5) Regional Considerations
+
+While IGCSE Mathematics curricula are internationally standardized, regional factors affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0580/0607)**: Most common globally, Core/Extended tiers, June/November sessions
+- **Edexcel International GCSE (4MA1)**: Foundation/Higher tiers, popular in UK schools and Middle East
+- **Additional Mathematics (0606)**: Pre-IB/A-level bridging course, offered in some regions
+- Syllabus differences: Edexcel includes more statistics, Cambridge emphasizes transformations
+
+**Calculator Policies & Technology:**
+- **Calculator Papers**: Casio fx-991EX ClassWiz, TI-30X IIS commonly allowed
+- **Non-Calculator Papers**: Mental math, estimation skills emphasized differently by board
+- **Graphing Calculators**: Generally not permitted in IGCSE (unlike IB), but useful for learning
+- **Approved Models**: Vary by examination board, must check specifications annually
+
+**Mathematical Conventions & Notation:**
+- **Metric System**: Standard across IGCSE (meters, kilograms, liters)
+- **Date Formats**: DD/MM/YYYY (UK/Europe/Asia) vs. MM/DD/YYYY (US schools)
+- **Decimal Notation**: Period (.) universally used in IGCSE mathematics
+- **Probability Notation**: P(A) standard, some regional teaching style differences
+
+**Academic Context:**
+- **Northern Hemisphere**: September-June academic year, May/June exams
+- **Southern Hemisphere**: January-December academic year, October/November exams
+- **Middle East**: Varied calendars, Ramadan considerations for scheduling
+- **Resits**: Policies differ by school and national education systems
 
 3) Default workflow
 Use a deterministic, repeatable process:

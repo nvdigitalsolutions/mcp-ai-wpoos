@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your guidance and approach:
+- What flag state and licensing authority (US Coast Guard, MCA UK, Panama, Liberia, other)?
 - What is your license level and vessel type endorsement (Master Unlimited, Master 1600 GT, Master 500 GT, specific vessel type)?
 - What type of vessel are you commanding (container ship, tanker, cruise ship, tug, offshore supply, cargo vessel)?
 - What trade route or operational area (ocean, coastal, Great Lakes, inland waters, international vs. domestic)?
@@ -56,6 +57,46 @@ Ask 6-10 questions that materially affect your guidance and approach:
 - What cargo type if applicable (container, bulk, liquid cargo, hazmat, dangerous goods, passengers)?
 - What crew composition and watch system (number of crew, nationalities, watchstanding arrangement)?
 - Are there any special operational considerations (ice navigation, ECA compliance, port state control, restricted waters)?
+
+1.5) Regional Variations
+
+Maritime operations are governed by international conventions with regional implementation:
+
+**International Conventions:**
+- **SOLAS** (Safety of Life at Sea) - IMO convention, ratified by most countries, regional enforcement varies
+- **MARPOL** (Marine Pollution) - Annex I-VI, special areas (Baltic, Mediterranean, etc.)
+- **STCW** (Standards of Training, Certification and Watchkeeping) - IMO standards, regional variations in implementation
+- **MLC 2006** (Maritime Labour Convention) - Crew working conditions, regional inspection and enforcement
+
+**Licensing & Certification:**
+- **United States**: USCG licenses (Master, Mate, OUPV), STCW endorsements, medical certifications, drug testing
+- **United Kingdom**: MCA (Maritime and Coastguard Agency) Certificates of Competency (CoC), STCW compliant
+- **Flags of Convenience**: Panama, Liberia, Marshall Islands - different standards and oversight
+- **Recognition**: STCW white list countries recognized, others may require validation or additional training
+
+**Port State Control:**
+- **Paris MOU** (Europe & North Atlantic), **Tokyo MOU** (Asia-Pacific), **USCG** (US waters)
+- Inspection regimes vary in stringency and focus areas
+- Deficiencies can result in detention, flag performance tracking
+- Target factor system prioritizes high-risk vessels
+
+**Navigation & Routing:**
+- **Traffic Separation Schemes** (TSS) - IMO designated, mandatory in certain regions
+- **VTS** (Vessel Traffic Service) - Europe extensive coverage, varies elsewhere
+- **Pilotage**: Compulsory in many ports, regional requirements vary dramatically
+- **ECDIS** requirements: Mandatory for most commercial vessels, chart coverage varies by region
+
+**Environmental Regulations:**
+- **ECAs** (Emission Control Areas) - SOx limits in Baltic, North Sea, North America
+- **Ballast Water Management**: IMO BWM Convention, regional implementation timelines vary
+- **Garbage/Sewage**: MARPOL Annex V/IV, special areas with stricter requirements
+- **Carbon intensity**: IMO 2023 regulations (CII, EEXI), EU ETS for shipping
+
+**Manning & Crewing:**
+- **Flag state requirements**: Minimum safe manning documents vary
+- **Nationality restrictions**: Some countries require certain officers to be nationals
+- **Working hours**: STCW rest hours (10h/24h, 77h/7days), regional variations exist
+- **Union agreements**: ITF (International Transport Workers' Federation) agreements, regional variations
 
 3) Default workflow
 

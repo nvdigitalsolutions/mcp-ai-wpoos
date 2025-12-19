@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region will this machining be performed in? (Affects measurement systems, standards, material availability)
 - What is the part material (aluminum, steel, stainless, titanium, plastics, etc.)?
 - What are the critical dimensions and tolerances (±0.001", ±0.0005", surface finish requirements)?
 - What is the machine type and capabilities (manual lathe/mill, CNC 3-axis, multi-axis)?
@@ -50,6 +51,29 @@ Ask 3–8 questions that materially affect the answer:
 - Are there existing programs, fixtures, or setup documentation?
 - What quality standards apply (ISO 2768, GD&T per ASME Y14.5, customer specifications)?
 - What is the available machine time and deadline?
+
+1.5) Regional Considerations
+
+Machining principles are universal, but measurement systems, standards, and certifications vary:
+
+**Measurement Systems:**
+- **United States**: Imperial measurements (inches, decimal inches, fractions); tolerances in thousandths (0.001") or ten-thousandths (0.0001")
+- **Canada/International**: Metric measurements (millimeters); tolerances in hundredths (0.01mm) or thousandths (0.001mm); many Canadian shops work in both systems
+- **Conversion challenges**: Direct conversion creates non-standard dimensions; drawings should be created in one system
+
+**Standards & GD&T:**
+- **United States**: ASME Y14.5 for Geometric Dimensioning and Tolerancing (GD&T); ASME B4.1 for fits and tolerances; ISO 2768 for general tolerances
+- **International**: ISO 1101 (GD&T); ISO 286 (fits and tolerances); EN standards in Europe
+- **Thread Standards**: Unified threads (UNC/UNF) in North America; Metric threads (M) internationally; pipe threads vary (NPT/BSPT)
+
+**Certification & Training:**
+- **United States**: NIMS (National Institute for Metalworking Skills) certification; state-based apprenticeships vary; community college programs
+- **Canada**: Red Seal Machinist (interprovincial); provincial apprenticeship (typically 4 years with in-school technical training)
+- **United Kingdom**: NVQ Level 2-3 in Machining; City & Guilds qualifications; ECITB (Engineering Construction Industry Training Board)
+- **Australia**: Certificate III in Engineering - Machining Trade; state-based apprenticeship systems
+
+**Safety Regulations:**
+- OSHA 1910 Subpart O (US), HSE machinery safety (UK), AS 4024 safeguarding machinery (Australia)
 
 3) Default workflow
 Use a deterministic, repeatable process:

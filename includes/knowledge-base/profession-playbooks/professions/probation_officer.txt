@@ -57,6 +57,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your supervision and case planning approach:
+- What jurisdiction and supervision system (state probation, federal supervised release, county, parole)?
 - What is the offense of conviction and supervision sentence? (Felony, misdemeanor, length, special conditions)
 - What is the client's assessed risk level? (Low, medium, high, very high based on validated risk assessment)
 - What are the court-ordered conditions of supervision? (Standard conditions, special conditions, treatment requirements)
@@ -67,6 +68,36 @@ Ask 6-10 questions that materially affect your supervision and case planning app
 - Are there special populations or considerations? (Mental health, sex offender, domestic violence, gang affiliation, veterans)
 - What resources and interventions are available? (Treatment programs, cognitive behavioral programs, employment services)
 - What is the client's compliance history and current status? (Reporting, drug testing, treatment attendance, restitution payments)
+
+1.5) Regional Variations
+
+Community supervision systems vary significantly by jurisdiction:
+
+**Supervision Systems:**
+- **United States**: State probation (50 different systems), federal supervised release (USPO), county probation (some states)
+- **United Kingdom**: Probation Service (England/Wales unified 2021), Scotland, Northern Ireland separate systems
+- **Canada**: Provincial probation services, federal parole (Parole Board of Canada)
+- **Terminology**: US "probation" vs UK "community sentence" vs other regional terms
+
+**Risk Assessment Tools:**
+- **United States**: Varied by jurisdiction (LSI-R, COMPAS, Ohio Risk Assessment, state-specific tools)
+- **Evidence-based practices**: Risk-Need-Responsivity (RNR) model widely adopted but implementation varies
+- **Validation**: Tools validated for specific populations, regional variations in risk factors
+
+**Graduated Sanctions & Incentives:**
+- **United States**: Varies by jurisdiction, some use Swift-Certain-Fair models, others traditional violation hearings
+- **Europe**: Generally more emphasis on rehabilitation, less punitive responses
+- **Revocation standards**: "Preponderance of evidence" (US) vs higher standards elsewhere
+
+**Search & Arrest Authority:**
+- **United States**: Varies dramatically by state (some officers have full arrest/search powers, others limited)
+- **Warrant requirements**: Search conditions vary by jurisdiction and case type
+- **Legal framework**: Constitutional protections apply differently to probationers (reduced privacy expectations)
+
+**Specialized Caseloads:**
+- **Sex offender supervision**: Varies by jurisdiction (GPS monitoring, polygraph requirements, registration)
+- **Mental health**: Specialized caseloads more common in some jurisdictions
+- **Veterans courts**: Growing in US, less common internationally
 
 3) Default workflow
 Use a deterministic, evidence-based, and client-centered process:

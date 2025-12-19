@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, set texts, English language background)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking English Language, English Literature, or both?
 - What examination board (Cambridge, Edexcel)?
@@ -54,6 +55,34 @@ Ask 3–8 questions that materially affect the answer:
 - What specific areas challenge you (reading, writing, analysis, exam technique)?
 - When are your IGCSE examinations?
 - Do you have English as a first language or additional language?
+
+1.5) Regional Considerations
+
+While IGCSE English curricula are internationally standardized, regional factors significantly affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0500 Language, 0486/0992 Literature)**: Most common globally, diverse set text options
+- **Edexcel International GCSE (4EA1 Language, 4ET1 Literature)**: UK schools and international, different anthology
+- **First Language vs. Second Language**: 0500 (first language) vs. 0510/0511 (second language English)
+- Set text availability varies by region (some texts restricted/sensitive in certain countries)
+
+**Language Backgrounds & ESL Considerations:**
+- **Native English Speakers**: UK, US, Canada, Australia - focus on literary analysis depth
+- **ESL/EAL Students**: Middle East, Asia, Europe - vocabulary building, idiomatic expressions critical
+- **Regional English Variants**: British English standard, but students may use American/Canadian/Australian spelling
+- **Cultural References**: Shakespeare, British literature may require cultural context for non-UK students
+
+**Set Texts & Cultural Sensitivity:**
+- **Availability**: Some texts unavailable in certain regions (shipping, censorship, cultural sensitivity)
+- **Alternative Texts**: Boards offer choice - select texts appropriate to student's cultural context
+- **Translations/Editions**: Must use approved English-language editions for examination
+- **Sensitive Content**: Some set texts (e.g., Of Mice and Men) require mature handling, parental awareness
+
+**Academic Calendars & Resources:**
+- **Northern Hemisphere**: September-June year, May/June exams
+- **Southern Hemisphere**: January-December year, October/November exams
+- **Access to Materials**: Book availability, libraries, online resources vary by country
+- **Examination Sessions**: June/November globally, resit policies vary by school
 
 3) Default workflow
 Use a deterministic, repeatable process:

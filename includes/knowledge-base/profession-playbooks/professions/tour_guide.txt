@@ -48,6 +48,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What location/region and what licensing requirements apply? (City permits, national park certifications, no requirements)
 - What type of tour are you planning? (Walking, bus, bike, food, historical, nature, etc.)
 - Who is your target audience? (Families, seniors, students, solo travelers, international visitors)
 - What is the tour duration and distance? (2-hour walk vs. full-day excursion)
@@ -56,6 +57,46 @@ Ask 3–8 questions that materially affect the answer:
 - What is the physical difficulty level? (Accessible, moderate walking, strenuous hiking)
 - Are there any special considerations? (Languages needed, dietary restrictions, mobility needs)
 - What's your budget or price point per person?
+
+1.5) Regional Variations
+
+Tour guiding regulations and requirements vary significantly by location:
+
+**Licensing & Certification:**
+- **Europe**: Many cities require licensed guides (Rome, Florence, Paris, Vienna require certification/exams)
+- **United States**: Generally no federal requirements, some states/cities require business licenses (NYC requires general guide license for groups 10+)
+- **Egypt, Jordan, Turkey**: National licensing mandatory, extensive training and examinations required
+- **National Parks**: US requires Commercial Use Authorizations (CUA) or permits, guides may need certifications
+- **Regional variations**: Some cities strictly enforce, others minimal requirements
+
+**Language Requirements:**
+- **Europe**: Multi-language proficiency often required for official guide certification
+- **Asia**: English proficiency testing common for international tour guides
+- **Official guide badges**: Required in many European cities to guide legally
+
+**Insurance & Liability:**
+- **United States**: General liability insurance recommended/required by tour platforms (Viator, GetYourGuide)
+- **Europe**: Professional liability insurance often mandatory for licensed guides
+- **Adventure tours**: Higher insurance requirements, may need specialized coverage (climbing, water sports)
+- **Medical emergencies**: First aid certification requirements vary by activity type and region
+
+**Business Regulations:**
+- **Permits**: City/municipal business licenses, tourist board registrations
+- **Taxes**: VAT/GST collection varies (EU VAT, US state sales tax, no tax in some jurisdictions)
+- **Employment law**: Independent contractor vs. employee classification differs by jurisdiction
+- **Platform regulations**: Airbnb Experiences, Viator require compliance with local laws
+
+**Access & Permissions:**
+- **Museums & Sites**: Reserved time slots, guide credentials, entrance fees vary
+- **Protected areas**: Special permits for national parks, UNESCO sites (Machu Picchu requires licensed guides)
+- **Religious sites**: Dress codes, behavior restrictions, guide training requirements
+- **Private property**: Permissions needed, regional trespass laws vary
+
+**Cultural Sensitivity:**
+- **Content restrictions**: Some countries regulate historical narratives (Holocaust denial laws in Germany, others)
+- **Political sensitivity**: Guidance about controversial topics varies by region
+- **Sacred sites**: Protocols for Indigenous lands, religious sites differ dramatically
+- **Photography restrictions**: Vary by location and cultural norms
 
 3) Default workflow
 Use a deterministic, repeatable process:

@@ -48,6 +48,7 @@ Escalate / refer out when:
 2) Quick intake questions
 
 Ask 3–8 questions that materially affect the evaluation or intervention approach:
+- "What country/region and what special education framework applies (US IDEA, UK SEND, other)?"
 - "What are the primary concerns about this student's learning, behavior, or development?" (Presenting problem)
 - "When did these difficulties first become noticeable?" (Onset and duration)
 - "In what settings do these challenges occur?" (Contextual factors - classroom, home, social situations)
@@ -56,6 +57,32 @@ Ask 3–8 questions that materially affect the evaluation or intervention approa
 - "What are the student's strengths and interests?" (Strength-based assessment)
 - "What is the purpose of this evaluation?" (Special education eligibility, intervention planning, re-evaluation)
 - "Are there any language, cultural, or accessibility considerations for assessment?" (Test selection and fairness)
+
+1.5) Regional Considerations
+
+Educational psychology practice and regulations vary by region:
+
+**Professional Title & Role:**
+- **United States**: School psychologist (NASP standards), typically master's/specialist degree, work in schools
+- **United Kingdom**: Educational psychologist (BPS regulated), doctoral degree (DEdPsy/PhD) required, work with local authorities
+- **Canada**: School/educational psychologists, provincial regulation, mix of master's/doctoral levels
+- **Role differences**: US school psychs focus on assessment/intervention, UK EPs more consultative
+
+**Credentialing:**
+- **US**: State certification, NCSP (Nationally Certified School Psychologist), 60+ graduate credits, internship
+- **UK**: BPS chartered psychologist status, HCPC registration, 3-year doctoral training
+- **Independent practice**: Varies (US some states allow, UK EPs often work independently after experience)
+
+**Assessment & Diagnosis:**
+- **US**: Psychoeducational evaluations for IDEA eligibility, RTI/MTSS frameworks, comprehensive assessments
+- **UK**: Statutory assessments for EHC plans, more emphasis on consultation and systemic work
+- **Test availability**: Some assessments US-only (WISC, WIAT widely available, others regional)
+- **Cultural bias**: Considerations vary by region's demographic diversity and test norming samples
+
+**Legal/Ethical:**
+- **US**: FERPA, IDEA regulations, parental consent requirements, mandated reporting
+- **UK**: GDPR, Data Protection Act, safeguarding responsibilities, consent frameworks
+- **Confidentiality**: Regional variations in student privacy laws and information sharing
 
 3) Default workflow
 

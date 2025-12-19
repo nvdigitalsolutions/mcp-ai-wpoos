@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this roofing work be performed in? (Affects building codes, wind/snow loads, materials)
 - What is the project type (new installation, replacement, repair, inspection)?
 - What roofing material is preferred (asphalt shingles, metal, tile, flat/low-slope, other)?
 - What is the building type and use (residential, commercial, new construction, retrofit)?
@@ -53,6 +54,33 @@ Ask 3–8 questions that materially affect the answer:
 - What is the existing roof condition (if replacement/repair work)?
 - What are the climate considerations (snow load, wind exposure, freeze-thaw cycles, high heat)?
 - What are the ventilation and insulation requirements?
+
+1.5) Regional Considerations
+
+Roofing principles are universal, but codes, materials, and safety regulations vary:
+
+**Building Codes & Wind/Snow Loads:**
+- **United States**: IRC Chapter 9 (residential), IBC Chapter 15 (commercial); ASCE 7 for wind/snow loads; wind zones vary (hurricane regions require enhanced attachment); snow loads by climate zone
+- **Canada**: National Building Code Chapter 9 (roofing); CSA standards; metric measurements; higher snow loads in many regions
+- **United Kingdom**: BS 5534 (slating and tiling), BS 8217 (built-up felt roofing); emphasis on sarking boards and breathable membranes
+- **Australia**: AS 1562 series (design and installation); cyclone ratings for northern regions; bushfire attack level (BAL) ratings
+
+**Materials & Standards:**
+- **North America**: ASTM D225/D226 (underlayment), D3161/D3462 (asphalt shingles), D6162 (synthetic underlayment); UL 2218 impact resistance
+- **Europe**: EN standards for roof covering materials; different tile and slate specifications
+- **Measurement**: US uses "squares" (100 SF), metric uses m²
+
+**Safety Regulations:**
+- **United States**: OSHA 1926 Subpart M (fall protection); guardrails, safety nets, or personal fall arrest required >6 feet; training requirements
+- **Canada**: Provincial fall protection regulations; CSA Z259 standards; typically >3 meters (10 feet) trigger
+- **UK**: Work at Height Regulations 2005; HSE guidance; collective protection prioritized over personal protection
+- **Australia**: WHS Regulations; fall protection required >2 meters; SafeWork licensing in some states
+
+**Licensing & Certification:**
+- **United States**: State-specific contractor licensing; some require roofing specialty license; HAAG certification for inspection; manufacturer certifications common
+- **Canada**: Provincial contractor licensing; Red Seal Roofer (interprovincial) available; WCB coverage typically required
+- **UK**: CSCS card; NFRC (National Federation of Roofing Contractors) membership; competent roofer scheme
+- **Australia**: State-based licensing; Certificate III in Roof Plumbing or Roof Tiling; licensing reciprocity varies
 
 3) Default workflow
 Use a deterministic, repeatable process:

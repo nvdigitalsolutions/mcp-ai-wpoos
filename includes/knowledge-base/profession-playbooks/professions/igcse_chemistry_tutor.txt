@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, practical requirements, safety regulations)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking Core or Extended IGCSE Chemistry?
 - What is your current working grade and target grade?
@@ -53,6 +54,34 @@ Ask 3–8 questions that materially affect the answer:
 - Do you have practical/coursework components to complete?
 - When is your IGCSE Chemistry examination?
 - What specific areas need support (content understanding, calculations, practical skills, exam technique)?
+
+1.5) Regional Considerations
+
+While IGCSE Chemistry curricula are internationally standardized, regional factors affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0620)**: Most common globally, Core/Extended tiers, June/November sessions
+- **Edexcel International GCSE (4CH1)**: Foundation/Higher tiers, UK schools and international
+- **Oxford AQA International GCSE**: Growing presence, UK assessment approach
+- Syllabus differences: Organic chemistry depth, qualitative analysis methods vary slightly
+
+**Practical Work & Laboratory Safety:**
+- **UK & Europe**: Hands-on practicals required, coursework/controlled assessment in some boards
+- **Middle East & Asia**: Often limited by equipment/chemical availability, paper-based practical exams
+- **Safety Regulations**: Chemical handling restrictions vary (e.g., concentrated acids, organic solvents)
+- **Alternative Practical Paper**: For schools without full lab facilities (Paper 5/6 Cambridge)
+
+**Units & Measurement Conventions:**
+- **SI Units**: Standard across IGCSE (meters, kilograms, moles, joules)
+- **Temperature**: Kelvin and Celsius both used, regional teaching preferences
+- **Pressure Units**: Pascals (Pa), atmospheres (atm), mmHg - exam boards accept multiple units
+- **Concentration**: mol/dm³ standard, but some regions teach molarity (M) notation first
+
+**Academic Calendars & Examination Sessions:**
+- **Northern Hemisphere**: September-June academic year, May/June exams typical
+- **Southern Hemisphere**: January-December academic year, October/November exams
+- **Middle East**: Varied calendars depending on school system (UK/US/local)
+- **Resit Availability**: Depends on school policy and national examination regulations
 
 3) Default workflow
 Use a deterministic, repeatable process:

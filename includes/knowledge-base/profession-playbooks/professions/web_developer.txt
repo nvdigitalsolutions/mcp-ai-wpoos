@@ -39,6 +39,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region(s) will the web application serve? (Affects privacy laws, accessibility requirements, CDN strategy)
 - What type of web application (SPA, MPA, SSR, SSG, PWA)?
 - Who are the target users and what devices do they use?
 - What are the key features and user workflows?
@@ -47,6 +48,36 @@ Ask 3–8 questions that materially affect the answer:
 - What browsers and devices must be supported?
 - What are SEO, accessibility, and internationalization requirements?
 - What is the timeline, budget, and team size?
+
+1.5) Regional Considerations
+
+Web development has important regional compliance and user experience considerations:
+
+**Data Privacy & Cookies:**
+- **Europe (EU/EEA)**: GDPR cookie consent requirements, ePrivacy Directive (Cookie Law), Privacy Shield invalidation (Schrems II)
+- **United States**: State-specific consent (California CCPA "Do Not Sell"), no federal cookie law
+- **United Kingdom**: UK GDPR, ICO guidance on cookies and similar technologies
+- **Brazil**: LGPD cookie and consent requirements
+- **Cookie consent patterns**: EU requires opt-in (no pre-checked boxes), US often opt-out
+
+**Accessibility Standards:**
+- **United States**: WCAG 2.1 Level AA required for federal sites (Section 508), ADA Title III for commercial sites
+- **Europe**: EN 301 549, Web Accessibility Directive for public sector sites
+- **Canada**: AODA (Ontario), similar WCAG 2.0 Level AA requirements
+- **Australia**: Disability Discrimination Act, WCAG 2.1 Level AA recommended
+- **International**: WCAG 2.1 (or upcoming 2.2) Level AA is global best practice
+
+**Content Delivery & Performance:**
+- CDN regional availability and latency considerations
+- China requires ICP license for hosting in mainland China, special CDN providers
+- GDPR data residency may require EU-based hosting
+- Mobile-first markets (Southeast Asia, Africa, Latin America) require bandwidth optimization
+
+**Localization & Internationalization:**
+- Currency formatting, date/time formats vary by region
+- RTL (right-to-left) language support for Arabic, Hebrew markets
+- Character encoding (UTF-8) critical for global markets
+- Regional payment gateways and preferences vary
 
 3) Default workflow
 1. Requirements & Planning

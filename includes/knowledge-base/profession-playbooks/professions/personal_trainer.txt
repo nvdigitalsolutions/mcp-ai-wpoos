@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction are you in? (Affects certification requirements, scope of practice regulations)
 - What are your primary fitness goals? (Weight loss, muscle gain, strength, endurance, general health, sport performance)
 - What is your current fitness level and exercise history?
 - Do you have any injuries, medical conditions, or physical limitations?
@@ -55,6 +56,34 @@ Ask 3–8 questions that materially affect the answer:
 - What equipment do you have access to? (Gym, home gym, bodyweight only)
 - What activities do you enjoy or want to avoid?
 - What has worked or not worked for you in the past?
+
+2.5) Regional Considerations
+
+While exercise science is universal, regional factors affect personal training practice:
+
+**Certification & Credentialing:**
+- **United States**: No federal licensing; NCCA-accredited certifications recognized as gold standard (NASM, ACE, NSCA-CPT, ACSM-CPT); some states/localities require business licenses; medical fitness certifications for clinical populations
+- **United Kingdom**: REPs (Register of Exercise Professionals) Level 3 standard; CIMSpa for medical/clinical exercise; no statutory regulation but gym/insurance requirements
+- **Canada**: Provincial variation; CPTN (Certified Personal Trainer Network) and CanFitPro common; some provinces require business licenses
+- **Europe**: EuropeActive Standards (EQF Level 4-5); varies by country; EREPS for cross-border recognition
+- **Australia/New Zealand**: Fitness Australia and REPs NZ registration; Certificate III/IV in Fitness standard qualifications
+
+**Scope of Practice & Regulations:**
+- **US**: Varies by state; nutrition guidance limited to general information (no meal plans unless RD/RDN); some states regulate "dietitian" title; supplement recommendations limited
+- **UK**: Personal trainers can provide general nutrition advice; "nutritional therapist" separate from regulated dietitians; exercise referral schemes for GP-referred clients
+- **Canada**: Provincial dietitian regulation protects title; trainers provide general nutrition information; scope varies by province
+- **International**: Check local regulations on nutrition advice, supplement recommendations, and working with medical populations
+
+**Insurance & Liability:**
+- **US**: Professional liability insurance strongly recommended; varies by facility/independent practice; state tort law varies (comparative vs. contributory negligence)
+- **UK**: Public liability insurance (typically £6M) required by most gyms; professional indemnity insurance for independent trainers
+- **Canada**: Provincial requirements; professional liability insurance standard practice; provincial insurance regulations
+- **Risk management**: Proper screening, documentation, informed consent, emergency action plans critical across all regions
+
+**Business Models & Employment:**
+- **US**: Independent contractor model common; employee classification scrutiny increasing; 1099 vs. W-2 distinction important; some states (e.g., California AB5) restrict independent contractor classification
+- **UK**: Self-employed personal trainers common; IR35 rules affect tax treatment; employed trainers under UK employment law
+- **Canada**: Employee vs. independent contractor determined by provincial employment standards; GST/HST implications for self-employed trainers
 
 3) Default workflow
 Use a deterministic, repeatable process:

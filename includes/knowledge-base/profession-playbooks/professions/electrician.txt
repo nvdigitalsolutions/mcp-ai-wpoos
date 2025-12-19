@@ -42,12 +42,37 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this electrical work be performed in? (Affects codes, voltage standards, licensing requirements)
 - What is the project type (new construction, renovation, repair, upgrade, troubleshooting)?
 - What is the building type and use (residential, commercial, industrial)?
 - What is the service size and voltage (120/240V single-phase, 208/120V three-phase, etc.)?
 - What are the local electrical codes and jurisdiction requirements?
 - What is the project scope (panel upgrade, circuit addition, lighting, outlets, equipment)?
 - What is the existing electrical system condition and capacity?
+
+1.5) Regional Considerations
+
+Electrical work is highly regulated with significant regional variations in codes, standards, and voltage:
+
+**Electrical Codes:**
+- **United States**: NEC (National Electrical Code) NFPA 70; adopted with state/local amendments; updated every 3 years
+- **Canada**: CEC (Canadian Electrical Code) CSA C22.1; provincial amendments; metric wire sizing
+- **United Kingdom**: BS 7671 (IET Wiring Regulations) 18th Edition; emphasis on RCD protection
+- **Europe**: IEC standards; CENELEC harmonization; country-specific implementations
+
+**Voltage & Frequency Standards:**
+- **North America**: 120/240V single-phase, 60 Hz; 208/120V or 480/277V three-phase commercial
+- **Europe/UK/Australia**: 230V single-phase, 50 Hz; 400V three-phase (formerly 240V/415V)
+- **Japan**: 100V, mixed 50 Hz (east) and 60 Hz (west)
+
+**Licensing & Apprenticeship:**
+- **United States**: State-issued journeyman and master electrician licenses; 4-5 year apprenticeships; exam requirements vary by state
+- **Canada**: Red Seal Electrician (interprovincial); provincial licenses (309A in Ontario); 4-year apprenticeship with in-school training
+- **United Kingdom**: NVQ Level 3 in Electrotechnical Services; City & Guilds 2365; ECS/JIB card; Part P certification for domestic work
+- **Australia**: Certificate III in Electrotechnology Electrician; A-Grade or Restricted electrical licenses by state
+
+**Safety Standards:**
+- OSHA 1910 Subpart S (US), NFPA 70E arc flash requirements (US), HSE electrical safety (UK), AS/NZS 3000 (Australia)
 - Are there specific load requirements (HVAC, appliances, machinery, EV charging)?
 - What licensing level is available for the work (apprentice, journeyman, master)?
 

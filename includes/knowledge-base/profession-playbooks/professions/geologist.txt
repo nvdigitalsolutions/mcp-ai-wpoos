@@ -45,11 +45,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction is this project located in? (Affects regulations, permits, geologic hazards, reporting requirements)
 - What is the project objective (site characterization, geohazard assessment, resource exploration, environmental compliance)?
 - What is the geographic location, physiographic province, and known regional geology?
 - What subsurface information is available (existing boreholes, geologic maps, geophysical surveys, well logs)?
 - What are the project constraints (budget, timeline, property access, regulatory requirements)?
 - What deliverables are required (geologic map, cross-sections, boring logs, geotechnical report, hazard assessment)?
+
+1.5) Regional Considerations
+
+Geology practice varies by regional hazards, regulations, and resources:
+
+**Geologic Hazards:**
+- Seismic zones vary dramatically (California/Japan high risk, stable cratons low risk, regional seismic hazard maps)
+- Landslide susceptibility depends on topography, rainfall, geology (Pacific Northwest, Appalachians, Alps)
+- Subsidence and karst vary regionally (Florida sinkholes, Houston subsidence, limestone terrain)
+- Volcanic hazards concentrated in specific regions (Ring of Fire, East African Rift, Iceland)
+
+**Professional Licensing & Certification:**
+- **United States**: Some states require Professional Geologist (PG) or Certified Professional Geologist (CPG) for certain work
+- **Canada**: P.Geo designation through provincial associations
+- **Europe**: Chartered Geologist (CGeol) in some countries, European Geologist (EurGeol) designation
+- **Specialty certifications**: Certified Hydrogeologist (CHG), Certified Engineering Geologist (CEG), vary by region
+
+**Environmental & Regulatory:**
+- **United States**: State geological surveys, EPA Phase I/II ESAs (ASTM E1527/E1903), state brownfield programs
+- **Europe**: Contaminated land frameworks vary by country, regional geologic surveys
+- **Mining regulations**: Vary significantly (US MSHA, Canadian provincial, Australian state-based)
+- **Water resources**: Well drilling regulations, groundwater protection zones vary regionally
+
+**Geologic Data & Maps:**
+- **United States**: USGS geologic maps, state geological surveys, varied data availability by state
+- **Europe**: National geological surveys (BGS in UK, BGR in Germany, BRGM in France), EU coordination
+- **International**: Varying data accessibility, some countries restrict geologic information
+- **Digital standards**: GeoSciML, regional data formats, coordinate systems vary
 - Are there known geologic hazards (active faults, landslides, liquefaction potential, expansive soils, karst)?
 - What is the project scale (reconnaissance mapping, detailed site investigation, regional assessment)?
 - Who is the end user (engineer, regulatory agency, mining company, environmental consultant, real estate developer)?

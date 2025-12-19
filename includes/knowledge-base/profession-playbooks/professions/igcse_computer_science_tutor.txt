@@ -49,6 +49,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects programming language, software availability, practical examination)
 - What year are you in (Year 9, 10, or 11)?
 - Are you taking Core or Extended tier?
 - What is your current working grade and target grade?
@@ -58,6 +59,33 @@ Ask 3–8 questions that materially affect the answer:
 - Have you completed any mock exams (theory or practical)? If so, what were the results?
 - When is your IGCSE Computer Science examination?
 - Do you have access to a computer for practice between sessions?
+
+1.5) Regional Considerations
+
+While IGCSE Computer Science curricula are internationally standardized, regional factors affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0478)**: Most common, theory + practical programming papers
+- **Edexcel International GCSE (4CP1)**: Alternative, different practical assessment approach
+- Programming language choice varies by school: Python (most common), Visual Basic, Java, C#
+
+**Programming Languages & Software:**
+- **Python**: Most popular globally, cross-platform (Windows, Mac, Linux), free IDLE/PyCharm
+- **Visual Basic**: Mainly UK/Europe schools, Windows-only (limitations for Mac users)
+- **Java**: Some schools use, requires JDK installation
+- **Software Availability**: Some regions have restricted access to IDEs, cloud platforms (e.g., internet filtering)
+
+**Hardware & Internet Access:**
+- **Computer Access**: Essential for practice - not all students have reliable home computers
+- **Internet Connectivity**: Required for research, online tutorials, cloud IDEs (varies by region)
+- **Operating Systems**: Windows vs. Mac vs. Linux affects software installation and compatibility
+- **School IT Infrastructure**: Lab access, equipment quality varies significantly by school and country
+
+**Practical Examination Context:**
+- **Cambridge Paper 2**: Pre-release material (case study released months before exam), programming task in exam
+- **Time Zones**: Examination sessions vary (May/June for Northern Hemisphere, October/November for Southern)
+- **Examination Conditions**: Access to computers, programming environment setup varies by examination center
+- **Support Resources**: Online tutorials, forums (Stack Overflow, GitHub) accessibility varies by internet filtering
 
 3) Default workflow
 Use a deterministic, repeatable process:

@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region, climate zone, or country are you farming in? (Affects crops, practices, regulations)
 - What crop(s) are you growing or planning to grow, and what is the intended use (grain, forage, specialty)?
 - What is your location, climate zone (USDA hardiness zone), and growing season length?
 - What are your soil characteristics (texture, pH, organic matter, drainage)?
@@ -53,6 +54,34 @@ Ask 3–8 questions that materially affect the answer:
 - What are your current challenges (yield limitations, pest pressure, soil fertility, water availability)?
 - What are your sustainability goals or certification requirements (organic, regenerative, conservation)?
 - What precision agriculture tools or data do you have available (yield maps, soil maps, imagery)?
+
+2.5) Regional Considerations
+
+While agronomy principles are universal, regional factors significantly affect practice:
+
+**Climate Zones & Growing Seasons:**
+- **United States**: USDA Plant Hardiness Zones (1-13); growing seasons vary from 90 days (northern plains) to year-round (California, Florida, Hawaii)
+- **Canada**: Shorter growing seasons (90-150 days most areas); heat units (Crop Heat Units, CHU) critical for crop selection; frost-free period limitations
+- **Europe**: Maritime climates (UK, Ireland) vs. continental (Eastern Europe); Mediterranean (Southern Europe) enables different crops
+- **Australia/New Zealand**: Southern Hemisphere seasons (plant spring September-November); diverse climates from tropical to temperate
+- **Tropics**: Year-round growing; different pest pressures; monsoon/dry season cycles affect planting windows
+
+**Soil Classification Systems:**
+- **US**: USDA Soil Taxonomy (12 orders: Alfisols, Mollisols, etc.); Web Soil Survey for detailed soil maps
+- **International**: FAO World Reference Base (WRB) for global soil classification; harmonization with national systems
+- **Canada**: Canadian System of Soil Classification; similarities to USDA system with regional adaptations
+
+**Agricultural Regulations & Subsidy Programs:**
+- **US**: USDA farm programs (crop insurance, conservation programs like CRP, EQIP); EPA pesticide regulations (FIFRA); FDA food safety rules; state departments of agriculture
+- **Europe**: Common Agricultural Policy (CAP); environmental regulations (Nitrates Directive, Water Framework Directive); organic standards (EU Reg 2018/848)
+- **Canada**: Canadian Agricultural Partnership; provincial agricultural programs; pest management regulations; nutrient management regulations vary by province
+- **Australia**: National standards; state-specific regulations; drought assistance programs
+
+**Professional Organizations & Certification:**
+- **US**: Certified Crop Adviser (CCA) through American Society of Agronomy; state-specific certifications; Certified Professional Agronomist (CPAg)
+- **UK**: Basis (British Agronomy Standards Inspection Scheme) for agronomist registration; FACTS (Fertiliser Advisers Certification and Training Scheme)
+- **Canada**: Provincial agrologists (P.Ag.) through provincial institutes (e.g., Alberta Institute of Agrologists, Ontario Institute of Agrologists)
+- **International**: Varies by country; international certifications less common than regional/national standards
 
 3) Default workflow
 Use a deterministic, repeatable process:

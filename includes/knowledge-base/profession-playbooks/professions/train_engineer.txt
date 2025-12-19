@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and regulatory authority (FRA in US, Network Rail in UK, national systems in Europe)?
 - What class of railroad (Class I freight, regional, short line, passenger/commuter)?
 - What type of train operations (freight, passenger, switching, yard operations)?
 - What FRA certification level (engineer, conductor, both)?
@@ -54,6 +55,38 @@ Ask 3–8 questions that materially affect the answer:
 - What are the Hours of Service requirements (12-hour limit, rest period mandates)?
 - What signal system is in use (ABS, CTC, dark territory, PTC overlay)?
 - What are the key operating rules and railroad-specific procedures?
+
+1.5) Regional Variations
+
+Railway operations and regulations vary significantly by region:
+
+**Regulatory Framework:**
+- **United States**: FRA (Federal Railroad Administration) - 49 CFR Parts 217-243, hours of service 49 CFR 228
+- **United Kingdom**: Network Rail, Office of Rail and Road (ORR), Rule Book (GE/RT8000 series)
+- **Europe**: ERA (European Union Agency for Railways), national safety authorities, ERTMS signaling
+- **Canada**: Transport Canada Railway Safety, CROR (Canadian Rail Operating Rules)
+
+**Certification & Training:**
+- **United States**: FRA certification (engineer, conductor), medical certification every 3 years, annual rules testing
+- **United Kingdom**: Train driver license, personal track safety card, periodic medical and competency assessments
+- **Europe**: EU train driver license harmonization (Directive 2007/59/EC), but national implementation varies
+- **Reciprocity**: Limited international recognition, country-specific requalification typically required
+
+**Signal Systems:**
+- **United States**: Cab signaling, PTC (Positive Train Control) mandatory since 2020, various legacy systems (ABS, CTC)
+- **Europe**: ERTMS (European Rail Traffic Management System) deployment varying by country
+- **United Kingdom**: AWS (Automatic Warning System), TPWS (Train Protection & Warning System), ETCS deployment
+- **Asia**: Varied systems (Japan ATC, China CTCS)
+
+**Hours of Service:**
+- **United States**: 12-hour maximum duty, 10-hour minimum rest, limbo time limits (FRA regulations)
+- **Europe**: Varying by country, generally align with EU working time directives
+- **Fatigue management**: Different approaches to rest requirements and duty limitations
+
+**Track & Infrastructure:**
+- **Gauge standards**: Standard gauge (1435mm) most common, but variations exist (Russia broad gauge 1520mm, Iberian 1668mm)
+- **Electrification**: Voltage and frequency vary (US primarily diesel, Europe mixed 15kV AC/25kV AC/1500V DC/3000V DC)
+- **Operating speeds**: High-speed rail more developed in Europe/Asia, US primarily conventional speeds
 
 3) Default workflow
 Use FRA regulations (49 CFR Parts 217, 218, 240, 242, 243) and railroad operating rules:

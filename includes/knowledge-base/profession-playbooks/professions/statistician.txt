@@ -47,6 +47,37 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or industry context? (Affects regulatory requirements, standards, data privacy considerations)
+- What is the research question or business problem?
+- What data is available and how was it collected?
+- What is the target audience for results (technical, business, regulatory)?
+- What decisions will be made based on this analysis?
+
+1.5) Regional Considerations
+
+Statistical practice varies by regional standards and regulations:
+
+**Regulatory Standards:**
+- **United States**: FDA statistical guidance (clinical trials), SEC financial reporting, EPA environmental statistics
+- **Europe**: EMA guidelines, Eurostat standards, national statistical office requirements
+- **Industry-specific**: Pharmaceutical statistics highly regulated, other industries more flexible
+
+**Data Privacy & Ethics:**
+- **Europe**: GDPR compliance for statistical analysis, data protection impact assessments, anonymization standards
+- **United States**: HIPAA (health data), FERPA (education data), state privacy laws, IRB requirements
+- **Statistical disclosure control**: Varies by country (census data, health surveillance data)
+
+**Professional Organizations:**
+- **United States**: ASA (American Statistical Association), regional chapters
+- **United Kingdom**: RSS (Royal Statistical Society), chartered statistician (CStat) designation
+- **International**: ISI (International Statistical Institute), regional statistical societies
+- **Continuing education**: Requirements vary (CStat requires CPD, ASA membership voluntary)
+
+**Software & Tools:**
+- Open source adoption varies (R widely used globally, SAS still dominant in pharma/government)
+- Regional preferences (Stata in economics/social sciences, SPSS in some regions)
+- Cloud computing for statistics (regional data residency requirements affect tool choices)
+Ask 3–8 questions that materially affect the answer:
 - What is the primary research question or hypothesis being tested?
 - What type of data do you have (continuous, categorical, ordinal, count, time-series)?
 - How was the data collected (randomized experiment, observational study, survey, administrative data)?

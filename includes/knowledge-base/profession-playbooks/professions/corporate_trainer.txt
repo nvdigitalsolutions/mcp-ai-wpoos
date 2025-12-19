@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region/countries and what regulatory training requirements apply (compliance, safety, industry-specific)?
 - What is the performance gap or business problem driving this training need?
 - Who is the target audience? (Role, experience level, prior knowledge, learning environment)
 - What should learners be able to do after training? (Specific, observable behaviors)
@@ -52,6 +53,31 @@ Ask 3–8 questions that materially affect the answer:
 - What resources are available? (SMEs, existing materials, technology, space)
 - How will training effectiveness be measured? (Tests, observations, business metrics)
 - What constraints exist? (Time away from work, technology limitations, organizational culture)
+
+1.5) Regional Considerations
+
+Corporate training regulations and practices vary by region:
+
+**Regulatory Training Requirements:**
+- **United States**: OSHA safety training, anti-harassment (Title VII), securities (FINRA), healthcare (HIPAA), state-specific
+- **Europe**: Working Time Directive, health & safety regulations, national employment law variations
+- **United Kingdom**: Health and Safety at Work Act, mandatory training for certain industries
+- **Industry-specific**: Financial services, healthcare, transportation regulations vary dramatically
+
+**Professional Development:**
+- **United States**: ATD certifications (CPTD, APTD), SHRM for HR-related training, industry associations
+- **United Kingdom**: CIPD qualifications (Levels 3-7), Chartered status available
+- **Global**: ASTD/ATD model prevalent in multinational corporations
+
+**Work Culture:**
+- **Training hours**: European countries generally mandate more paid training time, US more variable
+- **Learning culture**: Varies by region (Scandinavian emphasis on development, Asia hierarchical training approaches)
+- **Virtual training**: Timezone considerations for global teams, regional preferences for synchronous vs asynchronous
+
+**Employment Law:**
+- **Paid training time**: Regional variations (EU generally requires pay, US depends on circumstances)
+- **Time off for learning**: Varies (UK Apprenticeship Levy, French CPF account, limited in US)
+- **Discrimination/accessibility**: ADA (US), Equality Act (UK), various national laws affect training delivery
 
 3) Default workflow
 Use ADDIE instructional design model (ATD 2024 standards):

@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects case study selection, fieldwork requirements, geographical context)
 - What year are you in (Year 9, 10, or 11)?
 - What is your current working grade and target grade?
 - Which themes have you covered so far (Population & Settlement, Natural Environment, Economic Development)?
@@ -52,6 +53,33 @@ Ask 3–8 questions that materially affect the answer:
 - Have you completed any mock exams? If so, what were the results?
 - When is your IGCSE Geography examination?
 - Do you have fieldwork coursework to complete?
+
+1.5) Regional Considerations
+
+While IGCSE Geography curricula are internationally standardized, regional context significantly affects tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0460)**: Most common globally, flexible case study selection
+- **Edexcel International GCSE (4GE1)**: Alternative board, slightly different theme emphasis
+- Case study requirements: Students must study examples from their own and contrasting regions
+
+**Case Study Selection & Regional Context:**
+- **Local Examples**: Students in Asia study Asian case studies, UK students study UK/Europe
+- **Contrasting Regions**: Must include developed/developing world examples (e.g., UK student studies Bangladesh flooding)
+- **Teacher Choices**: Schools select case studies based on local relevance and available resources
+- **Current Events**: Regional geographical issues (earthquakes, hurricanes, development projects) provide relevant examples
+
+**Fieldwork & Coursework:**
+- **Cambridge**: Fieldwork component (Paper 4) or alternative to coursework (Paper 2)
+- **Accessibility**: Urban students have different fieldwork opportunities than rural students
+- **Safety & Permissions**: Field trips vary by country (health/safety regulations, parental permissions)
+- **Remote Learning**: COVID-era virtual fieldwork alternatives (Google Earth, datasets)
+
+**Geographical Context & Resources:**
+- **Climate Zones**: Students in tropical regions vs. temperate regions have different local geography understanding
+- **Map Skills**: Different countries emphasize different map projections, coordinate systems
+- **Units**: Metric system standard in IGCSE (kilometers, Celsius)
+- **Resources**: Access to geographical data, atlases, field equipment varies by region
 
 3) Default workflow
 Use a deterministic, repeatable process:

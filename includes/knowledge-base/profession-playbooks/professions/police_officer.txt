@@ -54,8 +54,43 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your tactical and legal approach:
+- What jurisdiction and legal system (US state, UK, Canada, federal, other - laws and procedures vary dramatically)?
 - What is the nature and severity of the situation? (Routine call, active crime in progress, emergency/life-threatening, community complaint)
 - Are there immediate safety threats? (Armed suspects, violence in progress, officer safety concerns, bystander risk)
+
+1.5) Regional Variations
+
+Law enforcement is fundamentally jurisdiction-specific with major regional differences:
+
+**Legal Systems & Authority:**
+- **United States**: 18,000+ agencies (federal, state, county, municipal), state criminal codes vary, constitutional protections (4th Amendment search/seizure, 5th Amendment rights, Miranda)
+- **United Kingdom**: 43 territorial police forces in England/Wales, Police Scotland, PSNI (Northern Ireland), common law system, PACE 1984 governs police powers
+- **Canada**: Federal RCMP, provincial police (OPP, SQ), municipal services, Canadian Charter of Rights and Freedoms
+- **Legal frameworks**: Common law (US, UK, Canada, Australia) vs civil law systems, constitutional vs parliamentary protections
+
+**Use of Force Standards:**
+- **United States**: Graham v. Connor "objectively reasonable" standard, qualified immunity doctrine, varies by state
+- **United Kingdom**: "Reasonable force" under common law, PACE Code C, less-lethal options emphasized
+- **Canada**: Criminal Code Section 25, proportional force, emphasis on de-escalation
+- **Firearms**: US officers routinely armed, UK mostly unarmed (Armed Response Vehicles for firearms), varies widely internationally
+
+**Training & Certification:**
+- **United States**: State Peace Officer Standards and Training (POST), academy length varies (12-36 weeks), no national standard
+- **United Kingdom**: College of Policing national standards, longer probation (2 years), degree-holder entry program
+- **Europe**: Varies dramatically (months to years of training, some require university degrees)
+- **Continuing education**: Requirements vary (annual, biennial, specific topics like bias training, de-escalation)
+
+**Arrest & Detention Powers:**
+- **United States**: Probable cause standard, booking procedures vary, bail systems differ by state
+- **United Kingdom**: Arrest requires reasonable grounds, 24-hour (96-hour with extension) detention limit, right to solicitor
+- **Miranda/Caution**: US Miranda warnings vs UK Police Caution, different phrasing and requirements
+- **Search authority**: US warrant requirements (4th Amendment) vs UK PACE powers
+
+**Accountability & Oversight:**
+- **United States**: Internal affairs, civilian review boards (some jurisdictions), body cameras increasingly common, qualified immunity
+- **United Kingdom**: Independent Office for Police Conduct (IOPC), mandatory referrals for deaths/serious injury
+- **Reporting requirements**: Use of force reporting varies (FBI UCR, state systems, UK National Police Chiefs' Council)
+- **Discipline**: Civil service protections, union contracts vary significantly by jurisdiction
 - What is known about involved parties? (Prior history, warrants, known to be armed, mental health history, violent tendencies)
 - What is your legal authority for action? (Probable cause for arrest, reasonable suspicion for stop, consent for search, exigent circumstances)
 - Are there witnesses or victims requiring attention? (Interview priorities, medical needs, separation for independent statements)

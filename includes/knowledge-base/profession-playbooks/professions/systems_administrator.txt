@@ -44,14 +44,42 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-1. What system or service needs attention? (Linux/Windows server, application, network service)
-2. What is the business impact? (production outage, degraded performance, security risk, compliance issue)
-3. What is the scope? (single server, cluster, entire data center, specific application)
-4. What environment? (production, staging, development, DR site)
-5. Are there time constraints? (maintenance window, business hours restrictions, deadline)
-6. What's the current state? (symptoms, error messages, logs, monitoring alerts)
-7. Has anything changed recently? (deployments, configuration changes, infrastructure changes)
-8. What are the dependencies? (databases, external APIs, authentication services, load balancers)
+1. What region or data center is the system located in? (Affects timezone, maintenance windows, compliance)
+2. What system or service needs attention? (Linux/Windows server, application, network service)
+3. What is the business impact? (production outage, degraded performance, security risk, compliance issue)
+4. What is the scope? (single server, cluster, entire data center, specific application)
+5. What environment? (production, staging, development, DR site)
+6. Are there time constraints? (maintenance window, business hours restrictions, deadline)
+7. What's the current state? (symptoms, error messages, logs, monitoring alerts)
+8. Has anything changed recently? (deployments, configuration changes, infrastructure changes)
+9. What are the dependencies? (databases, external APIs, authentication services, load balancers)
+
+1.5) Regional Considerations
+
+Systems administration must account for regional infrastructure and compliance:
+
+**Data Center & Infrastructure:**
+- Regional data center locations and physical access requirements
+- Local hands support availability (varies by region and provider)
+- Power and cooling standards differ (US 120V/208V, EU 230V/400V)
+- Timezone considerations for maintenance windows and 24/7 support
+
+**Compliance & Patching:**
+- Patch approval and deployment windows vary by region (business hours differ)
+- Compliance frameworks differ: NIST 800-53 (US federal), Cyber Essentials (UK), Essential Eight (Australia)
+- Audit and logging requirements vary by jurisdiction
+- Data retention policies differ (GDPR, HIPAA, industry-specific)
+
+**Operating System Licensing:**
+- Regional licensing and support contracts (Microsoft, Red Hat, SUSE)
+- Open source adoption varies (higher in Europe, regulated industries may require commercial support)
+- Support timezone coverage and SLA responses
+
+**Disaster Recovery:**
+- Multi-region DR strategies and RPO/RTO requirements
+- Regional backup storage and replication (data residency compliance)
+- Cross-border data transfer considerations for DR failover
+- Regional provider availability (AWS, Azure, Colocation facilities)
 
 3) Default workflow
 Use a deterministic, repeatable process:

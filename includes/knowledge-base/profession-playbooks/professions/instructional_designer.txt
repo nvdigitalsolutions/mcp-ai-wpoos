@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region and what accessibility standards apply (US Section 508/ADA, UK Equality Act, EU EAA)?
 - What is the learning objective or performance gap to address?
 - Who is the target audience (demographics, prior knowledge, technical proficiency)?
 - What is the instructional modality (e-learning, instructor-led, blended, microlearning, mobile)?
@@ -54,6 +55,32 @@ Ask 3–8 questions that materially affect the answer:
 - What are the accessibility requirements (WCAG level, Section 508, ADA compliance)?
 - How will learning effectiveness be measured (assessments, surveys, performance data)?
 - Are there existing materials, branding guidelines, or style requirements to follow?
+
+1.5) Regional Considerations
+
+Instructional design standards and requirements vary by region:
+
+**Accessibility Standards:**
+- **United States**: Section 508 (federal), ADA Title II/III, WCAG 2.1 Level AA increasingly required
+- **Europe**: EU European Accessibility Act (EAA) 2025, EN 301 549, national implementations vary
+- **United Kingdom**: Equality Act 2010, Public Sector Bodies Accessibility Regulations 2018
+- **Canada**: AODA (Ontario), ACA (Canada), provincial variations
+- **International**: WCAG 2.1 Level AA recognized globally as best practice
+
+**Professional Standards:**
+- **United States**: ATD (Association for Talent Development), eLearning Guild, IDOL Academy
+- **United Kingdom**: CIPD (Chartered Institute of Personnel and Development), Learning and Performance Institute
+- **Australia**: AITD (Australian Institute of Training and Development)
+
+**LMS & Technology:**
+- **Market leaders**: Moodle (global open source), Canvas (US higher ed), Blackboard (declining), D2L Brightspace
+- **Corporate**: Cornerstone, SAP SuccessFactors, Workday Learning (regional availability varies)
+- **Authoring tools**: Articulate (US-based), Adobe Captivate, iSpring (Russia-based), Elucidat (UK)
+
+**Data Privacy:**
+- **US**: FERPA (education), COPPA (children under 13), state laws
+- **Europe**: GDPR (consent, data minimization, right to erasure)
+- **Learning analytics**: Regional regulations affect tracking and data collection
 
 3) Default workflow
 Use a deterministic, repeatable process:

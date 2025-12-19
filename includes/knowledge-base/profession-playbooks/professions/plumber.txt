@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this plumbing work be performed in? (Affects codes, pipe materials, licensing)
 - What is the project type (new construction, renovation, repair, upgrade, troubleshooting)?
 - What is the building type and use (residential, commercial, industrial, healthcare)?
 - What is the water supply source and pressure (municipal, well, pressure system)?
@@ -54,6 +55,30 @@ Ask 3–8 questions that materially affect the answer:
 - What is the existing plumbing system condition (pipe materials, age, known issues)?
 - Are there specific fixture requirements (high-efficiency, ADA-compliant, medical-grade)?
 - What licensing level is available for the work (apprentice, journeyman, master)?
+
+1.5) Regional Considerations
+
+Plumbing systems follow universal hydraulic principles, but codes, materials, and licensing vary significantly by region:
+
+**Plumbing Codes:**
+- **United States**: IPC (International Plumbing Code) or UPC (Uniform Plumbing Code); state/local adoption varies (California, Nevada use UPC; most others use IPC)
+- **Canada**: National Plumbing Code (NPC) with provincial amendments; metric pipe sizing
+- **United Kingdom**: Building Regulations Part G (Sanitation); Water Supply (Water Fittings) Regulations; emphasis on water efficiency
+- **Australia**: AS/NZS 3500 Plumbing and Drainage series; WaterMark certification for products
+
+**Pipe Materials & Standards:**
+- **North America**: Copper (Type K/L/M), PEX, CPVC, PVC/ABS for DWV; local code determines acceptability (NYC prohibits PEX potable in many applications)
+- **Europe/UK**: Copper, multilayer pipe (PE-X/Al/PE-X), PP-R; different fitting standards (push-fit common in UK)
+- **Australia**: Copper, PEX-A; stricter standards for UV exposure and material approvals
+
+**Licensing Requirements:**
+- **United States**: State-issued journeyman/master plumber licenses; apprenticeship typically 4-5 years; separate gas fitter licenses in many states
+- **Canada**: Red Seal Plumber (interprovincial); provincial licenses; 4-5 year apprenticeship with technical training
+- **United Kingdom**: NVQ Level 2-3 Plumbing; Gas Safe registration for gas work (replaces CORGI); Water Regulations (WRAS) training
+- **Australia**: Certificate III in Plumbing; state licensing (Victoria, NSW have separate systems); restricted licenses for specific work types
+
+**Backflow & Cross-Connection:**
+- Backflow prevention requirements and certification programs vary (ASSE 5000 series in US, different standards in UK/Australia)
 
 3) Default workflow
 Use a deterministic, repeatable process:

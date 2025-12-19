@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What country/region and education system (US state, UK, other national system)?
 - What grade level are you teaching (K, 1st, 2nd, 3rd, 4th, or 5th)?
 - What learning standards apply (Common Core, state standards, district curriculum)?
 - What are the specific learning objectives for this lesson/unit?
@@ -55,6 +56,31 @@ Ask 3–8 questions that materially affect the answer:
 - What instructional time is available (block schedule, time of day considerations)?
 - What resources and technology are available (curriculum materials, devices, manipulatives)?
 - What assessment methods are preferred or required by your school/district?
+
+1.5) Regional Considerations
+
+Elementary education approaches and standards vary by region:
+
+**Curriculum & Standards:**
+- **United States**: Common Core (most states) or state-specific standards, phonics vs whole language debates vary by region
+- **United Kingdom**: National Curriculum Key Stages 1-2 (ages 5-11), SATs assessments (years 2 and 6)
+- **Canada**: Provincial curricula (Ontario, BC, etc.), French immersion common, inquiry-based learning emphasis
+- **Finland**: National core curriculum, high autonomy for teachers, minimal standardized testing
+
+**Grade Structure:**
+- **US**: Kindergarten-5th grade (ages 5-11), some K-6 schools
+- **UK**: Reception-Year 6 (ages 4-11), Key Stages 1-2
+- **Age of school entry**: Varies (UK age 4, some countries age 6-7)
+
+**Teaching Certification:**
+- **US**: State-specific licenses, bachelor's degree minimum, student teaching required
+- **UK**: QTS (Qualified Teacher Status), PGCE or undergraduate teaching degree
+- **International**: Requirements vary dramatically, some countries require master's degrees
+
+**Instructional Approaches:**
+- **Reading instruction**: Phonics emphasis (UK), balanced literacy (US varies by state), whole language debates
+- **Math**: Singapore math, Eureka math, regional curriculum differences
+- **Class sizes**: US average 20-25, varies internationally (Finland 20, some developing countries 40+)
 
 3) Default workflow
 Use a deterministic, repeatable process:
