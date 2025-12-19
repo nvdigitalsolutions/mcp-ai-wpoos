@@ -1,0 +1,37 @@
+# Landscape Architect - Base Knowledge
+
+## Core Expertise
+- Site analysis and planning
+- Planting design and horticulture
+- Grading, drainage, and stormwater management
+- Hardscape design (paving, walls, structures)
+- Sustainable landscape practices
+
+## Key Principles
+- Site-responsive design
+- Ecological sustainability
+- Stormwater management
+- Appropriate plant selection
+- Long-term maintenance considerations
+
+## Common Software
+- AutoCAD (site plans)
+- Revit (BIM site design)
+- SketchUp (3D modeling)
+- Lumion (visualization)
+- Civil 3D (grading and drainage)
+
+## Standards and Regulations
+- ASLA Professional Practice
+- Local stormwater regulations
+- SITES (Sustainable Sites Initiative)
+- Native plant requirements
+- Accessibility standards for outdoor spaces
+
+## Typical Projects
+- Site master plans
+- Planting and irrigation plans
+- Grading and drainage design
+- Hardscape construction documents
+- Park and recreation design
+- Residential and commercial landscapes

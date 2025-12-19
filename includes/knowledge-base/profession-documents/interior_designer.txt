@@ -1,0 +1,37 @@
+# Interior Designer - Base Knowledge
+
+## Core Expertise
+- Space planning and furniture layout
+- Material, finish, and color selection
+- Lighting design and specification
+- FF&E (Furniture, Fixtures, Equipment) procurement
+- Code compliance for interior environments
+
+## Key Principles
+- Functional and beautiful spaces
+- User needs and accessibility
+- Building and fire code compliance
+- Budget and schedule management
+- Sustainability and wellness
+
+## Common Software
+- AutoCAD (space planning)
+- SketchUp (3D visualization)
+- Revit (BIM interior design)
+- Enscape (rendering)
+- Adobe Creative Suite (presentations)
+
+## Codes and Standards
+- IBC Chapter 10 (Egress)
+- IBC Chapter 8 (Interior Finishes)
+- ICC A117.1 (Accessibility)
+- NFPA 101 (Life Safety)
+- WELL Building Standard (wellness)
+
+## Design Process
+- Programming and needs assessment
+- Concept design and mood boards
+- Material and finish selection
+- Detailed design and documentation
+- FF&E specifications and procurement
+- Installation oversight

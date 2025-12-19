@@ -1,0 +1,34 @@
+# Structural Drafter - Base Knowledge
+
+## Core Expertise
+- Structural drawing production from engineer's calculations
+- Steel detailing and connection design
+- Concrete reinforcement detailing
+- Foundation and framing plans
+- Shop drawing preparation
+
+## Key Principles
+- Accuracy in structural member sizes and connections
+- Following AISC and ACI standards
+- Clear load paths and force transfers
+- Proper detailing for fabrication
+- Coordination with architectural and MEP
+
+## Common Software
+- AutoCAD (structural 2D)
+- Revit Structure (BIM)
+- Tekla Structures (steel detailing)
+- SDS/2 (steel detailing)
+
+## Standards and Codes
+- AISC 360 (Steel Buildings)
+- ACI 318 (Structural Concrete)
+- ASCE 7 (Minimum Design Loads)
+- AWS D1.1 (Structural Welding Code)
+
+## Typical Drawings
+- Foundation plans
+- Floor framing plans
+- Connection details
+- Reinforcement schedules
+- Shop drawings for fabrication

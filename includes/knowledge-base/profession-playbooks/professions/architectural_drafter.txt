@@ -1,0 +1,498 @@
+Profession Playbook — Architectural Drafter
+Slug: architectural_drafter
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality architectural drawing production and construction documentation.
+
+Category guidance
+- Emphasize requirements, correctness, code compliance, coordination, and clear documentation standards.
+
+1) Role boundaries
+Do:
+- Create architectural construction documents using AutoCAD, Revit, or ArchiCAD
+- Prepare floor plans, elevations, sections, and building details
+- Develop door, window, and finish schedules
+- Coordinate with engineers and consultants (structural, MEP, civil)
+- Apply building codes, zoning regulations, and accessibility standards
+- Produce permit submission drawings and construction documents
+- Maintain drawing standards and template libraries
+- Revise drawings based on architect's redlines and design changes
+- Success = Accurate, code-compliant construction documents ready for permitting and bidding
+
+Do NOT:
+- Make design decisions without architect's direction
+- Seal or stamp drawings (requires licensed architect)
+- Approve code interpretations or variances without architect review
+- Modify structural or MEP elements without consultant coordination
+- Change critical dimensions affecting building code compliance
+- Issue construction documents without architect's final review
+
+Escalate / refer out when:
+- Building code interpretations require professional judgment
+- Design conflicts between disciplines need resolution
+- Structural or MEP coordination issues arise
+- Accessibility compliance questions require clarification
+- Zoning or permit requirements are unclear
+- Project involves historic preservation or landmark status
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What project phase is this? (Schematic Design, Design Development, Construction Documents)
+- What building type and occupancy? (Residential, commercial, mixed-use)
+- What jurisdiction and building codes apply? (IBC edition, state/local amendments)
+- What is the project size and complexity? (Square footage, number of floors)
+- What deliverable format is required? (CAD, Revit, PDF for permits)
+- Are consultants coordinated? (Structural, MEP, civil drawings available?)
+- What sheet organization is required? (A-series, discipline codes)
+- What is the delivery timeline and review schedule?
+
+3) Default workflow
+Use standard architectural documentation workflow:
+
+1. Project Setup and Standards
+   - Review architect's schematic design or design development drawings
+   - Set up project template with company/office standards
+   - Establish drawing sheet organization (A-series: A0 Index, A1 Site, A2 Plans, A3 Elevations, etc.)
+   - Configure layers, line weights, text styles per office standards
+   - Set up annotation styles and dimension standards
+   - Create project-specific title blocks with required information
+   - Establish file naming and organization conventions
+
+2. Floor Plan Development
+   - Create base floor plan from design sketches or previous phase
+   - Define wall types with proper thickness (structural, partitions)
+   - Locate all door and window openings with accurate dimensions
+   - Add room names and numbers
+   - Dimension grid lines, column centers, and major spaces
+   - Dimension to face of stud/finished face as appropriate
+   - Show floor materials and transitions
+   - Indicate ceiling heights if varied
+   - Add wall types and assembly notes
+   - Coordinate with structural grid and column locations
+
+3. Reflected Ceiling Plans (RCP)
+   - Create RCP showing ceiling grid layout
+   - Indicate ceiling heights and soffits
+   - Show light fixture locations and types (coordinate with electrical)
+   - Show diffusers, grilles, and registers (coordinate with mechanical)
+   - Add sprinkler head locations (coordinate with fire protection)
+   - Include ceiling materials and transitions
+   - Note access panels for MEP equipment
+
+4. Exterior Elevations
+   - Develop all building elevations (North, South, East, West)
+   - Show accurate building height and floor-to-floor heights
+   - Indicate all exterior materials with hatch patterns and notes
+   - Show window and door types (match schedules)
+   - Add finish grade lines and floor levels
+   - Dimension key heights and offsets
+   - Include material notes and specifications
+   - Show roof slopes, parapets, and architectural features
+
+5. Building Sections
+   - Create minimum 2 building sections showing key spaces
+   - Show floor-to-floor heights and roof structure
+   - Indicate ceiling heights and plenum spaces
+   - Show wall assemblies and foundation details
+   - Coordinate with structural sections
+   - Add key dimensions and level datums
+   - Reference detail callouts
+   - Show insulation and moisture barriers
+
+6. Wall Sections and Details
+   - Create enlarged wall sections at 3/4" or 1 1/2" scale
+   - Show foundation to roof assembly
+   - Detail connections and transitions
+   - Include material specifications
+   - Show flashing, sealants, and weatherproofing
+   - Reference applicable details
+   - Coordinate with structural and envelope consultants
+
+7. Enlarged Plans and Details
+   - Develop enlarged plans for stairs, restrooms, elevator lobbies
+   - Detail millwork, casework, and built-in elements
+   - Create door and window jamb details
+   - Show accessibility requirements (grab bars, clearances, etc.)
+   - Detail special conditions and connections
+   - Scale appropriately (1/2", 3/4", 1 1/2", 3" = 1'-0")
+
+8. Schedules
+   - **Door Schedule**: Door number, size, material, frame type, hardware set, fire rating, notes
+   - **Window Schedule**: Window number, size, type, glazing, frame material, U-value
+   - **Finish Schedule**: Room-by-room floor, base, walls, ceiling finishes
+   - **Room Data Sheet**: Area, occupancy, finishes, special requirements
+
+9. Code Compliance Documentation
+   - Prepare code analysis summary (occupancy, construction type, height/area)
+   - Create egress plans showing exit paths, travel distances, door swings
+   - Show fire-rated assemblies and separation walls
+   - Document accessibility compliance (ramps, elevators, toilet rooms)
+   - Include energy code compliance notes (if required)
+
+10. Coordination and Quality Control
+    - Coordinate dimensions and information across all sheets
+    - Check detail callouts match detail sheets
+    - Verify door/window numbers match schedules
+    - Cross-reference consultant drawings (structural, MEP)
+    - Review for code compliance
+    - Check for completeness and constructability
+    - Submit to architect for review before issue
+
+11. Permit Submission Preparation
+    - Organize complete drawing set per jurisdiction requirements
+    - Include all required sheets and consultants' drawings
+    - Add permit title sheet with project data and code summary
+    - Ensure drawings meet jurisdiction's submission format
+    - Prepare PDF set with proper sheet order
+    - Coordinate with architect for seal/stamp
+
+4) Deliverables
+List the artifacts commonly produced:
+
+**Construction Document Set (CD Phase):**
+- Cover Sheet / Index (A0): Project data, drawing index, abbreviations, symbols
+- Site Plan (A1): Building location, property lines, setbacks, parking
+- Floor Plans (A2 series): All levels with dimensions, room names, door/window numbers
+- Reflected Ceiling Plans (A4 series): Ceiling layouts coordinated with MEP
+- Roof Plan (A5): Roof geometry, drainage, equipment locations
+- Exterior Elevations (A3 series): All sides with materials and heights
+- Building Sections (A5 series): Key sections through building
+- Wall Sections (A6 series): Enlarged sections showing assembly details
+- Enlarged Plans (A7 series): Stairs, restrooms, special spaces
+- Details (A8 series): Construction details at various scales
+- Schedules (A9 series): Door, window, finish, room data schedules
+
+**Schematic Design Deliverables:**
+- Conceptual floor plans (1/16" or 1/8" scale)
+- Exterior elevations (schematic level)
+- Key building sections
+- Design renderings (if required)
+
+**Design Development Deliverables:**
+- Floor plans (1/8" or 1/4" scale) with dimensions
+- RCPs showing preliminary MEP coordination
+- Elevations with material indications
+- Key sections and enlarged plans
+- Outline specifications
+- Door and window schedules
+
+**Minimum viable deliverable**: 
+Floor plans, elevations, and basic sections sufficient for design review and preliminary permitting.
+
+**Gold standard deliverable**: 
+Complete coordinated construction document set with all details, schedules, code documentation, fully coordinated with consultants, ready for permit submission and construction bidding.
+
+5) Quality checklist
+Create architectural drafting-specific QA gates:
+
+**Floor Plan Check:**
+- [ ] All walls dimensioned or located relative to grid
+- [ ] Room names and numbers complete and consistent
+- [ ] Door and window numbers match schedules
+- [ ] Wall types indicated and match wall legend
+- [ ] Grid lines labeled and coordinated across floors
+- [ ] Stair and elevator locations match across floors
+- [ ] Accessible routes shown and dimensioned
+- [ ] Floor material indications shown
+
+**Elevation Check:**
+- [ ] All elevations shown (typically N, S, E, W)
+- [ ] Building heights and floor levels dimensioned
+- [ ] Materials indicated with notes and patterns
+- [ ] Window and door types match schedules
+- [ ] Roof slopes and drainage indicated
+- [ ] Grade lines shown
+- [ ] Scale appropriate for detail level
+
+**Section Check:**
+- [ ] Floor-to-floor heights shown and dimensioned
+- [ ] Ceiling heights indicated
+- [ ] Roof assembly and structure coordinated with structural drawings
+- [ ] Foundation shown and coordinated with structural
+- [ ] Detail callouts reference correct detail sheets
+- [ ] Level datums consistent across all sections
+
+**Detail Check:**
+- [ ] Details drawn at appropriate scale (1/2", 3/4", 1 1/2", 3")
+- [ ] All materials labeled
+- [ ] Connections and fasteners shown
+- [ ] Referenced on plan/section drawings
+- [ ] Notes complete and specific
+- [ ] Constructible and coordinated with specifications
+
+**Schedule Check:**
+- [ ] Door schedule complete with all required information
+- [ ] Door numbers match floor plans
+- [ ] Window schedule includes all windows on elevations
+- [ ] Finish schedule covers all rooms
+- [ ] Fire ratings shown where required
+- [ ] Hardware sets assigned correctly
+
+**Code Compliance Check:**
+- [ ] Occupancy classification documented
+- [ ] Construction type appropriate for height/area
+- [ ] Egress widths and travel distances meet code
+- [ ] Accessible paths of travel provided
+- [ ] Fire-rated assemblies indicated
+- [ ] Required separations shown
+- [ ] Toilet room layouts meet accessibility requirements
+
+**Coordination Check:**
+- [ ] Structural grid matches structural drawings
+- [ ] Ceiling heights accommodate MEP systems
+- [ ] Equipment locations coordinated with MEP drawings
+- [ ] Door swings don't conflict with furniture or egress
+- [ ] Details coordinate across disciplines
+- [ ] Sheet references are accurate (no broken callouts)
+
+**Drawing Set Check:**
+- [ ] Sheet index matches actual sheets in set
+- [ ] Title blocks complete on all sheets
+- [ ] Revision indicators current
+- [ ] North arrows consistent
+- [ ] Scales indicated on all drawings
+- [ ] General notes included where appropriate
+- [ ] Drawing set organized per standards (A-series)
+
+6) Templates (paste-ready)
+
+=== General Notes Template ===
+GENERAL NOTES - ARCHITECTURAL
+1. ALL WORK SHALL COMPLY WITH [IBC 2024 / LOCAL CODE] AND REFERENCED STANDARDS
+2. VERIFY ALL EXISTING CONDITIONS AND DIMENSIONS IN FIELD BEFORE PROCEEDING
+3. CONTRACTOR SHALL COORDINATE ALL WORK WITH OTHER TRADES
+4. DIMENSIONS ARE TO FACE OF STUD UNLESS OTHERWISE NOTED
+5. ALL DIMENSIONS SHALL BE VERIFIED BY CONTRACTOR BEFORE FABRICATION
+6. CONTRACTOR SHALL PROVIDE ALL REQUIRED FIRESTOPPING AND FIREPROOFING
+7. MECHANICAL, ELECTRICAL, AND PLUMBING WORK - SEE CONSULTANT DRAWINGS
+8. STRUCTURAL WORK - SEE STRUCTURAL DRAWINGS
+9. DO NOT SCALE DRAWINGS - USE FIGURED DIMENSIONS
+10. CONTRACTOR SHALL OBTAIN ALL REQUIRED PERMITS AND INSPECTIONS
+
+===
+
+=== Door Schedule Template ===
+DOOR SCHEDULE
+MARK | SIZE | MATERIAL | FRAME | HARDWARE SET | FIRE RATING | NOTES
+-----|------|----------|-------|--------------|-------------|------
+101  | 3'-0" x 7'-0" | WOOD | WOOD | A | 20 MIN | TYPICAL
+102  | 3'-0" x 7'-0" | WOOD | WOOD | A | 20 MIN | TYPICAL
+201  | 3'-0" x 7'-0" | HOLLOW METAL | HOLLOW METAL | B | 90 MIN | STAIR EXIT
+
+DOOR TYPE NOTES:
+- All doors shall meet NFPA 80 for fire-rated assemblies
+- Accessible doors per ICC A117.1 (32" clear width minimum)
+- Hardware per DHI standards and ADA requirements
+
+===
+
+=== Window Schedule Template ===
+WINDOW SCHEDULE
+MARK | SIZE | TYPE | GLAZING | FRAME | U-VALUE | NOTES
+-----|------|------|---------|-------|---------|------
+W1   | 4'-0" x 5'-0" | FIXED | IG | ALUMINUM | 0.30 | TYPICAL
+W2   | 3'-0" x 4'-0" | CASEMENT | IG | ALUMINUM | 0.30 | OPERABLE
+
+GLAZING NOTES:
+- IG = Insulated Glass (1" unit, low-e coating)
+- All glazing per IGCC/IECC energy requirements
+- Safety glazing where required per IBC 2406
+
+===
+
+=== Finish Schedule Template ===
+FINISH SCHEDULE
+ROOM | FLOOR | BASE | WALLS | CEILING | NOTES
+-----|-------|------|-------|---------|------
+101 LOBBY | PORCELAIN TILE | PORCELAIN TILE | PAINT TYPE A | GYP BD, PAINT TYPE A | 10' CLG HT
+102 CORRIDOR | VCT | RUBBER | PAINT TYPE A | ACT | 9' CLG HT
+201 OFFICE | CARPET | WOOD | PAINT TYPE B | ACT | 9' CLG HT
+
+FINISH NOTES:
+- Paint Type A: Semi-Gloss, [Color/Spec]
+- VCT: Vinyl Composition Tile per [Spec]
+- ACT: Acoustic Ceiling Tile per [Spec]
+
+===
+
+=== Code Summary Template ===
+CODE SUMMARY / PROJECT DATA
+
+Jurisdiction: [City, State]
+Applicable Codes:
+- [IBC 2024]
+- [Local Amendments]
+- [IECC 2024 (Energy Code)]
+- [ICC A117.1-2017 (Accessibility)]
+
+Project Information:
+- Building Use: [Describe]
+- Occupancy Classification: [Group B, S-2, R-2, etc.]
+- Construction Type: [Type V-A, III-B, etc.]
+- Sprinklered: [Yes / No] - NFPA 13
+- Number of Stories: [X] stories above grade
+- Building Height: [XX feet]
+- Building Area: [XXXX SF per floor]
+- Allowable Area per IBC Table 503: [XXXXX SF]
+
+Occupant Load:
+- [Floor/Area]: [XXX occupants]
+- Total: [XXX occupants]
+
+Egress:
+- Required Exits: [X] exits per floor
+- Exit Width Required: [XX inches]
+- Travel Distance: [Max XXX feet] (complies with IBC 1017)
+
+Accessibility:
+- Accessible Entrance: [Location]
+- Accessible Route: Provided throughout
+- Accessible Toilet Rooms: [Location]
+- Elevator: [Required / Not Required]
+
+===
+
+7) Examples of excellent outputs
+
+**Example 1: Second Floor Plan**
+
+```
+SECOND FLOOR PLAN
+SCALE: 1/4" = 1'-0"
+SHEET A2.2
+
+Drawing shows:
+- Complete floor layout with all walls dimensioned
+- Grid lines labeled (A, B, C... and 1, 2, 3...)
+- Room names and numbers (201 OFFICE, 202 CONFERENCE RM, etc.)
+- Door numbers in hexagons (201, 202, 203...)
+- Window numbers in circles (W1, W2, W3...)
+- Wall type indicators (WT-1, WT-2 per legend)
+- Exit stairs with arrows showing egress direction
+- Accessible restrooms with ADA symbols
+- Key dimensions between grids and to critical walls
+- North arrow in consistent location
+- Room areas called out (e.g., 201: 150 SF)
+
+Notes:
+- TYPICAL CEILING HEIGHT 9'-0" AFF UNLESS OTHERWISE NOTED
+- SEE SHEET A4.2 FOR REFLECTED CEILING PLAN
+- SEE STRUCTURAL DRAWINGS FOR BEAM AND COLUMN LOCATIONS
+```
+
+**Example 2: Building Section**
+
+```
+BUILDING SECTION
+SCALE: 1/4" = 1'-0"
+SHEET A5.1
+
+Section cut through A-A shows:
+- Foundation level with datum (+0'-0")
+- First floor level (+2'-0") above grade
+- Second floor level (+12'-0")
+- Roof level (+22'-0")
+- Parapet top (+24'-0")
+- Floor-to-floor heights (10'-0" typical)
+- Ceiling heights (9'-0" AFF first floor, 9'-0" second floor)
+- Roof slope (1/4" per 12")
+- Foundation wall and footing (coordinated with structural)
+- Floor assemblies (reference to structural)
+- Wall construction (reference to wall type details)
+- Parapet construction detail callout (3/A8.1)
+- Window head/sill details referenced (5/A8.2, 6/A8.2)
+
+Level Datums Shown:
+T.O. PARAPET: +24'-0"
+T.O. ROOF: +22'-0"
+2ND FLOOR: +12'-0"
+1ST FLOOR: +2'-0"
+FOUNDATION: +0'-0" (DATUM)
+
+Material callouts:
+- STANDING SEAM METAL ROOF - SEE SPEC 07 61 00
+- PARAPET COPING - SEE DETAIL 3/A8.1
+- BRICK VENEER - SEE SPEC 04 21 00
+- CONCRETE MASONRY BACKUP - SEE STRUCTURAL
+```
+
+**Example 3: Stair Detail - Enlarged Plan**
+
+```
+STAIR 1 - ENLARGED PLAN
+SCALE: 1/2" = 1'-0"
+SHEET A7.1
+
+Drawing shows:
+- Stair landing dimensions (5'-0" clear minimum)
+- Stair width (44" clear between handrails)
+- Door swing (out of stair enclosure, per code)
+- Handrails on both sides (34"-38" AFF)
+- Stair direction arrows (UP/DN)
+- Tread/riser dimensions (7" rise, 11" tread typical)
+- Landing at top and bottom (5'-0" x 5'-0" min)
+- Fire-rated wall assembly (2-hour per IBC)
+- Exit signage location noted
+- Emergency lighting noted
+
+Code Compliance Notes:
+- STAIR WIDTH: 44" CLEAR (MEETS IBC 1011.2 MIN 44")
+- RISER: 7" MAX (IBC 1011.5.2)
+- TREAD: 11" MIN (IBC 1011.5.2)
+- LANDING: 5'-0" MIN DEPTH (IBC 1011.6)
+- HANDRAILS: BOTH SIDES, 34"-38" AFF (IBC 1014)
+- HEADROOM: 6'-8" MIN (IBC 1011.3)
+- ENCLOSURE: 2-HOUR FIRE-RATED (IBC TABLE 1023.2)
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **AFF**: Above Finished Floor - measurement reference
+- **FD**: Floor Drain
+- **GWB**: Gypsum Wall Board (drywall)
+- **ACT**: Acoustic Ceiling Tile
+- **VCT**: Vinyl Composition Tile
+- **RCP**: Reflected Ceiling Plan
+- **T.O.**: Top Of (T.O. Wall, T.O. Parapet, etc.)
+- **FFE**: Furniture, Fixtures, and Equipment
+- **CMU**: Concrete Masonry Unit (concrete block)
+- **Datum**: Reference elevation (typically first floor = 0'-0")
+- **Egress**: Exit path from building
+- **Fire-Rating**: Time rating for fire resistance (e.g., 1-hour, 2-hour)
+- **A-Series Sheets**: Architectural drawing organization (A1, A2, A3, etc.)
+
+**Standards & Codes (2024):**
+- **IBC 2024 (International Building Code)**: Primary building code
+- **IRC 2024 (International Residential Code)**: 1-2 family dwellings
+- **IECC 2024 (International Energy Conservation Code)**: Energy efficiency
+- **ICC A117.1-2017**: Accessibility standard (referenced by IBC)
+- **ADA Standards (2010)**: Federal accessibility requirements
+- **NFPA 101 (Life Safety Code)**: Alternative egress code
+- **NFPA 13**: Automatic sprinkler systems
+- **NFPA 80**: Fire doors and other opening protectives
+- **ASTM E84**: Surface burning characteristics (flame spread)
+- **CSI MasterFormat**: Specification organization (Divisions 00-16 or 00-50)
+
+**Common Software:**
+- **AutoCAD**: 2D drafting standard
+- **Revit**: BIM/3D architectural modeling and documentation
+- **ArchiCAD**: BIM alternative to Revit
+- **SketchUp**: 3D conceptual modeling
+- **Bluebeam Revu**: PDF markup and coordination
+- **Navisworks**: Model coordination and clash detection
+
+**Measurement Conventions:**
+- Dimensions typically in feet and inches (e.g., 10'-6")
+- Small dimensions in inches (e.g., 3")
+- Scales: 1/8" = 1'-0" (plans), 1/4" = 1'-0" (enlarged plans), 3/4" = 1'-0" (details)
+
+**Change log**
+[2024-12]: Initial playbook created based on IBC 2024 and current architectural practice
+- Emphasizes code compliance, coordination, and construction documentation
+- Includes standard deliverables and quality checklists
+- References current building codes and accessibility standards
+- Covers all phases from SD through CD
