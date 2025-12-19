@@ -84,8 +84,8 @@ This document provides methodology, templates, and guidelines for completing the
 
 ## Status
 
-**Completed**: 127/182 professions (Phases 1-28 complete)
-**Remaining**: 55 professions
+**Completed**: 132/182 professions (Phases 1-29C complete)
+**Remaining**: 50 professions
 **Phase 3 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 4 Status**: ✅ COMPLETED (Dec 18, 2024)
 **Phase 5 Status**: ✅ COMPLETED (Dec 18, 2024)
@@ -111,6 +111,7 @@ This document provides methodology, templates, and guidelines for completing the
 **Phase 25-26 Status**: ✅ COMPLETED (Dec 18, 2024) - 2 professions (ship_captain, anthropologist)
 **Phase 27 Status**: ✅ COMPLETED (Dec 19, 2024) - 4 professions (biomedical_engineer, environmental_engineer, hotel_manager, urban_planner)
 **Phase 28 Status**: ✅ COMPLETED (Dec 19, 2024) - 4 professions (interior_designer, philosopher, applied_statistician, warehouse_manager)
+**Phase 29C Status**: ✅ COMPLETED (Dec 19, 2024) - 5 professions (crisis_communications_manager, customs_broker, import_export_specialist, restaurant_consultant, retail_manager)
 
 ## Phase Summary
 
@@ -539,11 +540,11 @@ Group similar professions to reuse research:
 - Client feedback and iteration processes
 - Portfolio and deliverable formats
 
-### Business/Advisory (~30) ✅ 4 COMPLETED
-**Templates**: marketing_consultant (17KB), project_manager (22KB), business_consultant (26KB), hr_consultant (31KB)
-**Status**: Templates well-established ✅ Phase 12 established project management template, Phase 18 established business consulting template, Phase 21 added HR consultant
-**Completed**: marketing_consultant, project_manager, business_consultant, hr_consultant
-**Remaining**: ~26 professions (management_consultant, operations_manager, event_planner, etc.)
+### Business/Advisory (~30) ✅ 9 COMPLETED
+**Templates**: marketing_consultant (17KB), project_manager (22KB), business_consultant (26KB), hr_consultant (31KB), crisis_communications_manager (28KB), customs_broker (24KB), import_export_specialist (24KB), restaurant_consultant (30KB), retail_manager (33KB)
+**Status**: Templates well-established ✅ Phase 12 established project management template, Phase 18 established business consulting template, Phase 21 added HR consultant, Phase 29C added 5 advisory/business professions
+**Completed**: marketing_consultant, project_manager, business_consultant, hr_consultant, crisis_communications_manager, customs_broker, import_export_specialist, restaurant_consultant, retail_manager
+**Remaining**: ~21 professions (management_consultant, operations_manager, event_planner, etc.)
 
 **Key Adaptations**:
 - Consulting methodologies
@@ -1239,12 +1240,49 @@ Phase 26 was completed in PR #2213 and included the ship_captain and anthropolog
 - Completed: 28KB, 615 lines
 - Time: ~4 hours
 
-Phase 29+: [Future contributors - 55 professions remaining after Phase 28]
+## ✅ Phase 29C - Advisory/Business Category Expansion (COMPLETED)
+
+**Priority #1: crisis_communications_manager** (Advisory Category Expansion) ✅
+- Purpose: Expand advisory category with crisis PR and reputation management expertise
+- Research Focus: PRSA 2024 Crisis Standards, IABC Crisis Communication Framework, SCCT (Situational Crisis Communication Theory), ISO 22361:2022
+- Key Elements: Crisis assessment, holding statements, stakeholder communication, media relations, reputation repair, post-crisis recovery, legal coordination
+- Completed: 28KB, 553 lines
+- Time: ~4 hours
+
+**Priority #2: customs_broker** (Advisory Category Expansion) ✅
+- Purpose: Expand advisory category with international trade compliance and customs clearance
+- Research Focus: 19 USC/CFR 2024, CBP regulations, HTSUS (Harmonized Tariff Schedule), USMCA, Section 301 tariffs, C-TPAT
+- Key Elements: HTS classification, duty calculation, customs entry filing (CBP Form 7501), trade agreement utilization, partner government agency coordination (FDA, USDA), post-clearance compliance
+- Completed: 24KB, 567 lines
+- Time: ~3.5 hours
+
+**Priority #3: import_export_specialist** (Advisory Category Expansion) ✅
+- Purpose: Expand advisory category with global logistics and trade documentation
+- Research Focus: INCOTERMS 2020, UCP 600 (Letter of Credit rules), SCOR Model 13.0, EAR (Export Administration Regulations), ITAR
+- Key Elements: International shipment coordination, freight forwarding, export/import documentation, Letter of Credit transactions, landed cost analysis, export compliance
+- Completed: 24KB, 593 lines
+- Time: ~4 hours
+
+**Priority #4: restaurant_consultant** (Advisory Category Expansion) ✅
+- Purpose: Expand advisory category with restaurant operations and business optimization
+- Research Focus: NRA (National Restaurant Association) 2024 Benchmarks, menu engineering (Kasavana & Smith), ServSafe Food Safety, HACCP, FDA Food Code
+- Key Elements: Operational assessment, financial analysis (food cost %, labor cost %, prime cost), menu engineering, kitchen workflow optimization, staff training, technology recommendations
+- Completed: 30KB, 630 lines
+- Time: ~4.5 hours
+
+**Priority #5: retail_manager** (Advisory Category Expansion) ✅
+- Purpose: Expand advisory category with retail operations and team management
+- Research Focus: NRF (National Retail Federation) 2024 Standards, retail KPIs (conversion rate, ATV, UPT, sales per square foot), visual merchandising principles
+- Key Elements: Sales performance management, inventory management (shrink, turnover), team development, visual merchandising, customer experience, labor optimization, KPI reporting
+- Completed: 33KB, 734 lines
+- Time: ~5 hours
+
+Phase 30+: [Future contributors - 50 professions remaining after Phase 29C]
 
 ---
 
-**Last Updated**: December 19, 2024 (Phase 28 completed)
+**Last Updated**: December 19, 2024 (Phase 29C completed)
 **Framework Version**: 4.0
-**Status**: Phases 1-28 complete ✅ - 127/182 professions complete (69.8%), 55 remaining
+**Status**: Phases 1-29C complete ✅ - 132/182 professions complete (72.5%), 50 remaining
 
-**Note**: Phase 28 added 4 cross-category professions (interior_designer, philosopher, applied_statistician, warehouse_manager) bringing total from 123 to 127. All playbooks expanded from stub files (56-67 lines) to comprehensive 532-615 line, 26-28KB playbooks meeting COMPLETION_FRAMEWORK quality standards.
+**Note**: Phase 29C added 5 advisory/business category professions (crisis_communications_manager, customs_broker, import_export_specialist, restaurant_consultant, retail_manager) bringing total from 127 to 132. All playbooks expanded from stub files (67 lines) to comprehensive 553-734 line, 24-33KB playbooks meeting COMPLETION_FRAMEWORK quality standards.
