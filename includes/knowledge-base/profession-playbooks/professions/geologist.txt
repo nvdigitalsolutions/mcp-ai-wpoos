@@ -13,55 +13,459 @@ Category guidance
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Conduct geological field mapping, rock/mineral identification, and stratigraphic analysis following ASBOG standards
+- Design subsurface investigation programs including borehole planning, soil/rock sampling, and core logging per ASTM standards
+- Prepare geological reports, cross-sections, and 3D subsurface models for engineering, environmental, and resource projects
+- Perform site characterization for geohazards (landslides, earthquakes, subsidence, flooding) and geotechnical assessments
+- Analyze geochemical data, petrographic thin sections, and geophysical survey results for stratigraphic/structural interpretation
+- Recommend field safety protocols per GSA Field Safety Policy including emergency planning, first aid, and hazard assessment
+- Provide guidance on professional licensure requirements (PG licensing), ASBOG exam preparation, and continuing education
+- Interpret remote sensing data (satellite imagery, aerial photos, LiDAR, UAV surveys) for geological mapping and hazard assessment
+- Develop conceptual geological models integrating field observations, lab data, and geophysical results
+- Success = Accurate geological interpretation, safe fieldwork, comprehensive documentation, regulatory compliance, public safety protection
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Certify geotechnical designs or engineering calculations without Professional Engineer (PE) license (geologist scope ends at characterization)
+- Make subsurface predictions or recommendations affecting public safety without Professional Geologist (PG) licensure where required by state law
+- Guarantee absence of geologic hazards or specific mineral quantities (too many subsurface uncertainties)
+- Recommend drilling programs, mining operations, or excavation methods without coordination with licensed engineers/miners
+- Enter unsupported excavations, trenches >4 feet deep without OSHA-compliant shoring/sloping (29 CFR 1926 Subpart P)
+- Sample from private property, protected areas, or cultural sites without proper permits and landowner/agency permissions
+- Identify or handle hazardous materials (asbestos, lead, radioactive minerals) without appropriate training and safety equipment
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Geotechnical engineering design (foundations, slope stability calculations, retaining walls) requires PE structural/geotechnical engineer
+- Environmental contamination assessment requires Professional Environmental Engineer or Certified Hydrogeologist
+- Petroleum/mineral resource evaluations require Certified Professional Geologist (CPG) with petroleum/mining specialization
+- Seismic hazard analysis for critical facilities requires Professional Geophysicist or earthquake engineering specialist
+- Legal disputes (mineral rights, property boundaries, expert testimony) require consulting attorney and expert witness experience
+- Paleontological resources discovered requiring paleontologist consultation per state/federal laws
+- Radiometric dating, isotope geochemistry, or specialized analytical techniques requiring collaboration with geochronology lab
+- Archaeological/cultural resources encountered requiring coordination with archaeologist and tribal consultation
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the project objective (site characterization, geohazard assessment, resource exploration, environmental compliance)?
+- What is the geographic location, physiographic province, and known regional geology?
+- What subsurface information is available (existing boreholes, geologic maps, geophysical surveys, well logs)?
+- What are the project constraints (budget, timeline, property access, regulatory requirements)?
+- What deliverables are required (geologic map, cross-sections, boring logs, geotechnical report, hazard assessment)?
+- Are there known geologic hazards (active faults, landslides, liquefaction potential, expansive soils, karst)?
+- What is the project scale (reconnaissance mapping, detailed site investigation, regional assessment)?
+- Who is the end user (engineer, regulatory agency, mining company, environmental consultant, real estate developer)?
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+1. Desktop Study & Background Research
+   - Review published geologic maps (USGS, state geological surveys), quadrangle maps, and regional reports
+   - Analyze aerial imagery, satellite data, LiDAR topography, and historical photos for lineaments, landforms
+   - Compile existing subsurface data (well logs, boring logs, geophysical surveys, past reports)
+   - Research geologic hazards (USGS earthquake database, landslide inventories, flood maps, mine subsidence maps)
+   - Identify regulatory requirements (NEPA, CEQA, state permits, cultural resource clearances)
+   - Develop conceptual geological model hypothesis for field verification
+   
+2. Field Reconnaissance & Safety Planning
+   - Complete GSA Field Safety Plan including emergency contacts, first aid kit, communication devices
+   - Obtain property access permissions, permits (BLM, USFS, private landowners), and environmental clearances
+   - Conduct reconnaissance traverse identifying key outcrops, structural features, and representative lithologies
+   - Photograph outcrops with scale, GPS coordinates, and annotate strike/dip, bedding orientations
+   - Collect orientation data (strike/dip of bedding, foliation, faults) using Brunton compass or digital inclinometer
+   - Document field observations in waterproof notebook with location, date, time, weather, geologist initials
+   - Assess field safety hazards (unstable slopes, wildlife, weather, remote location, stream crossings)
+   
+3. Detailed Geological Mapping & Sampling
+   - Establish base map scale appropriate for project (1:24,000 reconnaissance, 1:2,400 detailed site mapping)
+   - Traverse systematic grid or follow geologic contacts, measuring/recording stratigraphic sections
+   - Collect representative rock samples with GPS coordinates, sample numbers, and field descriptions (color, texture, mineralogy)
+   - Document sedimentary structures (cross-bedding, ripples, graded bedding), fossils, weathering patterns
+   - Measure/photograph structural features (folds, faults, joints) with orientation data and sense of movement
+   - Log soil profiles or hand-augered borings for shallow subsurface characterization (soil color, texture, depth to bedrock)
+   - Use handlens for mineral identification, acid bottle for carbonate testing, Munsell chart for soil color
+   
+4. Subsurface Investigation & Laboratory Analysis
+   - Design drilling program specifying borehole locations, depths, sampling intervals, and drilling method (rotary, auger, sonic)
+   - Supervise drilling operations ensuring OSHA safety compliance, proper sampling techniques (SPT, Shelby tube, core barrel)
+   - Log rock core or soil borings per ASTM D 2488 (soils) or ISRM standards (rock) including lithology, RQD, fractures
+   - Collect samples for laboratory testing (grain size, Atterberg limits, strength, moisture content, mineralogy)
+   - Coordinate geophysical surveys (seismic refraction, electrical resistivity, GPR) to define subsurface stratigraphy
+   - Prepare petrographic thin sections for optical microscopy and geochemical samples for XRF, ICP-MS analysis
+   - Interpret analytical results in context of field observations and regional geology
+   
+5. Data Integration, Modeling & Reporting
+   - Compile field data, boring logs, and lab results into GIS database with standardized symbology
+   - Prepare geologic map with legend, cross-sections (minimum 2-3 orientations), and structure contour maps
+   - Develop 3D subsurface model using borehole data, geophysical interpretations, and surface geology
+   - Write geologic report with executive summary, regional setting, site stratigraphy, structural geology, geohazards, conclusions
+   - Include recommendations for engineering design, hazard mitigation, or additional investigation
+   - Conduct peer review and quality check for accuracy, completeness, and adherence to standards
+   - Deliver final report with appendices (boring logs, lab data, maps, photos) in PDF and GIS formats
 
 4) Deliverables
 List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Geologic Map with legend, scale bar, north arrow, cross-section lines (USGS standard symbology)
+- Geologic Cross-Sections (minimum 2-3 orientations) showing stratigraphic units, structures, and interpretations
+- Boring Logs per ASTM D 5434 with lithology, sample depths, SPT blow counts, groundwater levels, RQD
+- Geologic Report with regional setting, site stratigraphy, structural geology, geohazards, and engineering recommendations
+- 3D Subsurface Model showing formation contacts, faults, and interpolated geology between boreholes
+- Geohazard Assessment Report identifying landslides, liquefaction potential, active faults, expansive soils
+- Rock/Soil Sample Catalog with GPS locations, descriptions, photos, and laboratory test results
+- Geophysical Survey Interpretation Report integrating seismic, resistivity, or GPR data with geological model
+- Field Photos with GPS coordinates, scale, annotations, and corresponding field notebook pages
+- Conceptual Site Model illustrating stratigraphic succession, groundwater flow, and geologic history
+- OSHA Excavation Safety Plan for trenching operations per 29 CFR 1926 Subpart P
+- Regulatory Compliance Documentation for environmental permits, cultural resource clearances, and agency submittals
+
+Minimum viable: Geologic map, one cross-section, basic boring logs, short summary report
+Gold standard: Comprehensive geologic report with 3D model, multiple cross-sections, geophysical integration, peer-reviewed interpretations, GIS deliverables
 
 5) Quality checklist
 Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Field Data Quality:
+- [ ] All outcrops GPS-located with ±10m horizontal accuracy and verified on base map
+- [ ] Strike/dip measurements follow right-hand rule convention and checked for consistency with regional structure
+- [ ] Field notebook entries legible, dated, and include weather conditions, geologist signature
+- [ ] Rock samples labeled with unique numbers matching field notebook and sample catalog
+- [ ] Field photos include scale (rock hammer, lens cap, person), GPS location, and descriptive annotation
+
+Laboratory & Analytical Data:
+- [ ] Sample chain-of-custody maintained with signatures and laboratory accreditation verified (ISO/IEC 17025)
+- [ ] Laboratory results include detection limits, QA/QC samples (duplicates, blanks, standards), and uncertainties
+- [ ] Petrographic descriptions follow IUGS classification (e.g., QAP diagram for plutonic rocks)
+- [ ] Geochemical data reported with appropriate units, significant figures, and analytical method specified
+- [ ] Geophysical surveys calibrated with borehole control and processed with documented parameters
+
+Geological Interpretation:
+- [ ] Stratigraphic correlations supported by lithologic similarities, fossil evidence, or radiometric ages
+- [ ] Cross-sections balanced (no impossible geometries, consistent with map patterns and structural measurements)
+- [ ] Fault interpretations consistent with regional stress field and kinematic indicators (slickensides, drag folds)
+- [ ] Geologic ages cited from authoritative sources (USGS, state surveys, peer-reviewed literature)
+- [ ] Alternative interpretations discussed where subsurface data is sparse or ambiguous
+
+Regulatory & Safety Compliance:
+- [ ] Field work complies with GSA Field Safety Policy (emergency plan, first aid, participant briefing)
+- [ ] Drilling operations follow OSHA excavation safety (29 CFR 1926 Subpart P) for trenches >4 feet deep
+- [ ] Environmental permits obtained (NEPA, CEQA, ESA Section 7, state archaeological clearances)
+- [ ] Professional Geologist (PG) seal/signature on final report where required by state law
+- [ ] Boring logs meet ASTM D 5434 format and include driller name, date, drilling method, sample types
+
+Report Quality:
+- [ ] Executive summary concisely states project objectives, methods, findings, and recommendations (<2 pages)
+- [ ] References cited in consistent format (author-date or numbered) with full bibliographic information
+- [ ] Maps include scale bar, north arrow, legend with USGS standard symbols, and projection/datum statement
+- [ ] Cross-sections vertically exaggerated ratio stated and reasonable for visualization (typically 2-5x)
+- [ ] Report peer-reviewed by senior geologist for technical accuracy and completeness
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Geologic Map Legend Template ===
+GEOLOGIC MAP LEGEND
+[Project Name], [Location]
+Prepared by: [Geologist Name, PG #####]
+Date: [MM/DD/YYYY]
+Base Map: [USGS 7.5' Quad Name, NAD83, UTM Zone ##]
+Scale: 1:[Scale]
+
+QUATERNARY
+Qal - Alluvium (Holocene): Sand, gravel, silt; channel and floodplain deposits; 0-10 ft thick
+
+TERTIARY
+Ts - Sandstone (Miocene): Fine to medium-grained, cross-bedded, fossiliferous; 50-150 ft thick
+Tsh - Shale (Miocene): Dark gray, fissile, marine; 20-80 ft thick
+
+MESOZOIC
+Kss - Sandstone (Cretaceous): Coarse-grained, conglomeratic, terrestrial; 100-300 ft thick
+
+SYMBOLS
+—— Geologic contact (dashed where approximately located, dotted where concealed)
+- ⊥ ⊥ - Fault (bar and ball on downthrown side; arrows show sense of slip)
+→ 35 ← Strike and dip of bedding (number is dip angle in degrees)
+• Boring location with number (B-1, B-2, etc.)
+A————A' Cross-section line
+===
+
+=== Boring Log Template (ASTM D 5434) ===
+BORING LOG
+Project: [Project Name]
+Boring No: [B-1]
+Location: [Address or coordinates]
+Ground Surface Elevation: [###] ft (datum: [NAVD88])
+Total Depth: [##] ft
+
+Date Started: [MM/DD/YYYY] | Date Completed: [MM/DD/YYYY]
+Driller: [Company Name] | Drilling Method: [Hollow-stem auger / Rotary / Sonic]
+Logged by: [Geologist Name, PG #####]
+
+Depth (ft) | Soil/Rock Description | Sample Type | Blows/6" | Comments
+0-2 | FILL: Brown silty sand with gravel, loose | - | - | Dry, no odor
+2-8 | ALLUVIUM: Gray fine sand, medium dense | SPT | 8-10-12 | Moist, N=22
+8-15 | ALLUVIUM: Brown clayey silt (CL), stiff | SPT | 14-18-20 | Plastic, N=38
+15-20 | SANDSTONE: Tan, fine-grained, moderately weathered | Core | - | RQD = 65%, dry
+20-25 | SANDSTONE: Gray, fine-grained, slightly weathered | Core | - | RQD = 85%, moist
+
+Groundwater: First encountered at 12 ft depth on [MM/DD/YYYY]
+            Stabilized at 10 ft depth after 24 hours
+
+Notes:
+- SPT N-values corrected for sampler efficiency and overburden pressure per ASTM D 1586
+- Rock Quality Designation (RQD) per ASTM D 6032
+- Soil classification per Unified Soil Classification System (USCS), ASTM D 2487
+===
+
+=== Geohazard Assessment Summary Template ===
+GEOHAZARD ASSESSMENT SUMMARY
+Site: [Project Name and Address]
+Assessed by: [Geologist Name, PG #####]
+Date: [MM/DD/YYYY]
+
+Earthquake Ground Shaking:
+- Seismic Zone: [Zone 2 / 3 / 4 per IBC]
+- Nearest Active Fault: [Fault Name], [Distance] km, [Quaternary activity]
+- Peak Ground Acceleration (PGA): [#.##]g (10% probability of exceedance in 50 years)
+- Recommendation: [Use IBC seismic design parameters; consider site-specific ground motion study if >$5M project]
+
+Liquefaction Potential:
+- Susceptibility: [High / Moderate / Low / None]
+- Basis: [Holocene loose sandy soils, shallow groundwater (<15 ft), high PGA]
+- Mitigation: [Ground improvement (vibro-compaction, stone columns); deep foundations; avoid shallow groundwater areas]
+
+Landslide Hazard:
+- Slope Stability: [Stable / Marginally stable / Unstable]
+- Basis: [Slope angle 25°, weathered bedrock, evidence of past movement]
+- Mitigation: [Surface drainage controls; avoid toe loading; consider retaining wall with sub-drains]
+
+Expansive Soil Potential:
+- Plasticity Index (PI): [##] (per ASTM D 4318)
+- Expansion Potential: [Very High (PI>35) / High (20-35) / Moderate (10-20) / Low (<10)]
+- Mitigation: [Remove and replace with non-expansive fill; moisture barrier; post-tensioned slab foundation]
+
+Flooding:
+- FEMA Flood Zone: [A / AE / X (shaded) / X (unshaded)]
+- 100-year flood elevation: [###] ft NAVD88
+- Recommendation: [Elevate structures above BFE; provide adequate drainage; flood insurance required]
+
+Overall Risk Rating: [High / Moderate / Low]
+Recommended Actions: [List prioritized mitigation measures]
+===
+
+=== Field Safety Plan Template (GSA Compliant) ===
+FIELD SAFETY PLAN
+Project: [Project Name]
+Location: [State, County, nearest town]
+Dates: [Start Date] to [End Date]
+Field Team Leader: [Name, Title, Phone]
+
+Emergency Contacts:
+- Local Emergency (911 or equivalent): [Phone]
+- Nearest Hospital: [Name, Address, Phone, GPS coordinates]
+- Field Team Leader: [Name, Phone]
+- Project Manager: [Name, Phone]
+- University/Company Safety Officer: [Name, Phone]
+
+Participant Medical Information:
+[Table with participant names, emergency contacts, known allergies, medications]
+
+Site-Specific Hazards:
+- Terrain: [Steep slopes, loose rock, river crossings]
+- Weather: [Thunderstorms, extreme heat, cold, flash floods]
+- Wildlife: [Bears, snakes, ticks, poison ivy]
+- Remote Location: [Limited cell service; 2+ hours from medical facility]
+- Geologic Hazards: [Rockfall, unstable slopes, abandoned mines]
+
+Safety Equipment Required:
+- First aid kit (checked and stocked)
+- Communication devices (satellite phone, PLB, SPOT)
+- Emergency shelter, water, and food (24-hour supply)
+- Personal protective equipment (hard hat, safety glasses, steel-toed boots)
+- Rock hammer, handlens, GPS, field notebook
+
+Safety Protocols:
+- Buddy system mandatory; no solo fieldwork
+- Check weather forecast daily; abort if severe weather forecast
+- Report location and ETA to Field Team Leader at start and end of each day
+- If lost or injured, stay put and use communication device to call for help
+- Avoid wildlife encounters; bear spray carried in bear country
+
+Evacuation Plan:
+- Primary: [Vehicle transport to nearest road, then hospital]
+- Secondary: [Helicopter medevac from GPS coordinates: [lat, lon]]
+- Designated landing zone: [Description and GPS]
+
+Acknowledgment:
+All participants have read and understood this Field Safety Plan.
+[Signature lines for each participant]
+===
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Site Characterization for Commercial Development
+```
+Project: Westside Plaza Development, Denver, Colorado
+Objective: Characterize subsurface conditions for foundation design of 5-story mixed-use building
+Geologist: Jane Smith, PG 5678 (Colorado)
+
+Regional Geology:
+Site located on Quaternary alluvial fan deposits of the South Platte River, Denver Basin. Regional bedrock is Pierre Shale (Cretaceous) overlain by Denver Formation sandstone (Paleocene) and surficial Quaternary deposits.
+
+Subsurface Investigation:
+- Four borings (B-1 through B-4) advanced to depths of 25-30 feet using hollow-stem auger
+- Borings located at building corners
+- SPT sampling at 2.5-foot intervals; undisturbed samples for lab testing
+
+Stratigraphy:
+0-3 ft: FILL - Brown silty sand with brick fragments, loose (N=5-8)
+3-12 ft: ALLUVIUM - Tan to gray fine to medium sand, medium dense (N=15-25)
+12-20 ft: ALLUVIUM - Brown sandy clay (CL), stiff to very stiff (N=20-35)
+20-30 ft: WEATHERED SANDSTONE - Tan, fine-grained, moderately weathered (RQD=40-60%)
+
+Groundwater: Encountered at 18 ft depth, stabilized at 16 ft after 24 hours
+
+Laboratory Testing:
+- Grain size analysis: Sand with 15-25% fines (silt+clay)
+- Atterberg Limits: PI = 18 (CL classification, moderate expansion potential)
+- Moisture content: 12-18% (near optimum for compaction)
+
+Geotechnical Recommendations:
+- Spread footings feasible bearing on native sand (12+ ft depth) or dense engineered fill
+- Allowable bearing pressure: 2,500 psf for spread footings on sand; 3,500 psf on sandstone
+- Remove fill to 3 ft depth; replace with compacted structural fill (95% standard Proctor)
+- Foundation drains recommended due to shallow groundwater
+- No seismic liquefaction risk (dense sand, groundwater >15 ft below footings)
+
+Geohazards:
+- Low seismic risk (PGA = 0.08g for Denver area)
+- Moderate expansive soil potential (PI=18); moisture control required
+- No active faults, landslides, or flooding hazards identified
+```
+
+Example 2: Geologic Mapping for Highway Corridor
+```
+Project: State Route 50 Corridor Mapping, Sierra Nevada, California
+Objective: 1:12,000 scale geologic mapping for rockfall hazard assessment
+Geologist: Dr. Michael Chen, PG 12345 (California), CEG 2345
+
+Regional Geology:
+Site located in Sierra Nevada batholith (Cretaceous granite and granodiorite) intruded into Paleozoic metasedimentary rocks. Quaternary glacial deposits and landslide debris mantle slopes.
+
+Mapping Methods:
+- Field reconnaissance along 15-mile corridor, August-October 2024
+- Base map: USGS 7.5' topographic quads, LiDAR DEM (1m resolution)
+- Structural measurements: 150 strike/dip measurements, joint spacing/orientation analysis
+- Rock sampling: 45 samples for petrographic analysis and strength testing
+
+Stratigraphy (oldest to youngest):
+- Pmv: Metavolcanic rocks (Permian): Dark green, schistose, chlorite-rich
+- Kgr: Granite (Cretaceous): Coarse-grained, leucocratic, massive to weakly foliated
+- Kgd: Granodiorite (Cretaceous): Medium-grained, salt-and-pepper texture
+- Qls: Landslide deposits (Quaternary): Chaotic angular blocks; inactive
+- Qal: Alluvium (Quaternary): Stream gravel and sand; active channels
+
+Structural Geology:
+- Regional foliation: N30W, 60NE (in metavolcanic rocks)
+- Dominant joint set: N45E, 85NW (parallel to regional fault system)
+- Secondary joint set: N60W, 75SW (exfoliation joints in granitic rocks)
+- No evidence of active faulting; nearest Holocene fault 25 km north
+
+Geohazards Identified:
+1. Rockfall Zones (5 locations): Oversteepened cuts in jointed granite; joint spacing 0.3-1.0 m
+   - Mitigation: Rock bolts, shotcrete, catch fences below slopes
+   
+2. Landslide (Mile Post 8.2): 500m x 200m debris slide; dormant
+   - Monitoring: Inclinometers, crack surveys; avoid undercutting toe
+   
+3. Unstable Talus (3 locations): Loose angular blocks at base of cliffs
+   - Mitigation: Remove loose material; install barrier fencing
+
+Tunnel Alignment Recommendations:
+- Favorable geology: Massive granite with RQD > 75%, low groundwater inflow
+- Avoid contact zones: Fractured, altered rock with groundwater seepage
+- Recommend geotechnical borings at 200m spacing along tunnel alignment
+```
+
+Example 3: Subsurface Investigation for Dam Foundation
+```
+Project: Bear Creek Dam, Montana
+Objective: Characterize foundation conditions for proposed 80-foot earthen dam
+Geologist: Sarah Johnson, PG 7890 (Montana)
+
+Background:
+Proposed dam site on Bear Creek, impounding 5,000 acre-feet for irrigation. Foundation investigations required per FERC and Montana DNRC dam safety regulations.
+
+Investigation Program:
+- 8 rotary core borings (DB-1 through DB-8) along dam axis and abutments
+- Depths: 30-60 feet (to competent bedrock plus 10-foot confirmation)
+- Geophysical surveys: Seismic refraction, electrical resistivity
+- Laboratory testing: Permeability, unconfined compressive strength, point load index
+
+Stratigraphy:
+Dam Axis (DB-1 to DB-4):
+0-15 ft: ALLUVIUM - Silty sand and gravel, loose to medium dense; High permeability (k = 10^-2 cm/s)
+15-25 ft: GLACIAL TILL - Sandy silt with cobbles, very dense; Moderate permeability (k = 10^-4 cm/s)
+25-60 ft: SANDSTONE - Tan to gray, fine-grained; RQD = 60-80%, Low permeability (k = 10^-6 cm/s)
+
+Abutments (DB-5 to DB-8):
+0-5 ft: COLLUVIUM - Angular sandstone fragments; Loose
+5-40 ft: SANDSTONE - Same as dam axis; RQD = 50-75%
+40+ ft: SHALE - Dark gray, fissile; RQD = 30-50%, Very low permeability (k = 10^-8 cm/s)
+
+Groundwater:
+- Water table at 12-18 ft depth in alluvium (seasonal variation)
+- Artesian conditions in sandstone (piezometric level 5 ft above ground)
+
+Foundation Conditions:
+- Favorable: Dense glacial till and competent sandstone provide adequate bearing capacity (>5 tons/sq ft)
+- Concern: High permeability alluvium requires cutoff trench to bedrock (25 ft) to prevent underseepage
+- Concern: Artesian pressure requires relief wells to prevent uplift and piping
+
+Recommendations:
+1. Excavate cutoff trench to sandstone bedrock (25 ft depth); backfill with low-permeability clay
+2. Install relief wells downstream of dam to control artesian pressure
+3. Remove colluvium on abutments (5 ft); key dam into competent sandstone
+4. Grout fractured sandstone in foundation contact zone to reduce seepage
+5. Phase 2: Additional borings for detailed embankment design; infiltration testing
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
+Define key terms and list authoritative references:
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Professional Geologist (PG)**: State-licensed geoscientist authorized to practice geology affecting public health, safety, and welfare; requires education, experience, and ASBOG exams
+- **ASBOG (Association of State Boards of Geology)**: Organization administering Fundamentals of Geology (FG) and Practice of Geology (PG) licensure examinations
+- **Strike and Dip**: Orientation of planar geological features (bedding, foliation, faults); strike is compass direction of horizontal line, dip is angle below horizontal
+- **RQD (Rock Quality Designation)**: Percentage of rock core recovered in pieces ≥4 inches (10 cm) long; indicates rock mass quality (per ASTM D 6032)
+- **SPT (Standard Penetration Test)**: Field test measuring soil resistance to penetration by driving split-spoon sampler; N-value (blows per foot) indicates density/strength
+- **Cross-Section**: Vertical slice through the earth showing interpreted subsurface geology between two surface points
+- **Stratigraphic Column**: Vertical sequence of rock/soil layers showing age relationships (oldest at bottom, youngest at top per Law of Superposition)
+- **Geohazard**: Geologic condition posing risk to public safety (earthquakes, landslides, liquefaction, expansive soils, flooding, subsidence)
+- **Brunton Compass**: Pocket transit compass used for measuring strike/dip, bearings, and vertical angles in the field
+- **Geophysical Survey**: Non-invasive subsurface investigation using seismic, electrical, gravity, or magnetic methods
+- **Petrography**: Microscopic examination of rock thin sections under polarized light to identify minerals, textures, and rock type
+- **Conceptual Site Model**: 3D visualization integrating surface geology, subsurface stratigraphy, structure, and hydrogeology
+
+Standards & Frameworks (2024-2025):
+- **ASBOG Tasks of a Professional Geologist**: Comprehensive list of knowledge areas and skills tested on PG licensure exams (field methods, mapping, geochemistry, hydrogeology, engineering geology)
+- **GSA Position Statement on Responsible Geologic Fieldwork (2024)**: Ethical guidelines for safe, inclusive, environmentally responsible field practices respecting Indigenous lands and local communities
+- **GSA Field Safety Policy & Procedures**: Safety requirements for field trips including emergency planning, first aid certification, codes of conduct, and participant briefings
+- **USGS Survey Manual and Handbooks**: Bureau-level procedures for geologic field studies, sample collection, core logging, and occupational safety compliance
+- **ASTM D 5434 (Standard Guide for Field Logging of Subsurface Explorations)**: Format and content requirements for boring logs including lithology, sampling, and groundwater observations
+- **ASTM D 2488 (Standard Practice for Description and Identification of Soils)**: Visual-manual soil classification procedures for field use (Unified Soil Classification System)
+- **ISRM (International Society for Rock Mechanics) Suggested Methods**: Standardized procedures for rock core logging, RQD calculation, discontinuity characterization, and strength testing
+- **USDA-NRCS Field Book for Describing and Sampling Soils**: Soil profile description standards including color (Munsell), texture, structure, and horizon designation
+
+Common Tools & Platforms:
+- **Field Equipment**: Brunton compass, GPS (Garmin, Trimble), rock hammer, handlens (10x or 20x), acid bottle (10% HCl), field notebook (Rite in the Rain), Munsell color chart
+- **Mapping & GIS**: ArcGIS, QGIS, StraboSpot (digital field mapping), Rockworks (3D subsurface modeling), Midland Valley Move (structural geology)
+- **Geophysical Software**: Seismic refraction processing (SeisImager, Reflexw), electrical resistivity inversion (RES2DINV, EarthImager)
+- **Laboratory Analysis**: Petrographic microscope, XRF (X-ray fluorescence), ICP-MS (inductively coupled plasma mass spectrometry), XRD (X-ray diffraction)
+- **Geological Databases**: USGS National Geologic Map Database, state geological survey websites, NGMDB (National Geologic Map Database)
+- **Boring Log Software**: gINT (Bentley), LogPlot (Rockware), SoilVision (geotechnical database)
+- **Remote Sensing**: Google Earth Pro, USGS EarthExplorer (Landsat, aerial photos), OpenTopography (LiDAR data)
+
+Change Log:
+2024-12: Initial playbook created based on ASBOG PG standards, GSA field safety policy, and USGS/ASTM field/lab methods
+- Emphasized Professional Geologist (PG) licensure requirements and state-specific regulations for public safety practice
+- Integrated GSA Responsible Geologic Fieldwork Practices (2024) for ethical, inclusive, and environmentally responsible field conduct
+- Incorporated GSA Field Safety Policy requirements for emergency planning, first aid certification, and participant safety
+- Referenced ASTM D 5434 (boring logs), ASTM D 2488 (soil classification), and ISRM methods for standardized field/lab procedures
+- Added subsurface investigation workflows including drilling supervision, core logging, and geophysical survey integration
+- Included geohazard assessment protocols (earthquakes, landslides, liquefaction, expansive soils) for public safety protection
