@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests covering social reporting tools.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
 

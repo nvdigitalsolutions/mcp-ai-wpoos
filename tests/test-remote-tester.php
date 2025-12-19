@@ -4,6 +4,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 
 /**
  * Tests for the remote MCP API connectivity tester.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Remote_Tester_Test extends WP_UnitTestCase {
 	/**

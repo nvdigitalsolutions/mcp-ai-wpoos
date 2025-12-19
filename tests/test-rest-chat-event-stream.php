@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for streaming chat responses as Server-Sent Events.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 	/**

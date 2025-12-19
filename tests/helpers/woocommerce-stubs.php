@@ -1,6 +1,8 @@
 <?php
 /**
  * Minimal WooCommerce stubs for unit testing.
+ *
+ * @package WP_MCP_AI
  */
 if ( ! class_exists( 'WooCommerce' ) ) {
 	class WooCommerce {}

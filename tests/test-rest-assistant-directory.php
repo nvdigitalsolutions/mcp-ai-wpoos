@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the assistant directory REST endpoint.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 

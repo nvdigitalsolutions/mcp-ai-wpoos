@@ -4,6 +4,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-heal
 
 /**
  * Tests for the Site Health tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	/**

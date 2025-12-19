@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Rate Limit Manager.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Rate_Limit_Manager_Test extends WP_UnitTestCase {
 

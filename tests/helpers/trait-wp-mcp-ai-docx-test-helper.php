@@ -1,6 +1,8 @@
 <?php
 /**
  * Helper utilities for generating DOCX fixtures in tests.
+ *
+ * @package WP_MCP_AI
  */
 trait WP_MCP_AI_Docx_Test_Helper {
 	/**

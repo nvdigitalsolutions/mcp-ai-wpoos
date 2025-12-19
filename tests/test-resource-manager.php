@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Resource Manager class.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 

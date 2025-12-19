@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for OpenAI Jukebox integration tools.
+ *
+ * @package WP_MCP_AI
  */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php';

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests that ensure model defaults are applied in chat REST requests.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
 

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Language Model Router class.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 

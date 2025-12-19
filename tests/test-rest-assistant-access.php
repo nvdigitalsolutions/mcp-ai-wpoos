@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for assistant access restrictions over REST.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 

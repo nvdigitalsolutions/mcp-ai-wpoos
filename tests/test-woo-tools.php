@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for WooCommerce-powered tools.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Woo_Tool_Availability_Test extends WP_UnitTestCase {
 	/**

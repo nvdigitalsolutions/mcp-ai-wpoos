@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for tracking all Crawl4AI jobs (sync, async, and local).
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {

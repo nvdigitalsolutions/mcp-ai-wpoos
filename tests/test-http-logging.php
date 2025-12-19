@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for HTTP connection logging.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {

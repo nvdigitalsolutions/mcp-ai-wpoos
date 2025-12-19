@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for chat transcript reconstruction from database records.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 	/**

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Tests for Generate simple jwt token tool.
+ *
+ * @package WP_MCP_AI
+ */
 namespace SimpleJWTLogin\Modules\Settings {
 	if ( ! class_exists( __NAMESPACE__ . '\\AuthenticationSettings' ) ) {
 		class AuthenticationSettings {

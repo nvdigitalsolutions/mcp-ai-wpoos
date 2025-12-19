@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Job Queue Manager.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
 

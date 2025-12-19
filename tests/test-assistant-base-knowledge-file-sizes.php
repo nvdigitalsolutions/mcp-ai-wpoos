@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for assistant base knowledge file size display.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Assistant_Base_Knowledge_File_Sizes_Test extends WP_UnitTestCase {
 

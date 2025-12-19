@@ -2,6 +2,8 @@
 /**
  * Tests for agentic tool execution loop ensuring assistant messages with tool_calls
  * are properly added to the conversation before tool response messages.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
 

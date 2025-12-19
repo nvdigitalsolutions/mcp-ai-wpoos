@@ -2,6 +2,8 @@
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
 /**
  * Tests for the OpenAI image generation tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 

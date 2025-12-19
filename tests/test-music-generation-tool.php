@@ -4,6 +4,8 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-se
 
 /**
  * Tests for the music generation tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Music_Generation_Tool_Test extends WP_UnitTestCase {
 

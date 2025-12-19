@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the GDACS events tool.
+ *
+ * @package WP_MCP_AI
  */
 class Test_GDACS_Tool extends WP_UnitTestCase {
 	/**

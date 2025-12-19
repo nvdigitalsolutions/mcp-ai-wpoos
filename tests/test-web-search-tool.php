@@ -3,6 +3,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.ph
 
 /**
  * Tests for the web search tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 	/**

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for guest token authentication with chat transcript endpoints.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 	/**

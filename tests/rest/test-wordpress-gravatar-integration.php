@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the WordPress.com/Gravatar bridge integration.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {

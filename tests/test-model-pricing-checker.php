@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Model Pricing Checker.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 

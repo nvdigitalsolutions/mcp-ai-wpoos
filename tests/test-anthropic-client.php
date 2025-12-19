@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Anthropic client wrapper.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 

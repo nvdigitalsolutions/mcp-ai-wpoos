@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for wp_mcp_ai_get_required_chat_capability().
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
 

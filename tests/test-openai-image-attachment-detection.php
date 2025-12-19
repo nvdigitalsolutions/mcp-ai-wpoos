@@ -1,6 +1,8 @@
 <?php
 /**
  * Test helper class to expose protected methods.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_OpenAI_Client_Test_Helper extends WP_MCP_AI_OpenAI_Client {
 

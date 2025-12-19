@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for Plugins Integration Settings Page
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 

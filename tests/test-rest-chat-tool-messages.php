@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests ensuring tool messages are paired with matching tool calls before dispatch.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_REST_Tool_Message_Sanitization_Test extends WP_UnitTestCase {
 

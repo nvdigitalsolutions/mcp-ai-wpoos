@@ -4,6 +4,8 @@
  *
  * Verifies that the /tools endpoint handles tool schema errors gracefully
  * and continues to function even when individual tools have issues.
+ *
+ * @package WP_MCP_AI
  */
 
 /**

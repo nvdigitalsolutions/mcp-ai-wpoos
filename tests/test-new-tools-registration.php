@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for new media and comments tools registration.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_New_Tools_Registration_Test extends WP_UnitTestCase {
 

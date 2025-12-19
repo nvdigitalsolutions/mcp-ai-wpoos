@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests covering JetEngine CRUD dispatch via the MCP integration layer.
+ *
+ * @package WP_MCP_AI
  */
 
 if ( ! class_exists( 'Jet_Engine' ) ) {

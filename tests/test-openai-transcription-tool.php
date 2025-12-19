@@ -3,6 +3,8 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-op
 
 /**
  * Tests for the OpenAI audio transcription tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
 

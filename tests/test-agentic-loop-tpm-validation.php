@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for agentic tool execution loop TPM validation and message truncation.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 

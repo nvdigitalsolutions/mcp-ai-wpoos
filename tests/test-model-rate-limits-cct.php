@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Model Rate Limits CCT.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 

@@ -6,6 +6,8 @@
  * with different client configurations, including:
  * 1. Proper MCP configuration (base URL with SSE)
  * 2. Incorrect configuration (direct /chat URL)
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 

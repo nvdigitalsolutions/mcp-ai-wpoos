@@ -1,6 +1,8 @@
 <?php
 /**
  * Memory streaming tests.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Memory_Streaming_Test extends WP_UnitTestCase {
 	/**

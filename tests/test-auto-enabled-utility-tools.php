@@ -4,6 +4,8 @@
  *
  * Verifies that generate_openai_speech and transcribe_openai_audio tools
  * are automatically available for all assistants without explicit configuration.
+ *
+ * @package WP_MCP_AI
  */
 
 /**

@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Crawl4AI tool integration.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 

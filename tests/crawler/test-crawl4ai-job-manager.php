@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the Crawl4AI background job manager.
+ *
+ * @package WP_MCP_AI
  */
 
 class WP_MCP_AI_Crawler_Job_Manager_Test extends WP_UnitTestCase {

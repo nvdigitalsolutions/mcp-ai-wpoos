@@ -2,6 +2,8 @@
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php';
 /**
  * Tests for the OpenAI speech generation tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_OpenAI_Speech_Tool_Test extends WP_UnitTestCase {
 

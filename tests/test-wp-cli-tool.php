@@ -4,6 +4,8 @@ require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-ch
 
 /**
  * Tests for the WP-CLI status tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 	/**
