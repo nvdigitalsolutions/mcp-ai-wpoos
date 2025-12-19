@@ -44,10 +44,38 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction does this project fall under? (Affects electrical codes, voltage standards, frequency)
 - What is the primary function and electrical load requirements of this system?
 - What are the voltage levels and power requirements (single-phase vs three-phase, 120V, 208V, 480V, etc.)?
 - What are the space constraints, equipment locations, and distribution requirements?
 - What type of facility and occupancy classification (commercial, industrial, residential, healthcare)?
+
+1.5) Regional Considerations
+
+Electrical engineering varies significantly by regional electrical systems:
+
+**Electrical Codes & Standards:**
+- **United States**: NEC (National Electrical Code), state amendments, local jurisdiction modifications
+- **Canada**: CEC (Canadian Electrical Code), provincial variations
+- **Europe**: IEC standards, CENELEC harmonization, national wiring regulations (BS 7671 in UK)
+- **International**: IEC 60364 for low-voltage installations, regional adoptions with modifications
+
+**Voltage & Frequency Standards:**
+- **North America**: 120V/240V single-phase, 208V/480V three-phase, 60 Hz
+- **Europe/Asia/Africa/Oceania**: 230V/400V, 50 Hz (some exceptions like Japan 100V)
+- **Voltage tolerances**: ±10% in most regions, affects equipment selection
+- **Frequency differences**: Motors, transformers, power supplies must match regional frequency
+
+**Professional Licensing:**
+- **United States**: Professional Engineer (PE) required for certain work, electrical contractor licenses
+- **United Kingdom**: Qualified electrician schemes (NICEIC, NAPIT, etc.), Part P Building Regulations
+- **Australia**: Electrical license levels (restricted, contractor, master), state-based
+- **Regional reciprocity**: Limited mutual recognition, retesting often required
+
+**Arc Flash & Safety:**
+- **United States**: NFPA 70E, OSHA 1910 Subpart S, IEEE 1584 arc flash calculations
+- **Europe**: IEC 61482 standards for arc-rated PPE
+- **Regional training**: Different requirements for electrical safety training and certification
 - What are the critical loads requiring backup power (UPS, generator, battery)?
 - What environmental conditions affect equipment selection (indoor, outdoor, NEMA ratings, hazardous locations)?
 - What codes and standards apply (NEC edition, state/local amendments, IEEE, NFPA, industry-specific)?

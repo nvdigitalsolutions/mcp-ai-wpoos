@@ -42,7 +42,36 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and region is this project located in? (Affects building codes, seismic design, permitting)
 - What is the project type (building, bridge, road, site development) and primary function?
+
+1.5) Regional Considerations
+
+Civil engineering is highly dependent on regional codes and site conditions:
+
+**Building Codes & Standards:**
+- **United States**: IBC (International Building Code), ASCE 7 (loads), state/local amendments
+- **Europe**: Eurocodes (EN 1990-1999), national annexes with regional parameters
+- **Canada**: NBC (National Building Code), provincial building codes
+- **Australia**: NCC (National Construction Code), Australian Standards (AS series)
+
+**Seismic Design:**
+- Regional seismic hazard maps define design requirements (USGS in US, PSHA studies globally)
+- Seismic design categories vary (A-F in US, different classifications elsewhere)
+- Site-specific ground motion studies required in high seismic zones
+- Construction practices vary (moment frames, shear walls, base isolation adoption)
+
+**Climate & Environmental:**
+- Snow loads, wind speeds, temperature extremes vary by region (ASCE 7 maps, Eurocode maps)
+- Frost depth affects foundation design (varies from 0 in tropics to 8+ feet in cold regions)
+- Flood zones and coastal design (FEMA maps in US, regional flood studies)
+- Permafrost considerations in Arctic regions
+
+**Professional Licensing:**
+- **United States**: PE (Professional Engineer) license, varies by state, comity between states
+- **Europe**: Chartered Engineer status, Ingenieur titles, EUR ING designation
+- **Canada**: P.Eng through provincial associations
+- **Sealing requirements**: Who can stamp drawings varies by jurisdiction and project type
 - What are the site conditions (location, topography, soil type, water table, access)?
 - What building codes and standards apply (IBC edition, ASCE 7, state/local amendments)?
 - What are the design loads and occupancy requirements (live loads, snow, wind, seismic)?

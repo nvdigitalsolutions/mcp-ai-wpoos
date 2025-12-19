@@ -46,10 +46,40 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your design approach:
+- What regulatory markets will this device target? (FDA, EU MDR, Health Canada, TGA, PMDA, etc.)
 - What is the intended use and indications for use of the medical device?
 - What is the device classification (Class I, II, III) and applicable FDA regulatory pathway (510(k), PMA, De Novo)?
 - What are the performance requirements and clinical endpoints?
 - What is the patient population, use environment (hospital, home, ambulatory), and user profile?
+
+1.5) Regional Considerations
+
+Medical device development faces significant regional regulatory variations:
+
+**Regulatory Frameworks:**
+- **United States**: FDA 21 CFR Part 820 (QSR), 510(k), PMA, De Novo pathways, post-market surveillance
+- **Europe**: EU MDR 2017/745 (Medical Device Regulation), replaced MDD, notified body involvement required
+- **Canada**: Health Canada Medical Devices Regulations (SOR/98-282), risk-based classification
+- **Japan**: PMDA (Pharmaceuticals and Medical Devices Agency), J-GCP for clinical trials
+- **Australia**: TGA (Therapeutic Goods Administration), largely harmonized with EU
+
+**International Harmonization:**
+- IMDRF (International Medical Device Regulators Forum) works toward harmonization
+- ISO 13485 (QMS) globally recognized, but with regional interpretations
+- IEC 60601 (electrical medical devices) internationally adopted with national deviations
+- MDSAP (Medical Device Single Audit Program) - one audit for multiple countries (US, Canada, Australia, Brazil, Japan)
+
+**Clinical Evidence Requirements:**
+- US FDA requires clinical data for high-risk devices (Class III PMA), less for 510(k)
+- EU MDR requires clinical evaluation for all devices, higher evidence bar than old MDD
+- Regional clinical trial requirements vary (GCP harmonization but local IRB/ethics)
+- Post-market surveillance requirements differ (MAUDE in US, vigilance reporting in EU)
+
+**Biocompatibility & Testing:**
+- ISO 10993 series globally recognized but regional testing lab accreditation differs
+- FDA recognizes ISO 10993 but may require additional testing
+- Animal testing regulations vary (stricter in EU, 3Rs principles)
+- Regional material restrictions (latex sensitivity labeling, REACH/RoHS compliance in EU)
 - Are there predicate devices or similar devices on the market (for 510(k) substantial equivalence)?
 - What are the critical safety concerns and potential hazards (electrical shock, infection, thermal burns, mechanical failure)?
 - What design standards apply (IEC 60601, ISO 14971, ISO 10993, IEC 62366)?

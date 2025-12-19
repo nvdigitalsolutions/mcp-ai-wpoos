@@ -44,10 +44,33 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this system operate in? (Affects codes, standards, certifications, units)
 - What is the primary function and performance requirements of this mechanical system/component?
 - What are the operating conditions (temperature range, pressure, load cycles, environment)?
 - What are the dimensional constraints, weight limitations, and space envelope requirements?
 - What materials are preferred or required (metals, plastics, composites, cost constraints)?
+
+1.5) Regional Considerations
+
+Mechanical engineering practices vary by regional codes and standards:
+
+**Engineering Standards & Codes:**
+- **United States**: ASME (pressure vessels, piping), SAE (automotive), ASTM (materials), ANSI (fasteners, dimensions)
+- **Europe**: EN standards, ISO adoption, CE marking requirements, Pressure Equipment Directive (PED)
+- **International**: ISO 9001 (quality), ISO 14001 (environmental), industry-specific ISO standards
+- **Regional variations**: Metric (SI) vs imperial units, different material specifications, tolerance conventions
+
+**Professional Licensing:**
+- **United States**: Professional Engineer (PE) license required for public safety, varies by state
+- **Canada**: P.Eng designation through provincial associations (PEO, APEGA, Engineers Canada)
+- **Europe**: Chartered Engineer (CEng) in UK, Ingenieur in Germany, varying requirements by country
+- **Australia**: Chartered status through Engineers Australia, mutual recognition with some countries
+
+**Safety & Compliance:**
+- Machinery Directive (EU), OSHA requirements (US), regional workplace safety regulations
+- Pressure equipment regulations (ASME BPVC in US, PED in EU, different approaches)
+- Environmental regulations affect material selection (RoHS, REACH in EU, California Prop 65)
+- Export controls on certain technologies (ITAR in US, dual-use goods regulations)
 - What manufacturing processes are available or preferred (machining, casting, sheet metal, 3D printing)?
 - What are the safety factors, reliability requirements, and expected service life?
 - What regulatory standards must be met (ASME, OSHA, ISO, industry-specific codes)?

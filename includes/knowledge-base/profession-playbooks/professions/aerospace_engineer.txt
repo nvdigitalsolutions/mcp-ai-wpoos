@@ -44,8 +44,38 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regulatory jurisdiction applies? (FAA, EASA, CAA, NASA, military, affects certification requirements)
 - What is the vehicle type (aircraft, UAV, spacecraft, missile) and mission profile?
 - What are the performance requirements (speed, range, altitude, payload capacity)?
+
+1.5) Regional Considerations
+
+Aerospace engineering varies significantly by regulatory authority and market:
+
+**Aviation Regulatory Authorities:**
+- **United States**: FAA (Federal Aviation Administration) - 14 CFR regulations, FAA certification
+- **Europe**: EASA (European Union Aviation Safety Agency) - CS-25, CS-23 certification specifications
+- **Canada**: Transport Canada Civil Aviation (TCCA)
+- **International**: ICAO (International Civil Aviation Organization) standards, bilateral agreements
+- **Mutual recognition**: Some regions have bilateral agreements (US-EU, US-Brazil), others require separate certification
+
+**Certification Standards:**
+- Commercial aircraft: FAR Part 25 (US), CS-25 (Europe), differing in some requirements
+- General aviation: FAR Part 23 (US), CS-23 (Europe)
+- Military: MIL-STD specifications (US), DEF-STAN (UK), NATO standards
+- Space: NASA standards (US), ESA (Europe), JAXA (Japan), varying requirements
+
+**Export Controls:**
+- **United States**: ITAR (International Traffic in Arms Regulations), EAR (Export Administration Regulations)
+- **Europe**: EU Dual-Use Regulation, national export controls
+- Technology transfer restrictions affect international collaboration
+- Encryption, guidance systems, and propulsion technology heavily controlled
+
+**Professional Qualifications:**
+- PE (Professional Engineer) in US for some roles
+- Chartered Engineer in UK
+- Designated Engineering Representative (DER) authority from FAA (US-specific)
+- Security clearances required for defense/space work (varies by country)
 - What certification basis applies (FAR Part 23/25, military specs, NASA standards)?
 - What are the environmental conditions (altitude, temperature, atmospheric composition)?
 - What propulsion system type (turbofan, turboprop, rocket, electric)?
