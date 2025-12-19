@@ -40,7 +40,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- What jurisdiction(s) does this legal matter involve (state, federal, international)?
+- What jurisdiction(s) does this legal matter involve (state, federal, international)? (CRITICAL - law is jurisdiction-specific)
 - What type of legal issue is this (contract, tort, criminal, family, etc.)?
 - What is the timeline and any statute of limitations concerns?
 - Has an attorney been consulted yet?
@@ -48,6 +48,96 @@ Ask 3–8 questions that materially affect the answer:
 - Are there any immediate deadlines or court dates?
 - What documentation or evidence exists?
 - What is the opposing party's position (if applicable)?
+
+1.5) Regional & Jurisdictional Variations
+
+**CRITICAL NOTE**: Law is fundamentally jurisdiction-specific. Always identify the applicable jurisdiction(s) before providing guidance.
+
+**United States (Federal & State System):**
+- Legal System: Common law (except Louisiana - civil law)
+- Federal vs. State: Dual sovereignty; federal courts (Article III), state courts (varied structure)
+- Attorney Licensing: State bar admission required; multi-jurisdictional practice rules (Model Rule 5.5)
+- Professional Conduct: Model Rules of Professional Conduct (ABA) adopted with state variations
+- Key Federal Laws: U.S. Constitution, U.S. Code, Code of Federal Regulations
+- Federal Courts: District Courts (trial), Circuit Courts of Appeals (11 circuits + DC + Federal), Supreme Court
+- State Variations: Significant differences in contract law, tort law, family law, probate, criminal sentencing
+- Practice Areas: Federal practice (immigration, bankruptcy, patents, securities), state practice (most civil, criminal, family)
+- Citation: Bluebook (legal) or ALWD Citation Manual
+- Key Resources: Westlaw, LexisNexis, state-specific reporters
+
+**United Kingdom:**
+- Legal System: Common law (England & Wales), separate systems in Scotland (mixed civil/common) and Northern Ireland
+- Legal Professions: Solicitors (client-facing, transactional) vs. Barristers (courtroom advocacy); fusion in some areas
+- Attorney Regulation: Solicitors Regulation Authority (SRA), Bar Standards Board (BSB)
+- Professional Conduct: SRA Standards and Regulations, BSB Handbook
+- Court Structure: Magistrates' Courts, County Courts, Crown Court, High Court, Court of Appeal, Supreme Court (replaced House of Lords 2009)
+- Key Legislation: UK Acts of Parliament, statutory instruments, EU law (retained post-Brexit)
+- Practice Rights: Solicitor advocates, direct access barristers expanding
+- Regional Variations: Scotland has distinct legal system (Court of Session, Sheriff Courts, Scots law)
+- Citation: OSCOLA (Oxford Standard for Citation of Legal Authorities)
+- Key Resources: Westlaw UK, LexisLibrary, BAILII (free case law)
+
+**European Union (EU Member States):**
+- Legal System: Primarily civil law (codified), except Ireland (common law)
+- EU Law Supremacy: EU regulations and directives take precedence over national law in areas of EU competence
+- Attorney Licensing: National bar admission; Lawyers' Services Directive allows cross-border practice
+- Professional Conduct: CCBE Code of Conduct for European Lawyers; national codes
+- Court Structure: National courts + European Court of Justice (ECJ) for EU law interpretation
+- Key EU Law: Treaties (TFEU, TEU), regulations (directly applicable), directives (member state implementation)
+- Practice Areas: EU-regulated areas (competition, data protection, trade) vs. national (family, criminal, most civil)
+- Regional Variations: Significant differences between civil law countries (Germany, France, Spain) in procedural rules, legal education
+- Citation: Varies by country; ECJ uses ECLI (European Case Law Identifier)
+- Key Resources: EUR-Lex (EU law), national databases vary by country
+
+**Canada:**
+- Legal System: Common law (all provinces except Quebec - civil law for private matters)
+- Federal vs. Provincial: Similar to US; federal jurisdiction (criminal law, IP, immigration), provincial (property, contracts, family)
+- Attorney Licensing: Provincial law societies; National Committee on Accreditation for foreign-trained lawyers
+- Professional Conduct: Model Code of Professional Conduct (Federation of Law Societies); provincial variations
+- Court Structure: Provincial courts, superior courts, provincial courts of appeal, Federal Court, Supreme Court of Canada
+- Bilingualism: Federal courts and some provinces operate in English and French
+- Indigenous Law: Growing recognition; overlap with Canadian law in some areas
+- Regional Variations: Quebec's Civil Code (based on French civil law), bijural system
+- Citation: Canadian Guide to Uniform Legal Citation (McGill Guide)
+- Key Resources: CanLII (free case law), Westlaw Canada, Lexis Advance Quicklaw
+
+**Australia:**
+- Legal System: Common law, federal system
+- Federal vs. State: Similar to US/Canada; federal jurisdiction (constitutional, bankruptcy, IP), state (most civil/criminal)
+- Attorney Licensing: State-based admission, automatic mutual recognition across states
+- Professional Conduct: Australian Solicitors' Conduct Rules; state-based regulation
+- Court Structure: Magistrates'/Local Courts, District/County Courts, Supreme Courts (state), Federal Court, High Court of Australia
+- Practice: No solicitor/barrister division in most states (fused profession)
+- Citation: Australian Guide to Legal Citation (AGLC)
+- Key Resources: AustLII (free case law), Jade, LexisNexis, Westlaw AU
+
+**Civil Law Jurisdictions (Continental Europe, Latin America, Asia):**
+- Legal System: Codified law (civil codes, commercial codes, criminal codes)
+- Sources: Written codes primary; case law persuasive but not binding (no strict stare decisis)
+- Legal Profession: Often distinction between avocat/abogado (lawyer) and notaire/notario (notary) for certain transactions
+- Judicial Role: Judges more inquisitorial; actively investigate and question
+- Legal Education: Undergraduate law degree typical; less emphasis on case method
+- Examples: France (Code civil), Germany (BGB), Japan (hybrid system), Mexico, Brazil
+
+**Common vs. Civil Law Key Differences:**
+- **Precedent**: Binding in common law (stare decisis), persuasive in civil law
+- **Codification**: Civil law relies on comprehensive codes; common law more case-driven
+- **Judicial Role**: Common law adversarial (parties drive), civil law inquisitorial (judge-driven investigation)
+- **Legal Reasoning**: Common law analogizes from cases; civil law applies code provisions
+- **Contract Interpretation**: Common law focuses on parties' intent; civil law on code provisions and good faith
+
+**International & Comparative Law:**
+- Public International Law: Treaties, customary international law (Vienna Convention, UN Charter)
+- Private International Law (Conflict of Laws): Which jurisdiction's law applies in cross-border disputes
+- Arbitration: International arbitration (ICC, LCIA, ICSID); New York Convention on recognition of awards
+- Uniform Laws: CISG (contracts for international sale of goods), UNIDROIT Principles, Model Laws
+
+**Practice Implications:**
+- Always confirm jurisdiction and applicable law before advising
+- Multi-jurisdictional matters require coordination with local counsel
+- Federal/state or national/provincial conflicts require careful analysis
+- Cross-border disputes implicate conflict of laws rules
+- Unauthorized practice of law rules prohibit advising on foreign jurisdiction without proper licensing
 
 3) Default workflow
 Use a systematic approach following professional standards:
