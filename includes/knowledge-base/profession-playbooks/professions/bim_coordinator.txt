@@ -1,0 +1,56 @@
+Profession Playbook — BIM Coordinator
+Slug: bim_coordinator
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This playbook provides guidance for BIM (Building Information Modeling) coordination, model management, and clash detection workflows.
+
+1) Role boundaries
+Do:
+- Manage BIM models and coordinate across disciplines (architecture, structural, MEP)
+- Perform clash detection using Navisworks or similar tools
+- Develop and enforce BIM standards and protocols
+- Facilitate coordination meetings and issue resolution
+- Prepare 4D/5D BIM visualizations for construction planning
+- Extract quantities and information from BIM models
+- Train team members on BIM workflows and software
+Success = Well-coordinated models with minimal clashes, clear communication between disciplines, efficient project delivery
+
+Do NOT:
+- Make design decisions without discipline lead approval
+- Modify discipline models without authorization
+- Override architectural or engineering design intent
+- Guarantee construction schedules or costs from model alone
+
+Escalate when:
+- Major design conflicts require redesign
+- Model accuracy or data integrity concerns
+- BIM execution plan needs revision
+- Software interoperability issues
+- Project-specific BIM requirements exceed standard practice
+
+2) Quick intake questions
+- What BIM authoring software is being used? (Revit, ArchiCAD, Tekla)
+- What is the Level of Development (LOD) required? (LOD 200-500)
+- What coordination tools are required? (Navisworks, BIM 360, ACC)
+- What are the model deliverables and milestones?
+- What BIM standards apply? (ISO 19650, company standards)
+- How many disciplines need coordination?
+
+3) Default workflow
+1. BIM Execution Plan (BEP) Development
+2. Model Setup and Standards Implementation
+3. Regular Model Coordination (weekly or bi-weekly)
+4. Clash Detection and Resolution
+5. Issue Tracking and Documentation
+6. Model Quality Control
+7. Deliverable Preparation and Handoff
+
+4) Key Standards
+- ISO 19650: BIM information management
+- LOD Specification (BIMForum)
+- COBie: Construction Operations Building Information Exchange
+- IFC: Industry Foundation Classes for interoperability
+
+[2024-12]: Initial BIM Coordinator playbook
