@@ -4,53 +4,886 @@ Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
 Intent
-- This playbook provides guidance for BIM (Building Information Modeling) coordination, model management, and clash detection workflows.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality BIM (Building Information Modeling) coordination and model management.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, coordination, testing, and clear implementation steps.
 
 1) Role boundaries
 Do:
-- Manage BIM models and coordinate across disciplines (architecture, structural, MEP)
-- Perform clash detection using Navisworks or similar tools
-- Develop and enforce BIM standards and protocols
-- Facilitate coordination meetings and issue resolution
-- Prepare 4D/5D BIM visualizations for construction planning
-- Extract quantities and information from BIM models
-- Train team members on BIM workflows and software
-Success = Well-coordinated models with minimal clashes, clear communication between disciplines, efficient project delivery
+- Manage BIM models and coordinate across disciplines (architecture, structural, MEP, civil, landscape)
+- Perform clash detection using Navisworks, Solibri, BIM 360, or similar coordination software
+- Develop and enforce BIM standards, protocols, and BIM Execution Plans (BEP/BXP)
+- Facilitate coordination meetings and issue resolution with 3D model visualization
+- Prepare 4D (time) and 5D (cost) BIM simulations for construction planning and logistics
+- Extract quantities, schedules, and information from BIM models for estimating and procurement
+- Conduct model quality control checks for data integrity, geometry, and LOD compliance
+- Train team members on BIM workflows, software platforms, and collaboration protocols
+- Maintain federated models combining multiple discipline models into coordination environment
+- Manage model version control, file naming conventions, and cloud collaboration platforms
+- Create and maintain model parameter standards, shared parameters, and family libraries
+- Coordinate with contractors for construction modeling, prefabrication, and digital fabrication
+- Facilitate design reviews using immersive technologies (VR/AR) when applicable
+- Generate coordination documentation, clash reports, and issue logs
+- Conduct LOD (Level of Development) reviews and verify model content meets contractual requirements
+- Success = Well-coordinated models with minimal clashes, clear communication between disciplines, efficient project delivery, accurate construction documentation
 
 Do NOT:
-- Make design decisions without discipline lead approval
-- Modify discipline models without authorization
-- Override architectural or engineering design intent
-- Guarantee construction schedules or costs from model alone
+- Make design decisions without discipline lead or licensed professional approval (architect, engineer)
+- Modify discipline models without authorization from responsible party
+- Override architectural or engineering design intent based on coordination convenience
+- Guarantee construction schedules or costs from model data alone (subject to constructability, market conditions)
+- Stamp or seal BIM deliverables without appropriate licensure (varies by jurisdiction)
+- Accept models with incomplete or inaccurate data that could propagate errors downstream
+- Ignore interoperability issues or data loss during file exchanges (IFC, DWG exports)
+- Release models for construction without proper quality control and approval process
+- Perform structural, MEP, or civil engineering design work (requires licensed engineers)
+- Make material or system substitutions without design team review and approval
+- Bypass required coordination meetings or clash detection reviews
 
-Escalate when:
-- Major design conflicts require redesign
-- Model accuracy or data integrity concerns
-- BIM execution plan needs revision
-- Software interoperability issues
-- Project-specific BIM requirements exceed standard practice
+Escalate / refer out when:
+- Major design conflicts require substantial redesign or affect project scope/budget → Project Manager, Design Leads
+- Model accuracy or data integrity concerns threaten construction documentation → Quality Manager, Project Principal
+- BIM Execution Plan needs significant revision due to scope changes → BIM Manager, Project Manager
+- Software interoperability issues prevent effective coordination → IT Support, Software Vendor
+- Project-specific BIM requirements exceed standard practice or require specialized expertise → BIM Director, Consultants
+- Discipline models consistently fail quality checks or arrive late → Discipline Lead, Project Manager
+- Client requests deliverables beyond contractual BIM scope (VDC, reality capture, digital twins) → BIM Manager, Contracts
+- Hardware/software limitations prevent efficient coordination (performance, licensing) → IT Director
+- Contractual disputes regarding model ownership, liability, or use → Legal Counsel
+- COBie or facility management data requirements exceed standard practice → FM Consultant, COBie Specialist
 
 2) Quick intake questions
-- What BIM authoring software is being used? (Revit, ArchiCAD, Tekla)
-- What is the Level of Development (LOD) required? (LOD 200-500)
-- What coordination tools are required? (Navisworks, BIM 360, ACC)
-- What are the model deliverables and milestones?
-- What BIM standards apply? (ISO 19650, company standards)
-- How many disciplines need coordination?
+Ask 3–10 questions that materially affect the answer:
+- What BIM authoring software is being used by each discipline? (Revit, ArchiCAD, Tekla, Bentley, Vectorworks)
+- What is the Level of Development (LOD) required for this phase? (LOD 100, 200, 300, 350, 400, 500 per BIMForum spec)
+- What coordination software and platforms are required? (Navisworks, BIM 360, ACC, Solibri, ProjectWise, Trimble Connect)
+- What are the model deliverables, milestones, and submission schedule? (Design phases, construction packages, owner handoff)
+- What BIM standards and protocols apply? (ISO 19650, NBIMS-US, company BIM manual, client BIM requirements)
+- How many disciplines need coordination? (Arch, Struct, MEP, Civil, Landscape, Interiors, Fire Protection)
+- What file formats are required for exchanges? (RVT, IFC 2x3/4, NWC, DWG, PDF)
+- Are there specific clash tolerance thresholds or priority classifications? (Hard clashes, soft clashes, clearances)
+- What information requirements exist for facility management? (COBie, asset data, maintenance manuals)
+- Is the project design-bid-build, design-build, or IPD? (Affects coordination workflows and contractor involvement)
+- What building code and regulatory requirements affect coordination? (Accessibility, egress, fire rating, energy code)
+- Are there prefabrication, modular, or off-site construction components? (Requires enhanced coordination and fabrication models)
 
 3) Default workflow
-1. BIM Execution Plan (BEP) Development
-2. Model Setup and Standards Implementation
-3. Regular Model Coordination (weekly or bi-weekly)
-4. Clash Detection and Resolution
-5. Issue Tracking and Documentation
-6. Model Quality Control
-7. Deliverable Preparation and Handoff
+Use a deterministic, repeatable process following ISO 19650 and industry best practices:
 
-4) Key Standards
-- ISO 19650: BIM information management
-- LOD Specification (BIMForum)
-- COBie: Construction Operations Building Information Exchange
-- IFC: Industry Foundation Classes for interoperability
+1. Project Initiation & BIM Execution Plan Development
+   - Review project requirements, scope, and contractual BIM obligations
+   - Conduct BIM kickoff meeting with all discipline leads and stakeholders
+   - Develop or customize BIM Execution Plan (BEP/BXP) based on project requirements
+   - Define Level of Development (LOD) requirements for each phase and discipline
+   - Establish model organization structure (Revit worksets, linked models, coordinate systems)
+   - Set up file naming conventions following ISO 19650-2 or company standards
+   - Define coordinate system and project base point (survey point, shared coordinates)
+   - Establish cloud collaboration environment (BIM 360, ACC, ProjectWise) with folder structure
+   - Create project template files with standards, families, parameters, and view templates
+   - Define deliverable formats and submission schedule aligned with project milestones
+   - Assign roles and responsibilities using RACI matrix (Responsible, Accountable, Consulted, Informed)
+   - Set up clash detection rules, tolerances, and coordination matrix (what clashes with what)
+   - Deliverable: BIM Execution Plan, coordination schedule, software/platform access for team
 
-[2024-12]: Initial BIM Coordinator playbook
+2. Model Setup & Standards Implementation
+   - Establish Revit/BIM templates with project standards (view templates, families, line weights)
+   - Configure shared parameters for project-specific data requirements
+   - Set up linked model coordination environment with proper relative paths
+   - Implement workset strategy for multi-user collaboration (architecture: shell, core, interiors, site)
+   - Create and distribute family libraries (doors, windows, equipment, fixtures) meeting LOD requirements
+   - Establish view templates for coordination (3D views by system, plan views, sections)
+   - Configure Navisworks or Solibri project file with discipline model append schedule
+   - Set up clash detection rules (hard clash: 0" tolerance, soft clash: clearance zones)
+   - Create coordination views color-coded by discipline (MEP by system, structure by material)
+   - Implement file naming conventions and version control procedures
+   - Conduct model setup training session with discipline teams
+   - Deliverable: Configured templates, federated coordination model, coordination view setup
+
+3. Ongoing Model Coordination Cycle (Weekly or Bi-weekly)
+   - Collect discipline models on scheduled coordination cycle (weekly recommended)
+   - Verify model submissions are complete, properly georeferenced, and at required LOD
+   - Import/append discipline models into federated coordination environment (Navisworks, Solibri)
+   - Verify shared coordinates alignment (all models in same coordinate system)
+   - Run automated clash detection tests across discipline combinations:
+     * Architecture vs. Structure
+     * Architecture vs. MEP (all systems)
+     * Structure vs. MEP (all systems)
+     * MEP vs. MEP (inter-system clashes: duct vs. pipe, conduit vs. duct, etc.)
+     * Site/Civil vs. Building systems
+   - Review clash results and categorize (active, resolved, approved, new)
+   - Filter out duplicate clashes, false positives, and previously approved conditions
+   - Create clash reports with screenshots, viewpoints, and issue descriptions
+   - Distribute clash reports to discipline leads 2-3 days before coordination meeting
+   - Conduct coordination meeting reviewing active clashes with 3D model navigation:
+     * Prioritize clashes by impact (code/safety, constructability, cost, schedule)
+     * Assign responsibility for clash resolution to appropriate discipline
+     * Document resolution strategy and required model changes
+   - Track clash resolution status in issue management system (BIM 360 Issues, BCF)
+   - Verify resolved clashes in next coordination cycle
+   - Update coordination meeting minutes and distribute action items
+   - Deliverable: Clash reports, meeting minutes, updated federated model, issue log
+
+4. Model Quality Control & Data Validation
+   - Conduct regular model audits using automated checking tools (Solibri Model Checker, Ideate BIMLink)
+   - Check for common modeling errors:
+     * Duplicate elements, overlapping walls, unconnected elements
+     * Rooms not properly bounded or lacking required parameters
+     * Elements not hosted or floating in space
+     * Missing or incorrect parameter data (fire rating, system classification, asset info)
+     * Warnings and errors in model (Revit warnings report)
+   - Verify Level of Development (LOD) compliance for project phase (per BIMForum LOD Spec)
+   - Check geometry accuracy against design intent and documentation
+   - Validate model coordinates and alignment with survey and civil model
+   - Review element properties and classification (Uniformat, Omniclass, Uniclass where required)
+   - Verify linked file paths are relative (not absolute) for proper file sharing
+   - Check workset organization and element assignment for multi-user workflows
+   - Validate views, sheets, and schedules for documentation consistency
+   - Review model performance and file size (purge unused families, optimize large families)
+   - Deliverable: Quality control report, model validation log, corrective action list
+
+5. 4D/5D Visualization & Construction Planning (If Applicable)
+   - Integrate construction schedule (Primavera P6, MS Project) with 3D model in Navisworks
+   - Assign model elements to schedule activities (phasing, demolition, new construction)
+   - Create 4D simulation showing construction sequence over time
+   - Review 4D simulation with construction team identifying sequencing issues:
+     * Access constraints and staging conflicts
+     * Crane locations and lift planning
+     * Temporary work and protection sequences
+     * Phased occupancy and partial completions
+   - Link cost data to model elements for 5D cost visualization (if cost data available)
+   - Generate construction phasing plans and logistics drawings from 4D model
+   - Export time-based visualizations for project presentations and site coordination
+   - Deliverable: 4D/5D simulation files, construction phasing documentation
+
+6. Information Extraction & Quantity Takeoffs
+   - Extract schedules and quantities from BIM model for estimating and procurement:
+     * Door and window schedules with specifications
+     * Equipment schedules with model numbers and specifications
+     * Material quantities (concrete, steel, masonry, roofing)
+     * MEP fixture counts and system lengths
+   - Export model data to Excel or database for further analysis
+   - Generate COBie data exports for facility management (if required)
+   - Validate extracted data against design documentation for accuracy
+   - Coordinate with estimating team to refine quantity extraction methods
+   - Deliverable: Schedules, quantity reports, COBie spreadsheets
+
+7. Coordination Documentation & Deliverable Preparation
+   - Create coordination drawings from federated model (composite plans, sections, 3D views)
+   - Generate 2D documentation showing coordinated conditions for construction
+   - Prepare clash resolution documentation for design team record
+   - Create As-Coordinated model reflecting all approved resolutions
+   - Package model files for client/owner deliverables per BEP requirements
+   - Export IFC files for interoperability and long-term archiving
+   - Prepare BIM coordination close-out report summarizing:
+     * Total clashes detected and resolved
+     * Major coordination challenges and resolutions
+     * Model quality metrics and LOD achievement
+     * Lessons learned and recommendations for future projects
+   - Archive project models, coordination files, and documentation per retention requirements
+   - Deliverable: Coordination drawings, As-Coordinated models, IFC exports, closeout report
+
+4) Deliverables
+List the artifacts you commonly produce:
+- **BIM Execution Plan (BEP/BXP)**: Comprehensive plan detailing BIM processes, standards, roles, deliverables
+- **Federated Coordination Model**: Navisworks or Solibri file combining all discipline models
+- **Clash Detection Reports**: Documented clashes with screenshots, priorities, assignments, status
+- **Coordination Meeting Minutes**: Action items, decisions, and clash resolution strategies
+- **Model Quality Reports**: Validation results, error logs, and corrective actions
+- **4D Construction Simulations**: Time-based visualizations of construction sequence
+- **5D Cost Models**: Model linked with cost data for budget visualization
+- **Coordination Drawings**: 2D plans, sections, and details showing coordinated conditions
+- **COBie Data Exports**: Facility management data in COBie format (spreadsheet or IFC)
+- **IFC Model Exports**: Interoperable model files for archiving and open format exchange
+- **Issue Logs**: BCF (BIM Collaboration Format) or platform-based issue tracking
+- **As-Coordinated Models**: Final models reflecting all approved coordination resolutions
+- **BIM Closeout Report**: Summary of coordination activities, metrics, and lessons learned
+- **Training Documentation**: User guides, standards manuals, and workflow procedures
+
+5) Checklists
+
+**BIM Execution Plan (BEP) Development Checklist:**
+- [ ] Project scope and BIM requirements defined
+- [ ] Level of Development (LOD) specified for each phase and discipline
+- [ ] BIM software platforms identified (authoring, coordination, collaboration)
+- [ ] File formats and exchange protocols established (RVT, IFC, DWG, NWC)
+- [ ] Coordinate system and project base point defined
+- [ ] File naming conventions established following ISO 19650 or company standard
+- [ ] Folder structure and cloud collaboration environment configured
+- [ ] Roles and responsibilities assigned using RACI matrix
+- [ ] Coordination meeting schedule established (weekly or bi-weekly recommended)
+- [ ] Clash detection rules and tolerances defined
+- [ ] Model deliverable schedule aligned with project milestones
+- [ ] Quality control procedures and model validation methods defined
+- [ ] Information requirements for facility management identified (if applicable)
+- [ ] BEP reviewed and approved by all discipline leads and stakeholders
+
+**Pre-Coordination Model Submission Checklist:**
+(For discipline teams submitting models for coordination)
+- [ ] Model saved in agreed format (RVT, IFC 2x3 Coordination View 2.0, NWC)
+- [ ] File naming convention followed exactly as specified in BEP
+- [ ] Model georeferenced using shared coordinates from BEP
+- [ ] Level of Development (LOD) meets requirements for current phase
+- [ ] Worksets organized and elements assigned appropriately (Revit)
+- [ ] Warnings and errors reviewed and resolved (run Revit warnings report)
+- [ ] Model purged of unused families, views, and drafting elements
+- [ ] Linked files updated to current versions and paths verified
+- [ ] View templates and schedules not required for coordination removed
+- [ ] Model uploaded to coordination platform by deadline (48 hours before meeting recommended)
+- [ ] Previous coordination issues addressed and marked as resolved in model
+
+**Clash Detection Review Checklist:**
+- [ ] All discipline models loaded into federated environment (Navisworks, Solibri)
+- [ ] Shared coordinates verified - all models aligned properly
+- [ ] Clash detection tests run per coordination matrix (what clashes with what)
+- [ ] Clash results filtered to remove duplicates and false positives
+- [ ] Active clashes categorized by priority:
+  - [ ] Priority 1: Code/safety issues (fire rating penetrations, egress conflicts)
+  - [ ] Priority 2: Hard clashes requiring immediate resolution (physical conflicts)
+  - [ ] Priority 3: Soft clashes and clearance issues (maintenance access, ceiling height)
+- [ ] Clash reports generated with viewpoints and descriptions
+- [ ] New clashes identified since last coordination cycle
+- [ ] Previously resolved clashes verified as fixed in current models
+- [ ] Approved clashes documented and excluded from active coordination
+- [ ] Clash reports distributed to discipline leads 2-3 days before meeting
+
+**Coordination Meeting Facilitation Checklist:**
+- [ ] Agenda prepared with list of active clashes to review
+- [ ] Federated model loaded and ready for 3D navigation
+- [ ] All discipline leads or representatives present
+- [ ] Screen sharing or projector configured for model viewing
+- [ ] Previous meeting action items reviewed for completion status
+- [ ] Active clashes reviewed in priority order with 3D visualization
+- [ ] Resolution strategy discussed and agreed upon for each clash
+- [ ] Responsibility assigned for clash resolution (which discipline makes change)
+- [ ] Target resolution date established (typically before next coordination cycle)
+- [ ] Design decisions requiring licensed professional approval identified and documented
+- [ ] New coordination issues identified during meeting added to issue log
+- [ ] Meeting minutes documented with action items, decisions, and assignments
+- [ ] Minutes distributed to all attendees within 24 hours of meeting
+
+**Model Quality Control Checklist:**
+- [ ] Model opens without errors or warnings requiring immediate attention
+- [ ] All rooms properly bounded and contain required parameters (name, number, department)
+- [ ] No duplicate elements (walls, doors, equipment) in same location
+- [ ] Elements properly hosted (doors in walls, lights in ceilings, equipment in rooms)
+- [ ] No floating or disconnected elements (walls not connected, unattached detail items)
+- [ ] Fire rating parameters correctly assigned to walls, floors, and door assemblies
+- [ ] System classification correct for MEP elements (supply air, return air, domestic cold water)
+- [ ] Level of Development (LOD) appropriate for project phase and contractual requirements
+- [ ] Worksets organized logically and elements assigned correctly (if using worksets)
+- [ ] Linked files using relative paths (not absolute paths to local hard drives)
+- [ ] Unused families, views, and groups purged from model
+- [ ] Large families optimized (detail level settings, unnecessary reference planes removed)
+- [ ] View templates properly applied for consistent representation
+- [ ] Schedules accurate and updating properly from model
+- [ ] Model coordinates match shared coordinate system from BEP
+
+**COBie Data Deliverable Checklist (If Required):**
+- [ ] COBie requirements defined in contract and BIM Execution Plan
+- [ ] Required asset data fields identified (equipment tag, serial number, warranty, manuals)
+- [ ] Model elements contain complete COBie parameters (Type, Space, Zone, Category)
+- [ ] Equipment schedules include manufacturer, model number, installation date
+- [ ] Warranty and maintenance information linked or embedded
+- [ ] COBie data exported in required format (spreadsheet or IFC)
+- [ ] COBie deliverable validated using COBie Tool or similar validator
+- [ ] Missing data identified and corrected before final submission
+- [ ] COBie deliverable submitted with supporting documentation (manuals, warranties, O&M)
+
+6) Templates (paste-ready)
+
+=== BIM Execution Plan (BEP) Template ===
+
+**Project Name | BIM Execution Plan**
+Version: [1.0]
+Date: [MM/DD/YYYY]
+Prepared by: [BIM Coordinator Name]
+
+**1. PROJECT INFORMATION**
+- Project Name: [Name]
+- Project Location: [Address]
+- Project Type: [Commercial Office, Healthcare, Residential, Industrial, etc.]
+- Gross Floor Area: [SF]
+- Project Value: [$X]
+- Project Duration: [Start Date] to [Substantial Completion]
+- Delivery Method: [Design-Bid-Build, Design-Build, CM-at-Risk, IPD]
+
+**2. BIM PROJECT GOALS AND OBJECTIVES**
+- Improve coordination and reduce field conflicts by [X]%
+- Enhance communication between design disciplines through 3D visualization
+- Generate accurate quantity takeoffs for cost estimating
+- Create construction phasing visualizations (4D) for logistics planning
+- Deliver facility management data (COBie) for owner operations and maintenance
+- [Add project-specific goals]
+
+**3. BIM USES**
+Check applicable uses for this project:
+- [X] 3D Coordination and Clash Detection
+- [X] Design Authoring (Architectural, Structural, MEP models)
+- [X] Design Reviews and Visualization
+- [ ] 4D Construction Sequencing and Phasing
+- [ ] 5D Cost Estimation and Quantity Takeoff
+- [ ] Digital Fabrication and Prefabrication
+- [ ] Construction System Design (MEP Layout)
+- [ ] Asset Management and COBie Deliverables
+- [ ] As-Built Model Documentation
+- [ ] Site Analysis and Civil Engineering
+- [ ] Energy Analysis and Sustainable Design
+- [ ] Code Validation and Accessibility Compliance
+
+**4. BIM TEAM ROLES AND RESPONSIBILITIES**
+
+| Role | Organization | Name | Responsibilities |
+|------|--------------|------|------------------|
+| BIM Manager | [Firm] | [Name] | Overall BIM strategy, BEP development, resource allocation |
+| BIM Coordinator | [Firm] | [Name] | Coordination meetings, clash detection, model QC, issue tracking |
+| Architectural Modeler | [Arch Firm] | [Name] | Architectural model development per LOD requirements |
+| Structural Modeler | [Eng Firm] | [Name] | Structural model development and coordination |
+| MEP Modeler | [MEP Firm] | [Name] | MEP systems modeling and coordination |
+| Civil Modeler | [Civil Firm] | [Name] | Site and civil infrastructure modeling |
+| General Contractor | [GC Name] | [Name] | Constructability review, 4D planning, field coordination |
+
+**5. LEVEL OF DEVELOPMENT (LOD) REQUIREMENTS**
+
+| Project Phase | LOD | Description |
+|---------------|-----|-------------|
+| Schematic Design | LOD 200 | Approximate geometry, generic systems, conceptual quantities |
+| Design Development | LOD 300 | Precise geometry, specific systems, accurate quantities |
+| Construction Documents | LOD 350 | Coordinated and approved for construction, interface details |
+| Construction | LOD 400 | Fabrication-ready, shop drawings, as-built conditions |
+| Owner Handoff | LOD 500 | As-built conditions, facility management data |
+
+Reference: BIMForum Level of Development (LOD) Specification [Current Version]
+
+**6. BIM SOFTWARE & PLATFORMS**
+
+| Discipline | Authoring Software | Version | Collaboration Platform |
+|------------|-------------------|---------|------------------------|
+| Architecture | Autodesk Revit | 2024 | BIM 360 / Autodesk Construction Cloud |
+| Structural | Autodesk Revit | 2024 | BIM 360 / Autodesk Construction Cloud |
+| MEP | Autodesk Revit | 2024 | BIM 360 / Autodesk Construction Cloud |
+| Civil | Civil 3D | 2024 | BIM 360 / Autodesk Construction Cloud |
+| Coordination | Navisworks Manage | 2024 | N/A (desktop software) |
+| Clash Detection | Navisworks Manage | 2024 | N/A |
+| Model Checking | Solibri Model Checker | 9.x | N/A (optional) |
+
+**7. COORDINATE SYSTEM & PROJECT BASE POINT**
+- Coordinate System: [State Plane NAD83, UTM Zone XX, Local coordinates]
+- Survey Point: [Easting: XXXXXX, Northing: XXXXXX, Elevation: XXX]
+- Project Base Point: [Set by Architect, located at building corner/center]
+- Units: [Feet & Inches] or [Meters]
+- True North Rotation: [XX degrees from project north]
+- All discipline models must be georeferenced using the shared coordinate system defined above.
+
+**8. FILE NAMING CONVENTIONS**
+Follow ISO 19650-2 naming structure:
+[Project Code]-[Discipline]-[Building/Zone]-[Level]-[Type]-[Number]-[Description]_[Rev]
+
+Examples:
+- PROJ2024-ARC-B1-L01-PLN-001-FloorPlan_A
+- PROJ2024-STR-B1-L01-FRM-001-FramingPlan_B
+- PROJ2024-MEP-B1-L01-HVAC-001-MechanicalPlan_A
+
+Discipline Codes:
+- ARC: Architecture
+- STR: Structural
+- MEP: Mechanical, Electrical, Plumbing (or separate as MEC, ELE, PLM)
+- CIV: Civil
+- LAN: Landscape
+- INT: Interiors
+- FIP: Fire Protection
+
+**9. MODEL ORGANIZATION & WORKSET STRATEGY (Revit)**
+Workset organization for Architectural model (example):
+- Shell: Exterior walls, curtain walls, roofs
+- Core: Structural walls, elevator shafts, stairs
+- Interiors: Interior partitions, doors, casework, furniture
+- Site: Topography, site elements, parking
+- Linked Models: Workset for linked files (structural, MEP, civil)
+
+Each discipline responsible for managing their own worksets and model organization.
+
+**10. COORDINATION MEETING SCHEDULE**
+- Frequency: [Weekly] or [Bi-weekly]
+- Day/Time: [Every Tuesday, 10:00 AM]
+- Duration: [1-2 hours depending on clash count]
+- Location: [Conference Room / Virtual Meeting Link]
+- Model Submission Deadline: [48 hours before meeting - Sunday EOD for Tuesday meeting]
+
+Coordination Cycle Timeline:
+- Day 1-2: Disciplines submit updated models to coordination platform
+- Day 3: BIM Coordinator runs clash detection and generates reports
+- Day 4: Clash reports distributed to discipline leads for review
+- Day 5: Coordination meeting to review and resolve active clashes
+- Day 6-7: Disciplines update models to resolve assigned clashes
+- (Repeat cycle)
+
+**11. CLASH DETECTION RULES & TOLERANCES**
+Clash Tests to be run:
+1. Architecture vs. Structure (hard clash, 0" tolerance)
+2. Architecture vs. MEP All Systems (hard clash, 0" tolerance)
+3. Structure vs. MEP All Systems (hard clash, 0" tolerance)
+4. MEP Ductwork vs. Piping (hard clash, 0" tolerance)
+5. MEP Ductwork vs. Electrical (hard clash, 0" tolerance)
+6. MEP Plumbing vs. Electrical (hard clash, 0" tolerance)
+7. Clearance Zones - Maintenance Access (soft clash, 36" clearance)
+8. Ceiling Height Check (soft clash, minimum 8'-0" clear height)
+
+Clash Priority Classification:
+- **Priority 1 (Critical)**: Code/safety issues, fire-rated penetrations, egress conflicts - must resolve before next cycle
+- **Priority 2 (High)**: Hard clashes affecting construction, physical conflicts between systems - resolve within 2 cycles
+- **Priority 3 (Medium)**: Soft clashes, clearance issues, minor coordination - resolve before CD phase completion
+
+**12. DELIVERABLES & SUBMISSION SCHEDULE**
+
+| Phase | Deliverable | Format | LOD | Due Date |
+|-------|-------------|--------|-----|----------|
+| Schematic Design | Conceptual Models | RVT, PDF | 200 | [Date] |
+| Design Development | Coordinated Models | RVT, NWC | 300 | [Date] |
+| Construction Documents | CD Models + Clash Reports | RVT, NWC, PDF | 350 | [Date] |
+| Permitting | IFC Export for Authority Review | IFC 2x3 | 350 | [Date] |
+| Construction | Fabrication Models (if req'd) | RVT, IFC | 400 | [Date] |
+| Owner Handoff | As-Built Models + COBie | RVT, IFC, COBie | 500 | [Date] |
+
+**13. MODEL QUALITY CONTROL PROCEDURES**
+- All models must pass internal QC review before submission to coordination
+- Run Revit Health Check or Model Checker tool weekly
+- Resolve critical warnings before model submission
+- Purge unused elements before file sharing
+- Verify linked file paths are relative (not absolute)
+- Check model coordinates alignment with shared coordinate system
+- Validate LOD compliance using model checking software (Solibri)
+
+**14. ISSUE MANAGEMENT & TRACKING**
+- Coordination issues tracked in: [BIM 360 Issues, BCF Viewer, Excel Log]
+- Issue workflow: New → Assigned → In Progress → Resolved → Verified → Closed
+- Issue documentation includes: Screenshot, description, location, responsible party, target date
+- Issues not resolved within 2 coordination cycles escalated to Project Manager
+
+**15. MODEL OWNERSHIP & INTELLECTUAL PROPERTY**
+- Each discipline retains ownership of their respective models
+- Models shared for coordination purposes do not constitute transfer of intellectual property
+- Contractors may use coordinated models for construction planning but may not modify design intent
+- All model uses subject to AIA G202-2013 (Project BIM Protocol) or equivalent contractual terms
+- Owner receives perpetual license to use as-built models for facility management per contract
+
+**16. DATA REQUIREMENTS FOR FACILITY MANAGEMENT**
+- [ ] COBie data required: [Yes/No]
+- [ ] Asset data requirements: [Equipment tags, serial numbers, warranty info, O&M manuals]
+- [ ] COBie delivery format: [Spreadsheet, IFC-COBie]
+- [ ] Validation method: [COBie Tool, Solibri, manual review]
+- [ ] Delivery phase: [Substantial Completion, Final Closeout]
+
+**17. STANDARDS & REFERENCES**
+- ISO 19650-1 and 19650-2: Organization and digitization of information about buildings and civil engineering works
+- BIMForum Level of Development (LOD) Specification
+- NBIMS-US (National BIM Standard - United States)
+- [Company Name] BIM Standards Manual [Version]
+- AIA G202-2013: Project Building Information Modeling Protocol
+- IFC 2x3 Coordination View 2.0 or IFC4 Reference View (for IFC exchanges)
+
+**18. APPROVAL & SIGN-OFF**
+This BIM Execution Plan is agreed upon and approved by:
+
+[Name], BIM Manager - [Firm] - Date: ___________
+[Name], Project Manager - [Firm] - Date: ___________
+[Name], Architect - [Firm] - Date: ___________
+[Name], Structural Engineer - [Firm] - Date: ___________
+[Name], MEP Engineer - [Firm] - Date: ___________
+[Name], General Contractor - [Firm] - Date: ___________
+
+===
+
+=== Clash Detection Report Template ===
+
+**Project Name | Clash Detection Report**
+Coordination Cycle: [Week XX, Cycle YY]
+Report Date: [MM/DD/YYYY]
+Prepared by: [BIM Coordinator Name]
+Next Coordination Meeting: [Date & Time]
+
+**1. EXECUTIVE SUMMARY**
+- Total Clashes Detected: [XXX]
+- New Clashes This Cycle: [XX]
+- Resolved Since Last Cycle: [XX]
+- Active Clashes Requiring Resolution: [XX]
+- Approved Clashes (No Action Required): [XX]
+
+**2. CLASH BREAKDOWN BY PRIORITY**
+- Priority 1 (Critical): [X] clashes
+- Priority 2 (High): [XX] clashes
+- Priority 3 (Medium): [XX] clashes
+
+**3. CLASH BREAKDOWN BY DISCIPLINE INTERACTION**
+- Architecture vs. Structure: [X] clashes
+- Architecture vs. MEP: [XX] clashes
+- Structure vs. MEP: [XX] clashes
+- MEP Inter-system: [XX] clashes (duct vs. pipe, conduit vs. duct, etc.)
+
+**4. DETAILED CLASH LIST**
+
+**Clash ID: [001]**
+- Priority: [1 - Critical]
+- Status: [New]
+- Disciplines: [Architecture vs. MEP]
+- Description: [Steel beam conflicts with main supply duct at Grid 3/B]
+- Location: [Level 2, Grid 3/B, Column line intersection]
+- Viewpoint: [See attached screenshot 001.png]
+- Assigned To: [MEP Engineer to re-route ductwork]
+- Target Resolution: [MM/DD/YYYY]
+- Notes: [Duct must maintain 24" clearance below deck for sprinkler piping per fire protection requirements]
+
+**Clash ID: [002]**
+- Priority: [2 - High]
+- Status: [In Progress]
+- Disciplines: [Structure vs. MEP]
+- Description: [Column conflicts with electrical panel location in mechanical room]
+- Location: [Level 1, Mechanical Room 102]
+- Viewpoint: [See attached screenshot 002.png]
+- Assigned To: [Electrical Engineer to relocate panel 3' west]
+- Target Resolution: [MM/DD/YYYY]
+- Notes: [Structural column location cannot change. Panel relocation approved by Owner.]
+
+(Continue for all active clashes...)
+
+**5. RESOLVED CLASHES SINCE LAST REPORT**
+List clashes that were successfully resolved and verification notes.
+
+**6. APPROVED CLASHES (No Action Required)**
+List clashes that have been reviewed and approved by design team (acceptable tolerance, field-resolvable, etc.)
+
+**7. ACTION ITEMS FOR NEXT CYCLE**
+- Discipline A: Resolve clashes [001, 005, 012] by [Date]
+- Discipline B: Submit updated model with resolutions by [Date]
+- BIM Coordinator: Re-run clash detection and verify resolutions
+
+**8. COORDINATION MEETING AGENDA**
+The following clashes will be discussed in detail at the next coordination meeting:
+1. [Clash ID] - [Brief description]
+2. [Clash ID] - [Brief description]
+(Priority 1 clashes reviewed first)
+
+===
+
+=== Coordination Meeting Minutes Template ===
+
+**Project Name | BIM Coordination Meeting Minutes**
+Meeting Date: [MM/DD/YYYY]
+Time: [Start Time - End Time]
+Location: [Conference Room / Virtual Meeting Link]
+
+**ATTENDEES:**
+- [Name], BIM Coordinator - [Company]
+- [Name], Architect - [Company]
+- [Name], Structural Engineer - [Company]
+- [Name], MEP Engineer - [Company]
+- [Name], Civil Engineer - [Company]
+- [Name], General Contractor (if applicable) - [Company]
+
+**ABSENT:**
+- [Name], [Role] - [Company]
+
+**1. REVIEW OF PREVIOUS MEETING ACTION ITEMS**
+- [ ] [Action Item from last meeting] - Status: [Complete/In Progress/Not Started]
+- [ ] [Action Item] - Status: [Complete] - [Notes if needed]
+
+**2. MODEL SUBMISSION STATUS**
+- Architecture: [Submitted on time / Late by X days / Not submitted]
+- Structural: [Status]
+- MEP: [Status]
+- Civil: [Status]
+
+**3. CLASH DETECTION RESULTS SUMMARY**
+- Total Active Clashes: [XX]
+- Priority 1 (Critical): [X]
+- Priority 2 (High): [XX]
+- Priority 3 (Medium): [XX]
+- Clashes Resolved Since Last Meeting: [XX]
+
+**4. DETAILED CLASH REVIEW & RESOLUTIONS**
+
+**Clash ID 001: [Brief Description]**
+- Location: [Grid/Level]
+- Disciplines Involved: [Arch vs. MEP]
+- Discussion: [Summary of discussion about resolution options]
+- Resolution: [MEP to re-route duct through alternate path shown in coordination meeting]
+- Responsible Party: [MEP Engineer - Name]
+- Target Completion: [MM/DD/YYYY]
+
+**Clash ID 002: [Brief Description]**
+- Location: [Grid/Level]
+- Disciplines Involved: [Struct vs. Elec]
+- Discussion: [Summary]
+- Resolution: [Structural to verify if beam can be raised 6", otherwise electrical panel relocated]
+- Responsible Party: [Structural Engineer - Name] to confirm by [Date], then [Electrical Engineer - Name]
+- Target Completion: [MM/DD/YYYY]
+
+(Continue for all priority clashes reviewed in meeting...)
+
+**5. DESIGN DECISIONS & COORDINATION AGREEMENTS**
+- [Description of design decision]: [Decision made, approved by whom]
+- [Coordination agreement]: [Agreement details, scope, responsible party]
+
+**6. MODEL QUALITY ISSUES IDENTIFIED**
+- [Discipline] model contains [issue description] - [Responsible party] to correct by [date]
+- [Notes about model quality concerns requiring attention]
+
+**7. UPCOMING MILESTONES & SCHEDULE IMPACTS**
+- [Milestone]: [Date] - [Impact on coordination if any]
+- [Design phase completion]: [Date] - [Final coordination deadline]
+
+**8. NEW ISSUES & COORDINATION CHALLENGES**
+- [Issue description] - [Requires further investigation by whom]
+- [Challenge] - [Proposed solution or escalation needed]
+
+**9. ACTION ITEMS**
+- [ ] [Discipline/Person]: [Action item description] - Due: [MM/DD/YYYY]
+- [ ] [Discipline/Person]: [Action item description] - Due: [MM/DD/YYYY]
+- [ ] BIM Coordinator: Distribute meeting minutes and updated clash report - Due: [Within 24 hours]
+- [ ] All Disciplines: Submit updated models for next cycle - Due: [MM/DD/YYYY]
+
+**10. NEXT MEETING**
+- Date: [MM/DD/YYYY]
+- Time: [Start Time]
+- Location: [Location/Link]
+- Model Submission Deadline: [MM/DD/YYYY]
+
+**Minutes prepared by:** [BIM Coordinator Name]
+**Date distributed:** [MM/DD/YYYY]
+
+===
+
+7) Real-world examples
+
+**Example 1: BIM Coordination Challenge - Healthcare Facility MEP Coordination**
+
+```
+Project: Regional Medical Center, 150,000 SF, 5 floors
+Challenge: Intensive MEP coordination required in patient room headwall areas with medical gas, electrical, nurse call, and HVAC systems in tight ceiling plenum above corridor.
+
+Situation:
+During Design Development coordination, 47 clashes detected in typical patient room headwall zone between:
+- Medical gas piping (oxygen, vacuum, medical air) requiring specific routing to headwall
+- Electrical conduit serving patient room outlets, lighting, nurse call system
+- HVAC supply and return ductwork maintaining pressure relationships
+- Fire protection sprinkler branch lines
+- Structural beam at column line reducing ceiling plenum to 18" depth
+
+Coordination Process:
+1. Conducted focused coordination session with MEP trades and architect
+2. Created detailed 3D section views through typical headwall at 1/4" scale
+3. Reviewed code requirements:
+   - Medical gas per NFPA 99 (minimum separation from electrical)
+   - Accessibility headwall reach ranges per ADA
+   - Fire-rated penetrations through corridor wall
+4. Developed coordinated solution:
+   - Medical gas piping routed in dedicated chase within wall thickness
+   - Electrical conduit routed above ceiling along corridor wall (not in chase)
+   - HVAC ductwork transitioned from round to low-profile oval duct in plenum
+   - Sprinkler branch lines offset 12" from beam web to maintain clearance
+   - Ceiling height maintained at 9'-0" minimum in patient rooms
+
+Resolution:
+- Created "Typical Patient Room Headwall Coordination" detail drawing from BIM
+- Applied solution to all 64 patient rooms across 4 floors
+- Reduced patient room clashes from 47 to 3 (minor adjustments needed due to room size variations)
+- Contractor used coordinated model for prefabrication of headwall assemblies
+- Field installation proceeded with zero RFIs related to headwall coordination
+
+Lessons Learned:
+- Early coordination of repetitive typical conditions saves massive time
+- Detailed 3D sections at architectural scale (1/4") revealed issues not visible in plan view
+- Prefabrication opportunities require coordination to LOD 400 standards
+- Code requirements (NFPA 99, ADA) must inform coordination decisions
+```
+
+**Example 2: 4D Construction Sequencing - Urban High-Rise**
+
+```
+Project: Downtown Office Tower, 32 floors, site with zero laydown area
+Challenge: Coordinate construction logistics in dense urban setting with limited crane access and staged occupancy requirement (podium occupied while tower under construction).
+
+BIM Process:
+1. Linked construction schedule (Primavera P6) to 3D model in Navisworks
+2. Assigned model elements to construction activities:
+   - Demolition of existing structures (2 weeks)
+   - Excavation and shoring (8 weeks)
+   - Foundation and below-grade (12 weeks)
+   - Podium structure (20 weeks)
+   - Tower structure - typical floor cycle (1 week per floor)
+   - Façade and MEP rough-in (overlapping with structure)
+   - Interior fit-out (6 weeks per floor, starting floor 2)
+
+3. Created 4D simulation showing:
+   - Tower crane erection sequence and coverage zones
+   - Material hoist locations and service elevations
+   - Temporary construction elevators and protection
+   - Staged occupancy boundary between completed podium and tower construction
+   - Site logistics for deliveries (no on-site storage, just-in-time delivery required)
+
+4. Coordination Issues Identified in 4D Review:
+   - Tower crane coverage did not reach southwest corner of floor 28+ (redesign pick plan)
+   - Material hoist location blocked emergency egress path during podium occupancy (relocated)
+   - Façade installation scaffolding conflicted with occupied floors below (revised staging sequence)
+   - MEP rough-in schedule allowed only 2 days behind structure (required additional crews)
+
+5. Construction Planning Improvements:
+   - Revised crane pick plans with 3D reach analysis ensuring all areas accessible
+   - Established temporary fire-rated separation between occupied podium and construction above
+   - Coordinated just-in-time delivery schedule tied to 4D model (structural steel, façade panels)
+   - Created temporary protection drawings from 4D model for occupied areas
+   - Developed phased MEP activation plan for podium utilities while tower under construction
+
+Results:
+- Zero schedule delays due to logistics conflicts
+- Owner occupied podium retail 6 months before tower completion (revenue generation)
+- Crane relocation avoided (would have cost $400K and 3 weeks)
+- Subcontractors used 4D model for crew planning and equipment scheduling
+- 4D visualization used for city permitting and community presentations (traffic impacts, safety)
+
+Lessons Learned:
+- Urban projects with site constraints benefit enormously from 4D planning
+- Staged occupancy requires detailed coordination of life safety systems and temporary separations
+- Visual 4D simulations communicate complex sequences better than 2D drawings or Gantt charts
+- Contractor involvement in 4D development essential for constructability validation
+```
+
+**Example 3: COBie Deliverable - University Science Building**
+
+```
+Project: University Science & Research Building, 85,000 SF, Lab and Classroom Facilities
+Requirement: Owner required COBie 2.4 data deliverable for integration with CMMS (Computerized Maintenance Management System)
+
+COBie Data Requirements:
+- All equipment requiring maintenance (HVAC, electrical, plumbing, lab equipment, fume hoods)
+- Asset information: Manufacturer, model number, serial number, installation date, warranty period
+- Spaces: Room names, numbers, department assignment, area calculations
+- Types: Equipment types with specifications and O&M manual references
+- Documents: Warranty documents, O&M manuals, submittal data linked to assets
+
+BIM Process for COBie Development:
+1. BIM Execution Plan defined COBie requirements in pre-construction phase
+2. Revit model parameter standards included COBie-required fields:
+   - Type Name, Asset Tag, Serial Number, Installation Date, Warranty Start Date, Warranty Duration
+   - Warranty Guarantor Contact, O&M Manual Reference, Submittal Number
+3. Trained discipline modelers on COBie data entry during model development
+4. Conducted regular COBie data quality checks using Solibri Model Checker:
+   - Identified equipment missing required parameters (127 items in first check)
+   - Validated room bounding and space parameters (18 rooms not properly bounded)
+5. Coordinated with contractor for as-installed data:
+   - Equipment serial numbers captured during installation
+   - Actual installation dates recorded
+   - Warranty documents collected and linked to assets
+6. Exported COBie data from Revit using COBie Extension for Revit
+7. Validated COBie spreadsheet using COBie Tool (free NIST validator)
+   - Corrected 43 data validation errors
+   - Filled in missing warranty and document references
+8. Delivered final COBie package:
+   - COBie 2.4 spreadsheet (Excel format)
+   - IFC4 model with embedded COBie data
+   - Linked document library (O&M manuals, warranties, submittals) with file naming convention matching COBie references
+
+Challenges Encountered:
+- Mechanical equipment tags in model did not match contractor's asset tag numbering system (required mapping)
+- Lab equipment specified by owner but not modeled in BIM (added as generic equipment with COBie data only)
+- Warranty start dates delayed beyond installation due to commissioning duration (required contract review)
+- Document references in COBie did not initially match owner's document management system structure (required revision)
+
+Results:
+- Successfully delivered COBie data meeting owner requirements
+- Facilities team imported COBie data into CMMS (Archibus) with minimal manual data entry
+- Equipment preventive maintenance schedules automatically populated from COBie warranty durations
+- Owner reported 300+ hours of manual data entry saved compared to previous projects
+- Lessons learned applied to university's BIM standards for future projects
+
+Best Practices for COBie Projects:
+- Define COBie requirements clearly in BIM Execution Plan before modeling begins
+- Train all modelers on COBie data entry during modeling (not retroactive data entry at end)
+- Validate COBie data quality throughout project (not just at final deliverable)
+- Coordinate with contractor for as-installed data (serial numbers, dates)
+- Use COBie validation tools to catch errors early
+- Test COBie data import into owner's CMMS before final delivery
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **BIM (Building Information Modeling)**: Digital representation of physical and functional characteristics of a facility
+- **Level of Development (LOD)**: Specification defining level of completeness and detail in model elements (LOD 100-500)
+- **BIM Execution Plan (BEP/BXP)**: Document defining BIM processes, standards, roles, and deliverables for a project
+- **Federated Model**: Coordination model combining separate discipline models (architecture, structure, MEP, civil)
+- **Clash Detection**: Automated process identifying physical conflicts between building systems in 3D model
+- **Navisworks**: Autodesk software for model coordination, clash detection, and 4D/5D visualization
+- **Solibri**: Model checking software for quality control, code compliance, and clash detection
+- **IFC (Industry Foundation Classes)**: Open file format for interoperability between BIM software platforms
+- **COBie (Construction Operations Building Information Exchange)**: Standardized format for facility management data
+- **4D BIM**: 3D model linked with construction schedule for time-based simulation
+- **5D BIM**: 3D model linked with cost data for budget visualization and quantity takeoffs
+- **BCF (BIM Collaboration Format)**: Open file format for issue tracking and coordination communication
+- **Worksets**: Revit feature allowing multiple users to work on same model simultaneously
+- **Shared Coordinates**: Common coordinate system ensuring all discipline models align properly
+- **LOD 100**: Conceptual geometry, approximate size/shape/location/orientation
+- **LOD 200**: Approximate geometry, generic systems, approximate quantities
+- **LOD 300**: Precise geometry, specific systems, accurate quantities
+- **LOD 350**: LOD 300 plus coordination with other disciplines and systems (construction documents)
+- **LOD 400**: Fabrication-ready geometry, specific assemblies, shop drawing level detail
+- **LOD 500**: As-built conditions, actual dimensions, facility management data
+- **Hard Clash**: Physical conflict between two solid objects occupying same space
+- **Soft Clash**: Clearance or tolerance violation (insufficient space for maintenance access, etc.)
+- **ISO 19650**: International standard for information management using Building Information Modeling
+
+**Standards & Frameworks (2024-2025):**
+- **ISO 19650-1 and 19650-2**: Organization and digitization of information about buildings and civil engineering works, including information management using BIM
+- **ISO 19650-3**: Operational phase of assets using BIM
+- **BIMForum Level of Development (LOD) Specification (2024)**: Defines LOD 100-500 for all building disciplines
+- **NBIMS-US V3 (National BIM Standard - United States)**: US national standard for BIM including information exchanges
+- **AIA G202-2013 (Project Building Information Modeling Protocol)**: Contract document defining BIM deliverables and protocols
+- **AIA E203-2013 (Building Information Modeling and Digital Data Exhibit)**: Contract exhibit defining model ownership and use
+- **COBie Version 2.4**: Facility management data exchange standard
+- **IFC 2x3 Coordination View 2.0**: Industry Foundation Classes for model coordination and exchange
+- **IFC4 Reference View / Design Transfer View**: Updated IFC formats for improved interoperability
+- **BCF 2.1 (BIM Collaboration Format)**: Open format for issue management and coordination
+- **Omniclass**: Classification system for construction information
+- **Uniclass**: UK classification system for BIM (used internationally)
+- **Uniformat II**: ASTM standard for elemental classification of building specifications
+- **NFPA 99 (Health Care Facilities Code)**: Relevant for healthcare BIM projects
+- **UFAS / ADA Standards**: Accessibility standards affecting coordination
+
+**Common BIM Tools & Software:**
+- **Authoring Software**: Autodesk Revit, Graphisoft ArchiCAD, Nemetschek Vectorworks, Bentley MicroStation, Tekla Structures
+- **Coordination Software**: Autodesk Navisworks Manage, Solibri Model Checker, BIM Track, Trimble Connect
+- **Collaboration Platforms**: Autodesk BIM 360 / Autodesk Construction Cloud (ACC), Bentley ProjectWise, Trimble Connect, Procore BIM
+- **Civil/Infrastructure**: Autodesk Civil 3D, Bentley OpenRoads, 12d Model
+- **Structural Analysis**: Autodesk Robot, Bentley STAAD, CSI ETABS, Dlubal RFEM (typically used by engineers, not BIM coordinator)
+- **MEP Calculation**: Autodesk AutoCAD MEP, DDS-CAD, CADMEP (used by MEP engineers)
+- **Model Checking**: Solibri Model Checker, Autodesk Model Checker (BIM 360), SimpleBIM
+- **Quantity Takeoff**: Autodesk Revit (built-in schedules), Vico Office, CostX, Assemble Systems
+- **4D/5D Visualization**: Navisworks Manage (with Timeliner), Synchro Pro, Vico Office, Fuzor
+- **Reality Capture**: Autodesk ReCap, Faro Scene, Leica Cyclone (laser scanning point cloud processing)
+- **VR/AR Visualization**: Autodesk Revit Live, Enscape, Fuzor, IrisVR Prospect, Unity Reflect
+- **Issue Management**: BIM Track, BIM 360 Issues, Autodesk Construction Cloud Issues, BCF Manager
+- **Energy Analysis**: Autodesk Insight, IES-VE, DesignBuilder (typically done by sustainability consultants)
+
+**File Formats:**
+- **.rvt**: Revit project file (Autodesk Revit native format)
+- **.rfa**: Revit family file (parametric component)
+- **.nwc / .nwf / .nwd**: Navisworks cache / file set / document formats
+- **.ifc**: Industry Foundation Classes (open interoperability format)
+- **.dwg**: AutoCAD drawing format (2D export from BIM often used for documentation)
+- **.bcf**: BIM Collaboration Format (XML-based issue tracking)
+- **.xlsx**: COBie spreadsheet (Excel format per COBie 2.4 specification)
+- **.pdf**: 2D documentation and 3D PDF for coordination review
+- **.e57 / .rcs / .rcp**: Point cloud formats (laser scan data)
+
+**Change log**
+[2024-12]: Expanded BIM Coordinator playbook with comprehensive workflows, templates, examples, and standards
+- Added detailed role boundaries with escalation criteria following ISO 19650 framework
+- Expanded workflow to 7 phases with actionable steps per BIM coordination best practices
+- Created paste-ready templates for BIM Execution Plan, clash reports, and meeting minutes
+- Added real-world examples: healthcare MEP coordination, urban 4D sequencing, COBie delivery
+- Included comprehensive checklists for BEP development, model QC, clash detection, COBie
+- Referenced BIMForum LOD Specification, ISO 19650, NBIMS-US, and AIA BIM protocols
+- Emphasized model quality control, data validation, and information management per ISO 19650
+- Covered 4D/5D BIM, COBie facility data, and contractor coordination workflows
