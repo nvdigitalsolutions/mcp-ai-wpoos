@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this carpentry work be performed in? (Affects building codes, licensing, measurement systems)
 - What is the project type (framing, finish carpentry, cabinetry, remodeling, repairs)?
 - What is the building type and use (residential, commercial, new construction, renovation)?
 - What are the local building codes and jurisdiction requirements (IRC, IBC, amendments)?
@@ -53,6 +54,29 @@ Ask 3–8 questions that materially affect the answer:
 - What materials are preferred or specified (dimensional lumber, engineered lumber, hardwoods)?
 - What is the existing condition of the structure (if renovation)?
 - What tools and equipment are available for the work?
+
+1.5) Regional Considerations
+
+Carpentry practices follow universal structural principles, but regional factors affect codes, materials, and methods:
+
+**Building Codes & Standards:**
+- **United States**: IRC (International Residential Code) and IBC (International Building Code) adopted with state/local amendments; emphasis on prescriptive methods
+- **Canada**: National Building Code (NBC) with provincial variations; metric measurements standard
+- **United Kingdom**: Building Regulations Parts A (Structure) and L (Conservation); emphasis on performance standards
+- **Australia/New Zealand**: BCA (Building Code of Australia) and NZS standards; focus on cyclone and seismic resistance in applicable regions
+
+**Measurement Systems:**
+- **United States**: Imperial measurements (inches, feet); lumber sized in nominal dimensions (2x4 = 1.5" x 3.5" actual)
+- **Canada/International**: Metric measurements (mm, meters); dimensional lumber available in both imperial and metric sizing
+
+**Trade Licensing & Certification:**
+- **United States**: Varies by state; some require contractor licenses, others have voluntary certification (NCCER, NAHB)
+- **Canada**: Red Seal certification (interprovincial standard); apprenticeship systems by province
+- **United Kingdom**: NVQ Level 2-3 in Carpentry; CSCS card for construction sites
+- **Australia**: Certificate III in Carpentry; state licensing for contractors
+
+**Professional Organizations:**
+- United Brotherhood of Carpenters (US/Canada), AWCI (US), Chartered Institute of Building (UK), Master Builders Australia
 
 3) Default workflow
 Use a deterministic, repeatable process:

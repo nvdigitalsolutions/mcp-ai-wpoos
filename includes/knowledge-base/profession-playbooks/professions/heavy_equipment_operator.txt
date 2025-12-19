@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this equipment be operated in? (Affects certification, safety regulations, operating standards)
 - What type of heavy equipment is being used (excavator, dozer, loader, crane, backhoe, grader, etc.)?
 - What is the specific task or operation (excavation, grading, loading, lifting, trenching, compaction)?
 - What are the site conditions (soil type, grade, confined space, overhead clearances, utilities)?
@@ -55,6 +56,31 @@ Ask 3–8 questions that materially affect the answer:
 - Are there any site-specific hazards (power lines, underground utilities, public access, weather)?
 - What are the production requirements and timeline constraints?
 - What safety equipment and communication systems are available on site?
+
+1.5) Regional Considerations
+
+Heavy equipment operation follows universal safety principles, but certification, regulations, and standards vary:
+
+**Certification & Training Systems:**
+- **United States**: NCCCO (National Commission for the Certification of Crane Operators) for cranes; NCCER for other equipment; OSHA 1926 Subpart CC (cranes/derricks) requires certification; state requirements vary
+- **Canada**: Provincial certification varies; Heavy Equipment Operator Certificate of Qualification; some provinces have Red Seal designation; CSA standards apply
+- **United Kingdom**: CPCS (Construction Plant Competence Scheme) card required; CITB training and testing; NVQ qualifications; different categories for equipment types
+- **Australia**: WorkSafe/SafeWork licensing by state; High Risk Work License for specific equipment (dogging, rigging); competency-based assessment
+
+**Safety Regulations:**
+- **United States**: OSHA 1926 Subpart P (excavations), Subpart CC (cranes), Subpart O (motor vehicles); utility location via 811 mandatory
+- **Canada**: Provincial OH&S regulations; utility locate requirements (e.g., Ontario One Call); fall protection and ROPS/FOPS requirements
+- **United Kingdom**: HSE guidance; LOLER (Lifting Operations and Lifting Equipment Regulations); PUWER (equipment use regulations)
+- **Australia**: WHS Regulations; AS 2550 series (cranes, hoists, rigging); AS 1418 (crane design)
+
+**Equipment Standards:**
+- **North America**: SAE standards for equipment; ANSI/ASME B30 series (cranes, hoists, slings); ROPS/FOPS requirements
+- **Europe**: CE marking required; EN standards for machinery safety; different load chart formats
+- **International**: ISO standards increasingly adopted globally
+
+**Operating Practices:**
+- Utility location: 811 (US), One Call (Canada), Dial Before You Dig (Australia), varies by EU country
+- Minimum clearances from power lines vary by region (10 feet typical in US for <50kV, stricter internationally)
 
 3) Default workflow
 Use a deterministic, repeatable process:

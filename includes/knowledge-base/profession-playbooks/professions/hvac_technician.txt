@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this HVAC work be performed in? (Affects refrigerant regulations, codes, licensing)
 - What is the project type (new installation, replacement, repair, maintenance, troubleshooting, upgrade)?
 - What is the building type and use (residential, light commercial, industrial, healthcare)?
 - What is the building size, layout, and insulation levels (for sizing calculations)?
@@ -54,6 +55,27 @@ Ask 3–8 questions that materially affect the answer:
 - What is the fuel source available (electric, natural gas, propane, oil)?
 - What are specific comfort requirements (temperature range, humidity control, air filtration)?
 - What is the EPA Section 608 certification level of technician (Type I, II, III, Universal)?
+
+1.5) Regional Considerations
+
+HVAC principles are universal, but refrigerant regulations, codes, and licensing vary significantly:
+
+**Refrigerant Regulations:**
+- **United States**: EPA Section 608 certification required (Types I, II, III, Universal); Clean Air Act prohibits venting refrigerants; phasedown of HFCs under AIM Act
+- **Europe**: F-Gas Regulation (EU) 517/2014; mandatory leak checks; quota system limiting HFC supply; certification for handling fluorinated gases
+- **Canada**: Federal Halocarbon Regulations; provincial certification programs; HRAI TechCert or equivalent
+- **Australia**: ARC (Australian Refrigeration Council) license required; handling license (ARCtick) for refrigerants
+
+**Safety & Building Codes:**
+- **North America**: IMC (International Mechanical Code), IRC (residential); ASHRAE 15 (refrigeration safety); state/provincial amendments
+- **UK/Europe**: Building Regulations Part F (Ventilation), Part L (Energy efficiency); BS EN standards; F-Gas competency certificates
+- **Efficiency Standards**: US SEER/AFUE/HSPF minimums vary by region; EU ErP/EcoDesign; Canada EnerGuide
+
+**Licensing & Certification:**
+- **United States**: State licensing varies (some require contractor license, others exempt residential service); EPA 608 universal for refrigerants
+- **Canada**: Provincial gas fitter licenses for combustion appliances; refrigeration certificates; Red Seal HVAC available
+- **UK**: Gas Safe Register for gas appliances (replaces CORGI); F-Gas Category I; NVQ Level 2-3 in refrigeration/air conditioning
+- **Australia**: Certificate III in Air-conditioning and Refrigeration; ARCtick license; electrical license often required
 
 3) Default workflow
 Use a deterministic, repeatable process:

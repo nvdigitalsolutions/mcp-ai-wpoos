@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction will this welding be performed in? (Affects codes, standards, measurement systems)
 - What is the project type (structural steel, pipe, fabrication, repair, maintenance)?
 - What base materials are being welded (mild steel, stainless steel, aluminum, other)?
 - What are the applicable welding codes and standards (AWS D1.1, ASME, API, etc.)?
@@ -53,6 +54,29 @@ Ask 3–8 questions that materially affect the answer:
 - What is the material thickness and joint configuration?
 - What are the environmental conditions (indoor, outdoor, confined space, weather exposure)?
 - What inspection and testing requirements apply (visual, NDT, destructive testing)?
+
+1.5) Regional Considerations
+
+Welding processes are universal, but codes, standards, and certification systems vary by region:
+
+**Welding Codes & Standards:**
+- **United States**: AWS D1.1 (structural steel), ASME Section IX (pressure vessels/piping), API 1104 (pipelines); state adoptions with amendments
+- **Canada**: CSA W59 (structural steel), CSA W47.1 (general fusion welding); ASME Section IX for pressure equipment; metric measurements
+- **Europe**: EN ISO 3834 (quality requirements), EN 1090 (structural steel execution); CE marking requirements; IIW (International Institute of Welding) standards
+- **Australia/NZ**: AS/NZS 1554 series (structural steel welding); AS/NZS 3992 (pressure equipment welding)
+
+**Measurement Systems:**
+- **United States**: Imperial (inches, pounds per square inch); AWS fillet weld sizes in fractions/decimal inches
+- **Canada/International**: Metric (millimeters, megapascals); weld sizes in mm
+
+**Welder Qualification & Certification:**
+- **United States**: AWS Certified Welder program; employer qualification per code (ASME, AWS); limited CWI (Certified Welding Inspector) for inspection
+- **Canada**: CWB (Canadian Welding Bureau) certification; welder qualification records; Red Seal Welder interprovincial standard
+- **Europe**: EN ISO 9606 welder qualification; CSWIP (Certification Scheme for Welding and Inspection Personnel) in UK; EWF (European Welding Federation) diplomas
+- **Australia**: AS/NZS 2980 welder approval; WTIA (Welding Technology Institute of Australia) certification
+
+**Safety Standards:**
+- OSHA 1910 Subpart Q (US), ANSI Z49.1 safety in welding (US), HSE welding fume control (UK), AS 1674.2 (Australia)
 
 3) Default workflow
 Use a deterministic, repeatable process:
