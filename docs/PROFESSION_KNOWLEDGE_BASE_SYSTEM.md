@@ -4,6 +4,8 @@
 
 The WP oOS profession system uses **three interconnected knowledge base directories** to provide AI assistants with comprehensive professional guidance. This document explains how each directory works, what it contains, and how they integrate together.
 
+**Important:** This system has been recently corrected. profession-documents now properly populates the Knowledge Base Content field instead of creating attachments.
+
 ## Three Knowledge Base Systems
 
 ### 1. **professions/** - JSON Metadata Files (12 Category Files → 191 Professions)
@@ -39,7 +41,7 @@ professions/
   - Role description (for AI prompts)
   - Expertise areas (array)
   - Warnings/disclaimers (array)
-  - Knowledge base notes (markdown text)
+  - Knowledge base notes (markdown text) - **This is SHORT summary text, full content comes from profession-documents/**
   - Default tools (array of tool slugs)
   - Optional: region specification
 
@@ -57,7 +59,7 @@ professions/
       "role_description": "You assist with accounting principles...",
       "expertise": ["GAAP/IFRS", "Financial reporting", ...],
       "warnings": ["Complex matters require certified accountant", ...],
-      "knowledge_base": "### Accounting Practice\n- Follow GAAP...",
+      "knowledge_base": "### Accounting Practice\n- Follow GAAP...", // SHORT
       "default_tools": ["web_search", "search_content", ...]
     },
     ...
@@ -77,11 +79,11 @@ professions/
 
 ---
 
-### 2. **profession-documents/** - Base Knowledge Reference (191 TXT Files)
+### 2. **profession-documents/** - Knowledge Base Content (191 TXT Files)
 
 **Location:** `includes/knowledge-base/profession-documents/`
 
-**Purpose:** Detailed reference material exported/generated from profession posts. Provides **foundational knowledge** about each profession.
+**Purpose:** Rich reference material that populates the **Knowledge Base Content** field in the profession CPT. This is what assistants use as foundational knowledge.
 
 **Structure:**
 ```
@@ -97,7 +99,7 @@ profession-documents/
 - Overview and description
 - Role description
 - Core expertise list
-- Knowledge base notes (from JSON)
+- Knowledge base notes (detailed, not just from JSON)
 - Warnings and disclaimers
 - Default tools list
 
@@ -114,21 +116,32 @@ Expert in accounting principles, financial reporting, and bookkeeping
 
 Role Description
 ---------------
-You assist with accounting principles, financial reporting, bookkeeping...
+You assist with accounting principles, financial reporting, bookkeeping, and financial management.
 
 Core Expertise
 -------------
 - Accounting principles (GAAP/IFRS)
 - Financial statement preparation
 - Bookkeeping and record-keeping
-...
+- Financial analysis and reporting
+- Budgeting and forecasting
+- Tax compliance
 
 Knowledge Base Notes
 -------------------
 ### Accounting Practice
 - Follow GAAP or IFRS standards
 - Maintain accurate and timely records
-...
+- Ensure internal controls and audit trails
+- Prepare financial statements (Balance Sheet, Income Statement, Cash Flow)
+- Support business decision-making with financial data
+- Stay current with accounting standards updates
+
+### Financial Reporting Standards
+[... detailed content ...]
+
+### Best Practices
+[... detailed content ...]
 
 Warnings & Disclaimers
 ---------------------
@@ -142,28 +155,36 @@ Default Tools
 - save_post
 ```
 
-**How It's Created:**
-- `WP_MCP_AI_Profession_Base_Knowledge_Seeder` reads these files (if they exist)
-- Creates attachment files in `uploads/wp-mcp-ai/base-knowledge/`
-- Attachments are linked to profession posts via `META_MEMORY_FILES`
+**How It's Created & Used:**
 
-**How It's Used:**
-1. Seeder looks for matching .txt file by slug
-2. If found, uses file content directly
-3. If not found, generates content from profession post meta
-4. Creates WordPress attachment (MIME: text/plain)
-5. Adds attachment ID to profession's `_wp_mcp_ai_profession_memory_files` meta
-6. When creating assistants from this profession, these files become part of the assistant's memory
+1. **Seeding Process:**
+   - `WP_MCP_AI_Profession_Base_Knowledge_Seeder` reads these .txt files
+   - Looks for `profession-documents/{slug}.txt`
+   - If found, reads the entire file content
+   - **Populates the `META_KNOWLEDGE_BASE` field** directly (NOT an attachment!)
+   - This field is the rich editor in the profession edit screen
+
+2. **In the WordPress Admin:**
+   - Navigate to profession edit screen
+   - See "Expertise & Knowledge" metabox
+   - Find "Knowledge Base Content" field (rich editor)
+   - This field is populated from profession-documents/{slug}.txt
+   - Admins can edit this content directly in WordPress
+
+3. **When Creating Assistants:**
+   - Assistant creation reads `META_KNOWLEDGE_BASE` from profession post
+   - This content is incorporated into the system prompt
+   - NO attachment is created - it's direct text in the prompt
 
 **Triggers:**
 - Runs after profession seeding (automatically)
 - Can be triggered via "Reseed Professions" → automatically calls `seed_base_knowledge(true)`
 
-**Attachment Storage:**
-- Path: `wp-content/uploads/wp-mcp-ai/base-knowledge/profession-{ID}-{slug}-base-knowledge.txt`
-- Post type: `attachment`
-- MIME type: `text/plain`
-- Meta: `_wp_mcp_ai_seeded_profession_slug`, `_wp_mcp_ai_seeded_profession_doc_type` = `base_knowledge`
+**Storage:**
+- **Field:** `_wp_mcp_ai_profession_knowledge_base` (post meta)
+- **Type:** Text (can be quite long)
+- **Editable:** Yes, via WordPress admin in profession edit screen
+- **Used:** Directly in system prompt when creating assistants
 
 ---
 
@@ -171,7 +192,7 @@ Default Tools
 
 **Location:** `includes/knowledge-base/profession-playbooks/`
 
-**Purpose:** **Authorable playbooks** with specific instructions, SOPs, checklists, and templates. These are **action-oriented** vs. the reference nature of profession-documents.
+**Purpose:** **Authorable playbooks** with specific instructions, SOPs, checklists, and templates. These are **action-oriented** vs. the reference nature of profession-documents. **Creates attachment files** that are included in assistant memory.
 
 **Structure:**
 ```
@@ -259,22 +280,6 @@ Shared guidelines for all professions in a category:
 - Shared best practices
 - Category-specific risks
 
-**Example (`categories/financial.txt`):**
-```
-Financial Professions — Category Playbook
-
-This applies to: accountants, financial advisors, bookkeepers, etc.
-
-## Category Philosophy
-- Emphasize diagnosis before prescription
-- Present options with clear tradeoffs
-- Provide concrete recommendations
-- Focus on actionable execution plans
-
-## Financial Compliance Framework
-...
-```
-
 **Content - Global File (`global.txt`):**
 
 Universal guidelines that apply to ALL professions:
@@ -348,8 +353,8 @@ To update this content, edit the relevant txt files in includes/knowledge-base/p
 2. For each profession, calls `WP_MCP_AI_Profession_Playbook_Loader->build_playbook()`
 3. Loader reads and concatenates: global.txt + category txt + profession txt + tool recommendations
 4. Calculates SHA256 hash of assembled content
-5. Creates/updates WordPress attachment in `uploads/wp-mcp-ai/profession-playbooks/`
-6. Adds attachment ID to profession's `_wp_mcp_ai_profession_memory_files`
+5. **Creates WordPress attachment file** in `uploads/wp-mcp-ai/profession-playbooks/`
+6. **Adds attachment ID to profession's `META_MEMORY_FILES`**
 
 **Change Detection:**
 - Uses SHA256 hash stored in attachment meta `_wp_mcp_ai_playbook_hash`
@@ -361,6 +366,7 @@ To update this content, edit the relevant txt files in includes/knowledge-base/p
 - Post type: `attachment`
 - MIME type: `text/plain`
 - Meta: `_wp_mcp_ai_playbook_profession_id`, `_wp_mcp_ai_playbook_hash`
+- **Linked to profession via:** `_wp_mcp_ai_profession_memory_files` meta array
 
 **Triggers:**
 - Automatic: First admin load after activation (incremental, 20 per cycle)
@@ -378,23 +384,24 @@ To update this content, edit the relevant txt files in includes/knowledge-base/p
 1. **JSON → CPT Posts**
    - `WP_MCP_AI_Profession_Seeder` reads `professions/*.json`
    - Creates/updates `mcp_ai_profession` posts
-   - Populates meta fields from JSON
+   - Populates meta fields from JSON (including short knowledge_base text from JSON)
 
-2. **Base Knowledge Attachment**
+2. **Base Knowledge Content Population**
    - `WP_MCP_AI_Profession_Base_Knowledge_Seeder` runs after profession seeding
    - Looks for matching `.txt` file in `profession-documents/`
-   - Creates attachment from file content (or generates from post meta)
-   - **Adds attachment ID to profession's `META_MEMORY_FILES`**
+   - **Reads file content and updates `META_KNOWLEDGE_BASE` field**
+   - **NO attachment created** - just updates the post meta field
+   - This field is the rich editor in profession edit screen
 
-3. **Playbook Attachment**
+3. **Playbook Attachment Creation**
    - `WP_MCP_AI_Profession_Playbook_Seeder` runs after base knowledge seeding
-   - Assembles playbook from modular txt files
-   - Creates playbook attachment
-   - **Also adds attachment ID to profession's `META_MEMORY_FILES`**
+   - Assembles playbook from modular txt files (global + category + profession)
+   - **Creates playbook attachment file**
+   - **Adds attachment ID to `META_MEMORY_FILES`**
 
-**Result:** Each profession post has 2 attachments in its `_wp_mcp_ai_profession_memory_files` meta:
-- One base knowledge file (reference material)
-- One playbook file (actionable instructions)
+**Result:** Each profession post has:
+- `META_KNOWLEDGE_BASE` field with rich reference content (from profession-documents/)
+- `META_MEMORY_FILES` array with playbook attachment ID(s)
 
 ### When Creating Assistants
 
@@ -402,46 +409,54 @@ When an admin creates an assistant and selects a profession as a primary role:
 
 1. **System Prompt Construction**
    - `WP_MCP_AI_Assistant_CPT::build_system_prompt_from_primary_roles()` is called
-   - Reads profession's role description, expertise, warnings from post meta
-   - Constructs text-based system prompt
+   - Reads profession's:
+     - Role description
+     - Expertise areas
+     - Warnings
+     - **`META_KNOWLEDGE_BASE` content** (the full text from profession-documents/)
+   - Constructs comprehensive text-based system prompt
+   - Knowledge base content is directly embedded in the prompt
 
-2. **Memory Files**
+2. **Memory Files (Playbooks Only)**
    - Reads profession's `_wp_mcp_ai_profession_memory_files` meta
-   - Gets array of attachment IDs (includes both base knowledge AND playbook)
+   - Gets array of attachment IDs (playbook files only, NOT base knowledge)
    - Copies these attachment IDs to assistant's memory files
-   - When assistant is used, both files are available to the AI:
-     - **Base knowledge** provides foundational understanding
-     - **Playbook** provides step-by-step guidance for tasks
+   - When assistant is used, playbook files are available to the AI as reference documents
 
 3. **Tool Selection**
    - Reads profession's `_wp_mcp_ai_profession_default_tools` meta
    - Pre-selects these tools in the assistant creation UI
    - Admin can modify tool selection before saving
 
-### Data Flow Diagram
+### Correct Data Flow Diagram
 
 ```
 JSON Files (professions/*.json)
     ↓
 [Profession Seeder] → Creates CPT Posts
+    ↓                   ↓
+    ↓              Post Meta Fields
+    ↓              (role, expertise, warnings, etc.)
     ↓
-profession-documents/*.txt
+profession-documents/*.txt (191 files)
     ↓
-[Base Knowledge Seeder] → Creates Attachment 1
-    ↓                       ↓
-    ↓                  META_MEMORY_FILES[0]
+[Base Knowledge Seeder] → Populates META_KNOWLEDGE_BASE field
+    ↓                       (NO attachment created)
     ↓
 profession-playbooks/ (global + category + profession)
     ↓
-[Playbook Seeder] → Creates Attachment 2
+[Playbook Seeder] → Creates Playbook Attachment
     ↓                  ↓
-    ↓             META_MEMORY_FILES[1]
+    ↓             META_MEMORY_FILES[]
     ↓
-[Assistant Creation] → Copies both attachments
+[Assistant Creation] → Uses profession data:
     ↓
-Assistant has BOTH files available:
-- Base Knowledge (reference)
-- Playbook (instructions)
+    ├─ System Prompt = role + expertise + warnings + META_KNOWLEDGE_BASE (direct text)
+    └─ Memory Files = Playbook attachment(s) from META_MEMORY_FILES
+    
+Assistant has:
+  ✓ Knowledge Base Content embedded in system prompt (from profession-documents/)
+  ✓ Playbook file(s) as memory attachments (from profession-playbooks/)
 ```
 
 ## Key Differences
@@ -449,17 +464,35 @@ Assistant has BOTH files available:
 | Aspect | profession-documents | profession-playbooks |
 |--------|---------------------|---------------------|
 | **Purpose** | Reference material | Actionable instructions |
-| **Content** | What the profession is | How to perform the work |
+| **Content** | What the profession is about | How to perform the work |
 | **Tone** | Informational | Directive |
-| **Structure** | Flat text export | Modular (global + category + specific) |
-| **Editing** | Typically auto-generated | Hand-authored for quality |
+| **Storage** | `META_KNOWLEDGE_BASE` field (post meta) | Attachment file in uploads |
+| **Integration** | Embedded in system prompt (direct text) | Attached as memory file |
+| **Editing** | Via WordPress admin (rich editor) | Edit TXT files, sync playbooks |
+| **Structure** | Single comprehensive document | Modular (global + category + specific) |
 | **Examples** | "Financial reporting is...", "Core expertise includes..." | "DO: Explain GAAP standards", "DO NOT: Provide tax advice", "Escalate when..." |
-| **Source** | JSON → Post Meta → TXT | Hand-written TXT files |
-| **Assembly** | One file per profession | Three files assembled (global + category + profession) |
-| **Updates** | Via JSON reseed | Edit TXT files, sync playbooks |
-| **Tool Recommendations** | Listed in JSON | Dynamically generated with usage guidance |
+| **Source** | TXT file → Post meta field | TXT files assembled → Attachment |
+| **Assembly** | One file, used as-is | Three files assembled (global + category + profession) |
+| **Updates** | Edit in WP admin OR reseed from TXT | Edit TXT files, sync playbooks |
+| **Tool Recommendations** | None | Dynamically generated with usage guidance |
+| **File Count** | 191 files (one per profession) | 191 profession files + 7 category files + 1 global = 199 files |
 
 ## Common Workflows
+
+### Editing Base Knowledge Content
+
+**Option 1: Via WordPress Admin (Recommended for minor edits)**
+1. Navigate to profession edit screen
+2. Find "Expertise & Knowledge" metabox
+3. Edit "Knowledge Base Content" field (rich editor)
+4. Save profession
+
+**Option 2: Via TXT Files (Recommended for major updates)**
+1. Navigate to `includes/knowledge-base/profession-documents/`
+2. Edit `{slug}.txt` file
+3. Go to WP Admin → Settings → WP oOS → Advanced
+4. Click "Update Professions" (this triggers base knowledge sync)
+5. Profession's `META_KNOWLEDGE_BASE` will be updated from file
 
 ### Editing Playbook Content
 
@@ -470,23 +503,24 @@ Assistant has BOTH files available:
    - **Single profession:** Edit `professions/{slug}.txt`
 3. Test locally (optional)
 4. Go to WP Admin → Settings → WP oOS → Advanced
-5. Click "Sync Changed Playbooks" (fast) or "Force Regenerate All Playbooks" (thorough)
-6. Wait for completion
-7. Check a profession edit screen to verify playbook was regenerated
+5. Scroll to "Sync Profession Playbooks" section
+6. Click "Sync Changed Playbooks" (fast) or "Force Regenerate All Playbooks" (thorough)
+7. Wait for completion
+8. Check a profession edit screen → "Professional Playbook" metabox to verify
 
 ### Adding a New Profession
 
 1. Edit appropriate JSON file in `professions/` (e.g., `technology.json`)
 2. Add new profession object with all required fields
-3. Create `profession-documents/{slug}.txt` (optional, can be auto-generated)
-4. Create `profession-playbooks/professions/{slug}.txt` (recommended for quality)
+3. Create `profession-documents/{slug}.txt` with detailed reference content
+4. Create `profession-playbooks/professions/{slug}.txt` with actionable instructions
 5. Go to WP Admin → Settings → WP oOS → Advanced
 6. Click "Update Professions" (preserves existing) or "Replace All" (clean slate)
 7. System will:
-   - Create profession CPT post
-   - Generate base knowledge attachment
-   - Generate playbook attachment
-   - Both attached to profession's memory files
+   - Create profession CPT post with metadata
+   - Populate `META_KNOWLEDGE_BASE` from profession-documents/{slug}.txt
+   - Generate playbook attachment from assembled playbook files
+   - Add playbook attachment to `META_MEMORY_FILES`
 
 ### Regenerating Single Playbook
 
@@ -515,10 +549,24 @@ Assistant has BOTH files available:
 - **WP_MCP_AI_Profession_Knowledge_Base_Loader** - Loads JSON files
 - **WP_MCP_AI_Profession_Repository** - CRUD for profession CPT
 - **WP_MCP_AI_Profession_Seeder** - Processes JSON → CPT
-- **WP_MCP_AI_Profession_Base_Knowledge_Seeder** - Creates base knowledge attachments
+- **WP_MCP_AI_Profession_Base_Knowledge_Seeder** - Populates META_KNOWLEDGE_BASE from profession-documents/*.txt
 - **WP_MCP_AI_Profession_Playbook_Loader** - Assembles playbooks from modular TXT files
 - **WP_MCP_AI_Profession_Playbook_Seeder** - Creates playbook attachments
 - **WP_MCP_AI_Profession_Tool_Recommender** - Generates tool recommendations
+
+### Post Meta Fields
+
+**Profession CPT (`mcp_ai_profession`):**
+- `_wp_mcp_ai_profession_category` - Category (advisory, creative, etc.)
+- `_wp_mcp_ai_profession_expertise` - Array of expertise areas
+- `_wp_mcp_ai_profession_default_tools` - Array of tool slugs
+- `_wp_mcp_ai_profession_role_description` - Role description text
+- `_wp_mcp_ai_profession_warnings` - Array of warnings
+- `_wp_mcp_ai_profession_knowledge_base` - **RICH TEXT from profession-documents/{slug}.txt**
+- `_wp_mcp_ai_profession_memory_files` - Array of attachment IDs (playbooks only)
+- `_wp_mcp_ai_profession_vector_store_id` - Optional vector store ID
+- `_wp_mcp_ai_profession_supported_mime_types` - Array of MIME types
+- `_wp_mcp_ai_profession_region` - Primary region/jurisdiction
 
 ### Hooks
 
@@ -532,13 +580,19 @@ add_action( 'admin_init', array( 'WP_MCP_AI_Profession_Playbook_Seeder', 'seed_p
 
 ### AJAX Actions
 
-- `wp_ajax_wp_mcp_ai_reseed_professions` - Reseed from JSON
+- `wp_ajax_wp_mcp_ai_reseed_professions` - Reseed from JSON (includes base knowledge + playbooks)
 - `wp_ajax_wp_mcp_ai_regenerate_playbook` - Single playbook regeneration
 - `wp_ajax_wp_mcp_ai_sync_all_playbooks` - Bulk playbook sync
 
 ### API Usage
 
 ```php
+// Load profession-documents content into META_KNOWLEDGE_BASE
+$slug = 'accountant';
+$file_path = WP_MCP_AI_PATH . 'includes/knowledge-base/profession-documents/' . $slug . '.txt';
+$content = file_get_contents( $file_path );
+update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, $content );
+
 // Load and assemble a playbook
 $loader = new WP_MCP_AI_Profession_Playbook_Loader();
 $playbook_content = $loader->build_playbook( $profession_id );
@@ -548,13 +602,20 @@ WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
 
 // Force regenerate all playbooks
 WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
-
-// Load base knowledge from documents
-$doc_path = WP_MCP_AI_PATH . 'includes/knowledge-base/profession-documents/' . $slug . '.txt';
-$base_knowledge = file_get_contents( $doc_path );
 ```
 
 ## Troubleshooting
+
+### Knowledge Base Content not updating
+
+**Problem:** Edited a profession-documents/*.txt file but changes aren't in the profession CPT.
+
+**Solution:**
+1. Go to Settings → WP oOS → Advanced
+2. Click "Update Professions" (this triggers base knowledge sync)
+3. Check profession edit screen → "Knowledge Base Content" field
+4. Verify file exists at `includes/knowledge-base/profession-documents/{slug}.txt`
+5. Check file encoding is UTF-8
 
 ### Playbooks not updating after editing TXT files
 
@@ -562,73 +623,102 @@ $base_knowledge = file_get_contents( $doc_path );
 
 **Solution:**
 1. Go to Settings → WP oOS → Advanced
-2. Click "Sync Changed Playbooks"
-3. If still not updated, try "Force Regenerate All Playbooks"
-4. Check that file encoding is UTF-8
-5. Verify file exists at expected path
+2. Scroll to "Sync Profession Playbooks"
+3. Click "Sync Changed Playbooks"
+4. If still not updated, try "Force Regenerate All Playbooks"
+5. Check that file encoding is UTF-8
+6. Verify file exists at expected path
 
-### Missing attachments in profession memory files
+### Missing playbook attachments
 
-**Problem:** Profession doesn't have both attachments.
-
-**Solution:**
-1. Go to Settings → WP oOS → Advanced
-2. Click "Update Professions" (triggers full reseed pipeline)
-3. Check `wp-content/uploads/wp-mcp-ai/` for attachment files
-4. Query database for attachments with profession ID in meta
-
-### Profession not found in JSON
-
-**Problem:** Want to add custom profession not in JSON files.
+**Problem:** Profession doesn't have playbook attachment in memory files.
 
 **Solution:**
-1. Create profession manually in WP Admin (Add New Profession)
-2. OR edit appropriate JSON category file and add profession object
-3. Create matching playbook file in `profession-playbooks/professions/{slug}.txt`
-4. If created manually, playbook will be generated but may be empty
-5. Consider contributing profession back to JSON files for future users
+1. Check profession edit screen → "Professional Playbook" metabox
+2. If shows "Not Generated", click "Regenerate Playbook"
+3. OR go to Settings → Advanced → "Sync All Playbooks"
+4. Check `wp-content/uploads/wp-mcp-ai/profession-playbooks/` for attachment files
+5. Query database for attachments with profession ID in meta
+
+### Old base knowledge attachments still exist
+
+**Problem:** After upgrade, old base knowledge attachments are still in uploads/wp-mcp-ai/profession-knowledge/.
+
+**Solution:**
+- These are legacy from the old system
+- They are no longer linked to professions (not in META_MEMORY_FILES)
+- Safe to delete manually if desired
+- Or leave them - they're not being used
+
+## Migration Notes
+
+**For existing installations upgrading to corrected system:**
+
+The system has been updated to use profession-documents correctly:
+
+**Before (Incorrect):**
+- profession-documents/*.txt → Created attachments
+- META_KNOWLEDGE_BASE had only short JSON content
+
+**After (Correct):**
+- profession-documents/*.txt → Populates META_KNOWLEDGE_BASE field
+- No attachments created for base knowledge
+- Only playbooks create attachments
+
+**What happens on upgrade:**
+1. Run "Reseed Professions" to populate META_KNOWLEDGE_BASE from profession-documents/*.txt
+2. Old base knowledge attachments will remain in uploads but won't be linked
+3. Playbooks continue to work as before (no changes to playbook system)
+4. Assistants will now have richer knowledge base content in system prompts
+
+**Optional cleanup:**
+- Old attachments in `uploads/wp-mcp-ai/profession-knowledge/` can be deleted
+- They're no longer linked to professions
+- Query: `SELECT * FROM wp_postmeta WHERE meta_key = '_wp_mcp_ai_seeded_profession_doc_type' AND meta_value = 'base_knowledge'`
 
 ## Best Practices
 
 1. **Editing Strategy**
-   - Edit `global.txt` for universal changes affecting all professions
-   - Edit `categories/*.txt` for category-wide updates
-   - Edit `professions/{slug}.txt` for profession-specific refinements
-   - Minimize redundancy - don't repeat content across layers
+   - Edit profession-documents/*.txt for foundational reference material
+   - Edit playbook global.txt for universal changes
+   - Edit playbook categories/*.txt for category-wide updates
+   - Edit playbook professions/*.txt for profession-specific instructions
+   - Minimize redundancy across all systems
 
-2. **Version Control**
+2. **Content Guidelines**
+   - **profession-documents**: Focus on "what" - definitions, concepts, knowledge
+   - **playbooks**: Focus on "how" - procedures, checklists, workflows
+   - Be specific and actionable in playbooks
+   - Use active voice in playbooks
+   - Provide concrete examples
+
+3. **Version Control**
    - All TXT files are in git - use meaningful commit messages
    - Test changes locally before committing
    - Document significant changes in commit descriptions
 
-3. **Content Quality**
-   - Be specific and actionable
-   - Use active voice
-   - Provide concrete examples
-   - Explain why, not just what
-   - Keep current with industry changes
-
 4. **Testing**
-   - After editing, regenerate affected playbooks
-   - Test with actual assistant creation
-   - Verify both base knowledge and playbook are attached
-   - Check that AI responses reflect playbook guidance
+   - After editing profession-documents, reseed professions
+   - After editing playbooks, sync playbooks
+   - Create test assistant to verify both knowledge base and playbook work correctly
+   - Check that AI responses reflect updated guidance
 
 5. **Performance**
-   - Use "Sync Changed" for routine updates (fast)
+   - Use "Sync Changed Playbooks" for routine updates (fast)
    - Use "Force Regenerate All" only after major structural changes
    - Batch processing handles 191 professions efficiently
 
 ## Future Enhancements
 
 Potential improvements:
-- [ ] Admin UI for editing playbooks directly in WordPress
+- [ ] Admin UI for editing profession-documents in WordPress (currently via TXT files)
 - [ ] Visual diff showing changes between versions
 - [ ] Preview assembled playbook before saving
-- [ ] Multilingual playbook support
+- [ ] Multilingual support for both systems
 - [ ] AI-powered tool recommendation refinement
-- [ ] Export/import playbook bundles
+- [ ] Export/import profession bundles
 - [ ] Playbook templates for new professions
+- [ ] Automated testing of profession → assistant workflow
 
 ## Related Documentation
 
@@ -643,3 +733,4 @@ Potential improvements:
 **Last Updated:** December 2025
 **Version:** 1.7.0
 **Professions:** 191 across 12 categories
+**System Status:** Corrected - profession-documents now properly populates Knowledge Base Content field
