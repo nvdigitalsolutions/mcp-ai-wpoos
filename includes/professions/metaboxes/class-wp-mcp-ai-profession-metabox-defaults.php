@@ -157,23 +157,21 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 				<label for="profession_default_model">
 					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
 				</label><br>
-				<?php if ( ! empty( $models ) ) : ?>
-					<select name="profession_default_model" id="profession_default_model" class="widefat">
-						<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+				<select name="profession_default_model" id="profession_default_model" class="widefat">
+					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<?php if ( ! empty( $models ) ) : ?>
 						<?php foreach ( $models as $model_id => $model_name ) : ?>
 							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
 								<?php echo esc_html( $model_name ); ?>
 							</option>
 						<?php endforeach; ?>
-						<?php if ( $default_model && ! isset( $models[ $default_model ] ) ) : ?>
-							<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
-								<?php echo esc_html( $default_model ); ?> (custom)
-							</option>
-						<?php endif; ?>
-					</select>
-				<?php else : ?>
-					<input type="text" name="profession_default_model" id="profession_default_model" class="widefat" value="<?php echo esc_attr( $default_model ); ?>" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
-				<?php endif; ?>
+					<?php endif; ?>
+					<?php if ( $default_model && ( empty( $models ) || ! isset( $models[ $default_model ] ) ) ) : ?>
+						<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
+							<?php echo esc_html( $default_model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
+						</option>
+					<?php endif; ?>
+				</select>
 			</p>
 
 			<p>

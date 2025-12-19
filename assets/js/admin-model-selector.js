@@ -34,9 +34,10 @@
 						ModelSelector.handleProviderChange( $providerSelect, $modelField );
 					} );
 
-					// Load initial models if field is already a select.
-					if ( $modelField.is( 'select' ) ) {
-						ModelSelector.loadModels( $providerSelect.val(), $modelField );
+					// Load initial models for the selected provider (convert text input to dropdown).
+					const initialProvider = $providerSelect.val();
+					if ( initialProvider ) {
+						ModelSelector.loadModels( initialProvider, $modelField );
 					}
 				}
 			} );
