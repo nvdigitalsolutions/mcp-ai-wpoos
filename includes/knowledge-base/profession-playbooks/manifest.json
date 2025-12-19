@@ -1,5 +1,5 @@
 {
-  "count": 186,
+  "count": 188,
   "professions": [
     {
       "slug": "accountant",
@@ -454,6 +454,16 @@
     {
       "slug": "igcse_year_9_tutor",
       "title": "IGCSE Year 9 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_10_tutor",
+      "title": "IGCSE Year 10 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_11_tutor",
+      "title": "IGCSE Year 11 Tutor",
       "category": "other"
     },
     {
