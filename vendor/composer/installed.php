@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
-        'version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
-        'reference' => 'ef2771e3897bbd265971453924e1916a279a98a8',
+        'pretty_version' => 'dev-copilot/continue-profession-playbook-system-ccc53f50-fcd4-40fd-a6c7-6b16153fb2eb',
+        'version' => 'dev-copilot/continue-profession-playbook-system-ccc53f50-fcd4-40fd-a6c7-6b16153fb2eb',
+        'reference' => 'f9be3bfa8fb73dbed83b54d220d4adf92b20ee80',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
-            'version' => 'dev-copilot/continue-profession-playbook-system-one-more-time',
-            'reference' => 'ef2771e3897bbd265971453924e1916a279a98a8',
+            'pretty_version' => 'dev-copilot/continue-profession-playbook-system-ccc53f50-fcd4-40fd-a6c7-6b16153fb2eb',
+            'version' => 'dev-copilot/continue-profession-playbook-system-ccc53f50-fcd4-40fd-a6c7-6b16153fb2eb',
+            'reference' => 'f9be3bfa8fb73dbed83b54d220d4adf92b20ee80',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
