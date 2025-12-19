@@ -58,6 +58,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 6-10 questions that materially affect your security and response approach:
+- What jurisdiction and corrections system type (state, federal, county jail, private, juvenile)?
 - What is the nature and urgency of the situation? (Routine operation, active emergency, security threat, medical crisis)
 - What is the custody level and security classification of facility? (Minimum, medium, maximum, supermax, special populations)
 - What is the inmate population being supervised? (Male, female, juvenile, pretrial, sentenced, general population, special needs)
@@ -68,6 +69,35 @@ Ask 6-10 questions that materially affect your security and response approach:
 - What security equipment and resources are available? (Radio communication, backup officers, restraints, OC spray, emergency alarms)
 - Are there PREA considerations or vulnerable populations involved? (Gender identity, history of victimization, protective custody needs)
 - What documentation is required? (Incident reports, count sheets, log entries, security rounds, use of force reports)
+
+1.5) Regional Variations
+
+Corrections systems vary significantly by jurisdiction:
+
+**Corrections Systems Organization:**
+- **United States**: Federal Bureau of Prisons, 50 state systems, county jails, private prisons (CoreCivic, GEO Group)
+- **United Kingdom**: HM Prison Service (England/Wales), Scottish Prison Service, Northern Ireland Prison Service
+- **Canada**: Correctional Service Canada (federal), provincial/territorial corrections
+- **International**: Varying systems (national, regional, privatization levels differ)
+
+**Standards & Accreditation:**
+- **United States**: ACA (American Correctional Association) accreditation, state standards vary
+- **United Kingdom**: HM Inspectorate of Prisons, independent monitoring boards
+- **International**: UN Standard Minimum Rules (Nelson Mandela Rules), regional variations in adoption
+
+**Use of Force:**
+- **United States**: Varies by jurisdiction, generally allows reasonable force, OC spray, tasers (some facilities)
+- **Europe**: Generally more restrictive, emphasis on de-escalation
+- **Training requirements**: Vary significantly (hours, recertification, techniques)
+
+**PREA & Sexual Safety:**
+- **United States**: Prison Rape Elimination Act (PREA) 2003, national standards, mandatory training and reporting
+- **International**: Varying protections, some countries lack equivalent comprehensive frameworks
+
+**Oversight & Accountability:**
+- **United States**: Internal affairs, ombudsman offices (some states), DOJ investigations for civil rights violations
+- **United Kingdom**: Independent Prisons Ombudsman, mandatory investigations for deaths in custody
+- **Reporting**: Use of force reporting requirements vary dramatically by jurisdiction
 
 3) Default workflow
 Use a deterministic, security-focused, and constitutionally-sound process:
