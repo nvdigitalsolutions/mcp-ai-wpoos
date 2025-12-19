@@ -699,7 +699,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		$http_stub = static function ( $preempt, $args, $url ) use ( &$request_count ) {
 			++$request_count;
-			
+
 			// Return success immediately
 			return array(
 				'response' => array(
@@ -896,7 +896,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		// Should have condensed results array.
 		$this->assertArrayHasKey( 'results', $sanitized );
-		
+
 		// Should only include top 3 results (not all 5).
 		$this->assertCount( 3, $sanitized['results'], 'Should condense to top 3 results for LLM' );
 
@@ -1253,4 +1253,3 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 	}
 }
-

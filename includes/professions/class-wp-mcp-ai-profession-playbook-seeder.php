@@ -114,9 +114,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 *
 	 * Creates or updates playbook attachment based on content hash.
 	 *
-	 * @param WP_Post                                 $profession Profession post object.
-	 * @param WP_MCP_AI_Profession_Playbook_Loader    $loader     Playbook loader instance.
-	 * @param bool                                    $force      Force recreation even if hash matches.
+	 * @param WP_Post                              $profession Profession post object.
+	 * @param WP_MCP_AI_Profession_Playbook_Loader $loader     Playbook loader instance.
+	 * @param bool                                 $force      Force recreation even if hash matches.
 	 */
 	protected static function sync_profession_playbook( $profession, $loader, $force = false ) {
 		$slug = $profession->post_name;
@@ -214,9 +214,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$upload_dir = wp_upload_dir();
 
 		// Create subdirectory if it doesn't exist.
-		$subdir      = 'wp-mcp-ai/profession-playbooks';
-		$target_dir  = trailingslashit( $upload_dir['basedir'] ) . $subdir;
-		$target_url  = trailingslashit( $upload_dir['baseurl'] ) . $subdir;
+		$subdir     = 'wp-mcp-ai/profession-playbooks';
+		$target_dir = trailingslashit( $upload_dir['basedir'] ) . $subdir;
+		$target_url = trailingslashit( $upload_dir['baseurl'] ) . $subdir;
 
 		if ( ! file_exists( $target_dir ) ) {
 			wp_mkdir_p( $target_dir );

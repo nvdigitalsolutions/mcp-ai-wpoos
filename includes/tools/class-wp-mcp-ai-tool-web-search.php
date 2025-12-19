@@ -360,10 +360,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'wp-mcp-ai'
 				),
 				array(
-					'status'       => 202,
-					'is_pending'   => true,
-					'should_wait'  => false,
-					'retry_after'  => null,
+					'status'      => 202,
+					'is_pending'  => true,
+					'should_wait' => false,
+					'retry_after' => null,
 				)
 			);
 		}
@@ -391,10 +391,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'wp_mcp_ai_search_pending',
 			$message,
 			array(
-				'status'       => 202,
-				'is_pending'   => true,
-				'should_wait'  => false,
-				'retry_after'  => '' !== $retry_after ? (string) $retry_after : null,
+				'status'      => 202,
+				'is_pending'  => true,
+				'should_wait' => false,
+				'retry_after' => '' !== $retry_after ? (string) $retry_after : null,
 			)
 		);
 	}
@@ -521,7 +521,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Build descriptive text message for the LLM (removed from base result to prevent SSE streaming extraction).
 		// The text will be added by sanitize_for_llm() for LLM consumption only.
 		// Include system_message for chat client display without treating it as assistant content.
-		$text_parts = array();
+		$text_parts   = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: result count, 2: search query */
 			_n(
@@ -692,7 +692,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
-		$text_parts = array();
+		$text_parts   = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: result count, 2: search query */
 			_n(
@@ -921,7 +921,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$sanitized[ $key ] = $result[ $key ];
 			}
 		}
-		
+
 		// Generate descriptive text for the LLM.
 		// This is created here rather than in the base result to prevent
 		// it from being extracted during SSE streaming fallback text extraction.
@@ -935,7 +935,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// while dramatically reducing token usage.
 		if ( ! empty( $result['results'] ) && is_array( $result['results'] ) ) {
 			$condensed_results = array();
-			
+
 			// Only include top results for LLM (chat client gets all results).
 			$count = 0;
 
@@ -950,7 +950,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'url'   => isset( $item['url'] ) ? $item['url'] : '',
 				);
 
-				$count++;
+				++$count;
 			}
 
 			if ( ! empty( $condensed_results ) ) {
@@ -973,7 +973,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	protected function generate_result_text( array $result ) {
 		$query = isset( $result['query'] ) ? $result['query'] : '';
-		
+
 		// Handle empty results case.
 		if ( empty( $result['results'] ) || 0 === $result['result_count'] ) {
 			return sprintf(
@@ -982,11 +982,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$query
 			);
 		}
-		
+
 		// Build descriptive text for successful search.
 		$result_count = isset( $result['result_count'] ) ? absint( $result['result_count'] ) : 0;
-		$text_parts = array();
-		
+		$text_parts   = array();
+
 		$text_parts[] = sprintf(
 			/* translators: 1: result count, 2: search query */
 			_n(
@@ -998,7 +998,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result_count,
 			$query
 		);
-		
+
 		// Add brief summary of top result if available.
 		if ( ! empty( $result['results'][0]['title'] ) ) {
 			$text_parts[] = sprintf(
@@ -1007,7 +1007,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				wp_trim_words( $result['results'][0]['title'], 10, '...' )
 			);
 		}
-		
+
 		return implode( ' ', $text_parts );
 	}
 

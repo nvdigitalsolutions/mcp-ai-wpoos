@@ -193,7 +193,7 @@ class Test_Profession_Tool_Recommender extends WP_UnitTestCase {
 		$mock_registry = $this->createMock( WP_MCP_AI_Tool_Registry::class );
 		$mock_registry->method( 'get_tool' )
 			->willReturnCallback(
-				function( $slug ) {
+				function ( $slug ) {
 					return 'web_search' === $slug ? new stdClass() : null;
 				}
 			);

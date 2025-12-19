@@ -595,10 +595,10 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 
 		// Test various problematic inputs.
 		$test_cases = array(
-			'Normal text'                                  => 'Normal text',
-			'Café résumé'                                  => 'Café résumé',
+			'Normal text'                                 => 'Normal text',
+			'Café résumé'                                 => 'Café résumé',
 			'中文 日本語 한국어'                                  => '中文 日本語 한국어',
-			''                                             => '',
+			''                                            => '',
 			'Text with null bytes: ' . "\x00" . 'removed' => 'Text with null bytes: removed',
 		);
 

@@ -111,14 +111,14 @@ class WP_MCP_AI_Crawler {
 		$base_url = isset( $job_args['base_url'] ) ? esc_url_raw( (string) $job_args['base_url'] ) : '';
 
 		$job = array(
-			'task_id'       => $task_id,
-			'base_url'      => $base_url,
-			'status'        => isset( $job_args['status'] ) ? sanitize_key( $job_args['status'] ) : 'completed',
-			'created_at'    => time(),
-			'updated_at'    => time(),
-			'arguments'     => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
-			'context'       => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
-			'skip_polling'  => true, // Flag to indicate no polling needed
+			'task_id'      => $task_id,
+			'base_url'     => $base_url,
+			'status'       => isset( $job_args['status'] ) ? sanitize_key( $job_args['status'] ) : 'completed',
+			'created_at'   => time(),
+			'updated_at'   => time(),
+			'arguments'    => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
+			'context'      => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
+			'skip_polling' => true, // Flag to indicate no polling needed
 		);
 
 		if ( isset( $job_args['raw_response'] ) ) {

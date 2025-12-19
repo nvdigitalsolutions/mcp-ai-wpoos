@@ -19,13 +19,13 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_tool_schema_includes_url_parameter() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool   = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertArrayHasKey( 'properties', $schema, 'Schema should have properties' );
 		$this->assertArrayHasKey( 'url', $schema['properties'], 'Schema should include url parameter' );
-		
+
 		// Verify url parameter has proper structure
 		$url_param = $schema['properties']['url'];
 		$this->assertArrayHasKey( 'type', $url_param, 'URL parameter should have type' );
@@ -40,12 +40,12 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_tool_schema_includes_file_id_parameter() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool   = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertArrayHasKey( 'file_id', $schema['properties'], 'Schema should include file_id parameter' );
-		
+
 		// Verify file_id parameter has proper structure
 		$file_id_param = $schema['properties']['file_id'];
 		$this->assertArrayHasKey( 'type', $file_id_param, 'file_id parameter should have type' );
@@ -60,7 +60,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_tool_schema_preserves_existing_parameters() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool   = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$schema = $tool->get_parameters_schema();
 
@@ -88,7 +88,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_tool_description_mentions_attachments() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool        = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$description = $tool->get_description();
 
@@ -102,7 +102,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_tool_uses_attachment_file_resolver_trait() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool       = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$traits     = class_uses( $tool );
 		$trait_name = 'WP_MCP_AI_Attachment_File_Resolver';
@@ -116,12 +116,12 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_url_parameter_description_is_helpful() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool   = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$schema = $tool->get_parameters_schema();
 
 		$url_description = $schema['properties']['url']['description'];
-		
+
 		// Check that the description provides context about when to use this parameter
 		$this->assertStringContainsString( 'URL', $url_description, 'Description should mention URL' );
 		$this->assertStringContainsString( 'image', strtolower( $url_description ), 'Description should mention image' );
@@ -133,12 +133,12 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 	public function test_shortcut_tasks_mention_url_parameter() {
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php';
-		
+
 		$tool      = new WP_MCP_AI_Tool_Edit_Gemini_Image();
 		$shortcuts = $tool->get_shortcut_tasks();
 
 		$this->assertNotEmpty( $shortcuts, 'Tool should have shortcut tasks' );
-		
+
 		// Check if at least one shortcut mentions URL parameter
 		$mentions_url = false;
 		foreach ( $shortcuts as $shortcut ) {
@@ -147,7 +147,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 				break;
 			}
 		}
-		
+
 		$this->assertTrue( $mentions_url, 'At least one shortcut task should mention the url parameter' );
 	}
 }

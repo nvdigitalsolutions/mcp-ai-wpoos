@@ -370,9 +370,9 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * @return array Array of memory-related insights.
 	 */
 	private static function analyze_memory_trends() {
-		$insights         = array();
-		$recent_activity  = self::get_settings_repository()->get( 'recent_activity', array() );
-		$safety_buffer    = WP_MCP_AI_Settings_Registry::get_setting( 'prediction_safety_buffer', 15 );
+		$insights          = array();
+		$recent_activity   = self::get_settings_repository()->get( 'recent_activity', array() );
+		$safety_buffer     = WP_MCP_AI_Settings_Registry::get_setting( 'prediction_safety_buffer', 15 );
 		$warning_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
 
 		if ( empty( $recent_activity ) || count( $recent_activity ) < 10 ) {
@@ -401,8 +401,8 @@ class WP_MCP_AI_Orchestration_Health_Service {
 
 		if ( $trend['slope'] > 0 ) {
 			// Memory is increasing.
-			$current_memory = self::get_memory_usage();
-			$projected_time = time() + ( 3 * HOUR_IN_SECONDS ); // 3 hours ahead.
+			$current_memory  = self::get_memory_usage();
+			$projected_time  = time() + ( 3 * HOUR_IN_SECONDS ); // 3 hours ahead.
 			$projected_usage = $current_memory['percent'] + ( $trend['slope'] * 3 );
 
 			if ( $projected_usage > $warning_threshold ) {
@@ -431,8 +431,8 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * @return array Array of error-related insights.
 	 */
 	private static function analyze_error_trends() {
-		$insights        = array();
-		$recent_errors   = self::get_settings_repository()->get( 'recent_errors', array() );
+		$insights           = array();
+		$recent_errors      = self::get_settings_repository()->get( 'recent_errors', array() );
 		$critical_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 10 );
 
 		if ( empty( $recent_errors ) || count( $recent_errors ) < 5 ) {
@@ -613,12 +613,12 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			);
 		}
 
-		$n          = count( $samples );
-		$sum_x      = 0;
-		$sum_y      = 0;
-		$sum_xy     = 0;
-		$sum_x2     = 0;
-		$base_time  = $samples[0]['timestamp'];
+		$n         = count( $samples );
+		$sum_x     = 0;
+		$sum_y     = 0;
+		$sum_xy    = 0;
+		$sum_x2    = 0;
+		$base_time = $samples[0]['timestamp'];
 
 		foreach ( $samples as $sample ) {
 			$x       = ( $sample['timestamp'] - $base_time ) / HOUR_IN_SECONDS; // Hours from start.

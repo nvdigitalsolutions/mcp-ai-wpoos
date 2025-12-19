@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
  */
 class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+
 	const DEFAULT_MODEL   = 'gpt-4o-mini-transcribe';
 	const DEFAULT_FORMAT  = 'verbose_json';
 	const MAX_AUDIO_BYTES = 26214400; // 25MB default limit.

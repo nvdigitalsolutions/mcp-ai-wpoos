@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Add summary for frontend display.
 		$place_count = isset( $result['results'] ) && is_array( $result['results'] ) ? count( $result['results'] ) : 0;
-		
+
 		if ( ! empty( $query ) ) {
 			$summary = sprintf(
 				/* translators: 1: number of places, 2: search query */

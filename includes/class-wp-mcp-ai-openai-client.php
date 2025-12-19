@@ -2354,7 +2354,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					// Skip checking isset for image/image_file as those are handled by type check above.
 
-
 					if ( strpos( $type, 'input_' ) === 0 && 'input_file' === $type && isset( $segment['file_id'] ) ) {
 						$has_file_reference = true;
 					}

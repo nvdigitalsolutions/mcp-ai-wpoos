@@ -67,19 +67,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 		public function get_fields() {
 			return array(
 				// Auth0 Settings.
-				'auth0_domain'                     => array(
+				'auth0_domain'                         => array(
 					'type'        => 'text',
 					'label'       => __( 'Auth0 Domain', 'wp-mcp-ai' ),
 					'description' => __( 'Your Auth0 tenant domain. You can find this in your Auth0 dashboard under Settings → General (e.g., your-domain.auth0.com or your-domain.us.auth0.com for US region).', 'wp-mcp-ai' ),
 					'placeholder' => 'your-domain.auth0.com',
 				),
-				'auth0_audience'                   => array(
+				'auth0_audience'                       => array(
 					'type'        => 'text',
 					'label'       => __( 'Auth0 API Audience', 'wp-mcp-ai' ),
 					'description' => __( 'The unique identifier for your Auth0 API, configured in the Auth0 Dashboard under APIs. This is typically a URL-like identifier (e.g., https://api.yourapp.com or urn:yourapp:api).', 'wp-mcp-ai' ),
 					'placeholder' => 'https://your-api.example.com',
 				),
-				'auth0_required_scope'             => array(
+				'auth0_required_scope'                 => array(
 					'type'        => 'text',
 					'label'       => __( 'Required Access Scope', 'wp-mcp-ai' ),
 					'description' => __( 'Optional scope that must be present in Auth0 access tokens to use the API. Leave empty to allow any valid token. Multiple scopes can be space-separated (e.g., read:mcp write:mcp).', 'wp-mcp-ai' ),
@@ -87,21 +87,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// Auth0 GitHub Bridge.
-				'enable_auth0_github_bridge'       => array(
+				'enable_auth0_github_bridge'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Auth0 GitHub Bridge', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Resolve Auth0 GitHub identities into WordPress users', 'wp-mcp-ai' ),
 					'description'    => __( 'Maps Auth0 GitHub identities to WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'auth0_management_client_id'       => array(
+				'auth0_management_client_id'           => array(
 					'type'         => 'text',
 					'label'        => __( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
 					'description'  => __( 'Client ID for Auth0 Management API. Required for GitHub Bridge feature to resolve user identities from GitHub accounts via Auth0.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'auth0_management_client_secret'   => array(
+				'auth0_management_client_secret'       => array(
 					'type'         => 'password',
 					'label'        => __( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'Client Secret for Auth0 Management API. Keep this secure as it grants administrative access to your Auth0 tenant.', 'wp-mcp-ai' ),
@@ -133,7 +133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// Simple JWT Login.
-				'enable_simple_jwt_login'          => array(
+				'enable_simple_jwt_login'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Simple JWT Login', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow Simple JWT Login bearer tokens', 'wp-mcp-ai' ),
@@ -142,7 +142,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// Guest Access.
-				'guest_token_lifetime'             => array(
+				'guest_token_lifetime'                 => array(
 					'type'        => 'number',
 					'label'       => __( 'Guest Token Lifetime (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'How long guest tokens remain valid. Default: 86400 (24 hours)', 'wp-mcp-ai' ),
@@ -151,28 +151,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// REST API Capabilities.
-				'rest_enable_assistant_list'       => array(
+				'rest_enable_assistant_list'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable REST Assistant Listing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow listing assistants via REST API (GET /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, authenticated API clients can retrieve the list of available assistants. Enabled by default. Disable for enhanced security if you don\'t need remote assistant discovery.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'rest_enable_assistant_create'     => array(
+				'rest_enable_assistant_create'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow creating assistants via REST API (POST /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, authenticated API clients can create new assistants remotely. Requires proper authentication (Auth0, assistant credentials, or JWT).', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'rest_enable_assistant_delete'     => array(
+				'rest_enable_assistant_delete'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable REST Assistant Deletion', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'sse_enable_post_method'           => array(
+				'sse_enable_post_method'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable POST Method on SSE Endpoint', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow POST requests to /wp-json/mcp-ai/v1/sse endpoint', 'wp-mcp-ai' ),

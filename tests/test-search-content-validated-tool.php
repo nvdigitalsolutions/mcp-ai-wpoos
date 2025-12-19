@@ -140,7 +140,7 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertGreaterThanOrEqual( 1, $result['count'] );
-		
+
 		// Check that results contain the banana post.
 		$found = false;
 		foreach ( $result['results'] as $item ) {
@@ -273,7 +273,7 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'results', $result );
-		
+
 		// Verify results include the cherry post.
 		$found = false;
 		foreach ( $result['results'] as $item ) {
@@ -310,7 +310,7 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertIsArray( $result );
-		
+
 		// Verify results include the banana post but not cherry.
 		$found_banana = false;
 		$found_cherry = false;

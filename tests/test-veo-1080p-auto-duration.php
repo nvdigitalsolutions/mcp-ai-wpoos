@@ -77,7 +77,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result, '1080p without duration should not return error' );
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
-		
+
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
 		// Duration should have been auto-adjusted to 8 seconds.
@@ -150,7 +150,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result, '1080p with duration 5 should not return error' );
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
-		
+
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
 		// Duration should have been auto-adjusted to 8 seconds.
@@ -216,7 +216,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result, '1080p with duration 8 should not return error' );
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
-		
+
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
 		// Duration should remain 8 seconds.
@@ -282,7 +282,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result, '720p with duration 5 should not return error' );
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
-		
+
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
 		// Duration should remain 5 seconds (no adjustment for 720p).
@@ -355,7 +355,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result, '1080p with duration 0 should not return error' );
 		$this->assertNotNull( $captured_request, 'Request should be captured' );
-		
+
 		$request_body = json_decode( $captured_request['args']['body'], true );
 
 		// Duration should have been auto-adjusted to 8 seconds.
@@ -427,7 +427,7 @@ class WP_MCP_AI_Veo_1080p_Auto_Duration_Test extends WP_UnitTestCase {
 
 			$this->assertNotWPError( $result, "1080p with duration {$test_duration} should not return error" );
 			$this->assertNotNull( $captured_request, "Request should be captured for duration {$test_duration}" );
-			
+
 			$request_body = json_decode( $captured_request['args']['body'], true );
 
 			// Duration should have been auto-adjusted to 8 seconds.

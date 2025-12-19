@@ -103,7 +103,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );.
 
-
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -1311,12 +1310,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// conflicting sanitization callbacks that wipe provider subtab settings.
 			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296.
 
-
 			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
 			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.
 			// Keeping this would cause all checkboxes from inactive subtabs to be cleared to false.
 			// register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );.
-
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',

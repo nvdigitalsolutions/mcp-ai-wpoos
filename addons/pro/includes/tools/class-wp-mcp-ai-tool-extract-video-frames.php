@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  */
 class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+
 	/**
 	 * {@inheritdoc}
 	 */

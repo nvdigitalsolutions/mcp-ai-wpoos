@@ -15,7 +15,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_tool_instantiation() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Generate_Sora_Video', $tool );
 	}
 
@@ -25,7 +25,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_tool_slug() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$this->assertEquals( 'generate_sora_video', $tool->get_slug() );
 	}
 
@@ -35,7 +35,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_tool_name() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$this->assertNotEmpty( $tool->get_name() );
 	}
 
@@ -45,7 +45,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_tool_description() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$this->assertNotEmpty( $tool->get_description() );
 	}
 
@@ -56,7 +56,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool   = new WP_MCP_AI_Tool_Generate_Sora_Video();
 		$schema = $tool->get_parameters_schema();
-		
+
 		$this->assertIsArray( $schema );
 		$this->assertArrayHasKey( 'type', $schema );
 		$this->assertEquals( 'object', $schema['type'] );
@@ -74,7 +74,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool  = new WP_MCP_AI_Tool_Generate_Sora_Video();
 		$flags = $tool->get_capability_flags();
-		
+
 		$this->assertIsArray( $flags );
 		$this->assertContains( 'requires-credentials', $flags );
 		$this->assertContains( 'requires-capability', $flags );
@@ -91,7 +91,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool         = new WP_MCP_AI_Tool_Generate_Sora_Video();
 		$requirements = $tool->get_model_requirements();
-		
+
 		$this->assertIsArray( $requirements );
 		$this->assertContains( 'video-generation', $requirements );
 	}
@@ -102,12 +102,12 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_execute_without_prompt() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
-		
+
 		$result = $tool->execute( array(), array( 'user_id' => $user_id ) );
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_missing_prompt', $result->get_error_code() );
 	}
@@ -118,15 +118,15 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_execute_without_upload_capability() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
-		
+
 		$result = $tool->execute(
 			array( 'prompt' => 'Test video' ),
 			array( 'user_id' => $user_id )
 		);
-		
+
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
 	}
@@ -137,7 +137,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_sanitize_for_llm() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video();
-		
+
 		$result = array(
 			'success'    => true,
 			'video_url'  => 'data:video/mp4;base64,dGVzdA==',
@@ -145,9 +145,9 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 			'model'      => 'sora-2',
 			'some_extra' => 'data',
 		);
-		
+
 		$sanitized = $tool->sanitize_for_llm( $result );
-		
+
 		$this->assertIsArray( $sanitized );
 		$this->assertArrayNotHasKey( 'video_url', $sanitized );
 		$this->assertArrayHasKey( 'video_data_stripped', $sanitized );
@@ -163,7 +163,7 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	public function test_validated_tool_instantiation() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video-validated.php';
 		$tool = new WP_MCP_AI_Tool_Generate_Sora_Video_Validated();
-		
+
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Generate_Sora_Video_Validated', $tool );
 		$this->assertEquals( 'generate_sora_video_validated', $tool->get_slug() );
 	}
@@ -173,11 +173,11 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 	 */
 	public function test_api_endpoint() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php';
-		
+
 		// Use reflection to access the constant.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Generate_Sora_Video' );
 		$endpoint   = $reflection->getConstant( 'API_ENDPOINT' );
-		
+
 		// Verify the endpoint is correct (not the old /generations endpoint).
 		$this->assertEquals( 'https://api.openai.com/v1/videos', $endpoint );
 		$this->assertStringNotContainsString( '/generations', $endpoint );

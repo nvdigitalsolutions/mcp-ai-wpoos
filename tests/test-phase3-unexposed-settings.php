@@ -33,11 +33,11 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-chat-client.php';
 		}
 
-		$section        = new WP_MCP_AI_Section_Chat_Client();
-		$reflection     = new ReflectionClass( $section );
-		$method         = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Chat_Client();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		$subtab_groups  = $method->invoke( $section );
+		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'appearance', $subtab_groups, 'appearance subtab should exist' );
 		$this->assertContains( 'chat_colors', $subtab_groups['appearance']['fields'], 'chat_colors should be in appearance subtab' );
@@ -67,12 +67,12 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
 		}
 
-		$section        = new WP_MCP_AI_Section_Integrations();
-		$fields         = $section->get_fields();
-		$reflection     = new ReflectionClass( $section );
-		$method         = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$fields     = $section->get_fields();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		$subtab_groups  = $method->invoke( $section );
+		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'google_analytics_credentials_json', $fields, 'google_analytics_credentials_json field should be defined' );
 		$this->assertArrayHasKey( 'google_analytics', $subtab_groups, 'google_analytics subtab should exist' );
@@ -87,12 +87,12 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
 		}
 
-		$section        = new WP_MCP_AI_Section_Integrations();
-		$fields         = $section->get_fields();
-		$reflection     = new ReflectionClass( $section );
-		$method         = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$fields     = $section->get_fields();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		$subtab_groups  = $method->invoke( $section );
+		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'ita_tariff_api_key', $fields, 'ita_tariff_api_key field should be defined' );
 		$this->assertArrayHasKey( 'google_analytics', $subtab_groups, 'google_analytics subtab should exist' );

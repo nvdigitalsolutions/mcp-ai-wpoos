@@ -122,9 +122,9 @@ class Test_Veo_Filename_Consistency extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_file_name_preserves_job_id() {
 		$test_cases = array(
-			'async_c35fa56adf6cb70e' => 'async_c35fa56adf6cb70e',
+			'async_c35fa56adf6cb70e'      => 'async_c35fa56adf6cb70e',
 			'veo_69264137e396a4_03027627' => 'veo_69264137e396a4_03027627',
-			'test_123_abc' => 'test_123_abc',
+			'test_123_abc'                => 'test_123_abc',
 		);
 
 		foreach ( $test_cases as $input => $expected ) {

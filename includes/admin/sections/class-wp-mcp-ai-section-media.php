@@ -66,12 +66,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 */
 		public function get_fields() {
 			// Get WordPress allowed mime types for reference.
-			$wp_mimes = get_allowed_mime_types();
-			$default_image_mimes = implode( ', ', array_keys( array_filter( $wp_mimes, function( $mime ) {
-				return strpos( $mime, 'image/' ) === 0;
-			} ) ) );
-			$default_file_mimes = implode( ', ', array_keys( $wp_mimes ) );
-			
+			$wp_mimes            = get_allowed_mime_types();
+			$default_image_mimes = implode(
+				', ',
+				array_keys(
+					array_filter(
+						$wp_mimes,
+						function ( $mime ) {
+							return strpos( $mime, 'image/' ) === 0;
+						}
+					)
+				)
+			);
+			$default_file_mimes  = implode( ', ', array_keys( $wp_mimes ) );
+
 			return array(
 				'enable_ai_media_library'     => array(
 					'type'           => 'checkbox',
