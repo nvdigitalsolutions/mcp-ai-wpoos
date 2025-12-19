@@ -361,7 +361,10 @@ class WP_MCP_AI_Profession_CPT {
 		$sanitized = array_map( 'absint', $value );
 
 		// Remove any zero values (invalid IDs).
-		return array_filter( $sanitized );
+		$sanitized = array_filter( $sanitized );
+
+		// Remove duplicates and reindex array.
+		return array_values( array_unique( $sanitized ) );
 	}
 
 	/**
