@@ -112,6 +112,7 @@ class Test_Profession_Playbook_Loader extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Test Accountant - Professional Playbook', $playbook, 'Should have title header' );
 		$this->assertStringContainsString( 'Global Guidelines', $playbook, 'Should have global section' );
 		$this->assertStringContainsString( 'Financial Category Guidelines', $playbook, 'Should have category section' );
+		$this->assertStringContainsString( 'Recommended Tools', $playbook, 'Should have tool recommendations section' );
 
 		// Check for separators.
 		$this->assertStringContainsString( '---', $playbook, 'Should have section separators' );

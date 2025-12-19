@@ -31,7 +31,8 @@ When a profession playbook is generated, the system assembles content in this or
 2. **Global Section**: Content from `global.txt`
 3. **Category Section**: Content from `categories/{category}.txt`
 4. **Profession Section**: Content from `professions/{slug}.txt`
-5. **Footer**: Generation info and instructions
+5. **Tool Recommendations**: Intelligent tool mapping and usage guidance (NEW in 2025-12)
+6. **Footer**: Generation info and instructions
 
 Each section is separated by `---` dividers for clarity.
 
@@ -173,14 +174,56 @@ The reseed professions AJAX action automatically:
 2. Updates base knowledge documents
 3. **Syncs playbooks from txt files** ← Added in this system
 
+## Tool Recommendations System (NEW)
+
+As of December 2025, playbooks now include intelligent tool recommendations:
+
+### Features
+- **Automatic Tool Mapping**: 100+ tools intelligently mapped to professions
+- **Three-Tier System**: Core tools → Category tools → Profession-specific tools
+- **Contextual Guidance**: Profession-specific usage advice for each tool
+- **Availability Filtering**: Respects base vs. full version configurations
+- **Organized by Category**: Tools grouped into Core, Media, Admin, etc.
+
+### Example Output
+```markdown
+## Recommended Tools & How to Use Them
+
+This profession has access to 15 recommended tools...
+
+### Core Tools
+**web_search** - Search the web for current information...
+**save_post** - Create new posts or update existing content...
+
+### System Administration
+**check_site_security** - Essential for security audits...
+
+### Tool Usage Best Practices
+1. Verify permissions...
+```
+
+### Documentation
+- **Full Guide**: `docs/PROFESSION_TOOL_RECOMMENDATIONS.md`
+- **Quick Reference**: `docs/QUICK_GUIDE_TOOL_MAPPINGS.md`
+- **Tool Catalog**: `docs/tool-reference.md`
+
+### Customization
+Edit `includes/services/class-wp-mcp-ai-profession-tool-recommender.php` to:
+- Add tools to specific professions
+- Add tools to entire categories
+- Provide custom tool guidance
+- Create new tool categories
+
 ## Future Enhancements
 
 Potential improvements:
 - [ ] Admin UI for editing playbooks directly in WordPress
+- [ ] Visual tool selector for profession configuration
 - [ ] Preview playbook before saving
 - [ ] Diff view showing changes between versions
 - [ ] Export/import playbook bundles
 - [ ] Multilingual playbook support
+- [ ] AI-powered tool recommendation refinement
 
 ## Troubleshooting
 
