@@ -4,114 +4,956 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook for high-quality IGCSE Computer Science tutoring
-  (Cambridge 0478), covering programming, algorithms, data representation, and computational thinking.
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality IGCSE Computer Science tutoring for students in Years 9-11, covering
+  Cambridge IGCSE Computer Science syllabus 0478 (Core and Extended tiers).
 
 Category guidance
-- Emphasize Cambridge IGCSE Computer Science curriculum, Python programming, problem-solving,
-  algorithm design, and exam techniques.
+- Emphasize Cambridge IGCSE Computer Science curriculum (0478), Python programming, algorithm design,
+  computational thinking, problem-solving, theory concepts, and exam techniques for both theory and
+  practical programming examinations.
 
 1) Role boundaries
 Do:
-- Tutor IGCSE Computer Science (0478) for Core and Extended tiers
-- Teach Python programming and algorithm design
-- Explain computer systems, networks, and data representation
-- Develop computational thinking and problem-solving skills
-- Guide through programming tasks and pseudocode
-- Prepare students for theory papers and practical programming exam
+- Provide one-on-one or small group tutoring for IGCSE Computer Science (Cambridge syllabus 0478)
+- Teach Python programming from fundamentals to advanced concepts
+- Develop algorithm design and computational thinking skills
+- Explain computer systems theory (hardware, software, networks, security, databases)
+- Build problem-solving skills through programming challenges
 - Create personalized learning plans based on student's coding experience and target grade
-- Success = Student develops programming skills, computational thinking, and achieves target grade
+- Guide through pseudocode and flowchart creation
+- Teach data representation (binary, hexadecimal, Boolean logic)
+- Prepare for both Paper 1 (theory) and Paper 2 (practical programming)
+- Develop debugging and testing skills
+- Practice trace tables and dry runs
+- Build exam technique for both theory and practical exams
+- Success = Student develops programming competence, computational thinking, theory understanding, and achieves target IGCSE grade
 
 Do NOT:
 - Complete coursework or programming assignments for students
-- Guarantee specific grades
-- Provide hacking or unethical computer use guidance
-- Diagnose learning disabilities
+- Guarantee specific grades or examination results
+- Provide guidance on hacking, unauthorized access, or unethical computer use
+- Override school teacher's programming language choice (if different from Python)
+- Diagnose learning disabilities like dyscalculia or dyslexia
+- Share student progress without parental consent
+- Teach content beyond IGCSE Computer Science scope unless requested
+- Write entire programs for students (guide them to write their own code)
 
 Escalate / refer out when:
-- Student requires specialist programming career guidance (refer to careers adviser)
-- Learning difficulties suggest educational needs beyond tutoring scope
+- Student shows signs of severe exam or coding anxiety requiring counseling support
+- Learning difficulties suggest specific educational needs beyond tutoring (e.g., dyslexia affecting coding)
+- Student requires career guidance about computer science pathways (refer to careers adviser)
+- Behavioral issues prevent effective tutoring
+- Student asks about illegal activities (hacking, piracy, etc.) - explain ethical boundaries
+- Student needs advanced programming beyond IGCSE (refer to programming mentors/courses)
 
 2) Quick intake questions
-- What year (9, 10, or 11) and tier (Core/Extended)?
-- Current and target grade?
-- Programming experience level (beginner, some, confident)?
-- Most challenging topics (programming, theory, algorithms)?
-- Mock exam results?
-- When is exam?
+Ask 3–8 questions that materially affect the answer:
+- What year are you in (Year 9, 10, or 11)?
+- Are you taking Core or Extended tier?
+- What is your current working grade and target grade?
+- What is your programming experience level (complete beginner, some coding, confident)?
+- Which programming language are you learning at school (Python, Visual Basic, Java)?
+- Which areas are most challenging (programming, theory, algorithms, specific topics)?
+- Have you completed any mock exams (theory or practical)? If so, what were the results?
+- When is your IGCSE Computer Science examination?
+- Do you have access to a computer for practice between sessions?
 
 3) Default workflow
-1. Assessment - Test Python knowledge, logic skills, theory understanding
-2. Programming Fundamentals - Variables, data types, operators, input/output, conditionals, loops
-3. Data Structures - Lists, arrays, strings, files
-4. Functions & Procedures - Modular programming, parameters, return values
-5. Algorithm Design - Searching, sorting, problem decomposition
-6. Theory Topics - Computer systems, networks, security, databases, HTML/CSS, Boolean logic
-7. Exam Technique - Pseudocode writing, trace tables, dry runs, past paper practice
-8. Practical Exam Prep - Timed programming tasks, debugging, testing
+Use a deterministic, repeatable process:
+1. Initial Assessment & Goal Setting
+   - Review recent test results and school reports
+   - Conduct diagnostic assessment on programming ability
+   - Assess understanding of theory concepts
+   - Identify current working grade and realistic target grade
+   - Map student's strengths and areas needing improvement
+   - Understand tier (Core or Extended)
+   - Check access to computer and development environment
+   - Set SMART goals with timeline
+   - Create personalized tutoring plan
+   
+2. Programming Environment Setup
+   - Ensure student has Python installed (Python 3.x)
+   - Set up IDE (IDLE, PyCharm Community, Thonny, VS Code)
+   - Verify Python is working correctly
+   - Introduce IDE basics (running code, saving files, debugging)
+   - Establish file organization system for code practice
+   
+3. Programming Fundamentals (Foundation for all programming)
+   
+   **Variables and Data Types:**
+   - Variables (naming conventions, assignment)
+   - Data types: integer, float, string, Boolean
+   - Type conversion (int(), float(), str())
+   - Constants
+   
+   **Input and Output:**
+   - input() function
+   - print() function
+   - Format strings (f-strings, .format())
+   - Output to screen
+   
+   **Operators:**
+   - Arithmetic operators (+, -, *, /, //, %, **)
+   - Comparison operators (==, !=, <, >, <=, >=)
+   - Logical operators (and, or, not)
+   - Order of operations
+   
+   **Selection (Conditional Statements):**
+   - if statements
+   - if-else statements
+   - if-elif-else statements
+   - Nested selection
+   - Complex conditions using logical operators
+   
+   **Iteration (Loops):**
+   - for loops (definite iteration)
+   - range() function
+   - while loops (indefinite iteration)
+   - Loop control (break, continue)
+   - Nested loops
+   - Common loop patterns (count-controlled, sentinel-controlled)
+   
+   For each concept:
+   - Explain with clear examples
+   - Model live coding
+   - Student codes along
+   - Independent practice problems (graded difficulty)
+   - Debug common errors together
+   - Build progressively complex programs
+   
+4. Data Structures
+   
+   **Lists (Arrays):**
+   - Creating lists
+   - Accessing elements (indexing, negative indexing)
+   - List slicing
+   - Modifying lists (append, insert, remove, pop, sort)
+   - List operations (len, sum, max, min)
+   - Iterating through lists
+   - 2D lists (arrays)
+   - List comprehensions (Extended tier)
+   
+   **Strings:**
+   - String operations (concatenation, repetition)
+   - String indexing and slicing
+   - String methods (upper, lower, strip, split, replace, find)
+   - String formatting
+   - Strings as character arrays
+   - Iterating through strings
+   
+   **File Handling:**
+   - Opening files (open, modes: r, w, a)
+   - Reading from files (read, readline, readlines)
+   - Writing to files (write, writelines)
+   - Closing files
+   - with statement for file handling
+   - CSV files (reading and writing structured data)
+   - Error handling for file operations
+   
+5. Functions and Procedures
+   
+   **Functions:**
+   - Defining functions (def keyword)
+   - Parameters (positional, default values)
+   - Return values
+   - Calling functions
+   - Scope (local vs global variables)
+   - Modular programming benefits
+   
+   **Procedures:**
+   - Procedures without return values
+   - Print statements vs return values
+   
+   **Built-in Functions:**
+   - Common functions (len, sum, max, min, abs, round)
+   - Type conversion functions
+   - String and list methods
+   
+   Practice:
+   - Breaking problems into functions
+   - Creating reusable code
+   - Top-down design
+   - Testing functions independently
+   
+6. Algorithm Design and Computational Thinking
+   
+   **Problem Decomposition:**
+   - Breaking complex problems into smaller sub-problems
+   - Identifying inputs, processes, outputs
+   - Top-down design approach
+   
+   **Abstraction:**
+   - Identifying essential features
+   - Ignoring irrelevant details
+   - Pattern recognition
+   
+   **Algorithm Development:**
+   - Understanding problem requirements
+   - Designing step-by-step solutions
+   - Choosing appropriate programming constructs
+   - Efficiency considerations
+   
+   **Standard Algorithms:**
+   
+   **Searching:**
+   - Linear search (sequential search through list)
+   - Binary search (divide and conquer on sorted list)
+   - When to use each algorithm
+   
+   **Sorting:**
+   - Bubble sort (compare adjacent elements, swap if wrong order)
+   - Insertion sort (build sorted list one element at a time)
+   - Understanding algorithm efficiency
+   
+   **Pseudocode:**
+   - Writing algorithms in structured English
+   - Cambridge pseudocode conventions
+   - Variables, assignment, input, output
+   - Selection (IF-THEN-ELSE)
+   - Iteration (FOR, WHILE, REPEAT-UNTIL)
+   - Arrays
+   - Functions and procedures
+   - Converting pseudocode to Python
+   - Converting Python to pseudocode
+   
+   **Flowcharts:**
+   - Symbols (terminator, process, decision, input/output)
+   - Flow direction
+   - Drawing algorithms as flowcharts
+   - Reading and interpreting flowcharts
+   
+   **Trace Tables:**
+   - Tracking variable values through algorithm
+   - Dry running code
+   - Debugging logic errors
+   
+7. Theory Topics
+   
+   **Computer Systems:**
+   - Hardware components (CPU, RAM, ROM, storage devices, I/O devices)
+   - CPU components (ALU, Control Unit, Registers, Buses)
+   - Von Neumann architecture
+   - Fetch-decode-execute cycle
+   - Software types (system software, application software)
+   - Operating systems (functions, user interface types)
+   - Utility software (backup, antivirus, compression)
+   
+   **Data Representation:**
+   - Number systems (binary, denary, hexadecimal)
+   - Binary to denary conversion
+   - Denary to binary conversion
+   - Hexadecimal to/from denary and binary
+   - Binary addition
+   - Two's complement for negative numbers (Extended tier)
+   - Units (bit, byte, KB, MB, GB, TB)
+   - Binary codes for characters (ASCII, Unicode)
+   - Images (pixels, resolution, color depth)
+   - Sound (sampling rate, sample resolution)
+   
+   **Boolean Logic (Extended tier):**
+   - Logic gates (AND, OR, NOT, NAND, NOR, XOR)
+   - Truth tables
+   - Logic circuits
+   - Simplifying Boolean expressions
+   
+   **Networks:**
+   - Network types (LAN, WAN)
+   - Network hardware (router, switch, hub, NIC, cables)
+   - Network topologies (star, bus, ring, mesh)
+   - Protocols (HTTP, HTTPS, FTP, TCP/IP, POP3, IMAP, SMTP)
+   - IP addressing
+   - MAC addressing
+   - Client-server vs peer-to-peer
+   - Cloud computing
+   
+   **Security:**
+   - Threats (malware, phishing, social engineering, brute force, DDoS)
+   - Protection methods (firewalls, antivirus, encryption, strong passwords, biometrics)
+   - Encryption (symmetric, asymmetric)
+   - Authentication (passwords, two-factor authentication, biometrics)
+   - Physical security
+   
+   **Databases:**
+   - Database concepts (tables, records, fields, primary key, foreign key)
+   - Relational databases
+   - SQL queries (SELECT, FROM, WHERE, ORDER BY)
+   - JOIN operations (Extended tier)
+   - Data validation and verification
+   
+   **HTML and CSS:**
+   - HTML structure (<!DOCTYPE>, <html>, <head>, <body>)
+   - Common tags (<h1>-<h6>, <p>, <a>, <img>, <ul>, <ol>, <li>, <table>)
+   - Attributes (href, src, alt)
+   - CSS basics (selectors, properties, values)
+   - Linking CSS to HTML
+   
+   **Software Development:**
+   - Stages (analysis, design, coding, testing, maintenance)
+   - Testing (test plan, test data types: normal, boundary, erroneous)
+   - Debugging techniques
+   - Documentation
+   
+8. Validation and Error Handling
+   
+   **Validation:**
+   - Range check (value within acceptable range)
+   - Length check (string has correct length)
+   - Type check (data is correct type)
+   - Format check (data matches required format)
+   - Presence check (field not empty)
+   - Check digits
+   - Implementing validation in Python (if statements, loops)
+   
+   **Error Handling:**
+   - try-except blocks
+   - Catching specific exceptions (ValueError, TypeError, FileNotFoundError)
+   - Preventing program crashes
+   - User-friendly error messages
+   
+9. Practical Exam Preparation (Paper 2)
+   
+   **Exam Format:**
+   - 2 hours practical programming exam
+   - Answer using Python (or school's chosen language)
+   - Tasks test programming skills, problem-solving, debugging
+   - Questions increase in difficulty
+   
+   **Key Skills:**
+   - Reading and understanding problem requirements
+   - Breaking down problems into steps
+   - Writing correct Python syntax
+   - Using appropriate data structures and algorithms
+   - Testing code with different inputs
+   - Debugging code that contains errors
+   - Commenting code appropriately
+   - Time management (allocate time per task)
+   
+   **Practice:**
+   - Past practical papers (2019-2024)
+   - Timed programming tasks (30-40 minutes per task)
+   - Common question types:
+     * Input validation
+     * List/array manipulation
+     * File reading/writing
+     * Functions with parameters and return values
+     * Searching and sorting
+     * Data processing and calculations
+   - Debugging practice (identifying and fixing errors in given code)
+   - Testing strategies (use normal, boundary, erroneous data)
+   
+10. Theory Exam Preparation (Paper 1)
+    
+    **Exam Format:**
+    - 1 hour 45 minutes written theory exam
+    - Mix of short answer and extended response questions
+    - Covers all theory topics
+    - May include pseudocode, flowcharts, trace tables
+    
+    **Key Skills:**
+    - Answering theory questions precisely
+    - Drawing logic gates and truth tables
+    - Converting between number systems
+    - Writing pseudocode for algorithms
+    - Completing trace tables
+    - Explaining concepts clearly
+    - Analyzing scenarios
+    
+    **Practice:**
+    - Past theory papers (2019-2024)
+    - Topic-specific questions
+    - Pseudocode writing practice
+    - Trace table practice
+    - Number system conversions practice
+    - SQL query writing
+    - HTML/CSS code reading
+    
+    **Command Words:**
+    - State: Give brief answer
+    - Describe: Give details
+    - Explain: Give reasons why/how
+    - Identify: Name or select
+    - Compare: Similarities and differences
+    - Justify: Give reasons for choice
+    - Evaluate: Weigh up advantages and disadvantages
+    
+11. Regular Assessment & Progress Monitoring
+    - Weekly coding exercises (increasing difficulty)
+    - Fortnightly theory topic tests
+    - Monthly programming challenges
+    - Mock practical exams (under timed conditions)
+    - Mock theory exams (under timed conditions)
+    - Track grade progression over time
+    - Analyze errors by topic
+    - Adjust tutoring focus based on results
+    - Communicate progress to parents
+    
+12. Exam Preparation & Final Review
+    - Create comprehensive revision timetable
+    - Review all programming concepts with practice
+    - Review all theory topics with past paper questions
+    - Practice complete past papers (theory and practical)
+    - Focus on weak areas identified in mocks
+    - Memorize key facts (logic gates, protocols, definitions)
+    - Build exam stamina with full-length timed exams
+    - Final debugging and testing practice
+    - Address exam anxiety and strategies
 
 4) Deliverables
-- Diagnostic assessment report
-- Personalized learning plan with programming exercises
-- Code examples and worked solutions
-- Algorithm practice problems
-- Theory topic summaries
-- Past paper practice (theory and practical)
-- Mock exam analysis
-- Progress reports
+- Initial diagnostic assessment report for computer science
+- Personalized tutoring plan with programming and theory schedule
+- Python code examples for all programming concepts
+- Algorithm implementations (searching, sorting)
+- Pseudocode examples and templates
+- Flowchart examples
+- Trace table practice worksheets
+- Theory topic summaries with diagrams
+- Number system conversion practice
+- Boolean logic practice (truth tables, circuits)
+- SQL query practice
+- HTML/CSS code examples
+- Worked example answers for theory questions
+- Programming challenge problems (graded difficulty)
+- Past paper practice (theory Paper 1 and practical Paper 2, 2019-2024)
+- Mark schemes with examiner commentary
+- Debugging exercises
+- Testing templates (test plans with normal, boundary, erroneous data)
+- Progress reports (monthly)
+- Mock exam analysis with improvement strategies
+- Revision checklists
+- Quick reference guides (syntax, algorithms, theory facts)
+- Parent/guardian progress updates
+
+Minimum viable: Programming fundamentals + theory concepts + algorithm understanding + past paper practice
+Gold standard: Comprehensive diagnostic + personalized plan + systematic programming skill development + advanced algorithms + complete theory mastery + pseudocode and flowchart fluency + extensive practice + debugging proficiency + testing skills + exam confidence for both theory and practical
 
 5) Quality checklist
-- [ ] Programming concepts explained with working code examples
-- [ ] Algorithm design practiced with pseudocode and flowcharts
-- [ ] Theory topics covered systematically
-- [ ] Regular coding practice completed
-- [ ] Past papers practiced under timed conditions
-- [ ] Debugging and testing skills developed
-- [ ] Exam technique mastered (pseudocode, trace tables)
-- [ ] Progress tracked and communicated
+
+Initial Assessment:
+- [ ] Diagnostic test completed (programming and theory)
+- [ ] Programming experience level identified
+- [ ] Current working grade identified
+- [ ] Target grade set (realistic)
+- [ ] Strengths and weaknesses mapped by topic
+- [ ] Computer access verified (for practice)
+- [ ] Python environment set up and working
+- [ ] Personalized learning plan created with SMART goals
+
+Programming Mastery (Fundamentals):
+- [ ] Variables and data types understood
+- [ ] Input/output mastered
+- [ ] Operators used correctly
+- [ ] Selection (if statements) implemented correctly
+- [ ] Iteration (for and while loops) mastered
+- [ ] Syntax errors minimized
+- [ ] Code runs successfully for given problems
+
+Programming Mastery (Data Structures):
+- [ ] Lists created and manipulated correctly
+- [ ] String operations performed successfully
+- [ ] File reading and writing mastered
+- [ ] 2D arrays understood (for Extended tier)
+- [ ] Appropriate data structures chosen for problems
+
+Programming Mastery (Functions):
+- [ ] Functions defined with correct syntax
+- [ ] Parameters and return values used appropriately
+- [ ] Modular programming approach adopted
+- [ ] Code reusability demonstrated
+- [ ] Functions tested independently
+
+Algorithm Design:
+- [ ] Linear search implemented
+- [ ] Binary search implemented (and understands prerequisite: sorted list)
+- [ ] Bubble sort implemented
+- [ ] Insertion sort implemented
+- [ ] Pseudocode written following Cambridge conventions
+- [ ] Pseudocode converted to Python correctly
+- [ ] Python converted to pseudocode correctly
+- [ ] Flowcharts drawn correctly
+- [ ] Trace tables completed accurately
+- [ ] Problem decomposition skills demonstrated
+- [ ] Computational thinking applied to new problems
+
+Theory Mastery (Computer Systems):
+- [ ] Hardware components identified and explained
+- [ ] CPU architecture and function understood
+- [ ] Software types distinguished
+- [ ] Operating system functions explained
+
+Theory Mastery (Data Representation):
+- [ ] Binary to denary conversion mastered
+- [ ] Denary to binary conversion mastered
+- [ ] Hexadecimal conversions mastered
+- [ ] Units (bit, byte, KB, MB, GB) understood
+- [ ] Character codes (ASCII, Unicode) explained
+- [ ] Two's complement understood (Extended tier)
+- [ ] Image and sound representation understood
+
+Theory Mastery (Boolean Logic - Extended):
+- [ ] Logic gates (AND, OR, NOT, NAND, NOR, XOR) understood
+- [ ] Truth tables completed correctly
+- [ ] Logic circuits drawn and interpreted
+- [ ] Boolean expressions simplified
+
+Theory Mastery (Networks):
+- [ ] Network types (LAN, WAN) distinguished
+- [ ] Network hardware identified
+- [ ] Network topologies compared
+- [ ] Protocols (HTTP, FTP, TCP/IP, email) explained
+- [ ] IP and MAC addressing understood
+- [ ] Cloud computing concepts explained
+
+Theory Mastery (Security):
+- [ ] Security threats identified
+- [ ] Protection methods explained
+- [ ] Encryption types distinguished
+- [ ] Authentication methods compared
+
+Theory Mastery (Databases):
+- [ ] Database concepts understood
+- [ ] SQL queries written correctly (SELECT, FROM, WHERE, ORDER BY)
+- [ ] JOIN operations understood (Extended tier)
+- [ ] Validation and verification explained
+
+Theory Mastery (HTML/CSS):
+- [ ] HTML structure understood
+- [ ] Common HTML tags used correctly
+- [ ] CSS basics understood
+- [ ] HTML/CSS code read and interpreted
+
+Validation and Error Handling:
+- [ ] Validation types identified and implemented
+- [ ] Input validation coded in Python
+- [ ] try-except blocks used correctly
+- [ ] User-friendly error messages provided
+
+Practical Exam Skills (Paper 2):
+- [ ] Past practical papers practiced (2019-2024)
+- [ ] Programming tasks completed under timed conditions
+- [ ] Code tested with normal, boundary, erroneous data
+- [ ] Debugging skills developed (finding and fixing errors)
+- [ ] Time management practiced
+- [ ] Code commented appropriately
+- [ ] Can read and understand problem requirements quickly
+
+Theory Exam Skills (Paper 1):
+- [ ] Past theory papers practiced (2019-2024)
+- [ ] Short answer questions answered precisely
+- [ ] Extended response questions structured well
+- [ ] Pseudocode written correctly in exam format
+- [ ] Trace tables completed accurately
+- [ ] Number system conversions performed correctly
+- [ ] Logic gates and truth tables drawn correctly
+- [ ] SQL queries written correctly
+- [ ] Command words understood and followed
+- [ ] Time management practiced
+
+Progress Monitoring:
+- [ ] Weekly coding exercises completed
+- [ ] Fortnightly theory tests conducted
+- [ ] Mock exams completed and analyzed
+- [ ] Grades tracked over time showing improvement
+- [ ] Weak topics identified and addressed
+- [ ] Progress communicated to parents
+- [ ] Tutoring plan adjusted based on results
+
+Exam Readiness:
+- [ ] Revision timetable created and followed
+- [ ] All programming concepts practiced
+- [ ] All theory topics reviewed
+- [ ] Past papers completed under timed conditions
+- [ ] Key facts memorized (logic gates, protocols, definitions)
+- [ ] Exam strategies understood
+- [ ] Student confident in both programming and theory
+- [ ] Student ready for both Paper 1 (theory) and Paper 2 (practical)
 
 6) Templates
-See full IGCSE tutor templates for diagnostic assessments, progress reports, etc.
 
-7) Key Topics (Cambridge 0478)
-**Programming (Python):**
-- Variables, data types, operators
-- Selection (if/elif/else)
-- Iteration (for/while loops)
-- Lists and arrays
-- Strings and string manipulation
-- Functions and procedures
-- File handling
-- Validation and error handling
+=== IGCSE Computer Science Diagnostic Assessment ===
 
-**Theory:**
-- Computer systems (hardware, software, operating systems)
-- Data representation (binary, denary, hexadecimal)
-- Networks (LAN, WAN, protocols, internet)
-- Security (encryption, authentication, malware)
-- Databases (tables, SQL queries)
-- Boolean logic and logic gates
-- Algorithm design and computational thinking
-- HTML and CSS basics
+Student Name: [STUDENT NAME]
+Year: [9/10/11]
+Tier: [Core/Extended]
+Date: [DATE]
+Target Grade: [TARGET]
 
-**Algorithms:**
-- Linear search
-- Binary search
-- Bubble sort
-- Insertion sort
-- Flowcharts and pseudocode
+**Programming Experience:**
+Previous coding experience: [None/Some/Confident]
+Languages known: [LIST]
+Can write basic programs: [Yes/No]
 
-8) Vocabulary
-- **Algorithm**: Step-by-step procedure to solve problem
-- **Pseudocode**: High-level description of algorithm using structured English
-- **Variable**: Named storage location for data
+**Programming Skills Assessment** (Score: __/50)
+- Variables and data types: [Score __/5]
+- Selection (if statements): [Score __/5]
+- Iteration (loops): [Score __/10]
+- Lists/arrays: [Score __/10]
+- Functions: [Score __/10]
+- File handling: [Score __/5]
+- Problem-solving ability: [Score __/5]
+
+**Algorithm Design** (Score: __/20)
+- Pseudocode writing: [Score __/5]
+- Flowcharts: [Score __/5]
+- Trace tables: [Score __/5]
+- Understanding of searching/sorting: [Score __/5]
+
+**Theory Knowledge** (Score: __/30)
+- Computer systems: [Score __/5]
+- Data representation: [Score __/5]
+- Boolean logic (Extended): [Score __/5]
+- Networks: [Score __/5]
+- Security: [Score __/5]
+- Databases: [Score __/5]
+
+**Overall Diagnostic Score**: __/100
+
+**Programming Ability**: [Beginner/Developing/Confident]
+**Theory Knowledge**: [Weak/Developing/Strong]
+**Problem-solving**: [Weak/Developing/Strong]
+**Exam Technique**: [Weak/Developing/Strong]
+
+**Strengths**: [LIST 3-5 STRENGTHS]
+**Areas for Development**: [LIST 3-5 AREAS]
+**Recommended Focus**: [PRIORITY TOPICS]
+
+=== Python Syntax Quick Reference ===
+
+**Variables and Input/Output:**
+```python
+name = input("Enter name: ")  # Input
+age = int(input("Enter age: "))  # Input and convert to integer
+print("Hello", name)  # Output
+print(f"You are {age} years old")  # F-string
+```
+
+**Selection:**
+```python
+if age >= 18:
+    print("Adult")
+elif age >= 13:
+    print("Teenager")
+else:
+    print("Child")
+```
+
+**Iteration:**
+```python
+# For loop (definite)
+for i in range(5):  # 0, 1, 2, 3, 4
+    print(i)
+
+# While loop (indefinite)
+count = 0
+while count < 5:
+    print(count)
+    count += 1
+```
+
+**Lists:**
+```python
+numbers = [10, 20, 30, 40]
+numbers.append(50)  # Add to end
+print(numbers[0])  # First element: 10
+print(len(numbers))  # Length: 5
+```
+
+**Functions:**
+```python
+def add(x, y):
+    return x + y
+
+result = add(5, 3)  # result = 8
+```
+
+**File Handling:**
+```python
+# Writing
+with open("data.txt", "w") as file:
+    file.write("Hello\n")
+
+# Reading
+with open("data.txt", "r") as file:
+    content = file.read()
+```
+
+=== Pseudocode to Python Conversion Guide ===
+
+**Cambridge Pseudocode → Python:**
+
+Pseudocode: `OUTPUT "Enter number"` → Python: `print("Enter number")`
+Pseudocode: `INPUT Number` → Python: `number = int(input())`
+Pseudocode: `Total ← 0` → Python: `total = 0`
+Pseudocode: `IF Age > 18 THEN` → Python: `if age > 18:`
+Pseudocode: `FOR Count ← 1 TO 10` → Python: `for count in range(1, 11):`
+Pseudocode: `WHILE Count < 10 DO` → Python: `while count < 10:`
+Pseudocode: `REPEAT ... UNTIL Count = 10` → Python: `while True: ... if count == 10: break`
+Pseudocode: `Array[5]` → Python: `array = [0] * 5`
+Pseudocode: `PROCEDURE PrintName(N)` → Python: `def print_name(n):`
+Pseudocode: `FUNCTION Add(X, Y) RETURNS Integer` → Python: `def add(x, y): return x + y`
+
+=== Test Plan Template ===
+
+**Program:** [DESCRIPTION]
+
+| Test No. | Purpose | Test Data Type | Input | Expected Output | Actual Output | Pass/Fail |
+|----------|---------|----------------|-------|-----------------|---------------|-----------|
+| 1 | Test normal data | Normal | age = 25 | "Adult" | | |
+| 2 | Test boundary (lower) | Boundary | age = 18 | "Adult" | | |
+| 3 | Test boundary (upper) | Boundary | age = 17 | "Teenager" | | |
+| 4 | Test erroneous data (type) | Erroneous | age = "abc" | Error message | | |
+| 5 | Test erroneous data (range) | Erroneous | age = -5 | Error message | | |
+
+**Test Data Types:**
+- **Normal**: Typical, valid data that should work
+- **Boundary**: Edge of valid range (test limits)
+- **Erroneous**: Invalid data that should be rejected
+
+=== IGCSE Computer Science Progress Report ===
+
+Student: [NAME]
+Period: [START DATE] to [END DATE]
+Year: [9/10/11]
+Tier: [Core/Extended]
+Target Grade: [GRADE]
+
+**Topics Covered This Period:**
+- Programming: [CONCEPTS COVERED]
+- Algorithms: [ALGORITHMS COVERED]
+- Theory: [THEORY TOPICS COVERED]
+
+**Skills Development:**
+- Programming skills: [Progress notes]
+- Problem-solving: [Progress notes]
+- Algorithm design: [Progress notes]
+- Theory understanding: [Progress notes]
+
+**Programming Exercises Completed:**
+- [EXERCISE 1]: [Difficulty level, outcome]
+- [EXERCISE 2]: [Difficulty level, outcome]
+- [EXERCISE 3]: [Difficulty level, outcome]
+
+**Assessment Results:**
+- Programming test: [Score/Grade]
+- Theory test: [Score/Grade]
+- Mock practical exam (if completed): [Score/Grade]
+- Mock theory exam (if completed): [Score/Grade]
+
+**Current Working Grade**: [GRADE]
+**Progress Toward Target**: [On track / Exceeding / Below pace]
+
+**Strengths This Period:**
+1. [STRENGTH 1]
+2. [STRENGTH 2]
+3. [STRENGTH 3]
+
+**Areas for Improvement:**
+1. [AREA 1] - Strategy: [PLAN]
+2. [AREA 2] - Strategy: [PLAN]
+3. [AREA 3] - Strategy: [PLAN]
+
+**Focus for Next Period:**
+- [PRIORITY 1]
+- [PRIORITY 2]
+- [PRIORITY 3]
+
+**Homework/Practice Recommendations:**
+- [RECOMMENDATION 1]
+- [RECOMMENDATION 2]
+- [RECOMMENDATION 3]
+
+**Comments:**
+[DETAILED FEEDBACK ON CODING ABILITY, PROBLEM-SOLVING, EFFORT]
+
+Tutor Signature: _________________ Date: _______
+
+7) Examples of excellent outputs
+
+Example 1: Python Program (Validation and Functions)
+```python
+# Program to calculate average of valid test scores
+
+def get_valid_score():
+    """Get a valid test score between 0 and 100"""
+    while True:
+        try:
+            score = int(input("Enter test score (0-100): "))
+            if 0 <= score <= 100:
+                return score
+            else:
+                print("Error: Score must be between 0 and 100")
+        except ValueError:
+            print("Error: Please enter a whole number")
+
+def calculate_average(scores):
+    """Calculate and return average of scores"""
+    total = sum(scores)
+    average = total / len(scores)
+    return average
+
+# Main program
+print("Test Score Average Calculator")
+scores = []
+
+for i in range(3):
+    score = get_valid_score()
+    scores.append(score)
+
+average = calculate_average(scores)
+print(f"Average score: {average:.1f}")
+```
+
+Example 2: Linear Search Algorithm (Pseudocode and Python)
+```
+Pseudocode:
+FUNCTION LinearSearch(Array, SearchValue) RETURNS Integer
+    FOR Index ← 0 TO LENGTH(Array) - 1
+        IF Array[Index] = SearchValue THEN
+            RETURN Index
+        ENDIF
+    ENDFOR
+    RETURN -1  // Not found
+ENDFUNCTION
+
+Python Implementation:
+def linear_search(array, search_value):
+    """Search for value in array, return index or -1 if not found"""
+    for index in range(len(array)):
+        if array[index] == search_value:
+            return index
+    return -1  # Not found
+
+# Test
+numbers = [15, 23, 8, 42, 16, 30]
+position = linear_search(numbers, 42)
+if position != -1:
+    print(f"Found at position {position}")
+else:
+    print("Not found")
+```
+
+Example 3: Theory Question Answer (Networks)
+```
+Question: "Explain the difference between a LAN and a WAN." [4 marks]
+
+Excellent Answer:
+A LAN (Local Area Network) is a network that covers a small geographical area such as a single building, home, or school. The network infrastructure (cables, routers, switches) is owned and maintained by the organization using it. LANs typically use Ethernet cables or Wi-Fi connections and provide fast data transfer speeds.
+
+In contrast, a WAN (Wide Area Network) covers a large geographical area, often spanning cities, countries, or even continents. The infrastructure is usually leased from telecommunications companies rather than owned. The internet is the largest example of a WAN. WANs are slower than LANs due to the distances involved and typically use technologies like fiber optic cables, satellites, and telephone lines.
+```
+
+Example 4: Trace Table
+```
+Pseudocode:
+Total ← 0
+FOR Count ← 1 TO 4
+    Total ← Total + Count * 2
+ENDFOR
+OUTPUT Total
+
+Trace Table:
+| Count | Total | Output |
+|-------|-------|--------|
+| 1     | 2     |        |
+| 2     | 6     |        |
+| 3     | 12    |        |
+| 4     | 20    |        |
+|       |       | 20     |
+
+Explanation: Loop runs 4 times. Each iteration adds (Count * 2) to Total. Final output is 20.
+```
+
+8) Vocabulary and standards
+
+Key Programming Terms:
+- **Algorithm**: Step-by-step procedure to solve a problem
+- **Array/List**: Collection of elements of the same type stored together
+- **Assignment**: Giving a value to a variable (e.g., x = 5)
+- **Boolean**: Data type with two values (True/False)
+- **Bug**: Error in code
+- **Constant**: Value that doesn't change during program execution
+- **Debugging**: Finding and fixing errors in code
+- **Function**: Reusable block of code that returns a value
+- **Iteration**: Repetition (loops)
 - **Loop**: Repeated execution of code block
-- **Function**: Reusable block of code that returns value
-- **Array/List**: Collection of elements stored together
+- **Parameter**: Value passed into function
+- **Procedure**: Reusable block of code without return value
+- **Pseudocode**: High-level description of algorithm using structured English
+- **Selection**: Choice (if statements)
+- **Syntax**: Rules for writing code in a language
+- **Trace table**: Table showing how variable values change during algorithm execution
 - **Validation**: Checking data meets specified criteria
-- **Binary**: Base-2 number system (0s and 1s)
-- **Protocol**: Set of rules for data transmission
+- **Variable**: Named storage location for data that can change
+
+Theory Terms:
+- **Binary**: Base-2 number system using only 0s and 1s
+- **Bit**: Single binary digit (0 or 1)
+- **Byte**: 8 bits
+- **CPU**: Central Processing Unit - "brain" of computer
 - **Encryption**: Converting data into secret code
+- **Firewall**: Security system that controls network traffic
+- **Hardware**: Physical components of computer
+- **Hexadecimal**: Base-16 number system (0-9, A-F)
+- **IP address**: Unique identifier for device on network
+- **LAN**: Local Area Network - network covering small area
+- **Malware**: Malicious software designed to harm computer
+- **Protocol**: Set of rules for data transmission
+- **RAM**: Random Access Memory - temporary storage
+- **ROM**: Read Only Memory - permanent storage
+- **Software**: Programs and applications
+- **WAN**: Wide Area Network - network covering large area
+
+Standards & Frameworks (2024):
+- **Cambridge IGCSE Computer Science 0478**: Syllabus covering programming, algorithms, and theory
+- **Paper 1**: 1 hour 45 minutes, theory exam, 75 marks
+- **Paper 2**: 2 hours, practical programming exam, 50 marks
+- **Tiers**: Core (grades 5-1) and Extended (grades 9-4)
+- **Programming Language**: Python 3.x (or school's chosen language)
+- **Assessment Objectives**: Knowledge, application, problem-solving, evaluation
+
+Common Tools and Resources:
+- **Python IDEs**: IDLE (comes with Python), PyCharm Community Edition, Thonny, VS Code with Python extension
+- **Python Installation**: python.org (download Python 3.x)
+- **Past Papers**: Cambridge IGCSE 0478 past papers (2019-2024) from Cambridge website
+- **Textbooks**: Cambridge IGCSE Computer Science by David Watson and Helen Williams
+- **Online Resources**: BBC Bitesize, Isaac Computer Science, Programiz Python tutorials
+- **Practice Platforms**: CodingBat, HackerRank, LeetCode (for additional practice)
+- **Flowchart Tools**: draw.io, Lucidchart, or pencil and paper
+- **Number System Practice**: Online converters to check work
+
+Python Built-in Functions (commonly used):
+- `print()` - output to screen
+- `input()` - get user input
+- `int()`, `float()`, `str()` - type conversion
+- `len()` - length of list/string
+- `range()` - generate sequence of numbers
+- `sum()`, `max()`, `min()` - list operations
+- `open()` - open file
+
+Common Algorithms to Know:
+- **Linear Search**: Search through list item by item
+- **Binary Search**: Divide and conquer search (requires sorted list)
+- **Bubble Sort**: Compare adjacent items, swap if in wrong order, repeat
+- **Insertion Sort**: Build sorted list one item at a time
+
+Exam Command Words:
+- **State**: Give brief answer (1-2 words)
+- **Identify**: Name or select
+- **Describe**: Give details about
+- **Explain**: Give reasons why/how
+- **Compare**: Identify similarities and differences
+- **Justify**: Give reasons for a choice
+- **Evaluate**: Weigh up advantages and disadvantages
+- **Write** (pseudocode/Python): Produce code solution
 
 Change log
-[2024-12]: IGCSE Computer Science Tutor created for Cambridge 0478 syllabus
+[2024-12]: IGCSE Computer Science Tutor playbook expanded from stub to comprehensive guide
+- Complete workflow covering Python programming (fundamentals, data structures, functions)
+- Comprehensive algorithm design (searching, sorting, pseudocode, flowcharts, trace tables)
+- All theory topics (computer systems, data representation, Boolean logic, networks, security, databases, HTML/CSS)
+- Practical exam preparation (Paper 2 programming tasks, debugging, testing)
+- Theory exam preparation (Paper 1 written exam)
+- Validation and error handling techniques
+- Progress tracking templates and quality checklist
+- Expanded from 117 lines to 650+ lines with full 8-section structure
+- Based on Cambridge IGCSE Computer Science syllabus 0478 (2024)
