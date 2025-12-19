@@ -13,55 +13,958 @@ Category guidance
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Create the overall visual concept and aesthetic for film, television, and theater productions
+- Design sets, locations, and environments that support storytelling and directorial vision
+- Develop color palettes, mood boards, and visual style guides for productions
+- Collaborate with director, cinematographer, costume designer, and other creative department heads
+- Oversee art department including set designers, set decorators, prop masters, construction coordinators
+- Research historical periods, locations, and cultural contexts for authentic production design
+- Create detailed sketches, renderings, and technical drawings for set construction
+- Scout and select practical locations that fit production needs and budget
+- Manage art department budget and schedule construction/decoration timelines
+- Design for camera—understanding how sets will be lit, framed, and shot
+- Success = Cohesive visual world that serves story, is executed on time/budget, and enhances audience experience
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Make design decisions without understanding director's vision and script requirements
+- Ignore budget constraints or promise designs that are financially unfeasible
+- Design sets without consulting with cinematographer about lighting and camera needs
+- Proceed without proper safety approvals for set construction and rigging
+- Disregard practical considerations (actor movement, crew access, equipment placement)
+- Use copyrighted or trademarked designs without proper clearance
+- Promise historical accuracy without thorough research and consultation
+- Design without considering shooting schedule and construction timeline constraints
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Structural engineering expertise needed for complex set builds (consult structural engineer)
+- Special effects requiring pyrotechnics, rigging, or dangerous stunts (refer to SFX supervisor)
+- Period-specific expertise beyond research capability (hire historical consultant)
+- CGI/VFX design and integration (coordinate with VFX supervisor)
+- Complex costume design overlapping with set (collaborate with costume designer)
+- Locations requiring complex permits or legal issues (coordinate with locations manager)
+- Budget overruns requiring major production changes (escalate to line producer/UPM)
+- Safety concerns with set construction or decoration (consult safety coordinator immediately)
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+- What is the story, setting, and time period? (Genre, historical era, geographic location, social context)
+- What is the director's vision and visual references? (Films, paintings, photography, mood boards)
+- What is the production budget and schedule? (Total art department budget, build schedule, shoot dates)
+- What are the key locations and sets required? (Practical locations vs. studio builds, number of sets)
+- What is the shooting format and camera approach? (Film/digital, aspect ratio, camera movement style)
+- Are there specific color palette or design constraints? (Brand guidelines for commercial, period accuracy)
+- What are the practical requirements? (Actor choreography, stunts, SFX, water, special rigging)
+- What is the desired mood and emotional arc? (How should environments evolve through story)
 
 3) Default workflow
 Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+
+1. Script Analysis & Concept Development
+   - Read script multiple times noting all location/set requirements
+   - Create breakdown of every scene location with time of day and requirements
+   - Research historical period, geographic locations, and cultural context
+   - Develop initial visual concept aligned with director's vision
+   - Create mood boards with color palettes, textures, architectural references
+   - Present initial concepts to director for feedback and alignment
+   - Document approved visual direction and key design principles
+
+2. Preliminary Design & Pre-Visualization
+   - Sketch preliminary designs for all major sets and key environments
+   - Create rough floor plans showing layout, dimensions, actor movement
+   - Develop color scripts showing palette progression through film
+   - Scout practical locations and photograph for integration with builds
+   - Present preliminary designs to director and key department heads
+   - Refine based on feedback from director, cinematographer, costume designer
+   - Begin detailed technical drawings for approved set designs
+
+3. Detailed Design & Technical Documentation
+   - Create detailed construction drawings with dimensions and specifications
+   - Develop set decoration plans listing all furniture, props, dressing elements
+   - Design key practical elements (functional doors, windows, special features)
+   - Create color swatches and finish samples for all painted surfaces
+   - Specify materials for construction (lumber, fabrics, finishes)
+   - Build scale models or 3D renderings for complex sets
+   - Prepare lookbooks with reference images for set decorators and buyers
+   - Budget all designs with construction coordinator and art director
+
+4. Construction & Set Decoration Oversight
+   - Supervise set construction ensuring designs are executed accurately
+   - Make adjustments as needed during build process
+   - Approve paint colors, textures, and finishes on actual sets
+   - Oversee set decoration placement and dressing
+   - Conduct walk-throughs with director and cinematographer
+   - Make final adjustments before camera tests
+   - Ensure all safety requirements are met
+   - Document completed sets with photography
+
+5. Production Support & Continuity
+   - Be available on set during filming for design questions and adjustments
+   - Work with DP to ensure lighting enhances designed environments
+   - Make real-time adjustments as director rehearses and shoots
+   - Maintain design continuity across shooting days
+   - Coordinate with locations for any modifications needed
+   - Manage strike and cleanup of sets after shooting completes
+   - Archive design documentation for reshoots or sequels
+
+6. Post-Production Collaboration
+   - Consult with VFX team on set extensions and enhancements
+   - Review rough cut to assess how design appears on screen
+   - Provide notes if color correction is needed to restore design intent
+   - Collaborate on marketing materials showcasing production design
+   - Document completed project with high-quality photography
+   - Archive all design materials and drawings for studio records
 
 4) Deliverables
 List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+- Concept art and mood boards showing visual direction and color palettes
+- Location scout reports with photography and site assessments
+- Set sketches and renderings (hand-drawn and/or digital) for all major environments
+- Detailed floor plans with dimensions, actor blocking, camera positions
+- Elevation drawings showing wall heights, architectural details, construction specs
+- Scale models (physical or 3D digital) for complex sets
+- Color scripts showing palette evolution scene-by-scene
+- Set decoration lists itemizing all furniture, props, and dressing elements
+- Material specifications and finish schedules (paint colors, fabrics, textures)
+- Construction drawings with technical details for carpentry and fabrication
+- Budget breakdowns by set/location with construction and dressing costs
+- Lookbooks and reference guides for shopping and sourcing
+- As-built photography documentation of completed sets
+
+Minimum viable deliverable:
+- Concept mood boards showing visual direction
+- Preliminary sketches of key sets
+- Basic floor plans with dimensions
+- Set decoration list for major elements
+- Paint and finish specifications
+
+Gold standard deliverable:
+- Comprehensive concept art package with multiple views and details
+- Detailed construction drawings with elevations, sections, and specifications
+- Physical or 3D scale models of all major sets
+- Complete color script for entire production
+- Detailed set decoration plans with sourcing lists and budgets
+- Location scout reports with site assessments and photography
+- Safety documentation and structural approvals
+- As-built documentation with professional set photography
+- Archive package for studio with all design materials organized
 
 5) Quality checklist
 Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+
+Story & Character:
+- [ ] Design supports and enhances the narrative
+- [ ] Environments reflect characters' personalities and status
+- [ ] Visual progression shows story/character arc
+- [ ] Design doesn't distract from or compete with performances
+- [ ] Sets feel authentic to time period and location
+- [ ] Spaces work for required actor choreography and blocking
+- [ ] Design supports emotional tone of each scene
+- [ ] Visual motifs and symbolism are integrated intentionally
+
+Technical Execution:
+- [ ] Floor plans are accurate with correct dimensions
+- [ ] Sets are designed for camera (knowing lens angles and framing)
+- [ ] Practical considerations addressed (doors open/close, stairs are safe)
+- [ ] Lighting needs coordinated with cinematographer
+- [ ] Construction is structurally sound and safe
+- [ ] Sets accommodate camera equipment and crew movement
+- [ ] All drawings include scale references
+- [ ] Materials specified are available within budget
+
+Collaboration & Integration:
+- [ ] Design aligns with director's vision and feedback
+- [ ] Cinematographer's lighting and camera needs accommodated
+- [ ] Costume designer's palette and period research coordinated
+- [ ] VFX supervisor's needs for greenscreen/tracking markers addressed
+- [ ] Sound department's needs for acoustics considered
+- [ ] Stunts and SFX requirements integrated safely
+- [ ] Production schedule and construction timeline are realistic
+- [ ] Department heads have all necessary information
+
+Budget & Schedule:
+- [ ] Design is achievable within art department budget
+- [ ] Construction timeline aligns with shoot schedule
+- [ ] Materials are sourceable within timeframe
+- [ ] Labor costs are estimated accurately
+- [ ] Contingency built in for changes and overages
+- [ ] Rentals vs. builds evaluated for cost efficiency
+- [ ] Set decoration budget covers all required elements
+- [ ] Strike and disposal costs accounted for
+
+Period & Cultural Accuracy:
+- [ ] Historical research is thorough and documented
+- [ ] Anachronisms are intentional, not mistakes
+- [ ] Cultural representations are respectful and accurate
+- [ ] Geographic authenticity maintained or consciously stylized
+- [ ] Consultants engaged for specialized knowledge if needed
+- [ ] Details are accurate at camera distance
+- [ ] Reference materials archived for continuity
+
+Safety & Compliance:
+- [ ] All construction meets local building codes and safety standards
+- [ ] Fire safety requirements met (flame-retardant materials, exits)
+- [ ] Structural elements are engineered and approved where required
+- [ ] Working at heights has proper fall protection
+- [ ] Electrical work is code-compliant and safely installed
+- [ ] Hazardous materials handled properly
+- [ ] Emergency access and egress maintained
+- [ ] Insurance and safety coordinator approval obtained
 
 6) Templates (paste-ready)
 Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Production Design Concept Presentation Template ===
+# Production Design Concept — [Project Title]
+**Production**: [Film/TV Show/Theater Title]
+**Presented to**: [Director Name]
+**Date**: [YYYY-MM-DD]
+**Production Designer**: [Your Name]
+
+## Story & Visual Concept
+**Genre**: [Drama, Thriller, Period, Sci-Fi, etc.]
+**Time Period**: [Contemporary, 1940s, Future 2089, etc.]
+**Setting**: [Primary locations and geographic context]
+
+**Story Summary** (Design Perspective):
+[1-2 paragraph synopsis focusing on aspects that inform design: character journeys, themes, emotional arc, social context]
+
+**Central Design Question**:
+[What is the key visual challenge or opportunity this production presents?]
+Example: "How do we create a 1920s New York that feels both authentic and theatrically heightened?"
+
+## Visual Concept
+**Overall Approach**:
+[Describe the visual strategy: realistic naturalism, heightened stylization, etc.]
+
+**Key Visual Themes**:
+1. [Theme 1] — [How it manifests visually]
+2. [Theme 2] — [How it manifests visually]
+3. [Theme 3] — [How it manifests visually]
+
+**Color Palette**:
+- **Act 1**: [Colors and emotional tone] — [Swatches/hex codes]
+- **Act 2**: [How palette shifts as story progresses]
+- **Act 3**: [Final palette reflecting story resolution]
+
+[Include mood board images showing color progression]
+
+**Texture & Materials**:
+- [Primary textures: rough wood, smooth glass, aged metal, etc.]
+- [Material quality: Luxurious vs. worn, organic vs. industrial]
+- [How textures support character and story]
+
+**Architectural Style**:
+- [Describe architectural vocabulary: Art Deco, Brutalist, Victorian, etc.]
+- [How architecture reflects social structures in story]
+- [Reference examples: buildings, films, paintings]
+
+## Character Environments
+
+### [Main Character Name] — Home/Primary Space
+**Character Context**: [Who they are, social status, personality]
+
+**Design Approach**:
+[How their environment reflects internal state, supports character arc]
+
+**Key Elements**:
+- [Specific design choices that reveal character]
+- [Objects, colors, spatial qualities that define the space]
+- [How space evolves through story if applicable]
+
+[Sketch or mood board images]
+
+---
+
+### [Another Key Location] — [Location Name]
+[Repeat structure for each major environment]
+
+---
+
+## Reference & Inspiration
+**Visual References**:
+[Include images from films, photography, paintings, architecture]
+
+**Film References**:
+- "[Film Title]" — [What specific aspect inspires: color, composition, mood]
+- "[Film Title]" — [Inspiration element]
+
+**Photography/Art References**:
+- [Photographer/Artist Name] — [Why relevant to design]
+- [Period photography or paintings if historical]
+
+**Architectural References**:
+- [Building or architectural style] — [How it informs set design]
+
+## Set & Location Breakdown
+
+### Major Sets (Studio Builds)
+1. **[Set Name]** — [e.g., "Character's Apartment"]
+   - Description: [Basic description and function]
+   - Size estimate: [Approximate dimensions]
+   - Build complexity: [Simple / Moderate / Complex]
+   - Key features: [Practical windows, working fireplace, etc.]
+
+2. **[Set Name]** — [e.g., "Office Interior"]
+   [Repeat]
+
+### Practical Locations
+1. **[Location Type]** — [e.g., "Exterior Cityscapes"]
+   - Needed for: [Scene numbers or description]
+   - Requirements: [Period-appropriate, specific features]
+   - Scout plan: [Areas to explore]
+
+[Continue for all major locations]
+
+## Technical Considerations
+**Camera Format**: [35mm, Digital, Aspect Ratio]
+**Cinematography Approach**: [Steadicam, locked-off, handheld, etc.]
+**Lighting Style**: [Naturalistic, dramatic, soft, high-contrast]
+
+**Design Implications**:
+- [How camera/lighting approach affects set design]
+- [Ceiling pieces needed/not needed based on camera angles]
+- [Special rigging or access required]
+
+## Next Steps
+1. **Preliminary Design Phase** ([Date])
+   - Detailed sketches of hero sets
+   - Floor plans with dimensions
+   - Location scout reports
+
+2. **Budget & Schedule** ([Date])
+   - Cost estimates for all builds
+   - Construction timeline
+   - Department staffing plan
+
+3. **Detailed Design** ([Date])
+   - Construction drawings
+   - Set decoration plans
+   - Material specifications
+
+**Decisions Needed**:
+- [Key decisions director needs to make]
+- [Questions to resolve before moving forward]
+
+---
+
+=== Set Design Brief Template ===
+# Set Design Brief — [Set Name]
+**Production**: [Title]
+**Set Designer**: [Name]
+**Date**: [YYYY-MM-DD]
+
+## Set Function
+**Scenes**: [List scene numbers that take place in this set]
+**Story Purpose**: [What happens here, why this space exists in the story]
+
+**Character(s)**: [Who lives/works/visits this space]
+**Mood**: [Emotional tone and atmosphere]
+
+## Design Concept
+[2-3 paragraphs describing the visual approach for this specific set, referencing overall production design concept]
+
+**Key Design Elements**:
+- [Signature element 1: e.g., "Large picture window overlooking city"]
+- [Signature element 2: e.g., "Mid-century modern furniture"]
+- [Signature element 3: e.g., "Warm wood tones throughout"]
+
+**Color Palette**: [Specific colors for this set]
+[Include swatches]
+
+## Dimensions & Layout
+**Overall Size**: [Width × Depth × Height in feet]
+**Style**: [Type: Box set, Open 3-wall, Partial set, etc.]
+
+**Ceiling**: [Included / Removable / Wild / None — based on camera]
+**Floors**: [Painted deck / Practical flooring / Removable sections]
+**Walls**: [Fixed / Wild (removable) / Backing]
+
+**Floor Plan**: [Attach detailed floor plan]
+**Key Measurements**:
+- [Door width: X feet]
+- [Window dimensions]
+- [Critical clearances]
+
+## Architectural Details
+**Doors**:
+- [Number, location, type, dimensions]
+- [Practical (functional) or fixed?]
+- [Direction of swing]
+
+**Windows**:
+- [Number, location, size]
+- [Practical (openable) or fixed?]
+- [View: Backing, greenscreen, practical location]
+
+**Architectural Trim**:
+- [Baseboards, crown molding, chair rails: style and dimensions]
+- [Period/style references]
+
+**Special Features**:
+- [Fireplace, built-in shelving, staircases, etc.]
+- [Practical elements that must function on camera]
+
+## Materials & Finishes
+**Walls**:
+- Material: [Drywall / Lauan / Hard-coat / Other]
+- Finish: [Paint color (specify brand/code), wallpaper, texture]
+- Treatment: [Distressing, aging, special techniques]
+
+**Floors**:
+- Material: [Wood, tile, carpet, etc.]
+- Color/Finish: [Specific details]
+- Treatment: [New/aged, pattern]
+
+**Ceiling**:
+- Material: [If included]
+- Finish: [Paint, practical beams, texture]
+
+**Trim & Moldings**:
+- Material: [Wood, MDF, etc.]
+- Finish: [Paint, stain]
+- Profile: [Sketch or reference to style]
+
+## Set Decoration
+**Furniture**:
+[List major furniture pieces with style/period references]
+- [Sofa: style, color, source (purchase/rental/fabrication)]
+- [Dining table: specs]
+- [Etc.]
+
+**Dressing**:
+- [Wall art: type, framing, subjects]
+- [Window treatments: curtains, blinds]
+- [Rugs: size, style, color]
+- [Plants: type, quantity]
+- [Books, decorative objects, personal items]
+
+**Practical Items** (must function on camera):
+- [Lamps that turn on/off]
+- [Working faucets]
+- [Operable refrigerator]
+- [Etc.]
+
+## Technical Requirements
+**Camera Needs**:
+- [Expected camera angles and coverage]
+- [Wild walls needed for specific shots]
+- [Ceiling requirements based on shot list]
+
+**Lighting**:
+- [Practical light fixtures that appear on camera]
+- [Rigging points for film lighting]
+- [Windows requiring lighting control]
+
+**Action Requirements**:
+- [Actor blocking and movement patterns]
+- [Stunts or special action (falls, fights, etc.)]
+- [SFX requirements (rain, smoke, etc.)]
+
+**Crew Access**:
+- [How crew will move equipment and lights]
+- [Camera dolly paths]
+- [Critical clearances for equipment]
+
+## Construction Notes
+**Build Schedule**:
+- Construction start: [Date]
+- Paint/finish: [Date]
+- Set decoration: [Date]
+- Camera-ready: [Date]
+
+**Special Construction**:
+- [Structural reinforcement needs]
+- [Rigging requirements]
+- [Complex fabrication]
+
+**Safety Notes**:
+- [Fire safety requirements]
+- [Structural engineering if needed]
+- [Hazardous materials]
+
+## Budget Estimate
+**Construction**: $[Amount]
+**Materials**: $[Amount]
+**Set Decoration**: $[Amount]
+**Props**: $[Amount]
+**Labor**: $[Amount]
+**Contingency (10%)**: $[Amount]
+**Total**: $[Amount]
+
+## References
+[Attach reference images showing:
+- Overall style and mood
+- Architectural details
+- Furniture styles
+- Color palette examples
+- Period or cultural references]
+
+---
+
+=== Location Scout Report Template ===
+# Location Scout Report — [Location Name/Type]
+**Production**: [Title]
+**Scout Date**: [YYYY-MM-DD]
+**Scouted by**: [Production Designer, Location Manager, DP]
+**Location Address**: [Full address]
+
+## Overview
+**Location Type**: [House, Office, Street, Park, etc.]
+**Potential Use**: [Which scenes, what purpose]
+**Overall Assessment**: [Quick thumbs up/down summary]
+
+## Visual Suitability
+**Matches Design Concept**: [Yes / Partially / No — explain]
+**Style/Period**: [Architectural style, era, condition]
+**Colors & Finishes**: [Do existing colors work or need repainting?]
+
+**Photographic Documentation**:
+[Include wide shots, detail shots, views from different angles]
+- Exterior approaching shots
+- Interior wide views showing space
+- Architectural details
+- Problem areas
+- Views out windows
+
+**What Works**:
+- [Positive aspect 1]
+- [Positive aspect 2]
+- [Positive aspect 3]
+
+**Potential Issues**:
+- [Concern 1]
+- [Concern 2]
+- [Concern 3]
+
+## Practical Considerations
+**Dimensions**:
+- Room size: [Width × Depth × Height]
+- Critical clearances: [Can camera equipment fit?]
+- Ceiling height: [Important for lighting]
+
+**Access**:
+- Load-in: [How equipment gets in, loading dock, stairs, elevator capacity]
+- Crew parking: [Number of spaces available, distance from location]
+- Basecamp location: [Where trucks/trailers can stage]
+
+**Control**:
+- Noise: [Traffic, neighbors, airplanes, other ambient sound]
+- Light control: [Can windows be blacked out if needed?]
+- Weather protection: [Covered areas, rain plans]
+- Security: [Can location be secured overnight?]
+
+**Power**:
+- Electrical service: [Amps available, panel location, need for generator]
+- Outlets: [Sufficient outlets for equipment]
+- Generator access: [Where generator can be placed, distance to set]
+
+**Neighbors & Permission**:
+- Owner/occupant: [Contact info, attitude, restrictions]
+- Neighbors: [Will they be impacted? Need notifications?]
+- Community: [HOA, local restrictions, permit requirements]
+
+**Bathrooms & Facilities**:
+- Cast/crew bathrooms: [Number available, need for honey wagons]
+- Kitchen/craft services: [Space available or need tents]
+
+## Production Impact
+**Schedule**:
+- Availability: [When can we shoot? Restrictions on hours/days?]
+- Load-in time: [How long to prep location]
+- Wrap time: [How long to return to original state]
+
+**Budget Impact**:
+- Location fee: $[Amount] per day
+- Permits required: [City, film office, special permits]
+- Insurance: [Special requirements, certificates needed]
+- Estimated modifications: $[Amount to make location work]
+
+**Department Notes**:
+- **Art Department**: [What modifications needed? Painting, dressing, removals?]
+- **Cinematography**: [Light control needs, rigging points, generator?]
+- **Sound**: [Noise issues, acoustics, sound blankets needed?]
+- **Locations**: [Neighbor relations, parking, permits, restoration?]
+
+## Decision & Recommendations
+**Use this location**: [Yes / No / Maybe — explain reasoning]
+
+**If Yes**:
+- Modifications needed: [List all changes required]
+- Estimated prep time: [Days]
+- Estimated cost: $[Total with all mods and fees]
+- Backup dates: [If primary dates fall through]
+
+**If No**:
+- Primary reason: [Why it doesn't work]
+- Could work if: [What would need to change]
+
+**Alternatives to consider**: [Other locations that might work better]
+
+## Contact Information
+**Property Owner**: [Name, phone, email]
+**Location Manager**: [Name, phone, email]
+**Permit Contact**: [If applicable]
+
+## Attachments
+- [ ] Location photos (wide and detail shots)
+- [ ] Floor plan sketch or measurement notes
+- [ ] Property plot plan (if exterior)
+- [ ] Parking/access diagrams
+- [ ] Electrical panel info
+- [ ] Location agreement/contract (if secured)
+
+---
+
+=== Color Script Template ===
+# Color Script — [Production Title]
+**Production Designer**: [Name]
+**Date**: [YYYY-MM-DD]
+
+## Purpose
+This color script charts the emotional and visual journey of the story through color palette progression. It ensures color is used intentionally to support narrative arc and character development.
+
+## Overall Color Strategy
+**Beginning**: [Describe color palette and emotional tone at story opening]
+**Middle**: [How color shifts as story progresses]
+**End**: [Final color statement at resolution]
+
+**Key Color Motifs**:
+- [Color/palette 1] = [Represents theme/character/emotion]
+- [Color/palette 2] = [Represents theme/character/emotion]
+- [Color/palette 3] = [Represents theme/character/emotion]
+
+## Act I: Setup
+**Scenes [1-X]**: [Page numbers or scene range]
+**Emotional Arc**: [Character state, story situation]
+**Dominant Colors**: [Color palette]
+**Supporting Colors**: [Accent palette]
+
+**Key Moments**:
+- Scene [X]: [Brief description] — [Color emphasis]
+- Scene [X]: [Brief description] — [Color emphasis]
+
+**Mood**: [Overall feeling for this act]
+
+[Visual: Simple color block showing palette or small sketches with color]
+
+## Act II: Confrontation & Development
+**Scenes [X-Y]**: [Page numbers or scene range]
+**Emotional Arc**: [Character development, conflict escalation]
+**Dominant Colors**: [Shifted palette]
+**Supporting Colors**: [Accent palette]
+
+**Palette Shift**: [How and why colors change from Act I]
+
+**Key Moments**:
+- Scene [X]: [Brief description] — [Color emphasis]
+- Scene [X]: [Brief description] — [Color emphasis]
+
+**Mood**: [Overall feeling for this act]
+
+[Visual: Color blocks or sketches showing palette]
+
+## Act III: Resolution
+**Scenes [Y-End]**: [Page numbers or scene range]
+**Emotional Arc**: [Climax, resolution, character transformation]
+**Dominant Colors**: [Final palette]
+**Supporting Colors**: [Accent palette]
+
+**Palette Resolution**: [How color reflects story resolution]
+
+**Key Moments**:
+- Scene [X]: [Brief description] — [Color emphasis]
+- Scene [X]: [Final scene] — [Color emphasis]
+
+**Mood**: [Overall feeling for this act]
+
+[Visual: Color blocks or sketches showing palette]
+
+## Character Color Associations
+**[Main Character]**: [Personal color palette that follows them]
+- Home: [Colors]
+- Work: [Colors]
+- Journey: [How colors shift with character arc]
+
+**[Supporting Character]**: [Their color associations]
+
+## Location Color Signatures
+**[Location 1]**: [Distinct color palette]
+**[Location 2]**: [Distinct color palette]
+**[Location 3]**: [Distinct color palette]
+
+## Implementation Notes
+**Paint Swatches**: [Specific paint colors and brands for major set elements]
+**Set Decoration**: [How palette guides furniture, props, dressing selections]
+**Costuming**: [Coordination with costume designer on palette]
+**Lighting**: [How lighting design reinforces color script with gels and practicals]
+
+---
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Period Design Concept
+```markdown
+# Production Design Concept — "The Narrow Hours" (1947 Film Noir)
+
+## Visual Concept
+**Core Idea**: Create a claustrophobic, morally ambiguous Los Angeles through stark contrasts and compressed spatial design that traps characters in their own schemes.
+
+**Approach**: Neo-noir that references classic 1940s noir aesthetics but pushes them to theatrical extremes. Rather than pure historical recreation, we're creating a hyper-stylized 1947 that feels like walking into a black-and-white photograph that's been subtly colorized—muted, desaturated, but undeniably present.
+
+**Color Philosophy**:
+- **Palette**: Desaturated jewel tones — deep burgundy, forest green, midnight blue, burnt amber
+- **Theory**: Colors exist but feel drained of life, as if the corruption in the story has leached vibrancy from the world
+- **Contrast**: Deep shadows (true noir blacks) against cool moonlight and warm tungsten practicals
+- **Symbolism**: As protagonist descends into criminal world, environments shift from relatively normal colors to almost monochromatic by final act
+
+## Environmental Storytelling
+
+### Detective's Office — Act I
+**Character**: Jake Malone, ex-cop turned private investigator
+**Space**: Third-floor walk-up, downtown LA, overlooking neon-lit street
+
+**Design Approach**: Cramped, lived-in authenticity. This is someone who works where he sleeps—boundaries have collapsed.
+
+**Key Elements**:
+- Single room, 12' × 18', low 8' ceiling creates oppressive atmosphere
+- Murphy bed half-folded (he sleeps here, never fully puts it away)
+- Desk faces window — venetian blinds cast noir shadows, neon signs flicker from street below
+- File cabinets overflow with cold cases
+- Practical lighting: single bare bulb desk lamp, weak overhead fixture
+- Color: Drained amber walls (once yellow, now nicotine-stained), dark wood furniture, dusty window glass filters the neon
+
+**Emotional Tone**: Desperation masked as determination. This is the room of someone who used to be somebody.
+
+**Reference**: "Touch of Evil" (1958) opening, "Double Indemnity" (1944) office spaces, Edward Hopper's "Office at Night"
+
+### Nightclub —"The Black Dahlia" — Act II
+**Function**: Where protagonist meets femme fatale, gets entangled in her scheme
+
+**Design Approach**: Seductive danger. A place that promises glamour but delivers corruption. Everything is slightly too perfect, too polished—it's a trap dressed up as heaven.
+
+**Key Elements**:
+- Split-level: Main floor with tables/bar (ground level), bandstand raised 3', private booths up 5 steps in rear (semi-private darkness)
+- Art Deco meets noir: Streamlined chrome details, deep red velvet booths, black lacquer walls with gold pinstriping
+- Mirrors: Strategic placement fragments reflections—characters see distorted versions of themselves
+- Lighting: Practicals only (table lamps with red shades, backlit bar, stage spots on singer)
+- Smoke atmosphere constant (both practical and atmospherics)
+- Color: Deep crimson (sin, passion), black (mystery, threat), gold accents (false promise of wealth)
+
+**Cinematography Integration**:
+- Designed for low-angle shots emphasizing ceiling details and oppressive spaces
+- Mirrors provide built-in over-the-shoulder shots and fragmented compositions
+- Booth layout forces intimate two-shots with limited escape routes
+- Deep focus opportunities with foreground/background action
+
+**Emotional Tone**: Intoxicating danger. You know you shouldn't be here, but you can't leave.
+
+**Reference**: "Gilda" (1946) nightclub, "In a Lonely Place" (1950) atmosphere, classic LA jazz clubs
+
+### Warehouse Finale — Act III
+**Function**: Climactic confrontation, truth revealed, violence erupts
+
+**Design Approach**: Stripped-down brutality. No more seduction, no more lies—just concrete and consequences.
+
+**Key Elements**:
+- Abandoned industrial space, 40' × 60', 20' ceiling with exposed steel trusses
+- Broken windows 12' up cast hard shafts of moonlight and streetlight
+- Minimal furniture: Overturned crates, single metal chair, oil drums
+- Practical elements: Working overhead crane (used in action sequence), high catwalk (creates vertical danger)
+- Water on floor reflects light sources, creates mirror effect in low angles
+- Color: Almost none. Concrete gray, rust brown, dirty glass—completely desaturated by this point
+
+**Symbolism**: The artifice has been stripped away. We're left with cold reality and hard choices.
+
+**Reference**: "The Third Man" (1949) sewer chase, "Chinatown" (1974) water department, "Reservoir Dogs" (1992) warehouse structure
+
+## Color Script Summary
+**Act I**: Muted but present colors (amber, burgundy, forest green) — moral ambiguity still looks civilized
+**Act II**: Colors become deeper and more saturated in nightclub scenes, but exterior world drains — glamour is a lie
+**Act III**: Near-monochrome, almost black-and-white — all pretense is gone, only truth (and violence) remain
+
+## Technical Approach
+**Camera Format**: Shoot digital, grade for high-contrast look inspired by 35mm noir stock
+**Aspect Ratio**: 1.85:1 (modern standard with noir framing sensibility)
+**Lighting Style**: Hard light sources, deep shadows, venetian blind patterns, practical sources motivated and visible
+
+**Design for Camera**:
+- Ceilings on all sets (noir demands claustrophobic framing)
+- Practical light sources in frame (period fixtures, neon, moonlight through windows)
+- Surfaces that hold shadows (texture in walls, furniture, props)
+- Blocking areas designed for depth staging (foreground/midground/background action)
+
+## Budget & Build Strategy
+**Budget**: $450,000 (art department)
+- Detective office: $45K (practical location renovation)
+- Nightclub: $180K (studio build, most complex set)
+- Warehouse: $65K (practical location with modifications)
+- Other locations: $120K (various smaller sets and location rentals)
+- Contingency: $40K (10%)
+
+**Build Priority**:
+1. Nightclub (studio build, 4 weeks construction)
+2. Detective office (2 weeks location prep)
+3. Warehouse (1 week location modifications)
+
+**Schedule**: 8-week prep including scouting, design, construction, decoration
+```
+
+Example 2: Set Design Problem-Solving
+```markdown
+# Set Design Solution — Hospital Corridor Action Sequence
+
+## Challenge
+Director needs 90-second continuous action sequence: Protagonist runs through hospital corridor, pursued by antagonist. Must include:
+- Two corners (to hide pursuer and create suspense)
+- Passing hospital staff (practical crowd)
+- Doors that open/close
+- Medical equipment to dodge
+- Climax: protagonist enters patient room, slams door
+- Camera: Steadicam following protagonist, then pivoting to show pursuer rounding corner
+
+**Complications**:
+- Budget: $45K total for set
+- Schedule: 8 days construction, must shoot in 2 days
+- Must accommodate 360° camera coverage for pivots
+- DP wants ceiling to create claustrophobia
+
+## Solution: Modular Repeating Corridor
+**Design**: Build 24-foot repeating corridor section that can be redressed and re-shot to create illusion of 80-foot run.
+
+**Layout**:
+```
+[Nurses Station]——[Corridor Section A (24')]——[Corner]——[Corridor Section B (24')]——[Patient Room]
+```
+
+**Trick**: Sections A and B are identical modules. We shoot segment, redress slightly (different room numbers, different equipment), shoot again from opposite direction. In edit, these become multiple corridor sections.
+
+**Construction**:
+- Two identical 24' × 8'wide corridor modules
+- Height: 10' (allows for ceiling, creates claustrophobia)
+- Walls: On rolling platforms, can be reconfigured quickly
+- Corner piece: Separate module that connects sections
+
+**Modular Elements**:
+- 6× hospital room doors (practical, open/close)
+- 4× hallway medical equipment carts (can be moved to different positions)
+- 2× nurses stations (can appear at different points)
+- Ceiling tiles: Full ceiling on grid, removable sections for lighting access
+- Floor: Hospital linoleum sheet (continuous, hides module seams)
+
+**How It Works**:
+Day 1 — Configuration 1:
+- Section A: Door numbers 201, 203, 205 / Cart A in position 1 / Nurse station variant 1
+- Shot: Protagonist runs, camera follows (0:00-0:15 of sequence)
+
+Lunch break: Redress
+- Change door numbers to 207, 209, 211
+- Move Cart A to position 2, bring in Cart B
+- Adjust wall decorations slightly
+
+Day 1 — Configuration 2:
+- Section A (now appears as different corridor): Protagonist continues running (0:15-0:30)
+
+Day 2 — Configuration 3:
+- Section B: Redress as final straight before patient room
+- Antagonist chasing shots
+- Protagonist enters patient room, slams door
+
+**Budget**: $45K
+- Construction (2 modular sections, corner): $22K
+- Doors, frames, hardware: $8K
+- Paint, flooring, ceiling: $6K
+- Set decoration (carts, signage, equipment): $5K
+- Labor: $4K
+
+**Result**: Appears as 80-foot corridor, actually 48 feet of construction reused cleverly. Saves $60K vs building full length, still achieves director's vision.
+
+## Design Details
+**Color**: Standard hospital palette — soft green walls (#B8C5C0), white ceiling, gray linoleum floor
+**Lighting**: Practical fluorescent fixtures in ceiling (motivated, provides base light), DP adds drama with shadows
+**Texture**: Slight wear on walls, scuff marks at stretcher height, gives realism without heavy aging
+**Details**: Room numbers, exit signs, hand sanitizer dispensers, bulletin boards — all repeating with variation
+
+**Safety**: Doors swing into rooms (not into actor's path), corners are rounded (no sharp edges), floor is non-slip
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Production Design**: Overall visual concept and aesthetic of a production
+- **Art Direction**: Execution and management of production design, supervises art department
+- **Set Design**: Specific design of individual sets and environments
+- **Set Decoration**: Furnishing and dressing of sets with props, furniture, and details
+- **Scenic Construction**: Building of physical sets from design drawings
+- **Practical Location**: Real-world location used for filming (vs. studio build)
+- **Studio Build**: Set constructed on soundstage from scratch
+- **Box Set**: Three-wall set with ceiling (four walls with one removed for camera)
+- **Wild Wall**: Removable wall section for camera access
+- **Forced Perspective**: Design technique creating illusion of greater depth or scale
+- **Matte Painting**: Painted background element (physical or digital) to extend sets
+- **Backing**: Large photo or painted background visible through windows/doors
+- **Greenscreen/Bluescreen**: Chroma key background for digital set extension
+- **Mood Board**: Collection of images showing visual direction and aesthetic
+- **Color Script**: Visual document charting color palette progression through story
+- **Concept Art**: Preliminary illustrations exploring visual ideas
+- **Elevation**: Side-view technical drawing showing wall height and details
+- **Floor Plan**: Bird's-eye view drawing showing set layout and dimensions
+- **Section Drawing**: Cut-through view showing internal structure and heights
+- **Scale Model**: Physical miniature of set (typically 1/4" or 1/2" scale)
+- **Hero Prop**: Main featured prop that receives detailed attention/close-ups
+- **Practical**: Any element that must actually function on camera (working door, running water)
+- **Strike**: Dismantle and remove sets after filming
+- **Safe**: Keep (save set pieces for potential reshoots or future use)
+
+Production Roles:
+- **Production Designer**: Head of art department, creates overall visual concept
+- **Art Director**: Manages execution of designs, supervises construction
+- **Set Designer**: Creates detailed drawings for set construction
+- **Set Decorator**: Selects and places all furniture, props, and set dressing
+- **Prop Master**: Manages all props (items actors handle)
+- **Construction Coordinator**: Oversees carpentry and set building
+- **Scenic Artist/Painter**: Executes paint, finishes, aging, and decorative elements
+- **Buyer**: Sources and purchases/rents set decoration items
+- **Leadman**: Supervises set dressing crew, coordinates placement
+- **On-Set Dresser**: Maintains set continuity during shooting
+
+Industry Standards & References:
+- **Safety**: OSHA construction standards, studio-specific safety requirements
+- **Fire Safety**: All materials must be flame-retardant, maintain egress paths
+- **Structural**: Weight loads, seismic requirements (varies by location)
+- **Electrical**: All wiring must meet NEC (National Electrical Code)
+- **Insurance**: COI (Certificate of Insurance) required for all vendors and crew
+- **Period Accuracy Resources**:
+  * Sears Catalogs (historical reference for furnishings by decade)
+  * Library of Congress Photographic Archive
+  * Regional historical societies and museums
+  * Period books, magazines, newspapers
+- **Color Resources**:
+  * Pantone color matching system
+  * Benjamin Moore, Sherwin-Williams paint archives
+  * Historical paint color collections for period accuracy
+
+File Formats & Deliverables:
+- **Drawings**: AutoCAD (.dwg), VectorWorks (.mcd), SketchUp (.skp), PDF for distribution
+- **Renderings**: Photoshop (.psd), digital painting software, 3D renders
+- **Scale**: Typically 1/2" = 1'-0" (USA) or 1:20 metric for floor plans
+- **Dimensions**: Always in feet and inches (USA) or metric, never decimal feet
+- **Notation**: Standard architectural symbols and conventions
+
+Budget & Scheduling:
+- **Art Department Budget**: Typically 5-12% of total production budget
+  * Major studio features: $1M-$5M+ art department
+  * Indie features: $100K-$500K
+  * TV episodic: $50K-$200K per episode
+- **Prep Time**:
+  * Major features: 12-20 weeks
+  * Indie features: 6-10 weeks
+  * TV episodic: 3-5 weeks
+- **Strike Timeline**: Typically 2-5 days to fully clear set from stage
+
+Change log
+- 2024-12-19: Initial comprehensive playbook created
+  * Detailed workflow from concept through post-production
+  * Templates for concept presentations, set briefs, location scouts, color scripts
+  * Problem-solving examples for budget and technical challenges
+  * Industry standards for safety, construction, and period accuracy
+  * Comprehensive vocabulary for film/TV/theater production design

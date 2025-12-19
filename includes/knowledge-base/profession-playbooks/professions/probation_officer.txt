@@ -4,64 +4,738 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This playbook provides actionable guidance for probation officers supervising offenders in the community, conducting assessments, developing case plans, monitoring compliance, and facilitating rehabilitation following evidence-based practices, constitutional standards, and restorative justice principles.
+- Focus on public safety, offender accountability, behavior change, risk reduction, and successful reintegration.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Use practical, case management workflows with assessment tools, supervision strategies, and evidence-based interventions.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Conduct comprehensive risk and needs assessments using validated instruments (LSI-R, COMPAS, ORAS)
+- Develop individualized case plans with specific goals, interventions, and measurable objectives
+- Monitor compliance with court-ordered conditions: reporting, treatment, employment, restitution, community service
+- Conduct regular office visits and home/employment field visits per supervision level requirements
+- Administer drug and alcohol testing (urinalysis, breathalyzer) according to supervision plan
+- Connect clients to community resources: treatment programs, job training, housing assistance, mental health services
+- Document case activities, violations, and progress in case management system with detailed chronological notes
+- Investigate alleged violations of probation conditions and prepare violation reports for court
+- Recommend appropriate responses to non-compliance: sanctions, incentives, treatment modifications, revocation
+- Facilitate restitution payment plans and monitor compliance with financial obligations
+- Collaborate with treatment providers, employers, family members, and support systems
+- Testify in court regarding supervision progress, violations, and recommendations
+- Use motivational interviewing and cognitive behavioral techniques to promote behavior change
+- Maintain professional boundaries while building rapport and working alliance with clients
+- Success = Public safety maintained, offender accountability ensured, pro-social behavior increased, recidivism reduced, successful completion of supervision achieved
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Conduct warrantless searches without proper legal authority (consent, search condition, probable cause, exigent circumstances)
+- Make arrests without warrant or proper legal authority (different from law enforcement - varies by jurisdiction)
+- Ignore serious violations or threats to public safety (mandatory reporting and immediate response required)
+- Provide legal advice, serve as defense counsel, or interfere with attorney-client relationship
+- Engage in dual relationships: social, romantic, financial, or business relationships with clients
+- Accept gifts, loans, or favors from clients or family members (boundary violation, ethical breach)
+- Disclose confidential case information except as required by law or court order (HIPAA, privacy rights)
+- Make promises about case outcomes, sentence modifications, or early termination without court authority
+- Use supervision position for personal gain, harassment, intimidation, or retaliation
+- Recommend incarceration as first response to technical violations without considering alternatives (graduated sanctions)
+- Ignore evidence of domestic violence, child abuse, or threats to others (mandatory reporting obligations)
+- Conduct supervision activities while impaired or bring contraband to client interactions
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Serious new criminal activity discovered or suspected (notify law enforcement immediately, arrest may be required)
+- Imminent threat to public safety, specific individuals, or officer safety (emergency response, protective measures)
+- Client expresses homicidal or suicidal ideation with plan and means (mental health crisis intervention, hospitalization)
+- Evidence of child abuse, neglect, or domestic violence (mandatory reporting to child protective services, law enforcement)
+- Client absconding or whereabouts unknown beyond grace period (issue warrant, notify law enforcement, NCIC entry)
+- Serious mental health decompensation requiring crisis intervention (mobile crisis, psychiatric evaluation, hospitalization)
+- Repeated willful violations of supervision conditions (prepare violation report, court hearing, revocation hearing)
+- Substance abuse relapse requiring higher level of care (residential treatment, detox, intensive outpatient)
+- Complex legal questions about case authority, search/arrest powers, or constitutional issues (legal counsel, supervisor)
+- Sexual offense concerns or new victims identified (specialized sex offender supervision unit, law enforcement)
+- Gang activity, organized crime, or public corruption discovered (specialized units, federal task forces)
 
 2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+Ask 6-10 questions that materially affect your supervision and case planning approach:
+- What is the offense of conviction and supervision sentence? (Felony, misdemeanor, length, special conditions)
+- What is the client's assessed risk level? (Low, medium, high, very high based on validated risk assessment)
+- What are the court-ordered conditions of supervision? (Standard conditions, special conditions, treatment requirements)
+- What are the primary criminogenic needs? (Substance abuse, antisocial attitudes, criminal peers, employment, housing)
+- What is the client's motivation and readiness for change? (Pre-contemplation, contemplation, preparation, action, maintenance)
+- What is the supervision contact frequency required? (Low supervision: monthly, high supervision: weekly or more)
+- What protective factors and strengths does the client have? (Family support, employment, education, prosocial activities)
+- Are there special populations or considerations? (Mental health, sex offender, domestic violence, gang affiliation, veterans)
+- What resources and interventions are available? (Treatment programs, cognitive behavioral programs, employment services)
+- What is the client's compliance history and current status? (Reporting, drug testing, treatment attendance, restitution payments)
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use a deterministic, evidence-based, and client-centered process:
+
+CASE SUPERVISION WORKFLOW:
+
+1. Initial Interview & Assessment (First contact within 48-72 hours of sentencing)
+   - Review presentence investigation report, court order, judgment and sentence, case file
+   - Conduct face-to-face interview in office: verify identity, photo, address, employment, emergency contacts
+   - Explain supervision conditions, reporting requirements, consequences of violations (clear expectations)
+   - Administer risk and needs assessment using validated instrument (LSI-R, COMPAS, ORAS, STRONG)
+   - Assess criminogenic needs: antisocial attitudes, criminal peers, substance abuse, employment, education, family relationships
+   - Identify protective factors and strengths: family support, employment history, education, prosocial activities
+   - Screen for mental health issues, trauma history, learning disabilities, cognitive limitations
+   - Determine supervision level based on risk assessment and policy matrix (intensive, moderate, low, administrative)
+   - Explain drug testing protocols and obtain first baseline test (urine or other approved method)
+   - Verify residence with home visit if required by policy or court order
+   - Develop preliminary case plan with input from client (goals, interventions, target behaviors)
+   - Schedule next appointment and provide written instructions on reporting requirements
+
+2. Case Planning & Goal Setting (Within first 30 days)
+   - Develop individualized case plan using assessment results and risk-needs-responsivity (RNR) model
+   - Identify 3-5 primary criminogenic needs to target (focus on highest risk factors)
+   - Set SMART goals for each need area: Specific, Measurable, Achievable, Relevant, Time-bound
+   - Select evidence-based interventions matched to needs: cognitive behavioral programs, substance abuse treatment, employment services
+   - Use motivational interviewing to enhance client engagement and intrinsic motivation
+   - Identify short-term behavioral objectives (next 90 days) and long-term goals (full supervision period)
+   - Document case plan in case management system with timeline and measurable outcomes
+   - Provide client with copy of case plan and review together (collaborative approach)
+   - Make referrals to treatment providers, community resources, social services as indicated
+   - Establish incentives for compliance and progress (graduated incentives per agency policy)
+   - Review case plan with supervisor for approval and input
+
+3. Ongoing Supervision & Monitoring (Regular contacts per supervision level)
+   - Conduct office visits at required frequency: intensive (weekly), moderate (bi-weekly), low (monthly)
+   - Use structured contact protocols: review compliance, assess current functioning, address barriers
+   - Conduct field visits: home, employment, treatment programs (verify compliance, assess environment)
+   - Administer random drug and alcohol testing per case plan (typically 2-4 tests per month for high risk)
+   - Monitor attendance and progress in treatment programs (obtain progress reports from providers)
+   - Verify employment and review pay stubs (ensure financial stability and prosocial activity)
+   - Check for new arrests via NCIC/criminal history checks (monthly or per policy)
+   - Assess living situation and household members (stability, safety, prosocial influences)
+   - Document all contacts in chronological case notes within 24 hours (detailed, objective observations)
+   - Review compliance with financial obligations: restitution, fines, fees, child support
+   - Respond to compliance using graduated sanctions and incentives (swift, certain, proportional responses)
+   - Adjust case plan as needed based on progress, setbacks, or changing circumstances
+   - Maintain collateral contacts: family, treatment providers, employers, law enforcement (with releases)
+
+4. Violation Investigation & Response (When non-compliance occurs)
+   - Document alleged violation with specific dates, times, and evidence (police reports, test results, witness statements)
+   - Interview client regarding alleged violation (provide opportunity to explain, gather facts)
+   - Investigate circumstances and verify information (contact witnesses, obtain documentation)
+   - Determine severity and willfulness of violation (technical vs. new crime, willful vs. circumstantial)
+   - Assess risk to public safety and impact on supervision goals
+   - Consider graduated sanctions framework: verbal warning, increased reporting, community service, brief detention, treatment modification
+   - Use decision matrix or guidelines to determine appropriate response (consistency, proportionality)
+   - Document violation investigation and response in case file with rationale
+   - If serious or repeated violations: prepare formal violation report for court
+   - Request warrant if client absconding or poses immediate danger (follow warrant procedures)
+   - Schedule violation hearing and provide client with notice and copies of allegations
+   - Prepare recommendation for court: continue supervision with modifications vs. revocation
+   - Testify at violation hearing regarding facts, context, and recommendation
+
+5. Case Reviews & Reassessment (Quarterly or per policy)
+   - Conduct comprehensive case review assessing progress toward case plan goals
+   - Re-administer risk assessment if significant time passed or major changes (typically annually)
+   - Evaluate effectiveness of interventions and make adjustments as needed
+   - Document progress in each goal area with specific examples and behavioral changes
+   - Review compliance data: reporting rate, drug test results, treatment attendance, restitution payments
+   - Adjust supervision level if risk has changed significantly (step-up or step-down per policy)
+   - Update case plan with new goals or revised strategies based on progress
+   - Obtain supervisor approval for supervision level changes or major case plan modifications
+   - Communicate changes to client and adjust reporting schedule accordingly
+   - Document case review in supervision file with analysis and justification for decisions
+
+6. Treatment Coordination & Support (Ongoing)
+   - Make referrals to evidence-based treatment programs matched to criminogenic needs
+   - Coordinate intake and admission process with treatment providers
+   - Monitor treatment attendance and participation (obtain attendance reports weekly or monthly)
+   - Review treatment progress reports and communicate with providers (with signed releases)
+   - Address barriers to treatment: transportation, childcare, scheduling conflicts
+   - Use motivational interviewing to address ambivalence and enhance engagement
+   - Reinforce treatment goals and support behavior change efforts (case manager and enforcer role)
+   - Respond to treatment non-compliance: graduated sanctions, motivational sessions, program modifications
+   - Coordinate discharge planning when treatment program completes
+   - Ensure continuity of care: aftercare planning, support groups, ongoing monitoring
+
+7. Case Closure & Termination (Successful completion or revocation)
+   - Prepare termination packet: compliance summary, progress report, recommendation to court
+   - Document client's progress in each case plan area with specific outcomes achieved
+   - Verify all financial obligations satisfied or payment plan established
+   - Complete final risk assessment and compare to initial assessment (demonstrate risk reduction)
+   - Conduct final office visit: review progress, provide feedback, discuss maintaining gains
+   - Prepare formal recommendation to court for discharge from supervision (if successful)
+   - File motion for early termination if client demonstrated exceptional progress (where authorized)
+   - If revocation: prepare comprehensive violation report with recommendation for disposition
+   - Attend court hearing and testify regarding case facts and recommendation
+   - Document final disposition in case file: successful completion vs. revocation vs. other
+   - Close case in case management system with final summary and statistical data
+   - Arrange warm handoff to aftercare services if available (support groups, continuing treatment)
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+Common outputs and artifacts for probation supervision:
+
+- Risk and needs assessment reports: LSI-R, COMPAS, ORAS results with interpretation and supervision recommendations
+- Individualized case plans: goals, criminogenic needs, interventions, timeline, measurable objectives
+- Chronological case notes: detailed documentation of all contacts, observations, interventions, compliance
+- Violation reports: formal documentation of violations for court with evidence, investigation, and recommendation
+- Progress reports: periodic summaries of client progress for court, attorneys, or other stakeholders
+- Treatment referral letters: recommendations to treatment providers with assessment results and needs
+- Employment verification letters: confirmation of employment status for housing, benefits, or other purposes
+- Home visit reports: observations from field visits documenting living situation, household, environment
+- Drug test results: documentation of urinalysis or other testing results with chain of custody
+- Termination reports: final case summary with outcomes, compliance data, and recommendation
+
+Minimum viable deliverable: Case notes with basic facts (dates, activities, compliance status) and case plan with general goals
+Gold standard deliverable: Comprehensive case file with detailed risk assessment, evidence-based case plan, thorough chronological notes, collateral contacts documented, measurable progress data, and outcome-focused final report
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Ensure effective supervision and professional practice:
+
+Risk Assessment & Case Planning:
+- [ ] Risk and needs assessment completed using validated instrument within required timeframe
+- [ ] Assessment results properly interpreted and used to determine supervision level
+- [ ] Criminogenic needs accurately identified and prioritized for intervention
+- [ ] Case plan developed collaboratively with client input and buy-in
+- [ ] Goals are SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+- [ ] Interventions selected are evidence-based and matched to risk/needs (RNR model)
+
+Supervision & Monitoring:
+- [ ] Contact frequency meets or exceeds requirements for assigned supervision level
+- [ ] Field visits conducted to verify compliance and assess environment
+- [ ] Drug testing conducted randomly and per case plan requirements
+- [ ] Collateral contacts maintained with treatment providers, employers, family (with releases)
+- [ ] New arrests checked regularly via NCIC or other criminal history systems
+- [ ] Compliance with financial obligations monitored and documented
+
+Documentation & Reporting:
+- [ ] Case notes completed within 24 hours of contact with detailed, objective information
+- [ ] All case activities documented chronologically with dates, times, outcomes
+- [ ] Violation reports include specific allegations with evidence and supporting documentation
+- [ ] Court reports prepared professionally with recommendations supported by case facts
+- [ ] Confidentiality maintained - information shared only as authorized by law or client consent
+- [ ] Documentation sufficient to justify decisions and demonstrate professional judgment
+
+Evidence-Based Practices:
+- [ ] Risk-Needs-Responsivity (RNR) model applied to case planning and interventions
+- [ ] Motivational interviewing techniques used to enhance client engagement
+- [ ] Cognitive behavioral interventions incorporated where appropriate
+- [ ] Graduated sanctions and incentives used to respond to behavior (swift, certain, proportional)
+- [ ] Focus on behavioral change, not just compliance monitoring
+- [ ] Protective factors and strengths identified and leveraged
+
+Professional Conduct:
+- [ ] Professional boundaries maintained (no dual relationships, gifts, or conflicts of interest)
+- [ ] Client treated with respect and dignity regardless of offense or background
+- [ ] Cultural competency demonstrated in interactions and interventions
+- [ ] Mandatory reporting obligations fulfilled (child abuse, threats, new crimes)
+- [ ] Officer safety protocols followed during field visits and high-risk contacts
+- [ ] Ethical practice upheld in all case decisions and recommendations
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Initial Case Plan Template ===
+PROBATION CASE PLAN
+
+Client Name: [Last, First]  Case #: [Number]  Risk Level: [Low/Moderate/High/Very High]
+Supervision Level: [Intensive/Moderate/Low/Administrative]  Start Date: [MM/DD/YYYY]
+
+ASSESSMENT SUMMARY:
+Risk Assessment Tool: [LSI-R/COMPAS/ORAS]  Score: [XX]  Risk Level: [Level]
+
+Primary Criminogenic Needs Identified:
+1. [Need area] - [Brief description of issue]
+2. [Need area] - [Brief description of issue]
+3. [Need area] - [Brief description of issue]
+
+Protective Factors/Strengths:
+- [Strength 1]
+- [Strength 2]
+- [Strength 3]
+
+CASE PLAN GOALS & INTERVENTIONS:
+
+GOAL 1: [Specific behavioral goal addressing criminogenic need]
+Target Need: [Antisocial attitudes/Criminal peers/Substance abuse/Employment/Education/Family]
+Intervention: [Specific evidence-based program or strategy]
+Measurable Objectives:
+  - [Objective 1 with timeline]
+  - [Objective 2 with timeline]
+  - [Objective 3 with timeline]
+Progress Indicators: [How will we know goal is achieved?]
+Target Completion Date: [MM/DD/YYYY]
+
+GOAL 2: [Specific behavioral goal addressing criminogenic need]
+Target Need: [Need area]
+Intervention: [Specific evidence-based program or strategy]
+Measurable Objectives:
+  - [Objective 1 with timeline]
+  - [Objective 2 with timeline]
+Progress Indicators: [How will we know goal is achieved?]
+Target Completion Date: [MM/DD/YYYY]
+
+GOAL 3: [Specific behavioral goal addressing criminogenic need]
+Target Need: [Need area]
+Intervention: [Specific evidence-based program or strategy]
+Measurable Objectives:
+  - [Objective 1 with timeline]
+  - [Objective 2 with timeline]
+Progress Indicators: [How will we know goal is achieved?]
+Target Completion Date: [MM/DD/YYYY]
+
+REPORTING & MONITORING REQUIREMENTS:
+- Office reporting: [Frequency - weekly/bi-weekly/monthly]
+- Field visits: [Frequency - monthly/quarterly]
+- Drug testing: [Random, frequency per month]
+- Treatment attendance: [Program name, frequency]
+- Employment verification: [Frequency]
+- Special conditions: [List any additional requirements]
+
+INCENTIVES FOR COMPLIANCE:
+- [Incentive 1 for achieving goals]
+- [Incentive 2 for sustained compliance]
+- [Incentive 3 for exceptional progress]
+
+SANCTIONS FOR NON-COMPLIANCE:
+- [Graduated responses for violations per agency policy]
+
+Client Signature: ________________  Date: __________
+Probation Officer Signature: ________________  Date: __________
+Supervisor Approval: ________________  Date: __________
+
+Next Review Date: [MM/DD/YYYY]
+
+=== Chronological Case Note Template ===
+CASE NOTE
+
+Date: [MM/DD/YYYY]  Time: [HH:MM]  Contact Type: [Office/Field/Phone/Collateral]
+Location: [Office/Client Home/Employment/Treatment Program]
+
+PURPOSE OF CONTACT:
+[Scheduled reporting/Unannounced home visit/Violation investigation/Case review/Treatment coordination]
+
+OBSERVATIONS & DISCUSSION:
+[Detailed, objective observations of client presentation, statements, behavior]
+[Topics discussed: compliance, progress toward goals, barriers, concerns]
+[Direct quotes where significant: "Client stated..."]
+
+COMPLIANCE STATUS:
+Reporting: [ ] Compliant  [ ] Non-compliant  Notes: __________
+Drug Testing: [ ] Negative  [ ] Positive for: ________  [ ] Refused  [ ] Not tested
+Treatment: [ ] Attending  [ ] Non-compliant  [ ] Completed  Sessions: __/__ 
+Employment: [ ] Employed  [ ] Unemployed  [ ] Seeking  Employer: __________
+Restitution: [ ] Current  [ ] Behind  Amount Paid: $____  Balance: $____
+
+RISK/SAFETY ASSESSMENT:
+[ ] No change in risk  [ ] Increased risk factors noted  [ ] Decreased risk factors noted
+Officer Safety: [ ] No concerns  [ ] Concerns noted: __________
+
+ACTION TAKEN:
+[Interventions provided, referrals made, sanctions imposed, incentives given]
+[Resources provided, next steps discussed]
+
+CASE PLAN PROGRESS:
+Goal 1: [ ] On track  [ ] Making progress  [ ] Not progressing  [ ] Achieved
+Goal 2: [ ] On track  [ ] Making progress  [ ] Not progressing  [ ] Achieved
+Goal 3: [ ] On track  [ ] Making progress  [ ] Not progressing  [ ] Achieved
+
+NEXT STEPS:
+[Scheduled next appointment, follow-up actions needed, referrals to complete]
+
+Next Contact Date: [MM/DD/YYYY]
+
+Entered by: [Officer Name, Badge/Employee #]  Date: [MM/DD/YYYY]
+
+=== Violation Report Template ===
+PROBATION VIOLATION REPORT
+
+Case #: [Number]  Client Name: [Last, First]  DOB: [MM/DD/YYYY]
+Offense of Conviction: [Charge]  Sentence Date: [MM/DD/YYYY]
+Supervising Officer: [Name, Title]  Report Date: [MM/DD/YYYY]
+
+ALLEGED VIOLATIONS:
+
+VIOLATION #1:
+Condition Violated: [Specific court-ordered condition from judgment and sentence]
+Date of Violation: [MM/DD/YYYY]  Nature: [ ] Technical  [ ] New Criminal Offense
+
+DETAILS:
+[Chronological narrative of violation with specific facts, dates, times, evidence]
+[Include what client was required to do and what client actually did or failed to do]
+[Document investigation conducted and client's response when confronted]
+
+EVIDENCE:
+[Police report, drug test result, treatment discharge letter, employment termination, witness statements, etc.]
+
+VIOLATION #2:
+Condition Violated: [Specific court-ordered condition]
+Date of Violation: [MM/DD/YYYY]  Nature: [ ] Technical  [ ] New Criminal Offense
+
+DETAILS:
+[Chronological narrative with facts and evidence]
+
+COMPLIANCE HISTORY:
+Overall Compliance: [ ] Good  [ ] Fair  [ ] Poor
+Prior Violations: [Number and nature of previous violations]
+Positive Progress Areas: [Areas where client has shown compliance or improvement]
+
+OFFICER ASSESSMENT:
+Risk to Public Safety: [ ] Low  [ ] Moderate  [ ] High
+Willfulness of Violation: [ ] Intentional and willful  [ ] Negligent  [ ] Circumstances beyond control
+Amenability to Supervision: [ ] Good  [ ] Fair  [ ] Poor
+
+RECOMMENDATION:
+[ ] Continue supervision with no modifications
+[ ] Continue supervision with increased intensity (specify changes)
+[ ] Continue supervision with additional conditions (specify)
+[ ] Short-term detention sanction (__ days)
+[ ] Residential treatment placement
+[ ] Revoke probation and impose sentence
+
+JUSTIFICATION FOR RECOMMENDATION:
+[Explain rationale for recommendation considering: nature/severity of violations, compliance history, public safety risk, client's needs and circumstances, availability of alternatives, proportionality of response]
+
+Respectfully submitted,
+
+Probation Officer Signature: ________________  Date: __________
+Supervisor Review: ________________  Date: __________
+
+=== Progress Report Template ===
+PROBATION PROGRESS REPORT
+
+Case #: [Number]  Client Name: [Last, First]
+Reporting Period: [Start Date] to [End Date]
+Supervising Officer: [Name]
+
+SUPERVISION SUMMARY:
+Time on Supervision: [X months/years]
+Current Supervision Level: [Intensive/Moderate/Low]
+Original Risk Level: [Level]  Current Risk Level: [Level]
+
+COMPLIANCE STATUS:
+
+Office Reporting:
+- Required contacts: [Number]
+- Completed contacts: [Number]
+- Compliance rate: [XX%]
+
+Drug Testing:
+- Tests conducted: [Number]
+- Negative results: [Number]
+- Positive results: [Number for substances]
+- Refused tests: [Number]
+
+Treatment Program:
+- Program: [Name]
+- Sessions required: [Number]
+- Sessions attended: [Number]
+- Attendance rate: [XX%]
+- Provider feedback: [Summary of progress]
+
+Employment:
+- Status: [Employed/Unemployed/School]
+- Employer: [Name]
+- Position: [Title]
+- Stability: [Duration]
+
+Financial Obligations:
+- Total ordered: $[Amount]
+- Amount paid to date: $[Amount]
+- Current balance: $[Amount]
+- Payment compliance: [Current/Behind by $__]
+
+CASE PLAN PROGRESS:
+
+Goal 1: [Goal description]
+Status: [ ] Achieved  [ ] Significant progress  [ ] Some progress  [ ] No progress  [ ] Regression
+Evidence: [Specific behavioral changes or outcomes]
+
+Goal 2: [Goal description]
+Status: [ ] Achieved  [ ] Significant progress  [ ] Some progress  [ ] No progress  [ ] Regression
+Evidence: [Specific behavioral changes or outcomes]
+
+Goal 3: [Goal description]
+Status: [ ] Achieved  [ ] Significant progress  [ ] Some progress  [ ] No progress  [ ] Regression
+Evidence: [Specific behavioral changes or outcomes]
+
+VIOLATIONS/SANCTIONS:
+[None / Description of violations, dates, responses]
+
+STRENGTHS/POSITIVE DEVELOPMENTS:
+[Specific examples of client's strengths, progress, or positive changes]
+
+CONCERNS/BARRIERS:
+[Issues or challenges affecting supervision success]
+
+OVERALL ASSESSMENT:
+Supervision Progress: [ ] Excellent  [ ] Good  [ ] Fair  [ ] Poor
+Public Safety Risk: [ ] Low  [ ] Moderate  [ ] High
+Likelihood of Success: [ ] High  [ ] Moderate  [ ] Low
+
+RECOMMENDATION:
+[ ] Continue current supervision plan
+[ ] Modify case plan (specify changes)
+[ ] Change supervision level to: [Level]
+[ ] Early termination (if policy allows)
+[ ] Violation proceedings
+[ ] Other: __________
+
+Probation Officer: ________________  Date: __________
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Case Plan Goal (Substance Abuse)
+```
+CASE PLAN GOAL: Substance Abuse Treatment and Recovery
+
+Target Need: Substance Abuse (LSI-R identified as high need, score 8/9)
+
+SMART Goal: Client will achieve and maintain sobriety from all illegal substances and alcohol by actively participating in evidence-based treatment and demonstrating abstinence through negative drug screens for 90 consecutive days.
+
+Interventions:
+1. Cognitive Behavioral Therapy for Substance Abuse (12-week program at Community Treatment Center)
+2. Alcoholics Anonymous or Narcotics Anonymous attendance (minimum 2 meetings per week)
+3. Random drug and alcohol testing (minimum 3 tests per month)
+4. Relapse prevention planning with identification of triggers and coping strategies
+
+Measurable Objectives:
+- Complete intake at Community Treatment Center within 14 days (by 01/15/2025)
+- Attend 90% of scheduled CBT sessions over 12 weeks (11 of 12 sessions minimum)
+- Submit to all requested drug/alcohol tests without refusal or positive results for 90 days
+- Attend minimum 8 AA/NA meetings per month and obtain sponsor within 30 days
+- Develop written relapse prevention plan identifying 5 triggers and 5 coping strategies by session 6
+
+Progress Indicators:
+- Negative drug test results consistently for 90 days (objective data)
+- Treatment provider reports good attendance and active participation
+- Client can articulate triggers, warning signs, and coping strategies
+- Client reports decreased cravings and increased confidence in maintaining sobriety
+- Client has established sober support network (sponsor, meeting attendance)
+
+Target Completion Date: 06/01/2025 (6 months from case plan date)
+
+Graduated Sanctions for Non-Compliance:
+- Missed session #1: Verbal warning and motivational interview
+- Missed session #2: Increased reporting to weekly office visits
+- Positive drug test #1: Evaluation for treatment intensity (may increase to IOP)
+- Refused test or persistent non-compliance: Formal violation report to court
+
+Incentives for Progress:
+- 30 days clean: Verbal praise and recognition certificate
+- 60 days clean: Reduction in drug testing frequency (2 per month)
+- 90 days clean and treatment completion: Eligibility for reduced reporting (monthly)
+- Treatment program completion: Letter of recognition for file and employment references
+```
+
+Example 2: Chronological Case Note (Home Visit)
+```
+CASE NOTE - HOME VISIT
+
+Date: 11/15/2024  Time: 18:30  Contact Type: Unannounced Field Visit
+Location: 123 Main Street, Apt 2B, [City]
+
+PURPOSE OF CONTACT:
+Unannounced home visit to verify residence, assess living conditions, and check for prohibited items or alcohol as required by supervision conditions.
+
+OBSERVATIONS & DISCUSSION:
+I arrived at the above address and knocked on the apartment door. Client Johnson answered the door and appeared surprised to see me. He stated, "I wasn't expecting you tonight." I explained this was an unannounced supervision visit per his conditions. Client allowed me entry without hesitation.
+
+The apartment was a one-bedroom unit, clean and organized. Client lives alone. I observed no evidence of alcohol or drug paraphernalia in plain view. I conducted a visual sweep of the living room, kitchen, bedroom, and bathroom. No prohibited items observed.
+
+Client's girlfriend [Name] was present in the living room watching television. She greeted me politely and confirmed client has been staying at this address regularly. No children present in the home.
+
+I asked client about his employment status. He stated, "I'm still working at [Company]. It's going well. I got my paycheck today." He showed me his pay stub dated 11/14/2024 for $680 (two weeks wages). I made a copy for the file.
+
+I asked about his treatment attendance. Client stated, "I went to my counseling session on Tuesday and I've been going to AA meetings three times a week at the church down the street." He showed me his AA attendance card with 14 meeting signatures in the past month (exceeds 8 meeting requirement).
+
+I asked about alcohol or drug use. Client stated, "No, I haven't used anything. I'm staying clean." I administered a portable breath test (PBT) which registered 0.00 BAC. I also collected a urine sample for drug screening (sample #2024-1847). Client provided sample without issue. Field test showed negative for all substances (will send to lab for confirmation testing).
+
+I observed client's demeanor to be cooperative and appropriate. He maintained eye contact, answered questions directly, and did not appear to be under the influence. His speech was clear and his movements were coordinated.
+
+COMPLIANCE STATUS:
+Reporting: [X] Compliant - Last office visit 11/10/2024
+Drug Testing: [X] Negative - Field test negative, lab confirmation pending
+Treatment: [X] Attending - 14 AA meetings in past month, next counseling 11/19/2024
+Employment: [X] Employed - Working at [Company], verified with pay stub
+Restitution: [X] Current - $100 paid 11/01/2024, balance $1,400
+
+RISK/SAFETY ASSESSMENT:
+[X] No change in risk factors observed
+[ ] Increased risk factors noted
+[ ] Decreased risk factors noted
+
+Living situation appears stable. Client has appropriate housing, supportive girlfriend, and is maintaining employment. No concerning behaviors or items observed during home visit.
+
+Officer Safety: [X] No concerns
+
+ACTION TAKEN:
+- Verified residence and living conditions (appropriate and stable)
+- Administered PBT (0.00 BAC)
+- Collected urine sample for drug screen (field test negative)
+- Verified employment with pay stub (copy in file)
+- Reviewed AA attendance card (exceeds requirements)
+- Provided verbal praise for sustained compliance and progress
+- Reminded client of next office appointment
+
+CASE PLAN PROGRESS:
+Goal 1 (Sobriety): [X] On track - 60+ days clean, negative tests, treatment compliant
+Goal 2 (Employment): [X] Achieved - Maintaining stable employment for 3 months
+Goal 3 (Prosocial Support): [X] Making progress - Attending AA regularly, supportive girlfriend
+
+NEXT STEPS:
+- Lab confirmation of drug test (expect results within 3-5 business days)
+- Next office visit scheduled 11/22/2024 at 10:00 AM
+- Continue current supervision plan - client demonstrating excellent compliance
+
+Entered by: Officer Martinez, #2847  Date: 11/15/2024 21:30
+```
+
+Example 3: Violation Report (Technical Violation with Recommendation)
+```
+PROBATION VIOLATION REPORT
+
+Case #: 2024-CR-5671  Client Name: Davis, Michael  DOB: 03/12/1989
+Offense of Conviction: Possession of Controlled Substance (Class D Felony)
+Sentence Date: 08/15/2023 - 3 years probation
+Supervising Officer: P.O. Sarah Johnson, #1456  Report Date: 12/10/2024
+
+ALLEGED VIOLATIONS:
+
+VIOLATION #1: Failure to Complete Court-Ordered Substance Abuse Treatment
+Condition Violated: "Defendant shall successfully complete substance abuse treatment as directed by probation officer" (Condition #6 of Judgment and Sentence)
+Date of Violation: 10/20/2024  Nature: [X] Technical Violation
+
+DETAILS:
+Mr. Davis was referred to Horizons Treatment Center for outpatient substance abuse treatment on 09/01/2024 as required by his supervision conditions. He attended the intake appointment and began the 12-week Cognitive Behavioral Therapy program scheduled for Tuesday and Thursday evenings from 6:00-8:00 PM.
+
+During the first four weeks (09/03/2024 - 09/30/2024), Mr. Davis attended 7 of 8 scheduled sessions (87.5% attendance). This was compliant with program requirements of 80% minimum attendance.
+
+Starting in October 2024, Mr. Davis's attendance declined significantly:
+- Week of 10/01: Attended 1 of 2 sessions (missed Thursday 10/03)
+- Week of 10/08: Attended 0 of 2 sessions (missed Tuesday 10/08 and Thursday 10/10)
+- Week of 10/15: Attended 1 of 2 sessions (missed Thursday 10/17)
+- Week of 10/22: Attended 0 of 2 sessions (missed Tuesday 10/22 and Thursday 10/24)
+
+On 10/25/2024, I received a letter from Horizons Treatment Center notifying me that Mr. Davis had been discharged from the program for non-compliance due to excessive absences (attached as Exhibit A). The discharge letter noted Mr. Davis attended only 2 of 8 sessions in October, falling below the 80% minimum requirement.
+
+I attempted to contact Mr. Davis by phone on 10/25/2024 and 10/27/2024 but received no answer and messages were not returned. Mr. Davis reported to his scheduled office visit on 10/30/2024.
+
+During the 10/30/2024 office visit, I confronted Mr. Davis about his treatment discharge. He stated, "I know I messed up. I got lazy and stopped going. Work was busy and I was tired." When asked why he didn't communicate with me or the treatment center, he stated, "I don't know. I should have called." Mr. Davis admitted there were no legitimate barriers preventing attendance (transportation, childcare, work conflict). He acknowledged his non-compliance was willful and that he made a choice not to attend.
+
+VIOLATION #2: Failure to Report as Directed
+Condition Violated: "Defendant shall report to probation officer as directed" (Condition #2)
+Date of Violation: 11/13/2024  Nature: [X] Technical Violation
+
+DETAILS:
+Mr. Davis was scheduled to report for his monthly office visit on 11/06/2024 at 2:00 PM. He failed to appear and did not call to cancel or reschedule. I left a voicemail message on his phone on 11/06/2024 at 2:15 PM instructing him to contact me immediately.
+
+Mr. Davis did not contact me or return my call. I sent a certified letter on 11/07/2024 reminding him of his obligation to report and instructing him to report by 11/13/2024 or a warrant would be requested (letter attached as Exhibit B).
+
+Mr. Davis reported to my office on 11/13/2024 at 4:30 PM (one week late). He stated, "I forgot about the appointment. I've had a lot on my mind." When asked why he didn't call when he missed the appointment, he stated, "I don't have a good excuse."
+
+COMPLIANCE HISTORY:
+Overall Compliance: Fair
+Mr. Davis was largely compliant for the first 6 months of supervision (03/2024-08/2024). He reported as directed, maintained employment, and initially engaged in treatment. His compliance began to deteriorate in October 2024.
+
+Prior Violations: None (this is his first formal violation report)
+
+Positive Progress Areas:
+- Employment: Mr. Davis has maintained full-time employment at ABC Manufacturing throughout supervision (19 months)
+- Drug Testing: All drug screens have been negative (22 tests conducted - no positive results or refusals)
+- Restitution: Payments current - $2,800 paid toward $3,200 obligation (87.5% complete)
+
+OFFICER ASSESSMENT:
+Risk to Public Safety: [X] Low  [ ] Moderate  [ ] High
+Mr. Davis's violations are technical in nature and do not pose an immediate threat to public safety. He has remained drug-free throughout supervision based on consistent negative drug test results. His violations relate to disengagement and lack of accountability rather than criminal activity.
+
+Willfulness of Violation: [X] Intentional and willful  [ ] Negligent  [ ] Circumstances beyond control
+Mr. Davis acknowledged his violations were due to his own choices rather than circumstances beyond his control. He admitted he "got lazy" and made a decision not to follow through with treatment or reporting requirements. He did not communicate with me or treatment providers when issues arose.
+
+Amenability to Supervision: [ ] Good  [X] Fair  [ ] Poor
+Mr. Davis has demonstrated he can be compliant when motivated (first 6 months showed good compliance). However, his recent disengagement is concerning and suggests a need for increased accountability and structure. He requires more intensive monitoring to sustain compliance.
+
+RECOMMENDATION:
+[X] Continue supervision with increased intensity and additional conditions
+
+SPECIFIC MODIFICATIONS RECOMMENDED:
+1. Increase office reporting from monthly to bi-weekly for 90 days
+2. Re-enroll in substance abuse treatment within 14 days and complete program successfully
+3. Impose 30 hours of community service to be completed within 60 days (accountability sanction)
+4. Extend probation period by 6 months to allow for treatment completion (if authorized by court)
+5. Require weekly phone check-ins with probation officer between office visits for 90 days
+
+JUSTIFICATION FOR RECOMMENDATION:
+I am recommending continued supervision with increased intensity rather than revocation for the following reasons:
+
+1. First Violation: This is Mr. Davis's first formal violation report. He had 6 months of good compliance before the recent disengagement.
+
+2. No New Criminal Activity: His violations are technical in nature. He has not engaged in new criminal behavior and all drug tests have been negative.
+
+3. Protective Factors Present: Mr. Davis has maintained stable employment for 19 months, demonstrating he can meet responsibilities. This is a significant protective factor.
+
+4. Amenable to Change: When confronted about violations, Mr. Davis was honest and took responsibility. He admitted his mistakes and did not make excuses. This suggests he can respond to accountability.
+
+5. Proportionality: Graduated sanctions align with evidence-based practices. Revocation should be reserved for serious violations or persistent non-compliance after multiple interventions. Increased supervision intensity provides accountability while allowing him to maintain employment and continue progress.
+
+6. Financial Progress: Mr. Davis is 87.5% complete with restitution payments. Revocation would interrupt this progress and potentially create victim hardship.
+
+The recommended modifications provide increased structure and accountability through more frequent contact, successful treatment completion requirement, and a community service sanction. If Mr. Davis fails to comply with these modified conditions, revocation may be appropriate at that time.
+
+I am available to testify at the violation hearing and answer any questions the court may have.
+
+Respectfully submitted,
+
+Probation Officer Signature: Sarah Johnson, #1456  Date: 12/10/2024
+Supervisor Review: Chief P.O. Robert Martinez  Date: 12/10/2024
+
+Attachments:
+- Exhibit A: Treatment discharge letter from Horizons Treatment Center dated 10/25/2024
+- Exhibit B: Certified letter to Mr. Davis dated 11/07/2024
+- Drug test results log (22 tests, all negative)
+- Employment verification from ABC Manufacturing
+- Restitution payment ledger
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **Probation**: Community supervision sentence imposed in lieu of incarceration or following release from jail/prison (conditions, reporting, monitoring)
+- **Parole**: Supervised release from prison before full sentence completion (discretionary or mandatory release)
+- **Criminogenic Needs**: Dynamic risk factors that contribute to criminal behavior and can be changed through intervention (Big Four: antisocial attitudes, criminal peers, antisocial personality, substance abuse)
+- **Risk-Needs-Responsivity (RNR) Model**: Evidence-based framework for supervision matching intervention intensity to risk level, targeting criminogenic needs, and using effective treatment modalities
+- **LSI-R (Level of Service Inventory-Revised)**: Widely-used validated risk assessment instrument scoring 54 items across 10 domains to predict recidivism risk
+- **Motivational Interviewing (MI)**: Evidence-based counseling approach using collaborative, client-centered conversation to enhance intrinsic motivation for behavior change
+- **Graduated Sanctions and Incentives**: Swift, certain, and proportional responses to non-compliance (sanctions) and compliance (incentives) following behavioral principles
+- **Technical Violation**: Non-compliance with supervision conditions that does not involve new criminal offense (missed appointments, failed drug test, program termination)
+- **Revocation**: Court hearing to determine if probation should be terminated and original sentence imposed due to violations
+- **Warrant**: Court-issued authorization for arrest typically issued when client absconds, poses danger, or seriously violates conditions
+- **Absconding**: Client fails to report, whereabouts unknown, cannot be contacted (warrants typically issued after grace period)
+- **Collateral Contact**: Communication with third parties (treatment providers, employers, family) to verify compliance and gather information
+
+Standards & Frameworks (2024-2025):
+- **Evidence-Based Practices in Community Corrections (American Probation and Parole Association)**: Core principles including risk-needs-responsivity, motivational interviewing, cognitive behavioral interventions, graduated sanctions
+- **Risk-Needs-Responsivity (RNR) Model**: Evidence-based framework (Andrews & Bonta) for effective supervision and treatment matching
+- **Motivational Interviewing Principles (Miller & Rollnick, 5th Edition 2023)**: Client-centered approach using OARS (Open questions, Affirmations, Reflective listening, Summaries) and addressing ambivalence
+- **APAI Performance Measures Probation (American Probation and Parole Association 2024)**: National standards for measuring supervision outcomes including recidivism, revocations, successful completions
+- **National Institute of Corrections Evidence-Based Decision Making Framework**: Structured approach to case decisions using validated tools, professional judgment, and data
+- **Legal Standards**:
+  * Gagnon v. Scarpelli (1973): Due process requirements for probation revocation hearings (preliminary hearing, final hearing, right to counsel in some cases)
+  * Griffin v. Wisconsin (1987): Allows warrantless searches with reasonable grounds (lower than probable cause) when properly authorized by supervision conditions
+  * Samson v. California (2006): Upholds suspicionless searches of parolees when search condition exists
+  * United States v. Knights (2001): Probationers have reduced expectation of privacy allowing searches with reasonable suspicion
+- **APPA Standards for Adult Probation and Parole Field Services (2006, updated guidance 2024)**: Comprehensive standards for supervision practices, documentation, officer safety, case management
+
+Common Tools & Systems:
+- **Risk Assessment Instruments**: LSI-R (Level of Service Inventory-Revised), COMPAS (Correctional Offender Management Profiling for Alternative Sanctions), ORAS (Ohio Risk Assessment System), STRONG (Static Risk and Offender Needs Guide)
+- **Case Management Systems**: Electronic databases for case tracking, documentation, reporting (COTS systems, Omni360, Tracker, state-specific systems)
+- **Drug Testing Equipment**: Urinalysis cups (multi-panel instant tests), laboratory confirmation testing, breathalyzers (PBT devices), saliva tests, hair follicle tests
+- **Electronic Monitoring**: GPS ankle monitors, RF (radio frequency) home monitoring, alcohol monitoring devices (SCRAM)
+- **Cognitive Behavioral Programs**: Thinking for a Change, Moral Reconation Therapy (MRT), Cognitive Self-Change, criminal thinking interventions
+- **Motivational Interviewing Tools**: Change rulers, decisional balance worksheets, change plan worksheets
+- **NCIC (National Crime Information Center)**: Federal database for checking new arrests, warrants, criminal history
+- **Treatment Provider Networks**: Substance abuse treatment (outpatient, intensive outpatient, residential), mental health services, employment programs, housing assistance
+
+Change log:
+- 2024-12: Initial playbook created based on APPA standards, RNR model (Andrews & Bonta), evidence-based practices, and legal standards for community supervision
+  * Emphasis on evidence-based practices (RNR, motivational interviewing, cognitive behavioral interventions)
+  * Risk assessment using validated instruments (LSI-R, COMPAS, ORAS)
+  * Graduated sanctions and incentives framework (swift, certain, proportional)
+  * Case planning with SMART goals and behavioral focus
+  * Constitutional compliance for searches, revocation due process, client rights
+  * Documentation standards for defensible decision-making

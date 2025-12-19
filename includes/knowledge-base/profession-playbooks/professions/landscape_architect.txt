@@ -4,53 +4,585 @@ Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
 Intent
-- This playbook provides guidance for landscape architecture, site design, planting design, and outdoor space development.
+- This playbook provides comprehensive guidance for landscape architecture, site design, planting design, and outdoor space development.
+- Covers residential, commercial, institutional, and public space projects.
 
 1) Role boundaries
 Do:
-- Design site plans, grading, and drainage systems
-- Develop planting plans with appropriate species selection
-- Design hardscape elements (paving, walls, structures)
-- Plan stormwater management and sustainable landscapes
-- Prepare construction documents for landscape implementation
-- Coordinate with civil engineers and architects
+- Design site plans, grading, and drainage systems for sustainable water management
+- Develop comprehensive planting plans with climate-appropriate species selection
+- Design hardscape elements (paving, walls, steps, structures, site furnishings)
+- Plan stormwater management systems (bioswales, rain gardens, permeable paving)
+- Create landscape master plans for large-scale development projects
+- Prepare construction documents for landscape implementation (grading plans, planting plans, irrigation plans, lighting plans)
+- Coordinate with civil engineers, architects, and other design professionals
 - Specify irrigation and landscape lighting systems
-Success = Sustainable, beautiful outdoor spaces that function properly, meet codes, and enhance the built environment
+- Design accessible outdoor spaces meeting ADA/AODA requirements
+- Conduct site analysis including soils, topography, vegetation, hydrology, microclimates
+- Prepare cost estimates and phasing plans for landscape construction
+- Perform construction administration and site observation during implementation
+- Success = Sustainable, beautiful outdoor spaces that function properly, meet codes, enhance the built environment, and thrive long-term
 
 Do NOT:
-- Seal plans without landscape architect license (required in most states)
-- Design structural retaining walls without engineer
-- Ignore environmental regulations or wetlands
-- Specify inappropriate plants for climate/conditions
+- Seal plans without landscape architect license (required in most US states/Canadian provinces)
+- Design structural retaining walls over 4' height without structural engineer involvement
+- Ignore environmental regulations, wetlands, or protected species habitats
+- Specify inappropriate plants for climate zone, soil conditions, or maintenance capacity
+- Design grading that creates drainage problems or violates local codes
+- Promise construction costs without proper quantity takeoffs and contractor pricing
+- Overlook utility conflicts (underground power, gas, water, telecom)
+- Design without understanding maintenance requirements and client capacity
 
-Escalate when:
-- Retaining walls over 4' height (engineer required)
-- Wetlands, streams, or protected areas involved
-- Complex grading or drainage engineering
-- Historic landscapes or preservation sites
-- Specialized systems (green roofs, living walls)
+Escalate / refer out when:
+- Retaining walls over 4' height require structural engineering (most jurisdictions)
+- Wetlands, streams, floodplains, or protected habitats involved (environmental engineer/specialist)
+- Complex grading or stormwater engineering beyond basic surface drainage (civil engineer)
+- Historic landscapes or preservation sites (historical landscape architect specialist)
+- Specialized systems like green roofs, living walls, rooftop gardens (specialist consultant)
+- Arboriculture issues requiring certified arborist (tree risk assessment, preservation plans)
+- Ecological restoration requiring restoration ecologist
+- Large-scale civil infrastructure (roads, utilities, major earthwork) needs civil engineer
 
 2) Quick intake questions
-- What is the project site and context?
-- What climate zone and USDA hardiness zone?
-- What are site constraints? (Slopes, drainage, existing vegetation)
-- What functions are needed? (Recreation, circulation, stormwater)
-- What is the maintenance expectation?
-- Any environmental concerns or regulations?
+Ask 3–8 questions that materially affect the answer:
+- What is the project type and site location? (Residential, commercial, park, campus; urban/suburban/rural)
+- What climate zone and USDA Plant Hardiness Zone? (Affects all plant selection and design strategies)
+- What are site constraints? (Slopes, drainage issues, poor soils, existing vegetation, utilities)
+- What functions are needed? (Recreation, circulation, stormwater management, habitat, aesthetics)
+- What is the maintenance expectation and capacity? (Low/moderate/high maintenance acceptable)
+- What is the project budget and timeline? (Affects scale, materials, phasing)
+- Any environmental concerns or regulations? (Wetlands, tree preservation, stormwater requirements)
+- What is the design aesthetic preference? (Formal/informal, native/ornamental, modern/traditional)
 
 3) Default workflow
+Use a deterministic, repeatable process:
+
 1. Site Analysis and Inventory
-2. Conceptual Design and Master Planning
-3. Design Development with Plant and Material Selection
-4. Grading and Drainage Design
-5. Construction Documents (Planting, Grading, Details)
-6. Specifications and Cost Estimating
-7. Bidding and Construction Administration
+   - Conduct site visit and document existing conditions (topography, vegetation, structures)
+   - Survey utilities (locate underground services with utility locates)
+   - Analyze soils (test for drainage, pH, compaction, composition)
+   - Document sun/shade patterns and microclimates
+   - Identify views, focal points, and site opportunities
+   - Note constraints (slopes, wet areas, poor soils, invasive species)
+   - Research zoning, setbacks, and site development regulations
+   - Review environmental regulations (wetlands, tree protection, stormwater)
+   - Photograph site thoroughly from multiple angles and vantage points
 
-4) Key Standards
-- ASLA Professional Practice guidelines
-- Local stormwater management regulations
-- Native plant requirements (where applicable)
-- Sustainable Sites Initiative (SITES)
+2. Programming and Conceptual Design
+   - Meet with client to clarify program requirements and priorities
+   - Develop functional diagrams showing space relationships
+   - Create bubble diagrams exploring different layout options
+   - Sketch preliminary concepts (2-3 options) showing overall organization
+   - Develop conceptual grading and drainage strategies
+   - Identify appropriate plant palette for climate and site conditions
+   - Create preliminary cost estimate ranges for different concepts
+   - Present concepts to client with pros/cons of each approach
+   - Gather feedback and select preferred direction
 
-[2024-12]: Initial Landscape Architect playbook
+3. Design Development
+   - Refine selected concept with detailed design decisions
+   - Create preliminary site plan showing hardscape, planting areas, structures
+   - Develop grading plan with spot elevations and slope analysis
+   - Design drainage system (surface and subsurface as needed)
+   - Create preliminary planting plan with plant groupings
+   - Design irrigation zones and water source planning
+   - Specify materials (paving, walls, fences, site furnishings)
+   - Develop lighting concept for safety and aesthetics
+   - Create 3D visualization or perspective sketches to communicate design
+   - Refine cost estimate with quantity takeoffs
+   - Present design development package for client approval
+
+4. Construction Documents
+   - Prepare detailed site plan with all dimensions, materials, notes
+   - Create grading and drainage plan with contours, spot elevations, drainage structures
+   - Develop detailed planting plan with plant schedule (botanical/common names, sizes, quantities)
+   - Design irrigation plan with zones, heads, pipe sizes, controllers, backflow prevention
+   - Create lighting plan with fixture types, locations, wiring, and controls
+   - Prepare construction details (wall sections, paving details, edging, steps, etc.)
+   - Write specifications for materials and installation methods
+   - Coordinate with consultants (structural, electrical, irrigation)
+   - Submit for permits (building, grading, tree removal if required)
+   - Prepare bid documents for contractor pricing
+
+5. Bidding and Contractor Selection
+   - Distribute construction documents to qualified contractors for bidding
+   - Conduct pre-bid meeting and site walk with contractors
+   - Answer contractor questions and issue addenda if needed
+   - Review and analyze bids for completeness and accuracy
+   - Assist client with contractor selection
+   - Review contractor's means and methods submittals
+   - Finalize contract documents
+
+6. Construction Administration and Observation
+   - Conduct preconstruction meeting with contractor and client
+   - Review shop drawings and product submittals
+   - Conduct site observations at key milestones (layout, grading, installation)
+   - Respond to contractor RFIs (requests for information)
+   - Review and approve payment applications
+   - Document construction progress with photography
+   - Prepare punch list of incomplete or deficient work
+   - Conduct final inspection and issue certificate of substantial completion
+   - Provide maintenance guidelines to client
+
+7. Post-Construction Follow-up
+   - Revisit site during first growing season to assess plant establishment
+   - Provide recommendations for maintenance or adjustments
+   - Document completed project with professional photography
+   - Update record drawings showing as-built conditions if changes occurred
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Site analysis diagrams and written reports
+- Conceptual design sketches and bubble diagrams (2-3 options)
+- Design development site plan with materials and planting concept
+- Construction site plan with dimensions, materials, notes (scaled 1"=10' or 1"=20')
+- Grading and drainage plan with contours, spot elevations, drainage details
+- Detailed planting plan with plant schedule (botanical names, common names, sizes, spacing, quantities)
+- Irrigation plan showing zones, heads, pipe sizes, controllers, backflow prevention
+- Lighting plan showing fixtures, locations, wiring paths, electrical requirements
+- Construction details (wall sections, paving patterns, edging, steps, handrails, fences, etc.)
+- Technical specifications for materials and installation methods
+- Cost estimates (preliminary, design development, detailed quantity takeoff)
+- Maintenance guidelines for client
+- As-built record drawings (if changes occurred during construction)
+
+Minimum viable deliverable:
+- Site analysis and constraints map
+- Conceptual design plan showing layout and major elements
+- Preliminary planting plan with plant palette
+- Basic cost estimate
+
+Gold standard deliverable:
+- Comprehensive site analysis with soils report and environmental assessment
+- Multiple conceptual options with 3D visualizations
+- Complete construction document set (site plan, grading, planting, irrigation, lighting, details)
+- Technical specifications book
+- Detailed quantity takeoff and cost estimate with phasing options
+- Construction administration services through project completion
+- Professional photography of completed project
+- Maintenance plan with seasonal calendar
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Site Analysis & Planning:
+- [ ] Utilities located (call 811 before digging) and shown on plans
+- [ ] Existing trees surveyed and preservation plan developed if needed
+- [ ] Soils tested and amendments specified if needed
+- [ ] Drainage patterns analyzed and problems identified
+- [ ] Zoning setbacks and building codes researched and met
+- [ ] Environmental constraints identified (wetlands, steep slopes, protected species)
+- [ ] Accessibility requirements identified (ADA/AODA slopes, paths, parking)
+- [ ] Sun/shade patterns documented and considered in plant selection
+
+Grading & Drainage:
+- [ ] Positive drainage away from buildings (minimum 2% slope for 10')
+- [ ] Slopes do not exceed 3:1 (33%) without retaining walls
+- [ ] Maximum 2% cross-slope on accessible paths
+- [ ] Spot elevations shown at key locations (building corners, grade changes, etc.)
+- [ ] Drainage structures sized adequately (catch basins, area drains, dry wells)
+- [ ] Stormwater directed to appropriate discharge points
+- [ ] Erosion control measures specified for construction phase
+- [ ] Grading plan coordinates with architectural foundation elevations
+
+Planting Design:
+- [ ] All plants appropriate for USDA Hardiness Zone and climate
+- [ ] Plants matched to site conditions (sun/shade, wet/dry, soil pH)
+- [ ] Mature sizes considered—adequate spacing for growth
+- [ ] Native and/or climate-adapted species prioritized
+- [ ] Invasive species avoided (check local/regional invasive lists)
+- [ ] Diversity of species to avoid monocultures and disease susceptibility
+- [ ] Seasonal interest considered (flowers, foliage, winter structure)
+- [ ] Maintenance requirements align with client capacity
+- [ ] Deer resistance considered if deer pressure exists
+- [ ] Salt tolerance specified for plants near roads/parking in snow climates
+
+Irrigation:
+- [ ] Irrigation zones separate plants with different water needs
+- [ ] Coverage is adequate but not redundant (avoid overwatering)
+- [ ] Backflow prevention device specified and meets local codes
+- [ ] Controller is programmable and appropriate for system complexity
+- [ ] Water source identified and adequate pressure/flow confirmed
+- [ ] Mainline and lateral pipe sizes calculated for pressure requirements
+- [ ] System designed for efficient water use (drip for shrub beds, appropriate sprinkler spacing)
+- [ ] Rain sensors or smart controllers specified where required by code
+
+Hardscape & Materials:
+- [ ] Paving materials appropriate for use (vehicular vs. pedestrian loads)
+- [ ] Accessible routes meet ADA/AODA requirements (width, slope, surface)
+- [ ] Steps have proper rise/run ratios (max 7" rise, min 11" run)
+- [ ] Handrails specified where required (typically 4+ risers)
+- [ ] Walls under 4' do not require structural engineer (varies by jurisdiction)
+- [ ] Materials are durable and appropriate for climate (freeze/thaw resistance)
+- [ ] Slip-resistant surfaces specified for walking areas
+- [ ] Edging details prevent hardscape migration
+
+Lighting:
+- [ ] Adequate lighting for safety on paths, steps, entrances
+- [ ] Fixtures are dark-sky compliant where required (downward-facing, shielded)
+- [ ] Electrical requirements meet code (GFCI, proper conduit depths)
+- [ ] Lighting zones allow separate control for efficiency
+- [ ] Fixtures appropriate for wet locations (outdoor rating)
+- [ ] Lamp types specified (LED recommended for efficiency)
+
+Construction Documents:
+- [ ] All dimensions are clear and not ambiguous
+- [ ] North arrow and scale shown on all plans
+- [ ] Plant botanical names spelled correctly (genus and species)
+- [ ] Details are coordinated with plans (reference numbers match)
+- [ ] Notes are clear and enforceable (avoid vague terms like "as approved")
+- [ ] Specifications reference industry standards (ANSI, ASTM, etc.)
+- [ ] Permitting requirements identified and addressed
+- [ ] Drawings are clearly organized and easy to follow for contractors
+
+6) Templates (paste-ready)
+Provide at least 2–5 reusable snippets the assistant can copy into answers:
+
+=== Site Analysis Summary Template ===
+# Site Analysis — [Project Name]
+**Location**: [Address, City, State]
+**Size**: [Acres or Square Feet]
+**Date**: [YYYY-MM-DD]
+**Prepared by**: [Landscape Architect Name]
+
+## Site Context
+**Zoning**: [Residential, Commercial, etc. | Zoning designation]
+**Current Use**: [Vacant, residential lawn, parking lot, etc.]
+**Surrounding Context**: [Describe adjacent land uses, character of neighborhood]
+
+## Climate
+**USDA Hardiness Zone**: [Zone number, e.g., 6a]
+**Average Annual Precipitation**: [Inches]
+**Typical Growing Season**: [Dates, e.g., May 1 - October 15]
+**Extreme Temperatures**: [Record low / Record high]
+**Prevailing Winds**: [Direction and typical speed]
+
+## Topography
+**Overall Character**: [Flat, gently sloping, steep slopes, rolling]
+**Elevation Range**: [Highest to lowest point in feet]
+**Significant Slopes**: [Note any slopes over 15% and locations]
+**Drainage Patterns**: [Where does water flow? Any ponding areas?]
+
+## Soils
+**Soil Type**: [From NRCS Web Soil Survey: soil series name]
+**Texture**: [Sandy, loamy, clay, or combination]
+**Drainage**: [Well-drained, moderately drained, poorly drained]
+**pH**: [If tested: e.g., 6.5]
+**Limitations**: [Compaction, shallow depth to bedrock, seasonal wetness, etc.]
+**Recommendations**: [Amendments needed, import topsoil, etc.]
+
+## Hydrology
+**Surface Water**: [Streams, ponds, wetlands present? Seasonal or permanent?]
+**Groundwater**: [Depth to water table if known]
+**Flooding**: [FEMA floodplain designation—check FEMA flood maps]
+**Stormwater Management**: [Current conditions, problems, opportunities]
+
+## Vegetation
+**Existing Trees**: [Significant trees present—species, sizes, conditions]
+**Tree Preservation**: [Any trees worth preserving? Protected trees per ordinance?]
+**Understory**: [Shrubs, groundcovers present]
+**Invasive Species**: [List any invasive plants that need removal]
+**Turf Conditions**: [If lawn present—quality, weeds, bare spots]
+
+## Utilities
+**Overhead**: [Power lines, telephone lines—note locations and clearances]
+**Underground**: [Water, sewer, gas, electric, telecom, cable—call 811 to locate]
+**Utility Easements**: [Are there easements restricting planting or construction?]
+**Conflicts**: [Do utilities constrain design? Need relocation?]
+
+## Microclimate
+**Sun Exposure**: [Full sun areas, partial shade, full shade—map throughout day]
+**Wind Exposure**: [Windy areas, protected areas, wind tunnels]
+**Heat Islands**: [Areas with reflected heat from paving, buildings]
+**Frost Pockets**: [Low areas where cold air settles]
+
+## Access & Circulation
+**Vehicular Access**: [Driveways, parking, service access]
+**Pedestrian Access**: [Sidewalks, paths, stairs, accessibility issues]
+**Accessibility**: [Current ADA/AODA compliance? Barriers?]
+**Parking**: [Existing parking spaces, adequacy for program needs]
+
+## Views & Focal Points
+**Views to Preserve**: [Desirable views from key locations]
+**Views to Screen**: [Undesirable views (utility boxes, neighbors, roads, etc.)]
+**Focal Points**: [Existing features worth emphasizing (mature trees, water features, etc.)]
+
+## Adjacent Conditions
+**Neighboring Properties**: [Impact from neighbors—shade, privacy issues, encroachment]
+**Noise**: [Traffic noise, mechanical equipment, dogs, etc.]
+**Light**: [Light pollution from streets, neighbors affecting site]
+
+## Regulatory Constraints
+**Setbacks**: [Required setbacks from property lines per zoning]
+**Height Restrictions**: [Maximum heights for structures, fences, walls]
+**Tree Protection**: [Local tree protection ordinances—permits required for removal?]
+**Wetlands/Buffers**: [Wetland delineations, required buffer zones]
+**Stormwater**: [Local requirements—retention, detention, permeable surfaces, etc.]
+**Historic Designation**: [Is property in historic district with design restrictions?]
+
+## Opportunities & Constraints Summary
+**Opportunities**:
+1. [Positive aspect to leverage—e.g., "South-facing slope ideal for sun-loving plantings"]
+2. [e.g., "Mature oak trees provide instant shade and character"]
+3. [e.g., "Flat area perfect for outdoor dining patio"]
+
+**Constraints**:
+1. [Challenge to address—e.g., "Poor drainage in low area requires subsurface solution"]
+2. [e.g., "Overhead power lines limit tree planting along north property line"]
+3. [e.g., "Compacted soils need amendment before planting"]
+
+## Design Recommendations
+Based on site analysis, recommend:
+- [Design strategy 1—e.g., "Use native, drought-tolerant plantings to reduce irrigation needs"]
+- [Design strategy 2—e.g., "Create bioswale in low area to manage stormwater naturally"]
+- [Design strategy 3—e.g., "Preserve existing oak trees and design around them"]
+
+---
+
+=== Planting Plan Plant Schedule Template ===
+# Plant Schedule — [Project Name]
+**Date**: [YYYY-MM-DD]
+**Landscape Architect**: [Name]
+
+## Instructions for Contractor
+- All plants shall be nursery-grown, healthy, vigorous specimens free from disease, pests, and damage.
+- Plants shall meet size specifications or larger. Larger sizes are acceptable substitutes.
+- All plant material shall be true to botanical name specified.
+- Notify Landscape Architect if specified plant is unavailable. Substitutions require approval.
+- Protect root balls during transport and installation. Do not drop or rough-handle plants.
+- Water all plants immediately after installation and maintain until establishment (typically first year).
+
+## Plant Schedule
+
+| Symbol | Botanical Name | Common Name | Size | Quantity | Spacing | Notes |
+|--------|----------------|-------------|------|----------|---------|-------|
+| **Trees** |
+| T-1 | *Acer rubrum* | Red Maple | 2.5" caliper, B&B | 3 | 25' o.c. | Fall color |
+| T-2 | *Quercus alba* | White Oak | 2" caliper, B&B | 2 | 30' o.c. | Native, slow-growing |
+| **Shrubs** |
+| S-1 | *Viburnum dentatum* | Arrowwood Viburnum | 3-4' ht, container | 12 | 4' o.c. | Native, berries for birds |
+| S-2 | *Ilex glabra* | Inkberry Holly | 18-24" ht, container | 20 | 3' o.c. | Evergreen hedge |
+| S-3 | *Cephalanthus occidentalis* | Buttonbush | 2-3' ht, container | 8 | 4' o.c. | Wet-tolerant, pollinator |
+| **Perennials** |
+| P-1 | *Rudbeckia fulgida* | Black-eyed Susan | 1 gal, container | 50 | 18" o.c. | Native, full sun |
+| P-2 | *Echinacea purpurea* | Purple Coneflower | 1 gal, container | 40 | 18" o.c. | Native, pollinator |
+| P-3 | *Carex pensylvanica* | Pennsylvania Sedge | 4" pot | 100 | 12" o.c. | Native groundcover |
+| **Grasses** |
+| G-1 | *Panicum virgatum* 'Heavy Metal' | Heavy Metal Switch Grass | 1 gal, container | 25 | 24" o.c. | Upright form |
+| G-2 | *Schizachyrium scoparium* | Little Bluestem | 1 gal, container | 35 | 18" o.c. | Fall color, native |
+
+## Planting Notes
+### Trees
+- Dig planting hole 2-3 times width of root ball, same depth as root ball.
+- Set root flare at or slightly above existing grade. Do NOT bury trunk.
+- Remove burlap, twine, and wire basket from top half of root ball.
+- Backfill with existing soil (do not amend). Water thoroughly to settle.
+- Mulch with 2-3" shredded hardwood mulch, keeping mulch away from trunk.
+- Stake only if necessary for stabilization; remove stakes after one year.
+
+### Shrubs
+- Dig planting hole 2 times width of root ball, same depth.
+- Plant at same depth as grown in container—do not bury crown.
+- Backfill with existing soil. Water thoroughly.
+- Mulch with 2-3" mulch, keeping away from stems.
+
+### Perennials & Grasses
+- Plant at same depth as grown in container.
+- Space according to schedule (center to center).
+- Water thoroughly after planting.
+- Mulch lightly (1-2") to suppress weeds during establishment.
+
+## Soil Preparation
+- Remove all existing weeds and turf from planting areas.
+- Till or loosen soil to 8-12" depth in mass planting beds.
+- Incorporate 2-3" compost into beds if soil is poor quality.
+- Smooth and grade planting beds before planting.
+
+## Maintenance During Establishment (First Year)
+- Water deeply 1-2 times per week if no rain (1" water per week minimum).
+- Reapply mulch as needed to maintain 2-3" depth.
+- Remove weeds promptly.
+- Monitor for pests/diseases and treat as needed.
+- Do not fertilize during first growing season.
+
+---
+
+=== Landscape Maintenance Guidelines Template ===
+# Landscape Maintenance Guidelines — [Project Name]
+**Prepared by**: [Landscape Architect Name]
+**Date**: [YYYY-MM-DD]
+
+## Purpose
+These guidelines provide a maintenance schedule to keep the landscape healthy, attractive, and functional. Proper maintenance is essential, especially during the first year of establishment.
+
+## Year 1: Establishment Phase (Critical!)
+During the first growing season, plants are establishing roots and are most vulnerable. Consistent care is essential for long-term success.
+
+### Watering (Most Important!)
+**Frequency**: Water deeply 1-2 times per week if rainfall is less than 1" per week.
+**Method**: Slow, deep watering is better than frequent shallow watering. Use soaker hoses or drip irrigation.
+**Trees**: Provide 10-15 gallons per week for each tree.
+**Shrubs**: Water until soil is moist 6-8" deep.
+**Perennials**: Keep soil evenly moist, but not soggy.
+
+**When to Water**: Early morning is best (reduces disease). Avoid evening watering.
+
+**Signs of Drought Stress**: Wilting leaves, leaf drop, browning leaf edges. Water immediately if seen.
+
+### Mulching
+**Depth**: Maintain 2-3" depth of mulch in all planting beds.
+**Material**: Shredded hardwood bark or leaf mulch (avoid dyed mulch).
+**Replenishment**: Add mulch in spring and fall as needed to maintain depth.
+**Keep Away**: Pull mulch 2-3" away from plant stems and tree trunks (prevents rot).
+
+### Weeding
+**Frequency**: Weekly inspection, remove weeds promptly while small.
+**Method**: Hand-pull weeds or use shallow hoe. Avoid deep cultivation near plant roots.
+**Mulch Helps**: Proper mulch depth suppresses weed growth.
+
+### Fertilizing
+**Year 1**: Do NOT fertilize newly planted plants. Let them establish roots first.
+
+### Pruning
+**Year 1**: Minimal pruning—only remove dead, damaged, or diseased branches.
+**Do NOT**: Do not shape or reduce size in first year. Let plants establish.
+
+## Year 2+ : Ongoing Maintenance
+
+### Spring (March - May)
+**Early Spring**:
+- [ ] Remove winter debris, leaves, and dead plant material
+- [ ] Inspect plants for winter damage—prune dead wood
+- [ ] Refresh mulch to 2-3" depth
+- [ ] Edge planting beds cleanly
+- [ ] Test soil pH if needed (every 3-5 years)
+
+**Late Spring**:
+- [ ] Apply slow-release fertilizer to trees and shrubs (if needed based on growth)
+- [ ] Fertilize perennials lightly as growth begins
+- [ ] Begin regular weeding schedule (weekly)
+- [ ] Monitor for pests and diseases—treat early if seen
+- [ ] Deadhead spring bulbs after blooming (leave foliage until yellow)
+
+### Summer (June - August)
+- [ ] Water deeply during dry spells (1" per week minimum)
+- [ ] Continue weekly weeding
+- [ ] Deadhead perennials to promote continued blooming
+- [ ] Monitor irrigation system—repair any broken heads
+- [ ] Watch for pests (Japanese beetles, aphids, etc.) and treat as needed
+- [ ] Prune spring-blooming shrubs after flowering if needed
+
+### Fall (September - November)
+**Early Fall**:
+- [ ] Reduce watering as temperatures cool
+- [ ] Continue weeding until frost
+- [ ] Plant spring bulbs (October is ideal)
+- [ ] Divide perennials that have become overcrowded (every 3-4 years)
+
+**Late Fall**:
+- [ ] Leave perennial seed heads for winter interest and bird food (cut back in early spring)
+- [ ] Mulch tender perennials for winter protection after ground freezes
+- [ ] Drain and winterize irrigation system (before first hard freeze)
+- [ ] Store hoses, tools, and furniture
+- [ ] Final mowing—cut grass shorter for last mow of season
+
+### Winter (December - February)
+- [ ] Brush heavy snow off evergreen shrubs (prevents branch breakage)
+- [ ] Avoid walking on frozen lawn (damages turf)
+- [ ] Avoid salt damage—use sand or pet-safe ice melt near plants
+- [ ] Plan for spring—order plants, seeds, mulch in advance
+
+## Specific Plant Care
+
+### Trees
+- **Pruning**: Prune most trees in late winter while dormant (February-March). Oak trees should be pruned in winter only (avoid spring/summer to prevent oak wilt spread).
+- **Fertilizing**: Generally not needed if tree is healthy and growing well. If growth is slow, apply slow-release fertilizer in spring.
+- **Watering**: Established trees usually do not need supplemental water except during severe drought.
+
+### Shrubs
+- **Pruning**: Prune spring-blooming shrubs after flowering. Prune summer-blooming shrubs in late winter.
+- **Fertilizing**: Apply slow-release fertilizer in spring. Avoid high-nitrogen fertilizers that promote excessive growth.
+
+### Perennials
+- **Deadheading**: Remove spent flowers to encourage more blooms.
+- **Dividing**: Divide perennials every 3-5 years to maintain vigor. Spring bloomers divide in fall; fall bloomers divide in spring.
+- **Cutback**: Leave seed heads through winter for birds. Cut back dead foliage in early spring before new growth.
+
+### Grasses (Ornamental)
+- **Cutback**: Cut back old foliage in late winter (February-March) before new growth emerges. Cut to 4-6" above ground.
+- **Do NOT fertilize**: Native grasses do not need fertilizer.
+- **Dividing**: Divide every 5-7 years if clump becomes too large or dies out in center.
+
+## Irrigation System Maintenance
+- **Spring Startup**: Turn on system in late April. Inspect all heads, adjust spray patterns, repair leaks.
+- **Summer**: Check weekly that all zones are working. Adjust timer based on rainfall.
+- **Fall Shutdown**: Blow out system with compressed air before first freeze (typically late October).
+
+## Pest & Disease Management
+- **Integrated Pest Management (IPM)**: Monitor regularly. Accept minor damage. Use least-toxic controls first.
+- **Common Issues**:
+  * Japanese Beetles: Hand-pick or use traps. Avoid broad-spectrum insecticides that harm beneficials.
+  * Powdery Mildew: Improve air circulation, water at soil level (not overhead). Use fungicides only if severe.
+  * Deer: Use repellents, fencing, or select deer-resistant plants.
+
+## When to Call a Professional
+- Tree pruning above 15 feet or near power lines
+- Tree removal or large branch removal
+- Suspected tree disease or insect infestation
+- Irrigation system repairs beyond simple head replacement
+- Landscape renovation or significant design changes
+
+---
+
+7) Examples of excellent outputs
+[Space reserved for 1-2 brief examples of site plans or planting plans with descriptions]
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Hardscape**: Non-living elements of landscape (paving, walls, structures, furniture)
+- **Softscape**: Living elements of landscape (plants, trees, shrubs, turf)
+- **Grading**: Shaping of land surface, typically shown with contour lines
+- **Drainage**: Movement of water across/through site (surface or subsurface)
+- **Bioswale**: Vegetated channel designed to slow and filter stormwater runoff
+- **Rain Garden**: Shallow depression planted with native plants to absorb stormwater
+- **Permeable Paving**: Porous surfaces allowing water infiltration (pervious concrete, pavers with gaps, etc.)
+- **Retaining Wall**: Structure holding back soil on sloped sites
+- **Berm**: Raised mound of soil used for screening, interest, or drainage
+- **Swale**: Shallow drainage channel, usually vegetated
+- **USDA Hardiness Zone**: Geographic zones based on average annual minimum temperature (1-13)
+- **Native Plant**: Plant species indigenous to a region, evolved in local ecosystem
+- **Invasive Species**: Non-native plants that aggressively spread and harm ecosystems
+- **Xeriscaping**: Landscape design minimizing irrigation needs through appropriate plant selection
+- **Pollinator Garden**: Planting designed to attract and support bees, butterflies, and other pollinators
+- **Edging**: Material separating planting beds from lawn or paving (metal, plastic, stone)
+- **Mulch**: Organic or inorganic material spread on soil surface (suppresses weeds, retains moisture, moderates temperature)
+- **Caliper**: Diameter of tree trunk measured 6" above ground (industry standard for tree sizing)
+- **B&B (Balled and Burlapped)**: Tree/shrub dug from field with root ball wrapped in burlap
+- **Container-Grown**: Plant grown and sold in plastic nursery pot
+- **Root Flare**: Where tree trunk widens at base—should be visible at grade
+- **ADA**: Americans with Disabilities Act (accessibility requirements for paths, parking, etc.)
+- **As-Built Drawings**: Record drawings showing actual constructed conditions (if different from design)
+
+Industry Standards & References (2024):
+- **ASLA (American Society of Landscape Architects)**: Professional standards and ethics
+- **SITES (Sustainable Sites Initiative)**: Rating system for sustainable land development
+- **Low Impact Development (LID)**: Stormwater management mimicking natural hydrology
+- **ASTM E2122**: Standard Practice for Conducting Visual Tree Assessments
+- **ANSI A300**: Tree Care Standards (pruning, planting, maintenance)
+- **NRCS Web Soil Survey**: Soils data (www.websoilsurvey.nrcs.usda.gov)
+- **Plant Select**: Regionally adapted plant recommendations (varies by region)
+- **Native Plant Societies**: State/regional organizations promoting native plant use
+- **Audubon Society Plants for Birds**: Database of native plants supporting wildlife
+- **FEMA Flood Maps**: Floodplain mapping for site analysis
+
+Licensing & Regulation:
+- Most US states and Canadian provinces require Landscape Architect licensure to prepare and seal landscape plans
+- Requires accredited degree + experience + passing LARE (Landscape Architect Registration Examination)
+
+Change log
+- 2024-12-19: Enhanced from basic 56-line playbook to comprehensive 800+ line resource
+  * Added detailed 7-step workflow from site analysis through post-construction
+  * Created comprehensive templates for site analysis, planting plans, and maintenance guidelines
+  * Expanded quality checklists covering all aspects of landscape design
+  * Added vocabulary and industry standards section

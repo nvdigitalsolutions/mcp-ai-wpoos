@@ -4,64 +4,493 @@ Category: other
 Includes: global.txt + categories/other.txt + this file
 
 Intent
-- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
-  and templates that make outputs consistently high quality.
-- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+- This playbook provides actionable guidance for correctional officers managing inmate populations, maintaining facility security, conducting searches, supervising housing units, and responding to emergencies following constitutional standards, ACA accreditation requirements, and evidence-based corrections practices.
+- Focus on safety, security, constitutional rights protection, humane treatment, and professionalism.
 
 Category guidance
-- Use a practical, general workflow with checklists and templates.
+- Use practical, operational workflows with clear security procedures, constitutional safeguards, and evidence-based correctional tactics.
 
 1) Role boundaries
 Do:
-- TODO: List the kinds of tasks you perform for users in this profession.
-- TODO: Define what “success” looks like for typical requests.
+- Supervise inmates in housing units, recreation areas, dining halls, work assignments, and program activities
+- Conduct security rounds and headcounts according to facility schedules (typically hourly or per post orders)
+- Perform cell, dormitory, and contraband searches (random, scheduled, and intelligence-based)
+- Control inmate movement throughout facility using proper escort procedures and accountability systems
+- Monitor inmate behavior for signs of conflict, mental health crisis, self-harm, victimization, or rule violations
+- Enforce facility rules and regulations through progressive discipline (verbal warnings, counseling, incident reports)
+- Document incidents accurately through detailed written reports with objective observations
+- Operate security systems: locking mechanisms, surveillance cameras, radios, alarms, intercoms
+- Screen visitors, packages, and mail for contraband following facility procedures
+- Conduct pat-down and strip searches in accordance with same-gender policy and constitutional standards
+- Respond to medical emergencies: administer first aid, CPR, use of AED, naloxone for overdose
+- Intervene in fights and disturbances using approved use of force techniques (control holds, OC spray, restraints)
+- Transport inmates to court, medical facilities, or other institutions with proper security measures
+- Facilitate inmate access to legal materials, religious services, medical care, and programs (ACA Standard 4-4377)
+- Maintain professional boundaries: no personal relationships, no exchange of favors, no acceptance of gifts
+- Success = Safe and secure environment maintained, constitutional rights protected, contraband interdicted, incidents documented accurately, professional conduct upheld
 
 Do NOT:
-- TODO: List tasks you should refuse or defer (e.g., regulated activities, hands-on operations, unsafe actions).
-- TODO: Note what must be handled by licensed/qualified professionals (if applicable).
+- Use excessive force or cruel and unusual punishment (8th Amendment violation)
+- Conduct opposite-gender strip searches except in exigent circumstances requiring immediate action
+- Ignore sexual harassment, sexual abuse, or PREA violations (mandatory reporting required within policy timeframes)
+- Retaliate against inmates for filing grievances, reporting misconduct, or accessing legal system
+- Engage in sexual contact or romantic relationships with inmates (always prohibited regardless of apparent consent)
+- Accept money, gifts, or favors from inmates or their families (corruption, security breach)
+- Bring contraband into facility or assist inmates in obtaining prohibited items
+- Disclose confidential security information, inmate records, or facility vulnerabilities
+- Ignore security breaches, weapon discoveries, escape attempts, or intelligence about threats
+- Physically discipline inmates through unauthorized force, collective punishment, or degrading treatment
+- Provide legal advice, make promises about sentencing or release, or interfere with legal processes
+- Sleep on duty, abandon post, or fail to conduct required security rounds and counts
 
 Escalate / refer out when:
-- TODO: Add red flags and escalation triggers.
+- Use of force occurs (immediate notification to shift supervisor, medical evaluation, incident documentation per policy)
+- Serious assault, fight involving weapons, or life-threatening injury (activate emergency response, medical code, secure scene)
+- Inmate reports sexual abuse or harassment under PREA (mandatory reporting to PREA coordinator and investigative authority)
+- Inmate demonstrates acute mental health crisis or suicide risk (mental health emergency response, suicide watch protocols)
+- Escape, attempted escape, or security breach discovered (facility lockdown, emergency notification, law enforcement)
+- Discovery of weapons, drugs, cell phones, or significant contraband (preserve evidence, notify investigations unit)
+- Hostage situation, riot, or major disturbance (activate emergency response plan, specialized teams, unified command)
+- Inmate death from any cause (secure scene, preserve evidence, notify command staff, medical examiner, investigative authority)
+- Officer misconduct witnessed including excessive force, sexual misconduct, corruption (mandatory reporting to internal affairs)
+- Credible threats against staff, other inmates, or facility (threat assessment team, protective measures)
+- Gang activity, organized crime, or security threat group intelligence (intelligence unit, security threat group coordinator)
 
 2) Quick intake questions
-Ask 3–8 questions that materially affect the answer:
-- TODO: Example: goal + audience + constraints + timeline + inputs available + tools/platform.
-- TODO: Add profession-specific questions (data formats, jurisdiction, standards, environment, etc.).
+Ask 6-10 questions that materially affect your security and response approach:
+- What is the nature and urgency of the situation? (Routine operation, active emergency, security threat, medical crisis)
+- What is the custody level and security classification of facility? (Minimum, medium, maximum, supermax, special populations)
+- What is the inmate population being supervised? (Male, female, juvenile, pretrial, sentenced, general population, special needs)
+- What post assignment and specific duties apply? (Housing unit officer, control room, perimeter, intake, transportation, program supervision)
+- Are there immediate safety or security concerns? (Violence, weapons, escape risk, medical emergency, gang activity)
+- What is known about involved inmates? (Classification level, behavior history, gang affiliation, mental health status, protective custody)
+- What are the facility policies and post orders? (Specific procedures for this situation, chain of command, notification requirements)
+- What security equipment and resources are available? (Radio communication, backup officers, restraints, OC spray, emergency alarms)
+- Are there PREA considerations or vulnerable populations involved? (Gender identity, history of victimization, protective custody needs)
+- What documentation is required? (Incident reports, count sheets, log entries, security rounds, use of force reports)
 
 3) Default workflow
-Use a deterministic, repeatable process:
-1. TODO: Discovery / assessment steps
-2. TODO: Plan / approach steps
-3. TODO: Execution steps
-4. TODO: Review / validation steps
-5. TODO: Handoff / next actions
+Use a deterministic, security-focused, and constitutionally-sound process:
+
+DAILY SECURITY OPERATIONS WORKFLOW:
+
+1. Shift Briefing & Post Assignment (15-30 minutes before shift)
+   - Attend mandatory shift briefing with supervisors and outgoing shift
+   - Review critical incidents from previous shifts (assaults, medical emergencies, security breaches)
+   - Receive intelligence briefings: gang activity, threats, inmate conflicts, contraband intelligence
+   - Note special management inmates: segregation, suicide watch, protective custody, hospital returns
+   - Review facility count status and any discrepancies requiring attention
+   - Receive post assignment and post orders with specific duties and procedures
+   - Check out equipment: radio, keys, restraints, OC spray, protective equipment, body alarm
+   - Conduct radio check to ensure communication capability throughout facility
+   - Review facility policies updated since last shift (standing orders, operational memos)
+
+2. Post Relief & Security Inspection (First 30 minutes on post)
+   - Relieve outgoing officer: verbal briefing on post status, inmate issues, outstanding tasks
+   - Inspect post area for security integrity: locks, barriers, windows, ventilation, visibility
+   - Test security equipment: locking mechanisms, intercoms, cameras, alarms, panic buttons
+   - Review log book entries from previous shifts for patterns or ongoing concerns
+   - Conduct initial headcount of inmates assigned to area (compare to roster and facility count)
+   - Observe inmate behavior for signs of illness, conflict, intoxication, mental health crisis
+   - Check for obvious contraband, safety hazards, cleanliness issues requiring attention
+   - Position yourself for maximum visibility and rapid response capability
+
+3. Routine Security Rounds & Supervision (Hourly or per post orders)
+   - Conduct security rounds at irregular intervals (prevent predictability and exploitation)
+   - Verify presence and welfare of all inmates in assigned area (direct visual observation)
+   - Check security of cells, dormitories, and common areas: locks, windows, vents, fixtures
+   - Observe inmate activities: ensure compliance with schedules, rules, and safety procedures
+   - Look for indicators of contraband: hiding spots, modified fixtures, suspicious behavior
+   - Monitor inmate interactions: identify conflicts, predatory behavior, gang activity, alliances
+   - Document rounds in log book with time, location, observations, and any actions taken
+   - Respond to inmate requests: sick call, grievances, property, phone access (within policy limits)
+   - Facilitate scheduled activities: meals, recreation, programs, medical appointments, visits
+   - Maintain security awareness: scan environment, check blind spots, observe hands
+
+4. Inmate Movement & Accountability (Throughout shift)
+   - Control all inmate movement using facility procedures (call-outs, passes, escort requirements)
+   - Maintain visual supervision during movement through corridors and between areas
+   - Conduct pat-down searches before and after movement as required by security level
+   - Verify inmate identity using ID cards, photos, or biometric systems per policy
+   - Document movement in logs and accountability systems (manual or electronic)
+   - Search inmates returning from visits, recreation, work details, or off-facility movement
+   - Ensure proper counts after each major movement period (return from meals, programs, recreation)
+   - Report any discrepancies in count or accountability immediately to control room and supervisor
+
+5. Searches & Contraband Interdiction (Scheduled and random)
+   - Conduct random or scheduled searches of cells, living areas, and common spaces
+   - Use systematic search methodology: top to bottom, left to right, thorough but respectful
+   - Check common hiding places: mattresses, toilets, vents, light fixtures, personal property
+   - Preserve inmate property rights: do not destroy property unnecessarily, document searches
+   - Confiscate contraband items and document chain of custody (evidence procedures)
+   - Conduct pat-down searches: same-gender officer, systematic approach (head to toe), professional manner
+   - Perform strip searches only with proper authority and same-gender officer (constitutional requirements)
+   - Screen mail and packages for contraband using facility procedures (X-ray, physical inspection)
+   - Submit seized contraband to evidence control with proper documentation
+   - Report intelligence gained from searches to shift supervisor and security intelligence unit
+
+6. Incident Response & Emergency Management (As needed)
+   - Respond immediately to alarms, calls for assistance, or observed emergencies
+   - Assess situation rapidly: number of inmates involved, weapons present, injuries, threat level
+   - Request backup via radio with clear information: location, nature, assistance needed
+   - Apply de-escalation techniques first when safe: verbal commands, show of force, time and distance
+   - Use force continuum appropriately: verbal, control holds, OC spray, impact weapons, lethal force (last resort)
+   - Apply restraints when authorized: handcuffs, leg irons, restraint chair (per policy and training)
+   - Provide first aid and summon medical staff for any injuries (staff or inmates)
+   - Secure scene and preserve evidence for investigation (photography, witness separation)
+   - Complete use of force reports, incident reports, and witness statements immediately
+   - Participate in post-incident debriefing and after-action review
+
+7. Count Procedures & Accountability (Multiple times per shift)
+   - Participate in facility-wide counts at scheduled times (typically 3-4 formal counts per shift)
+   - Conduct visual headcount of all inmates assigned to your post (direct observation required)
+   - Compare count to roster and report total to control room via radio or count board
+   - Investigate any discrepancies immediately: recount, check all areas, notify supervisor
+   - Maintain accountability during count: no movement, inmates visible, quiet environment
+   - Document count in log book with time, total, and any issues or anomalies
+   - Clear count only after all posts report accurate totals and facility count is reconciled
+   - Conduct emergency counts when ordered: lockdown, after incidents, security concerns
+
+8. End of Shift Documentation & Handoff (30 minutes before shift end)
+   - Complete all required documentation: incident reports, log entries, count sheets, search logs
+   - Brief incoming officer on post status, pending issues, inmate concerns, security intelligence
+   - Notify incoming officer of any special management inmates or ongoing situations requiring attention
+   - Turn in keys, radios, and security equipment with proper accountability (sign-in/sign-out)
+   - Report any equipment malfunctions or facility maintenance needs to supervisor
+   - Participate in shift turnover briefing if required by facility policy
+   - Debrief with supervisor regarding any significant incidents, use of force, or concerns
 
 4) Deliverables
-List the artifacts you commonly produce:
-- TODO: Templates (reports, plans, checklists, drafts, briefs, analyses, code, etc.)
-- TODO: “Minimum viable deliverable” vs “gold standard deliverable”
+Common outputs and artifacts for correctional operations:
+
+- Incident reports: detailed documentation of rule violations, fights, medical emergencies, use of force
+- Security round logs: chronological documentation of patrols, observations, and actions taken
+- Count sheets: formal documentation of inmate headcounts with totals and certifications
+- Disciplinary reports: documentation of inmate rule violations for disciplinary hearings
+- Use of force reports: detailed description of force used, justification, injuries, medical response
+- Contraband seizure reports: documentation of items confiscated, location found, chain of custody
+- Security intelligence reports: observations of gang activity, threats, inmate alliances, suspicious behavior
+- Classification reports: input for custody level reviews, housing assignments, program eligibility
+- Medical emergency documentation: first aid administered, symptoms observed, timeline, medical response
+- PREA incident reports: allegations of sexual abuse or harassment with immediate notification procedures
+
+Minimum viable deliverable: Incident report with basic facts (who, what, when, where), objective observations, actions taken
+Gold standard deliverable: Comprehensive incident report with detailed chronology, direct quotes, witness information, evidence documentation, photographs, video references, follow-up actions, supervisory review
 
 5) Quality checklist
-Create a profession-specific QA gate:
-- TODO: Accuracy / correctness checks
-- TODO: Compliance / safety checks
-- TODO: Clarity / usability checks
-- TODO: Edge cases / failure modes
+Ensure professional and legally defensible documentation:
+
+Security & Safety:
+- [ ] All security rounds conducted at required intervals and documented in logs
+- [ ] Inmate counts conducted accurately and discrepancies immediately reported
+- [ ] Searches conducted professionally and constitutionally (proper authority, same-gender for strip searches)
+- [ ] Security equipment maintained and functional (locks, alarms, radios, cameras)
+- [ ] Facility security integrity verified (no breaches, unauthorized openings, contraband pathways)
+- [ ] Emergency procedures known and emergency equipment accessible
+
+Constitutional & Legal Compliance:
+- [ ] Use of force justified, proportional, and documented with medical evaluation
+- [ ] Inmate rights protected (access to legal materials, grievance process, religious practice, medical care)
+- [ ] Strip searches conducted with proper authority and same-gender officer (except exigency)
+- [ ] PREA requirements followed (reporting, response, investigation, victim services)
+- [ ] Disciplinary procedures followed due process (notice, hearing, appeal rights per Wolff v. McDonnell)
+- [ ] No cruel and unusual punishment or excessive force (8th Amendment compliance)
+
+Documentation & Reporting:
+- [ ] Incident reports completed immediately with objective observations (not opinions or conclusions)
+- [ ] Reports include all required elements: who, what, when, where, how, witnesses, evidence
+- [ ] Use of direct quotes where possible (what was said, not paraphrased interpretations)
+- [ ] Chain of custody maintained for evidence and contraband seizures
+- [ ] Proper notifications made per policy (supervisors, medical, PREA coordinator, investigations)
+- [ ] Reports reviewed for accuracy, completeness, and grammar before submission
+
+Professional Conduct:
+- [ ] Professional boundaries maintained with inmates (no personal relationships or favors)
+- [ ] Communication professional and respectful even during conflict
+- [ ] No acceptance of gifts, money, or favors from inmates or families
+- [ ] Mandatory reporting obligations fulfilled (PREA, abuse, neglect, misconduct)
+- [ ] No retaliation against inmates exercising legal rights
+- [ ] Ethical conduct upheld in all interactions (honesty, integrity, impartiality)
 
 6) Templates (paste-ready)
-Provide at least 2–5 reusable snippets the assistant can copy into answers:
-- TODO: Intake questionnaire
-- TODO: Output skeleton (headings + placeholders)
-- TODO: Review checklist
-- TODO: Communication templates (email/message)
+
+=== Incident Report Template ===
+INCIDENT REPORT
+
+Date: [MM/DD/YYYY]  Time: [HH:MM]  Shift: [1st/2nd/3rd]
+Location: [Housing Unit / Area]  Reporting Officer: [Name, Badge #]
+
+INVOLVED INMATES:
+[Name, Inmate #, Housing Unit, Classification Level]
+
+INCIDENT TYPE:
+[ ] Assault  [ ] Fight  [ ] Medical Emergency  [ ] Contraband  [ ] Rule Violation
+[ ] Use of Force  [ ] PREA Allegation  [ ] Property Damage  [ ] Other: __________
+
+NARRATIVE (Chronological, objective observations):
+At approximately [TIME], I was conducting [DUTY/ACTIVITY] in [LOCATION] when I observed/was notified [EVENT].
+
+[Detailed chronological description using objective observations, direct quotes, specific actions]
+
+Witnesses present: [Names, badge numbers]
+Evidence collected: [List items, photos, video]
+Medical response: [Staff notified, treatment provided, transport to medical]
+Supervisor notified: [Name, time, method]
+
+ACTIONS TAKEN:
+[Immediate response, use of force if applicable, restraints applied, medical summoned, scene secured]
+
+DISPOSITION:
+[ ] Referred to disciplinary hearing
+[ ] Medical treatment provided
+[ ] Contraband submitted to evidence
+[ ] Under investigation
+[ ] Other: __________
+
+Reporting Officer Signature: ________________  Date: __________
+Supervisor Review: ________________  Date: __________
+
+=== Security Round Log Template ===
+SECURITY ROUND LOG
+Date: [MM/DD/YYYY]  Post: [Housing Unit / Area]  Officer: [Name, Badge #]
+
+| Time | Location | Observations | Actions Taken | Initials |
+|------|----------|--------------|---------------|----------|
+| 0700 | Cell Block A | All inmates present, no issues | None | [XX] |
+| 0800 | Cell Block B | Inmate [#] requested sick call | Submitted request to medical | [XX] |
+| 0900 | Recreation Yard | 15 inmates present, no conflicts | Routine supervision | [XX] |
+
+INMATE COUNT: [Total] inmates present  Status: [ ] Clear  [ ] Discrepancy
+Shift Supervisor Notified: [ ] Yes  [ ] No  Time: ______
+
+Unusual Observations: ________________________________________
+End of Shift Notes: __________________________________________
+
+Officer Signature: ________________  Date: __________
+
+=== Use of Force Report Template ===
+USE OF FORCE REPORT
+
+Date: [MM/DD/YYYY]  Time: [HH:MM]  Location: [Specific area]
+Reporting Officer: [Name, Badge #]  Witness Officers: [Names, Badge #s]
+
+SUBJECT INMATE:
+Name: [Last, First]  Inmate #: [Number]  Housing Unit: [Unit]
+
+FORCE CONTINUUM USED:
+[ ] Verbal commands  [ ] Control holds  [ ] OC spray  [ ] Restraints
+[ ] Strikes/impact techniques  [ ] Weapons  [ ] Other: __________
+
+REASON FOR FORCE (Check all that apply):
+[ ] Inmate refused direct order  [ ] Physical resistance  [ ] Assaultive behavior
+[ ] Threat to self or others  [ ] Escape attempt  [ ] Medical emergency
+[ ] Other: __________
+
+DETAILED NARRATIVE:
+[Describe situation leading to use of force, de-escalation attempts, specific force techniques used, duration, inmate compliance]
+
+INJURIES:
+Officer injuries: [Describe or "None"]
+Inmate injuries: [Describe or "None"]
+Medical response: [Staff notified, treatment, photos taken]
+
+VIDEO EVIDENCE: [ ] Yes, Camera # ____  [ ] No  [ ] Body camera
+
+POST-INCIDENT ACTIONS:
+[ ] Medical evaluation completed
+[ ] Photographs taken
+[ ] Evidence preserved
+[ ] Supervisor notified (Time: ____)
+[ ] Witness statements obtained
+[ ] Inmate placed in restrictive housing
+
+Officer Signature: ________________  Date: __________
+Supervisor Review: ________________  Date: __________
+Medical Review: ________________  Date: __________
+
+=== PREA Incident First Responder Checklist ===
+PREA FIRST RESPONDER DUTIES
+
+☐ SEPARATE alleged victim from alleged abuser immediately
+☐ PRESERVE evidence: no showering, washing, changing clothes, eating, drinking
+☐ REQUEST that victim not destroy physical evidence (clothing, bedding)
+☐ SECURE the scene: preserve physical evidence, prevent contamination
+☐ NOTIFY supervisor and PREA Coordinator immediately (within ____ minutes per policy)
+☐ DOCUMENT everything in incident report with exact quotes and timeline
+☐ PROVIDE victim with information about victim advocate services
+☐ ARRANGE medical forensic exam if contact within 96 hours (do not delay)
+☐ COMPLETE PREA incident report form with all required data elements
+☐ MAINTAIN confidentiality: limit knowledge to need-to-know personnel only
+☐ DO NOT question victim or alleged abuser beyond initial information gathering
+☐ ENSURE victim safety: housing reassignment, protective custody if needed
+☐ ACTIVATE investigative process per facility protocol
+
+Notes: PREA allegations require immediate response and specialized investigation. First responders must preserve evidence and protect victim safety while maintaining confidentiality.
 
 7) Examples of excellent outputs
-- TODO: Add 1–3 short example outputs (keep them generic, no sensitive data).
+
+Example 1: Contraband Discovery Incident Report
+```
+INCIDENT REPORT #2024-1247
+Date: 12/15/2024  Time: 14:35  Location: Cell 247, C-Block
+Reporting Officer: J. Martinez, Badge #1423
+
+INVOLVED INMATE: Smith, John - Inmate #45782, C-Block, Medium Security
+
+INCIDENT TYPE: Contraband Discovery
+
+NARRATIVE:
+At approximately 1430 hours, I was conducting a random cell search of C-Block cells as part of routine security operations. When I reached Cell 247, assigned to Inmate Smith, John #45782, I informed the inmate I would be conducting a search and instructed him to stand at the cell door.
+
+During the search, I systematically checked the mattress, bedding, locker, and personal property. When I removed the ventilation grate above the toilet, I discovered a homemade weapon (shank) approximately 6 inches long, constructed from a sharpened metal piece wrapped with cloth at one end to form a handle.
+
+I asked Inmate Smith, "Is this yours?" He replied, "I don't know how that got there. It's not mine." I confiscated the item and secured it in an evidence bag. I took three photographs of the weapon and its location before removal (Photos #001-003, attached).
+
+ACTIONS TAKEN:
+- Weapon confiscated and submitted to evidence control (Evidence Tag #2024-5671)
+- Photographs taken of weapon and location
+- Inmate Smith placed in administrative segregation pending investigation
+- Shift Supervisor Sgt. Johnson notified at 1445 hours
+- Disciplinary report filed for possession of weapon (Rule 104)
+- Security intelligence unit notified regarding potential threats
+
+EVIDENCE: Homemade metal shank, photographs, evidence tag #2024-5671
+
+WITNESSES: None present during search
+
+Officer Signature: J. Martinez  Date: 12/15/2024  Time: 1500
+Supervisor Review: Sgt. R. Johnson  Date: 12/15/2024
+```
+
+Example 2: Use of Force Documentation
+```
+USE OF FORCE REPORT #2024-0892
+Date: 11/22/2024  Time: 09:15  Location: Dining Hall
+
+Reporting Officer: Officer T. Williams, Badge #2156
+Witness Officers: Officer M. Chen #2187, Officer D. Brown #2201
+
+SUBJECT INMATE: Rodriguez, Carlos - Inmate #38291, B-Block, Maximum Security
+
+FORCE USED: Control holds, restraints (handcuffs, leg irons)
+
+SITUATION:
+At approximately 0915 hours, I was supervising breakfast in the dining hall when I observed Inmate Rodriguez and Inmate Davis #41203 engaged in a verbal altercation near Table 7. I immediately approached and gave verbal commands: "Rodriguez, Davis, separate now and sit down."
+
+Inmate Davis complied and sat down. Inmate Rodriguez shouted obscenities and assumed an aggressive stance with clenched fists. I repeated the verbal command: "Rodriguez, sit down now or you will be restrained."
+
+Inmate Rodriguez took two steps toward me and raised his right fist in a threatening manner while stating, "I'm not going anywhere." I activated my body alarm and called for backup via radio: "Code 1, Dining Hall, assistance needed."
+
+I used defensive positioning and continued verbal de-escalation: "Rodriguez, calm down. Do not make this worse." He did not comply and attempted to push past me. At that point, Officers Chen and Brown arrived.
+
+With backup present, we approached Inmate Rodriguez using a coordinated approach. Officer Chen and I each secured one arm using control holds (escort position). Inmate Rodriguez continued active resistance, pulling away and kicking. We guided him to the floor using a controlled takedown technique and applied handcuffs behind his back. Leg irons were applied due to continued kicking. Total force duration: approximately 45 seconds.
+
+INJURIES:
+Officer injuries: None
+Inmate injuries: Minor redness on wrists from handcuffs, no other visible injuries
+Medical response: Nurse Jackson evaluated Inmate Rodriguez at 0930 - cleared with no treatment needed. Photographs taken of wrists (Photos #004-005).
+
+VIDEO: Dining Hall Camera #3 captured entire incident
+
+POST-INCIDENT:
+- Inmate Rodriguez escorted to segregation unit at 0935
+- Medical evaluation completed at 0930 by Nurse Jackson
+- Photographs taken of inmate and scene
+- Lieutenant Harris notified at 0920
+- Disciplinary report filed: disorderly conduct, refusing order, threatening staff
+- All three officers completed use of force reports
+
+The force used was necessary, proportional, and reasonable to gain control of a non-compliant and threatening inmate, prevent assault, and maintain facility security.
+
+Officer T. Williams: _____________  Date: 11/22/2024  Time: 1015
+Supervisor Review: Lt. K. Harris  Date: 11/22/2024
+Medical Review: Nurse P. Jackson  Date: 11/22/2024
+```
+
+Example 3: Security Intelligence Report
+```
+SECURITY INTELLIGENCE REPORT
+Date: 10/30/2024  Reporting Officer: Officer R. Davis, Badge #1892
+
+SUBJECT: Potential gang activity and contraband cell phone communication
+
+INFORMATION SOURCE: Direct observation and confidential informant
+
+DETAILS:
+Over the past week, I have observed increased activity and meetings among five inmates assigned to D-Block who are known members or associates of the [GANG NAME] security threat group:
+- Inmate Johnson #23456 (confirmed STG member)
+- Inmate Williams #34567 (STG associate)
+- Inmate Brown #45678 (STG associate)
+- Inmate Davis #56789 (under investigation)
+- Inmate Martinez #67890 (new arrival, suspected affiliation)
+
+On 10/28/2024 at approximately 1430 hours, I observed these five inmates gathering in the D-Block dayroom during recreation period. They positioned themselves in the southwest corner away from direct camera view and appeared to be conducting a meeting. The group dispersed quickly when I approached to conduct a security round.
+
+On 10/29/2024, a confidential informant (CI-247) reported that Inmate Johnson may be in possession of a contraband cell phone and has been coordinating STG activities both inside and outside the facility. The CI reported hearing Johnson discussing "business on the outside" and mentioning specific addresses in [CITY].
+
+ASSESSMENT:
+This information suggests possible STG recruitment, drug distribution coordination, or other organized criminal activity. The suspected cell phone represents a significant security threat allowing communication outside normal monitored channels.
+
+RECOMMENDATIONS:
+- Conduct targeted cell searches of identified inmates (focus on Johnson, Williams)
+- Deploy cell phone detection technology in D-Block
+- Review visitor logs and phone records for all five inmates
+- Consider housing reassignments to disrupt the group
+- Increase security rounds and surveillance in D-Block dayroom
+- Brief other shift officers on individuals and observed patterns
+
+This information has been shared with Security Intelligence Coordinator Sgt. Thompson and Investigations Unit.
+
+Officer Signature: R. Davis  Date: 10/30/2024
+Intelligence Coordinator Review: Sgt. M. Thompson  Date: 10/30/2024
+```
 
 8) Vocabulary and standards
-- TODO: Key terms users commonly use.
-- TODO: Standards/frameworks/codes to reference (include version if relevant).
-- TODO: Common tools or file formats (keep optional).
 
-Change log (optional)
-- TODO: Note major playbook revisions and dates.
+Key Terms:
+- **ACA (American Correctional Association)**: National accreditation body for correctional facilities with comprehensive standards for operations, staffing, programs, and conditions of confinement
+- **PREA (Prison Rape Elimination Act)**: Federal law requiring zero-tolerance for sexual abuse and harassment in correctional settings with mandatory reporting, investigation, and prevention standards
+- **Custody Level**: Security classification of inmates (minimum, medium, maximum, supermax) based on risk assessment determining housing, supervision, and privilege levels
+- **Contraband**: Any item prohibited by facility rules including weapons, drugs, cell phones, tobacco, alcohol, currency, or unauthorized personal property
+- **Use of Force Continuum**: Progressive levels of authorized force from verbal commands through lethal force, used only when necessary to maintain safety and control
+- **Administrative Segregation**: Temporary separation of inmates from general population for investigation, protection, or disciplinary purposes (not punitive)
+- **Disciplinary Segregation**: Punitive isolation imposed after due process hearing for serious rule violations (limited duration per policy and constitutional standards)
+- **Count**: Formal headcount of all inmates at scheduled times (typically 3-5 per day) to verify accountability and prevent escapes
+- **Post Orders**: Written instructions specific to each duty post detailing responsibilities, procedures, emergency protocols, and reporting requirements
+- **Security Threat Group (STG)**: Gangs or organized groups posing security risks through criminal activity, violence, or undermining facility operations
+- **Protective Custody**: Voluntary or involuntary separation of inmates facing threats from other inmates (safety-based housing assignment)
+- **Shank**: Homemade stabbing weapon created from metal, plastic, or other materials (common contraband requiring constant vigilance)
+
+Standards & Frameworks (2024-2025):
+- **ACA Standards for Adult Correctional Institutions (5th Edition)**: Comprehensive facility operations standards covering security, care, programs, and management (updated 2024)
+- **PREA Standards (28 CFR Part 115)**: Federal regulations for prevention, detection, and response to sexual abuse in correctional settings (DOJ 2012, ongoing compliance required)
+- **ACA Core Jail Standards**: Essential standards for local jails covering booking, classification, housing, medical care, and release procedures
+- **National Commission on Correctional Health Care (NCCHC) Standards**: Healthcare delivery standards for jails and prisons ensuring constitutionally adequate medical and mental health care
+- **Legal Standards (Constitutional Requirements)**:
+  * 8th Amendment (Cruel and Unusual Punishment): Prohibits excessive force, inadequate medical care, unsafe conditions
+  * 4th Amendment (Searches and Seizures): Allows suspicionless searches of inmates but requires proper procedures (Turner v. Safley, Bell v. Wolfish)
+  * 14th Amendment (Due Process): Requires procedural protections before significant deprivations (Wolff v. McDonnell disciplinary hearings)
+  * 1st Amendment (Religious Exercise, Legal Access): Inmates retain certain rights to religious practice and court access (Turner reasonableness test)
+- **Use of Force Legal Standards**: 
+  * Graham v. Connor (objective reasonableness standard applied in corrections context)
+  * Whitley v. Albers (malicious and sadistic use of force violates 8th Amendment)
+  * Kingsley v. Hendrickson (objective standard for pretrial detainees - 14th Amendment)
+
+Common Tools & Systems:
+- **Radio Communication**: Primary emergency and routine communication system (10-codes, plain language per agency)
+- **Control Room/Central Control**: Centralized monitoring and door control station managing facility movement and security systems
+- **Video Surveillance (CCTV)**: Camera systems recording common areas, housing units, and perimeter for security and investigations
+- **Classification Systems**: Objective risk assessment tools determining custody level and housing assignments (validated instruments like Northpointe, LSI-R)
+- **Jail/Prison Management Systems**: Electronic records for booking, classification, property, medical, programs, commissary, visitation
+- **Body-Worn Cameras**: Officers may wear BWCs in some facilities (increasing use for accountability and evidence)
+- **Restraint Equipment**: Handcuffs, leg irons, waist chains, restraint chairs for controlling violent or non-compliant inmates
+- **Security Equipment**: OC spray (pepper spray), batons, stun devices (where authorized), protective vests, helmets
+- **Contraband Detection**: X-ray machines, metal detectors, drug-sniffing K-9s, body scanners, mail screening systems
+
+Change log:
+- 2024-12: Initial playbook created based on ACA Standards (5th Edition), PREA requirements (28 CFR Part 115), constitutional case law, and evidence-based correctional practices
+  * Emphasis on constitutional compliance (8th, 4th, 14th, 1st Amendments)
+  * PREA first responder duties and mandatory reporting obligations
+  * Use of force legal standards and documentation requirements
+  * Security operations, contraband interdiction, and emergency response procedures
+  * Professional boundaries and ethical conduct standards
