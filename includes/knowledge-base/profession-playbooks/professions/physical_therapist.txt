@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (PT licensing, terminology (PT vs physiotherapist), and practice vary)
 - What is the chief complaint or functional limitation (pain, weakness, loss of function)?
 - What is the mechanism of injury or onset (acute trauma, gradual onset, post-surgical)?
 - What is the patient's current functional status and activity level?
@@ -52,6 +53,56 @@ Ask 3–8 questions that materially affect the answer:
 - What prior treatments have been attempted (previous PT, medications, injections, surgery)?
 - What is the care setting (outpatient clinic, acute care, home health, SNF)?
 - Are there any contraindications or precautions (fracture, surgical precautions, cardiac restrictions)?
+
+1.5) Regional Variations - Physical Therapy Practice & Licensing
+
+**United States:**
+- Terminology: Physical Therapist (PT); Physical Therapist Assistant (PTA)
+- Licensing: State licensure boards; DPT (Doctor of Physical Therapy) now entry-level standard
+- Education: DPT degree (3 years post-bachelor's); clinical residencies and fellowships for specialization
+- Scope: Varies by state; direct access (no physician referral required) in all 50 states with some restrictions
+- Specialization: ABPTS (American Board of Physical Therapy Specialties) - 9 specialty certifications
+- Organizations: APTA (American Physical Therapy Association), state chapters
+- Reimbursement: Medicare/Medicaid, private insurance; often requires physician referral for payment despite direct access laws
+- Practice Settings: Outpatient, acute care, home health, skilled nursing, schools, sports/industrial
+
+**United Kingdom:**
+- Terminology: Physiotherapist (NOT physical therapist)
+- Licensing: HCPC (Health and Care Professions Council) registration
+- Education: BSc (Honours) in Physiotherapy (3 years); MSc pre-registration programs available
+- Scope: Autonomous practice; can diagnose, treat, refer, discharge; extended scope practitioners in musculoskeletal triage, injection therapy
+- Specialization: CSP (Chartered Society of Physiotherapy) specialist interest groups
+- Organizations: Chartered Society of Physiotherapy (CSP), HCPC
+- Practice Settings: NHS (public), private practice; Band 5-8 grading in NHS; consultant physiotherapists (Band 8+)
+- First Contact Practitioners: Physiotherapists increasingly working as first point of contact in primary care (GP surgeries)
+
+**Canada:**
+- Terminology: Physiotherapist (NOT physical therapist)
+- Licensing: Provincial physiotherapy regulatory colleges
+- Education: Master's or Doctoral degree in physiotherapy; 2-3 years post-bachelor's
+- Scope: Autonomous practice; self-referral allowed in all provinces; controlled acts vary by province (e.g., spinal manipulation in some)
+- Specialization: CPA specialty divisions (orthopedic, neurology, cardiorespiratory, etc.)
+- Organizations: CPA (Canadian Physiotherapy Association), provincial colleges
+- Reimbursement: Workers' compensation, auto insurance, private insurance, some provincial coverage; generally no physician referral required
+- Practice Settings: Private clinics, hospitals, home care, community health centers
+
+**Australia:**
+- Terminology: Physiotherapist (NOT physical therapist)
+- Licensing: AHPRA via Physiotherapy Board of Australia
+- Education: Bachelor's or Master's degree in physiotherapy; 4 years bachelor's or 2-year graduate entry master's
+- Scope: Autonomous practice; patients can self-refer; extended scope physiotherapists in emergency departments, surgical pre-assessment
+- Specialization: APA (Australian Physiotherapy Association) titled membership (musculoskeletal, sports, etc.)
+- Organizations: Australian Physiotherapy Association (APA), Physiotherapy Board of Australia
+- Reimbursement: Medicare rebates for chronic disease management plans (limited visits), private health insurance, DVA, workers' compensation
+- Practice Settings: Private practice, public hospitals, aged care, community health, sports teams
+
+**Key Regional Differences:**
+- **Terminology**: "Physical Therapist" (US) vs "Physiotherapist" (UK, Canada, Australia, most of world)
+- **Education**: US DPT (doctoral entry), others master's or bachelor's entry
+- **Direct Access**: US achieved in all states recently; long-standing in UK/Canada/Australia
+- **Prescriptive Authority**: Very limited globally; some UK extended scope PTs can prescribe
+- **Healthcare System**: US insurance-based (complex reimbursement), others more public/universal healthcare integration
+- **Scope of Practice**: Generally autonomous but US more physician-centric historically; UK/Australia leading in extended scope roles
 
 3) Default workflow
 Use systematic physical therapy patient management process:

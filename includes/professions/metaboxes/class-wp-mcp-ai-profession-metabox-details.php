@@ -78,6 +78,35 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 				</tr>
 				<tr>
 					<th scope="row">
+						<label for="profession_region">
+							<?php esc_html_e( 'Primary Region/Jurisdiction', 'wp-mcp-ai' ); ?>
+						</label>
+					</th>
+					<td>
+						<?php
+						$region = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_REGION, true );
+						?>
+						<select id="profession_region" name="profession_region" class="regular-text">
+							<option value=""><?php esc_html_e( 'Global (All Regions)', 'wp-mcp-ai' ); ?></option>
+							<option value="north_america" <?php selected( $region, 'north_america' ); ?>><?php esc_html_e( 'North America', 'wp-mcp-ai' ); ?></option>
+							<option value="united_states" <?php selected( $region, 'united_states' ); ?>><?php esc_html_e( 'United States', 'wp-mcp-ai' ); ?></option>
+							<option value="canada" <?php selected( $region, 'canada' ); ?>><?php esc_html_e( 'Canada', 'wp-mcp-ai' ); ?></option>
+							<option value="europe" <?php selected( $region, 'europe' ); ?>><?php esc_html_e( 'Europe', 'wp-mcp-ai' ); ?></option>
+							<option value="european_union" <?php selected( $region, 'european_union' ); ?>><?php esc_html_e( 'European Union', 'wp-mcp-ai' ); ?></option>
+							<option value="united_kingdom" <?php selected( $region, 'united_kingdom' ); ?>><?php esc_html_e( 'United Kingdom', 'wp-mcp-ai' ); ?></option>
+							<option value="asia_pacific" <?php selected( $region, 'asia_pacific' ); ?>><?php esc_html_e( 'Asia-Pacific', 'wp-mcp-ai' ); ?></option>
+							<option value="latin_america_caribbean" <?php selected( $region, 'latin_america_caribbean' ); ?>><?php esc_html_e( 'Latin America & Caribbean', 'wp-mcp-ai' ); ?></option>
+							<option value="caribbean" <?php selected( $region, 'caribbean' ); ?>><?php esc_html_e( 'Caribbean (CARICOM)', 'wp-mcp-ai' ); ?></option>
+							<option value="middle_east_africa" <?php selected( $region, 'middle_east_africa' ); ?>><?php esc_html_e( 'Middle East & Africa', 'wp-mcp-ai' ); ?></option>
+							<option value="africa" <?php selected( $region, 'africa' ); ?>><?php esc_html_e( 'Africa', 'wp-mcp-ai' ); ?></option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Primary region or jurisdiction for this profession. Used to provide region-specific guidance and standards. Select "Global" if applicable worldwide or if the playbook covers multiple regions.', 'wp-mcp-ai' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
 						<label for="profession_role_description">
 							<?php esc_html_e( 'Role Description', 'wp-mcp-ai' ); ?>
 						</label>
@@ -144,6 +173,31 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 		// Save category.
 		if ( isset( $_POST['profession_category'] ) ) {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
+		}
+
+		// Save region.
+		if ( isset( $_POST['profession_region'] ) ) {
+			$region = sanitize_key( wp_unslash( $_POST['profession_region'] ) );
+			
+			// Validate against allowed region values.
+			$allowed_regions = array(
+				'',
+				'north_america',
+				'united_states',
+				'canada',
+				'europe',
+				'european_union',
+				'united_kingdom',
+				'asia_pacific',
+				'latin_america_caribbean',
+				'caribbean',
+				'middle_east_africa',
+				'africa',
+			);
+			
+			if ( in_array( $region, $allowed_regions, true ) ) {
+				update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_REGION, $region );
+			}
 		}
 
 		// Save role description.

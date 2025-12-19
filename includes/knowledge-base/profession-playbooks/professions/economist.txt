@@ -41,6 +41,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What region/economy are you analyzing? (Economic data, institutions, and policies vary significantly)
 - What is the economic question or problem you're trying to address?
 - What is the scope (micro/macro, national/regional/global, industry-specific)?
 - What time horizon are you analyzing (short-term, medium-term, long-term)?
@@ -49,6 +50,70 @@ Ask 3–8 questions that materially affect the answer:
 - What methodological approach is preferred (descriptive, econometric, forecasting, scenario analysis)?
 - What constraints exist (data limitations, timeline, budget, regulatory)?
 - What policy or business decisions will this analysis inform?
+
+1.5) Regional Variations - Economic Data Sources & Institutions
+
+**United States:**
+- Statistical Agencies: BEA (GDP, national accounts), BLS (employment, CPI), Census Bureau, Fed (monetary policy, flow of funds)
+- Central Bank: Federal Reserve System (FOMC sets interest rates)
+- Key Data: GDP (quarterly), Nonfarm payrolls (monthly), CPI/PCE (inflation), Fed Funds rate
+- Fiscal Authority: Congress and President (federal budget, taxation)
+- Trade Data: Census Bureau (trade balance), USTR (trade policy)
+- Regional Data: Federal Reserve districts, state-level data
+- Professional Org: American Economic Association (AEA), NABE (National Association for Business Economics)
+
+**United Kingdom:**
+- Statistical Agency: ONS (Office for National Statistics)
+- Central Bank: Bank of England (Monetary Policy Committee sets Bank Rate)
+- Key Data: GDP (quarterly), unemployment rate, CPI/RPI (inflation), interest rates
+- Fiscal Authority: HM Treasury, Chancellor of the Exchequer (budget)
+- Trade Data: ONS trade statistics
+- Brexit Impact: Significant structural break (2020); new trade relationships
+- Professional Org: Royal Economic Society, Society of Business Economists
+
+**European Union / Eurozone:**
+- Statistical Agency: Eurostat (EU-wide statistics)
+- Central Bank: European Central Bank (ECB) for Eurozone; sets key interest rates
+- Key Data: Eurozone GDP (quarterly), unemployment rate, HICP (harmonized inflation), ECB rates
+- Fiscal Rules: Stability and Growth Pact (deficit <3% GDP, debt <60% GDP)
+- Trade Data: Eurostat extra-EU trade; intra-EU trade statistics
+- Member State Data: National statistical offices (Destatis Germany, INSEE France, ISTAT Italy, INE Spain)
+- Professional Org: European Economic Association (EEA)
+
+**Canada:**
+- Statistical Agency: Statistics Canada (StatCan)
+- Central Bank: Bank of Canada (sets overnight rate target)
+- Key Data: GDP (quarterly, monthly), employment data, CPI (inflation), interest rates
+- Fiscal Authority: Federal government, Minister of Finance
+- Trade Data: StatCan trade statistics; USMCA (formerly NAFTA) data
+- Provincial Data: Provincial economic accounts available
+- Professional Org: Canadian Economics Association (CEA)
+
+**Australia:**
+- Statistical Agency: Australian Bureau of Statistics (ABS)
+- Central Bank: Reserve Bank of Australia (RBA) sets cash rate
+- Key Data: GDP (quarterly), employment data, CPI (inflation), cash rate
+- Fiscal Authority: Federal Treasury
+- Trade Data: ABS trade statistics; major trading partners (China, Japan, US)
+- Resource Economy: Significant commodity export focus
+- Professional Org: Economic Society of Australia (ESA)
+
+**International & Comparative:**
+- IMF: World Economic Outlook, International Financial Statistics, balance of payments data
+- World Bank: World Development Indicators, poverty data, development statistics
+- OECD: Economic Outlook, country surveys, productivity data
+- WTO: Trade statistics, trade policy reviews
+- UN: National accounts data, demographic statistics
+- Regional Development Banks: ADB (Asia), AfDB (Africa), IDB (Latin America)
+
+**Key Regional Economic Differences:**
+- **Monetary Policy**: Central bank independence varies; inflation targeting common; ECB unique multi-country
+- **Fiscal Policy**: US federal system; EU fiscal rules; varies elsewhere
+- **Labor Markets**: US more flexible; EU more regulated; varies by country
+- **Trade Openness**: Small economies more open; US less dependent on trade (relative to GDP)
+- **Statistical Standards**: SNA 2008 (System of National Accounts) harmonized globally; implementation varies
+- **Data Frequency**: Developed economies have monthly/quarterly data; developing economies less frequent
+- **Regional Economic Blocs**: NAFTA/USMCA, EU, ASEAN, Mercosur affect trade and policy
 
 3) Default workflow
 Use a deterministic, repeatable research process:

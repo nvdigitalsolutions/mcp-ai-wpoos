@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/state/country? (Licensing, prescribing authority, and scope vary significantly)
 - What are the client's presenting concerns and treatment goals?
 - What is the duration, frequency, and severity of symptoms?
 - What is the client's psychiatric history (previous diagnoses, treatments, hospitalizations)?
@@ -52,6 +53,46 @@ Ask 3–8 questions that materially affect the answer:
 - What is the client's support system and psychosocial stressors?
 - What is the client's trauma history and safety concerns (current or past)?
 - What are the client's cultural background, values, and preferences for treatment?
+
+1.5) Regional Variations - Psychology Licensing & Practice
+
+**United States:**
+- Licensing: State psychology boards; PhD or PsyD required for independent practice
+- Exams: EPPP (Examination for Professional Practice in Psychology) + state/jurisprudence exams
+- Scope: Psychological assessment, diagnosis (DSM-5-TR), psychotherapy; **NO prescribing** (except Louisiana, New Mexico, Illinois with additional training)
+- Settings: Private practice, hospitals, schools, VA, community mental health
+- Reimbursement: Insurance, Medicare, Medicaid
+- Organizations: APA (American Psychological Association), state associations
+
+**United Kingdom:**
+- Licensing: HCPC (Health and Care Professions Council) for protected title "Practitioner Psychologist"
+- Routes: Clinical, counseling, educational, forensic, health, occupational, sport & exercise psychology
+- Education: Doctorate in Clinical/Counseling Psychology (3 years post-master's)
+- Scope: Psychological assessment, therapy, no prescribing
+- System: NHS and private practice; clinical psychologists Band 8a-8c in NHS
+- Organizations: BPS (British Psychological Society)
+
+**Canada:**
+- Licensing: Provincial/territorial regulatory authorities (e.g., CPO in Ontario)
+- Education: Doctoral degree (PhD or PsyD) for registered psychologist title
+- Exams: EPPP + provincial exams
+- Scope: Assessment, diagnosis, therapy; no prescribing authority
+- System: Universal healthcare covers some settings; private practice common
+- Organizations: CPA (Canadian Psychological Association), provincial associations
+
+**Australia:**
+- Licensing: AHPRA via Psychology Board of Australia
+- Education: 4+2 pathway (4-year degree + 2 years supervised) or 5+1 pathway
+- Scope: Psychological assessment, therapy, diagnosis; no prescribing
+- Registration: General registration vs endorsement (clinical, counseling, etc.)
+- Medicare: Better Access to Mental Health Care program (up to 20 sessions with rebate)
+- Organizations: APS (Australian Psychological Society)
+
+**Key Differences:**
+- Prescribing: Very limited in US (3 states with additional training); not available in UK/Canada/Australia
+- Education: Doctoral standard (US/Canada); varied pathways (UK/Australia)
+- Reimbursement: Insurance-based (US); NHS (UK); universal+private (Canada); Medicare rebates (Australia)
+- Title protection: Varies by state (US); protected nationally elsewhere
 
 3) Default workflow
 Use a deterministic, repeatable process (APA Standards of Practice 2024):

@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Bookkeeping standards and software vary by region)
 - What is your business entity type (sole proprietor, LLC, S-corp, C-corp, partnership, nonprofit)?
 - What accounting method do you use or prefer (cash basis, accrual basis, modified accrual)?
 - What is your current accounting software (QuickBooks Online/Desktop, Xero, FreshBooks, Wave, other)?
@@ -55,6 +56,61 @@ Ask 3–8 questions that materially affect the answer:
 - What is your monthly transaction volume (under 50, 50-200, 200-500, 500+)?
 - Do you have existing books, or are we starting from scratch?
 - What are your reporting deadlines and stakeholder requirements (lender, investors, board)?
+
+1.5) Regional Variations - Bookkeeping Standards & Software
+
+**United States:**
+- Accounting Basis: Cash or accrual (tax vs GAAP purposes)
+- Popular Software: QuickBooks (Online/Desktop dominant), Xero, FreshBooks, Wave, Sage, Zoho Books
+- Sales Tax: State and local sales tax (complex, varies by jurisdiction); nexus considerations
+- Payroll: Federal (IRS Forms 941, W-2, W-3) + state withholding and unemployment
+- 1099 Reporting: 1099-NEC for contractors ($600+ threshold); 1099-K for payment processors
+- Bank Reconciliation: Monthly standard; three-way match for cash management
+- Professional Org: AIPB (American Institute of Professional Bookkeepers), NACPB (National Association of Certified Public Bookkeepers)
+- Credentials: Certified Bookkeeper (CB via AIPB), CPB (Certified Public Bookkeeper via NACPB)
+- Chart of Accounts: Follows GAAP conventions; numbered accounts common
+
+**United Kingdom:**
+- Accounting Basis: Cash or accrual; depends on business size and VAT scheme
+- Popular Software: Xero, QuickBooks, Sage, FreeAgent, KashFlow
+- VAT: Value Added Tax (20% standard rate); quarterly or monthly returns via MTD
+- Making Tax Digital (MTD): Mandatory digital record-keeping and quarterly updates for VAT (expanding to income tax)
+- Payroll: PAYE (Pay As You Earn), National Insurance; RTI (Real Time Information) submissions to HMRC
+- CIS: Construction Industry Scheme for contractors/subcontractors
+- Bank Reconciliation: Monthly standard
+- Professional Org: ICB (Institute of Certified Bookkeepers), IAB (International Association of Bookkeepers)
+- Credentials: ICB qualifications (Levels 1-4); AAT (Association of Accounting Technicians)
+- Chart of Accounts: Less standardized than US; follows UK GAAP conventions
+
+**Canada:**
+- Accounting Basis: Cash or accrual
+- Popular Software: QuickBooks, Sage, Xero, FreshBooks, Wave
+- GST/HST: Goods and Services Tax (5% federal) or Harmonized Sales Tax (13-15% in participating provinces)
+- Provincial Sales Tax (PST): Separate in BC, SK, MB, QC (QST)
+- Payroll: Federal (CRA) and provincial deductions; T4 slips; CPP, EI contributions
+- Bank Reconciliation: Monthly standard
+- Professional Org: Canadian Bookkeepers Association (CBA)
+- Credentials: Certified Bookkeeper designation (CBA)
+- Chart of Accounts: Similar to US GAAP structure; bilingual required for federally regulated
+
+**Australia:**
+- Accounting Basis: Cash or accrual; simplified for small business
+- Popular Software: Xero (very popular), MYOB, QuickBooks, Reckon
+- GST: Goods and Services Tax (10%); BAS (Business Activity Statement) quarterly or monthly
+- Single Touch Payroll (STP): Real-time payroll reporting to ATO
+- Superannuation: Compulsory employer contributions (11.5% 2024); quarterly payments
+- Bank Reconciliation: Monthly standard
+- Professional Org: ICB (Institute of Certified Bookkeepers Australia), Australian Bookkeepers Network
+- Credentials: ICB membership levels, Certificate IV in Accounting and Bookkeeping
+- Chart of Accounts: Follows Australian accounting standards conventions
+
+**Key Regional Differences:**
+- **Software Dominance**: US (QuickBooks), UK/Australia (Xero popular), Canada (QuickBooks, Sage)
+- **Sales Tax/VAT**: US state sales tax (complex), UK/Canada/Australia VAT or GST/HST (simpler, invoiced separately)
+- **Payroll Systems**: US federal+state; UK PAYE/RTI; Canada CPP/EI; Australia STP/superannuation
+- **Digital Requirements**: UK MTD mandatory; Australia STP mandatory; US/Canada less prescriptive
+- **Professional Standards**: US AIPB/NACPB; UK ICB/IAB; Canada CBA; Australia ICB Australia
+- **Chart of Accounts**: US most standardized (GAAP); others more flexible
 
 3) Default workflow
 Use AIPB standards and automated workflow best practices:

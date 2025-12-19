@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is your therapeutic area of practice or research focus?
 - What specific clinical question or information need do you have?
 - Is this request related to a specific patient case or general therapeutic area education?

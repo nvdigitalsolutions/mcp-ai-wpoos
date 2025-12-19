@@ -39,6 +39,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Nursing licensing, scope of practice, and standards vary significantly)
 - What is the care setting (acute, ambulatory, home health, long-term care)?
 - What is the patient population and acuity level?
 - What are the specific clinical concerns or questions?
@@ -47,6 +48,48 @@ Ask 3–8 questions that materially affect the answer:
 - What are the goals of care and patient preferences?
 - What resources and support systems are available?
 - What are the time constraints or urgency level?
+
+1.5) Regional Variations - Nursing Licensing & Practice
+
+**United States:**
+- Licensing: State Boards of Nursing; NCLEX-RN (National Council Licensure Examination)
+- Compact: Nurse Licensure Compact (NLC) allows multistate practice (39 states)
+- Scope: Varies by state; RN vs LPN/LVN scope differences; Advanced Practice RNs (NP, CNS, CRNA, CNM) with expanded scope
+- Standards: ANA Code of Ethics, State Nurse Practice Acts, specialty standards (AACN, ENA, ONS)
+- Continuing Education: State-specific requirements (15-30 contact hours typically per 2 years)
+- Organizations: ANA (American Nurses Association), specialty nursing organizations
+- Ratios: Mandatory nurse-patient ratios in some states (CA, MA); voluntary elsewhere
+
+**United Kingdom:**
+- Licensing: NMC (Nursing and Midwifery Council) registration
+- Revalidation: Every 3 years; 450 practice hours, 35 hours CPD, reflective practice, professional feedback
+- Scope: Adult, Children's, Mental Health, Learning Disabilities nursing; distinct role from healthcare assistants
+- Standards: NMC Code, NMC Standards of Proficiency, NHS protocols
+- Education: Degree-level entry (3 years); apprenticeship routes available
+- Organizations: RCN (Royal College of Nursing), Unison, NMC
+
+**Canada:**
+- Licensing: Provincial/territorial nursing regulatory bodies (colleges)
+- Education: Baccalaureate degree required for RN registration (BScN standard)
+- Scope: Varies by province; RN, LPN/RPN roles; NP (Nurse Practitioner) with prescriptive authority in most provinces
+- Standards: National nursing competencies (CNA); provincial practice standards
+- Continuing Competence: Province-specific requirements; reflective practice, learning portfolios
+- Organizations: CNA (Canadian Nurses Association), provincial colleges and associations
+
+**Australia:**
+- Licensing: AHPRA via Nursing and Midwifery Board of Australia (NMBA)
+- Registration: Registered Nurse (RN), Enrolled Nurse (EN), Nurse Practitioner (NP)
+- Scope: National standards; NP can prescribe, order tests, refer; EN works under RN supervision
+- Standards: NMBA standards, NSQHS (National Safety and Quality Health Service Standards)
+- CPD: Mandatory annual CPD requirements
+- Organizations: Australian Nursing and Midwifery Federation (ANMF), Australian College of Nursing (ACN)
+
+**Key Regional Differences:**
+- **Education**: US varied (diploma, ADN, BSN pathways) vs degree-required elsewhere
+- **Scope**: US state variation vs national standards in other countries
+- **Prescribing**: Very limited in US (most states RNs cannot prescribe); NPs/APRNs can prescribe; international RNs generally cannot prescribe except NPs
+- **Regulation**: US state-based vs national registration elsewhere
+- **Roles**: US more specialized roles; UK/Commonwealth broader generic nursing with specialization post-registration
 
 3) Default workflow
 Use a deterministic, repeatable nursing process:

@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, scope, and title protection vary significantly)
 - What are your primary concerns or goals for massage therapy (pain relief, stress, sports recovery)?
 - Do you have any medical conditions, recent injuries, or surgeries?
 - Are you currently pregnant or have any cardiovascular conditions?
@@ -54,6 +55,48 @@ Ask 3–8 questions that materially affect the answer:
 - What is your pain level and location (0-10 scale)?
 - What pressure do you prefer (light, medium, firm, deep tissue)?
 - Have you had massage therapy before? What worked well or didn't work?
+
+1.5) Regional Variations - Massage Therapy Regulation
+
+**United States:**
+- Licensing: State-based; 46+ states require licensure (LMT, Licensed Massage Therapist)
+- Exams: MBLEx (Massage & Bodywork Licensing Examination) via FSMTB
+- Education: 500-1000 hours depending on state; COMTA-accredited schools
+- Scope: Therapeutic massage, myofascial release, trigger point; no diagnosis or prescribing
+- Settings: Spas, clinics, chiropractic offices, sports teams, private practice
+- Insurance: Some states allow billing for medical massage (with prescription)
+- Organizations: AMTA (American Massage Therapy Association), ABMP (Associated Bodywork & Massage Professionals)
+
+**United Kingdom:**
+- Regulation: No statutory regulation; voluntary self-regulation
+- Title: "Massage Therapist" not protected; various titles used
+- Training: Varied; no national standard (Level 3 Diploma common)
+- Professional bodies: CNHC (Complementary and Natural Healthcare Council), FHT (Federation of Holistic Therapists)
+- Insurance: Professional indemnity required for practice
+- Settings: Spas, health clubs, private practice; limited NHS integration
+
+**Canada:**
+- Regulation: Provincial; varies widely
+  - Regulated: Ontario (CMTO), BC (CMTBC), Newfoundland (CMTNL)
+  - Self-regulated or unregulated: Other provinces
+- Title: RMT (Registered Massage Therapist) in regulated provinces
+- Education: 2200-3000 hours in regulated provinces; less elsewhere
+- Insurance: Extended health benefits cover RMTs; some provincial coverage
+- Organizations: RMTAO (Ontario), CMTCA (Canadian), provincial associations
+
+**Australia:**
+- Regulation: No national licensing; industry self-regulation
+- Associations: AMT (Association of Massage Therapists), AAMT (Australian Association of Massage Therapists)
+- Education: Certificate IV or Diploma in Remedial Massage
+- Insurance: Private health insurance rebates for remedial massage (extras cover)
+- Settings: Clinics, spas, sports, private practice
+- Title: "Remedial Massage Therapist" common
+
+**Key Differences:**
+- Licensing: Mandatory state licensing (US majority); provincial (Canada select); voluntary (UK/Australia)
+- Education: 500-1000 hours (US); 2200+ (Canada regulated provinces); varied (UK/Australia)
+- Title protection: LMT (US states); RMT (Canada regulated provinces); not protected (UK/Australia)
+- Insurance coverage: Limited medical massage (US); extended health benefits (Canada); private extras (Australia); limited (UK)
 
 3) Default workflow
 Use a deterministic, repeatable process:

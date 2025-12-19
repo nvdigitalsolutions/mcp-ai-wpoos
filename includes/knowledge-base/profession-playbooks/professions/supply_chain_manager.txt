@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regions does your supply chain span? (Regional sourcing, manufacturing, and distribution considerations vary)
 - What are the business objectives driving supply chain strategy (growth, cost reduction, service improvement)?
 - What is the current supply chain maturity level (reactive, stable, optimized, world-class)?
 - What are the key performance gaps (service failures, excess inventory, high costs, long lead times)?
@@ -54,6 +55,59 @@ Ask 3–8 questions that materially affect the answer:
 - What are the competitive dynamics and customer expectations (delivery speed, customization, cost pressure)?
 - What constraints exist (budget, capacity, supplier base, regulatory, geographic)?
 - What stakeholders need alignment (sales, operations, finance, procurement, senior leadership)?
+
+1.5) Regional Variations - Supply Chain Considerations
+
+**Regional Supply Chain Factors:**
+
+**Asia-Pacific (Manufacturing Hub):**
+- Sourcing: "Factory of the world" (China, Vietnam, Thailand, Bangladesh); low labor costs; improving quality
+- Manufacturing: China (scale, infrastructure), ASEAN (diversification, lower costs), India (growing)
+- Lead Times: Long ocean transit (4-6 weeks to US/Europe); air freight for urgent needs
+- Trade Considerations: Regional trade agreements (RCEP, ASEAN); US-China trade tensions
+- Logistics Infrastructure: Major ports (Shanghai, Shenzhen, Singapore); improving but varied quality
+- Risks: Geopolitical tensions, IP protection concerns, currency fluctuations, natural disasters
+
+**North America (Nearshoring Trend):**
+- Sourcing: Mexico (USMCA benefits, proximity), US domestic, Canada
+- Manufacturing: Mexico growing (automotive, electronics); US high-tech and specialized
+- Lead Times: Short land transit (1-3 days truck); reduced supply chain complexity
+- Trade Considerations: USMCA preferential treatment; simplified customs
+- Logistics Infrastructure: Excellent (highways, rail, ports); integrated US-Mexico-Canada
+- Trends: Nearshoring from Asia for speed, resilience; reshoring for critical goods
+
+**Europe:**
+- Sourcing: EU member states, Eastern Europe (Poland, Czech Republic, Romania - lower costs)
+- Manufacturing: Germany (automotive, machinery), France, Italy (specialized); declining vs Asia
+- Lead Times: Short intra-EU (days); moderate from Asia/Americas
+- Trade Considerations: EU Single Market (no internal tariffs); post-Brexit UK customs
+- Logistics Infrastructure: Excellent (autobahns, rail, Rhine river, ports Rotterdam/Antwerp)
+- Trends: Focus on sustainability, circular economy, reduced carbon footprint
+
+**Latin America:**
+- Sourcing: Brazil, Mexico, Argentina, Chile (commodities, agriculture, some manufacturing)
+- Manufacturing: Mexico (export-oriented), Brazil (domestic market-oriented)
+- Lead Times: Moderate to US; longer to Asia/Europe
+- Trade Considerations: Regional agreements (Mercosur, Pacific Alliance); varied tariffs
+- Logistics Infrastructure: Improving but often challenging (Brazil inland, infrastructure deficits)
+- Opportunities: Nearshoring to Mexico for North American market
+
+**Africa:**
+- Sourcing: Commodities, raw materials, agriculture; limited manufacturing currently
+- Manufacturing: South Africa, Egypt, Morocco, Kenya (growing but limited scale)
+- Lead Times: Long to major markets
+- Trade Considerations: AfCFTA (African Continental Free Trade Area) creating larger market
+- Logistics Infrastructure: Varies widely; coastal areas better than inland; improving
+- Emerging Opportunity: Young population, growing economies, "the next frontier"
+
+**Supply Chain Strategy Considerations by Region:**
+- **Cost**: Asia lowest manufacturing costs; Americas moderate; Europe higher
+- **Speed**: Americas fastest to NA market; Europe fastest to EU; Asia long lead times
+- **Quality**: Converging but Europe/NA traditionally higher; Asia improving rapidly
+- **Resilience**: Regional diversification reduces risk; over-reliance on single region (China) risky
+- **Sustainability**: Europe strict environmental standards; growing focus in Americas; varied in Asia
+- **Digital Maturity**: Advanced in developed economies; varies in developing regions
+- **Talent**: Skilled workforce in developed economies; growing capabilities in emerging markets
 
 3) Default workflow
 Use APICS/ASCM framework and S&OP best practices:

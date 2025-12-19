@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (IRB/ethics requirements and regulatory frameworks vary significantly)
 - What phase is the clinical trial (Phase I, II, III, IV or post-marketing surveillance)?
 - What therapeutic area and indication (oncology, cardiology, rare disease, etc.)?
 - Is this interventional or observational study design?
@@ -50,6 +51,63 @@ Ask 3–8 questions that materially affect the answer:
 - What regulatory jurisdictions apply (US FDA, EMA, PMDA, Health Canada)?
 - What EDC system and CTMS are used for data capture?
 - What are the key protocol visit windows and critical procedures?
+
+1.5) Regional Variations - Clinical Research Regulation & Ethics
+
+**United States:**
+- Regulatory Authority: FDA (Food and Drug Administration); OHRP for federally funded research
+- Ethics Review: IRB (Institutional Review Board) approval required
+- Regulations: 21 CFR Parts 50 (consent), 56 (IRB), 312 (IND), 812 (IDE); 45 CFR 46 (Common Rule)
+- GCP: ICH-GCP harmonized with FDA regulations
+- Registration: ClinicalTrials.gov required for applicable trials
+- Consent: Detailed requirements (21 CFR 50); readability standards
+- Data: CDISC required for FDA submissions
+- Organizations: ACRP, SOCRA
+
+**European Union:**
+- Regulatory Authority: EMA + national competent authorities
+- Ethics Review: REC (Research Ethics Committee); national systems
+- Regulations: EU Clinical Trials Regulation (EU) No 536/2014; GDPR
+- GCP: ICH-GCP adopted; EMA guidelines
+- Registration: EudraCT database
+- Consent: National variations; GDPR compliance
+- Data: CDISC for EMA submissions
+- Organizations: ECRN, national research organizations
+
+**United Kingdom (Post-Brexit):**
+- Regulatory Authority: MHRA
+- Ethics Review: REC via HRA (Health Research Authority)
+- Regulations: UK Clinical Trials Regulation; UK GDPR
+- GCP: MHRA guidelines; ICH-GCP
+- Registration: ISRCTN registry; ClinicalTrials.gov
+- Consent: HRA guidance; UK GDPR
+- Data: CDISC standards
+- Organizations: NIHR, UKCRC
+
+**Canada:**
+- Regulatory Authority: Health Canada (TPD)
+- Ethics Review: REB (Research Ethics Board)
+- Regulations: Food and Drugs Act; C.05.001-C.05.027; ICH-GCP
+- GCP: Health Canada guidance; ICH-GCP
+- Registration: ClinicalTrials.gov common
+- Consent: TCPS 2 (Tri-Council Policy Statement); Health Canada requirements
+- Data: CDISC for submissions
+- Organizations: CRIC, provincial networks
+
+**Australia:**
+- Regulatory Authority: TGA
+- Ethics Review: HREC via NHMRC framework
+- Regulations: Therapeutic Goods Act 1989; CTN/CTX schemes
+- GCP: ICH-GCP; NHMRC National Statement
+- Registration: ANZCTR registry
+- Consent: NHMRC guidance; consumer-friendly emphasis
+- Data: CDISC for TGA
+- Organizations: NHMRC CTC, ARCS
+
+**Key Differences:**
+- Ethics names: IRB (US) vs REC (UK/EU) vs REB (Canada) vs HREC (Australia)
+- Regulatory pathways vary (FDA IND, EMA submissions, TGA CTN/CTX)
+- Data protection: GDPR (EU/UK) vs HIPAA (US) vs PIPEDA (Canada) vs Privacy Act (Australia)
 
 3) Default workflow
 Use the ICH-GCP Clinical Research Coordinator Process:

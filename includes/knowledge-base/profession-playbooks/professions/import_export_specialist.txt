@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What countries/regions are involved? (Export and import regulations vary significantly)
 - What is being shipped? (Product, quantity, weight, dimensions, value)
 - Where is it shipping from and to? (Origin and destination countries/cities)
 - What is the urgency? (Standard transit or expedited/time-critical)
@@ -54,6 +55,77 @@ Ask 3–8 questions that materially affect the answer:
 - Are there special requirements? (Temperature control, hazmat, oversized, etc.)
 - Is this a first-time shipment or established trade lane?
 - What is your budget? (Freight cost, insurance, duties, total landed cost)
+
+1.5) Regional Variations - Trade Regulations & Documentation
+
+**United States (Exports & Imports):**
+- Export Authority: Bureau of Industry and Security (BIS), Directorate of Defense Trade Controls (DDTC)
+- Export Controls: Export Administration Regulations (EAR), International Traffic in Arms Regulations (ITAR)
+- Export Licensing: EAR99 (no license), license required (controlled goods/destinations), ITAR registration
+- Export Filing: Electronic Export Information (EEI) via AES (Automated Export System) if value >$2,500 or license required
+- Import Authority: U.S. Customs and Border Protection (CBP)
+- Import System: Automated Commercial Environment (ACE)
+- Documentation: Commercial invoice, packing list, BOL/AWB, entry documents, certificate of origin (FTA)
+- Trade Agreements: USMCA (North America), various FTAs (reduce/eliminate tariffs)
+- Sanctions: OFAC (Office of Foreign Assets Control) - embargoed countries, SDN list
+- Partner Agencies: FDA, USDA, EPA, DOT, CPSC (require additional clearances)
+
+**European Union (Exports & Imports):**
+- Export Controls: Dual-Use Regulation (EU) 2021/821; member state controls for military items
+- Export Licensing: EU-wide licensing for dual-use; national licensing for military
+- Export System: Varies by member state; harmonized export control list
+- Import System: Union Customs Code (UCC); Customs Decision System (CDS); Import Control System 2 (ICS2)
+- Documentation: Commercial invoice, packing list, transport document, customs declaration, EUR.1/EUR-MED (preferential origin)
+- Trade Agreements: EU FTAs with 70+ countries; Rules of Origin vary by agreement
+- Sanctions: EU sanctions regulations (separate from OFAC but often aligned)
+- Intra-EU Trade: No customs formalities within EU (free circulation); VAT reporting
+
+**United Kingdom (Post-Brexit):**
+- Export/Import Authority: HMRC (HM Revenue & Customs)
+- Export Controls: Export Control Order 2008 (as amended); military, dual-use, torture goods
+- Export Licensing: Export Control Joint Unit (ECJU); Open General Export Licences (OGELs) available
+- Export System: Customs Declaration Service (CDS)
+- Import System: CDS; Customs Handling of Import and Export Freight (CHIEF) being phased out
+- Documentation: Commercial invoice, packing list, transport document, customs declaration, certificates of origin
+- Trade Agreements: UK-EU Trade and Cooperation Agreement (TCA); rollover FTAs; new UK FTAs
+- Border Controls: Full customs controls between UK and EU (ended transition Dec 31, 2020)
+- Northern Ireland Protocol: Special rules for NI (remains aligned with some EU rules)
+- Trusted Trader: Authorised Economic Operator (AEO) status
+
+**Canada (Exports & Imports):**
+- Export Authority: Global Affairs Canada (export permits); CBSA (export reporting)
+- Export Controls: Export and Import Permits Act (EIPA); Area Control List, Export Control List
+- Export Licensing: Export permits required for controlled goods/destinations
+- Export Filing: Canadian Export Reporting System (CERS) via CBSA
+- Import Authority: Canada Border Services Agency (CBSA)
+- Import System: Canadian Single Window (CSW); CBSA Assessment and Revenue Management (CARM) portal
+- Documentation: Commercial invoice, packing list, BOL/AWB, B3 (Canada Customs Coding Form), certificates
+- Trade Agreements: CUSMA (USMCA), CETA (Canada-EU), CPTPP, various FTAs
+- Import Requirements: Product-specific regulations via Health Canada, CFIA, Transport Canada
+
+**Asia-Pacific (Selected Markets):**
+- **China**: Customs authority (GACC); export licensing (MOFCOM); import/export via China Single Window
+- **Singapore**: Singapore Customs; TradeNet system; free trade hub; many FTAs
+- **Japan**: Japan Customs; NACCS (Nippon Automated Cargo and Port Consolidated System); strict import standards
+- **Australia**: Australian Border Force (ABF); Integrated Cargo System (ICS); import/export declarations required
+- **ASEAN**: ASEAN Single Window (ASW) connecting member states; ASEAN Trade in Goods Agreement (ATIGA)
+
+**Latin America & Caribbean:**
+- Varied customs systems; many use ASYCUDA (Automated System for Customs Data)
+- Regional agreements: Mercosur, Pacific Alliance, CARICOM, CAFTA-DR
+- Documentation requirements vary; authenticated/legalized documents common
+- Customs brokers often mandatory for commercial imports
+- See ASYCUDA specialist playbook for detailed regional implementation guidance
+
+**Key Regional Differences:**
+- **Export Controls**: US (EAR/ITAR very strict), EU (dual-use harmonized), varied elsewhere
+- **Licensing Requirements**: Some countries require export licenses for most goods; others minimal controls
+- **Documentation**: Generally similar (invoice, packing list, BOL/AWB) but certificate requirements vary
+- **Customs Automation**: Developed countries have electronic systems; developing countries transitioning
+- **Free Trade Agreements**: Each country has unique FTA network with different rules of origin
+- **Customs Broker Requirements**: Mandatory in some countries (US, Canada for commercial), optional in others
+- **Transit Systems**: ATA Carnet for temporary imports; TIR Convention for road transport
+- **Sanctions Compliance**: US OFAC most extensive; EU, UN have separate sanction regimes
 
 3) Default workflow
 Use structured international logistics methodology (SCOR Model 2024):

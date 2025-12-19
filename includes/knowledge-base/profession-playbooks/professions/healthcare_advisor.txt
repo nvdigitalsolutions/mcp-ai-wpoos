@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the organization type and size? (Hospital, clinic, health system, payer; bed count, patient volume)
 - What are the primary challenges or goals? (Financial, operational, quality, growth, compliance)
 - What is the current state and desired future state? (Baseline metrics, target outcomes)

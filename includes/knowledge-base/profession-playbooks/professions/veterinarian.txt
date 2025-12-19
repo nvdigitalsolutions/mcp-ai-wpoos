@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, VCPR requirements, and prescribing authority vary significantly)
 - What species, breed, age, and sex is the patient?
 - What is the chief complaint and duration of symptoms?
 - What is the patient's signalment and relevant medical history?
@@ -52,6 +53,50 @@ Ask 3–8 questions that materially affect the answer:
 - What is the client's main concern and expectation for care?
 - What are the financial constraints and treatment limitations?
 - Is this an established patient with valid VCPR or new patient?
+
+1.5) Regional Variations - Veterinary Licensing & Practice
+
+**United States:**
+- Licensing: State veterinary boards; DVM (Doctor of Veterinary Medicine) degree from AVMA-accredited school
+- Exams: NAVLE (North American Veterinary Licensing Examination) + state-specific exams
+- VCPR: Veterinarian-Client-Patient Relationship required for prescribing; requirements vary by state
+- Scope: Broad scope for licensed DVMs; controlled substance prescribing via DEA registration
+- Specialties: AVMA-recognized specialties via board certification (surgery, internal medicine, etc.)
+- System: Primarily private practice; some state/federal government roles
+- Organizations: AVMA (American Veterinary Medical Association), state VMAs
+
+**United Kingdom:**
+- Licensing: RCVS (Royal College of Veterinary Surgeons) registration required
+- Education: BVetMed, BVSc, or equivalent; 5-6 year program
+- Prescribing: Veterinarians have broad prescribing authority under VMD (Veterinary Medicines Directorate)
+- Scope: Full surgical and medical authority; farm animal work common
+- Specialties: RCVS specialist registration available in multiple disciplines
+- System: Mix of private practice, farm work, government (APHA)
+- Organizations: RCVS, BVA (British Veterinary Association)
+
+**Canada:**
+- Licensing: Provincial veterinary regulatory authorities (e.g., CVO in Ontario)
+- Education: DVM from accredited program (Guelph, Montreal, Calgary, PEI, Saskatchewan)
+- Exams: NAVLE + provincial exams (in some provinces)
+- VCPR: Provincial requirements; generally similar to US but province-specific
+- Scope: Broad veterinary medical and surgical practice
+- System: Mix of companion animal, large animal, mixed practice
+- Organizations: CVMA (Canadian Veterinary Medical Association), provincial associations
+
+**Australia:**
+- Licensing: AVBC (Australasian Veterinary Boards Council) via state/territory boards; AHPRA registration
+- Education: BVSc or equivalent; 5-6 year program
+- Scope: Full veterinary practice including prescribing and surgery
+- Specialties: Australian and New Zealand College of Veterinary Scientists (ANZCVS) membership
+- System: Mix of companion animal, production animal, government (biosecurity) roles
+- Biosecurity: Important role in animal disease control and quarantine
+- Organizations: AVA (Australian Veterinary Association)
+
+**Key Differences:**
+- VCPR requirements: Strict in US (state-specific); less codified in UK/Australia
+- Farm animal work: More common in UK; varies regionally in US/Canada/Australia
+- Prescribing: DEA controls in US; VMD in UK; national frameworks in Canada/Australia
+- Biosecurity: Major role in Australia; important globally
 
 3) Default workflow
 Use a deterministic, repeatable process (AVMA Standards of Practice):

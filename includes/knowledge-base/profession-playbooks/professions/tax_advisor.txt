@@ -46,14 +46,97 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your country/jurisdiction? (Tax laws are highly jurisdiction-specific)
 - What is your tax situation (individual, business owner, investor, estate/trust)?
 - What tax year and filing status apply (single, married filing jointly, head of household)?
 - What is your income composition (W-2 wages, self-employment, investments, rental, other)?
-- What is your state of residence and any other state activity (multistate considerations)?
+- What is your state/province of residence and any other state/province activity (multistate/multiprovincial)?
 - What deductions or credits may apply (mortgage, student loans, energy credits, child tax credit)?
-- Have you received any IRS notices or been selected for audit?
+- Have you received any tax authority notices or been selected for audit?
 - What is your tax planning horizon (current year, multi-year, retirement, estate)?
 - What are your business entity types and ownership structures (if applicable)?
+
+1.5) Regional Variations - Tax Systems & Regulations
+
+**United States:**
+- Tax Authority: Internal Revenue Service (IRS)
+- Tax System: Federal + state + local; worldwide income taxation for citizens/residents
+- Key Legislation: Internal Revenue Code (IRC), Treasury Regulations
+- Individual Tax: Progressive rates (10%-37% 2024); standard deduction vs itemized
+- Business Tax: Corporate (21% flat), pass-through (199A deduction), self-employment tax (15.3%)
+- Capital Gains: Preferential rates (0%, 15%, 20%) for long-term; short-term at ordinary rates
+- Estate/Gift Tax: Unified credit ($13.61M exemption 2024); portability for spouses
+- State Taxes: Income tax (0-13.3% CA), sales tax, property tax; vary significantly by state
+- International: FATCA, FBAR reporting; foreign tax credit; Subpart F (CFC rules); GILTI
+- Compliance: E-file required for most; estimated tax payments quarterly; extensions available
+- Professional Standards: Circular 230 (IRS practice), AICPA SSTS, state CPA societies
+- Credentials: CPA, EA (Enrolled Agent), Tax Attorney; PTIN required for paid preparers
+
+**United Kingdom:**
+- Tax Authority: HM Revenue & Customs (HMRC)
+- Tax System: National taxation; residence and domicile-based
+- Individual Tax: Income tax bands (20%, 40%, 45%); personal allowance £12,570 (2024/25)
+- Business Tax: Corporation tax 25% (profits >£250K), 19% (£50K or less) with marginal relief
+- Capital Gains: Annual exempt amount £3,000 (2024/25); rates 10%/20% (18%/24% for property)
+- Inheritance Tax: £325,000 nil-rate band; £175,000 residence nil-rate band; 40% rate
+- VAT: Standard 20%, reduced 5%, zero-rated
+- Dividend Tax: Allowance £500; rates 8.75%/33.75%/39.35%
+- National Insurance: Employees and employers contributions; self-employed Class 2/4
+- Making Tax Digital (MTD): Quarterly digital updates required for VAT, expanding to income tax
+- Tax Years: April 6 - April 5 (following year)
+- Professional Bodies: CIOT (Chartered Institute of Taxation), ATT (Association of Tax Technicians), ICAEW
+
+**Canada:**
+- Tax Authority: Canada Revenue Agency (CRA)
+- Tax System: Federal + provincial/territorial; worldwide income for residents
+- Individual Tax: Federal progressive (15%-33%); provincial rates vary (add 5-20%)
+- Business Tax: Federal corporate 15% (general), 9% (small business to $500K); provincial rates add 11-16%
+- Capital Gains: 50% inclusion rate (50% taxable at marginal rate)
+- GST/HST: Federal GST 5%; harmonized 13-15% in participating provinces; provincial sales tax in others
+- RRSP: Tax-deferred retirement savings (18% earned income, max $31,560 2024)
+- TFSA: Tax-free savings account ($7,000 annual limit 2024)
+- Principal Residence Exemption: Primary home sale exempt from capital gains
+- International: Foreign property reporting (T1135 if >$100K CAD); foreign tax credit
+- Tax Years: Calendar year (Jan 1 - Dec 31)
+- Filing Deadlines: April 30 (individuals), June 15 (self-employed filing only, payment April 30)
+- Professional Bodies: CPA Canada; provincial CPAs; tax specialist designations
+
+**Australia:**
+- Tax Authority: Australian Taxation Office (ATO)
+- Tax System: Federal taxation; progressive rates; residence-based
+- Individual Tax: Tax-free threshold $18,200; marginal rates 19%-45%; Medicare levy 2%
+- Business Tax: Company tax 25% (base rate entities), 30% (others); small business CGT concessions
+- Capital Gains: 50% discount for assets held >12 months; primary residence exemption
+- GST: Goods and Services Tax 10%
+- Superannuation: Compulsory employer contributions 11.5% (2024); concessional/non-concessional caps
+- Franking Credits: Dividend imputation system (avoid double taxation of corporate profits)
+- Negative Gearing: Deduct investment property losses against other income
+- Tax Year: July 1 - June 30
+- Filing: MyTax (online) or tax agent; October 31 deadline (individuals), May 15 (with agent)
+- Professional Bodies: CPA Australia, Chartered Accountants ANZ, Tax Practitioners Board (TPB)
+
+**European Union (Varied by Member State):**
+- Tax Systems: National tax authorities; no harmonized income/corporate tax
+- VAT: Harmonized at EU level; standard rate min 15%, most countries 19-27%
+- Corporate Tax: Rates vary widely (9% Hungary to 31% Portugal); BEPS initiatives
+- Individual Tax: Progressive systems; rates and structures vary significantly
+- Withholding Taxes: On dividends, interest, royalties; Parent-Subsidiary Directive, Interest-Royalties Directive
+- Transfer Pricing: OECD guidelines; country-by-country reporting (CbCR)
+- ATAD (Anti-Tax Avoidance Directive): Minimum EU-wide anti-avoidance rules
+- DAC6: Mandatory disclosure of cross-border arrangements
+- Examples:
+  - Germany: Income tax 0-45% + solidarity surcharge; corporate tax 15% + trade tax
+  - France: Income tax 0-45%; corporate tax 25%; wealth tax (IFI) on real estate
+  - Ireland: Low corporate tax (12.5%); attractive for multinationals
+
+**Key Regional Tax Differences:**
+- **Worldwide vs Territorial**: US taxes worldwide income; many countries territorial (only domestic income)
+- **Tax Rates**: US moderate (21% corporate, 37% individual top); EU varies; some low-tax jurisdictions
+- **Capital Gains Treatment**: US preferential rates; UK annual exemption; Canada 50% inclusion; Australia 50% discount
+- **Estate/Inheritance**: US unified estate/gift tax; UK inheritance tax; Canada deemed disposition at death; Australia no estate tax
+- **Retirement Accounts**: US 401(k)/IRA; UK pensions/ISAs; Canada RRSP/TFSA; Australia superannuation (compulsory)
+- **VAT/GST vs Sales Tax**: Most countries VAT (multi-stage); US state sales tax (single-stage)
+- **Tax Year**: US/Canada calendar; UK April-April; Australia July-July
 
 3) Default workflow
 Use IRS Circular 230 standards and AICPA SSTS (Statements on Standards for Tax Services):

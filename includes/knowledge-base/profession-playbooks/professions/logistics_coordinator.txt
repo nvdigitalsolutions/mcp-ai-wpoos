@@ -45,6 +45,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regions/countries are involved? (Transportation and customs regulations vary significantly)
 - What is the shipment origin, destination, and required delivery date?
 - What transportation mode is needed (air, ocean, ground, intermodal) and why?
 - What is being shipped (commodity, dimensions, weight, hazmat classification if applicable)?
@@ -53,6 +54,52 @@ Ask 3–8 questions that materially affect the answer:
 - What documentation is required (commercial invoice, certificate of origin, packing list, MSDS)?
 - What is the shipment value and insurance requirements?
 - Are there customs, regulatory, or compliance considerations (FDA, USDA, export controls)?
+
+1.5) Regional Variations - Transportation & Logistics Regulations
+
+**NOTE**: See import_export_specialist and customs_broker playbooks for detailed customs/trade regulations.
+
+**United States:**
+- Transportation Modes: Extensive trucking (Interstate Highway System), rail (freight-dominant), air cargo hubs (major airports), ocean ports (Los Angeles, Long Beach, NY/NJ, Savannah)
+- Trucking Regulation: FMCSA (Federal Motor Carrier Safety Administration); HOS (Hours of Service) rules; ELD (Electronic Logging Device) mandate
+- Rail: Class I railroads (BNSF, Union Pacific, CSX, Norfolk Southern); STB (Surface Transportation Board) oversight
+- Freight Forwarders: No federal license required but must register with FMCSA
+- Hazmat: DOT hazmat regulations (49 CFR); placarding, shipping papers, training requirements
+- Cross-Border: US-Mexico (USMCA/NAFTA lanes); US-Canada (expedited clearance programs)
+
+**European Union:**
+- Transportation Modes: Extensive road network (autobahns, motorways), rail (growing intermodal), Rhine river shipping, major ports (Rotterdam, Antwerp, Hamburg)
+- Road Transport: EU regulations (driving time, rest periods); CMR Convention (international road transport)
+- Rail: Trans-European Transport Network (TEN-T); varied national rail operators
+- Freight Forwarders: National registration requirements vary
+- Hazmat: ADR (road), RID (rail), IMDG (sea), IATA (air) regulations; harmonized at EU level
+- Cross-Border: Schengen area facilitates movement; UK post-Brexit requires customs clearance
+
+**United Kingdom (Post-Brexit):**
+- Transportation: Road (motorways), rail (Channel Tunnel to EU), major ports (Felixstowe, Southampton, London Gateway)
+- Customs: Full customs controls with EU since 2021; GVMS (Goods Vehicle Movement Service)
+- Freight Forwarders: Registration with appropriate authorities
+- Northern Ireland: Special arrangements under NI Protocol
+- Hazmat: UK regulations aligned with but separate from EU ADR/RID
+
+**Canada:**
+- Transportation: Extensive highway system (Trans-Canada Highway), rail (CN, CP), major ports (Vancouver, Montreal, Halifax)
+- Trucking: Provincial regulation; CVSA (Commercial Vehicle Safety Alliance) for cross-border
+- Cross-Border: US-Canada integrated; FAST (Free and Secure Trade) program for expedited clearance
+- Hazmat: TDG (Transportation of Dangerous Goods) regulations
+
+**Asia-Pacific:**
+- Varied systems: highly developed (Singapore, Hong Kong, Japan) to developing infrastructure
+- Major Ports: Singapore (world's busiest transshipment), Shanghai, Shenzhen, Busan, Tokyo
+- Rail: China Belt and Road Initiative expanding rail links Europe-Asia
+- Regional Trade: ASEAN facilitates trade; varied customs and logistics efficiency
+
+**Key Regional Logistics Differences:**
+- **Infrastructure Quality**: Developed economies have extensive infrastructure; developing economies improving
+- **Modal Preferences**: US trucking-dominant; EU balanced road/rail; Asia ocean shipping-focused
+- **Regulations**: Harmonized in regions (EU ADR, ASEAN agreements); national elsewhere
+- **Technology Adoption**: Developed economies use TMS/WMS; varies in developing economies
+- **Cross-Border Efficiency**: Varies significantly (EU Schengen smooth; other regions more complex)
 
 3) Default workflow
 Use SCOR (Supply Chain Operations Reference) and industry best practices:

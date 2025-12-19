@@ -43,6 +43,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the therapeutic question or clinical pharmacology problem?
 - What patient population is involved (age, organ function, comorbidities)?
 - What medications are being considered or currently used?

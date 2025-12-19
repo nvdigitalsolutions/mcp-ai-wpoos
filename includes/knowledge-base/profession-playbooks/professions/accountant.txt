@@ -38,6 +38,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Accounting standards and regulations vary significantly - GAAP vs IFRS vs regional)
 - What is the business entity type (sole proprietor, LLC, corporation, nonprofit)?
 - What accounting method is used (cash, accrual, modified)?
 - What is your fiscal year-end and reporting requirements?
@@ -47,7 +48,95 @@ Ask 3–8 questions that materially affect the answer:
 - What is your current accounting workflow and pain points?
 - What reporting deadlines and stakeholder requirements exist?
 
-3) Default workflow
+1.5) Regional Variations - Accounting Standards & Regulations
+
+**United States:**
+- Accounting Framework: U.S. Generally Accepted Accounting Principles (US GAAP)
+- Standard-Setter: Financial Accounting Standards Board (FASB)
+- Key Standards: FASB Accounting Standards Codification (ASC)
+- Regulatory Bodies: SEC (public companies), IRS (tax), state boards of accountancy
+- Professional Organization: AICPA (American Institute of CPAs)
+- CPA Licensing: State-level; 150 credit hours education requirement in most states
+- Audit Standards: AICPA Auditing Standards (private), PCAOB standards (public companies post-SOX)
+- Tax: Federal (IRS, Internal Revenue Code) + state/local taxes
+- Key Compliance: Sarbanes-Oxley Act (SOX) for public companies, SEC reporting
+- SQMS: Statements on Quality Management Standards for CPA firms
+
+**European Union & IFRS Countries:**
+- Accounting Framework: International Financial Reporting Standards (IFRS) for listed companies; national GAAP for others
+- Standard-Setter: International Accounting Standards Board (IASB)
+- EU Adoption: IFRS mandatory for consolidated accounts of EU-listed companies since 2005
+- Regional Variations: Each EU country has national accounting standards for non-listed entities
+- Regulatory Bodies: Varies by member state (e.g., FRC in UK, AMF in France)
+- Professional Bodies: National institutes (ICAEW in England/Wales, IDW in Germany, OEC in France)
+- Audit Standards: International Standards on Auditing (ISA) adopted by most EU countries
+- Tax: VAT (EU-wide) + national corporate and income taxes
+- Examples: Germany (HGB - Handelsgesetzbuch), France (PCG - Plan Comptable Général), Spain (PGC)
+
+**United Kingdom (Post-Brexit):**
+- Accounting Framework: IFRS (listed companies), UK GAAP/FRS 102 (most private entities)
+- Standard-Setter: Financial Reporting Council (FRC) endorses IFRS; sets UK GAAP
+- Professional Bodies: ICAEW, ICAS (Scotland), ICAI (Ireland), ACCA, CIMA
+- Audit Standards: ISA (UK)
+- Regulatory: Companies House (company filings), FRC (audit oversight), HMRC (tax)
+- Key Legislation: Companies Act 2006, Financial Services and Markets Act 2000
+- Brexit Impact: UK has adopted "UK-adopted IFRS" with minor modifications
+
+**Canada:**
+- Accounting Framework: IFRS (public companies), ASPE (private enterprises), ASNPO (not-for-profits)
+- Standard-Setter: Accounting Standards Board (AcSB) under CPA Canada
+- Professional Body: Chartered Professional Accountants of Canada (CPA Canada); provincial CPAs
+- Audit Standards: Canadian Auditing Standards (CAS) based on ISA
+- Regulatory: Provincial securities commissions (e.g., OSC), CRA (tax)
+- Bilingual: English and French financial reporting in federally incorporated companies
+- Tax: Federal (CRA, Income Tax Act) + provincial corporate taxes
+
+**Australia:**
+- Accounting Framework: Australian Accounting Standards (AASB) based on IFRS
+- Standard-Setter: Australian Accounting Standards Board (AASB)
+- Professional Bodies: Chartered Accountants ANZ, CPA Australia, IPA
+- Audit Standards: Australian Auditing Standards (ASA) based on ISA
+- Regulatory: ASIC (Australian Securities and Investments Commission)
+- Tax: ATO (Australian Taxation Office)
+
+**Asia-Pacific:**
+- Varied adoption: Many countries converging toward IFRS
+- Examples:
+  - China: Chinese Accounting Standards (CAS) substantially converged with IFRS
+  - Japan: JGAAP (national) or IFRS (optional for listed companies)
+  - Singapore: SFRS (Singapore Financial Reporting Standards) aligned with IFRS
+  - India: Ind AS (Indian Accounting Standards) based on IFRS
+  - Hong Kong: HKFRS aligned with IFRS
+
+**Latin America:**
+- Varied adoption: Growing IFRS convergence
+- Examples:
+  - Brazil: IFRS adopted (CPC standards)
+  - Mexico: Mexican FRS (NIF) with IFRS convergence
+  - Argentina: IFRS adopted
+- Regional tax regimes vary significantly
+
+**Key GAAP vs IFRS Differences:**
+- **Revenue Recognition**: US GAAP ASC 606 vs IFRS 15 (now converged)
+- **Inventory**: US GAAP allows LIFO; IFRS prohibits LIFO
+- **Development Costs**: US GAAP generally expenses; IFRS may capitalize if criteria met
+- **Revaluation**: US GAAP prohibits asset revaluation (historical cost); IFRS allows revaluation model
+- **Extraordinary Items**: US GAAP prohibits classification; IFRS allows if infrequent/unusual
+- **Consolidation**: Differences in control assessment and structured entities (VIEs)
+- **Financial Statement Presentation**: Format differences (classified vs current/non-current)
+
+**Tax Accounting Regional Considerations:**
+- Tax rules often differ from financial reporting (book-tax differences)
+- Transfer pricing regulations vary but generally follow OECD guidelines
+- Controlled Foreign Corporation (CFC) rules differ by country
+- Thin capitalization rules (debt-to-equity) vary
+- R&D credits and incentives region-specific
+- VAT/GST (EU, Canada, Australia, others) vs Sales Tax (US states)
+
+**Audit & Assurance:**
+- ISA (International Standards on Auditing) adopted by 130+ countries
+- US uses GAAS (Generally Accepted Auditing Standards) from AICPA
+- Public company audit oversight: PCAOB (US), FRC (UK), CPAB (Canada), ASIC (Australia)
 Use a deterministic, repeatable process:
 1. Discovery & Assessment
    - Review current financial records and accounting systems

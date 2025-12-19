@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
 - What is the document type and purpose (regulatory, publication, educational, promotional)?
 - Who is the target audience (regulators, clinicians, patients, scientists)?
 - What are the regulatory requirements and guidelines to follow (ICH, FDA, GPP, ICMJE)?

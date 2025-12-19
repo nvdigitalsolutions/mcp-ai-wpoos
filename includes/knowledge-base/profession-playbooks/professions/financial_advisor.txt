@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Financial regulations, tax laws, and retirement accounts vary significantly)
 - What are your primary financial goals (retirement, education, home purchase, business, legacy)?
 - What is your current financial situation (income, expenses, assets, liabilities, net worth)?
 - What is your time horizon for each goal (short-term <3 years, medium 3-10, long-term >10)?
@@ -50,6 +51,65 @@ Ask 3–8 questions that materially affect the answer:
 - What employee benefits do you have (401k, pension, stock options, HSA)?
 - What insurance coverage exists (life, disability, health, long-term care)?
 - What tax situation applies (tax bracket, state tax, capital gains, itemizing)?
+
+1.5) Regional Variations - Financial Regulations & Planning
+
+**United States:**
+- Regulatory Framework: SEC (securities), FINRA (broker-dealers), state insurance departments
+- Licensing: Series 7/63/65/66 for securities; CFP certification; state insurance licenses
+- Fiduciary Standard: Reg BI (Regulation Best Interest) for broker-dealers; fiduciary for RIAs under Investment Advisers Act
+- Professional Standards: CFP Board Standards of Conduct (fiduciary at all times as of 2020)
+- Retirement Accounts: 401(k), IRA, Roth IRA, 403(b), SEP, SIMPLE; contribution limits and RMD rules
+- Tax Planning: Federal + state income tax; capital gains preferential rates; estate/gift tax ($13.61M exemption 2024)
+- Investment Products: Mutual funds, ETFs, individual securities, annuities, REITs, options, alternatives
+- Professional Bodies: CFP Board, FPA (Financial Planning Association), NAPFA (fee-only)
+
+**United Kingdom:**
+- Regulatory Framework: FCA (Financial Conduct Authority)
+- Licensing: FCA authorization required; Level 4 Diploma in Financial Planning (DipPFS) or equivalent
+- Professional Standards: Chartered Financial Planner via CII or PFS
+- Disclosure: RDR (Retail Distribution Review) - commission ban, fee transparency
+- Retirement Accounts: State pension, workplace pensions (auto-enrolment), SIPPs, ISAs (tax-free)
+- Tax Planning: Income tax bands, CGT (annual exemption), inheritance tax (£325K nil-rate band)
+- Investment Products: OEIC/unit trusts, investment trusts, ISA wrappers, pensions, VCT/EIS
+- Professional Bodies: CII (Chartered Insurance Institute), PFS (Personal Finance Society)
+
+**European Union:**
+- Regulatory Framework: MiFID II (Markets in Financial Instruments Directive), national regulators
+- Licensing: Varies by member state; generally national qualifications and registration
+- Professional Standards: EFPA (European Financial Planning Association) - EFA, EFP
+- Key Regulations: MiFID II, PRIIPS, GDPR (data protection), IDD (Insurance Distribution Directive)
+- Retirement Systems: State pensions vary by country; occupational pensions; personal pensions
+- Tax Planning: Varied by country (progressive income tax, capital gains, estate/inheritance)
+- Investment Products: UCITS (EU-harmonized funds), insurance-wrapped products
+- Cross-Border: EU passport allows cross-border advisory (restrictions post-Brexit for UK)
+
+**Canada:**
+- Regulatory Framework: Provincial securities commissions (OSC), MFDA, IIROC
+- Licensing: Provincial registration; MFDA mutual fund dealer, IIROC investment dealer, insurance licenses
+- Professional Standards: QAFP, CFP, CIM, PFP designations
+- Disclosure: CRM2 (Client Relationship Model Phase 2) - fee and performance reporting
+- Retirement Accounts: RRSP, TFSA, RESP, LIRA, pension plans; contribution limits
+- Tax Planning: Federal + provincial income tax; capital gains (50% taxable); lifetime capital gains exemption
+- Investment Products: Mutual funds (prevalent), ETFs, segregated funds (insurance), GICs
+- Professional Bodies: FP Canada (CFP), CSI, Advocis
+
+**Australia:**
+- Regulatory Framework: ASIC (Australian Securities and Investments Commission)
+- Licensing: Australian Financial Services (AFS) license required; RG 146 compliance
+- Professional Standards: FASEA education/ethics standards; CFP Australia
+- Key Regulations: Corporations Act 2001, FOFA reforms, Royal Commission reforms
+- Retirement: Superannuation system (compulsory 11.5% 2024); SMSFs; age pension
+- Tax Planning: Income tax, CGT (50% discount >12 months), franking credits (dividend imputation)
+- Investment Products: Managed funds, listed securities, SMSFs, insurance bonds
+- Professional Bodies: FPA Australia, AFA
+
+**Key Regional Differences:**
+- **Fiduciary Standards**: US moving toward (Reg BI); UK/Australia have stronger requirements
+- **Compensation Models**: US allows commissions; UK banned commission (RDR)
+- **Tax-Advantaged Accounts**: Each region has unique retirement/savings vehicles
+- **Investment Product Preferences**: US (mutual funds, ETFs), Europe (insurance products), Canada (mutual funds)
+- **Regulatory Intensity**: Post-financial crisis, regulation increased (Dodd-Frank US, RDR UK, FOFA Australia, MiFID II EU)
 
 3) Default workflow
 Use the CFP Board Financial Planning Process (6 Steps):

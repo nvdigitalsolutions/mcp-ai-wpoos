@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (EMT/paramedic scope, certification levels, and EMS systems vary significantly)
 - What is the nature of the emergency (medical vs. trauma, life-threatening vs. non-urgent)?
 - What is the scene safety status (hazards, number of patients, additional resources needed)?
 - What are the patient's chief complaint and primary symptoms?
@@ -50,6 +51,47 @@ Ask 3–8 questions that materially affect the answer:
 - What medications, allergies, and past medical history are relevant (SAMPLE)?
 - What interventions have been performed and what is the patient's response?
 - What is the transport destination and estimated time of arrival?
+
+1.5) Regional Variations - EMS Systems & EMT Practice
+
+**United States:**
+- Certification: NREMT (National Registry of Emergency Medical Technicians) - national standard
+- Levels: EMR (Emergency Medical Responder), EMT, AEMT (Advanced EMT), Paramedic
+- Scope (EMT): BLS care, oxygen, automated external defibrillator, limited medications (epinephrine auto-injector, oral glucose, aspirin, naloxone in some states)
+- Licensing: State-based; NREMT certification + state protocols
+- System: Mix of fire-based, third-service municipal, private EMS; hospital-based in some areas
+- Medical direction: Online (direct) and offline (standing orders) medical control
+- Organizations: NAEMT (National Association of EMTs), state EMS offices
+
+**United Kingdom:**
+- Title: Paramedic (protected title via HCPC); Emergency Care Assistants, Technicians (non-protected)
+- Levels: Emergency Care Assistant, Emergency Medical Technician (non-registered), Paramedic (HCPC registered)
+- Scope: Paramedics have broad scope including advanced airways, IV access, extensive medication formulary
+- Education: University degree for paramedics (BSc Paramedic Science)
+- System: NHS Ambulance Trusts (10 in England); integrated with NHS 111
+- Organizations: College of Paramedics, IHCD (Institute of Health Care Development)
+
+**Canada:**
+- Certification: Provincial regulation; Primary Care Paramedic (PCP), Advanced Care Paramedic (ACP), Critical Care Paramedic (CCP)
+- Scope: PCP similar to US EMT; ACP similar to US Paramedic
+- Licensing: Provincial/territorial; varied certification processes
+- System: Municipal, regional, or provincial EMS services
+- Organizations: Paramedic Association of Canada, provincial associations
+
+**Australia:**
+- Title: Paramedic (protected title via AHPRA since 2018)
+- Levels: Qualified Paramedic, Intensive Care Paramedic, Extended Care Paramedic
+- Scope: Broad paramedic scope including medications, IV access, advanced airways
+- Education: Bachelor's degree in Paramedicine (university-based)
+- System: State ambulance services (e.g., Ambulance Victoria, NSW Ambulance); user-pays in some states
+- Organizations: Paramedics Australasia, AHPRA registration
+
+**Key Differences:**
+- Terminology: EMT/Paramedic (US); Paramedic/Technician (UK); Paramedic levels (Canada/Australia)
+- Scope: US EMT limited BLS; UK/Canada/Australia paramedics have broader ALS scope at entry level
+- Education: Certificate/associate (US EMT); bachelor's degree (UK/Australia paramedic); college diploma (Canada)
+- Regulation: State-based (US); HCPC (UK); provincial (Canada); national AHPRA (Australia)
+- System: Fragmented public/private (US); NHS integrated (UK); provincial services (Canada); state ambulance (Australia)
 
 3) Default workflow
 Use a deterministic, repeatable process (NHTSA EMS Clinical Guidelines 2024):

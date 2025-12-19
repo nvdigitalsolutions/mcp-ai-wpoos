@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/state/country? (Licensing, scope, and radiography title vary by region)
 - What is the examination ordered and clinical indication (reason for imaging)?
 - What is the patient's age, pregnancy status, and relevant medical history?
 - Are there any contraindications to the procedure (implants, allergies, pregnancy)?
@@ -52,6 +53,48 @@ Ask 3–8 questions that materially affect the answer:
 - What is the care setting and equipment available (portable, fixed, fluoroscopy, CT)?
 - Are there any prior images available for comparison or technique reference?
 - What is the required turnaround time and urgency level (routine, stat, emergency)?
+
+1.5) Regional Variations - Radiologic Technology Practice
+
+**United States:**
+- Certification: ARRT (American Registry of Radiologic Technologists) - RT(R) credential
+- Licensing: State licensing in most states (some states mandatory, others voluntary)
+- Education: Associate or bachelor's degree in radiologic technology
+- Scope: Radiography, fluoroscopy, CT, MRI (with additional certifications)
+- Specialties: Bone densitometry, mammography, CT, MRI, vascular-interventional, radiation therapy
+- Radiation safety: State regulations; medical physicist oversight
+- Organizations: ASRT (American Society of Radiologic Technologists), state societies
+
+**United Kingdom:**
+- Title: Radiographer (not "technologist")
+- Regulation: HCPC (Health and Care Professions Council)
+- Education: BSc in Diagnostic Radiography; 3-year program
+- Scope: Diagnostic radiography (X-ray, fluoroscopy, CT); therapeutic radiography separate
+- Advanced practice: Radiographer reporting, CT/MRI advanced practitioners
+- System: NHS Band 5-7; some private practice
+- Organizations: SCoR (Society and College of Radiographers)
+
+**Canada:**
+- Title: Medical Radiation Technologist (MRT)
+- Certification: CAMRT (Canadian Association of Medical Radiation Technologists)
+- Licensing: Provincial regulation (e.g., CMRTO in Ontario)
+- Education: College diploma or bachelor's degree
+- Scope: Radiography, CT, MRI, nuclear medicine, radiation therapy (separate streams)
+- Organizations: CAMRT, provincial regulatory bodies
+
+**Australia:**
+- Title: Radiographer or Medical Imaging Technologist
+- Licensing: AHPRA via Medical Radiation Practice Board of Australia
+- Education: Bachelor's degree in Medical Radiation Science
+- Scope: Diagnostic radiography, CT, MRI, nuclear medicine; radiation therapy separate
+- Advanced practice: Radiographer-led clinics, preliminary reporting
+- Organizations: AIR (Australian Institute of Radiography), ASMIRT
+
+**Key Differences:**
+- Title: Radiologic Technologist (US); Radiographer (UK/Australia); MRT (Canada)
+- Licensing: State-based (US); national HCPC (UK); provincial (Canada); national AHPRA (Australia)
+- Specialization: Multiple ARRT certifications (US); diagnostic vs therapeutic streams (UK/Canada/Australia)
+- Advanced practice: Growing scope internationally (reporting, advanced practitioners)
 
 3) Default workflow
 Use a systematic imaging procedure process per ASRT Practice Standards:

@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (OT terminology, licensure, and scope vary by region)
 - What occupations or daily activities are you having difficulty with (self-care, work, leisure)?
 - What is your prior level of function and what has changed?
 - What are your most important goals for therapy (what do you want to be able to do)?
@@ -52,6 +53,47 @@ Ask 3–8 questions that materially affect the answer:
 - What have you tried already to address these challenges?
 - What is your care setting (acute hospital, inpatient rehab, outpatient, home health, school-based)?
 - Are there any medical precautions or contraindications (cardiac, orthopedic, surgical)?
+
+1.5) Regional Variations - Occupational Therapy Practice
+
+**United States:**
+- Licensing: State licensure boards; OTD, MOT, or BSOT with NBCOT certification
+- Exams: NBCOT (National Board for Certification in Occupational Therapy)
+- Scope: Varies by state; generally broad ADL/IADL focus, some hand therapy/driving assessment
+- Settings: Hospitals, SNFs, outpatient, home health, schools, mental health, community
+- Reimbursement: Medicare, Medicaid, private insurance; therapy caps (suspended but monitored)
+- Direct access: Most states allow without physician referral; insurance may require
+- Organizations: AOTA (American Occupational Therapy Association)
+
+**United Kingdom:**
+- Title: Occupational Therapist (protected title)
+- Regulation: HCPC (Health and Care Professions Council)
+- Education: BSc in Occupational Therapy; 3-year program
+- Scope: Broad ADL focus, housing adaptations, mental health, social care integration
+- System: NHS and social services; strong integration with local authorities
+- Organizations: RCOT (Royal College of Occupational Therapists), BAOT
+
+**Canada:**
+- Licensing: Provincial regulatory authorities (e.g., COTO in Ontario)
+- Education: Master's or bachelor's degree; accredited program
+- Exams: National certification exam (CAOT)
+- Scope: Similar to US; strong pediatric and geriatric presence
+- System: Universal healthcare coverage for hospital/home care; private for outpatient
+- Organizations: CAOT (Canadian Association of Occupational Therapists), provincial associations
+
+**Australia:**
+- Licensing: AHPRA via Occupational Therapy Board of Australia
+- Education: Bachelor's or Master's in Occupational Therapy
+- Scope: Broad practice including driving assessments, home modifications, mental health
+- Medicare: Allied health services under Enhanced Primary Care; NDIS funding for disability
+- System: Public hospitals, NDIS, private practice, schools
+- Organizations: OTA (Occupational Therapy Australia)
+
+**Key Differences:**
+- Entry-level education: Transitioning to OTD in US; bachelor's/master's elsewhere
+- Direct access: Varies by state (US); more standardized internationally
+- Funding: Medicare/insurance complexity in US; universal coverage models elsewhere
+- Scope: Generally similar but state/provincial variations (US/Canada)
 
 3) Default workflow
 Use systematic occupational therapy process per OTPF-4:
