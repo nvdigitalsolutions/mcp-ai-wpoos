@@ -72,16 +72,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		public function get_fields() {
 			// Get available WordPress capabilities for dropdown.
 			$wp_capabilities = array(
-				'read'               => __( 'Read (Subscriber)', 'wp-mcp-ai' ),
-				'edit_posts'         => __( 'Edit Posts (Contributor)', 'wp-mcp-ai' ),
-				'publish_posts'      => __( 'Publish Posts (Author)', 'wp-mcp-ai' ),
-				'edit_others_posts'  => __( 'Edit Others Posts (Editor)', 'wp-mcp-ai' ),
-				'manage_options'     => __( 'Manage Options (Administrator)', 'wp-mcp-ai' ),
+				'read'              => __( 'Read (Subscriber)', 'wp-mcp-ai' ),
+				'edit_posts'        => __( 'Edit Posts (Contributor)', 'wp-mcp-ai' ),
+				'publish_posts'     => __( 'Publish Posts (Author)', 'wp-mcp-ai' ),
+				'edit_others_posts' => __( 'Edit Others Posts (Editor)', 'wp-mcp-ai' ),
+				'manage_options'    => __( 'Manage Options (Administrator)', 'wp-mcp-ai' ),
 			);
-			
+
 			$fields = array(
 				// Tool Configuration.
-				'web_search_provider'                     => array(
+				'web_search_provider'                  => array(
 					'type'        => 'select',
 					'label'       => __( 'Web Search Provider', 'wp-mcp-ai' ),
 					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'wp-mcp-ai' ),
@@ -91,21 +91,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'duckduckgo',
 				),
-				'enable_varnish_purge'                    => array(
+				'enable_varnish_purge'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Varnish Purge Tool', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Varnish cache purging functionality', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'group_email_capability'                  => array(
+				'group_email_capability'               => array(
 					'type'        => 'select',
 					'label'       => __( 'Send Group Email Capability', 'wp-mcp-ai' ),
 					'description' => __( 'WordPress capability required to use the Send Group Email tool. Controls who can send bulk emails through AI assistants. Higher capabilities = more restricted access.', 'wp-mcp-ai' ),
 					'options'     => $wp_capabilities,
 					'default'     => 'publish_posts',
 				),
-				'group_email_max_recipients'              => array(
+				'group_email_max_recipients'           => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Email Recipients', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of recipients allowed in a single group email. Higher limits increase the risk of spam. Consider your server\'s email sending limits.', 'wp-mcp-ai' ),
@@ -115,33 +115,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'step'        => 10,
 					'placeholder' => '100',
 				),
-				
+
 				// External Tools fields.
-				'gmail_client_id'                         => array(
+				'gmail_client_id'                      => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'gmail_client_secret'                     => array(
+				'gmail_client_secret'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'gmail_refresh_token'                     => array(
+				'gmail_refresh_token'                  => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'gmail_user_email'                        => array(
+				'gmail_user_email'                     => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'brave_search_api_key'                    => array(
+				'brave_search_api_key'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -152,73 +152,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_api_token'                    => array(
+				'cloudflare_api_token'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'wp-mcp-ai' ),
 					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_zone_id'                      => array(
+				'cloudflare_zone_id'                   => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'cloudways_api_key'                       => array(
+				'cloudways_api_key'                    => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for Cloudways hosting integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudways_email'                         => array(
+				'cloudways_email'                      => array(
 					'type'        => 'email',
 					'label'       => __( 'Cloudways Account Email', 'wp-mcp-ai' ),
 					'description' => __( 'Email address associated with your Cloudways account.', 'wp-mcp-ai' ),
 					'placeholder' => 'you@example.com',
 				),
-				'mailjet_api_key'                         => array(
+				'mailjet_api_key'                      => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'mailjet_api_secret'                      => array(
+				'mailjet_api_secret'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'quickbooks_api_key'                      => array(
+				'quickbooks_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'quickbooks_client_id'                    => array(
+				'quickbooks_client_id'                 => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Client ID', 'wp-mcp-ai' ),
 					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'quickbooks_client_secret'                => array(
+				'quickbooks_client_secret'             => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'google_analytics_property_id'            => array(
+				'google_analytics_property_id'         => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
 					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ),
 					'placeholder' => '123456789',
 				),
-				'google_analytics_credentials'            => array(
+				'google_analytics_credentials'         => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Google Analytics Service Account JSON', 'wp-mcp-ai' ),
 					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ),
@@ -226,7 +226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// remove.bg API.
-				'removebg_api_key'                        => array(
+				'removebg_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'remove.bg API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -239,7 +239,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// GitHub Integration fields.
-				'github_client_id'                        => array(
+				'github_client_id'                     => array(
 					'type'         => 'text',
 					'label'        => __( 'GitHub OAuth Client ID', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -250,47 +250,47 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'github_client_secret'                    => array(
+				'github_client_secret'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'GitHub OAuth Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'github_access_token'                     => array(
+				'github_access_token'                  => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'github_username'                         => array(
+				'github_username'                      => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
 
 				// Plugins Integration fields.
-				'enable_jetengine_cct'                    => array(
+				'enable_jetengine_cct'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'wp-mcp-ai' ),
 					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_jetengine_tools'                  => array(
+				'enable_jetengine_tools'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable JetEngine AI tools', 'wp-mcp-ai' ),
 					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_woocommerce_tools'                => array(
+				'enable_woocommerce_tools'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'wp-mcp-ai' ),
 					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_elementor_widgets'                => array(
+				'enable_elementor_widgets'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Elementor AI Widgets', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Elementor AI widgets', 'wp-mcp-ai' ),
@@ -299,14 +299,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Features fields.
-				'enable_mesh'                             => array(
+				'enable_mesh'                          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Mesh Computing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable distributed computing features', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_federation'                       => array(
+				'enable_federation'                    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'wp-mcp-ai' ),
@@ -315,28 +315,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Media fields.
-				'enable_ai_media_library'                 => array(
+				'enable_ai_media_library'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Media Library', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze images on upload', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_media_generate_alt_text'              => array(
+				'ai_media_generate_alt_text'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Alt Text', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_generate_caption'               => array(
+				'ai_media_generate_caption'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Captions', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate image captions', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_overwrite_existing'             => array(
+				'ai_media_overwrite_existing'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Overwrite Existing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
@@ -345,14 +345,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Comments fields.
-				'enable_ai_comments_moderation'           => array(
+				'enable_ai_comments_moderation'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Comments Moderation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_comments_sensitivity'                 => array(
+				'ai_comments_sensitivity'              => array(
 					'type'        => 'select',
 					'label'       => __( 'Moderation Sensitivity', 'wp-mcp-ai' ),
 					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'wp-mcp-ai' ),
@@ -363,7 +363,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'ai_comments_min_confidence'              => array(
+				'ai_comments_min_confidence'           => array(
 					'type'        => 'select',
 					'label'       => __( 'Minimum Confidence Level', 'wp-mcp-ai' ),
 					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'wp-mcp-ai' ),
@@ -376,7 +376,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => '0.7',
 				),
-				'ai_comments_auto_hold_low_confidence'    => array(
+				'ai_comments_auto_hold_low_confidence' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Hold Low Confidence Comments', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'wp-mcp-ai' ),

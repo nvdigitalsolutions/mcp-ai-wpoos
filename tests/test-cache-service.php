@@ -191,7 +191,7 @@ class Test_WP_MCP_AI_Cache_Service extends WP_UnitTestCase {
 	 * Test stampede protection with get_or_set.
 	 */
 	public function test_stampede_protection() {
-		$key       = 'stampede_test';
+		$key        = 'stampede_test';
 		$call_count = 0;
 
 		$callback = function () use ( &$call_count ) {

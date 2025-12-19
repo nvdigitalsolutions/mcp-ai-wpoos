@@ -154,7 +154,7 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 	 */
 	public function test_completed_jobs_skip_polling() {
 		$task_id = 'completed-task-789';
-		
+
 		// Register a completed job
 		$registered = WP_MCP_AI_Crawler::register_completed_job(
 			$task_id,
@@ -164,9 +164,9 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 				'context'   => array( 'user_id' => 1 ),
 				'status'    => 'completed',
 				'result'    => array(
-					'status'  => 'completed',
-					'task_id' => $task_id,
-					'results' => array(
+					'status'   => 'completed',
+					'task_id'  => $task_id,
+					'results'  => array(
 						array(
 							'url'      => 'https://example.org',
 							'markdown' => '# Test',

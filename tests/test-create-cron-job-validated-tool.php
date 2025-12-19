@@ -152,7 +152,10 @@ class Test_WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_UnitTestCase {
 	 */
 	public function test_create_cron_job_with_arguments() {
 		$future_timestamp = time() + 3600;
-		$custom_args      = array( 'post_id' => 123, 'action' => 'publish' );
+		$custom_args      = array(
+			'post_id' => 123,
+			'action'  => 'publish',
+		);
 		$arguments        = array(
 			'hook'      => 'test_hook_with_args',
 			'timestamp' => $future_timestamp,

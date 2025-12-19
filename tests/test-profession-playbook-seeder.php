@@ -204,12 +204,12 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Run sync first time.
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
 
-		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$memory_files  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
 		$attachment_id = end( $memory_files );
 		$initial_hash  = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
 
 		// Get initial file content.
-		$file_path      = get_attached_file( $attachment_id );
+		$file_path       = get_attached_file( $attachment_id );
 		$initial_content = file_get_contents( $file_path );
 
 		// Modify profession to trigger content change (change title).

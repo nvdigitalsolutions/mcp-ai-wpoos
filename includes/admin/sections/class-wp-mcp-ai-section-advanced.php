@@ -57,14 +57,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'memory_max_file_bytes'        => array(
+				'memory_max_file_bytes'       => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'wp-mcp-ai' ),
 					'default'     => 5242880,
 					'placeholder' => '5242880',
 				),
-				'enable_opcache_reset'         => array(
+				'enable_opcache_reset'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Auto OPcache Reset', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'wp-mcp-ai' ),
@@ -72,28 +72,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
-				'enable_federation_directory'  => array(
+				'enable_federation_directory' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'federation_regions'           => array(
+				'federation_regions'          => array(
 					'type'        => 'text',
 					'label'       => __( 'Federation Regions', 'wp-mcp-ai' ),
 					'description' => __( 'Comma-separated list of geographic regions where this site operates (e.g., "us-east,us-west,eu-central"). Used for regional routing and data residency compliance.', 'wp-mcp-ai' ),
 					'default'     => 'global',
 					'placeholder' => 'global, us-east, eu-central',
 				),
-				'federation_data_tags'         => array(
+				'federation_data_tags'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Federation Data Tags', 'wp-mcp-ai' ),
 					'description' => __( 'Comma-separated data classification tags (e.g., "public,internal,confidential"). Used for data governance and access control in federated operations.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'public, internal',
 				),
-				'federation_qps'               => array(
+				'federation_qps'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Federation QPS Limit', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum queries per second (QPS) allowed for federation API requests. Prevents resource exhaustion from federated queries. Default: 5 QPS.', 'wp-mcp-ai' ),
@@ -102,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'max'         => 1000,
 					'placeholder' => '5',
 				),
-				'federation_burst'             => array(
+				'federation_burst'            => array(
 					'type'        => 'number',
 					'label'       => __( 'Federation Burst Capacity', 'wp-mcp-ai' ),
 					'description' => __( 'Burst capacity for federation rate limiting. Allows temporary spikes above QPS limit. Default: 10.', 'wp-mcp-ai' ),
@@ -111,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'max'         => 10000,
 					'placeholder' => '10',
 				),
-				'federation_jwks_keys'         => array(
+				'federation_jwks_keys'        => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Federation JWKS Keys', 'wp-mcp-ai' ),
 					'description' => __( 'JSON Web Key Set (JWKS) for federation authentication. Advanced setting - only modify if implementing custom federation authentication. Must be valid JSON array of JWK objects.', 'wp-mcp-ai' ),
@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'placeholder' => '[{"kty":"RSA","use":"sig","kid":"...","n":"...","e":"AQAB"}]',
 					'rows'        => 6,
 				),
-				'federation_price_hints'       => array(
+				'federation_price_hints'      => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Federation Price Hints', 'wp-mcp-ai' ),
 					'description' => __( 'JSON object with pricing information for federation services. Used for cost attribution in federated AI operations. Advanced setting. Format: {"model": "gpt-4", "cost_per_1k_tokens": 0.03}', 'wp-mcp-ai' ),
@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'placeholder' => '{"gpt-4": {"input": 0.03, "output": 0.06}}',
 					'rows'        => 5,
 				),
-				'mesh_inbound_api_key'         => array(
+				'mesh_inbound_api_key'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Mesh Inbound API Key', 'wp-mcp-ai' ),
 					'description' => __( 'Auto-generated API key for receiving mesh network requests. This key is used by peer sites to authenticate inbound connections. Copy this key to configure peer sites. Key is auto-generated when mesh networking is enabled.', 'wp-mcp-ai' ),
@@ -136,7 +136,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'readonly'    => true,
 					'class'       => 'regular-text code',
 				),
-				'mesh_peer_sites'              => array(
+				'mesh_peer_sites'             => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Mesh Peer Sites Configuration', 'wp-mcp-ai' ),
 					'description' => __( 'JSON array of mesh network peer configurations. Each peer should have: url (peer site URL), api_key (their inbound key), name (friendly name), and enabled (boolean). Example: [{"url":"https://peer1.com","api_key":"mesh_xxx","name":"Peer 1","enabled":true}]', 'wp-mcp-ai' ),

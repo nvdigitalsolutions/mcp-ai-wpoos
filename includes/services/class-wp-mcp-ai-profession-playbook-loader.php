@@ -36,7 +36,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                                 $playbook_base_path Optional path to playbook directory.
+	 * @param string                                     $playbook_base_path Optional path to playbook directory.
 	 * @param WP_MCP_AI_Profession_Tool_Recommender|null $tool_recommender Optional tool recommender instance.
 	 *                                                                     If null, a new instance will be created automatically.
 	 *                                                                     This parameter is backward compatible - existing code
@@ -158,14 +158,14 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 
 		// Add header.
 		$sections[] = "# {$title} - Professional Playbook\n";
-		$sections[] = "Generated: " . gmdate( 'Y-m-d H:i:s' ) . " UTC\n";
-		
+		$sections[] = 'Generated: ' . gmdate( 'Y-m-d H:i:s' ) . " UTC\n";
+
 		// Add region context if specified.
 		if ( ! empty( $region ) ) {
 			$region_label = $this->get_region_label( $region );
 			$sections[]   = "Primary Region/Jurisdiction: {$region_label}\n";
 		}
-		
+
 		$sections[] = "---\n";
 
 		// Global section.
@@ -249,17 +249,17 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	 */
 	protected function get_region_label( $region ) {
 		$labels = array(
-			'north_america'            => 'North America',
-			'united_states'            => 'United States',
-			'canada'                   => 'Canada',
-			'europe'                   => 'Europe',
-			'european_union'           => 'European Union',
-			'united_kingdom'           => 'United Kingdom',
-			'asia_pacific'             => 'Asia-Pacific',
-			'latin_america_caribbean'  => 'Latin America & Caribbean',
-			'caribbean'                => 'Caribbean (CARICOM)',
-			'middle_east_africa'       => 'Middle East & Africa',
-			'africa'                   => 'Africa',
+			'north_america'           => 'North America',
+			'united_states'           => 'United States',
+			'canada'                  => 'Canada',
+			'europe'                  => 'Europe',
+			'european_union'          => 'European Union',
+			'united_kingdom'          => 'United Kingdom',
+			'asia_pacific'            => 'Asia-Pacific',
+			'latin_america_caribbean' => 'Latin America & Caribbean',
+			'caribbean'               => 'Caribbean (CARICOM)',
+			'middle_east_africa'      => 'Middle East & Africa',
+			'africa'                  => 'Africa',
 		);
 
 		return isset( $labels[ $region ] ) ? $labels[ $region ] : ucwords( str_replace( '_', ' ', $region ) );

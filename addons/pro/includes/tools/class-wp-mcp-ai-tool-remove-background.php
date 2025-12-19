@@ -280,7 +280,7 @@ PYTHON;
 
 		// Execute Python script using Process Service.
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		
+
 		$result = $process_service->run(
 			array(
 				$python_cmd,
@@ -298,7 +298,7 @@ PYTHON;
 		if ( is_wp_error( $result ) ) {
 			$error_message = $result->get_error_message();
 			$error_data    = $result->get_error_data();
-			
+
 			// Check if it's a specific exit code error.
 			if ( isset( $error_data['exit_code'] ) && 2 === $error_data['exit_code'] ) {
 				return new WP_Error(
@@ -351,7 +351,7 @@ PYTHON;
 	 * @return string|WP_Error Python command or error.
 	 */
 	protected function find_python_command() {
-		$process_service  = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 		$python_commands = array( 'python3', 'python' );
 
 		foreach ( $python_commands as $cmd ) {

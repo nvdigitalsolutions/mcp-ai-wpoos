@@ -175,7 +175,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 
 		// Validate required parameters.
 		$product_id_param = isset( $arguments['product_attachment_id'] ) ? $arguments['product_attachment_id'] : 0;
-		
+
 		// Handle both integer attachment IDs and string file IDs from chat uploads.
 		// When files are uploaded via the chat attach button with OpenAI, they get a file_id like "file-abc123".
 		// We need to resolve this back to the WordPress attachment_id.
@@ -190,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			$attachments_helper = new WP_MCP_AI_Message_Attachments();
 			$product_id         = $attachments_helper->get_attachment_id_for_openai_file( $product_id_param );
 		}
-		
+
 		$scene_prompt = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
 		$mode         = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
 		$aspect_ratio = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';

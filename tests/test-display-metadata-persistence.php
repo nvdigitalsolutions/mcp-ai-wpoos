@@ -90,7 +90,7 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 						return new WP_Error( 'invalid_record', 'Invalid session_key or user_id' );
 					}
 
-					$key                  = $session_key . '_' . $user_id;
+					$key                   = $session_key . '_' . $user_id;
 					$this->records[ $key ] = $record;
 
 					return true;
@@ -177,9 +177,9 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 				'content' => 'Create a chart',
 			),
 			array(
-				'role'    => 'tool',
-				'content' => '{"result":"Chart created"}',
-				'display' => array(
+				'role'         => 'tool',
+				'content'      => '{"result":"Chart created"}',
+				'display'      => array(
 					'text'        => '✓ Chart created',
 					'chartHtml'   => $chart_html,
 					'chartWidth'  => 800,
@@ -310,19 +310,19 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 				'role'    => 'assistant',
 				'content' => 'Response with badges',
 				'display' => array(
-					'bubbleType'       => 'assistant',
-					'text'             => 'Response with badges',
-					'usage'            => array(
+					'bubbleType'      => 'assistant',
+					'text'            => 'Response with badges',
+					'usage'           => array(
 						'prompt_tokens'     => 10,
 						'completion_tokens' => 20,
 						'total_tokens'      => 30,
 					),
-					'cost'             => array(
+					'cost'            => array(
 						'input_cost'  => 0.001,
 						'output_cost' => 0.002,
 						'total_cost'  => 0.003,
 					),
-					'capabilityFlags'  => array( 'vision', 'function_calling' ),
+					'capabilityFlags' => array( 'vision', 'function_calling' ),
 				),
 			),
 		);

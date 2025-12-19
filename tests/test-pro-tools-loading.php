@@ -26,22 +26,25 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 
 	/**
 	 * Test that Pro tools are registered in tool registry.
-	 * 
+	 *
 	 * Note: Individual Pro tools may not be registered if their dependencies
 	 * (WooCommerce, JetEngine, Elementor, Crawl4AI, imagick/gd) are not available.
 	 * This test verifies that Pro tools CAN be registered when dependencies are met.
 	 */
 	public function test_pro_tools_can_register() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		
+
 		// Get all registered tools.
-		$all_tools = $registry->get_tools();
-		$registered_slugs = array_map( function( $tool ) {
-			return $tool->get_slug();
-		}, $all_tools );
+		$all_tools        = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
 
 		// Check if any Pro tools are registered.
-		$pro_tool_slugs = array( 'product_actualization', 'lookup_product_price', 'woo_products', 'woo_orders', 'jetengine', 'elementor' );
+		$pro_tool_slugs       = array( 'product_actualization', 'lookup_product_price', 'woo_products', 'woo_orders', 'jetengine', 'elementor' );
 		$registered_pro_tools = array_intersect( $pro_tool_slugs, $registered_slugs );
 
 		// At least one Pro tool should be registered (or Pro addon is not working).
@@ -50,7 +53,7 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 		// 2. All Pro tools require dependencies that aren't available (OK)
 		// To distinguish, we check if the Pro addon is loaded.
 		$pro_addon_loaded = defined( 'WP_MCP_AI_PRO_VERSION' );
-		
+
 		if ( $pro_addon_loaded ) {
 			// Pro addon is loaded. Check if product_actualization can register.
 			if ( extension_loaded( 'imagick' ) || extension_loaded( 'gd' ) ) {
@@ -116,8 +119,8 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 	 * Test that Pro tools appear in tool group map.
 	 */
 	public function test_pro_tools_in_group_map() {
-		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-		$group_map  = $registry->get_tool_group_map();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$group_map = $registry->get_tool_group_map();
 
 		// Check that Pro tools are in the group map (regardless of availability).
 		$this->assertArrayHasKey(
@@ -193,7 +196,7 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 	 * Test that all tools (base + extended + pro) are loaded.
 	 */
 	public function test_all_tools_loaded_in_full_version() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 		$all_tools = $registry->get_tools();
 
 		// Count should include base tools + extended tools + pro tools.

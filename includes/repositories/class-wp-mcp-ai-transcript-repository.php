@@ -115,7 +115,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
-		$query_values   = array_merge( $where_values, array( $per_page, $offset ) );
+		$query_values = array_merge( $where_values, array( $per_page, $offset ) );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
 		$query_template = "SELECT session_key,
                 MIN(request_started_at) AS started_at,
@@ -187,7 +187,7 @@ class WP_MCP_AI_Transcript_Repository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
 		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
-		$total_query          = $wpdb->prepare( $total_query_template, $where_values );
+		$total_query = $wpdb->prepare( $total_query_template, $where_values );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$total = (int) $wpdb->get_var( $total_query );
@@ -202,11 +202,11 @@ class WP_MCP_AI_Transcript_Repository {
 				$fallback_where_values[]  = (string) $assistant_id;
 			}
 
-			$fallback_where_sql            = implode( ' AND ', $fallback_where_clauses );
+			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $fallback_where_sql contains only hardcoded placeholders.
 			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where_sql}";
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
-			$fallback_total_query          = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
+			$fallback_total_query = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 			$total = (int) $wpdb->get_var( $fallback_total_query );
@@ -268,7 +268,7 @@ class WP_MCP_AI_Transcript_Repository {
 			$where_values[]  = (string) $assistant_id;
 		}
 
-		$where_sql      = implode( ' AND ', $where_clauses );
+		$where_sql = implode( ' AND ', $where_clauses );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $where_sql contain only hardcoded strings/placeholders.
 		$query_template = "SELECT {$select_fields}
          FROM {$table}
@@ -320,7 +320,7 @@ class WP_MCP_AI_Transcript_Repository {
 				$author_where_values[]  = (string) $assistant_id;
 			}
 
-			$author_where_sql      = implode( ' AND ', $author_where_clauses );
+			$author_where_sql = implode( ' AND ', $author_where_clauses );
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $author_where_sql contain only hardcoded strings/placeholders.
 			$author_query_template = "SELECT {$select_fields}
          FROM {$table}

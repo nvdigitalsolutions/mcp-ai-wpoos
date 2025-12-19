@@ -25,6 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
  */
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -53,57 +54,57 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'prompt'             => array(
+				'prompt'                  => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed description of the video to generate. Use cinematic language (e.g., "wide shot", "golden hour", "slow zoom"). Be specific about subjects, actions, setting, lighting, and camera movements.', 'wp-mcp-ai' ),
 				),
-				'duration'           => array(
+				'duration'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'wp-mcp-ai' ),
 					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 5,
 				),
-				'aspect_ratio'       => array(
+				'aspect_ratio'            => array(
 					'type'        => 'string',
 					'description' => __( 'Video aspect ratio. Supported values: "3:2" for landscape (default), "2:3" for portrait, "1:1" for square, or "auto" to let the model decide.', 'wp-mcp-ai' ),
 					'enum'        => array( '1:1', '2:3', '3:2', 'auto' ),
 					'default'     => '3:2',
 				),
-				'resolution'         => array(
+				'resolution'              => array(
 					'type'        => 'string',
 					'description' => __( 'Video resolution. "720p" (default, supported by all models and durations) or "1080p" (Veo 3.1 only, automatically sets 8 seconds duration). Veo 2.0 always outputs 720p regardless of this parameter.', 'wp-mcp-ai' ),
 					'enum'        => array( '720p', '1080p' ),
 					'default'     => '720p',
 				),
-				'style'              => array(
+				'style'                   => array(
 					'type'        => 'string',
 					'description' => __( 'Visual style preset: "cinematic", "realistic", "anime", "documentary", "artistic". This enhances the prompt with style-specific language.', 'wp-mcp-ai' ),
 					'enum'        => array( 'cinematic', 'realistic', 'anime', 'documentary', 'artistic', 'none' ),
 					'default'     => 'none',
 				),
-				'negative_prompt'    => array(
+				'negative_prompt'         => array(
 					'type'        => 'string',
 					'description' => __( 'What to avoid in the video (e.g., "blurry, low quality, distorted").', 'wp-mcp-ai' ),
 				),
-				'reference_image_id' => array(
+				'reference_image_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of a reference image to guide video generation (optional).', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
 				'reference_image_file_id' => $this->get_file_id_parameter_schema(),
 				'reference_image_url'     => $this->get_url_parameter_schema( 'image', __( 'URL of a reference image to guide video generation (optional).', 'wp-mcp-ai' ) ),
-				'seed'               => array(
+				'seed'                    => array(
 					'type'        => 'integer',
 					'description' => __( 'Random seed for reproducible results. Use the same seed and prompt to generate similar videos.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 				),
-				'save_to_media'      => array(
+				'save_to_media'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to save the generated video to WordPress Media Library. Default is true.', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
-				'model'              => array(
+				'model'                   => array(
 					'type'        => 'string',
 					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'wp-mcp-ai' ),
 					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
@@ -216,7 +217,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Handle reference image if provided.
 		$reference_image_id = 0;
-		
+
 		// Try to resolve from reference_image_id, reference_image_file_id, or reference_image_url.
 		if ( ! empty( $arguments['reference_image_id'] ) || ! empty( $arguments['reference_image_file_id'] ) || ! empty( $arguments['reference_image_url'] ) ) {
 			// Temporarily map to standard parameter names for the resolver.
@@ -230,9 +231,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			if ( ! empty( $arguments['reference_image_url'] ) ) {
 				$temp_args['url'] = $arguments['reference_image_url'];
 			}
-			
+
 			$resolved = $this->resolve_attachment_id( $temp_args );
-			
+
 			// Handle remote URL case.
 			if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
 				return new WP_Error(
@@ -241,16 +242,16 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					array( 'status' => 400 )
 				);
 			}
-			
+
 			if ( is_wp_error( $resolved ) ) {
 				return $resolved;
 			}
-			
+
 			if ( $resolved > 0 ) {
 				$reference_image_id = $resolved;
 			}
 		}
-		
+
 		if ( $reference_image_id > 0 ) {
 			$image_data = $this->get_reference_image_data( $reference_image_id );
 			if ( is_wp_error( $image_data ) ) {

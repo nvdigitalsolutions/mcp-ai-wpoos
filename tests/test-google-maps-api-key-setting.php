@@ -64,8 +64,8 @@ class WP_MCP_AI_Google_Maps_API_Key_Setting_Test extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array( 'address' => '1600 Amphitheatre Parkway, Mountain View, CA' ),
 			array(
-				'user_id'              => 1,
-				'token_authenticated'  => false,
+				'user_id'             => 1,
+				'token_authenticated' => false,
 			)
 		);
 

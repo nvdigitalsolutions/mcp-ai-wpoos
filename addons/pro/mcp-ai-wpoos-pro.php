@@ -190,12 +190,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Load Pro tool files.
 		$pro_tools = array(
 			// Exec service tools (video, audio, CLI).
-			'WP_MCP_AI_Tool_Check_WP_CLI'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
-			'WP_MCP_AI_Tool_Extract_Video_Frames'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
-			'WP_MCP_AI_Tool_Get_Video_Metadata'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
-			'WP_MCP_AI_Tool_Remove_Background'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
-			'WP_MCP_AI_Tool_Generate_Jukebox_Music'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
-			'WP_MCP_AI_Tool_Check_Jukebox_Status'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
+			'WP_MCP_AI_Tool_Check_WP_CLI'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
+			'WP_MCP_AI_Tool_Extract_Video_Frames'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
+			'WP_MCP_AI_Tool_Get_Video_Metadata'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
+			'WP_MCP_AI_Tool_Remove_Background'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
+			'WP_MCP_AI_Tool_Generate_Jukebox_Music'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
+			'WP_MCP_AI_Tool_Check_Jukebox_Status'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			// WooCommerce tools.
 			'WP_MCP_AI_Pro_Tool_Woo_Products'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 			'WP_MCP_AI_Pro_Tool_Woo_Orders'               => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
@@ -522,7 +522,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 // When loaded as part of combined plugin (via inline require_once), init immediately.
 // When loaded as separate plugin, use plugins_loaded hook.
 // Defensive check: only call did_action/doing_action if functions exist.
-$functions_available = function_exists( 'did_action' ) && function_exists( 'doing_action' );
+$functions_available  = function_exists( 'did_action' ) && function_exists( 'doing_action' );
 $plugins_loaded_fired = $functions_available && ( did_action( 'plugins_loaded' ) || doing_action( 'plugins_loaded' ) );
 
 if ( $plugins_loaded_fired ) {

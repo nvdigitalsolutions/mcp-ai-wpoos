@@ -123,7 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function set_force_sync( $tool_slug, $force_sync ) {
-			$force_sync_tools = get_option( self::FORCE_SYNC_OPTION, array() );
+			$force_sync_tools     = get_option( self::FORCE_SYNC_OPTION, array() );
 			$old_force_sync_tools = $force_sync_tools;
 
 			if ( $force_sync ) {
@@ -184,19 +184,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Settings_Manager' ) ) {
 				'network'      => array(
 					'label' => __( 'Network & Performance', 'wp-mcp-ai' ),
 					'flags' => array(
-						'local-only'          => __( 'Local Only', 'wp-mcp-ai' ),
-						'external-api'        => __( 'External API', 'wp-mcp-ai' ),
-						'network-dependent'   => __( 'Network Dependent', 'wp-mcp-ai' ),
-						'async'               => __( 'Async', 'wp-mcp-ai' ),
-						'rate-limited'        => __( 'Rate Limited', 'wp-mcp-ai' ),
-						'deferred-result'     => __( 'Deferred Result', 'wp-mcp-ai' ),
-						'requires-polling'    => __( 'Requires Polling', 'wp-mcp-ai' ),
-						'supports-webhook'    => __( 'Supports Webhook', 'wp-mcp-ai' ),
-						'requires-callback'   => __( 'Requires Callback', 'wp-mcp-ai' ),
-						'long-running'        => __( 'Long-running', 'wp-mcp-ai' ),
-						'may-timeout'         => __( 'May Timeout', 'wp-mcp-ai' ),
-						'background-only'     => __( 'Background Only', 'wp-mcp-ai' ),
-						'streaming-capable'   => __( 'Streaming Capable', 'wp-mcp-ai' ),
+						'local-only'        => __( 'Local Only', 'wp-mcp-ai' ),
+						'external-api'      => __( 'External API', 'wp-mcp-ai' ),
+						'network-dependent' => __( 'Network Dependent', 'wp-mcp-ai' ),
+						'async'             => __( 'Async', 'wp-mcp-ai' ),
+						'rate-limited'      => __( 'Rate Limited', 'wp-mcp-ai' ),
+						'deferred-result'   => __( 'Deferred Result', 'wp-mcp-ai' ),
+						'requires-polling'  => __( 'Requires Polling', 'wp-mcp-ai' ),
+						'supports-webhook'  => __( 'Supports Webhook', 'wp-mcp-ai' ),
+						'requires-callback' => __( 'Requires Callback', 'wp-mcp-ai' ),
+						'long-running'      => __( 'Long-running', 'wp-mcp-ai' ),
+						'may-timeout'       => __( 'May Timeout', 'wp-mcp-ai' ),
+						'background-only'   => __( 'Background Only', 'wp-mcp-ai' ),
+						'streaming-capable' => __( 'Streaming Capable', 'wp-mcp-ai' ),
 					),
 				),
 				'data'         => array(

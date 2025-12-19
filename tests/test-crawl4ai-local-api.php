@@ -297,10 +297,22 @@ class WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
 
 		// Create test tasks with different statuses.
 		$test_data = array(
-			array( 'task_id' => 'test-completed-1', 'status' => 'completed' ),
-			array( 'task_id' => 'test-completed-2', 'status' => 'completed' ),
-			array( 'task_id' => 'test-failed-1', 'status' => 'failed' ),
-			array( 'task_id' => 'test-running-1', 'status' => 'running' ),
+			array(
+				'task_id' => 'test-completed-1',
+				'status'  => 'completed',
+			),
+			array(
+				'task_id' => 'test-completed-2',
+				'status'  => 'completed',
+			),
+			array(
+				'task_id' => 'test-failed-1',
+				'status'  => 'failed',
+			),
+			array(
+				'task_id' => 'test-running-1',
+				'status'  => 'running',
+			),
 		);
 
 		foreach ( $test_data as $data ) {

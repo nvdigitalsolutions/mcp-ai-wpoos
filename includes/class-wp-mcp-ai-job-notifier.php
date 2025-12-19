@@ -109,11 +109,11 @@ class WP_MCP_AI_Job_Notifier {
 
 		// Build metadata from context.
 		$metadata = array(
-			'tool'      => 'web_search',
-			'query'     => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
-			'provider'  => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : '',
-			'user_id'   => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
-			'cached'    => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+			'tool'     => 'web_search',
+			'query'    => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
+			'provider' => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : '',
+			'user_id'  => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
+			'cached'   => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
 		);
 
 		// Delegate to the standard job completion handler.
@@ -142,11 +142,11 @@ class WP_MCP_AI_Job_Notifier {
 
 		// Build metadata from context and result.
 		$metadata = array(
-			'tool'      => 'generate_veo_video',
-			'prompt'    => isset( $arguments['prompt'] ) ? sanitize_text_field( $arguments['prompt'] ) : '',
-			'model'     => isset( $result['model'] ) ? sanitize_key( $result['model'] ) : '',
-			'duration'  => isset( $result['duration'] ) ? absint( $result['duration'] ) : 0,
-			'user_id'   => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
+			'tool'     => 'generate_veo_video',
+			'prompt'   => isset( $arguments['prompt'] ) ? sanitize_text_field( $arguments['prompt'] ) : '',
+			'model'    => isset( $result['model'] ) ? sanitize_key( $result['model'] ) : '',
+			'duration' => isset( $result['duration'] ) ? absint( $result['duration'] ) : 0,
+			'user_id'  => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
 		);
 
 		// Add attachment_id to metadata if available.
