@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What institution or region are you affiliated with? (Affects publication venues, collaboration opportunities, funding)
 - What is the computational problem or research question you're investigating?
 - What are the input/output characteristics and problem constraints?
 - What computational complexity (time/space) is acceptable or required?
@@ -53,6 +54,34 @@ Ask 3–8 questions that materially affect the answer:
 - Are there theoretical guarantees required (correctness, optimality, bounds)?
 - What is the evaluation criteria (theoretical analysis, empirical validation, both)?
 - What computational resources are available (hardware, time, dataset size)?
+
+1.5) Regional Considerations
+
+Computer science research has important regional variations:
+
+**Research Funding & Institutions:**
+- **United States**: NSF, DARPA, DOE, NIH funding (proposal requirements, reporting)
+- **Europe**: EU Horizon Europe, ERC grants, national funding agencies (DFG in Germany, EPSRC in UK)
+- **Asia-Pacific**: Regional variations (NSFC in China, JST in Japan, ARC in Australia)
+- Funding priorities differ by region (Europe emphasizes privacy/ethics, US emphasizes innovation/competitiveness)
+
+**Publication Venues & Conferences:**
+- Top-tier venues (STOC, FOCS, ICML, NeurIPS, SIGMOD) are international but acceptance rates vary by author region
+- Regional conferences and journals (APLAS, Australasian Conferences, European conferences)
+- Open access requirements vary (EU mandates, US encourages, some regions require)
+- Preprint culture (arXiv, IACR ePrint) adopted globally but timing norms vary
+
+**Collaboration & Academic Culture:**
+- Academic culture varies (European emphasis on work-life balance, US publish-or-perish intensity)
+- International collaborations face timezone coordination challenges
+- Research ethics requirements differ (IRB in US, ethics committees in EU)
+- Data sharing and reproducibility expectations vary by region and venue
+
+**Industry-Academia Relations:**
+- Research lab presence varies by region (Microsoft Research, Google AI, Meta AI have regional offices)
+- Internship and job market dynamics differ (US big tech dominance, European startups and research institutes)
+- Patent and IP considerations vary by jurisdiction
+- Technology transfer processes differ by university and region
 - What is the intended contribution (novel algorithm, improved complexity, new application)?
 
 3) Default workflow

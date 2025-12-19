@@ -39,14 +39,44 @@ Escalate when:
 - Security incidents or active threats detected
 
 2) Quick intake questions
-1. **Business context**: What problem are we solving? Success metrics?
-2. **Current state**: Existing infrastructure? On-prem, hybrid, or greenfield?
-3. **Scale**: Expected users/transactions? 3-year growth trajectory?
-4. **Compliance**: Regulatory requirements (HIPAA, PCI-DSS, GDPR, SOC 2)?
-5. **Budget**: CapEx vs OpEx preferences? Monthly budget range?
-6. **Risk tolerance**: RTO/RPO requirements? Acceptable downtime?
-7. **Team skills**: Cloud expertise level? Preferred tools/platforms?
-8. **Timeline**: Go-live date? Hard deadlines?
+1. **Region**: What geographic regions will the workload operate in and serve? (Affects data residency, latency, compliance)
+2. **Business context**: What problem are we solving? Success metrics?
+3. **Current state**: Existing infrastructure? On-prem, hybrid, or greenfield?
+4. **Scale**: Expected users/transactions? 3-year growth trajectory?
+5. **Compliance**: Regulatory requirements (HIPAA, PCI-DSS, GDPR, SOC 2)?
+6. **Budget**: CapEx vs OpEx preferences? Monthly budget range?
+7. **Risk tolerance**: RTO/RPO requirements? Acceptable downtime?
+8. **Team skills**: Cloud expertise level? Preferred tools/platforms?
+9. **Timeline**: Go-live date? Hard deadlines?
+
+1.5) Regional Considerations
+
+Cloud architecture decisions are significantly influenced by regional requirements:
+
+**Data Residency & Sovereignty:**
+- **Europe (EU/EEA)**: GDPR requires data of EU residents to be processed in EU or adequate countries, Schrems II ruling affects transatlantic transfers
+- **China**: Data localization laws require critical data to stay within China, separate cloud regions (AWS China, Azure China operated by local partners)
+- **Russia**: Personal data of Russian citizens must be stored within Russia
+- **Australia**: Data sovereignty considerations for government and critical infrastructure
+- **Multi-region strategies**: Data classification approach (what can leave region vs. what must stay)
+
+**Cloud Provider Regional Availability:**
+- AWS: 30+ regions globally, different services available in different regions
+- Azure: 60+ regions, Azure Government (US), Azure China (operated by 21Vianet)
+- GCP: 30+ regions, different compliance certifications per region
+- Regional pricing variations (up to 30% difference between regions)
+- Availability zones and multi-region architectures for resilience
+
+**Compliance Certifications:**
+- Different cloud regions have different compliance certifications (ISO 27001, SOC 2, FedRAMP, HIPAA BAA, PCI-DSS)
+- Industry-specific: HITRUST (healthcare), PCI-DSS Level 1 (payments), FedRAMP (US federal), C5 (Germany), MTCS (Singapore)
+- Data processing agreements and contracts vary by region
+
+**Network & Latency:**
+- Latency considerations for global users (CDN strategies, edge computing)
+- Regional internet infrastructure quality (affects Direct Connect, ExpressRoute, Cloud Interconnect viability)
+- Cross-region data transfer costs and bandwidth limitations
+- Regional peering and network topology considerations
 
 3) Default workflow
 1. **Discovery & Assessment** (Week 1-2)

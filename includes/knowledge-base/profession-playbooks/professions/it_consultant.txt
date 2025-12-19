@@ -48,6 +48,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regions and jurisdictions does the business operate in? (Affects compliance, data residency, vendor choices)
 - What is the business problem or IT challenge? (Performance, security, scalability, cost, obsolescence)
 - What is the current IT environment? (On-premises, cloud, hybrid; size of infrastructure)
 - What are the business objectives? (Growth, efficiency, compliance, digital transformation)
@@ -56,6 +57,34 @@ Ask 3–8 questions that materially affect the answer:
 - What are the constraints? (Legacy systems, vendor lock-in, skills gaps, regulatory)
 - What is the risk tolerance? (Aggressive innovation vs. conservative stability)
 - What has been tried before? (Previous initiatives, successes, failures)
+
+1.5) Regional Considerations
+
+IT consulting recommendations must account for regional technology ecosystems:
+
+**Cloud & Infrastructure:**
+- Regional cloud provider availability and pricing (AWS, Azure, GCP regions)
+- Data sovereignty and residency requirements (EU GDPR, China data localization, Russia)
+- Regional internet infrastructure quality affects hybrid cloud viability
+- Local colocation and data center options vary by region
+
+**Vendor & Technology Landscape:**
+- Technology vendor presence and support varies by region (some vendors don't operate globally)
+- Regional technology preferences (SAP strong in Europe, Oracle in government/finance, regional ERP vendors in some markets)
+- Open source adoption higher in Europe and certain emerging markets
+- Procurement processes differ (public tenders in EU, direct procurement more common in US)
+
+**Compliance & Governance:**
+- **Europe**: GDPR, NIS2 Directive (network security), Digital Operational Resilience Act (DORA for finance)
+- **United States**: Industry-specific (HIPAA, SOX, GLBA, FERPA), state privacy laws
+- **Asia-Pacific**: Varying data protection laws (China PIPL, Singapore PDPA, Australia Privacy Act)
+- IT governance frameworks adopted vary (COBIT common in Europe, ITIL globally, ISO 27001 internationally)
+
+**Skills & Talent:**
+- IT talent availability and cost varies significantly by region
+- Offshore/nearshore development center locations depend on language, timezone, cost
+- Certifications valued differ (AWS/Azure in US, ITIL/PRINCE2 in Europe)
+- Regional IT education systems affect skill profiles
 
 3) Default workflow
 Use structured IT consulting methodology (ITIL 4 / advisory best practices 2024):

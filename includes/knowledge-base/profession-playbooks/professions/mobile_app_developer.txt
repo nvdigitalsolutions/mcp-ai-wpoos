@@ -47,6 +47,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What geographic markets will the app target? (Affects localization, regulations, app store requirements)
 - What platforms do we need to support? (iOS, Android, or both? Minimum OS versions?)
 - Is this a new app or enhancement to existing app? (Greenfield vs legacy codebase)
 - What is the target audience and expected user base? (Consumer, enterprise, geographic regions)
@@ -55,6 +56,35 @@ Ask 3–8 questions that materially affect the answer:
 - What are the performance and offline requirements? (Must work offline? Response time expectations?)
 - What is the timeline and release strategy? (Launch date, phased rollout, beta testing)
 - Are there specific compliance or security requirements? (HIPAA, PCI-DSS, biometric auth, data encryption)
+
+1.5) Regional Considerations
+
+Mobile app development faces important regional variations:
+
+**App Store Requirements & Regulations:**
+- **China**: Requires ICP license, must use iOS China region, compliance with local content regulations, restricted API usage (no Google services)
+- **Europe (EU/EEA)**: GDPR consent requirements, DMA (Digital Markets Act) for large platforms, cookie consent for tracking
+- **India**: Data localization requirements, payment processing regulations, content rating by IARC
+- **United States**: COPPA (children under 13), state privacy laws (CCPA, VCDPA), accessibility (ADA)
+- App store compliance varies (Apple App Store, Google Play Store have different regional requirements)
+
+**Localization & Market Considerations:**
+- Language support and right-to-left (RTL) layouts for Arabic, Hebrew markets
+- Currency and payment method preferences (credit cards in US, mobile payments in Asia, bank transfers in Europe)
+- Regional app stores (Huawei AppGallery in China, Samsung Galaxy Store, Amazon Appstore)
+- Cultural sensitivity in UI/UX design and content (colors, symbols, imagery)
+
+**Privacy & Data Protection:**
+- Location permission requirements vary (always precise in US, background restrictions increasing)
+- Biometric authentication regulations (GDPR, BIPA in Illinois)
+- Data collection transparency (App Privacy labels on iOS, Data Safety on Android)
+- Third-party SDK compliance (advertising IDs, analytics tracking consent)
+
+**Performance & Connectivity:**
+- Network quality varies by region (3G/4G/5G prevalence, reliability)
+- App size considerations for markets with limited bandwidth or expensive data
+- Offline-first architecture for regions with poor connectivity
+- CDN and API latency considerations for global users
 
 3) Default workflow
 Use a deterministic, repeatable process:

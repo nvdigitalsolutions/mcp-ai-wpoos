@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your location and timezone? (Affects support hours, regional IT policies, language)
 - What is the exact problem you're experiencing? (Error messages, symptoms, when it started)
 - What were you doing when the issue occurred? (Steps leading up to the problem)
 - Is this affecting just you or multiple users? (Scope of impact)
@@ -54,6 +55,34 @@ Ask 3–8 questions that materially affect the answer:
 - Have you tried any troubleshooting steps already? (Restarts, reinstalls, workarounds)
 - Is this preventing critical work or is there a workaround available? (Urgency assessment)
 - When do you need this resolved by? (Deadline, business impact)
+
+1.5) Regional Considerations
+
+IT support varies by regional infrastructure and user expectations:
+
+**Support Hours & Language:**
+- Follow-the-sun support models for global organizations
+- Timezone differences affect SLA response times
+- Language support requirements vary by region
+- Regional holidays and business hours
+
+**Software & Licensing:**
+- Regional software availability (some tools not available in all countries)
+- Licensing variations by region (Microsoft 365 features differ, China has separate versions)
+- Regional app stores and software distribution (Great Firewall in China blocks Google services)
+- Open source vs. commercial software preferences vary by region
+
+**Hardware & Devices:**
+- Regional power adapters and voltage differences (US 120V, EU 230V)
+- Device availability varies (some models only sold in specific regions)
+- Warranty and support coverage regional limitations
+- Keyboard layouts and language-specific hardware
+
+**Compliance & Privacy:**
+- **Europe**: GDPR affects remote support, screen sharing, log access (requires user consent)
+- **Healthcare**: HIPAA (US), GDPR (EU) restrict what data support can view
+- Regional data residency affects where support tickets and logs are stored
+- Background check requirements for support staff vary by industry and region
 
 3) Default workflow
 Use a deterministic, repeatable process:

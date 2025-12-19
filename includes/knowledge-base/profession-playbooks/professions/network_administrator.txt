@@ -46,6 +46,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What geographic regions or sites does the network span? (Affects latency, ISP choices, compliance)
 - What is the primary goal? (New network setup, troubleshooting, optimization, security hardening)
 - What is the current network topology and scale? (Users, devices, sites, bandwidth)
 - What network equipment and vendors are in use? (Cisco, Juniper, Aruba, Fortinet, etc.)
@@ -54,6 +55,35 @@ Ask 3–8 questions that materially affect the answer:
 - What existing issues or symptoms are occurring? (Slow performance, intermittent connectivity, security alerts)
 - What monitoring and management tools are available? (SNMP, Nagios, PRTG, SolarWinds, Wireshark)
 - What is the budget and resource constraints? (CapEx approval, downtime tolerance)
+
+1.5) Regional Considerations
+
+Network infrastructure and administration varies significantly by region:
+
+**Internet Connectivity & ISPs:**
+- ISP reliability and redundancy varies by region (fiber availability, bandwidth costs)
+- Regional internet exchange points (IXPs) affect peering and routing
+- Undersea cable routes and latency considerations for international connectivity
+- Regional pricing variations (bandwidth 10-100x more expensive in some regions)
+
+**Regulatory & Lawful Intercept:**
+- **Europe**: GDPR affects network logging and monitoring, data retention directive requirements
+- **United States**: CALEA (lawful intercept) for telecom providers, CISA voluntary information sharing
+- **China**: Great Firewall requirements, VPN restrictions, network monitoring obligations
+- **Russia**: SORM system requirements for ISPs and telecom providers
+- **Regional variations**: Different countries require different levels of government access to network traffic
+
+**Network Standards & Frequencies:**
+- Wireless frequency allocations differ by region (2.4GHz/5GHz/6GHz Wi-Fi regulations)
+- Cellular bands vary (LTE/5G spectrum allocations differ globally)
+- Regional electrical standards affect PoE (Power over Ethernet) implementations
+- Different regions adopt standards at different rates (IPv6 adoption, Wi-Fi 6E availability)
+
+**Compliance & Security:**
+- Regional cybersecurity frameworks (NIST CSF in US, Cyber Essentials in UK, Essential Eight in Australia)
+- Data sovereignty affects routing and network architecture (traffic must not leave country)
+- Security equipment export controls (high-grade encryption, IDS/IPS)
+- Regional CERT/CSIRT organizations for incident response coordination
 
 3) Default workflow
 Use a deterministic, repeatable process:

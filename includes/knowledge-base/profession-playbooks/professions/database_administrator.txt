@@ -44,14 +44,44 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
-1. What database platform and version? (PostgreSQL 16, MySQL 8.0, SQL Server 2022, Oracle 19c, MongoDB 7.0)
-2. Hosting environment? (on-premises, AWS RDS/Aurora, Azure SQL, GCP Cloud SQL, self-managed cloud)
-3. What is the specific issue or goal? (performance tuning, schema design, backup strategy, security hardening, migration)
-4. Current database size and growth rate? (data volume in GB/TB, transaction rate in QPS, expected growth trajectory)
-5. Are there SLA/RTO/RPO requirements? (availability 99.9%+, recovery time objective, recovery point objective)
-6. What monitoring and tooling exists? (Prometheus, Grafana, Datadog, CloudWatch, pgAdmin, SQL Server Management Studio)
-7. Compliance or security requirements? (GDPR, HIPAA, PCI-DSS, SOX, SOC 2, data residency, encryption standards)
-8. Application stack and ORM? (Django, Rails, Spring Boot, Entity Framework - affects query patterns and connection pooling)
+1. What region(s) will the database operate in and serve? (Affects data residency, replication strategy, compliance)
+2. What database platform and version? (PostgreSQL 16, MySQL 8.0, SQL Server 2022, Oracle 19c, MongoDB 7.0)
+3. Hosting environment? (on-premises, AWS RDS/Aurora, Azure SQL, GCP Cloud SQL, self-managed cloud)
+4. What is the specific issue or goal? (performance tuning, schema design, backup strategy, security hardening, migration)
+5. Current database size and growth rate? (data volume in GB/TB, transaction rate in QPS, expected growth trajectory)
+6. Are there SLA/RTO/RPO requirements? (availability 99.9%+, recovery time objective, recovery point objective)
+7. What monitoring and tooling exists? (Prometheus, Grafana, Datadog, CloudWatch, pgAdmin, SQL Server Management Studio)
+8. Compliance or security requirements? (GDPR, HIPAA, PCI-DSS, SOX, SOC 2, data residency, encryption standards)
+9. Application stack and ORM? (Django, Rails, Spring Boot, Entity Framework - affects query patterns and connection pooling)
+
+1.5) Regional Considerations
+
+Database administration must account for regional compliance and infrastructure:
+
+**Data Residency & Sovereignty:**
+- **Europe (EU/EEA)**: GDPR requires personal data of EU residents stored/processed in EU or adequate countries
+- **China**: Data localization laws for personal information and important data
+- **Russia**: Personal data must be stored within Russia (Federal Law 152-FZ)
+- **Australia**: Cloud data sovereignty considerations for government and critical infrastructure
+- Multi-region replication strategies (read replicas, multi-master, sharding by geography)
+
+**Database Licensing:**
+- Oracle licensing varies by region and deployment model (on-prem, cloud, processor-based)
+- Microsoft SQL Server regional pricing variations (up to 30% difference)
+- Open source databases (PostgreSQL, MySQL) free but support contracts vary by region
+- Cloud database pricing varies by region (AWS RDS pricing differs across regions)
+
+**Backup & DR:**
+- Cross-region backup storage for disaster recovery
+- RPO/RTO requirements affect multi-region strategies
+- Backup retention requirements vary (GDPR 3-7 years, HIPAA 6+ years, SOX 7 years)
+- Regional backup storage costs and data transfer fees
+
+**Performance & Latency:**
+- Read replicas in multiple regions for low-latency reads
+- Write replication lag considerations for global applications
+- Database proximity to application servers (same region for low latency)
+- CDN strategies for database-backed APIs and content
 
 3) Default workflow
 Use a deterministic, repeatable process:

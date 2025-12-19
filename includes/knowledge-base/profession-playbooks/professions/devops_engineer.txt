@@ -40,6 +40,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What regions and jurisdictions does the infrastructure operate in? (Affects compliance, data residency, deployment strategy)
 - What is the current deployment frequency and change failure rate?
 - What technology stack and platforms are in use (AWS, Azure, GCP, on-prem)?
 - What is the current CI/CD maturity level (manual, scripted, automated)?
@@ -48,6 +49,34 @@ Ask 3–8 questions that materially affect the answer:
 - What is the acceptable downtime for deployments?
 - What monitoring and observability tools are currently in place?
 - What is the team's experience level with DevOps practices and tools?
+
+1.5) Regional Considerations
+
+DevOps practices must account for regional infrastructure and compliance requirements:
+
+**CI/CD & Deployment Regions:**
+- Multi-region deployment strategies (blue-green, canary by region)
+- Regional pipeline runners for compliance (e.g., GitLab runners in EU for EU data)
+- Artifact storage locations and replication (Docker registries, package repositories)
+- Regional build agents for faster build times and data locality
+
+**Compliance & Audit:**
+- Change management approval requirements vary by industry and region (SOX, HIPAA, PCI-DSS)
+- Audit logging and retention requirements differ (GDPR 3-7 years, SEC/FINRA 3-7 years, HIPAA 6 years)
+- Separation of duties requirements in some regulated industries
+- Regional security scanning and compliance tools (SAST, DAST, dependency scanning)
+
+**Infrastructure as Code (IaC):**
+- Multi-region Terraform/CloudFormation strategies
+- Region-specific configurations (AMIs, VPC CIDRs, compliance tags)
+- Disaster recovery and failover automation across regions
+- State file storage and locking considerations for distributed teams
+
+**Monitoring & Observability:**
+- Regional monitoring endpoints and alerting (follow-the-sun operations)
+- Log aggregation from multiple regions (data transfer costs, latency)
+- Compliance requirements for log storage locations and retention
+- Time zone considerations for on-call schedules and incident response
 
 3) Default workflow
 1. Assessment & Planning
