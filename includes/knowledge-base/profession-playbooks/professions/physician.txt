@@ -44,6 +44,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country and healthcare system? (Medical licensing, standards, and protocols vary significantly)
 - What is the clinical presentation (chief complaint, symptoms, duration, severity)?
 - What is the patient's relevant medical history (chronic conditions, prior surgeries, medications)?
 - What is the care setting and acuity level (outpatient, ED, inpatient, ICU)?
@@ -52,6 +53,75 @@ Ask 3–8 questions that materially affect the answer:
 - What are the relevant risk factors and red flags to consider?
 - What is the timeline and urgency of decision-making?
 - Are there any contraindications or special considerations (pregnancy, allergies, organ dysfunction)?
+
+1.5) Regional Variations - Medical Licensing & Practice Standards
+
+**United States:**
+- Licensing: State medical boards; USMLE (Steps 1, 2 CK/CS, 3) for MD; COMLEX for DO
+- Board Certification: ABMS (American Board of Medical Specialties) - 24 specialty boards
+- Continuing Medical Education (CME): State-specific requirements (typically 25-50 hours/year)
+- Practice Standards: Joint Commission accreditation, CMS regulations, state medical practice acts
+- Prescribing Authority: DEA registration for controlled substances; state-specific formularies
+- Malpractice: State tort laws vary; damages caps in some states; mandatory reporting to NPDB
+- Electronic Health Records: HIPAA compliance; Meaningful Use/MACRA requirements
+- Key Organizations: AMA, specialty societies (ACC, AHA, etc.), state medical associations
+- Reimbursement: Medicare/Medicaid (CMS), private insurance; complex coding (CPT, ICD-10)
+
+**United Kingdom:**
+- Licensing: General Medical Council (GMC) registration; Foundation Programme (F1/F2) after medical school
+- Specialty Training: Royal Colleges (RCP, RCS, RCGP, etc.); CCT (Certificate of Completion of Training)
+- Revalidation: Every 5 years with GMC; appraisal and supporting information required
+- Practice Standards: NICE guidelines, GMC Good Medical Practice, NHS protocols
+- Prescribing: UK Medicines and Healthcare products Regulatory Agency (MHRA) formulary
+- Malpractice: NHS Resolution (formerly NHS Litigation Authority); Crown Indemnity for NHS work
+- Electronic Records: NHS systems (SystmOne, EMIS); strict data protection (UK GDPR)
+- Key Organizations: BMA (British Medical Association), Royal Colleges, GMC
+- Healthcare System: NHS (public) with private practice option; salaried positions common
+
+**Canada:**
+- Licensing: Provincial/territorial medical regulatory authorities (Colleges of Physicians and Surgeons)
+- Medical Education: MCCEE, MCCQE Parts I & II, NAC OSCE (for international medical graduates)
+- Certification: Royal College of Physicians and Surgeons of Canada (RCPSC) or CFPC (family medicine)
+- CME: Provincial requirements via Mainpro+ (family), MOCOMP, or Royal College MOC
+- Practice Standards: Provincial standards; CMPA (Canadian Medical Protective Association) guidelines
+- Prescribing: Provincial formularies; controlled substances via provincial colleges
+- Malpractice: CMPA provides medico-legal protection (not insurance but indemnity)
+- Electronic Records: Provincial EMR systems; privacy laws (PHIPA Ontario, PIPA Alberta/BC)
+- Key Organizations: CMA (Canadian Medical Association), CMPA, provincial colleges
+- Healthcare System: Universal public healthcare (Canada Health Act); primarily publicly funded
+
+**Australia:**
+- Licensing: AHPRA (Australian Health Practitioner Regulation Agency) via Medical Board of Australia
+- Medical Education: AMC (Australian Medical Council) accreditation; intern/residency programs
+- Specialist Training: Royal Australasian College of Physicians (RACP), Royal Australasian College of Surgeons (RACS), or specialty colleges
+- CPD: RACP MyCPD, RACGP QI&CPD program; mandatory annual requirements
+- Practice Standards: AHPRA guidelines, NHMRC (National Health and Medical Research Council) guidelines
+- Prescribing: TGA (Therapeutic Goods Administration) approved medications; PBS (Pharmaceutical Benefits Scheme)
+- Malpractice: Medical indemnity insurance required; state-based systems
+- Electronic Records: My Health Record (national); practice software (Best Practice, Medical Director)
+- Key Organizations: AMA (Australian Medical Association), RACP, specialty colleges
+- Healthcare System: Medicare (universal public) + private health insurance dual system
+
+**European Union (Varied by Member State):**
+- Licensing: National medical councils; EU Directive 2005/36/EC allows mutual recognition
+- Medical Education: Varies by country; Bologna Process harmonization; 6 years typical
+- Specialist Training: National specialist titles; European Board examinations (UEMS - European specialist credentials)
+- CME: National CME systems; European Accreditation Council for CME (EACCME) credits
+- Practice Standards: National guidelines + EU directives (e.g., Working Time Directive)
+- Prescribing: National formularies; EMA (European Medicines Agency) approvals
+- Malpractice: National tort/insurance systems vary significantly
+- Electronic Records: National systems; EU GDPR compliance required
+- Key Organizations: UEMS (European Union of Medical Specialists), national medical associations
+- Examples: Germany (Bundesärztekammer), France (Conseil National de l'Ordre des Médecins), Netherlands (KNMG)
+
+**Key Regional Differences:**
+- **Training Pathway**: US (medical school → residency → fellowship), UK (Foundation → Specialty Training), Canada/Australia (similar to UK with Royal Colleges)
+- **Licensing**: US state-based vs national/regional in other countries
+- **Liability**: US tort system with high damages vs lower liability elsewhere
+- **Healthcare Financing**: US fragmented private/public vs universal systems elsewhere
+- **Prescribing Practices**: US more brand-name drugs, direct-to-consumer advertising; elsewhere more generic use, restricted advertising
+- **Work Hours**: EU Working Time Directive (48 hours/week max) vs US more variable (ACGME duty hour limits for residents)
+- **Scope of Practice**: Similar clinical scope but practice patterns differ (US more specialist-driven, others more GP/primary care-based)
 
 3) Default workflow
 Use a systematic clinical approach:

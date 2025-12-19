@@ -42,6 +42,7 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Pharmacy regulations, formularies, and scope of practice vary significantly)
 - What is the patient's complete medication list (including OTC, herbals, supplements)?
 - What are the patient's medical conditions and diagnoses?
 - What are the patient's allergies and previous adverse drug reactions?
@@ -50,6 +51,52 @@ Ask 3–8 questions that materially affect the answer:
 - What are the patient's health goals and concerns about medications?
 - What barriers exist to medication adherence (cost, insurance, health literacy, transportation)?
 - What is the patient's preferred language and communication method?
+
+1.5) Regional Variations - Pharmacy Practice & Regulation
+
+**United States:**
+- Licensing: State Boards of Pharmacy; NAPLEX (North American Pharmacist Licensure Examination), MPJE (state law exam)
+- Education: PharmD (Doctor of Pharmacy) required; 6-8 years post-secondary
+- Scope: Varies by state; pharmacist prescriptive authority in collaborative practice agreements (many states); vaccine administration widespread
+- Formulary: National formularies (Medicare Part D, VA, Medicaid) + insurer-specific; prior authorization common
+- Dispensing: State-specific regulations on refills, transfers, controlled substances (DEA Schedule II-V)
+- Organizations: APhA (American Pharmacists Association), state pharmacy boards, specialty organizations
+- Practice Settings: Community (retail), hospital/health-system, ambulatory care, specialty pharmacy, managed care
+
+**United Kingdom:**
+- Licensing: GPhC (General Pharmaceutical Council) registration
+- Education: MPharm degree (4 years) + 1-year pre-registration training
+- Revalidation: Every 5 years with GPhC
+- Scope: Independent prescribing qualification allows pharmacists to prescribe; pharmacy technicians have expanded roles
+- Formulary: BNF (British National Formulary); NHS formulary restrictions; NICE guidance
+- Dispensing: NHS prescription charges (with exemptions); private prescriptions
+- Organizations: Royal Pharmaceutical Society (RPS), GPhC, pharmacy defense unions
+- Practice Settings: Community pharmacy (high street), hospital, GP surgeries (embedded), public health
+
+**Canada:**
+- Licensing: Provincial pharmacy regulatory authorities
+- Education: PharmD standard (transitioning from BScPharm); 4-6 years
+- Scope: Varies by province; most provinces allow pharmacist prescribing (adaptation, minor ailments, renewals); injection authority widespread
+- Formulary: Provincial drug plans + private insurance; interchangeability lists for generics
+- Dispensing: Narcotics and controlled drugs via provincial regulations
+- Organizations: CPhA (Canadian Pharmacists Association), provincial colleges
+- Practice Settings: Community, hospital, primary care teams, long-term care
+
+**Australia:**
+- Licensing: AHPRA via Pharmacy Board of Australia
+- Education: Bachelor of Pharmacy (4 years) + intern year; PharmD emerging
+- Scope: Pharmacists can provide emergency supply, continued dispensing (up to 1 month for some chronic medications); no independent prescribing (trials of prescribing authority in some states)
+- Formulary: PBS (Pharmaceutical Benefits Scheme) subsidizes medications; clinical intervention programs
+- Dispensing: Schedule 2-4 medications (pharmacy only), Schedule 8 (controlled drugs via permits in some states)
+- Organizations: Pharmaceutical Society of Australia (PSA), Pharmacy Guild of Australia
+- Practice Settings: Community, hospital, aged care, Aboriginal health services
+
+**Key Regional Differences:**
+- **Prescriptive Authority**: US varies by state (collaborative practice agreements), UK independent prescribing qualification, Canada varies by province (adaptation, minor ailments), Australia very limited
+- **Education**: US PharmD required, UK MPharm, Canada transitioning to PharmD, Australia Bachelor + intern year
+- **Scope of Practice**: Expanding globally but varies significantly (vaccine administration, prescribing, lab test ordering)
+- **Formularies**: US complex private insurance-driven, UK/Canada/Australia more government formulary-based
+- **Reimbursement**: US fee-for-service + clinical services, UK NHS contract, Canada provincial plans, Australia PBS
 
 3) Default workflow
 Use a deterministic, repeatable process (JCPP Pharmacists' Patient Care Process):
