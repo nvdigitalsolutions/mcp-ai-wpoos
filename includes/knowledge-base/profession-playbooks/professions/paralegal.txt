@@ -47,14 +47,75 @@ Escalate / refer out when:
 
 2) Quick intake questions
 Ask 3–8 questions that materially affect the answer:
+- What jurisdiction/court system applies? (Procedures and requirements vary significantly)
 - What practice area does this matter involve (litigation, corporate, real estate, family, estate planning)?
 - What is the current status of the matter (new client intake, active case, pre-trial, trial, appeal)?
 - What is the immediate deadline or time-sensitive issue?
 - What documents do we currently have (complaint, contracts, correspondence, discovery)?
 - Who is the supervising attorney on this matter?
 - What specific task is requested (research memo, draft pleading, document organization, filing)?
-- What court or jurisdiction applies (federal vs. state, specific county/district)?
 - Are there any special requirements or attorney preferences for this type of matter?
+
+1.5) Regional Variations - Paralegal Practice & Regulation
+
+**United States:**
+- Regulation: State-based; no national licensing (except limited practice jurisdictions)
+- Scope of Practice: Defined by state bar associations; cannot practice law (give legal advice, represent clients, set fees)
+- Supervision: Must work under attorney supervision; attorney responsible for paralegal work
+- Professional Organizations: NALA (National Association of Legal Assistants), NFPA (National Federation of Paralegal Associations), NALS
+- Credentials: Voluntary certifications - CP (Certified Paralegal via NALA), PACE (Paralegal Advanced Competency Exam via NFPA), state-specific certifications
+- Limited License: Some states allow limited practice (WA Limited License Legal Technicians - program ended 2020; CA Legal Document Assistants for self-help)
+- Court Filings: E-filing systems vary by jurisdiction (federal ECF/CM-ECF; state systems vary)
+- Federal Practice: Federal courts nationwide use CM/ECF; local rules vary by district
+- State Court Variations: Rules of civil/criminal procedure vary by state; e-filing adoption varies
+- Billable Rates: $95-175/hour typical (varies by market, experience, practice area)
+- Key Resources: State bar associations, local court websites, federal court PACER system
+
+**United Kingdom:**
+- Regulation: Not a regulated profession (paralegals); legal executives are regulated (CILEx)
+- Chartered Legal Executive: Regulated qualification via CILEx; specialized practice rights in certain areas
+- Scope of Practice: Paralegals assist solicitors/barristers; legal executives can specialize and gain practice rights
+- Professional Organizations: National Association of Licensed Paralegals (NALP), Institute of Paralegals (IoP)
+- Credentials: CILEx qualifications (levels 3-6); paralegal qualifications via IoP, NALP
+- Court System: Different procedures for England & Wales vs Scotland vs Northern Ireland
+- Practice Areas: Conveyancing, probate, litigation support, corporate, family
+- Legal Executive Rights: CILEx lawyers can achieve similar rights to solicitors in specialized areas
+- Key Resources: CILEx, Law Society, court service websites (HMCTS)
+
+**Canada:**
+- Regulation: Provincial regulation; Ontario has licensed paralegals (Law Society of Ontario)
+- Ontario Licensed Paralegals: Can represent clients in specific tribunals and lower courts (Small Claims Court up to $35K, Ontario Court of Justice summary conviction matters, tribunals)
+- Other Provinces: Paralegals work under lawyer supervision; no independent practice rights (except Ontario)
+- Scope (Non-Ontario): Similar to US - cannot practice law independently, must be supervised
+- Professional Organizations: Canadian Association of Paralegals (CAPO), provincial associations
+- Credentials: Ontario P1 license (Law Society of Ontario); other provinces vary
+- Court System: Federal courts, provincial/territorial courts; procedures vary by province
+- Key Resources: Provincial law societies, CanLII (case law), federal/provincial court websites
+
+**Australia:**
+- Regulation: Not separately regulated; work under lawyer supervision
+- Scope of Practice: Cannot provide legal advice independently; work under Australian Legal Practitioners
+- Professional Organizations: Australian Institute of Paralegals, state-based paralegal associations
+- Court System: State/territory courts; federal courts; varying e-lodgment systems
+- Practice Areas: Litigation support, conveyancing, family law, corporate, estates
+- Key Resources: State law societies, AustLII (case law), court websites
+
+**Key Regional Differences:**
+- **Regulation Level**: US (no licensing except limited jurisdictions), Ontario Canada (licensed with practice rights), UK (CILEx legal executives regulated), elsewhere (not regulated separately)
+- **Independent Practice**: Only Ontario licensed paralegals and UK CILEx legal executives can represent clients independently in limited matters
+- **Supervision Requirements**: Most jurisdictions require attorney/solicitor supervision; varies in degree
+- **Court Systems**: US (federal + 50 state systems), UK (separate E&W, Scotland, NI), Canada (federal + provincial), Australia (federal + state/territory)
+- **E-Filing Adoption**: US federal courts unified (CM/ECF); state/provincial/territory systems vary widely
+- **Professional Standards**: US (NALA Code of Ethics, NFPA Model Code), UK (CILEx Code of Conduct), Canada (provincial standards), Australia (firm-based)
+- **Terminology**: US "paralegal/legal assistant", UK "paralegal/legal executive", Canada "paralegal/law clerk"
+
+**Practice Implications:**
+- Always verify local court rules and procedures (they vary significantly)
+- Confirm jurisdictional scope of practice and supervision requirements
+- Use jurisdiction-appropriate legal research databases (Westlaw, LexisNexis, CanLII, AustLII, BAILII)
+- Follow jurisdiction-specific citation formats (Bluebook US, OSCOLA UK, McGill Guide Canada, AGLC Australia)
+- Verify e-filing system requirements for specific court
+- Understand unauthorized practice of law rules in your jurisdiction
 
 3) Default workflow
 Use NALA Model Standards and NFPA Model Code of Ethics:
