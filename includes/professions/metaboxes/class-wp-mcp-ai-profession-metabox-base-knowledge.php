@@ -80,6 +80,9 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 		// Ensure proper types.
 		if ( ! is_array( $memory_files ) ) {
 			$memory_files = array();
+		} else {
+			// Remove duplicates that may exist in the database.
+			$memory_files = array_values( array_unique( array_map( 'absint', $memory_files ) ) );
 		}
 
 		if ( ! is_string( $vector_store_id ) ) {
@@ -400,6 +403,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 		if ( isset( $_POST['wp_mcp_ai_profession_memory_files'] ) ) {
 			$memory_files = array_map( 'absint', (array) $_POST['wp_mcp_ai_profession_memory_files'] );
 			$memory_files = array_filter( $memory_files ); // Remove zeros.
+			$memory_files = array_values( array_unique( $memory_files ) ); // Remove duplicates and reindex.
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 		} else {
 			delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES );

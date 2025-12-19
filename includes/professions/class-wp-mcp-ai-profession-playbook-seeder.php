@@ -398,11 +398,16 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			$memory_files = array();
 		}
 
+		// Deduplicate existing array to clean up any existing duplicates.
+		$memory_files = array_values( array_unique( array_map( 'absint', $memory_files ) ) );
+
 		// Add attachment if not already present (idempotent).
 		if ( ! in_array( $attachment_id, $memory_files, true ) ) {
 			$memory_files[] = $attachment_id;
-			update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 		}
+
+		// Always update to ensure deduplication is saved.
+		update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 	}
 
 	/**
