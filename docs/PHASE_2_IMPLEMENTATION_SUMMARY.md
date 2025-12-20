@@ -289,17 +289,20 @@ With Phase 2 complete, the next phase (Phase 3: Vector Stores) can proceed when 
 
 1. **Semantic Search**:
    - Requires posts to have pre-generated embeddings
-   - Performance degrades with large content libraries (thousands of posts)
+   - Limited to 1000 posts per query (MAX_POSTS_TO_QUERY constant)
    - Similarity calculation done locally (not using vector databases)
+   - May have memory and execution time issues on large sites
 
 2. **Model Suggestions**:
    - Model database needs manual updates when OpenAI releases new models
    - Pricing information may become outdated
+   - Hardcoded model capabilities need manual maintenance
 
 3. **Batch Embeddings**:
    - Limited to 100 posts per batch (to prevent timeouts)
    - No background processing (synchronous execution)
    - May hit rate limits with large batches
+   - Text truncation at 32,000 characters may lose context
 
 ### Future Enhancements
 
@@ -307,16 +310,20 @@ With Phase 2 complete, the next phase (Phase 3: Vector Stores) can proceed when 
    - Integrate with vector databases (Pinecone, Weaviate, etc.)
    - Add caching for frequent queries
    - Support for custom post meta embeddings
+   - Implement pagination or chunking for large result sets
 
 2. **Model Suggestions**:
    - Dynamic model discovery via OpenAI API
    - Real-time pricing via OpenAI API
    - User-specific model preferences
+   - Database storage with update mechanism
 
 3. **Batch Embeddings**:
    - Background processing with WP-Cron
    - Progress tracking dashboard
    - Automatic re-embedding on content updates
+   - Intelligent text summarization instead of truncation
+   - Chunking strategies for long content
 
 ---
 
