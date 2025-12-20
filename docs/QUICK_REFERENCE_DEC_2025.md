@@ -7,35 +7,30 @@
 
 ## 🚀 What's New in December 2025
 
-### Model Support
+### GPT-5.2 Model Family Support (December 16, 2025) ⭐ **LATEST**
 
-The plugin supports the following AI model providers and their latest models:
+OpenAI's latest model family is now fully supported with 6 variants:
 
-**OpenAI Models:**
-- GPT-5.1 series (Nov 2025)
-- GPT-5 series (Aug 2025)
-- GPT-4.1 series (multimodal - vision capable)
-- GPT-4o series (multimodal - vision capable)
-- o1 series (reasoning models)
-- Legacy GPT-4 and GPT-3.5 models
+| Model | Context | Cost/1K | Best For |
+|-------|---------|---------|----------|
+| `gpt-5.2` | 400K | $0.00175 | General use, large documents |
+| `gpt-5.2-pro` | 400K | $0.021 | Mission-critical reasoning |
+| `gpt-5.2-instant` | 400K | $0.00175 | High-volume operations |
+| `gpt-5.2-thinking` | 400K | $0.00175 | Deep analysis, research |
+| `gpt-5.2-2025-12-11` | 400K | $0.00175 | Version pinning (base) |
+| `gpt-5.2-pro-2025-12-11` | 400K | $0.021 | Version pinning (pro) |
 
-**Anthropic (Claude) Models:**
-- Claude 4 series (multimodal - vision capable)
-- Claude 3.5 series (legacy support)
-
-**Google Gemini Models:**
-- Gemini 3 series (preview)
-- Gemini 2.5 series (stable)
-- Gemini 2.0 series
-- Gemma models (open models)
-
-**Local AI:**
-- Ollama (local AI models)
-- LM Studio (various local models)
+**Key Features:**
+- 🎯 400,000 token context (2x GPT-5.1)
+- 📝 128,000 token max output
+- 📅 Knowledge cutoff: August 31, 2025
+- ✅ Rate limits configured
+- 🔄 Fallback chains ready
+- 💰 Cost tracking enabled
 
 **How to Use:**
 1. Go to **Settings → WP oOS → Default Model**
-2. Select your preferred model
+2. Select a GPT-5.2 variant
 3. Save settings
 
 **Or per-assistant:**
@@ -220,21 +215,21 @@ The plugin supports the following AI model providers and their latest models:
 
 ## 🎯 Quick Actions
 
-### Configure AI Models
+### Try GPT-5.2 Models
 
 **For admins:**
 ```
 1. Settings → WP oOS → Default Model
-2. Choose your preferred model (e.g., gpt-4.1, claude-sonnet-4.5)
+2. Choose: gpt-5.2 (or variant)
 3. Save
 ```
 
 **For testing:**
 ```
 1. Create test assistant
-2. Set model to your choice
-3. Try with test documents
-4. Compare different models
+2. Set model to gpt-5.2
+3. Try 400K context with large document
+4. Compare with GPT-5.1
 ```
 
 ### Check Pro Tools
@@ -286,6 +281,7 @@ The plugin supports the following AI model providers and their latest models:
 
 | PR # | Date | Description | Status |
 |------|------|-------------|--------|
+| #2144 | Dec 16 | GPT-5.2 model support | ✅ Merged |
 | #2091 | Dec 9 | Symfony Process integration | ✅ Merged |
 | #2073 | Dec 8 | Move exec tools to Pro | ✅ Merged |
 | #2072 | Dec 8 | Settings UI (27 new) | ✅ Merged |
@@ -296,16 +292,16 @@ The plugin supports the following AI model providers and their latest models:
 
 ### Cost Optimization
 
-**Use models strategically:**
-- GPT-4.1 series - Best balance for most tasks
-- GPT-4o-mini - Cost-effective for simple tasks
-- Claude Sonnet 4.5 - Excellent for complex reasoning
-- o1 series - When deep reasoning is critical
+**Use GPT-5.2 variants strategically:**
+- `gpt-5.2` - General use (affordable)
+- `gpt-5.2-instant` - High volume (same cost, faster)
+- `gpt-5.2-pro` - Only when accuracy critical (12x cost)
+- `gpt-5.2-thinking` - Research/analysis (worth it)
 
 ### Context Management
 
-**Large context tips:**
-- Load entire codebases with capable models
+**400K context window tips:**
+- Load entire codebases
 - Process full documents
 - Include extensive knowledge bases
 - Still leave room for tool calls

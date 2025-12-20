@@ -4533,6 +4533,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
+					'gpt-5.2'                 => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
+					'gpt-5.2-2025-12-11'      => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro'             => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro-2025-12-11'  => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-instant'         => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
+					'gpt-5.2-thinking'        => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
 					// GPT-5.1 series (Nov 2025).
 					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
 					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
@@ -4838,6 +4845,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
+					'gpt-5.2'                 => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
+					'gpt-5.2-2025-12-11'      => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro'             => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro-2025-12-11'  => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-instant'         => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
+					'gpt-5.2-thinking'        => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
 					// GPT-5.1 series (Nov 2025).
 					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
 					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
