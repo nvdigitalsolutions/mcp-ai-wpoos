@@ -21,6 +21,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		const AUDIO_TRANSCRIPTIONS_ENDPOINT = 'https://api.openai.com/v1/audio/transcriptions';
 		const AUDIO_TRANSLATIONS_ENDPOINT   = 'https://api.openai.com/v1/audio/translations';
 		const IMAGES_ENDPOINT               = 'https://api.openai.com/v1/images/generations';
+		const IMAGES_EDITS_ENDPOINT         = 'https://api.openai.com/v1/images/edits';
+		const IMAGES_VARIATIONS_ENDPOINT    = 'https://api.openai.com/v1/images/variations';
 		const CHAT_APPROX_CHARS_PER_TOKEN   = 4; // Heuristic for estimating tokens from character count.
 
 		/**
@@ -1728,6 +1730,306 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Edit an image using OpenAI's image editing API (DALL-E).
+		 *
+		 * @param string $image_path Path to the image file to edit.
+		 * @param string $prompt     Description of desired edits.
+		 * @param array  $options    Optional parameters (mask_path, model, n, size, response_format, timeout).
+		 * @return array|WP_Error    Array containing the edited image data or WP_Error on failure.
+		 */
+		public function edit_image( $image_path, $prompt, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$image_path = (string) $image_path;
+			if ( '' === $image_path || ! file_exists( $image_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_not_found',
+					__( 'The image file to edit could not be located.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$prompt = sanitize_textarea_field( $prompt );
+			if ( '' === $prompt ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_image_prompt',
+					__( 'A text prompt must be supplied to edit the image.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 30, $timeout ); // Image editing needs more time.
+
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
+			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
+
+			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
+				$response_format = 'b64_json';
+			}
+
+			// Prepare multipart form data.
+			$boundary = wp_generate_password( 24, false );
+			$body     = '';
+
+			// Add image file.
+			$image_filename  = basename( $image_path );
+			$image_mime_type = mime_content_type( $image_path );
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
+			$body .= "Content-Type: {$image_mime_type}\r\n\r\n";
+			$body .= $image_data . "\r\n";
+
+			// Add mask file if provided.
+			if ( isset( $options['mask_path'] ) && '' !== $options['mask_path'] && file_exists( $options['mask_path'] ) ) {
+				$mask_filename  = basename( $options['mask_path'] );
+				$mask_mime_type = mime_content_type( $options['mask_path'] );
+				$mask_data      = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+				$body .= "--{$boundary}\r\n";
+				$body .= "Content-Disposition: form-data; name=\"mask\"; filename=\"{$mask_filename}\"\r\n";
+				$body .= "Content-Type: {$mask_mime_type}\r\n\r\n";
+				$body .= $mask_data . "\r\n";
+			}
+
+			// Add other parameters.
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n";
+			$body .= $prompt . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"model\"\r\n\r\n";
+			$body .= $model . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"n\"\r\n\r\n";
+			$body .= $n . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
+			$body .= $size . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+			$body .= $response_format . "\r\n";
+
+			$body .= "--{$boundary}--\r\n";
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+				),
+				'timeout' => $timeout,
+				'body'    => $body,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_image_edit_request',
+				'Sending image edit request to OpenAI.',
+				array(
+					'model' => $model,
+					'size'  => $size,
+					'n'     => $n,
+				)
+			);
+
+			$response = wp_remote_post( self::IMAGES_EDITS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_image_edit_error', 'Image edit request failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code    = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded      = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI image edit request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_image_edit_error',
+					'Image edit failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_image_edit_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image edit API.', 'wp-mcp-ai' ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_image_edit_success', 'Image edit completed successfully.' );
+
+			return array(
+				'success' => true,
+				'data'    => $decoded['data'],
+				'created' => isset( $decoded['created'] ) ? $decoded['created'] : time(),
+			);
+		}
+
+		/**
+		 * Create variations of an existing image using OpenAI's API (DALL-E).
+		 *
+		 * @param string $image_path Path to the image file.
+		 * @param array  $options    Optional parameters (model, n, size, response_format, timeout).
+		 * @return array|WP_Error    Array containing the image variations or WP_Error on failure.
+		 */
+		public function create_image_variation( $image_path, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$image_path = (string) $image_path;
+			if ( '' === $image_path || ! file_exists( $image_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_not_found',
+					__( 'The image file could not be located.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 30, $timeout ); // Image generation needs more time.
+
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
+			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
+
+			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
+				$response_format = 'b64_json';
+			}
+
+			// Prepare multipart form data.
+			$boundary = wp_generate_password( 24, false );
+			$body     = '';
+
+			// Add image file.
+			$image_filename  = basename( $image_path );
+			$image_mime_type = mime_content_type( $image_path );
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
+			$body .= "Content-Type: {$image_mime_type}\r\n\r\n";
+			$body .= $image_data . "\r\n";
+
+			// Add other parameters.
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"model\"\r\n\r\n";
+			$body .= $model . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"n\"\r\n\r\n";
+			$body .= $n . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
+			$body .= $size . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+			$body .= $response_format . "\r\n";
+
+			$body .= "--{$boundary}--\r\n";
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+				),
+				'timeout' => $timeout,
+				'body'    => $body,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_image_variation_request',
+				'Sending image variation request to OpenAI.',
+				array(
+					'model' => $model,
+					'size'  => $size,
+					'n'     => $n,
+				)
+			);
+
+			$response = wp_remote_post( self::IMAGES_VARIATIONS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_image_variation_error', 'Image variation request failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI image variation request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_image_variation_error',
+					'Image variation failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_image_variation_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image variation API.', 'wp-mcp-ai' ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_image_variation_success', 'Image variation completed successfully.' );
+
+			return array(
+				'success' => true,
+				'data'    => $decoded['data'],
+				'created' => isset( $decoded['created'] ) ? $decoded['created'] : time(),
+			);
 		}
 
 		/**

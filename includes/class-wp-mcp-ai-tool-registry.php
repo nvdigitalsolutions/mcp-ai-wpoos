@@ -453,6 +453,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'semantic_content_search'        => 'external-tools',
 				'suggest_best_model'             => 'external-tools',
 				'batch_embed_content'            => 'external-tools',
+				// OpenAI API Integration - Phase 4 Tools.
+				'edit_openai_image'              => 'external-tools',
+				'create_image_variation'         => 'external-tools',
 				'vision_product_search'          => 'external-tools',
 				'vision_object_localization'     => 'external-tools',
 				'schedule_notify_sms'            => 'external-tools',
@@ -771,6 +774,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Semantic_Content_Search' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-content-search.php',
 				'WP_MCP_AI_Tool_Suggest_Best_Model'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-suggest-best-model.php',
 				'WP_MCP_AI_Tool_Batch_Embed_Content'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-batch-embed-content.php',
+				// OpenAI API Integration - Phase 4 Tools.
+				'WP_MCP_AI_Tool_Edit_OpenAI_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php',
+				'WP_MCP_AI_Tool_Create_Image_Variation'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-image-variation.php',
 				'WP_MCP_AI_Tool_Get_Site_Health'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php',
 				'WP_MCP_AI_Tool_Get_Environment_Status'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-environment-status.php',
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
