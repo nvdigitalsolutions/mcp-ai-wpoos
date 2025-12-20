@@ -1,6 +1,22 @@
 # WP oOS REST API
 
+**Status:** ✅ VERIFIED - December 20, 2025  
+**Namespace:** `/wp-json/mcp-ai/v1`  
+**Endpoint Count:** 15+ REST routes across 6 controllers  
+**Last Updated:** December 20, 2025
+
 The plugin exposes its REST surface at `/wp-json/mcp-ai/v1` for both chat completions and direct tool execution. This document summarises the available endpoints, request/response contracts, and common integration pitfalls.
+
+## REST API Controllers
+
+The REST API is organized into specialized controllers:
+- **Chat Controller** - Chat and transcript management (/chat, /chat-client, /chat-transcripts)
+- **MCP Controller** - MCP protocol and assistant directory (/mcp, /assistants, /sse)
+- **Tools Controller** - Tool execution and file downloads (/tools, /files)
+- **Teams Controller** - Team and profession management (/teams)
+- **Analytics Manager** - Analytics endpoints
+- **Cost Manager** - Cost tracking and reporting
+- **Token Manager** - Token budget management
 
 ## Authentication recap
 

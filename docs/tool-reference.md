@@ -1,5 +1,9 @@
 # Built-in tool reference
 
+**Status:** ✅ VERIFIED - December 20, 2025  
+**Tool Count:** 123 unique tools (117 base + 6 Pro addon)  
+**Last Updated:** December 20, 2025
+
 WP oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
 ## Autonomous automation capabilities for AI agents
