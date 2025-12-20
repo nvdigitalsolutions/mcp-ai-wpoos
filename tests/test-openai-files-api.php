@@ -45,8 +45,8 @@ class Test_OpenAI_Files_API extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'openai_api_key'   => 'test-key',
-				'request_timeout'  => 30,
+				'openai_api_key'  => 'test-key',
+				'request_timeout' => 30,
 			)
 		);
 

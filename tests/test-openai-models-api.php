@@ -59,15 +59,15 @@ class Test_OpenAI_Models_API extends WP_UnitTestCase {
 								'object' => 'list',
 								'data'   => array(
 									array(
-										'id'      => 'gpt-4o',
-										'object'  => 'model',
-										'created' => time(),
+										'id'       => 'gpt-4o',
+										'object'   => 'model',
+										'created'  => time(),
 										'owned_by' => 'openai',
 									),
 									array(
-										'id'      => 'gpt-4o-mini',
-										'object'  => 'model',
-										'created' => time(),
+										'id'       => 'gpt-4o-mini',
+										'object'   => 'model',
+										'created'  => time(),
 										'owned_by' => 'openai',
 									),
 								),
