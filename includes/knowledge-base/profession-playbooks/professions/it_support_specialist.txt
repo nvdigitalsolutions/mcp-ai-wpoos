@@ -1,0 +1,986 @@
+Profession Playbook — IT Support Specialist
+Slug: it_support_specialist
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Provide technical support for hardware, software, and network issues via phone, email, chat, or in-person
+- Troubleshoot and resolve end-user technology problems (Windows, macOS, mobile devices, applications)
+- Install, configure, and maintain computer systems, peripherals, and software applications
+- Set up new user accounts, permissions, and email accounts following security policies
+- Document support tickets with detailed troubleshooting steps and resolutions
+- Perform password resets, account unlocks, and access management tasks
+- Guide users through step-by-step troubleshooting procedures with clear instructions
+- Escalate complex technical issues to appropriate specialized teams
+- Maintain knowledge base articles and update IT documentation
+- Success = Users able to work productively with minimal downtime, positive customer satisfaction, efficient ticket resolution
+
+Do NOT:
+- Make system-wide changes without proper approval and change control
+- Share or reset passwords without following identity verification procedures
+- Install unauthorized or unlicensed software
+- Access user data or files without explicit permission or valid business justification
+- Make promises about specific resolution times without checking SLA agreements
+- Bypass security controls or policies even when requested by users
+- Attempt repairs beyond skill level or risk permanent data loss
+- Provide advice on personal devices or non-business-related technical issues
+
+Escalate / refer out when:
+- Security incidents suspected (malware, phishing, data breach) - engage security team immediately
+- Hardware failures requiring specialized repair or vendor support
+- Network outages or infrastructure issues - escalate to network administrators
+- Software bugs or licensing issues - contact vendors or internal development teams
+- Database access or complex SQL queries needed - involve database administrators
+- Server administration tasks - escalate to systems administrators
+- Issues affecting business-critical operations or VIP users - follow escalation procedures
+- User behavior concerns or policy violations - involve management and HR
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your location and timezone? (Affects support hours, regional IT policies, language)
+- What is the exact problem you're experiencing? (Error messages, symptoms, when it started)
+- What were you doing when the issue occurred? (Steps leading up to the problem)
+- Is this affecting just you or multiple users? (Scope of impact)
+- What device and operating system are you using? (Windows 10/11, macOS, iOS, Android, version)
+- What application or system is involved? (Email, browser, specific software)
+- Have you tried any troubleshooting steps already? (Restarts, reinstalls, workarounds)
+- Is this preventing critical work or is there a workaround available? (Urgency assessment)
+- When do you need this resolved by? (Deadline, business impact)
+
+1.5) Regional Considerations
+
+IT support varies by regional infrastructure and user expectations:
+
+**Support Hours & Language:**
+- Follow-the-sun support models for global organizations
+- Timezone differences affect SLA response times
+- Language support requirements vary by region
+- Regional holidays and business hours
+
+**Software & Licensing:**
+- Regional software availability (some tools not available in all countries)
+- Licensing variations by region (Microsoft 365 features differ, China has separate versions)
+- Regional app stores and software distribution (Great Firewall in China blocks Google services)
+- Open source vs. commercial software preferences vary by region
+
+**Hardware & Devices:**
+- Regional power adapters and voltage differences (US 120V, EU 230V)
+- Device availability varies (some models only sold in specific regions)
+- Warranty and support coverage regional limitations
+- Keyboard layouts and language-specific hardware
+
+**Compliance & Privacy:**
+- **Europe**: GDPR affects remote support, screen sharing, log access (requires user consent)
+- **Healthcare**: HIPAA (US), GDPR (EU) restrict what data support can view
+- Regional data residency affects where support tickets and logs are stored
+- Background check requirements for support staff vary by industry and region
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Ticket Creation & Triage
+   - Receive support request via phone, email, portal, or walk-up
+   - Create ticket with detailed description, user info, and symptoms
+   - Categorize issue type (hardware, software, network, access, how-to)
+   - Assign priority based on impact and urgency (P1-Critical to P4-Low)
+   - Verify user identity before proceeding with sensitive actions
+   
+2. Initial Troubleshooting & Diagnosis
+   - Review error messages, screenshots, or screen-sharing session
+   - Ask clarifying questions using the intake template
+   - Check knowledge base for known issues and solutions
+   - Test reproduction steps if possible
+   - Gather system information (OS version, hardware specs, logs)
+   - Check for recent changes (updates, new software, configuration)
+   
+3. Resolution Attempt
+   - Try quick fixes first (restart, clear cache, update software)
+   - Apply known solutions from knowledge base or documentation
+   - Guide user through step-by-step resolution (remote or in-person)
+   - Test thoroughly to confirm issue resolved
+   - Document all troubleshooting steps in ticket
+   - If unresolved within 30 minutes, escalate or research further
+   
+4. Escalation or Advanced Troubleshooting
+   - Escalate to Tier 2/3 support with detailed documentation
+   - Contact vendor support for product-specific issues
+   - Collaborate with specialized teams (network, security, database)
+   - Follow up on escalated tickets for status updates
+   - Keep user informed of progress and expected resolution time
+   
+5. Resolution & Closure
+   - Confirm with user that issue is fully resolved
+   - Document root cause and resolution in ticket
+   - Update knowledge base if new solution discovered
+   - Request user feedback/satisfaction rating
+   - Close ticket with appropriate category and resolution code
+   - Follow up after 24-48 hours to ensure continued satisfaction
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Resolved support tickets with detailed documentation
+- Knowledge base articles and how-to guides
+- User training documentation and quick reference guides
+- Hardware/software inventory and asset tracking updates
+- New user onboarding checklists and setup documentation
+- Incident reports for recurring or systemic issues
+- User account creation and permission documentation
+- Software installation guides and configuration procedures
+- Remote access setup instructions for end users
+- Weekly/monthly support metrics and trend reports
+
+Minimum viable deliverable: Issue resolved + basic ticket documentation + user confirmation
+Gold standard deliverable: Above + comprehensive root cause analysis + knowledge base article + preventive measures + follow-up + user training
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Issue Resolution:
+- [ ] Problem fully resolved and user can work normally
+- [ ] Root cause identified and documented
+- [ ] Solution tested and verified working
+- [ ] User confirmed satisfaction with resolution
+- [ ] No unintended side effects or new issues created
+- [ ] Resolution time within SLA targets
+
+Documentation:
+- [ ] Ticket contains detailed problem description
+- [ ] All troubleshooting steps documented
+- [ ] Resolution clearly explained
+- [ ] Assets and systems updated in CMDB/inventory
+- [ ] Knowledge base article created/updated if needed
+- [ ] Proper categorization and tagging applied
+
+Security & Compliance:
+- [ ] User identity verified before granting access
+- [ ] Security policies followed (password complexity, MFA)
+- [ ] Sensitive data protected and not exposed
+- [ ] Appropriate access levels granted (least privilege)
+- [ ] Security incidents properly escalated
+- [ ] Audit trail maintained for access changes
+
+Communication:
+- [ ] User kept informed throughout resolution process
+- [ ] Technical explanations provided in user-friendly language
+- [ ] Expected resolution time communicated
+- [ ] Escalations communicated with proper context
+- [ ] Professional and courteous tone maintained
+- [ ] Follow-up scheduled if needed
+
+Customer Satisfaction:
+- [ ] User able to resume work with minimal disruption
+- [ ] User understands how to prevent issue in future
+- [ ] User received helpful and patient support
+- [ ] Feedback requested and documented
+- [ ] Overall positive support experience
+
+6) Templates (paste-ready)
+Provide at least 2–5 reusable snippets the assistant can copy into answers:
+
+=== Support Ticket Template ===
+# Support Ticket: [Ticket #INC-######]
+**Status**: [New/In Progress/Resolved/Closed]
+**Priority**: [P1-Critical / P2-High / P3-Medium / P4-Low]
+**Created**: [YYYY-MM-DD HH:MM]
+**Assigned To**: [Support Agent Name]
+
+## User Information
+- **Name**: [User Full Name]
+- **Email**: [user@company.com]
+- **Phone**: [Extension or mobile]
+- **Department**: [Sales/Marketing/Engineering]
+- **Location**: [Building/Floor/Office]
+
+## Issue Description
+**Problem Summary**: [Brief one-line description]
+
+**Detailed Description**:
+[Full description of the issue as reported by user]
+
+**Error Messages**:
+```
+[Exact error messages or codes if applicable]
+```
+
+**Impact**:
+- **Users Affected**: [Just this user / Multiple users / Department-wide]
+- **Business Impact**: [Cannot work / Reduced productivity / Minor inconvenience]
+- **Workaround Available**: [Yes/No - describe if yes]
+
+## System Information
+- **Device**: [Make/Model - e.g., Dell Latitude 5420]
+- **Asset Tag**: [Company asset ID]
+- **Operating System**: [Windows 11 Pro / macOS 13.5 / etc.]
+- **Software/Application**: [Microsoft Outlook / Salesforce / etc.]
+- **Network**: [Office WiFi / VPN / Wired]
+
+## Troubleshooting Steps Performed
+1. [YYYY-MM-DD HH:MM] - [Action taken]: [Result]
+2. [YYYY-MM-DD HH:MM] - [Action taken]: [Result]
+3. [YYYY-MM-DD HH:MM] - [Action taken]: [Result]
+
+## Root Cause
+[Technical explanation of what caused the issue]
+
+## Resolution
+**Solution Applied**: [Description of fix]
+**Resolution Time**: [YYYY-MM-DD HH:MM]
+**Total Duration**: [X hours Y minutes from creation to resolution]
+
+**Steps to Resolve**:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+## Prevention
+[How to prevent this issue in the future]
+
+## Knowledge Base
+- **KB Article**: [KB-##### - Link to related article]
+- **New Article Needed**: [Yes/No - create if recurring issue]
+
+## Follow-up
+- [ ] User confirmed issue resolved
+- [ ] Follow-up scheduled for [date/time]
+- [ ] User satisfaction survey sent
+- [ ] Satisfaction Rating: [1-5 stars]
+
+## Related Tickets
+- [INC-###### - Similar issue]
+- [CHG-###### - Related change]
+
+=== New User Onboarding Checklist ===
+# New Employee IT Setup Checklist
+**Employee Name**: [Full Name]
+**Job Title**: [Position]
+**Department**: [Team/Department]
+**Manager**: [Manager Name]
+**Start Date**: [YYYY-MM-DD]
+**Completed By**: [IT Technician]
+
+## Account Creation (Day -1 or Day 1)
+- [ ] Active Directory/Azure AD account created
+  - Username: [firstname.lastname]
+  - Initial password: [Temporary - must change on first login]
+  - Password expiry: [30/60/90 days]
+  - MFA enabled: [Yes]
+- [ ] Email account created and tested
+  - Email: [user@company.com]
+  - Mailbox quota: [50GB]
+  - Mobile device sync: [Enabled/Disabled]
+- [ ] Security groups assigned based on role
+  - [ ] [Department] - Users
+  - [ ] [Application] - Access
+  - [ ] [Additional groups as needed]
+- [ ] Network shares and folder permissions configured
+  - [ ] Home drive: [\\server\users\username]
+  - [ ] Department share: [\\server\dept]
+  - [ ] Project folders: [As specified by manager]
+
+## Hardware Setup
+- [ ] Computer/laptop assigned
+  - Make/Model: [Dell Latitude 5420]
+  - Asset Tag: [IT-######]
+  - Serial Number: [##########]
+  - Operating System: [Windows 11 Pro]
+- [ ] Monitors/peripherals provided
+  - [ ] Monitor(s): [Quantity and size]
+  - [ ] Keyboard: [Wired/Wireless]
+  - [ ] Mouse: [Wired/Wireless]
+  - [ ] Headset: [For calls/meetings]
+  - [ ] Docking station: [If applicable]
+  - [ ] Webcam: [If not built-in]
+- [ ] Mobile device provisioned (if applicable)
+  - Device Type: [iPhone/Android]
+  - Phone Number: [+1-555-0100]
+  - MDM enrolled: [Yes]
+  - Corporate email added: [Yes]
+- [ ] Physical access
+  - [ ] Office key/access card: [Badge #]
+  - [ ] Parking pass: [If applicable]
+  - [ ] Building access codes: [Provided]
+
+## Software Installation
+- [ ] Standard software suite installed
+  - [ ] Microsoft Office 365 / Google Workspace
+  - [ ] Web browsers (Chrome, Edge, Firefox)
+  - [ ] VPN client (if remote work)
+  - [ ] Antivirus/security software
+  - [ ] Communication tools (Slack, Teams, Zoom)
+  - [ ] Password manager (LastPass, 1Password)
+- [ ] Department-specific software
+  - [ ] [Application 1]: [Version]
+  - [ ] [Application 2]: [Version]
+  - [ ] [Application 3]: [Version]
+- [ ] Software licenses assigned
+  - [ ] Microsoft 365: [License type]
+  - [ ] Adobe Creative Cloud: [If applicable]
+  - [ ] [Other licensed software]
+
+## Training & Documentation
+- [ ] Welcome email sent with login credentials
+- [ ] IT policies and acceptable use policy reviewed
+- [ ] Security awareness training scheduled
+- [ ] Password management best practices explained
+- [ ] VPN and remote access instructions provided
+- [ ] Help desk contact information shared
+  - Phone: [555-0100]
+  - Email: [helpdesk@company.com]
+  - Portal: [https://support.company.com]
+- [ ] IT orientation scheduled (if available)
+
+## Verification & Testing
+- [ ] User able to log in successfully
+- [ ] Email sending and receiving working
+- [ ] Network shares accessible
+- [ ] Internet and intranet access confirmed
+- [ ] All required applications launching
+- [ ] Printer access configured and tested
+- [ ] Mobile device (if applicable) syncing properly
+- [ ] VPN connection tested (if remote employee)
+
+## Completion
+- [ ] New hire satisfied with setup
+- [ ] Manager notified of completion
+- [ ] Asset inventory updated
+- [ ] Onboarding ticket closed
+- **Completion Date**: [YYYY-MM-DD]
+- **Setup Time**: [X hours]
+
+=== Password Reset Procedure ===
+# Password Reset Request
+**Ticket**: [INC-######]
+**Date/Time**: [YYYY-MM-DD HH:MM]
+**Requested By**: [User Name]
+**Verification Method**: [Security Questions/Manager Approval/Phone Callback/In-Person]
+
+## Identity Verification (REQUIRED)
+Before proceeding, verify user identity using ONE of the following methods:
+
+**Option 1: Security Questions**
+- [ ] User correctly answered security question 1
+- [ ] User correctly answered security question 2
+
+**Option 2: Manager Approval**
+- [ ] Manager [Name] approved request via [email/phone]
+- [ ] Manager contact verified: [Email/Phone number]
+
+**Option 3: Phone Callback**
+- [ ] Called user at phone number on file: [###-###-####]
+- [ ] User confirmed personal details: [Employee ID, Department]
+
+**Option 4: In-Person**
+- [ ] User presented valid ID badge
+- [ ] ID badge matched user record
+
+## Password Reset Actions
+- [ ] Active Directory password reset completed
+  - Account: [domain\username]
+  - New temporary password: [Generated securely]
+  - User must change on next login: [Enabled]
+- [ ] Account unlocked (if locked due to failed attempts)
+- [ ] Password expiry date reset to standard policy
+- [ ] User notified via [phone/email/in-person]
+
+## Instructions Provided to User
+- [ ] How to change temporary password on first login
+- [ ] Password complexity requirements explained:
+  - Minimum 12 characters
+  - Must include uppercase, lowercase, number, special character
+  - Cannot contain username or common words
+  - Cannot reuse last 5 passwords
+- [ ] Password manager recommended for secure storage
+- [ ] Multi-factor authentication (MFA) setup verified
+
+## Follow-up
+- [ ] User successfully logged in with new password
+- [ ] User changed temporary password to permanent one
+- [ ] No additional access issues reported
+- [ ] Ticket closed
+
+**Security Notes**:
+- Never send passwords via email
+- Always use temporary passwords that expire immediately
+- Document verification method used
+- Report suspicious password reset requests to security team
+
+=== Remote Support Session Template ===
+# Remote Support Session
+**Session ID**: [RS-######]
+**Date/Time**: [YYYY-MM-DD HH:MM - HH:MM]
+**Duration**: [XX minutes]
+**Agent**: [Support Technician Name]
+**User**: [User Name]
+
+## Connection Method
+- [ ] TeamViewer
+- [ ] AnyDesk
+- [ ] Microsoft Remote Assistance
+- [ ] Zoom Screen Share
+- [ ] Other: [Specify]
+
+**Session Key/Code**: [######-######]
+
+## Pre-Session Checklist
+- [ ] User consent obtained for remote access
+- [ ] User aware session may be monitored/recorded
+- [ ] Sensitive data warning provided
+- [ ] User asked to close sensitive documents/emails
+
+## Issue Being Addressed
+[Description of problem user is experiencing]
+
+## Actions Performed During Session
+1. [HH:MM] - [Action]: [Result]
+2. [HH:MM] - [Action]: [Result]
+3. [HH:MM] - [Action]: [Result]
+4. [HH:MM] - [Action]: [Result]
+
+## System Changes Made
+- Software installed: [List]
+- Software uninstalled: [List]
+- Configuration changes: [List]
+- Files accessed: [General description - no specifics]
+- Registry changes: [If applicable]
+- System restarts: [How many]
+
+## Resolution
+[Description of how issue was resolved]
+
+## User Training Provided
+[Explain what user was taught to prevent future issues]
+
+## Post-Session Actions Required
+- [ ] User to restart system after session ends
+- [ ] User to test specific functionality
+- [ ] User to monitor for [specific issue]
+- [ ] Follow-up scheduled: [Date/time]
+
+## Session Closure
+- [ ] Issue resolved to user's satisfaction
+- [ ] User understands next steps
+- [ ] Remote access terminated
+- [ ] Session documented in ticket: [INC-######]
+
+=== Common Issues Quick Reference ===
+# IT Support Quick Reference Guide
+
+## Windows Issues
+
+### Cannot Connect to Network
+1. Check physical connection (cable, WiFi enabled)
+2. Run: `ipconfig /release` then `ipconfig /renew`
+3. Run: `ipconfig /flushdns`
+4. Restart network adapter in Device Manager
+5. Check IP configuration: `ipconfig /all`
+6. Verify WiFi password if wireless
+7. Check for network outages (ping 8.8.8.8)
+
+### Slow Computer Performance
+1. Check Task Manager for high CPU/memory usage (Ctrl+Shift+Esc)
+2. Check for Windows updates and install pending ones
+3. Run Disk Cleanup (cleanmgr)
+4. Check for malware/viruses
+5. Restart computer (if not done recently)
+6. Check available disk space (need >15% free)
+7. Disable startup programs (msconfig → Startup tab)
+
+### Printer Not Working
+1. Check printer is powered on and has paper/ink
+2. Check physical connections (USB cable, network cable)
+3. Set as default printer (Settings → Devices → Printers)
+4. Clear print queue (Services → Print Spooler → Restart)
+5. Update printer driver
+6. Remove and re-add printer
+7. Test with different document/application
+
+### Outlook/Email Issues
+1. Check internet connection
+2. Send/Receive All Folders (F9)
+3. Check Outbox for stuck messages
+4. Restart Outlook in Safe Mode (Outlook.exe /safe)
+5. Repair Outlook data file (scanpst.exe)
+6. Check account settings (File → Account Settings)
+7. Create new Outlook profile if corrupted
+
+### Password Won't Work
+1. Verify Caps Lock is off
+2. Check keyboard language setting
+3. Verify correct account name/domain
+4. Check if account is locked (Active Directory)
+5. Verify password hasn't expired
+6. Try password reset (follow security procedure)
+7. Check for recently changed password policy
+
+## macOS Issues
+
+### Cannot Connect to Network
+1. Check WiFi is enabled (menu bar icon)
+2. Forget network and rejoin
+3. Renew DHCP Lease (Network Preferences → Advanced)
+4. Check DNS settings (8.8.8.8, 8.8.4.4)
+5. Reset SMC (System Management Controller)
+6. Reset NVRAM/PRAM (Cmd+Option+P+R on boot)
+
+### Application Won't Open
+1. Force quit application (Cmd+Option+Esc)
+2. Check for macOS updates
+3. Check for application updates
+4. Restart computer
+5. Reset application preferences (~/Library/Preferences)
+6. Reinstall application
+7. Check application compatibility with macOS version
+
+### Slow Performance
+1. Check Activity Monitor for resource hogs
+2. Reduce Login Items (System Preferences → Users & Groups)
+3. Clear system cache
+4. Check available storage (need >15GB free)
+5. Repair Disk Permissions (Disk Utility)
+6. Run First Aid on startup disk
+7. Reset SMC and PRAM
+
+## Mobile Device Issues
+
+### Email Not Syncing (iOS/Android)
+1. Check cellular/WiFi connection
+2. Verify email account settings
+3. Toggle Airplane mode on and off
+4. Remove and re-add email account
+5. Check server settings with IT
+6. Update device OS
+7. Check mail server status
+
+### Cannot Install App
+1. Check available storage space
+2. Verify app compatibility with device OS
+3. Restart device
+4. Check Apple ID/Google account signed in
+5. Check corporate MDM policies
+6. Update device OS
+7. Check App Store/Play Store for restrictions
+
+## Escalation Triggers
+- Security incidents (malware, phishing, breach)
+- Hardware failures (hard drive, motherboard)
+- Server or network infrastructure issues
+- Software bugs requiring vendor support
+- Data recovery needs
+- VIP user issues (C-level executives)
+- Outages affecting >10 users
+- Issues unresolved after 1 hour of troubleshooting
+
+7) Examples of excellent outputs
+
+Example 1: Troubleshooting Documentation (Email Connection Issue)
+```markdown
+# Ticket Resolution: INC-012345
+**User**: John Smith (john.smith@company.com)
+**Issue**: Unable to receive emails in Outlook
+**Priority**: P2 - High
+**Resolved**: 2024-12-18 14:30
+**Duration**: 25 minutes
+
+## Problem Description
+User reported not receiving new emails since yesterday afternoon. Could send emails but inbox not updating. No error messages displayed. Affects only Outlook desktop client - webmail working fine.
+
+## System Information
+- Device: Dell Latitude 5420 (Asset: IT-3421)
+- OS: Windows 11 Pro (22H2, Build 22621.2861)
+- Outlook Version: Microsoft 365 (Version 2311, Build 16.0.17029.20028)
+- Email Account: Microsoft 365 Exchange Online
+- Network: Office WiFi (Connected, good signal)
+
+## Troubleshooting Steps
+1. **14:10** - Verified internet connectivity: Successful (can browse web, ping external servers)
+2. **14:12** - Checked Outlook connection status: Shows "Connected" but last sync 16+ hours ago
+3. **14:14** - Attempted manual Send/Receive (F9): Stuck at "Sending and Receiving" indefinitely
+4. **14:16** - Checked Outlook processes in Task Manager: Found 2 instances of OUTLOOK.EXE running
+5. **14:17** - Closed all Outlook instances via Task Manager
+6. **14:18** - Restarted Outlook normally: Issue persists
+7. **14:20** - Opened Outlook in Safe Mode (outlook.exe /safe): Send/Receive works immediately
+8. **14:22** - Identified cause: Faulty add-in causing hang on Send/Receive
+
+## Root Cause
+Third-party Outlook add-in "PDF Converter Pro" version 3.2.1 causing Send/Receive operations to hang. Add-in was auto-updated yesterday evening and has known compatibility issues with latest Microsoft 365 build.
+
+## Resolution Steps
+1. Closed Outlook
+2. Opened Outlook in Safe Mode (outlook.exe /safe)
+3. File → Options → Add-ins → Manage COM Add-ins → Go
+4. Unchecked "PDF Converter Pro" add-in
+5. Closed and reopened Outlook normally
+6. Send/Receive (F9) completed successfully in 3 seconds
+7. Verified emails from last 16 hours downloaded (42 new messages)
+8. User confirmed can send and receive normally
+
+## Prevention & Follow-up
+- Recommended user contact PDF Converter Pro vendor for updated version
+- Submitted ticket to IT procurement to review add-in alternatives
+- Updated knowledge base article KB-0428 "Outlook Add-in Troubleshooting"
+- Checked 3 other users with same add-in - proactively disabled to prevent issues
+
+## User Feedback
+User very satisfied with quick resolution and clear explanation. Appreciated proactive check of other users.
+**Satisfaction Rating**: 5/5 stars
+```
+
+Example 2: Knowledge Base Article (How-To Guide)
+```markdown
+# KB-0523: How to Connect to Company VPN (Windows)
+**Category**: Network / Remote Access
+**Last Updated**: 2024-12-18
+**Applies To**: Windows 10, Windows 11
+**Difficulty**: Easy
+**Estimated Time**: 5 minutes
+
+## Overview
+This guide explains how to install and connect to the company VPN using Cisco AnyConnect. VPN is required for accessing internal company resources (file shares, intranet, internal applications) when working remotely.
+
+## Prerequisites
+- Company-issued laptop or approved personal device
+- Active employee network account
+- MFA (Multi-Factor Authentication) enabled on your account
+- Internet connection (home, coffee shop, hotel, etc.)
+
+## Installation Steps
+
+### Step 1: Download AnyConnect Client
+1. Open web browser and go to: https://vpn.company.com
+2. Log in with your company credentials:
+   - Username: [firstname.lastname]
+   - Password: [Your regular network password]
+3. Complete MFA prompt (Duo push notification or SMS code)
+4. Click "Download for Windows" button
+5. Save file to Downloads folder
+
+### Step 2: Install AnyConnect
+1. Navigate to Downloads folder
+2. Double-click: `anyconnect-win-[version].exe`
+3. If prompted by User Account Control, click "Yes"
+4. Click "Next" on installation wizard
+5. Accept license agreement → Click "Next"
+6. Keep default installation location → Click "Next"
+7. Wait for installation to complete (1-2 minutes)
+8. Click "Finish" when done
+9. Restart computer if prompted
+
+### Step 3: Connect to VPN
+1. Click Start menu → type "Cisco AnyConnect"
+2. Open "Cisco AnyConnect Secure Mobility Client"
+3. In the box that says "Ready to connect", type: `vpn.company.com`
+4. Click "Connect" button
+5. Enter credentials when prompted:
+   - Group: [Leave as default: "Employees"]
+   - Username: [firstname.lastname]
+   - Password: [Your regular network password]
+6. Complete second factor authentication:
+   - Duo push notification will appear on your phone
+   - Tap "Approve" on your phone
+7. Wait for connection (5-10 seconds)
+8. When you see "Connected to vpn.company.com" → Success!
+
+## How to Verify Connection
+Once connected, you should be able to:
+- Access internal websites (intranet.company.com)
+- Connect to network file shares (\\fileserver\shares)
+- Use internal applications like Salesforce, SAP, etc.
+
+To check connection status:
+- Look for Cisco AnyConnect icon in system tray (bottom-right)
+- Icon should show a padlock (🔒) when connected
+- Hover over icon to see "Connected" status
+
+## How to Disconnect
+1. Right-click Cisco AnyConnect icon in system tray
+2. Select "Disconnect"
+3. Connection will close in 1-2 seconds
+4. Icon will show disconnected status
+
+## Troubleshooting
+
+### Can't Connect - "Connection attempt has failed"
+**Solution**: Check your internet connection first
+1. Open web browser and visit any website (google.com)
+2. If internet not working, fix internet connection first
+3. Try VPN connection again
+4. If still failing, contact IT Help Desk
+
+### Can't Connect - "Login failed"
+**Solution**: Verify credentials
+1. Confirm username is correct: firstname.lastname (all lowercase)
+2. Try logging into Outlook webmail (mail.company.com) with same password
+3. If webmail login fails, reset your password through IT Help Desk
+4. If webmail works but VPN doesn't, contact IT Help Desk
+
+### Duo Push Not Received
+**Solution**: Use passcode instead
+1. Open Duo Mobile app on your phone
+2. Tap the "Company VPN" entry
+3. Note the 6-digit code shown
+4. In VPN login window, type `push,passcode=[code]` in Second Factor field
+   - Example: `push,passcode=123456`
+5. Click OK
+
+### "Certificate Error" or "Untrusted Certificate"
+**Solution**: Update AnyConnect client
+1. Contact IT Help Desk - your client may be outdated
+2. Do NOT click "Proceed anyway" - this is a security risk
+
+### VPN Connects But Can't Access Internal Resources
+**Solution**: DNS or routing issue
+1. Disconnect from VPN
+2. Reconnect to VPN
+3. If problem persists, try:
+   - Open Command Prompt as Administrator
+   - Type: `ipconfig /flushdns`
+   - Press Enter
+   - Try accessing resources again
+4. If still not working, contact IT Help Desk
+
+## Best Practices
+- ✅ Always connect to VPN before accessing company resources remotely
+- ✅ Disconnect from VPN when done working (saves bandwidth)
+- ✅ Keep AnyConnect client updated (update prompts appear automatically)
+- ✅ Use company VPN only for business purposes
+- ❌ Don't share VPN credentials with anyone (including family)
+- ❌ Don't use public/unsecured WiFi without VPN protection
+- ❌ Don't disable MFA to make login "easier"
+
+## Need Help?
+**IT Help Desk**:
+- Phone: 555-0100 (Monday-Friday, 7am-7pm EST)
+- Email: helpdesk@company.com
+- Portal: https://support.company.com
+- After-hours emergency: 555-0911
+
+**Related Articles**:
+- KB-0524: VPN for Mac Users
+- KB-0525: VPN for Mobile Devices
+- KB-0089: Multi-Factor Authentication (MFA) Setup
+- KB-0103: Working Remotely - Complete Guide
+```
+
+Example 3: User Training Email (Security Awareness)
+```markdown
+Subject: Important: How to Recognize and Report Phishing Emails
+
+Hi Team,
+
+This is [Your Name] from IT Support. I want to share some important information about recognizing phishing emails, which continue to be one of the top security threats to our organization.
+
+## What is Phishing?
+Phishing is when cybercriminals send fake emails pretending to be from legitimate sources (your bank, IT department, executives, etc.) to trick you into:
+- Clicking malicious links
+- Opening infected attachments
+- Sharing passwords or personal information
+- Transferring money or sensitive data
+
+## Red Flags - Signs of a Phishing Email
+
+🚩 **Suspicious Sender Address**
+- FROM: "IT Support <support@c0mpany.com>" ← Notice the zero instead of 'o'
+- FROM: "CEO@company-inc.net" ← Wrong domain
+
+🚩 **Urgent or Threatening Language**
+- "Your account will be suspended in 24 hours"
+- "Immediate action required"
+- "Verify your password now or lose access"
+
+🚩 **Generic Greetings**
+- "Dear User" or "Dear Customer" instead of your name
+- Real company emails usually address you personally
+
+🚩 **Poor Grammar and Spelling**
+- "Please to verify you're account information"
+- "We has detected suspicious activity"
+
+🚩 **Suspicious Links**
+- Hover over links (don't click!) to see real destination
+- Real: https://company.com/portal
+- Fake: https://c0mpany-verify.ru/portal
+
+🚩 **Unexpected Attachments**
+- Invoices you didn't request
+- ZIP files from unknown senders
+- .exe or .scr files (executable programs)
+
+🚩 **Requests for Sensitive Information**
+- Asking for password, SSN, credit card numbers
+- IT will NEVER ask for your password via email
+
+🚩 **Too Good to Be True**
+- "You've won a prize!"
+- "Free gift card - click here"
+- "Verify account to claim $500"
+
+## Recent Example (This is FAKE - Do Not Click!)
+```
+FROM: IT Department <it-support@company-secure.tk>
+SUBJECT: ACTION REQUIRED: Password Verification
+
+Dear User,
+
+We has detected suspicious login attempts on you're account from 
+unknown location. Please verify your identity immediately to avoid 
+account suspension.
+
+Click here to verify: http://company-verify.tk/login
+
+You have 24 hours to complete verification.
+
+IT Security Team
+```
+
+**Red Flags in this example**:
+✗ Wrong domain (.tk instead of .com)
+✗ Grammar errors ("has detected", "you're account")
+✗ Generic greeting ("Dear User")
+✗ Urgent threat ("24 hours")
+✗ Suspicious link (company-verify.tk)
+✗ IT would never ask for password verification via email
+
+## What To Do If You Receive a Suspicious Email
+
+### ✅ DO:
+1. **Don't click any links or open attachments**
+2. **Forward the email to**: security@company.com
+3. **Delete the email** after forwarding
+4. **Report it** using the "Report Phishing" button in Outlook
+5. **Tell your manager** if you accidentally clicked anything
+6. **Change your password immediately** if you entered it on a suspicious site
+
+### ❌ DON'T:
+1. Don't click links to "unsubscribe" (confirms your email is active)
+2. Don't reply to the sender
+3. Don't forward to coworkers (except security@)
+4. Don't feel embarrassed - these attacks fool everyone sometimes!
+
+## What Happens When You Report Phishing?
+1. Security team analyzes the email
+2. If confirmed phishing, they:
+   - Block the sender across entire company
+   - Add malicious URLs to blocklist
+   - Send warning to all employees if widespread
+   - Track for trends and patterns
+3. You'll receive confirmation within 1 business day
+4. **Your vigilance helps protect all 500 of us!**
+
+## When in Doubt, Verify Directly
+If you receive a suspicious email claiming to be from:
+- **IT Department**: Call help desk at 555-0100
+- **Your Bank**: Call the number on the back of your card (not the email)
+- **A Coworker**: Call or Slack them to confirm
+- **A Vendor**: Contact them through your regular channel
+
+**Never use contact information provided in suspicious emails!**
+
+## Additional Resources
+- **Security Awareness Training**: https://training.company.com/phishing
+- **Report Phishing**: security@company.com
+- **IT Help Desk**: 555-0100 or helpdesk@company.com
+
+Thank you for staying vigilant and helping keep our company secure!
+
+Best regards,
+[Your Name]
+IT Support Specialist
+IT Help Desk | Company Name
+Phone: 555-0100 ext. 123
+Email: helpdesk@company.com
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Ticket**: Support request record tracking issue from creation to resolution
+- **SLA**: Service Level Agreement - guaranteed response/resolution time based on priority
+- **Tier 1/2/3**: Support levels (1=basic, 2=advanced, 3=specialized/engineering)
+- **Escalation**: Transferring issue to higher support tier or specialized team
+- **CMDB**: Configuration Management Database - inventory of IT assets and relationships
+- **ITSM**: IT Service Management - framework for managing IT services
+- **Remote Access**: Connecting to user's computer from distance to troubleshoot
+- **Knowledge Base (KB)**: Repository of solutions and how-to articles
+- **RCA**: Root Cause Analysis - identifying underlying problem source
+- **MTTR**: Mean Time to Resolve - average time to fix issues
+
+Ticketing Priority Levels:
+- **P1 - Critical**: Business stopped, >50 users affected, <2 hour response
+- **P2 - High**: Significant impact, 10-50 users, <4 hour response
+- **P3 - Medium**: Moderate impact, 1-10 users, <8 hour response
+- **P4 - Low**: Minor inconvenience, workaround exists, <24 hour response
+
+Standards & Frameworks:
+- **ITIL v4** (2019): IT service management best practices framework
+- **HDI Support Center Standard** (2024): Help desk certification and standards
+- **CompTIA A+** (2024): Core IT support skills certification
+- **NIST SP 800-46** (Rev 2): Enterprise Telework and Remote Access Security
+- **ISO/IEC 20000**: IT service management system standard
+- **COBIT 2019**: Framework for IT governance and management
+- **Microsoft Certified**: Modern Desktop Administrator / Support Specialist
+
+Best Practices:
+- **Ticket Documentation**: Document everything - others may need to continue work
+- **User Communication**: Keep users informed even when waiting for resolution
+- **Security First**: Verify identity before password resets or access changes
+- **Knowledge Sharing**: Create KB articles for recurring issues
+- **Empathy**: Remember users are frustrated when technology fails them
+- **Ownership**: Follow tickets through to closure even if escalated
+
+Common Tools & Software:
+Ticketing Systems:
+- ServiceNow, Jira Service Desk, Zendesk, Freshservice
+- BMC Remedy, ManageEngine ServiceDesk Plus
+- SysAid, Spiceworks Help Desk
+
+Remote Support:
+- TeamViewer, AnyDesk, LogMeIn, ConnectWise Control
+- Microsoft Remote Assistance, Chrome Remote Desktop
+- Zoom, Microsoft Teams (screen sharing)
+
+Monitoring & Diagnostics:
+- SolarWinds, PRTG Network Monitor, Nagios
+- Wireshark (packet analysis), PingPlotter (connectivity)
+- Process Explorer, Autoruns (Windows troubleshooting)
+- Event Viewer (Windows), Console (macOS)
+
+System Administration:
+- Active Directory Users and Computers (ADUC)
+- Microsoft 365 Admin Center, Google Workspace Admin
+- Mobile Device Management: Intune, Jamf, AirWatch
+- Endpoint security: Symantec, McAfee, CrowdStrike
+
+Documentation:
+- Confluence, Microsoft OneNote, Notion
+- SharePoint, Google Drive (shared documents)
+- SnagIt, ShareX (screenshots), Loom (screen recording)
+
+Operating Systems:
+- Windows 10/11, Windows Server 2019/2022
+- macOS Monterey/Ventura/Sonoma
+- iOS, Android (mobile support)
+- ChromeOS (Chromebook management)
+
+Common Applications:
+- Microsoft 365 (Outlook, Word, Excel, PowerPoint, Teams)
+- Google Workspace (Gmail, Docs, Sheets, Meet)
+- Web Browsers (Chrome, Edge, Firefox, Safari)
+- Zoom, WebEx, Slack (collaboration)
+- Adobe Acrobat, VPN clients, antivirus software
+
+Change log
+2024-12: Initial playbook created based on HDI standards and ITIL v4 framework
+- Emphasis on customer service and user satisfaction
+- Security-focused procedures for password resets and access management
+- Comprehensive troubleshooting workflows for common issues
+- Knowledge base and documentation best practices
+- Real-world ticket examples and communication templates
+- Focus on empathy and clear communication for non-technical users

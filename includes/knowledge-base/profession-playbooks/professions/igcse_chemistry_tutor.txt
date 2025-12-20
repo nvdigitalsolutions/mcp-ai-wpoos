@@ -1,0 +1,752 @@
+Profession Playbook — IGCSE Chemistry Tutor
+Slug: igcse_chemistry_tutor
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality IGCSE Chemistry tutoring for students in Years 9-11, covering both
+  Core and Extended tiers.
+
+Category guidance
+- Emphasize Cambridge IGCSE Chemistry curriculum (0620), practical skills, chemical concepts,
+  calculations, and exam techniques.
+
+1) Role boundaries
+Do:
+- Provide one-on-one or small group tutoring for IGCSE Chemistry (Core grades 5-1, Extended grades 9-4)
+- Teach curriculum content aligned with Cambridge IGCSE Chemistry syllabus 0620
+- Explain chemical concepts using equations, diagrams, and practical examples
+- Develop practical skills and understanding of chemical investigations
+- Build exam technique for multiple-choice, structured, and calculation questions
+- Create personalized learning plans based on student's strengths and target grades
+- Provide practice problems, past papers, and mark scheme explanations
+- Address common misconceptions in chemistry (especially moles, equations, bonding)
+- Guide practical coursework and investigative skills (where applicable)
+- Prepare students for both Core and Extended tiers
+- Success = Student develops chemical understanding, calculation skills, practical confidence, and achieves target IGCSE grade
+
+Do NOT:
+- Complete coursework or practical reports for students
+- Guarantee specific grades or examination results
+- Conduct dangerous experiments without proper safety measures
+- Provide medical advice about chemicals or exposure
+- Override school teacher's methods without finding complementary approaches
+- Diagnose learning disabilities or special educational needs
+- Share student progress without parental consent
+- Handle hazardous chemicals without proper training and equipment
+
+Escalate / refer out when:
+- Student shows signs of severe anxiety requiring counseling support
+- Learning difficulties suggest specific educational needs beyond tutoring
+- Safety concerns arise with chemicals or practical work
+- Student requires career guidance about chemistry pathways (refer to careers adviser)
+- Chemical safety incidents occur (involve school immediately)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What region or country are you studying in? (Affects examination boards, practical requirements, safety regulations)
+- What year are you in (Year 9, 10, or 11)?
+- Are you taking Core or Extended IGCSE Chemistry?
+- What is your current working grade and target grade?
+- Which chemistry topics are you finding most challenging (atoms, moles, equations, organic chemistry)?
+- Have you completed mock exams? If so, what were the results?
+- Do you have practical/coursework components to complete?
+- When is your IGCSE Chemistry examination?
+- What specific areas need support (content understanding, calculations, practical skills, exam technique)?
+
+1.5) Regional Considerations
+
+While IGCSE Chemistry curricula are internationally standardized, regional factors affect tutoring:
+
+**Examination Boards & Curricula:**
+- **Cambridge IGCSE (0620)**: Most common globally, Core/Extended tiers, June/November sessions
+- **Edexcel International GCSE (4CH1)**: Foundation/Higher tiers, UK schools and international
+- **Oxford AQA International GCSE**: Growing presence, UK assessment approach
+- Syllabus differences: Organic chemistry depth, qualitative analysis methods vary slightly
+
+**Practical Work & Laboratory Safety:**
+- **UK & Europe**: Hands-on practicals required, coursework/controlled assessment in some boards
+- **Middle East & Asia**: Often limited by equipment/chemical availability, paper-based practical exams
+- **Safety Regulations**: Chemical handling restrictions vary (e.g., concentrated acids, organic solvents)
+- **Alternative Practical Paper**: For schools without full lab facilities (Paper 5/6 Cambridge)
+
+**Units & Measurement Conventions:**
+- **SI Units**: Standard across IGCSE (meters, kilograms, moles, joules)
+- **Temperature**: Kelvin and Celsius both used, regional teaching preferences
+- **Pressure Units**: Pascals (Pa), atmospheres (atm), mmHg - exam boards accept multiple units
+- **Concentration**: mol/dm³ standard, but some regions teach molarity (M) notation first
+
+**Academic Calendars & Examination Sessions:**
+- **Northern Hemisphere**: September-June academic year, May/June exams typical
+- **Southern Hemisphere**: January-December academic year, October/November exams
+- **Middle East**: Varied calendars depending on school system (UK/US/local)
+- **Resit Availability**: Depends on school policy and national examination regulations
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Initial Assessment & Goal Setting
+   - Review recent test results and school reports
+   - Conduct diagnostic assessment on key IGCSE Chemistry topics
+   - Identify current working grade and realistic target grade
+   - Map student's strengths and calculation confidence
+   - Understand examination tier (Core or Extended)
+   - Assess mathematical skills (critical for chemistry)
+   - Set SMART goals with timeline
+   - Create personalized tutoring plan
+   
+2. Foundation & Prerequisite Knowledge
+   - Review basic mathematical skills (fractions, ratios, percentages)
+   - Ensure understanding of atomic structure basics
+   - Check periodic table familiarity
+   - Review chemical formula writing
+   - Build equation balancing fundamentals
+   - Practice using scientific notation
+   - Develop safety awareness
+   
+3. Topic-by-Topic Mastery (IGCSE Chemistry Syllabus 0620)
+
+   **1. The Particulate Nature of Matter**
+   - States of matter and interconversions
+   - Kinetic particle theory
+   - Diffusion
+   - Solutions and solubility
+   
+   **2. Experimental Techniques**
+   - Separation methods (filtration, crystallization, distillation, chromatography)
+   - Measurement and accuracy
+   - Safety procedures
+   
+   **3. Atoms, Elements and Compounds**
+   - Atomic structure (protons, neutrons, electrons)
+   - Electronic configuration
+   - Isotopes
+   - Periodic table organization
+   - Ions and ionic bonding
+   - Covalent bonding
+   - Metallic bonding
+   - Structure and properties of substances
+   
+   **4. Stoichiometry (The Mole Concept)**
+   - Relative atomic mass and relative formula mass
+   - The mole concept and Avogadro's constant
+   - Calculations involving mass, moles, and formula
+   - Chemical formulae and equations
+   - Reacting masses and volumes
+   - Percentage composition and empirical formulae
+   
+   **5. Electricity and Chemistry**
+   - Electrolysis of molten compounds
+   - Electrolysis of aqueous solutions
+   - Electroplating
+   
+   **6. Chemical Energetics**
+   - Exothermic and endothermic reactions
+   - Energy level diagrams
+   - Bond breaking and bond making
+   
+   **7. Chemical Reactions**
+   - Types of chemical reactions
+   - Rates of reaction and factors affecting rates
+   - Catalysts
+   - Reversible reactions and equilibrium
+   
+   **8. Acids, Bases and Salts**
+   - Properties of acids and bases
+   - pH scale
+   - Neutralization
+   - Preparing salts
+   - Metal reactions with acids
+   
+   **9. The Periodic Table**
+   - Arrangement of elements
+   - Group properties (Group 1, Group 7, Group 0/8, transition metals)
+   - Trends in reactivity
+   
+   **10. Metals**
+   - Reactivity series
+   - Extraction of metals
+   - Uses of metals
+   - Corrosion and prevention
+   - Alloys
+   
+   **11. Air and Water**
+   - Composition of air
+   - Combustion
+   - Greenhouse effect and climate change
+   - Water treatment
+   - Pollution
+   
+   **12. Sulfur and Carbonates**
+   - Sulfur dioxide and sulfuric acid
+   - Carbonates and their reactions
+   - Limestone and its uses
+   
+   **13. Organic Chemistry**
+   - Alkanes, alkenes, alcohols
+   - Crude oil and fractional distillation
+   - Polymers
+   - Fuels and combustion
+   
+   For each topic:
+   - Explain concept using equations and molecular models
+   - Model worked calculations step-by-step
+   - Connect to everyday chemical phenomena
+   - Address common misconceptions
+   - Provide guided and independent practice
+   - Check understanding with formative questions
+   - Build from concrete to abstract concepts
+   
+4. Practical Skills Development
+   - Safe handling of chemicals and apparatus
+   - Experimental design and hypothesis testing
+   - Variables (independent, dependent, control)
+   - Risk assessment and safety procedures
+   - Measurement techniques and accuracy
+   - Recording results in tables
+   - Plotting graphs (line graphs showing trends)
+   - Drawing conclusions from data
+   - Evaluating experiments and suggesting improvements
+   - Writing practical reports (if coursework component)
+   
+5. Chemical Calculations Mastery
+   - Relative formula mass (Mr) calculations
+   - Mole calculations (mass ÷ Mr)
+   - Reacting masses from equations
+   - Volume calculations (gases at RTP)
+   - Concentration calculations (mol/dm³, g/dm³)
+   - Percentage yield and purity
+   - Empirical and molecular formulae
+   - Titration calculations
+   - All calculations with units and correct significant figures
+   
+6. Equation Writing & Balancing
+   - Symbol equations from word equations
+   - Balancing chemical equations
+   - State symbols (s, l, g, aq)
+   - Ionic equations
+   - Half equations for electrolysis
+   - Systematic approach to balancing
+   
+7. Exam Technique Development
+   - Familiarize with paper structure (Core Papers 1 & 3, Extended Papers 2 & 4)
+   - Practice question types (multiple choice, calculations, extended response)
+   - Time management strategies (mark allocation awareness)
+   - Command word recognition (state, describe, explain, calculate)
+   - Show all working for calculations
+   - Use correct chemical terminology
+   - Draw diagrams when helpful (apparatus, molecular structure)
+   - Practice past papers under timed conditions
+   - Review mark schemes to understand examiner expectations
+   
+8. Regular Assessment & Progress Monitoring
+   - Topic tests for each chemistry unit
+   - Calculation practice tests
+   - Monthly progress checks against learning plan
+   - Mock examinations under exam conditions
+   - Analyze errors by topic and question type
+   - Track grade progression over time
+   - Adjust tutoring focus based on results
+   - Communicate progress to parents
+   
+9. Exam Preparation & Final Review
+   - Create comprehensive revision timetable
+   - Practice full past papers from recent years (2019-2024)
+   - Focus on high-yield topics (moles, acids/bases, rates, organic)
+   - Review common misconceptions and errors
+   - Build exam stamina with timed practice
+   - Memorize key facts and equations
+   - Final topic reviews using active recall
+   - Exam strategies for difficult questions
+   - Address exam anxiety
+
+4) Deliverables
+- Initial diagnostic assessment report for chemistry
+- Personalized tutoring plan with topic schedule
+- Topic summary sheets with key concepts, equations, and calculations
+- Worked example collections for all calculation types
+- Practice problem sets (graded by difficulty)
+- Past paper practice (organized by topic and full papers)
+- Mark schemes with detailed explanations
+- Practical investigation guides and templates
+- Chemical equation practice sheets
+- Formula and key facts sheets
+- Progress reports (monthly)
+- Mock examination analysis with improvement strategies
+- Revision checklists and memory aids
+- Exam technique guides for chemistry papers
+- Parent/guardian progress updates
+
+Minimum viable: Topic explanations + calculation practice + past papers
+Gold standard: Comprehensive diagnostic + personalized plan + systematic coverage + calculation mastery + practical skills + extensive practice + detailed progress tracking + exam confidence
+
+5) Quality checklist
+
+Initial Assessment:
+- [ ] Diagnostic test completed covering all chemistry topics
+- [ ] Current working grade identified
+- [ ] Target grade set (realistic)
+- [ ] Mathematical skills assessed
+- [ ] Calculation confidence evaluated
+- [ ] Strengths and weaknesses mapped by topic
+- [ ] Tier (Core/Extended) confirmed
+- [ ] Personalized learning plan created
+
+Teaching & Explanation:
+- [ ] Concepts explained with equations and models
+- [ ] Real-world chemical examples provided
+- [ ] Worked calculations demonstrated step-by-step
+- [ ] Common misconceptions addressed explicitly (especially moles)
+- [ ] Chemical terminology used correctly and explained
+- [ ] Connections made between topics
+- [ ] Student actively engaged
+- [ ] Abstract concepts made concrete
+
+Practical Skills:
+- [ ] Experimental design understood
+- [ ] Variables identified correctly
+- [ ] Safety awareness demonstrated
+- [ ] Chemical apparatus use practiced
+- [ ] Measurement techniques accurate
+- [ ] Data recording skills developed
+- [ ] Graph plotting correct
+- [ ] Conclusions drawn from evidence
+
+Chemical Knowledge:
+- [ ] Atomic structure secure
+- [ ] Bonding types understood (ionic, covalent, metallic)
+- [ ] Periodic table trends known
+- [ ] Acid-base chemistry clear
+- [ ] Rates of reaction factors understood
+- [ ] Organic chemistry basics secure
+- [ ] Metal reactivity series memorized
+
+Calculations Mastery:
+- [ ] Mr calculations confident
+- [ ] Mole calculations practiced extensively
+- [ ] Reacting masses calculated correctly
+- [ ] Equation balancing systematic
+- [ ] Concentration calculations secure
+- [ ] Volume calculations understood
+- [ ] Percentage yield/purity calculated
+- [ ] All answers include units
+
+Exam Preparation:
+- [ ] Paper structure understood
+- [ ] Time management strategies practiced
+- [ ] Command words understood and applied
+- [ ] Past papers completed under timed conditions
+- [ ] Mark schemes reviewed thoroughly
+- [ ] Working shown for all calculations
+- [ ] Chemical terminology used accurately
+- [ ] State symbols included in equations
+
+Progress Monitoring:
+- [ ] Regular assessments track improvement
+- [ ] Data used to adjust tutoring focus
+- [ ] Parents updated on progress
+- [ ] Mock results analyzed in detail
+- [ ] Grade predictions updated
+- [ ] Weak areas (especially calculations) given extra focus
+- [ ] Student aware of own progress
+
+6) Templates (paste-ready)
+
+=== IGCSE Chemistry Diagnostic Assessment ===
+IGCSE CHEMISTRY DIAGNOSTIC TEST
+Student Name: _______________________
+Year: [ ] 9  [ ] 10  [ ] 11
+Tier: [ ] Core  [ ] Extended
+Date: _______________________
+
+SECTION 1: ATOMIC STRUCTURE & BONDING (15 marks)
+1. An atom has 11 protons, 12 neutrons, and 11 electrons.
+   a) What is the mass number? _____
+   b) What is the atomic number? _____
+   c) Name the element: _____
+2. Explain the difference between ionic and covalent bonding: _______
+3. Draw dot-and-cross diagram for H₂O: _______
+
+SECTION 2: CHEMICAL CALCULATIONS (20 marks)
+4. Calculate the Mr of H₂SO₄: _____ (H=1, S=32, O=16)
+5. How many moles in 88g of CO₂? (Mr = 44) _____
+6. Balance this equation: ___Al + ___O₂ → ___Al₂O₃
+7. If 48g of Mg reacts with oxygen, what mass of MgO forms? (Mg=24, O=16)
+   Equation: 2Mg + O₂ → 2MgO
+   Calculation: _______
+
+SECTION 3: ACIDS, BASES & SALTS (15 marks)
+8. What is the pH of a neutral solution? _____
+9. Write the word equation for neutralization: _______
+10. Name the salt formed when sulfuric acid reacts with sodium hydroxide: _______
+11. Explain what happens when zinc reacts with hydrochloric acid: _______
+
+SECTION 4: PERIODIC TABLE & REACTIVITY (10 marks)
+12. Name two properties of Group 1 metals: _______
+13. Why does chlorine react more vigorously than iodine? _______
+14. Give one use of helium: _______
+
+SECTION 5: ORGANIC CHEMISTRY (10 marks)
+15. What is the general formula for alkanes? _____
+16. Name the process of separating crude oil: _______
+17. Describe one test to distinguish between alkane and alkene: _______
+
+RESULTS SUMMARY:
+Section | Score | Percentage | Priority
+--------|-------|------------|----------
+Atomic Structure & Bonding | __/15 | ___% | [ ] High [ ] Med [ ] Low
+Calculations (CRITICAL) | __/20 | ___% | [ ] High [ ] Med [ ] Low
+Acids, Bases & Salts | __/15 | ___% | [ ] High [ ] Med [ ] Low
+Periodic Table | __/10 | ___% | [ ] High [ ] Med [ ] Low
+Organic Chemistry | __/10 | ___% | [ ] High [ ] Med [ ] Low
+
+Overall Score: ___/70 (___%)
+Estimated Working Grade: _______
+
+CALCULATION CONFIDENCE: [ ] High [ ] Medium [ ] Low [ ] Very Low
+
+STRENGTHS:
+1. _______________________
+2. _______________________
+
+AREAS FOR DEVELOPMENT (especially if calculations weak):
+1. _______________________ (Priority: High)
+2. _______________________ (Priority: Medium)
+
+RECOMMENDED FOCUS:
+Immediate (if calculations weak, START HERE): _______________________
+Short-term: _______________________
+Long-term: _______________________
+
+=== Chemistry Calculation Worksheet Template ===
+IGCSE CHEMISTRY CALCULATION PRACTICE
+Topic: [e.g., Moles and Reacting Masses]
+Student: _______________________
+Date: _______________________
+
+REMEMBER:
+- Moles = Mass (g) / Mr
+- Mass = Moles × Mr
+- Mr = sum of atomic masses
+
+WORKED EXAMPLE:
+Calculate moles in 90g of water (H₂O). (H=1, O=16)
+
+Step 1: Calculate Mr
+Mr of H₂O = (2 × 1) + (1 × 16) = 2 + 16 = 18
+
+Step 2: Use formula
+Moles = Mass / Mr = 90 / 18 = 5 moles
+
+Answer: 5 moles ✓
+
+PRACTICE PROBLEMS (show all working):
+
+BASIC LEVEL:
+1. Calculate Mr of NaCl (Na=23, Cl=35.5)
+   Working:
+
+2. Calculate moles in 40g of NaOH (Mr=40)
+   Working:
+
+3. Calculate mass of 2 moles of CO₂ (Mr=44)
+   Working:
+
+MEDIUM LEVEL:
+4. Calculate moles in 5.4g of aluminum (Al=27)
+   Working:
+
+5. How many moles in 112g of Fe? (Fe=56)
+   Working:
+
+6. What mass of calcium contains 0.5 moles? (Ca=40)
+   Working:
+
+CHALLENGING:
+7. Calculate moles in 3.4g of NH₃ (N=14, H=1)
+   Working:
+
+8. Mg + 2HCl → MgCl₂ + H₂
+   If 12g of Mg reacts, what mass of H₂ is produced? (Mg=24, H=1)
+   Working:
+
+MARK SCHEME:
+1. Mr = 58.5 ✓
+2. Moles = 1 ✓
+3. Mass = 88g ✓
+[Continue...]
+
+STUDENT SELF-ASSESSMENT:
+After completing, rate your confidence:
+Mole calculations: [ ] Confident [ ] OK [ ] Need more practice
+Reacting masses: [ ] Confident [ ] OK [ ] Need more practice
+
+=== Progress Report Template ===
+IGCSE CHEMISTRY TUTORING PROGRESS REPORT
+Student: _______________________
+Period: _______ to _______
+Sessions: _______
+
+CURRENT PERFORMANCE:
+Working Grade: _______ Target: _______
+Status: [ ] On track [ ] Behind [ ] Ahead
+
+TOPICS COVERED THIS PERIOD:
+1. _______________________ (Mastery: [ ] Secure [ ] Developing [ ] Needs work)
+2. _______________________ (Mastery: [ ] Secure [ ] Developing [ ] Needs work)
+3. _______________________ (Mastery: [ ] Secure [ ] Developing [ ] Needs work)
+
+CALCULATION SKILLS:
+Mr calculations: [ ] Confident [ ] Developing [ ] Struggling
+Mole calculations: [ ] Confident [ ] Developing [ ] Struggling
+Reacting masses: [ ] Confident [ ] Developing [ ] Struggling
+Equation balancing: [ ] Confident [ ] Developing [ ] Struggling
+
+RECENT ASSESSMENTS:
+Assessment | Date | Score | Grade | Comments
+-----------|------|-------|-------|----------
+Moles Test | ____ | __/__ | ____ | __________
+Past Paper | ____ | __/__ | ____ | __________
+Mock Exam | ____ | __/__ | ____ | __________
+
+STRENGTHS THIS PERIOD:
+1. _______________________
+2. _______________________
+
+AREAS FOR DEVELOPMENT:
+1. _______________________ (Action: _______)
+2. _______________________ (Action: _______)
+
+EFFORT & ENGAGEMENT:
+Homework Completion: [ ] Always [ ] Usually [ ] Sometimes [ ] Rarely
+Calculation Practice: [ ] Regular [ ] Occasional [ ] Insufficient
+Participation: [ ] Excellent [ ] Good [ ] Adequate
+Progress: [ ] Exceeding [ ] Meeting [ ] Below expectations
+
+NEXT STEPS:
+Focus for next period:
+1. _______________________
+2. _______________________
+
+Tutor Recommendations:
+_______________________
+
+Tutor Signature: _________________ Date: _______
+
+7) Examples of excellent outputs
+
+Example 1: Mole Concept Breakthrough Session
+```
+SESSION: IGCSE Chemistry - The Mole Concept
+Student: David Kumar, Year 11 Extended
+Current Grade: 5, Target: 7
+Date: April 3, 2025
+Exam in 6 weeks
+
+SITUATION:
+David struggling significantly with mole calculations - scored 2/15 marks on moles section in mock (February). This is THE biggest weakness and highest-impact area to fix. Without moles, cannot access 25-30 marks across chemistry papers. URGENT priority.
+
+DIAGNOSIS:
+Reviewed David's mock:
+- Didn't know formula (moles = mass/Mr)
+- Couldn't calculate Mr correctly
+- Gave up on multi-step problems
+- Wrote answers without units
+Fundamental misunderstanding - needs complete rebuild from basics.
+
+SESSION FOCUS: Build mole concept from absolute foundations
+
+PART 1: WHAT IS A MOLE? (15 min)
+
+Started differently - not with formula.
+
+Me: "David, how many is a dozen?"
+David: "12"
+Me: "So if I say I have a dozen eggs, you know exactly how many, right?"
+David: "Yes, 12 eggs"
+Me: "A mole is exactly the same idea - it's just a number. A really BIG number."
+
+Explained:
+- 1 mole = 6.02 × 10²³ particles
+- Just like 1 dozen = 12 items
+- It's a counting unit for tiny particles (atoms, molecules)
+
+David: "So mole is just... a number?"
+Me: "Exactly! You've got it!"
+
+Why do chemists use moles?
+- Atoms are tiny - can't count them individually
+- Need a standard way to count huge numbers
+- 1 mole of ANY substance = same number of particles
+
+David starting to grasp - "It's like a chemist's dozen, but way bigger"
+Perfect analogy!
+
+PART 2: MOLES AND MASS - THE MAGIC CONNECTION (20 min)
+
+Key insight:
+"1 mole of a substance weighs Mr grams"
+
+Example: Water (H₂O)
+- Mr of H₂O = (2 × 1) + (1 × 16) = 18
+- So 1 mole of water weighs 18 grams
+- 2 moles weigh 36 grams
+- 0.5 moles weigh 9 grams
+
+David: "Wait, so if I know Mr, I know how much 1 mole weighs?"
+YES! Breakthrough moment!
+
+Practiced this connection:
+Q: Mr of CO₂ = 44. How much does 1 mole weigh?
+David: "44 grams!"
+Q: How much do 2 moles weigh?
+David: "88 grams!"
+Q: What about 0.5 moles?
+David calculated: "22 grams!"
+
+All correct! Foundation building nicely.
+
+PART 3: THE FORMULA (20 min)
+
+Now introduced formula triangle:
+
+        Mass (g)
+       -----------
+      Moles  |  Mr
+
+Formulas:
+- Moles = Mass ÷ Mr
+- Mass = Moles × Mr
+- Mr = Mass ÷ Moles
+
+Worked Example 1: Find moles
+Q: How many moles in 88g of CO₂? (Mr = 44)
+
+David's attempt:
+Step 1: Write formula: Moles = Mass / Mr
+Step 2: Substitute: Moles = 88 / 44
+Step 3: Calculate: Moles = 2
+Answer: 2 moles ✓
+
+PERFECT! David showed all working, got it right!
+
+Worked Example 2: Find mass
+Q: What is mass of 3 moles of H₂O? (Mr = 18)
+
+David's attempt:
+Formula: Mass = Moles × Mr
+Mass = 3 × 18 = 54g ✓
+
+Excellent!
+
+Did 5 more examples - David got 4/5 correct on first attempt.
+The one error: forgot units (wrote "54" not "54g")
+Important point about ALWAYS including units.
+
+PART 4: MR CALCULATIONS PRACTICE (15 min)
+
+Can't do mole calculations without Mr - practiced:
+
+Mr of NaCl = Na + Cl = 23 + 35.5 = 58.5 ✓
+Mr of CaCO₃ = Ca + C + (O × 3) = 40 + 12 + (16 × 3) = 100 ✓
+Mr of H₂SO₄ = (H × 2) + S + (O × 4) = 2 + 32 + 64 = 98 ✓
+
+David confident with Mr calculations now.
+
+PART 5: EXAM-STYLE QUESTIONS (10 min)
+
+Past paper question (4 marks):
+"Calculate the number of moles in 142g of chlorine gas, Cl₂" (Cl = 35.5)
+
+David's work:
+Step 1: Calculate Mr of Cl₂
+Mr = 35.5 × 2 = 71
+
+Step 2: Use formula
+Moles = Mass / Mr = 142 / 71 = 2 moles
+
+Answer: 2 moles ✓
+
+4/4 marks! David thrilled!
+
+COMPARISON TO MOCK:
+Mock (February): 2/15 marks on moles (13%)
+Today's questions: 8/10 marks (80%)
+
+MASSIVE improvement! From complete confusion to confident calculation in one session!
+
+David's reaction: "Why didn't anyone explain it like this before? It's actually not that hard!"
+
+HOMEWORK (CRITICAL - must practice to cement):
+1. Complete 20 mole calculations (worksheet - gradual difficulty)
+2. Self-mark using answers provided
+3. Redo any incorrect until perfect
+4. Move to reacting masses worksheet (next level)
+
+NEXT SESSION (3 days):
+- Review mole homework (check understanding solid)
+- Introduce reacting masses from equations
+- Link moles to chemical equations
+- More past paper practice
+
+TUTOR NOTES:
+Breakthrough session! David's confidence transformed - he actually SMILED doing chemistry calculations (first time!). Key was starting with the concept (mole = number) before formulas. Formula triangle visual really helped. Foundation now solid - can build to reacting masses and more complex calculations. Critical that David completes practice homework to cement learning. If he does, could gain 20+ marks on exam (enough to move from grade 5 to 7). Monitoring closely - this is make-or-break topic for David's target grade.
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Relative Atomic Mass (Ar)**: Average mass of atoms of an element compared to 1/12 mass of carbon-12
+- **Relative Formula Mass (Mr)**: Sum of relative atomic masses in a compound's formula
+- **Mole**: 6.02 × 10²³ particles (Avogadro's constant); standard amount of substance
+- **Molarity**: Concentration in moles per cubic decimeter (mol/dm³)
+- **Empirical Formula**: Simplest whole number ratio of atoms in compound
+- **Molecular Formula**: Actual number of atoms of each element in a molecule
+- **Ionic Bonding**: Electrostatic attraction between oppositely charged ions
+- **Covalent Bonding**: Sharing of electron pairs between atoms
+- **Catalyst**: Substance that speeds up reaction without being used up
+- **Exothermic**: Reaction that releases energy (temperature increases)
+- **Endothermic**: Reaction that absorbs energy (temperature decreases)
+- **Electrolysis**: Decomposition of compound using electricity
+- **Redox**: Reaction involving both reduction and oxidation
+
+Cambridge IGCSE Chemistry Syllabus 0620:
+**Paper Structure:**
+- Core: Paper 1 (Multiple Choice) + Paper 3 (Theory)
+- Extended: Paper 2 (Multiple Choice) + Paper 4 (Theory) + Paper 6 (Alternative to Practical)
+
+**Key Chemical Equations (must memorize):**
+- Photosynthesis: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂
+- Respiration: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O
+- Thermal decomposition of limestone: CaCO₃ → CaO + CO₂
+- Neutralization: Acid + Base → Salt + Water
+
+**Important Formulae:**
+- Moles = Mass (g) / Mr
+- Concentration (mol/dm³) = Moles / Volume (dm³)
+- Percentage yield = (Actual yield / Theoretical yield) × 100
+- Percentage by mass = (Mass of element / Mr of compound) × 100
+
+**Reactivity Series (most to least reactive):**
+Potassium, Sodium, Calcium, Magnesium, Aluminum, (Carbon), Zinc, Iron, (Hydrogen), Copper, Silver, Gold
+
+**Common Ion Charges:**
+- Group 1: +1, Group 2: +2, Group 7: -1
+- Ammonium NH₄⁺, Hydroxide OH⁻, Nitrate NO₃⁻, Carbonate CO₃²⁻, Sulfate SO₄²⁻
+
+Resources:
+- Save My Exams - IGCSE Chemistry
+- Chemguide - Detailed chemistry explanations
+- BBC Bitesize - IGCSE Chemistry
+- Cambridge International - Past papers 0620
+- Seneca Learning - Interactive chemistry
+
+Change log
+[2024-12]: Initial IGCSE Chemistry Tutor playbook created
+- Comprehensive chemistry tutoring for Cambridge IGCSE 0620
+- Strong emphasis on mole concept and calculations (highest-impact area)
+- Coverage of all syllabus topics
+- Practical skills development
+- Exam technique strategies
+- Core and Extended tier support
+- Aligned with Cambridge IGCSE Chemistry syllabus

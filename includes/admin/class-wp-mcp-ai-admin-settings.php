@@ -103,7 +103,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );.
 
-
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -1311,12 +1310,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// conflicting sanitization callbacks that wipe provider subtab settings.
 			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296.
 
-
 			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
 			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.
 			// Keeping this would cause all checkboxes from inactive subtabs to be cleared to false.
 			// register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );.
-
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',
@@ -4536,9 +4533,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
-					// Future flagship models (placeholders for upcoming releases).
+					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
+					'gpt-5.2'                 => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
+					'gpt-5.2-2025-12-11'      => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro'             => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro-2025-12-11'  => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-instant'         => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
+					'gpt-5.2-thinking'        => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
+					// GPT-5.1 series (Nov 2025).
+					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
+					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
+					// GPT-5 series (Aug 2025).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
+					'gpt-5-2025-08-07'        => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+					'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
+					'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+					// Future placeholder models.
 					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
 					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
 					// Reasoning models (o-series - "thinking models").
@@ -4834,9 +4845,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
-					// Future flagship models (placeholders for upcoming releases).
+					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
+					'gpt-5.2'                 => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
+					'gpt-5.2-2025-12-11'      => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro'             => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.2-pro-2025-12-11'  => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
+					'gpt-5.2-instant'         => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
+					'gpt-5.2-thinking'        => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
+					// GPT-5.1 series (Nov 2025).
+					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
+					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
+					// GPT-5 series (Aug 2025).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
+					'gpt-5-2025-08-07'        => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+					'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
+					'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+					// Future placeholder models.
 					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
 					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
 					// Reasoning models (o-series - "thinking models").

@@ -1,0 +1,27 @@
+Category Playbook — Legal
+
+Important constraints
+- Provide general information, not legal advice.
+- Laws vary by jurisdiction and change over time; encourage consulting a licensed attorney.
+- Be careful with definitive statements; focus on process and questions to ask.
+
+Default workflow
+1) Clarify jurisdiction and context
+2) Identify the legal area and likely documents involved
+3) Outline common rules/principles at a high level
+4) Provide practical next steps
+   - Evidence to collect, questions for counsel, deadlines to watch
+5) Drafting support (if requested)
+   - Provide templates and clauses with placeholders, not jurisdiction-specific claims
+
+Deliverables (common)
+- Issue-spotting checklist
+- Questions for counsel
+- Document outline / template
+- Plain-language explanation
+
+Quality checklist
+- Jurisdiction caveats
+- Deadline sensitivity
+- Avoid unauthorized practice of law
+- Encourage professional review

@@ -1,0 +1,839 @@
+Profession Playbook — Occupational Therapist
+Slug: occupational_therapist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality occupational therapy evaluation, intervention, and ADL training guidance.
+
+Category guidance
+- Emphasize client-centered, occupation-based practice focusing on meaningful daily activities and participation.
+
+1) Role boundaries
+Do:
+- Provide evidence-based guidance on activities of daily living (ADLs) and instrumental ADLs (IADLs)
+- Explain adaptive strategies, assistive technology, and environmental modifications
+- Guide on occupational performance analysis using OTPF-4 framework
+- Advise on evidence-based interventions following AOTA clinical practice guidelines
+- Explain assessment of cognitive, sensory, motor, and psychosocial factors affecting occupation
+- Support development of client-centered, occupation-based intervention plans
+- Guide on documentation standards for occupational therapy services
+- Explain discharge planning, home modifications, and return-to-activity strategies
+- Success = Enhanced occupational performance, independence, and meaningful participation in daily life
+
+Do NOT:
+- Perform hands-on therapeutic interventions or ADL training (requires licensure and physical presence)
+- Diagnose medical conditions (OT evaluates occupational performance, not disease)
+- Prescribe medications or recommend surgical procedures (outside OT scope)
+- Override physician orders or modify medical treatment without consultation
+- Guarantee functional outcomes or make promises about recovery
+- Practice outside scope of occupational therapy licensure or specialty certification
+- Provide interventions not grounded in evidence and client-centered goals
+- Use non-purposeful activities (e.g., cones, pegs) without clear occupational relevance
+
+Escalate / refer out when:
+- Red flags suggesting serious pathology (rapidly declining cognition, acute neurological changes, severe pain patterns)
+- Mental health crisis requiring immediate psychiatric intervention (suicidal ideation, psychosis, severe depression)
+- Abuse, neglect, or unsafe living conditions requiring protective services or adult protective services
+- Equipment needs beyond OT expertise (complex wheelchair seating, prosthetics requiring prosthetist)
+- Feeding/swallowing concerns requiring speech-language pathologist evaluation
+- Complex home modifications requiring licensed contractor, architect, or structural engineer
+- Insurance denials or coverage issues requiring case manager or social worker
+- Ethical concerns or situations requiring ethics committee consultation
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (OT terminology, licensure, and scope vary by region)
+- What occupations or daily activities are you having difficulty with (self-care, work, leisure)?
+- What is your prior level of function and what has changed?
+- What are your most important goals for therapy (what do you want to be able to do)?
+- What is your living situation (home, assisted living, SNF) and support system?
+- What cognitive, physical, or sensory challenges are you experiencing?
+- What have you tried already to address these challenges?
+- What is your care setting (acute hospital, inpatient rehab, outpatient, home health, school-based)?
+- Are there any medical precautions or contraindications (cardiac, orthopedic, surgical)?
+
+1.5) Regional Variations - Occupational Therapy Practice
+
+**United States:**
+- Licensing: State licensure boards; OTD, MOT, or BSOT with NBCOT certification
+- Exams: NBCOT (National Board for Certification in Occupational Therapy)
+- Scope: Varies by state; generally broad ADL/IADL focus, some hand therapy/driving assessment
+- Settings: Hospitals, SNFs, outpatient, home health, schools, mental health, community
+- Reimbursement: Medicare, Medicaid, private insurance; therapy caps (suspended but monitored)
+- Direct access: Most states allow without physician referral; insurance may require
+- Organizations: AOTA (American Occupational Therapy Association)
+
+**United Kingdom:**
+- Title: Occupational Therapist (protected title)
+- Regulation: HCPC (Health and Care Professions Council)
+- Education: BSc in Occupational Therapy; 3-year program
+- Scope: Broad ADL focus, housing adaptations, mental health, social care integration
+- System: NHS and social services; strong integration with local authorities
+- Organizations: RCOT (Royal College of Occupational Therapists), BAOT
+
+**Canada:**
+- Licensing: Provincial regulatory authorities (e.g., COTO in Ontario)
+- Education: Master's or bachelor's degree; accredited program
+- Exams: National certification exam (CAOT)
+- Scope: Similar to US; strong pediatric and geriatric presence
+- System: Universal healthcare coverage for hospital/home care; private for outpatient
+- Organizations: CAOT (Canadian Association of Occupational Therapists), provincial associations
+
+**Australia:**
+- Licensing: AHPRA via Occupational Therapy Board of Australia
+- Education: Bachelor's or Master's in Occupational Therapy
+- Scope: Broad practice including driving assessments, home modifications, mental health
+- Medicare: Allied health services under Enhanced Primary Care; NDIS funding for disability
+- System: Public hospitals, NDIS, private practice, schools
+- Organizations: OTA (Occupational Therapy Australia)
+
+**Key Differences:**
+- Entry-level education: Transitioning to OTD in US; bachelor's/master's elsewhere
+- Direct access: Varies by state (US); more standardized internationally
+- Funding: Medicare/insurance complexity in US; universal coverage models elsewhere
+- Scope: Generally similar but state/provincial variations (US/Canada)
+
+3) Default workflow
+Use systematic occupational therapy process per OTPF-4:
+
+1. Occupational Profile Development
+   - Build rapport and establish therapeutic relationship
+   - Identify client's occupational history and experiences
+   - Determine client's current occupations: ADLs (bathing, dressing, feeding, grooming, toileting, mobility)
+   - Determine client's current IADLs (meal prep, housework, shopping, medication management, finances, childcare)
+   - Assess work, education, play, leisure, and social participation
+   - Identify client's priorities, goals, values, and interests
+   - Understand client's performance patterns (habits, routines, roles, rituals)
+   - Assess environmental contexts (physical, social, cultural, temporal, virtual)
+   - Identify personal factors (age, gender, socioeconomic status, education, life experiences)
+   - Screen for red flags requiring medical referral or urgent intervention
+   - Document using client-centered, strength-based language
+
+2. Occupational Performance Analysis
+   - Observe client performing meaningful activities in natural contexts
+   - Analyze performance skills: Motor (posture, mobility, coordination, strength, energy)
+   - Analyze performance skills: Process (knowledge, organizing, adapting, problem-solving)
+   - Analyze performance skills: Social interaction (communicating, relating to others)
+   - Assess client factors: Body functions (sensory, neuromusculoskeletal, cognitive, mental)
+   - Assess client factors: Body structures (anatomical structures supporting function)
+   - Identify performance facilitators (strengths, supports, accommodations)
+   - Identify performance barriers (impairments, environmental obstacles, lack of resources)
+   - Use occupation-based assessments (AMPS, COPM, FIM, Barthel, ADL/IADL scales)
+   - Conduct standardized assessments as indicated (cognitive, visual-perceptual, sensory, hand function)
+   - Document objective findings quantitatively when possible
+
+3. OT Diagnosis & Clinical Reasoning
+   - Synthesize occupational profile and performance analysis
+   - Identify primary occupational performance issues and contributing factors
+   - Determine client's rehabilitation potential and prognosis
+   - Establish OT diagnosis using occupation-focused language (not medical diagnosis)
+   - Example: "Decreased independence in dressing due to limited shoulder ROM and problem-solving deficits"
+   - Use clinical reasoning: Procedural (what techniques), interactive (therapeutic relationship), conditional (future possibilities)
+   - Consider theoretical frameworks (biomechanical, motor learning, sensory integration, cognitive-behavioral)
+   - Determine if client is appropriate for OT services (skilled interventions required for occupational goals)
+   - Document clinical reasoning linking assessment findings to intervention plan
+
+4. Collaborative Goal Setting
+   - Engage client and family in collaborative goal-setting process
+   - Establish client-centered, occupation-based goals (not impairment-focused)
+   - Write goals that are SMART: Specific, Measurable, Achievable, Relevant, Time-bound
+   - Prioritize goals based on client values and safety
+   - Goals should address occupational performance (not just body functions)
+   - Example GOOD goal: "Client will independently dress upper body with adaptive equipment in 3 weeks"
+   - Example POOR goal: "Client will increase shoulder ROM to 120 degrees" (impairment-focused, not occupation-based)
+   - Set short-term objectives (1-2 weeks) supporting long-term goals (discharge)
+   - Identify measurable outcomes using validated tools (COPM, GAS, FIM change scores)
+   - Document client agreement and motivation toward goals
+
+5. Intervention Planning
+   - Select evidence-based intervention approaches per AOTA practice guidelines
+   - Occupations-Based Interventions: Using actual meaningful activities as therapy (e.g., real meal prep, real dressing)
+   - Purposeful Activities: Simulated or practice activities preparing for occupation (e.g., standing tolerance, reaching practice)
+   - Preparatory Methods: Techniques preparing for occupational performance (splinting, PAMs, sensory techniques, exercise)
+   - Education and Training: Teaching strategies, safety, energy conservation, joint protection
+   - Advocacy: Promoting occupational justice, access, and inclusion
+   - Plan activity demands and grading (modify complexity, tools, environment to just-right challenge)
+   - Incorporate therapeutic use of self (empathy, collaboration, encouragement, cultural humility)
+   - Plan assistive technology and adaptive equipment recommendations
+   - Plan environmental modifications and home safety strategies
+   - Establish frequency and duration based on acuity, goals, and setting standards
+   - Document intervention plan with clear rationale linked to goals
+
+6. Intervention Implementation
+   - Implement occupation-based activities as primary intervention approach
+   - Use meaningful, client-selected activities (not arbitrary exercises)
+   - Grade activities for just-right challenge (neither too easy nor too difficult)
+   - Apply motor learning principles (practice, feedback, variability, transfer)
+   - Apply cognitive strategies (errorless learning, memory aids, problem-solving training)
+   - Apply sensory strategies (modulation, discrimination, integration as indicated)
+   - Teach compensatory strategies when remediation not feasible (one-handed techniques, memory books, checklists)
+   - Train in use of adaptive equipment and assistive technology
+   - Provide caregiver training and education on cueing, assistance, safety
+   - Implement home exercise programs and activity recommendations
+   - Monitor client's response and adjust in real-time (fatigue, pain, frustration, safety)
+   - Document interventions provided with specific activities, duration, assistance level, client response
+
+7. Outcomes Monitoring & Re-evaluation
+   - Re-administer outcome measures at established intervals (weekly to monthly depending on setting)
+   - Compare current performance to baseline and established goals
+   - Document progress using objective data (FIM scores, COPM ratings, level of assistance, time to complete tasks)
+   - Determine if client progressing as expected toward goals
+   - Modify intervention approach if progress is slow or plateauing
+   - Progress interventions (reduce cues, increase complexity, change environment, add distractions)
+   - Update goals as client achieves objectives or priorities change
+   - Communicate progress to client, family, physician, and interdisciplinary team
+   - Document clinical reasoning for continuation, modification, or discharge
+
+8. Discharge Planning & Transition
+   - Determine discharge readiness (goals met, plateau reached, client decision, insurance limits)
+   - Complete discharge assessment with final outcome measures
+   - Provide recommendations for continued progress (home program, community resources, outpatient services)
+   - Recommend durable medical equipment and assistive technology with vendor information
+   - Provide home modification recommendations with specific measurements and vendors
+   - Educate on safety, fall prevention, and adaptive strategies for ongoing independence
+   - Connect client with community resources (senior centers, support groups, vocational rehab, driver rehab)
+   - Coordinate with other services (PT, SLP, nursing, social work, case management)
+   - Provide written discharge instructions, home programs, and emergency contacts
+   - Complete discharge summary to referring physician and payers
+   - Schedule follow-up if needed or provide criteria for return to OT
+
+4) Deliverables
+Common occupational therapy deliverables:
+- Initial evaluation report with occupational profile and performance analysis
+- Treatment plans with occupation-based goals and intervention strategies
+- Progress notes documenting interventions and functional outcomes
+- Re-evaluation reports with outcome measure comparison
+- Home assessment reports with modification recommendations
+- Assistive technology and adaptive equipment recommendations with specifications
+- Caregiver training handouts and demonstration checklists
+- Home exercise programs and ADL strategies
+- Discharge summary with final functional status and recommendations
+- Work capacity evaluations, driving evaluations, school-based IEP reports (specialty areas)
+
+Minimum viable: Brief evaluation with chief occupational concerns, key performance deficits, occupation-based goal, and basic intervention plan
+Gold standard: Comprehensive evaluation with detailed occupational profile, performance analysis using multiple assessments, clearly articulated OT diagnosis, collaborative SMART goals, evidence-based intervention plan with grading strategies, and family training components
+
+5) Quality checklist
+
+Occupational Profile Quality:
+- [ ] Client's occupational history and current roles documented
+- [ ] Client's priorities and valued occupations identified
+- [ ] Environmental and personal contexts considered
+- [ ] Strengths and resources identified (not just deficits)
+- [ ] Client-centered language used throughout
+
+Occupational Performance Assessment Quality:
+- [ ] Performance observed in meaningful contexts (not isolated skills)
+- [ ] Standardized assessments selected are validated and appropriate
+- [ ] Performance skills and client factors analyzed systematically
+- [ ] Facilitators and barriers to performance clearly identified
+- [ ] Quantitative data collected where possible
+
+Goal Quality:
+- [ ] Goals are occupation-based (address actual life activities)
+- [ ] Goals are SMART (specific, measurable, achievable, relevant, time-bound)
+- [ ] Goals collaboratively developed with client input
+- [ ] Goals prioritized based on client values and safety
+- [ ] Goals measurable using validated outcome tools
+
+Intervention Quality:
+- [ ] Interventions are occupation-based (using real or simulated meaningful activities)
+- [ ] Evidence-based interventions per AOTA guidelines
+- [ ] Activities graded appropriately for just-right challenge
+- [ ] Compensatory strategies taught when remediation insufficient
+- [ ] Adaptive equipment recommendations appropriate and specific
+- [ ] Caregiver training provided when relevant
+
+Patient Safety:
+- [ ] Fall risk assessed and safety strategies implemented
+- [ ] Cognitive safety assessed (medication management, cooking safety, financial exploitation)
+- [ ] Home safety evaluated (environmental hazards, accessibility)
+- [ ] Swallowing safety screened (refer to SLP if concerns)
+- [ ] Mental health and suicide risk screened
+- [ ] Abuse/neglect screened and reported if indicated
+
+Documentation Compliance:
+- [ ] Note follows required format for setting (SOAP, narrative, etc.)
+- [ ] Medical necessity clearly justified (skilled OT services)
+- [ ] Progress toward goals objectively documented
+- [ ] Level of assistance documented using standard terminology (I, SBA, CGA, Min A, Mod A, Max A, Total A)
+- [ ] All interventions documented with client response
+- [ ] Billing codes accurate and supported by documentation
+
+Evidence-Based Practice:
+- [ ] Interventions align with AOTA practice guidelines and evidence
+- [ ] Outcome measures appropriate for population and condition
+- [ ] Practice Smart principles followed (avoid non-purposeful activities)
+- [ ] Cultural humility and neurodiversity-affirming approaches used
+
+6) Templates (paste-ready)
+
+=== Occupational Therapy Initial Evaluation Template ===
+CLIENT INFORMATION:
+Name: [___]  Age: [___]  Diagnosis: [___]
+Referral Source: [___]  Date of Onset: [___]
+Setting: [Acute / Inpatient Rehab / Outpatient / Home Health / SNF]
+
+OCCUPATIONAL PROFILE:
+
+Occupational History:
+- Prior living situation: [Independent home / Assisted living / With family]
+- Prior roles: [Worker, caregiver, volunteer, student, etc.]
+- Prior level of function: [Independent in all ADLs/IADLs / Required assistance with ___]
+- Valued occupations: [Activities most important to client]
+
+Current Occupations & Concerns:
+- ADLs: [Bathing, dressing, grooming, toileting, feeding, mobility, sexual activity]
+- IADLs: [Meal prep, housework, shopping, money management, medication management, childcare, communication]
+- Work/Education: [Current occupation or student status, barriers]
+- Leisure: [Hobbies, interests, social participation]
+- Primary concerns: [What client most wants to address]
+
+Performance Patterns:
+- Habits: [Daily routines, sleep schedule, health management routines]
+- Roles: [Current roles and role satisfaction]
+- Routines: [Morning, evening, weekend routines]
+
+Contexts:
+- Physical environment: [Home layout, accessibility barriers, equipment already in place]
+- Social environment: [Support system, family involvement, caregivers]
+- Cultural: [Language, values, practices affecting occupational choices]
+
+Client Goals (in client's own words):
+1. [___]
+2. [___]
+3. [___]
+
+OCCUPATIONAL PERFORMANCE ANALYSIS:
+
+Observation:
+- Appearance: [Grooming, hygiene, appropriate dress]
+- Behavior: [Engaged, withdrawn, agitated, appropriate]
+- Cognition: [Alert, oriented x4, attention, memory, problem-solving observations]
+- Safety awareness: [Judgement, insight into limitations]
+
+Performance Skills Assessment:
+
+Motor Skills:
+- Posture: [Sitting/standing balance, alignment]
+- Mobility: [Bed mobility, transfers, ambulation, wheelchair mobility]
+- Coordination: [Fine motor, gross motor, bilateral integration]
+- Strength: [Gross grasp, pinch strength, endurance]
+- Energy: [Fatigue level, pacing, endurance with activities]
+
+Process Skills:
+- Attention: [Sustained, divided, selective attention]
+- Memory: [Immediate, short-term, long-term, procedural memory]
+- Organization: [Sequencing, planning, problem-solving]
+- Adaptation: [Noticing errors, self-correcting, modifying approach]
+
+Social Interaction Skills:
+- Communication: [Verbal, non-verbal, comprehension, expression]
+- Relating: [Eye contact, respect for others, cooperation]
+
+ADL Performance (Document level of assistance and barriers):
+- Bathing: [I / SBA / CGA / Min A / Mod A / Max A / Total A] Barriers: [___]
+- Dressing: [Upper body: ___ / Lower body: ___] Barriers: [___]
+- Grooming: [___] Barriers: [___]
+- Toileting: [___] Barriers: [___]
+- Feeding: [___] Barriers: [___]
+- Functional mobility: [___] Barriers: [___]
+
+IADL Performance:
+- Meal preparation: [___] Barriers: [___]
+- Medication management: [___] Barriers: [___]
+- Financial management: [___] Barriers: [___]
+- Communication device use: [___] Barriers: [___]
+
+Standardized Assessments:
+- FIM: [___] / 126
+- Barthel Index: [___] / 100
+- COPM (Performance): [___] / 10  (Satisfaction): [___] / 10
+- [Other relevant assessments]: [Scores]
+
+Client Factors:
+- ROM: [Limitations noted]
+- Sensation: [Intact / Impaired: location]
+- Vision/Perception: [Visual acuity, visual fields, visual-perceptual skills]
+- Cognition: [MoCA, SLUMS, or other cognitive screening results]
+- Pain: [Location, severity, impact on function]
+
+OT DIAGNOSIS:
+[Occupation-focused statement linking performance issues to underlying factors]
+Example: "Decreased independence in dressing, bathing, and meal preparation due to left upper extremity weakness, impaired problem-solving, and limited safety awareness following CVA."
+
+Prognosis: [Excellent / Good / Fair / Poor] for [achieving stated goals / returning to prior level of function]
+Rehab Potential: [Excellent / Good / Fair / Poor / Limited]
+Plan of Care: [Frequency] x [Duration] (e.g., Daily in acute care for 3-5 days, 3x/week outpatient for 8 weeks)
+
+INTERVENTION PLAN:
+
+Short-Term Goals (1-2 weeks):
+1. [Occupation-based, measurable goal]
+2. [Occupation-based, measurable goal]
+
+Long-Term Goals (Discharge):
+1. [Occupation-based, measurable goal]
+2. [Occupation-based, measurable goal]
+
+Intervention Approaches:
+1. Occupation-Based Activities: [Meaningful ADL/IADL practice in context]
+2. Purposeful Activities: [Preparatory activities leading to occupation]
+3. Preparatory Methods: [Exercises, splinting, sensory techniques, PAMs if appropriate]
+4. Education: [Safety, energy conservation, joint protection, adaptive strategies]
+5. Environmental Modifications: [Specific recommendations]
+6. Assistive Technology: [Equipment recommendations with rationale]
+7. Caregiver Training: [Areas for family/caregiver education and training]
+
+=== OT Progress Note Template (SOAP) ===
+SUBJECTIVE:
+- Client reports: [Symptoms, concerns, progress perception]
+- Goals addressed today: [Which goals worked on]
+
+OBJECTIVE:
+Interventions:
+1. [Activity name]: [Description of occupation-based or purposeful activity]
+   - Grading: [How activity was modified/progressed]
+   - Assistance: [Level of physical/verbal cues provided]
+   - Duration: [Time engaged in activity]
+
+2. [Activity name]: [Description]
+   - [Same detail as above]
+
+Client Performance:
+- Engagement: [Motivated, cooperative, frustrated, fatigued]
+- Quality of movement/cognition: [Observations of performance skills]
+- Compensatory strategies: [What strategies client used successfully]
+- Barriers: [What interfered with performance]
+- Progress noted: [Specific improvements from last session]
+
+ASSESSMENT:
+- Client [is/is not] progressing toward goals
+- Specific progress: [Objective evidence: decreased cues, faster completion, less assistance]
+- Barriers to progress: [Pain, fatigue, cognitive, psychosocial, environmental]
+- Modifications made: [How intervention adjusted based on performance]
+- Clinical reasoning: [Why continuing, modifying, or recommending changes]
+
+PLAN:
+- Continue current interventions with progression: [Specific next steps]
+- Next session focus: [Targeted goals/activities]
+- Anticipated discharge: [Timeline if on track]
+- Recommendations: [Equipment trials, home modifications, referrals]
+
+=== Home Safety Evaluation Template ===
+HOME SAFETY EVALUATION REPORT
+
+Client: [Name]  Date of Visit: [___]
+Home Address: [___]  Type: [Single-family / Apartment / Condo]
+
+PURPOSE: Assess home environment for safety, accessibility, and recommendations to support [client goal: independent living / safe discharge home / aging in place].
+
+EXTERIOR:
+- Entry: [Steps / Ramp / Level] [Number of steps: ___]
+- Lighting: [Adequate / Poor / Recommend motion lights]
+- Walkways: [Clear / Hazards noted: ___]
+- Recommendations: [Railing, ramp, lighting, etc.]
+
+INTERIOR LAYOUT:
+- Bedroom location: [Main floor / Upstairs]
+- Bathroom location: [Main floor / Upstairs / Attached to bedroom]
+- Laundry location: [Main floor / Basement / Upstairs]
+- Stairways: [Number: ___] [Railings: Yes/No both sides]
+- Flooring: [Carpet / Hardwood / Tile] [Trip hazards: rugs, cords, clutter]
+
+BEDROOM:
+- Bed height: [___] inches from floor (Recommend: 20-23 inches for easier transfers)
+- Accessibility: [Adequate space around bed for walker/wheelchair]
+- Lighting: [Adequate / Recommend bedside lamp, nightlight to bathroom]
+- Recommendations: [Bed risers, bedside commode, reacher, dressing stick]
+
+BATHROOM:
+- Tub/Shower: [Tub / Shower / Walk-in shower] [Curb height if applicable: ___]
+- Grab bars: [Present locations: ___] [Recommend locations: ___]
+- Toilet height: [Standard / Raised / Recommend raised seat: ___ inches]
+- Lighting: [Adequate / Poor / Recommend brighter bulbs, nightlight]
+- Floor: [Non-slip / Slippery when wet]
+- Recommendations: [Tub bench, handheld showerhead, grab bars at specific locations, raised toilet seat, non-slip mat]
+
+KITCHEN:
+- Accessibility: [Counter height, appliance locations, storage height]
+- Safety: [Stove safety concerns, reach limitations]
+- Recommendations: [Pull-out shelves, reacher, lightweight cookware, seated work surface, kettle tipper]
+
+LIVING AREAS:
+- Furniture: [Appropriate seat height and armrests for transfers]
+- Clutter: [Clear / Cluttered / Fall hazards present]
+- Cords: [Secured / Trip hazards]
+- Lighting: [Adequate / Recommend increased lighting, reduce glare]
+- Recommendations: [Chair risers, recliner with lift, remove throw rugs, cord management]
+
+SUMMARY & RECOMMENDATIONS:
+Priority 1 (Safety - Immediate):
+- [Recommendation with specific product/vendor information]
+- [Estimated cost if available]
+
+Priority 2 (Function - Near-term):
+- [Recommendation]
+
+Priority 3 (Long-term / Aging in Place):
+- [Recommendation]
+
+DURABLE MEDICAL EQUIPMENT RECOMMENDED:
+- [Equipment name]: [Justification, specifications, vendor]
+
+TOTAL ESTIMATED COST: $[___]
+- Many items may be covered by insurance, Medicare Part B, or Medicaid waivers. Recommend client consult with insurance case manager.
+
+Follow-up: OT available to answer questions, provide vendor contacts, or coordinate installation.
+
+=== Adaptive Equipment Recommendation Template ===
+ADAPTIVE EQUIPMENT RECOMMENDATION
+
+Client: [Name]  Date: [___]
+Diagnosis: [___]  Primary Functional Limitation: [___]
+
+EQUIPMENT: [Name of specific device/equipment]
+
+JUSTIFICATION:
+Client demonstrates [specific functional limitation] impacting ability to [specific occupation]. Current level of assistance is [___] for [activity]. This equipment will enable client to [specific functional improvement].
+
+SPECIFICATIONS:
+- Type: [Specific model/brand if relevant]
+- Size: [Measurements if applicable]
+- Features needed: [List specific features for client's needs]
+
+TRIAL RESULTS:
+- Trialed in OT on [date]
+- Performance with equipment: [Level of assistance, success, safety]
+- Client demonstrated: [Ability to use correctly / Requires training]
+- Client/caregiver education: [Provided and demonstrated]
+
+ALTERNATIVES CONSIDERED:
+- [Alternative option]: [Why not selected]
+
+VENDOR INFORMATION:
+- Suggested vendors: [Names and contact info]
+- Approximate cost: $[___]
+- Insurance coverage: [May be covered under DME benefit / Cash purchase]
+
+FOLLOW-UP:
+- Recommend follow-up OT session after equipment obtained to train in use and ensure safety
+- Provide written instructions for use and care
+
+7) Examples of excellent outputs
+
+Example 1: Outpatient OT Initial Evaluation - Orthopedic
+```
+OCCUPATIONAL PROFILE:
+Client is 58-year-old retired teacher who underwent right total shoulder arthroplasty 3 weeks ago. Prior to surgery, independent in all ADLs/IADLs, lived alone in 2-story home, enjoyed gardening and oil painting. Surgery due to chronic shoulder pain from osteoarthritis. Currently staying with daughter temporarily.
+
+Primary Concerns: Difficulty dressing (cannot don shirt or bra), cannot wash/style hair, unable to prepare meals (cannot reach into cabinets or lift pots), concerned about returning to painting. Lives alone and needs to resume independence for discharge home.
+
+Client Goals:
+1. "I want to be able to dress myself completely without help."
+2. "I need to be able to cook for myself and reach my dishes."
+3. "I hope to get back to painting within a few months."
+
+OCCUPATIONAL PERFORMANCE ANALYSIS:
+
+ADL Performance:
+- Bathing: Modified Independent with long-handled sponge and pump soap
+- Dressing: Upper body Moderate Assist (cannot don overhead shirt, bra, or zip back), Lower body Independent
+- Grooming: Modified Independent (adapted toothbrush holder, long-handled hairbrush)
+- Feeding: Independent (eating), Moderate Assist (meal prep - cannot lift pots, reach high shelves)
+
+Performance Limitations:
+- ROM: Right shoulder AROM: Flexion 90° (limited by surgical precautions and pain), Abduction 80°, ER 30°, IR to lateral thigh only
+- Strength: Right UE 3/5 gross strength (limited by surgical precautions, do not resist)
+- Pain: 3/10 at rest, 5/10 with overhead reaching attempts
+- Coordination: WNL bilateral
+- Sensation: Intact
+
+Barriers to Performance:
+- Limited right shoulder ROM preventing overhead reach
+- Surgical precautions limiting AROM and no resistance for 6 weeks post-op
+- Living alone with no nearby support for daily needs
+- Home environment: cabinets and storage 6+ feet high requiring overhead reach
+
+COPM: Performance Score: 3.2/10, Satisfaction Score: 2.8/10
+
+OT DIAGNOSIS:
+Decreased independence in dressing and meal preparation due to limited right shoulder AROM and adherence to post-operative precautions following right total shoulder arthroplasty.
+
+Prognosis: Good for return to independence in ADLs/IADLs with adaptive equipment and strategy training as ROM improves per surgical protocol.
+Plan: 2x/week for 8 weeks
+
+LONG-TERM GOALS (8 weeks):
+1. Client will independently don all clothing items including overhead shirts and bras using adaptive equipment and compensatory techniques within 8 weeks.
+2. Client will independently prepare complete meals including reaching into cabinets and using stove/oven with adaptive equipment and environmental modifications within 8 weeks.
+3. Client will report COPM performance and satisfaction scores of 7/10 or greater indicating functional independence for safe discharge home within 8 weeks.
+
+SHORT-TERM GOALS (4 weeks):
+1. Client will demonstrate modified independence in upper body dressing using reacher, dressing stick, and front-closure bra within 4 weeks.
+2. Client will demonstrate 3 compensatory strategies for meal preparation accommodating limited overhead reach within 4 weeks.
+
+INTERVENTION PLAN:
+1. Occupation-Based Activities:
+   - Dressing practice with real clothing using adaptive techniques
+   - Meal preparation in clinic kitchen with adaptive equipment
+   - Grooming activities requiring reaching and bilateral coordination
+   
+2. Education:
+   - Compensatory strategies for one-handed and limited-reach activities
+   - Energy conservation and activity pacing
+   - Post-surgical precautions and activity progression per physician protocol
+   - Joint protection principles
+   
+3. Adaptive Equipment:
+   - Reacher (32-inch) for dressing and retrieving items
+   - Dressing stick with hook for pulling up pants, donning shoes
+   - Front-closure sports bras (easier than traditional bras)
+   - Button hook and zipper pull (if needed for back closures)
+   - Long-handled shoehorn
+   - Pump dispensers for shampoo, conditioner, soap
+   - Dycem non-slip mat for jar opening and stabilization
+   - Lightweight cookware (if current pots too heavy)
+   
+4. Home Modifications:
+   - Recommend reorganizing kitchen: frequently used items at waist-to-shoulder height
+   - Consider turntable in corner cabinets for easier access
+   - Recommend temporary storage solutions at countertop level
+   
+5. ROM/Strengthening per Surgical Protocol:
+   - Gentle PROM and A-AROM within restrictions
+   - Progress AROM per physician timeline (currently AAROM only, no resistance until 6 weeks post-op)
+   - Functional ROM through occupation-based activities
+   
+6. Caregiver Training: Daughter educated on appropriate assistance level, equipment use, and red flags for complications.
+
+Client demonstrates good understanding, motivated, appropriate precautions. Trial of reacher and dressing stick successful today with 75% success donning shirt independently using techniques taught.
+```
+
+Example 2: Acute Care OT Evaluation - Stroke
+```
+OCCUPATIONAL PROFILE:
+72-year-old male admitted 2 days ago with acute left CVA, resulting in right hemiparesis and expressive aphasia. Retired accountant, lived independently with wife in single-story home. Prior to stroke: independent in all ADLs/IADLs, drove, managed finances, enjoyed fishing and woodworking.
+
+Client communication limited by aphasia. Wife reports his priorities are: walking independently, feeding himself, and eventually returning to fishing.
+
+OCCUPATIONAL PERFORMANCE ANALYSIS:
+
+ADLs (all activities in bed/bedside):
+- Bed Mobility: Moderate Assist (requires help rolling to right side, scooting up in bed)
+- Transfers: Moderate Assist x1 (sit-to-stand from bed, pivot to chair)
+- Grooming: Max Assist (requires set-up, hand-over-hand assist with dominant right hand affected)
+- Feeding: Moderate Assist (requires meal set-up, frequent cues for pacing, occasional assistance bringing spoon to mouth with left hand)
+- Toileting: Max Assist (requires two-person assist due to safety, balance, and transfer needs)
+
+Performance Skills:
+Motor Skills:
+- Right UE: Flaccid, no active movement, dependent positioning
+- Right LE: Minimal active movement (hip flexion trace, knee extension trace)
+- Left UE: WFL strength and coordination
+- Trunk control: Poor, requires support in sitting
+- Balance: Sitting unsupported <30 seconds before loss of balance
+
+Process Skills:
+- Attention: Impaired, easily distracted, requires frequent redirection
+- Memory: Appears impaired for new information, repeatedly asks same questions (per nurse report)
+- Problem-solving: Unable to assess at this time due to aphasia and attention limitations
+- Safety awareness: Impaired, attempts to stand without assistance despite high fall risk
+
+Social Interaction:
+- Expressive aphasia: Severe, few intelligible words, significant frustration with communication
+- Receptive language: Appears fair to good, follows simple one-step commands
+- Emotional lability: Tearful at times, especially when attempting to communicate
+
+Client Factors:
+- ROM: Right UE/LE full PROM, left WFL
+- Sensation: Impaired right UE/LE (diminished light touch, absent proprioception)
+- Visual: Unable to assess visual fields formally, no obvious neglect at bedside
+- Cognition: Unable to complete formal assessment due to aphasia
+
+FIM Score: 42/126 (indicating total assistance to maximum assistance level)
+
+OT DIAGNOSIS:
+Dependent status in all ADLs due to right hemiplegia, impaired trunk control and sitting balance, severe expressive aphasia, and impaired safety awareness following acute left CVA.
+
+Prognosis: Fair to Good for improved functional independence with intensive rehabilitation. Expect gains in self-feeding, basic grooming, and sitting balance in acute phase. Will require inpatient rehabilitation for further recovery.
+
+Recommend: Acute inpatient rehabilitation facility (IRF) placement for intensive OT, PT, SLP services.
+Plan: Daily OT in acute care until transfer to IRF (anticipated 1-3 days).
+
+SHORT-TERM GOALS (prior to IRF transfer):
+1. Client will maintain sitting balance unsupported for 1 minute to enable safe participation in ADL training within 2 days.
+2. Client will feed self 50% of meal with set-up and minimal verbal cues using left hand within 2 days.
+3. Client will tolerate 30 minutes of OT intervention without excessive fatigue to prepare for IRF intensity within 2 days.
+
+INTERVENTION PLAN:
+1. Occupation-Based Activities:
+   - Self-feeding training with left hand (non-dominant)
+   - Grooming activities at bedside
+   - Simple communication device trials
+   
+2. Preparatory Activities:
+   - Sitting balance activities progressing from supported to unsupported
+   - Right UE positioning and PROM to prevent contractures
+   - Trunk strengthening and weight-shifting activities
+   
+3. Education:
+   - Family education on aphasia, recovery expectations, and role in rehabilitation
+   - Positioning education for right UE support and shoulder subluxation prevention
+   - Communication strategies for aphasia (yes/no questions, picture boards)
+   
+4. Safety:
+   - Fall risk precautions (bed alarm, frequent checks, assistance for all transfers)
+   - Right UE positioning and sling use as needed
+   
+5. Discharge Planning:
+   - Coordinate with case management for IRF placement
+   - Provide interim recommendations for home setup if IRF wait time
+
+Continue daily OT, coordinate with PT and SLP for comprehensive stroke rehabilitation approach.
+```
+
+Example 3: Home Health OT Re-Evaluation - Chronic Conditions
+```
+OCCUPATIONAL THERAPY RE-EVALUATION
+4-Week Progress Report
+
+Client: 78-year-old female with diagnosis of osteoarthritis (bilateral knees, hands), Type 2 diabetes, and mild cognitive impairment (MCI).
+Service: Home Health OT, 2x/week for 4 weeks (8 visits completed)
+
+INITIAL STATUS (4 weeks ago):
+- Living alone in single-story home with 3 steps to enter (no railing)
+- Daughter visits weekly, concern for safety and medication management
+- ADLs: Mostly independent but slow, difficulty with lower body dressing (pain, limited knee flexion), difficulty with medication management (forgets doses)
+- IADLs: Required assistance with meal prep (difficulty standing at stove), shopping (daughter shops for her), housekeeping
+- Falls: 2 falls in past 3 months (tripped on rug, no injury)
+- FIM: 98/126 (modified independent to minimal assistance)
+- COPM: Performance 4.2/10, Satisfaction 3.8/10
+
+CURRENT STATUS:
+
+ADL Performance:
+- Bathing: Modified Independent with tub bench, grab bars installed, long-handled sponge
+- Dressing: Modified Independent with reacher for socks, elastic shoelaces, loose-fitting clothing
+- Grooming: Independent
+- Toileting: Modified Independent with raised toilet seat, grab bars
+- Functional Mobility: Modified Independent with rolling walker indoors, outdoor mobility limited due to steps
+
+IADL Performance:
+- Medication Management: Modified Independent with:
+  * Pillbox organized weekly by daughter
+  * Medication checklist on refrigerator with daughter's phone reminders
+  * Large-print labels applied to all medications
+  * Client demonstrates correct pillbox use 100% this week
+  
+- Meal Preparation: Modified Independent with:
+  * Tall kitchen stool for seated meal prep (reduces standing time, knee pain)
+  * Reorganized kitchen (frequently used items at counter height)
+  * Lightweight pots and pans moved to lower cabinets
+  * Client prepared 3 complete meals independently this week
+  
+- Housekeeping: Setup assistance (daughter assists with heavy cleaning, client independent with light tidying, dishes, laundry)
+
+Safety:
+- No falls in past 4 weeks
+- Throw rugs removed from home
+- Improved lighting in hallways and bathroom (motion-sensor nightlights installed)
+- Wearing prescribed eyeglasses consistently
+- Emergency call button worn at all times
+- Daughter installed handrail at entry steps (contracted by family)
+
+Cognitive/Safety Awareness:
+- Memory strategies in place working well (checklist for medications, daily routine checklist, large-print calendar)
+- Demonstrates good safety awareness (uses walker 100%, turns on lights, calls daughter if unsure)
+- No episodes of leaving stove on or safety concerns reported by daughter
+
+CURRENT OUTCOME SCORES:
+- FIM: 112/126 (modified independence, 14-point improvement)
+- COPM: Performance 7.8/10 (improved from 4.2), Satisfaction 7.5/10 (improved from 3.8)
+- Both scores meet COPM's Minimal Clinically Important Difference (MCID) of ≥2 points
+
+GOALS STATUS:
+1. Medication management modified independence: ACHIEVED ✓
+2. Meal preparation modified independence: ACHIEVED ✓
+3. Zero falls for 4-week period: ACHIEVED ✓
+
+ASSESSMENT:
+Client has made excellent progress toward all goals. Demonstrating modified independence in all areas of concern. Environmental modifications, adaptive equipment, and compensatory strategies successfully implemented and client using consistently. No safety concerns at this time. Daughter reports confidence in mother's safety. Client reports satisfaction with current level of independence and safety improvements.
+
+RECOMMENDATION:
+Recommend discharge from home health OT. Goals achieved. Client would benefit from:
+- Continued use of all adaptive equipment and strategies taught
+- Continued weekly pillbox setup by daughter (system working well)
+- Outpatient PT for continued strengthening and fall prevention if client interested and physician orders
+- Reassess in 3-6 months or return to OT if function declines or safety concerns arise
+
+DISCHARGE PLAN:
+- Final home exercise program provided (joint protection exercises, balance activities, cognitive exercises)
+- Written summary of strategies and equipment provided to client and daughter
+- Community resources provided: Senior center, Meals on Wheels, county aging services
+- Contact information for OT agency if questions or concerns arise
+- Follow-up call in 2 weeks to ensure continued success post-discharge
+
+Client and daughter expressed satisfaction with OT services and feel confident in current status.
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Occupation**: Meaningful, purposeful daily life activities (work, ADLs, IADLs, play, leisure, social participation)
+- **ADLs**: Activities of Daily Living - basic self-care (bathing, dressing, feeding, toileting, grooming, mobility)
+- **IADLs**: Instrumental Activities of Daily Living - complex tasks needed for independence (cooking, cleaning, shopping, finances, medication management)
+- **Occupational Performance**: Ability to carry out activities of daily life (interactions between person, occupation, and environment)
+- **Client-Centered**: Approach emphasizing client's goals, values, and preferences as central to therapy
+- **Occupation-Based Intervention**: Using actual meaningful activities as therapy (not isolated exercises)
+- **OTPF-4**: Occupational Therapy Practice Framework, 4th Edition - AOTA's guide to OT domain and process
+- **COPM**: Canadian Occupational Performance Measure - client-centered outcome measuring performance and satisfaction
+- **FIM**: Functional Independence Measure - standardized outcome measuring level of assistance required
+- **Level of Assistance**: Standard terminology (Independent, Modified Independent, Supervision, Contact Guard Assist, Minimal Assist 25%, Moderate Assist 50%, Maximal Assist 75%, Total Assist 100%)
+- **Therapeutic Use of Self**: Intentional use of therapist's personality, insights, and perceptions as therapeutic tools
+
+Standards & Frameworks (2024-2025):
+- **AOTA Standards of Practice**: Minimum standards for professional OT practice including education, licensure, ethical conduct
+- **OTPF-4**: Occupational Therapy Practice Framework, 4th Edition - defines OT domain (occupations, client factors, performance skills, contexts) and process (evaluation, intervention, outcomes)
+- **AOTA Practice Guidelines**: Evidence-based recommendations for specific populations (stroke, Alzheimer's, autism, arthritis, cancer, TBI, low vision, etc.)
+- **ACOTE Standards**: Accreditation Council for Occupational Therapy Education - education program standards
+- **CMS Documentation Requirements**: Medicare guidelines for OT documentation, medical necessity, and maintenance therapy
+- **AOTA Code of Ethics**: Professional standards for ethical OT practice
+- **Practice Smart (formerly Choosing Wisely)**: AOTA initiative promoting high-value care and de-implementing ineffective practices
+
+Common Outcome Measures:
+- **COPM**: Canadian Occupational Performance Measure - client rates performance and satisfaction (MCID = 2 points)
+- **FIM**: Functional Independence Measure - 18 items, 7-point scale (18-126 points)
+- **Barthel Index**: 10-item ADL measure (0-100 points)
+- **AMPS**: Assessment of Motor and Process Skills - occupation-based performance assessment
+- **MoCA**: Montreal Cognitive Assessment - cognitive screening
+- **Nine-Hole Peg Test**: Hand dexterity and fine motor coordination
+- **Box and Block Test**: Gross manual dexterity
+- **GAS**: Goal Attainment Scaling - individualized goal measurement
+
+Common Assessments & Tools:
+- **Cognitive**: MoCA, SLUMS, Allen Cognitive Level Screen, Executive Function Performance Test
+- **Visual-Perceptual**: MVPT (Motor-Free Visual Perception Test), TVPS
+- **Hand Function**: Grip/pinch dynamometer, Nine-Hole Peg Test, Purdue Pegboard, Box and Block
+- **Sensory**: Monofilaments, stereognosis testing, two-point discrimination
+- **ADL/IADL**: FIM, Barthel, Katz Index, Lawton IADL Scale, AMPS
+
+Common Adaptive Equipment:
+- **Dressing**: Reacher, dressing stick, sock aid, elastic shoelaces, button hook, zipper pull, long-handled shoehorn
+- **Bathing**: Tub bench, shower chair, handheld showerhead, long-handled sponge, grab bars, non-slip mats
+- **Toileting**: Raised toilet seat, toilet safety frame, grab bars, commode
+- **Feeding**: Built-up utensils, weighted utensils, plate guard, scoop dish, non-slip mat, universal cuff
+- **Kitchen**: One-handed cutting board, jar opener, electric can opener, reacher, lightweight cookware, kettle tipper
+- **General**: Reacher (various lengths), sock aid, button hook, dressing stick, long-handled brush
+
+Change log
+2024-12: Initial playbook created based on AOTA 2024-2025 standards and practice guidelines
+- Emphasis on occupation-based, client-centered interventions per OTPF-4 framework
+- Comprehensive OT process from occupational profile through discharge following AOTA best practices
+- Integration of COPM and other validated outcome measures
+- Quality checklist covering occupational profile, performance assessment, goals, interventions, safety, documentation
+- Templates for initial evaluation, progress notes, home safety evaluation, adaptive equipment recommendations
+- Three detailed clinical examples (outpatient orthopedic, acute care stroke, home health chronic conditions)
+- Focus on meaningful daily life activities, environmental modifications, and participation in valued occupations
+- Practice Smart principles emphasizing evidence-based, occupation-focused interventions

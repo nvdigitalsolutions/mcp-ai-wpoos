@@ -996,9 +996,9 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Handle WP_Post objects - extract only essential data.
 			if ( $data instanceof WP_Post ) {
 				return array(
-					'ID'         => $data->ID,
-					'post_title' => $data->post_title,
-					'post_type'  => $data->post_type,
+					'ID'          => $data->ID,
+					'post_title'  => $data->post_title,
+					'post_type'   => $data->post_type,
 					'post_status' => $data->post_status,
 				);
 			}

@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$sanitized = $this->sanitize_payload( $decoded );
-		
+
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of active storms */

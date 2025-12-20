@@ -10,17 +10,20 @@
  *
  * Chat Bundle Optimization:
  * The chat-bundle.js entry point bundles all chat-related services into a single
- * optimized file, reducing HTTP requests from 9 files to just 1 file.
+ * optimized file, reducing HTTP requests from 10 files to just 1 file.
  *
  * Bundled modules include:
  * - sse-service.js (Server-Sent Events)
  * - job-event-bus.js (event coordination)
  * - cron-status-service.js (async job status)
+ * - chat-http-client-service.js (HTTP with retry logic)
  * - chat-storage-service.js (localStorage)
  * - chat-clipboard-service.js (copy functionality)
  * - chat-markdown-service.js (markdown rendering)
  * - chat-ui-utilities-service.js (DOM helpers)
  * - chat-audio-service.js (TTS/transcription)
+ * - chat-attachments-service.js (file upload/attachment handling)
+ * - chat-transcription-service.js (audio recording and transcription)
  * - chat.js (main chat application)
  */
 
@@ -92,6 +95,27 @@ const builds = [
 		outfile: 'assets/js/performance-blocks.min.js',
 		...commonOptions,
 	},
+	// Admin dashboard assets
+	{
+		entryPoints: ['assets/js/ajax-error-service.js'],
+		outfile: 'assets/js/ajax-error-service.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-tool-orchestration.js'],
+		outfile: 'assets/js/admin-tool-orchestration.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/performance-admin.js'],
+		outfile: 'assets/js/performance-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/tools-manager.js'],
+		outfile: 'assets/js/tools-manager.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files
@@ -106,11 +130,14 @@ async function buildAll() {
 		'assets/js/sse-service.js',
 		'assets/js/job-event-bus.js',
 		'assets/js/cron-status-service.js',
+		'assets/js/chat-http-client-service.js',
 		'assets/js/chat-storage-service.js',
 		'assets/js/chat-clipboard-service.js',
 		'assets/js/chat-markdown-service.js',
 		'assets/js/chat-ui-utilities-service.js',
 		'assets/js/chat-audio-service.js',
+		'assets/js/chat-attachments-service.js',
+		'assets/js/chat-transcription-service.js',
 		'assets/js/chat.js',
 	];
 

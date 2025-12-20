@@ -415,15 +415,15 @@ class WP_MCP_AI_Analytics_Dashboard {
 		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
 			// Define date ranges based on current time.
 			$now = current_time( 'mysql' );
-			
+
 			// Today: from start of today to now.
 			$today_start = gmdate( 'Y-m-d 00:00:00', strtotime( 'today', strtotime( $now ) ) );
 			$today_end   = $now;
-			
+
 			// This week: from start of this week (Monday) to now.
 			$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( 'monday this week', strtotime( $now ) ) );
 			$week_end   = $now;
-			
+
 			// This month: from start of this month to now.
 			$month_start = gmdate( 'Y-m-01 00:00:00', strtotime( $now ) );
 			$month_end   = $now;

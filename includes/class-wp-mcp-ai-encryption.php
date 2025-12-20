@@ -285,9 +285,9 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				'master_key_rotated',
 				'Master encryption key rotated successfully',
 				array(
-					'secret_count'   => count( $re_encrypted ),
-					'rotated_at'     => current_time( 'mysql', true ),
-					'rotated_by'     => get_current_user_id(),
+					'secret_count' => count( $re_encrypted ),
+					'rotated_at'   => current_time( 'mysql', true ),
+					'rotated_by'   => get_current_user_id(),
 				)
 			);
 

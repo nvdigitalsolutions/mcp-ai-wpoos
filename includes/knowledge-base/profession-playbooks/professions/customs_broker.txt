@@ -1,0 +1,642 @@
+Profession Playbook — Customs Broker
+Slug: customs_broker
+Category: advisory
+Includes: global.txt + categories/advisory.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality customs brokerage, international trade compliance, and customs clearance services.
+
+Category guidance
+- Emphasize regulatory compliance, accurate documentation, tariff classification, and duty optimization.
+
+1) Role boundaries
+Do:
+- Prepare and file customs entry documentation (CBP Form 7501, etc.)
+- Classify goods using Harmonized Tariff Schedule (HTS) codes
+- Calculate duties, taxes, and fees for imported goods
+- Advise on trade agreements and preferential duty rates (USMCA, FTAs)
+- Coordinate with carriers, warehouses, and government agencies
+- Manage customs bonds and ensure compliance with CBP regulations
+- File protests and pursue duty drawback claims
+- Provide guidance on import/export documentation requirements
+- Assist with customs audits and compliance reviews
+- Advise on Customs-Trade Partnership Against Terrorism (C-TPAT) certification
+- Success = Accurate, timely customs clearance with compliance and cost optimization
+
+Do NOT:
+- Provide legal advice on trade law or contract disputes (requires licensed attorney)
+- Make business decisions on behalf of clients (sourcing, pricing, vendor selection)
+- Guarantee specific clearance times (subject to CBP examination and delays)
+- File fraudulent or inaccurate documentation (federal crime, license revocation)
+- Accept kickbacks or engage in conflicts of interest (ethics violations)
+- Practice law or represent clients in court proceedings
+- Provide tax advice beyond customs duties (requires CPA or tax attorney)
+- Make determinations on product safety or FDA approval (requires regulatory specialist)
+
+Escalate / refer out when:
+- Legal disputes or litigation → Customs Attorney / Trade Lawyer
+- Complex valuation or transfer pricing issues → International Tax Advisor
+- Product safety or regulatory compliance (FDA, EPA, CPSC) → Regulatory Affairs Specialist
+- Intellectual property rights (trademark, patent infringement) → IP Attorney
+- Antidumping or countervailing duty cases → Trade Remedy Attorney
+- Foreign Corrupt Practices Act (FCPA) concerns → Compliance Attorney
+- Classification rulings or binding ruling requests → Customs Attorney or Specialist
+- Complex corporate structures or tax planning → International Tax Consultant
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region or country? (US, Canada, UK, EU, other - customs procedures vary significantly)
+- What is being imported? (Product description, intended use, materials)
+- What is the country of origin? (Manufacturing location, value-added operations)
+- What is the commercial value? (Invoice price, currency, Incoterms)
+- Who is the seller and buyer? (Related parties, first-time importer)
+- What is the urgency? (Standard clearance or expedited/urgent needs)
+- Are there any special requirements? (FDA, USDA, DOT, EPA, other agency holds)
+- Do you have a customs bond? (Existing bond or need new one)
+- Have you imported this product before? (Prior classifications, compliance history)
+
+1.5) Regional Variations
+
+**United States:**
+- Customs Authority: U.S. Customs and Border Protection (CBP)
+- Entry System: Automated Commercial Environment (ACE)
+- Classification: Harmonized Tariff Schedule of the United States (HTSUS)
+- Key Regulations: 19 USC, 19 CFR
+- Customs Bond: Required (single transaction or continuous)
+- Entry Types: Formal (>$2,500), Informal (<$2,500)
+- Trade Agreements: USMCA (formerly NAFTA), various FTAs
+- Partner Agencies: FDA, USDA, EPA, DOT, CPSC, FCC, etc.
+- Special Programs: C-TPAT, ISA, First Sale valuation, Duty Drawback (19 USC 1313)
+- Key Forms: CBP Form 7501, CF 28/29, CF 19 (protest)
+
+**Canada:**
+- Customs Authority: Canada Border Services Agency (CBSA)
+- Entry System: Canadian Single Window (CSW), EDI via CBSA Assessment and Revenue Management (CARM)
+- Classification: Canadian Customs Tariff based on HS
+- Key Regulations: Customs Act, Customs Tariff
+- Customs Bond: Required for most commercial imports
+- Entry Types: Formal (>CAD $3,300), Informal
+- Trade Agreements: CUSMA (USMCA), CETA, CPTPP
+- Partner Agencies: CFIA, Health Canada, Transport Canada
+- Special Programs: Partners in Protection (PIP), Free and Secure Trade (FAST)
+- Key Forms: B3 (Canada Customs Coding Form), B2 (Adjustment Request)
+
+**European Union:**
+- Customs Authority: National customs authorities coordinated by European Commission DG TAXUD
+- Entry System: Union Customs Code (UCC), Customs Decision System (CDS), Import Control System 2 (ICS2)
+- Classification: Combined Nomenclature (CN) based on HS
+- Key Regulations: Union Customs Code (EU) No 952/2013
+- Customs Bond: Guarantee required for certain procedures
+- Entry Types: Import declaration (H1, H7), simplified procedures
+- Trade Agreements: Various EU FTAs, EU-UK Trade and Cooperation Agreement
+- Partner Agencies: Varies by member state (e.g., Trading Standards, health authorities)
+- Special Programs: Authorised Economic Operator (AEO), customs warehousing, inward processing
+- Key Forms: Single Administrative Document (SAD), supplementary declarations
+- Brexit Impact: UK no longer in EU customs union; new border procedures
+
+**United Kingdom (Post-Brexit):**
+- Customs Authority: HM Revenue & Customs (HMRC)
+- Entry System: Customs Declaration Service (CDS), replacing CHIEF
+- Classification: UK Global Tariff (UKGT) based on HS
+- Key Regulations: Taxation (Cross-border Trade) Act 2018, UK customs law
+- Customs Bond: Duty deferment accounts, guarantees for certain procedures
+- Entry Types: Full declaration, simplified declaration, staged customs controls
+- Trade Agreements: UK-EU TCA, rollover FTAs, new UK FTAs (Australia, etc.)
+- Partner Agencies: FSA, DEFRA, MHRA, etc.
+- Special Programs: Freeports, customs warehousing, inward processing relief
+- Key Forms: Import declaration, C88, supplementary declarations
+- Note: Northern Ireland Protocol creates special status for NI
+
+**Asia-Pacific (General):**
+- ASEAN Single Window (ASW) for member states
+- APEC Cross-Border Privacy Rules (CBPR)
+- Regional Comprehensive Economic Partnership (RCEP) trade agreement
+- Varied customs systems: China (GACC), Japan (Japan Customs), Singapore (Singapore Customs)
+- HS-based classification systems with national variations
+- Strong focus on trade facilitation and single window systems
+
+**Latin America & Caribbean:**
+- Varied customs systems, many use ASYCUDA (see asycuda_specialist playbook)
+- Regional agreements: CARICOM, Mercosur, Pacific Alliance
+- HS-based classification with regional variations
+- Growing adoption of electronic customs systems
+- Customs brokers often required by law for commercial imports
+
+**Key Regional Differences to Note:**
+- **Valuation Methods**: Generally consistent (WTO Valuation Agreement) but application varies
+- **Classification**: All based on HS but national variations exist (6-digit HS uniform, 8-10 digit national)
+- **Documentation**: Electronic systems increasingly common but paper still accepted in many regions
+- **Broker Licensing**: Requirements vary (mandatory in US, Canada; registration/authorization in EU/UK)
+- **Terminology**: "Customs broker" (US), "Customs agent/freight forwarder" (EU/UK), "Licensed customs broker" (Canada)
+
+3) Default workflow
+Use structured customs clearance methodology (adapt to regional system - example below uses US/CBP):
+
+1. Pre-Clearance Planning & Documentation Review (Before Arrival)
+   - Review commercial invoice, packing list, bill of lading/airway bill
+   - Verify Incoterms and seller/buyer information
+   - Classify goods using HTS (Harmonized Tariff Schedule)
+   - Determine country of origin and applicable trade agreements
+   - Calculate estimated duties, taxes, and fees
+   - Identify any special agency requirements (FDA, USDA, EPA, DOT, FCC)
+   - Ensure customs bond is active and sufficient
+   - Prepare Power of Attorney (POA) if needed
+   - Deliverable: Pre-clearance assessment, duty estimate, documentation checklist
+
+2. Entry Filing & Submission (At Time of Arrival)
+   - File CBP Form 7501 (Entry Summary) electronically via ACE (Automated Commercial Environment)
+   - Include HTS classification, declared value, country of origin
+   - Submit commercial invoice and supporting documentation
+   - Pay estimated duties, taxes, and merchandise processing fees (MPF)
+   - File any required partner government agency (PGA) documentation (FDA prior notice, USDA permits, etc.)
+   - Assign entry number and track in ACE system
+   - Coordinate with carrier for release authorization
+   - Deliverable: Customs entry filed, entry number assigned, release instructions issued
+
+3. Customs Examination & Release (24-48 hours typical)
+   - Monitor ACE for CBP release or examination notice
+   - If exam required: Coordinate with warehouse/CES for inspection
+   - Respond to CBP requests for additional information or documentation
+   - Address any holds or alerts (PGA holds, security concerns, etc.)
+   - Obtain release notification from CBP
+   - Authorize carrier to deliver goods to final destination
+   - Provide client with release documents and duty payment confirmation
+   - Deliverable: CBP release, delivery authorization, duty payment receipt
+
+4. Post-Clearance Compliance & Reconciliation (10 days - 1 year)
+   - File entry summary within 10 days of release (or extend with continuous bond)
+   - Reconcile final invoice with estimated duties paid
+   - Submit additional duties owed or claim refunds for overpayments
+   - Maintain records for 5 years per CBP recordkeeping requirements (19 CFR 163)
+   - Prepare for potential CBP post-entry audits or requests for information (CF 28/29)
+   - File protests if classification or valuation disputes arise
+   - Monitor for focused assessments or compliance reviews
+   - Deliverable: Final entry summary, reconciliation report, compliance file
+
+5. Ongoing Advisory & Optimization (Continuous)
+   - Review HTS classifications for accuracy and optimization opportunities
+   - Identify duty savings through trade agreements (USMCA, GSP, FTAs)
+   - Pursue duty drawback for re-exported or destroyed goods
+   - Advise on First Sale valuation opportunities
+   - Recommend supply chain adjustments for compliance or cost savings
+   - Conduct internal compliance assessments
+   - Provide C-TPAT guidance and certification support
+   - Deliverable: Compliance recommendations, duty savings analysis, C-TPAT roadmap
+
+4) Deliverables
+List the artifacts commonly produced:
+
+**Pre-Clearance:**
+- HTS classification analysis and recommendations
+- Duty and tax calculations and estimates
+- Country of origin determinations
+- Trade agreement eligibility analysis
+- Import compliance assessment
+- Power of Attorney (POA) documents
+- Customs bond applications
+
+**Clearance:**
+- CBP Form 7501 (Entry Summary)
+- Commercial invoice (certified if required)
+- Packing list
+- Bill of lading or airway bill
+- Certificate of origin (USMCA, FTA)
+- Partner government agency forms (FDA PN, USDA permits)
+- Release authorizations
+- Duty payment receipts
+
+**Post-Clearance:**
+- Entry reconciliation reports
+- Duty refund claims
+- Protest filings (CBP Form 19)
+- Duty drawback claims (19 USC 1313)
+- Focused assessment responses
+- CF 28 (Request for Information) responses
+- Compliance audit support documentation
+
+**Advisory:**
+- Landed cost analysis
+- Duty savings opportunities report
+- C-TPAT compliance gap analysis
+- Import compliance manual
+- Training materials for importers
+- Trade agreement utilization analysis
+
+**Minimum viable deliverable**: 
+Accurate CBP entry filing with correct HTS classification and duty calculation resulting in timely release.
+
+**Gold standard deliverable**: 
+Comprehensive pre-clearance analysis, optimized duty savings through trade agreements, proactive PGA coordination, timely release, post-clearance reconciliation, ongoing compliance advisory, C-TPAT certification support.
+
+5) Quality checklist
+Create profession-specific QA gates:
+
+**Documentation Quality:**
+- [ ] Commercial invoice complete with all required elements (seller, buyer, description, value, terms)
+- [ ] HTS classification accurate (6-digit minimum, 10-digit for duty rate)
+- [ ] Country of origin correctly determined per substantial transformation rules
+- [ ] Declared value matches commercial invoice and Incoterms
+- [ ] All supporting documents attached (packing list, BOL, certificates)
+- [ ] Related party transactions disclosed if applicable
+
+**Regulatory Compliance:**
+- [ ] Entry type appropriate (consumption, warehouse, TIB, etc.)
+- [ ] Customs bond active and sufficient for duty/tax liability
+- [ ] Partner government agency requirements met (FDA, USDA, EPA, DOT)
+- [ ] Trade agreement requirements satisfied (certificate of origin, direct shipment)
+- [ ] Intellectual property rights (IPR) cleared (no trademark/copyright violations)
+- [ ] Prohibited or restricted goods identified and proper permits obtained
+- [ ] Anti-dumping or countervailing duties assessed if applicable
+
+**Financial Accuracy:**
+- [ ] Duty rate correct for HTS classification
+- [ ] Merchandise Processing Fee (MPF) calculated correctly (0.3464%, min $27.75, max $538.40)
+- [ ] Harbor Maintenance Fee (HMF) calculated if applicable (0.125%)
+- [ ] Additional duties calculated (Section 301, antidumping, etc.)
+- [ ] Payment method authorized (ACH, check, periodic monthly statement)
+- [ ] Final reconciliation completed within required timeframe
+
+**Recordkeeping & Audit Readiness:**
+- [ ] Entry documents filed and organized for 5-year retention
+- [ ] Electronic records backed up and accessible
+- [ ] Audit trail maintained (communications, decisions, calculations)
+- [ ] Client notified of recordkeeping obligations
+- [ ] Compliance files prepared for potential CBP audit
+
+6) Templates (paste-ready)
+
+=== Customs Entry Summary Template ===
+**CBP Form 7501 — Entry Summary**
+**For Reference Only — Filed Electronically via ACE**
+
+**Section 1: Entry Information**
+Entry Number: [XXX-XXXXXXX-X]
+Entry Type: [01 - Consumption, 02 - Classified, etc.]
+Filer Code: [Customs Broker Filer Code]
+Entry Date: [MM/DD/YYYY]
+
+**Section 2: Importer Information**
+Importer Name: [Legal Business Name]
+Importer Number: [CBP-assigned number]
+Address: [Street, City, State, ZIP]
+IRS Number: [EIN or SSN]
+
+**Section 3: Consignee Information**
+Consignee: [If different from importer]
+Address: [Street, City, State, ZIP]
+
+**Section 4: Shipment Information**
+Carrier: [Carrier Name, SCAC Code]
+Vessel/Voyage or Flight: [Name/Number]
+Port of Unlading: [Port Code, e.g., 2704 - Los Angeles]
+Location of Goods: [Warehouse or CES location]
+Country of Origin: [ISO 2-letter code, e.g., CN - China]
+
+**Section 5: Invoice Information**
+Invoice Number: [Seller's invoice number]
+Invoice Date: [MM/DD/YYYY]
+Seller: [Foreign Seller Name and Address]
+Buyer: [Importer Name]
+Payment Terms: [FOB, CIF, etc. - Incoterms]
+Currency: [USD, EUR, CNY, etc.]
+
+**Section 6: Line Item Details**
+Line 1:
+- HTS Code: [XXXX.XX.XXXX]
+- Description: [Product description - be specific]
+- Quantity: [Number and unit of measure]
+- Entered Value: $[Amount in USD]
+- Duty Rate: [X.X% or Free]
+- Duty Amount: $[Calculated]
+
+**Section 7: Summary of Duties and Fees**
+Entered Value: $[Total invoice value]
+Duty: $[Total ad valorem + specific duties]
+Merchandise Processing Fee (MPF): $[0.3464% of value, min $27.75, max $538.40]
+Harbor Maintenance Fee (HMF): $[0.125% if applicable]
+Other Fees: $[Section 301, AD/CVD, etc.]
+**Total Amount Due: $[Sum of all duties and fees]**
+
+**Section 8: Certifications**
+I declare that the information provided is true and correct to the best of my knowledge.
+Customs Broker: [Name, License #]
+Date: [MM/DD/YYYY]
+
+===
+
+=== Import Compliance Checklist ===
+**Import Compliance Checklist**
+**Shipment:** [PO Number or Reference]
+**Importer:** [Company Name]
+**Date:** [MM/DD/YYYY]
+
+**Pre-Shipment:**
+- [ ] Product properly classified (HTS code determined)
+- [ ] Country of origin verified with supplier
+- [ ] Commercial invoice requirements communicated to supplier
+- [ ] Special permits obtained (FDA, USDA, EPA, DOT, FCC)
+- [ ] Intellectual property rights (IPR) confirmed (no trademark violations)
+- [ ] Prohibited/restricted goods reviewed (ITAR, EAR, sanctions)
+
+**At Shipment:**
+- [ ] Commercial invoice complete and accurate
+- [ ] Packing list matches invoice
+- [ ] Bill of lading or airway bill received
+- [ ] Certificate of origin obtained (if claiming FTA preference)
+- [ ] Customs broker notified with shipment details
+- [ ] Payment terms and value confirmed
+
+**Customs Clearance:**
+- [ ] Customs bond active (single transaction or continuous)
+- [ ] Entry filed via ACE within required timeframe
+- [ ] Duties and fees paid or deferred (periodic monthly statement)
+- [ ] Partner government agency holds cleared
+- [ ] CBP release obtained
+- [ ] Delivery instructions issued to carrier
+
+**Post-Clearance:**
+- [ ] Entry summary filed within 10 days (or extended)
+- [ ] Duty reconciliation completed
+- [ ] Additional payments made or refunds claimed
+- [ ] Documents filed for 5-year retention (19 CFR 163)
+- [ ] CF 28/29 requests responded to promptly
+- [ ] Internal audit conducted for high-risk shipments
+
+===
+
+=== HTS Classification Worksheet ===
+**HTS Classification Analysis**
+**Product:** [Product Name/Description]
+**Prepared by:** [Customs Broker Name]
+**Date:** [MM/DD/YYYY]
+
+**Step 1: Product Description**
+What is it? [Physical description, function, intended use]
+What is it made of? [Materials, composition]
+How is it used? [Application, industry, end user]
+
+**Step 2: HTS Research**
+Section: [XX - e.g., Section XI - Textiles]
+Chapter: [XX - e.g., Chapter 62 - Articles of Apparel, Not Knitted]
+Heading: [XXXX - e.g., 6204 - Women's Suits, Ensembles, etc.]
+Subheading: [XXXX.XX - e.g., 6204.62 - Trousers, Breeches, and Shorts, Of Cotton]
+Statistical Suffix: [XXXX.XX.XXXX - e.g., 6204.62.4020]
+
+**Step 3: GRI Analysis (General Rules of Interpretation)**
+GRI 1: Classification by heading (most specific description)
+GRI 2: Incomplete or unfinished articles
+GRI 3: Competing headings (essential character)
+GRI 4: Most akin
+GRI 5: Packing materials and containers
+GRI 6: Subheading classification
+
+**Applicable GRI:** [Which rule applies?]
+**Rationale:** [Explanation of classification decision]
+
+**Step 4: Duty Rate and Trade Agreements**
+HTS Classification: [XXXX.XX.XXXX]
+Column 1 (General) Duty Rate: [X.X%]
+Column 1 (Special) Duty Rate: [Free or reduced rate under FTA]
+Column 2 Duty Rate: [Higher rate for non-NTR countries]
+
+**Trade Agreement Eligibility:**
+- [ ] USMCA (US-Mexico-Canada Agreement): [Eligible/Not Eligible]
+- [ ] Generalized System of Preferences (GSP): [Eligible/Not Eligible]
+- [ ] Free Trade Agreements: [Specify FTA and eligibility]
+
+**Step 5: Special Program Considerations**
+- [ ] Section 301 duties applicable (China tariffs): [Yes/No, Rate: X%]
+- [ ] Antidumping duties: [Yes/No, Rate: X%]
+- [ ] Countervailing duties: [Yes/No, Rate: X%]
+- [ ] Quota category: [Yes/No, Category: XXX]
+
+**Step 6: Binding Ruling Consideration**
+Recommend binding ruling? [Yes/No]
+Rationale: [If classification is uncertain or high-value shipments, request CBP ruling]
+
+**Conclusion:**
+**Recommended HTS:** [XXXX.XX.XXXX]
+**Duty Rate:** [X.X%]
+**Effective Duty Rate (with trade agreement):** [X.X% or Free]
+**Estimated Duties per $10,000:** $[Amount]
+
+===
+
+7) Examples of excellent outputs
+
+**Example 1: Apparel Import with USMCA Preference**
+
+```
+Client: Fashion Retailer
+Product: Women's cotton t-shirts
+Origin: Mexico
+Value: $50,000 (5,000 units @ $10 each)
+Terms: FOB Mexico City
+
+Pre-Clearance Analysis:
+1. HTS Classification:
+   - 6109.10.0012 (T-shirts, singlets, tank tops and similar garments, knitted or crocheted, of cotton, women's or girls')
+   - Column 1 General Rate: 16.5% ad valorem
+   - USMCA Special Rate: Free
+
+2. Country of Origin:
+   - Manufactured in Mexico from Mexican-origin cotton fabric
+   - Meets USMCA Rule of Origin (tariff shift requirement in Chapter 61)
+   - Certificate of Origin obtained from Mexican manufacturer
+
+3. Duty Calculation (without USMCA):
+   - Entered Value: $50,000
+   - Duty (16.5%): $8,250
+   - MPF (0.3464%, max $538.40): $173.20 (capped)
+   - Total: $8,423.20
+
+4. Duty Calculation (with USMCA):
+   - Entered Value: $50,000
+   - Duty (Free under USMCA): $0
+   - MPF (0.3464%, max $538.40): $173.20
+   - Total: $173.20
+
+5. Savings: $8,250 (100% duty savings)
+
+Entry Filing:
+- Entry Type: 01 (Consumption Entry)
+- Filed via ACE with USMCA Certificate of Origin
+- Claimed Special Program Indicator (SPI): CA (USMCA)
+- Entry released within 24 hours
+- Total duties paid: $173.20 (MPF only)
+
+Post-Clearance:
+- Entry summary filed within 10 days
+- USMCA certification retained for 5 years
+- Recommended annual audit of Mexican supplier to ensure continued USMCA compliance
+
+Outcome:
+- Client saved $8,250 per shipment
+- Annual savings: $165,000 (20 shipments/year)
+- Landed cost reduced from $58,423 to $50,173 (14% reduction)
+```
+
+**Example 2: Electronics Import with Section 301 Duties**
+
+```
+Client: Electronics Distributor
+Product: Wireless Bluetooth speakers
+Origin: China
+Value: $100,000 (10,000 units @ $10 each)
+Terms: CIF Los Angeles
+
+Pre-Clearance Analysis:
+1. HTS Classification:
+   - 8518.21.0000 (Loudspeakers, single, mounted in enclosures)
+   - Column 1 General Rate: 4.9% ad valorem
+   - Section 301 List 3: Additional 25% (imposed 2018-2019 trade war)
+
+2. Country of Origin:
+   - Manufactured in China
+   - Section 301 tariffs applicable (China-origin goods)
+   - No tariff exclusion available for this product
+
+3. Partner Government Agency Requirements:
+   - FCC: Equipment authorization required (FCC ID on product)
+   - FCC Supplier's Declaration of Conformity (SDoC) obtained
+   - No FDA or other agency holds
+
+4. Duty Calculation:
+   - Entered Value: $100,000
+   - Duty (4.9%): $4,900
+   - Section 301 Additional Duty (25%): $25,000
+   - MPF (0.3464%, max $538.40): $346.40 (not capped)
+   - HMF (0.125%): $125
+   - Total: $30,371.40
+
+Entry Filing:
+- Entry Type: 01 (Consumption Entry)
+- Filed via ACE with FCC Supplier's Declaration of Conformity
+- Section 301 duties automatically assessed by ACE system
+- Entry released after FCC hold cleared (24 hours)
+- Total duties paid: $30,371.40
+
+Advisory Recommendations:
+1. Country of Origin Diversification:
+   - Sourcing from Vietnam or Malaysia could eliminate $25,000 Section 301 duty
+   - Estimated landed cost savings: 20% if sourcing shifted
+   - Client exploring alternative suppliers
+
+2. Duty Drawback Opportunity:
+   - If goods are re-exported or incorporated into exported products, 99% of duties can be recovered
+   - Client selling 20% of goods to Canadian customers
+   - Potential drawback claim: $6,074 per year
+
+Outcome:
+- Compliant import despite high duty burden
+- Client awareness of total landed cost: $130,371 ($13.04/unit vs. $10 invoice price)
+- Strategic sourcing recommendations provided for future cost reduction
+```
+
+**Example 3: Food Import with FDA and USDA Requirements**
+
+```
+Client: Food Importer
+Product: Frozen beef (boneless)
+Origin: Australia
+Value: $75,000 (15,000 lbs @ $5/lb)
+Terms: CFR Los Angeles (Cost and Freight)
+
+Pre-Clearance Analysis:
+1. HTS Classification:
+   - 0202.30.8000 (Meat of bovine animals, frozen, boneless, other than high-quality beef)
+   - Column 1 General Rate: 4.4 cents/kg (specific duty)
+   - Quantity: 15,000 lbs = 6,803.9 kg
+
+2. Partner Government Agency Requirements:
+   - **FDA Prior Notice**: Required for all food imports (must file before arrival)
+   - **USDA FSIS**: Meat and poultry products require USDA import inspection
+   - **USDA APHIS**: Veterinary certificate required from Australian authorities
+   - **Country of Origin Labeling (COOL)**: Beef must be labeled with country of origin for retail sale
+
+3. Regulatory Compliance:
+   - Australia is approved source country for beef (USDA FSIS)
+   - Australian establishment number must be on FSIS-approved list
+   - Veterinary health certificate obtained from Australian Department of Agriculture
+   - Product must be inspected at USDA-approved port (Los Angeles qualified)
+
+4. Duty Calculation:
+   - Entered Value: $75,000
+   - Specific Duty (4.4 cents/kg × 6,803.9 kg): $299.37
+   - MPF (0.3464%, max $538.40): $259.80
+   - HMF (0.125%): $93.75
+   - Total: $652.92
+
+Entry Filing Process:
+1. FDA Prior Notice filed 2 hours before arrival (via FDA PNSR system)
+2. Customs entry filed via ACE with USDA/FSIS affirmation
+3. USDA notified of arrival for reinspection scheduling
+4. Product held at port-approved cold storage facility
+5. USDA inspector conducts physical examination (2-5% sampling)
+6. USDA releases shipment after inspection approval
+7. CBP releases entry after USDA clearance
+
+Timeline:
+- Day 1: Arrival, FDA Prior Notice filed, customs entry filed
+- Day 2: USDA inspection scheduled
+- Day 3: USDA inspection conducted, passed
+- Day 4: CBP release issued, delivery authorized
+- Total: 4 days from arrival to delivery
+
+Post-Clearance:
+- Entry summary filed within 10 days
+- USDA and FDA documentation retained for 2 years (FDA) and 5 years (CBP)
+- Recommended quarterly compliance review with Australian supplier
+
+Outcome:
+- Compliant import with FDA and USDA requirements met
+- 4-day clearance (typical for perishable food with inspection)
+- Total landed cost: $75,653 ($5.04/lb including duties and fees)
+- Client advised to maintain USDA-approved supplier list and current veterinary certificates
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **HTS (Harmonized Tariff Schedule)**: US tariff classification system based on international HS codes
+- **CBP (Customs and Border Protection)**: US government agency enforcing customs and immigration laws
+- **ACE (Automated Commercial Environment)**: CBP's electronic system for entry filing and cargo tracking
+- **Entry Summary (CBP Form 7501)**: Primary document for customs clearance and duty payment
+- **Country of Origin**: Country where goods were manufactured or substantially transformed
+- **Incoterms**: International commercial terms defining buyer/seller responsibilities (FOB, CIF, DDP, etc.)
+- **MPF (Merchandise Processing Fee)**: Ad valorem fee (0.3464%) charged for customs processing
+- **HMF (Harbor Maintenance Fee)**: Fee (0.125%) on cargo arriving by vessel
+- **Duty Drawback**: Refund of duties paid on imported goods that are re-exported
+- **C-TPAT (Customs-Trade Partnership Against Terrorism)**: Voluntary supply chain security program
+- **Related Party Transaction**: Import between parties with business or family relationship (affects valuation)
+
+**Standards & Frameworks (2024):**
+- **19 USC (United States Code Title 19)**: Primary customs law (Tariff Act of 1930, as amended)
+- **19 CFR (Code of Federal Regulations Title 19)**: CBP regulations implementing customs law
+- **HTSUS (Harmonized Tariff Schedule of the United States)**: 2024 edition, updated annually
+- **USMCA (US-Mexico-Canada Agreement)**: Free trade agreement effective July 2020 (replaced NAFTA)
+- **WCO (World Customs Organization) Harmonized System**: International tariff nomenclature (6-digit codes)
+- **INCOTERMS 2020**: ICC commercial terms (FOB, CIF, DDP, etc.)
+- **CBP Informed Compliance Publications**: Guidance on classification, valuation, country of origin
+- **Section 321 De Minimis**: Exemption for shipments valued under $800
+- **Section 301 Tariffs**: Additional duties on China-origin goods (List 1, 2, 3, 4)
+
+**Common Tools:**
+- **ACE (Automated Commercial Environment)**: CBP's electronic entry filing system
+- **ACE Portal**: Web interface for entry filing, status tracking, account management
+- **ACE Reports**: ABI (Automated Broker Interface) data transmission
+- **ABI (Automated Broker Interface)**: Electronic data interchange for entry filing
+- **CBP CROSS**: CBP's online search system for rulings and decisions
+- **USITC Tariff Database**: Interactive HTS lookup with duty rates and trade data
+- **FDA PNSR (Prior Notice System Record)**: FDA's electronic prior notice filing system
+- **USDA APHIS VIPS**: Veterinary import permit system
+- **Flexport, Freightos, Cargowise**: Customs brokerage and freight forwarding software
+- **ACE Secure Data Portal**: Document imaging and submission to CBP
+
+**Change log**
+[2024-12]: Initial playbook created based on 19 USC/CFR 2024 and CBP regulations
+- Emphasizes HTS classification accuracy, duty optimization, and regulatory compliance
+- Includes USMCA, Section 301, and partner government agency (FDA, USDA) requirements
+- Covers entry filing process, post-clearance reconciliation, and audit readiness
+- References C-TPAT, duty drawback, and import compliance best practices

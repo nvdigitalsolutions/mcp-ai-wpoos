@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-plugin-activation-error-yet-again',
-        'version' => 'dev-copilot/fix-plugin-activation-error-yet-again',
-        'reference' => '19b7bff569b5d6e3dac977d25e5336463487f546',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips',
+        'version' => 'dev-copilot/rebuild-all-zips',
+        'reference' => 'f3d025321ccf3ae801ca7bc33e1766c61b841c02',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-plugin-activation-error-yet-again',
-            'version' => 'dev-copilot/fix-plugin-activation-error-yet-again',
-            'reference' => '19b7bff569b5d6e3dac977d25e5336463487f546',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips',
+            'version' => 'dev-copilot/rebuild-all-zips',
+            'reference' => 'f3d025321ccf3ae801ca7bc33e1766c61b841c02',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

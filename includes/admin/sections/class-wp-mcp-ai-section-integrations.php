@@ -68,11 +68,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$pro_notice = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'wp-mcp-ai' );
-			
+			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'wp-mcp-ai' );
+
 			return array(
 				// Gmail OAuth.
-				'gmail_client_id'              => array(
+				'gmail_client_id'                   => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ) . $pro_notice,
@@ -80,7 +80,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'off',
 					'disabled'     => ! $is_pro_active,
 				),
-				'gmail_client_secret'          => array(
+				'gmail_client_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ) . $pro_notice,
@@ -90,14 +90,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Crawl4AI.
-				'crawl4ai_base_url'            => array(
+				'crawl4ai_base_url'                 => array(
 					'type'         => 'url',
 					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
 					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
 					'placeholder'  => 'http://localhost:8000',
 					'autocomplete' => 'url',
 				),
-				'crawl4ai_api_key'             => array(
+				'crawl4ai_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for Crawl4AI service (if required).', 'wp-mcp-ai' ),
@@ -106,7 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Brave Search.
-				'brave_search_api_key'         => array(
+				'brave_search_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -119,14 +119,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Cloudflare.
-				'cloudflare_api_token'         => array(
+				'cloudflare_api_token'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'wp-mcp-ai' ),
 					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_zone_id'           => array(
+				'cloudflare_zone_id'                => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'wp-mcp-ai' ),
@@ -134,26 +134,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Cloudways.
-				'cloudways_api_key'            => array(
+				'cloudways_api_key'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for Cloudways hosting integration.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudways_email'              => array(
+				'cloudways_email'                   => array(
 					'type'        => 'email',
 					'label'       => __( 'Cloudways Account Email', 'wp-mcp-ai' ),
 					'description' => __( 'Email address associated with your Cloudways account.', 'wp-mcp-ai' ),
 					'placeholder' => 'you@example.com',
 				),
-				'cloudways_server_id'          => array(
+				'cloudways_server_id'               => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Server ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Cloudways server identifier for server management operations. Find this in your Cloudways dashboard under Servers.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'cloudways_app_id'             => array(
+				'cloudways_app_id'                  => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Application ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Cloudways application identifier for app-specific operations. Find this in your Cloudways dashboard under Applications.', 'wp-mcp-ai' ),
@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Mailjet.
-				'mailjet_api_key'              => array(
+				'mailjet_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ) . $pro_notice,
@@ -169,7 +169,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
-				'mailjet_api_secret'           => array(
+				'mailjet_api_secret'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ) . $pro_notice,
@@ -177,23 +177,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
-				'mailjet_from_email'           => array(
+				'mailjet_from_email'                => array(
 					'type'        => 'email',
 					'label'       => __( 'Mailjet From Email', 'wp-mcp-ai' ),
 					'description' => __( 'Default "from" email address for Mailjet messages.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => 'noreply@example.com',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 				),
-				'mailjet_from_name'            => array(
+				'mailjet_from_name'                 => array(
 					'type'        => 'text',
 					'label'       => __( 'Mailjet From Name', 'wp-mcp-ai' ),
 					'description' => __( 'Default "from" name for Mailjet messages.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => 'My Site',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 				),
 
 				// remove.bg API.
-				'removebg_api_key'             => array(
+				'removebg_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'remove.bg API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -206,7 +206,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// QuickBooks.
-				'quickbooks_api_key'           => array(
+				'quickbooks_api_key'                => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
 					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ) . $pro_notice,
@@ -214,21 +214,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
-				'quickbooks_company_id'        => array(
+				'quickbooks_company_id'             => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Company ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your QuickBooks company (realm) ID.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 				),
-				'quickbooks_client_id'         => array(
+				'quickbooks_client_id'              => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Client ID', 'wp-mcp-ai' ),
 					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 				),
-				'quickbooks_client_secret'     => array(
+				'quickbooks_client_secret'          => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ) . $pro_notice,
@@ -243,14 +243,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
 					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '123456789',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 				),
 				'google_analytics_credentials'      => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Google Analytics Service Account JSON (Legacy)', 'wp-mcp-ai' ),
 					'description' => __( 'Service account credentials in JSON format from Google Cloud Console. This field is being phased out in favor of google_analytics_credentials_json.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '{"type": "service_account", ...}',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 					'rows'        => 5,
 				),
 				'google_analytics_credentials_json' => array(
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'       => __( 'Google Analytics 4 Credentials JSON', 'wp-mcp-ai' ),
 					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields.', 'wp-mcp-ai' ) . $pro_notice,
 					'placeholder' => '{"type": "service_account", "project_id": "your-project", ...}',
-					'disabled'     => ! $is_pro_active,
+					'disabled'    => ! $is_pro_active,
 					'rows'        => 8,
 				),
 
@@ -276,27 +276,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Meta.
-				'meta_access_token'            => array(
+				'meta_access_token'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta Access Token', 'wp-mcp-ai' ),
 					'description'  => __( 'Long-lived access token for Meta Graph API. Used for Facebook, Instagram, and WhatsApp integrations.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_app_id'                  => array(
+				'meta_app_id'                       => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta App ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Meta (Facebook) App ID.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'meta_app_secret'              => array(
+				'meta_app_secret'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta App Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'Your Meta (Facebook) App Secret.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_business_account_id'     => array(
+				'meta_business_account_id'          => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta Business Account ID', 'wp-mcp-ai' ),
 					'description' => __( 'Your Meta Business Account ID (for WhatsApp Business API).', 'wp-mcp-ai' ),
@@ -304,20 +304,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// TikTok.
-				'tiktok_access_token'          => array(
+				'tiktok_access_token'               => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Access Token', 'wp-mcp-ai' ),
 					'description'  => __( 'Access token for TikTok Open API with video.share scope.', 'wp-mcp-ai' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'tiktok_client_key'            => array(
+				'tiktok_client_key'                 => array(
 					'type'        => 'text',
 					'label'       => __( 'TikTok Client Key', 'wp-mcp-ai' ),
 					'description' => __( 'Client Key from TikTok developer portal.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
-				'tiktok_client_secret'         => array(
+				'tiktok_client_secret'              => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Client Secret', 'wp-mcp-ai' ),
 					'description'  => __( 'Client Secret from TikTok developer portal.', 'wp-mcp-ai' ),
@@ -334,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			
+
 			return array(
 				'gmail'            => array(
 					'id'     => 'gmail',
@@ -412,16 +412,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$subtab        = '';
 			$subtab_groups = $this->get_subtab_groups();
 
-			// When rendered within Tools > Connections, use 'connection' parameter.
-
-			// Otherwise use 'subtab' parameter (for backwards compatibility if rendered standalone).
-
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// Use section-specific field name to avoid conflicts with other sections.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-			if ( isset( $_POST['connection'] ) ) {
+			$subtab_field_name = 'subtab_' . $this->get_id();
+			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+			} elseif ( isset( $_POST['connection'] ) ) {
+				// Legacy parameter for backwards compatibility.
 				$subtab = sanitize_key( $_POST['connection'] );
 			} elseif ( isset( $_GET['connection'] ) ) {
 				$subtab = sanitize_key( $_GET['connection'] );
 			} elseif ( isset( $_POST['subtab'] ) ) {
+				// Fallback to legacy field name for backward compatibility.
 				$subtab = sanitize_key( $_POST['subtab'] );
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				// Only use 'subtab' if it's one of our integration subtabs.
@@ -662,12 +665,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</nav>
 
 					<!-- Hidden field to preserve subtab during form submission -->
-					<!-- Use 'connection' parameter when in Tools > Connections context -->
-					<?php
-					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-					$param_name = isset( $_GET['subtab'] ) && 'connections' === $_GET['subtab'] ? 'connection' : 'subtab';
-					?>
-					<input type="hidden" name="<?php echo esc_attr( $param_name ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">

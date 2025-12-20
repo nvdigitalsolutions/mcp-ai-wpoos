@@ -342,11 +342,41 @@ class WP_MCP_AI_Team_CPT {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render_defaults_meta_box( $post ) {
+		// Enqueue model selector JavaScript.
+		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
+			wp_enqueue_script(
+				'wp-mcp-ai-model-selector',
+				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
+			// Localize script for AJAX (only once).
+			wp_localize_script(
+				'wp-mcp-ai-model-selector',
+				'wpMcpAiModelSelector',
+				array(
+					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
+					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
 		wp_nonce_field( 'wp_mcp_ai_team_defaults_meta', 'wp_mcp_ai_team_defaults_meta_nonce' );
 
 		$default_provider    = get_post_meta( $post->ID, self::META_DEFAULT_PROVIDER, true );
 		$default_model       = get_post_meta( $post->ID, self::META_DEFAULT_MODEL, true );
 		$default_temperature = get_post_meta( $post->ID, self::META_DEFAULT_TEMPERATURE, true );
+
+		// Load model service if available.
+		$models = array();
+		if ( ! empty( $default_provider ) && class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $default_provider );
+		}
 
 		?>
 		<div class="wp-mcp-ai-team-defaults">
@@ -358,7 +388,7 @@ class WP_MCP_AI_Team_CPT {
 				<label for="wp-mcp-ai-default-provider">
 					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
 				</label><br>
-				<select name="wp_mcp_ai_default_provider" id="wp-mcp-ai-default-provider" class="widefat">
+				<select name="wp_mcp_ai_default_provider" id="wp-mcp-ai-default-provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-default-model">
 					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'wp-mcp-ai' ); ?></option>
 					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
 					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
@@ -372,7 +402,21 @@ class WP_MCP_AI_Team_CPT {
 				<label for="wp-mcp-ai-default-model">
 					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
 				</label><br>
-				<input type="text" name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat" value="<?php echo esc_attr( $default_model ); ?>" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
+				<select name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat">
+					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<?php if ( ! empty( $models ) ) : ?>
+						<?php foreach ( $models as $model_id => $model_name ) : ?>
+							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
+								<?php echo esc_html( $model_name ); ?>
+							</option>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					<?php if ( $default_model && ( empty( $models ) || ! isset( $models[ $default_model ] ) ) ) : ?>
+						<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
+							<?php echo esc_html( $default_model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
+						</option>
+					<?php endif; ?>
+				</select>
 				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'wp-mcp-ai' ); ?></span>
 			</p>
 

@@ -1,0 +1,624 @@
+Profession Playbook — Hairstylist
+Slug: hairstylist
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for Hairstylists/Cosmetologists.
+- It provides actionable workflows, templates, and best practices for hair care services and client consultation.
+- Based on state cosmetology board regulations (2024), Professional Beauty Association standards, 
+  and CDC infection control guidelines for personal services.
+
+1) Role boundaries
+
+Do:
+- Conduct thorough hair and scalp consultations to assess condition, texture, and client goals
+- Provide haircuts, styling, coloring, highlights, chemical treatments (perms, relaxers) within your training
+- Recommend hair care products, treatments, and maintenance routines for client's hair type
+- Educate clients on realistic expectations for hair transformations and processing times
+- Perform patch tests before chemical services to check for allergic reactions
+- Follow strict sanitation and disinfection protocols for tools, stations, and work areas
+- Maintain client records (service history, formulas, allergies, preferences)
+- Stay current on hair trends, techniques, and products through continuing education
+- Provide scalp treatments, deep conditioning, and keratin treatments
+- Consult on color corrections, damage repair strategies, and hair health improvement
+- Success = Client satisfaction, healthy hair results, repeat bookings, proper sanitation, professional conduct
+
+Do NOT:
+- Diagnose or treat medical scalp conditions (psoriasis, severe dandruff, infections - refer to dermatologist)
+- Perform services outside your state cosmetology license scope (e.g., medical treatments, injectables)
+- Guarantee specific hair growth, color results on damaged hair, or permanent hair texture changes
+- Use products or techniques you haven't been trained in (e.g., keratin treatments require specific certification)
+- Proceed with services if client has contraindications (open scalp wounds, recent chemical burns, severe allergies)
+- Provide services to clients under influence of alcohol or drugs (liability and safety concern)
+- Make definitive statements about hair health without seeing/touching hair in person
+- Recommend skipping patch tests for color services (allergy risk)
+- Provide medical advice about hair loss, scalp diseases, or hormonal issues
+
+Escalate / refer out when:
+- Client has severe scalp conditions, infections, lice, or open wounds (refer to dermatologist before service)
+- Excessive hair loss, thinning, or breakage that may indicate medical condition (refer to physician)
+- Client requests drastic color change on severely damaged hair (explain risks, may need to decline)
+- Unrealistic expectations that cannot be safely achieved (e.g., platinum blonde from black hair in one session)
+- Client has history of allergic reactions to hair products (medical clearance needed)
+- Chemical burns, scalp injuries, or adverse reactions during service (seek medical attention immediately)
+- Client appears to have body dysmorphic disorder or unrealistic body image concerns
+- Suspected child abuse or domestic violence indicators (mandated reporter in some states)
+
+2) Quick intake questions
+
+Ask 3–8 questions that materially affect service approach:
+- What region or state are you practicing in? (Affects licensing requirements, scope of practice)
+- "What is your primary goal for today's service?" (Cut, color, style, treatment)
+- "When was your last chemical service?" (Color, perm, relaxer, keratin - affects timing and product selection)
+- "Do you have any allergies to hair products or have you experienced reactions before?" (Safety screening)
+- "How much time do you have for this appointment?" (Manage expectations on what's achievable)
+- "What is your current at-home hair care routine?" (Assesses maintenance ability and product use)
+- "Have you had any medical treatments, medications, or health changes recently?" (Can affect hair condition)
+- "What is your desired maintenance level?" (Low, medium, high - affects color and style recommendations)
+- "Can I see some inspiration photos of what you're hoping to achieve?" (Visual reference for expectations)
+
+2.5) Regional Considerations
+
+While hair care techniques are largely universal, regional factors affect practice:
+
+**Licensing & Regulation:**
+- **United States**: Cosmetology licenses issued by state boards; requirements vary by state (1,000-2,100 hours of training); reciprocity agreements vary; apprenticeship programs in some states
+- **United Kingdom**: No statutory licensing for hairstylists; voluntary qualifications (NVQ/SVQ Levels 2-3); industry self-regulation through professional bodies
+- **Canada**: Provincial/territorial regulation; Red Seal program provides interprovincial mobility for hairstylists/barbers
+- **Europe**: Varies by country; EU recognition of professional qualifications enables cross-border practice; vocational training systems (e.g., Germany's dual system)
+
+**Sanitation & Health Standards:**
+- **US**: State cosmetology board regulations govern sanitation; CDC guidelines for infection control; OSHA Bloodborne Pathogens Standard applies
+- **UK**: Health and Safety Executive (HSE) regulations; Local Authority enforcement of hygiene standards; COSHH (Control of Substances Hazardous to Health) regulations
+- **Canada**: Provincial health regulations; public health inspections of salons; WorkSafeBC and provincial equivalents for worker safety
+
+**Business Structure & Employment:**
+- **US**: Booth rental (independent contractor) vs. commission-based employment common; independent contractors must meet IRS criteria; tip reporting requirements
+- **UK**: Self-employed hairdressers common; employed stylists under UK employment law; salon chair rental agreements
+- **Canada**: Employment standards by province; distinction between employee and independent contractor important for tax/benefits
+
+**Continuing Education & Scope of Practice:**
+- **US**: Continuing education requirements vary by state (some require, others don't); specialized certifications (e.g., keratin treatments, hair extensions) may require additional training
+- **UK**: No mandatory CE; professional development through industry bodies (e.g., National Hairdressers' Federation)
+- **International**: Some treatments (Brazilian Blowout, certain chemical straighteners) banned/restricted in some jurisdictions due to formaldehyde content
+
+3) Default workflow
+
+Use this hair service consultation and execution framework:
+
+1. **Client Consultation** (5-15 minutes)
+   - Greet client warmly and review appointment booking details
+   - Conduct visual and tactile hair assessment (texture, density, porosity, elasticity, damage level)
+   - Examine scalp condition (dryness, oiliness, sensitivity, visible issues)
+   - Review hair history (previous colors, chemical treatments, heat styling habits)
+   - Discuss desired outcome and show inspiration photos
+   - Assess current hair vs. desired result (is it achievable? how many sessions?)
+   - Explain realistic expectations, timeline, and any limitations
+   - Discuss maintenance requirements and at-home care needed
+   - Perform patch test if new color service (24-48 hours before appointment for first-time colors)
+   - Provide price quote and time estimate
+   - Obtain verbal consent and document consultation notes
+
+2. **Service Planning and Preparation** (5-10 minutes)
+   - Develop formulation for color/chemical service (developer strength, processing time, application technique)
+   - Select appropriate products based on hair condition and desired result
+   - Set up workstation with all necessary tools, products, and supplies
+   - Drape client appropriately to protect clothing
+   - Section hair strategically based on service type
+   - Review plan with client one more time before starting
+   - Document formula in client record for future reference
+
+3. **Service Execution** (varies by service: 30 min - 4 hours)
+   - **For Haircuts**: Shampoo, section hair, cut using appropriate technique (blunt, layered, texturized), check balance and symmetry, refine and personalize
+   - **For Color**: Apply color systematically (root to ends or ends to roots depending on technique), monitor processing time, check development, emulsify and rinse thoroughly, condition
+   - **For Chemical Treatments**: Apply product per manufacturer directions, monitor processing carefully, neutralize or rinse as required, condition and protect
+   - **For Styling**: Blow dry, flat iron, curl, or set hair using heat protectants, finish with appropriate products
+   - Maintain client comfort throughout (check water temperature, neck support, offer refreshments)
+   - Ensure proper timing for chemical processes (set timers, check development)
+   - Communicate what you're doing to keep client informed
+
+4. **Finishing and Education** (10-15 minutes)
+   - Style hair to showcase the service result
+   - Show client the finished look from multiple angles (mirror work)
+   - Educate on at-home styling techniques specific to their cut/style
+   - Recommend products for maintaining the look and hair health
+   - Provide care instructions for color/chemical treatments (when to wash, what products to avoid)
+   - Discuss any follow-up appointments needed (root touch-up, trim, toner)
+   - Ask for feedback: "What do you think?" and address any immediate concerns
+   - Thank client and walk them to checkout area
+
+5. **Documentation and Cleanup** (5-10 minutes)
+   - Update client record with services performed, formulas used, timing, results
+   - Note any issues, concerns, or future recommendations
+   - Schedule next appointment if client desires
+   - Clean and disinfect all tools per state board regulations
+   - Sanitize station, sweep/mop area, dispose of used materials properly
+   - Prepare station for next client
+
+4) Deliverables
+
+Hairstyling services produce:
+- **Haircut with Styling**: Precision cut, finished blow-dry or style, styling tips
+- **Color Service**: All-over color, highlights, lowlights, balayage, or color correction with formula documentation
+- **Chemical Treatment**: Perm, relaxer, keratin treatment, or smoothing service with aftercare instructions
+- **Client Service Record**: Documentation of services, formulas, products used, timing, and next appointment recommendations
+- **Aftercare Instructions**: Written or verbal guidance on product use, washing frequency, heat styling, and maintenance
+- **Product Recommendations**: Specific shampoo, conditioner, styling products for client's hair type and service
+- **Maintenance Plan**: Timeline for touch-ups, trims, treatments, and color refreshes
+
+Minimum viable: Service completed safely and competently, client hair looks improved, basic aftercare instructions provided.
+Gold standard: Thorough consultation, customized service exceeding client expectations, detailed aftercare education, products sent home, client rebooking for next appointment, strong relationship built, all documentation complete.
+
+5) Quality checklist
+
+**Safety & Sanitation**:
+- [ ] All tools and implements properly cleaned and disinfected before use
+- [ ] Single-use items (neck strips, gloves) disposed of after each client
+- [ ] Workstation sanitized between clients
+- [ ] Proper ventilation for chemical services
+- [ ] Patch test performed for new color clients (24-48 hours prior)
+- [ ] No services performed on clients with contraindications
+
+**Consultation Quality**:
+- [ ] Thorough hair and scalp assessment completed
+- [ ] Client goals and expectations clearly understood
+- [ ] Realistic expectations set about achievable results
+- [ ] Hair history and health factors considered
+- [ ] Maintenance requirements discussed
+- [ ] Price and time estimates provided upfront
+
+**Technical Execution**:
+- [ ] Appropriate products and techniques selected for hair type and condition
+- [ ] Sectioning and application systematic and thorough
+- [ ] Processing times monitored and appropriate for desired result
+- [ ] Color formulas documented for future reference
+- [ ] Symmetry, balance, and finishing details checked
+- [ ] Final result matches consultation agreement
+
+**Client Experience**:
+- [ ] Client comfortable throughout service (physical comfort, conversation level)
+- [ ] Communication maintained about what you're doing and why
+- [ ] Client concerns addressed promptly and professionally
+- [ ] Education provided on styling and maintenance
+- [ ] Product recommendations given with explanation
+- [ ] Client expresses satisfaction with service
+
+**Professional Practice**:
+- [ ] Service completed within quoted time and price (or client notified of changes)
+- [ ] Client record updated with service details and formulas
+- [ ] Follow-up appointment scheduled if needed
+- [ ] Professional appearance and conduct maintained
+- [ ] Continuing education credits maintained for license renewal
+
+6) Templates (paste-ready)
+
+=== Client Consultation Form Template ===
+**CLIENT CONSULTATION FORM**
+
+**Client Name**: ___________________  **Date**: ___________
+**Phone**: _____________________  **Email**: ___________________
+
+**Service Requested**: [ ] Cut  [ ] Color  [ ] Highlights  [ ] Chemical Treatment  [ ] Style  [ ] Treatment
+
+**Hair History**:
+Last haircut: ________  Last color: ________  Last chemical treatment: ________
+Current hair color: Natural [ ] Colored [ ] - If colored, brand/shade: _______________
+Previous chemical treatments: [ ] Perm  [ ] Relaxer  [ ] Keratin  [ ] None
+
+**Hair Assessment**:
+Texture: [ ] Fine  [ ] Medium  [ ] Coarse
+Density: [ ] Thin  [ ] Medium  [ ] Thick
+Length: [ ] Short  [ ] Medium  [ ] Long
+Condition: [ ] Healthy  [ ] Dry  [ ] Damaged  [ ] Very Damaged
+Scalp: [ ] Normal  [ ] Dry  [ ] Oily  [ ] Sensitive
+
+**Health & Allergy Screening**:
+Any known allergies to hair products? [ ] Yes  [ ] No - If yes, specify: _____________
+Currently pregnant or nursing? [ ] Yes  [ ] No
+Recent medications or health changes? [ ] Yes  [ ] No - If yes, specify: _____________
+Previous adverse reactions to hair services? [ ] Yes  [ ] No
+
+**Desired Outcome**:
+Goal for today: _________________________________________________
+Inspiration photos: [ ] Yes (attached)  [ ] No
+Maintenance preference: [ ] Low  [ ] Medium  [ ] High
+
+**Stylist Notes**:
+_______________________________________________________________
+_______________________________________________________________
+
+**Recommended Service Plan**:
+Service: _______________________________________________________
+Estimated Time: ________  Estimated Price: $________
+Formula/Technique: ______________________________________________
+
+**Client Agreement**:
+I understand the service plan, pricing, timing, and maintenance requirements.
+I have disclosed all relevant health and hair history information.
+
+Client Signature: ____________________  Date: ___________
+
+=== Color Formula Card Template ===
+**COLOR FORMULA CARD**
+
+**Client**: ___________________  **Date**: ___________
+**Stylist**: ___________________
+
+**Service**: [ ] All-Over Color  [ ] Highlights  [ ] Balayage  [ ] Color Correction
+
+**Starting Level**: ____  **Target Level**: ____
+**Starting Tone**: ________  **Target Tone**: ________
+
+**Formula**:
+Product/Brand: _______________________________________________
+Shade(s): ___________________________________________________
+Developer Volume: _____  Ratio: _____
+Processing Time: _____ minutes
+
+**Application Technique**:
+[ ] Roots  [ ] Mid-shaft  [ ] Ends  [ ] Global  [ ] Foil  [ ] Balayage
+
+**Additional Products Used**:
+Toner: _____________________  Processing Time: _____
+Gloss: _____________________  Processing Time: _____
+
+**Results**:
+[ ] Achieved target  [ ] Slightly lighter  [ ] Slightly darker
+Client Satisfaction: [ ] Very Happy  [ ] Happy  [ ] Needs Adjustment
+
+**Notes for Next Visit**:
+_______________________________________________________________
+_______________________________________________________________
+
+**Next Appointment Recommended**: _____ weeks
+
+=== Aftercare Instructions Template (Color Services) ===
+**HAIR COLOR AFTERCARE INSTRUCTIONS**
+
+Thank you for trusting me with your hair! Here's how to maintain your beautiful new color:
+
+**First 24-48 Hours**:
+- Avoid washing hair for at least 24 hours (48 hours is ideal)
+- No hot tools, swimming, or heavy sweating
+- Avoid tying hair tightly (can create dents in fresh color)
+
+**Washing & Conditioning**:
+- Use sulfate-free, color-safe shampoo and conditioner
+- Wash hair in lukewarm or cool water (hot water fades color faster)
+- Limit washing to 2-3 times per week if possible
+- Use a color-depositing conditioner or mask weekly to maintain vibrancy
+
+**Styling**:
+- Always use heat protectant before blow drying or heat styling
+- Keep heat tools on lower settings (under 380°F when possible)
+- Air dry when possible to minimize heat damage
+
+**Sun & Chlorine Protection**:
+- Wear a hat in direct sunlight or use UV protection spray
+- Before swimming, wet hair and apply leave-in conditioner to create a barrier
+- Rinse immediately after pool or ocean exposure
+
+**Products I Recommend for Your Hair**:
+- Shampoo: [Specific product recommendation]
+- Conditioner: [Specific product recommendation]
+- Leave-in treatment: [Specific product recommendation]
+- Styling product: [Specific product recommendation]
+
+**Maintenance Schedule**:
+- Root touch-up every: _____ weeks
+- Gloss/toner refresh every: _____ weeks
+- Deep conditioning treatment every: _____ weeks
+
+**Questions or Concerns?**
+Call or text me at [phone number] if you have any questions or notice any issues.
+
+Your next appointment is scheduled for: [Date & Time]
+
+=== Damage Assessment & Recovery Plan Template ===
+**HAIR DAMAGE ASSESSMENT**
+
+**Client**: ___________________  **Date**: ___________
+
+**Damage Level**: [ ] Minimal  [ ] Moderate  [ ] Severe  [ ] Extreme
+
+**Damage Indicators Observed**:
+[ ] Dryness/brittleness
+[ ] Split ends
+[ ] Breakage
+[ ] Elasticity loss (stretches and breaks easily)
+[ ] Porosity issues (color bleeds, absorbs product too quickly)
+[ ] Chemical damage (over-processed from color/bleach/chemicals)
+[ ] Heat damage (crispy ends, lack of movement)
+[ ] Matting or tangling
+
+**Causes Identified**:
+[ ] Excessive heat styling without protection
+[ ] Over-processing with chemicals (too frequent color/bleach)
+[ ] Harsh products (sulfates, high alcohol content)
+[ ] Environmental damage (sun, chlorine, hard water)
+[ ] Mechanical damage (tight hairstyles, rough brushing)
+[ ] Lack of moisture/protein balance
+
+**Recovery Plan**:
+
+**Immediate Actions** (In-Salon Treatments):
+1. [Treatment 1, e.g., Olaplex #1 & #2 during color service]
+2. [Treatment 2, e.g., Deep conditioning mask for 20 minutes]
+3. [Treatment 3, e.g., Trim 2-3 inches to remove damaged ends]
+
+**At-Home Care** (Weekly Regimen):
+- Shampoo: [Product recommendation - moisture or protein-focused]
+- Conditioner: [Product recommendation]
+- Weekly mask: [Product recommendation - alternate moisture/protein]
+- Leave-in: [Product recommendation]
+
+**Behavioral Changes Needed**:
+1. Reduce heat styling to _____ times per week maximum
+2. Always use heat protectant (minimum 425°F protection)
+3. Limit chemical services to every _____ weeks minimum
+4. Sleep on silk/satin pillowcase
+5. Use wide-tooth comb, start detangling from ends
+
+**Follow-up Treatment Schedule**:
+- Week 1: [Treatment recommendation]
+- Week 4: [Treatment recommendation]
+- Week 8: [Treatment recommendation]
+- Week 12: Reassess damage level and adjust plan
+
+**Goal Timeline**:
+Estimated time to restore hair health: _____ months
+
+**Client Commitment**:
+I understand that hair recovery requires consistent at-home care and limiting damaging practices. I commit to following this plan and scheduling regular treatments.
+
+Client Signature: ____________________  Date: ___________
+
+=== Style Consultation & Recommendation Template ===
+**STYLE CONSULTATION**
+
+**Client**: ___________________  **Date**: ___________
+
+**Face Shape**: [ ] Oval  [ ] Round  [ ] Square  [ ] Heart  [ ] Diamond
+
+**Hair Characteristics**:
+Texture: [ ] Straight  [ ] Wavy  [ ] Curly  [ ] Coily
+Density: [ ] Fine  [ ] Medium  [ ] Thick
+Growth Patterns: [ ] Cowlick  [ ] Whorl  [ ] Widow's peak  [ ] Uneven hairline
+
+**Lifestyle Factors**:
+Styling time available: [ ] 5 min  [ ] 10-15 min  [ ] 20+ min
+Activity level: [ ] Low  [ ] Moderate  [ ] High (athlete/active)
+Profession/dress code: _______________
+
+**Current Concerns**:
+[ ] No volume
+[ ] Too much volume/frizz
+[ ] Difficulty styling
+[ ] Doesn't hold style
+[ ] Grows out awkwardly
+[ ] Other: _______________
+
+**Style Preferences**:
+Length: [ ] Pixie  [ ] Bob  [ ] Shoulder  [ ] Long
+Layers: [ ] No layers  [ ] Subtle  [ ] Heavy layering
+Bangs: [ ] No bangs  [ ] Full  [ ] Side-swept  [ ] Curtain
+Maintenance: [ ] Wash and wear  [ ] Minimal styling  [ ] Blow dry required
+
+**Recommended Styles** (based on face shape, hair type, lifestyle):
+
+**Option 1**: [Style name/description]
+Pros: _______________
+Cons: _______________
+Styling time: _____ min
+Maintenance: Every _____ weeks
+
+**Option 2**: [Style name/description]
+Pros: _______________
+Cons: _______________
+Styling time: _____ min
+Maintenance: Every _____ weeks
+
+**Recommended Styling Products & Techniques**:
+- Step 1: [Product + technique]
+- Step 2: [Product + technique]
+- Step 3: [Product + technique]
+
+**Client Decision**: [ ] Option 1  [ ] Option 2  [ ] Modified version: _______________
+
+7) Examples of excellent outputs
+
+Example 1: Color Consultation for Balayage
+```
+Client: Sarah, 28, dark brown virgin hair (Level 3), requesting natural-looking highlights
+
+Stylist: "Sarah, I love that you want to add dimension while keeping it natural! Let me show you some photos of what I'm thinking. Since your hair is virgin and quite dark, we'll do a balayage technique focusing on face-framing pieces and mid-lengths to ends. This will give you that sun-kissed look without the harsh grow-out line you'd get from traditional highlights.
+
+For your dark base, I'm thinking a soft caramel tone (Level 7-8) rather than going too light, which could look brassy. I'll paint the lightener freehand to create a gradual blend, then tone with a honey-golden shade to neutralize any warmth.
+
+Timeline: Today's session will take about 3 hours. Processing takes 30-45 minutes, and we'll do a toner for 20 minutes at the end. 
+
+Maintenance: The beauty of balayage is low maintenance! Your roots won't need touch-ups. I'd recommend coming back in 3-4 months for a refresh where we'll add a few more highlights and tone. Between appointments, use the purple shampoo I'll give you once a week to keep the tones fresh.
+
+Price: $225 for today, includes cut and style.
+
+Aftercare: You'll need to switch to color-safe products - I'll send you home with a sample of the sulfate-free shampoo and conditioner I recommend. Expect some fading over the first 4-6 weeks, which is normal. The tone will settle into a really natural look.
+
+Does this sound like what you're hoping for? Any questions before we get started?"
+
+[After client agrees]: "Perfect! Let me mix up the formulas and we'll do a strand test to make sure we get the right lift. I'll document everything so we can recreate this next time."
+
+[Formula Card Documentation]:
+Balayage Technique
+Lightener: Wella Blondor + 30 vol (1:2 ratio)
+Processing: 35 minutes, checked every 10 min
+Toner: Wella Color Touch 8/03 + 9/16 (1:1) + 6 vol
+Processing: 20 minutes
+Result: Achieved Level 7-8, warm caramel with golden undertones
+Client: Very happy, books next appointment for 14 weeks out
+```
+
+Example 2: Damage Recovery Consultation
+```
+Client: Michael, 45, experiencing significant thinning and breakage
+
+Stylist: "Michael, let me take a close look at what's going on. [Examines hair and scalp] I'm seeing a few things here. Your hair has some breakage around the crown area, and the ends are quite dry and splitting. The good news is this looks like mechanical damage and dryness, not a medical hair loss issue, but I do want to make sure we're addressing this properly.
+
+When you towel-dry your hair, are you rubbing vigorously? I'm asking because I see a lot of breakage at the lengths where towel friction would occur. Also, how often are you using that gel product you mentioned?
+
+[Client explains rough towel-drying and daily gel use]
+
+Here's what I'm seeing and my recommendations:
+
+**The Issue**:
+1. Rough towel-drying is causing mechanical breakage
+2. Gel with high alcohol content is drying out your hair
+3. Lack of conditioning/moisture in your routine
+
+**What We'll Do Today**:
+1. I'll trim off about an inch to remove the most damaged ends
+2. We'll do a deep conditioning treatment that adds protein and moisture
+3. I'll show you proper towel-drying technique
+
+**Your At-Home Plan**:
+1. Switch to microfiber towel or old t-shirt for drying - pat, don't rub
+2. Use this sulfate-free shampoo and actually conditioner every wash (yes, men need conditioner!)
+3. Replace your alcohol-heavy gel with this water-based styling cream - works the same but won't dry out your hair
+4. Once a week, use this leave-in treatment overnight
+
+**Timeline**: If you follow this plan consistently, you should see significant improvement in 6-8 weeks. Come back in 6 weeks for another trim and treatment, and we'll assess progress.
+
+**However**: If the thinning continues or gets worse despite following this plan, you should see a dermatologist to rule out any underlying medical issues like thyroid problems or male pattern baldness. I'm not seeing signs of that now, but it's worth monitoring.
+
+Does this make sense? Any questions about the products or techniques?"
+
+[After service]: "Here are your products and a reminder card with the routine we discussed. Text me if you have any questions. See you in 6 weeks!"
+```
+
+Example 3: Style Recommendation Based on Face Shape & Lifestyle
+```
+Client: Jessica, 32, round face, fine hair, busy professional
+
+Stylist: "Jessica, let's talk about what will work best for your hair and lifestyle. You mentioned you have about 10 minutes to style your hair in the morning and you want something that looks polished for work. Let me share two options:
+
+**Option 1: Long Bob (Lob) with Face-Framing Layers**
+This would hit right at your collarbone. The length is perfect for your round face because it creates a vertical line that elongates. I'd add some subtle layers starting at your cheekbones to frame your face and create movement.
+
+Pros:
+- Very flattering for round faces
+- Can be air-dried with texture product for casual days
+- Can be straightened quickly with flat iron for polished look
+- Versatile - can wear up in low ponytail or bun
+
+Cons:
+- Needs trim every 6-8 weeks to maintain shape
+- May require blow-drying for smoothest look
+
+Styling: Apply volumizing mousse to damp hair, blow dry with round brush pulling forward at the cheekbones. Takes about 10 minutes. Or air dry for 8/10 effort, tousled look.
+
+**Option 2: Collarbone Length with Curtain Bangs**
+Similar length but I'd add curtain bangs - parted in the middle, swept to sides. These are huge right now and incredibly flattering for round faces because they create angles.
+
+Pros:
+- Very on-trend
+- Bangs create the illusion of a longer, more oval face shape
+- Low maintenance once you get the styling down
+- Softens your features beautifully
+
+Cons:
+- Bangs need trimming every 3-4 weeks
+- Requires learning to style bangs (I'll teach you)
+- Awkward grow-out if you don't like them
+
+Styling: Same as Option 1, but you'll need to spend 2 extra minutes drying bangs with a round brush, pulling outward at an angle.
+
+**My Recommendation**: I actually think Option 2 with the curtain bangs would be stunning on you. Your hair has enough body to support bangs, and the face-framing effect would be really flattering. However, if you're not ready to commit to bangs, Option 1 is a fantastic safe choice.
+
+What are you thinking? Want to go for it with the bangs, or play it safe?"
+
+[Client chooses Option 2]
+
+"Excellent choice! I'm excited to do this. Just so you know, bangs take about 3-4 weeks to get used to styling. I'll show you exactly how to do it, and you can text me photos if you're struggling. Deal? Let's get started!"
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **Virgin Hair**: Hair that has never been chemically treated (colored, permed, relaxed)
+- **Porosity**: Hair's ability to absorb and retain moisture (low, medium, high)
+- **Elasticity**: Hair's ability to stretch and return to normal (indicates health)
+- **Lift**: How much natural pigment is removed during lightening process
+- **Toner**: Semi-permanent color used to neutralize unwanted tones after lightening
+- **Balayage**: Freehand painting technique for natural-looking highlights
+- **Foilyage**: Combination of foil highlights and balayage technique
+- **Ombré**: Color graduation from dark at roots to light at ends
+- **Gloss/Glaze**: Shine-enhancing treatment that can also adjust tone
+- **Level System**: Hair color darkness scale from 1 (black) to 10 (lightest blonde)
+- **Developer/Peroxide**: Activates color or lightener (10, 20, 30, 40 volume strengths)
+- **Patch Test**: Allergy test performed 24-48 hours before color service
+- **Base**: Natural hair color at the root area
+- **Undertone**: Underlying pigment in hair (warm, cool, neutral)
+- **Texture**: Hair strand thickness (fine, medium, coarse)
+- **Density**: Amount of hair on head (thin, medium, thick)
+
+**Color Theory**:
+- **Primary Colors**: Red, Yellow, Blue (cannot be created by mixing)
+- **Secondary Colors**: Orange, Green, Violet (created by mixing primaries)
+- **Complementary Colors**: Colors opposite on color wheel (cancel each other out)
+- **Warm Tones**: Red, orange, yellow, gold
+- **Cool Tones**: Blue, green, violet, ash
+- **Neutral**: Balanced warm and cool (natural, beige)
+
+**Chemical Processes**:
+- **Oxidative Color**: Permanent color using peroxide developer
+- **Demi-Permanent**: No ammonia, deposit-only color lasting 24-28 washes
+- **Semi-Permanent**: Temporary color coating hair shaft, 6-12 washes
+- **Bleach/Lightener**: Removes natural or artificial pigment from hair
+- **Perm (Permanent Wave)**: Chemical process creating curl pattern
+- **Relaxer**: Chemical straightening of curly/coily hair
+- **Keratin Treatment**: Semi-permanent smoothing treatment reducing frizz
+
+**Tools & Equipment**:
+- **Shears**: Professional haircutting scissors (wet cutting, dry cutting, texturizing)
+- **Clippers**: Electric hair cutting tool for short cuts and fades
+- **Thinning Shears**: Scissors with teeth for removing bulk
+- **Foils**: Aluminum sheets for highlighting
+- **Tail Comb**: Sectioning and parting comb with pointed end
+- **Paddle Brush**: Detangling and blow-drying
+- **Round Brush**: Volumizing and smoothing during blow-drying
+- **Diffuser**: Blow dryer attachment for curly hair
+
+**Standards & Regulations**:
+- **State Cosmetology Board Regulations**: Licensing requirements, sanitation standards, scope of practice (varies by state)
+- **Occupational Safety and Health Administration (OSHA)**: Workplace safety standards including bloodborne pathogens, chemical exposure
+- **Environmental Protection Agency (EPA)**: Disinfectant registration and proper use
+- **CDC Infection Control Guidelines**: Hand hygiene, disinfection protocols, personal protective equipment
+- **Professional Beauty Association (PBA)**: Industry advocacy, education standards, business best practices
+- **State Board Hours Required**: Typically 1000-1600 hours of cosmetology school (varies by state)
+
+**Continuing Education Topics**:
+- Advanced color techniques (balayage certification, color correction)
+- Chemical straightening and smoothing systems
+- Extensions (tape-in, micro-link, fusion, sew-in methods)
+- Men's grooming and barbering techniques
+- Textured hair cutting and styling (curly/coily hair specialists)
+- Business management for salon owners
+- Product knowledge training from manufacturers
+
+**Health & Safety Standards**:
+- **Barbicide Immersion**: EPA-registered hospital-grade disinfectant for tools (10-minute immersion minimum)
+- **Single-Use Items**: Neck strips, gloves, applicator brushes (dispose after each client)
+- **Hand Washing**: Before and after each client, after using restroom, after handling chemicals
+- **Ventilation**: Proper airflow to reduce chemical fume exposure
+- **PPE (Personal Protective Equipment)**: Gloves for chemical services, masks if needed
+- **Patch Testing**: Mandatory for first-time color clients or after 6-month gap
+
+**Professional Brands** (commonly used in salons):
+- **Color Lines**: Wella, Redken, Schwarzkopf, Pravana, Pulp Riot, Goldwell, L'Oréal Professional
+- **Care Products**: Olaplex, K18, Redken, Pureology, Moroccan Oil, Oribe, Kerastase
+- **Tools**: Sam Villa, Shark Fin, Babyliss Pro, Hot Tools, GHD
+
+Change log
+- 2024-12: Initial comprehensive playbook created based on state board cosmetology regulations, Professional Beauty Association standards, and CDC infection control guidelines
+- Key emphasis: Client consultation, realistic expectations, damage prevention, sanitation protocols, color theory, aftercare education
+- Reflects current licensing standards, modern techniques (balayage, color melting), and professional best practices for hair health and client safety

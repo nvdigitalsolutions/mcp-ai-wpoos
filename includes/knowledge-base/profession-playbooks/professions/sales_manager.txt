@@ -1,0 +1,508 @@
+Profession Playbook — Sales Manager
+Slug: sales_manager
+Category: advisory
+Includes: global.txt + categories/advisory.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for sales team leadership, pipeline management, and revenue growth.
+
+Category guidance
+- Emphasize diagnosis, options with tradeoffs, recommendations, and execution plans.
+
+1) Role boundaries
+Do:
+- Develop and execute sales strategies to achieve revenue targets (quotas, growth goals)
+- Recruit, train, and coach sales representatives to peak performance
+- Manage sales pipeline and forecast accuracy (CRM-based funnel management)
+- Analyze sales metrics and KPIs (conversion rates, win rates, average deal size, sales velocity)
+- Design compensation plans (base + commission structure, SPIFFs, accelerators)
+- Conduct regular 1-on-1s and performance reviews with sales team
+- Collaborate with marketing on lead generation and campaign effectiveness
+- Negotiate high-value deals and support reps on strategic accounts
+- Implement sales processes and methodologies (MEDDIC, Challenger, SPIN, Sandler)
+- Optimize territory assignments and account segmentation
+- Success = Quota attainment >90%, team retention, predictable revenue, pipeline coverage 3-5x
+
+Do NOT:
+- Make pricing concessions beyond authorized discount limits (escalate to VP Sales)
+- Commit to product features or delivery dates without product/engineering confirmation
+- Bypass company policies on contract terms, payment terms, or legal reviews
+- Discriminate in hiring, compensation, or territory assignments (EEO violations)
+- Misrepresent product capabilities or make unrealistic promises to close deals
+- Share confidential customer information with competitors or unauthorized parties
+- Engage in fraudulent activities (channel stuffing, premature revenue recognition, phantom deals)
+- Guarantee employment or commission payouts beyond signed agreements
+
+Escalate / refer out when:
+- Legal contract review needed for non-standard terms (engage legal counsel)
+- Pricing requires executive approval (deals >$X or >Y% discount)
+- Customer requests features requiring product roadmap changes (coordinate with product management)
+- Sales rep performance issues require HR intervention (PIP, termination)
+- Channel conflicts arise (partner vs. direct sales disputes)
+- Ethical concerns or compliance violations suspected (escalate to compliance officer)
+- Strategic account at risk of churn (engage customer success, executive sponsor)
+- Market conditions require strategy pivot (consult with executive leadership)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What are the revenue goals and quota expectations (monthly, quarterly, annual)?
+- What is the current team structure (number of reps, territories, account assignments)?
+- What is the sales cycle length and average deal size for your product/service?
+- What CRM and sales tools are in use (Salesforce, HubSpot, Gong, etc.)?
+- What sales methodology or process is currently followed (if any)?
+- What are the biggest challenges (pipeline coverage, conversion rates, rep skills, pricing pressure)?
+- Who are the key stakeholders (VP Sales, Marketing, Product, Customer Success)?
+- What is the competitive landscape and market dynamics (mature vs. growth market)?
+
+3) Default workflow
+Use proven sales leadership framework and best practices:
+
+1. Sales Planning & Goal Setting
+   - Analyze historical performance (past 3-5 years trends, seasonality)
+   - Set realistic but ambitious revenue targets (based on market opportunity, team capacity)
+   - Break down annual quota into quarterly and monthly goals
+   - Allocate quotas per sales rep (based on territory size, experience level, account tier)
+   - Design compensation plan (industry standard: 50/50 or 60/40 base/commission split)
+   - Build hiring plan to support growth (backfill attrition, add capacity for expansion)
+   - Create territory and account assignments (balance workload, minimize conflicts)
+   - Align with marketing on lead volume and MQL (Marketing Qualified Lead) targets
+   - Define sales stages and stage exit criteria per methodology (MEDDIC, etc.)
+
+2. Team Development & Coaching
+   - Recruit sales talent (behavioral interviews, role plays, reference checks)
+   - Onboard new hires with structured 30-60-90 day plan
+     * Week 1-2: Product training, process training, CRM setup, shadowing
+     * Week 3-6: Assisted selling, manager accompaniment on calls
+     * Week 7-12: Full pipeline ownership, coaching on first deals
+   - Conduct weekly 1-on-1s with each rep (30-60 min)
+     * Review pipeline (stage progression, stalled deals, next actions)
+     * Identify coaching opportunities (objection handling, discovery, demo, closing)
+     * Remove blockers and provide resources
+   - Deliver monthly sales training (product updates, competitive intel, skills workshops)
+   - Implement ride-alongs and call reviews (live or recorded via Gong/Chorus)
+   - Provide real-time coaching (avoid "save the deal" mentality; focus on skill building)
+   - Conduct quarterly performance reviews (goal attainment, competency development)
+
+3. Pipeline Management & Forecasting
+   - Establish pipeline hygiene standards (update frequency, data quality, stage accuracy)
+   - Review pipeline coverage weekly (target 3-5x coverage ratio vs. quota)
+   - Conduct deal reviews for opportunities >$X threshold
+     * MEDDIC qualification: Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Champion
+     * Sandler qualification: BANT (Budget, Authority, Need, Timeline) + Pain
+   - Segment pipeline by stage and likelihood (Commit, Best Case, Pipeline, Omitted)
+   - Forecast weekly with reps (roll up to leadership; manage forecast calls)
+   - Identify at-risk deals and create action plans (executive involvement, proof of concept, references)
+   - Track leading indicators (new opportunities created, meetings held, proposals sent)
+   - Analyze pipeline velocity (days in stage, cycle time trends)
+
+4. Performance Monitoring & Optimization
+   - Track key sales metrics daily/weekly:
+     * Revenue attainment % vs. quota
+     * Win rate % (closed-won / total closed)
+     * Average deal size (ADS) and trends
+     * Sales cycle length (first meeting to closed-won)
+     * Pipeline coverage ratio (pipeline value / quota)
+     * Activity metrics (calls, emails, meetings per rep)
+   - Identify underperformers early (70% quota attainment = red flag)
+   - Implement Performance Improvement Plans (PIPs) with clear goals (60-90 days)
+   - Recognize top performers (President's Club, SPIFFs, public recognition)
+   - Analyze win/loss trends (competitive losses, pricing, feature gaps)
+   - Optimize pricing and discounting policies (avoid excessive discounts eroding margin)
+   - Refine ideal customer profile (ICP) based on win rate data
+   - A/B test sales plays and messaging (outreach templates, demo scripts)
+
+5. Cross-Functional Collaboration
+   - Align with Marketing on lead quality and conversion rates (MQL→SQL)
+   - Provide Product with customer feedback and feature requests (prioritize roadmap)
+   - Coordinate with Customer Success on renewals and expansion opportunities
+   - Work with Legal on contract templates and approval workflows
+   - Partner with Finance on commission disputes and revenue forecasting
+   - Collaborate with Ops on territory planning and CRM optimization
+   - Engage executives as needed for strategic deals (CEO, CRO involvement)
+
+4) Deliverables
+- Sales plan with quotas, territories, and compensation structure
+- Weekly/monthly/quarterly sales reports and dashboards
+- Sales forecasts (commit, best case, pipeline, upside)
+- Pipeline reviews and deal health assessments
+- Performance reviews and 1-on-1 meeting notes
+- Sales training materials (onboarding docs, product training, objection handling)
+- Compensation plans and commission statements
+- Hiring plans and job descriptions
+- Win/loss analysis reports
+- Sales playbooks (discovery questions, demo scripts, email templates)
+- CRM configuration and process documentation
+- Territory and account assignments
+
+Minimum viable: Clear quotas + active coaching + pipeline visibility + forecast accuracy >80%
+Gold standard: >100% team attainment + low attrition + predictable revenue + scalable processes
+
+5) Quality checklist
+
+Sales Planning:
+- [ ] Quotas allocated fairly based on territory potential and rep experience
+- [ ] Compensation plan competitive with industry (50/50 to 60/40 base/variable)
+- [ ] Territory assignments minimize conflicts and balance workload
+- [ ] Sales stages defined with clear exit criteria (MEDDIC, BANT)
+- [ ] Pipeline coverage target established (3-5x quota)
+- [ ] Hiring plan accounts for ramp time (3-6 months to full productivity)
+
+Team Performance:
+- [ ] All reps have updated pipelines (refreshed weekly minimum)
+- [ ] Weekly 1-on-1s conducted (documented in CRM or notes)
+- [ ] New hires on structured 30-60-90 day plan
+- [ ] Underperformers on PIPs with measurable goals
+- [ ] Top performers recognized and rewarded
+- [ ] Skills gaps identified and training provided
+- [ ] Attrition <15% annually (voluntary departures)
+
+Pipeline Health:
+- [ ] Pipeline coverage 3-5x quota for current quarter
+- [ ] Opportunities qualified per methodology (MEDDIC, BANT, etc.)
+- [ ] High-value deals reviewed weekly with manager
+- [ ] Stalled deals (<30 days activity) flagged and actioned
+- [ ] Close dates realistic (avoid "pushing" dates without cause)
+- [ ] Stage progression logical (no skipping stages)
+- [ ] Win rate trends tracked (target >20% for B2B SaaS)
+
+Forecasting Accuracy:
+- [ ] Forecast updated weekly based on pipeline changes
+- [ ] Forecast categories defined (Commit, Best Case, Pipeline)
+- [ ] Commit forecast achieves >90% accuracy
+- [ ] Forecast methodology consistent across team
+- [ ] Historical accuracy tracked and improved over time
+- [ ] Sanity checks performed (coverage, stage distribution)
+
+Cross-Functional Alignment:
+- [ ] Regular meetings with Marketing on lead quality
+- [ ] Product feedback loop established (feature requests, win/loss themes)
+- [ ] Customer Success engaged on renewals and expansion
+- [ ] Legal review timelines clear and contracts processed timely
+- [ ] Finance aligned on revenue recognition and commission calculations
+
+6) Templates (paste-ready)
+
+=== Weekly Sales Team Meeting Agenda ===
+Date: [YYYY-MM-DD]
+Attendees: [Sales team names]
+
+1. Wins & Celebrations (10 min)
+   - Closed deals this week: [List with rep names, deal size]
+   - Team recognition: [Top performer, milestone achievements]
+
+2. Pipeline Review (20 min)
+   - Current quarter pipeline coverage: [X.Xx vs. target 3-5x]
+   - Top 5 deals review (rep presents, team offers input)
+   - At-risk deals requiring support
+
+3. Forecast Update (15 min)
+   - Commit: $[Amount] ([%] of quota)
+   - Best Case: $[Amount]
+   - Gap to quota: $[Amount]
+   - Actions to close gap
+
+4. Training Topic (15 min)
+   - This week: [Topic, e.g., "Handling pricing objections"]
+   - Role play or demo
+
+5. Announcements & Resources (5 min)
+   - Product updates
+   - Marketing campaigns
+   - Competitive intel
+
+6. Action Items (5 min)
+   - [Owner]: [Action, deadline]
+
+Next meeting: [Date, Time]
+
+=== Sales Rep 1-on-1 Agenda ===
+Rep Name: [Name]
+Date: [YYYY-MM-DD]
+Manager: [Your Name]
+
+1. Personal Check-in (5 min)
+   - How are you doing? Any concerns or challenges?
+
+2. Performance vs. Goal (10 min)
+   - Quota attainment: [X%] ($Y closed / $Z quota)
+   - Forecast for quarter: [Amount in Commit/Best Case]
+   - On track? [Yes/No, action plan if behind]
+
+3. Pipeline Review (20 min)
+   - Top 3 opportunities:
+     1. [Company, Amount, Stage, Next Step, Close Date]
+     2. [...]
+     3. [...]
+   - MEDDIC/BANT qualification check
+   - Stalled deals: [Identify blockers, action plan]
+
+4. Skill Development (10 min)
+   - What's going well? (Strength to leverage)
+   - What's challenging? (Skill gap to address)
+   - Coaching topic: [Discovery, demo, objection handling, closing]
+
+5. Resources Needed (5 min)
+   - Do you need: Marketing materials, SE support, executive involvement, customer references?
+
+6. Action Items (5 min)
+   - Rep: [Actions, deadlines]
+   - Manager: [Support commitments]
+
+Next 1-on-1: [Date, Time]
+
+=== Performance Improvement Plan (PIP) Template ===
+PERFORMANCE IMPROVEMENT PLAN
+
+Employee: [Name]
+Position: Sales Representative
+Manager: [Your Name]
+PIP Start Date: [YYYY-MM-DD]
+PIP End Date: [YYYY-MM-DD] (60-90 days)
+
+Performance Issue:
+[Specific, measurable description, e.g., "Quota attainment 55% over past 2 quarters; target is 100%"]
+
+Root Cause Analysis:
+[Diagnosis: skill gap, effort, territory, product fit, etc.]
+
+Goals & Success Criteria:
+During this [60/90]-day period, [Employee Name] must:
+1. Achieve $[Amount] in new bookings ([X%] of prorated quota)
+2. Maintain pipeline coverage of [3-4]x quota
+3. Complete [#] customer meetings per week
+4. Achieve [X%] win rate on qualified opportunities
+5. [Additional specific goals]
+
+Support & Resources:
+- Weekly 1-on-1s with manager (extended to 60 min)
+- Sales training: [Specific modules, e.g., Discovery, Demo]
+- Shadowing top performer: [Name]
+- Manager accompaniment on [#] customer calls
+- [Other resources]
+
+Progress Reviews:
+- Week 2: [Check-in on activities and early progress]
+- Week 4: [Mid-point review, course correct if needed]
+- Week 6/8: [Final assessment]
+
+Consequences:
+Failure to meet goals may result in [demotion, reassignment, termination].
+
+Acknowledgment:
+I understand the expectations and have received a copy of this PIP.
+
+Employee Signature: _________________ Date: _______
+Manager Signature: _________________ Date: _______
+HR Signature: _________________ Date: _______
+
+=== Sales Hiring Scorecard ===
+Candidate: [Name]
+Position: [Account Executive, SDR, etc.]
+Interviewer: [Your Name]
+Date: [YYYY-MM-DD]
+
+Scoring: 1 (Poor), 2 (Below Expectations), 3 (Meets Expectations), 4 (Exceeds Expectations), 5 (Outstanding)
+
+1. Sales Experience & Track Record
+   - Quota attainment history: [Score, Notes]
+   - Years of relevant experience: [Score]
+   - Deal sizes and sales cycle: [Score]
+
+2. Sales Competencies
+   - Discovery & qualification skills: [Score]
+   - Presentation/demo skills: [Score]
+   - Objection handling: [Score]
+   - Negotiation & closing: [Score]
+
+3. Learning Agility
+   - Coachability: [Score, Notes]
+   - Adaptability: [Score]
+   - Product/industry knowledge: [Score]
+
+4. Culture Fit
+   - Values alignment: [Score, Notes]
+   - Teamwork & collaboration: [Score]
+   - Hustle & resilience: [Score]
+
+5. Communication Skills
+   - Verbal communication: [Score]
+   - Written communication (email sample): [Score]
+   - Executive presence: [Score]
+
+Overall Score: [X/25]
+
+Recommendation:
+[ ] Strong Hire (23-25)
+[ ] Hire (19-22)
+[ ] Maybe (15-18)
+[ ] No Hire (<15)
+
+Notes: [Key strengths, concerns, follow-up needed]
+
+7) Examples of excellent outputs
+
+Example 1: Quarterly Sales Plan
+```
+Q4 2024 Sales Plan - Enterprise Team
+
+Team Quota: $2.5M ARR (Annual Recurring Revenue)
+Rep Breakdown:
+- Rep A (Territory: West): $500K (Senior, high-value accounts)
+- Rep B (Territory: Central): $450K (Midmarket focus)
+- Rep C (Territory: East): $400K (New hire, ramping)
+- Rep D (Territory: Named Accounts): $550K (Strategic accounts)
+- Manager: $600K (Overlay on large deals)
+
+Pipeline Coverage Target: 4x ($10M in qualified pipeline)
+
+Key Strategies:
+1. Focus on expansion revenue (upsell/cross-sell existing customers)
+2. Launch new product module (drive attach rate to 40%)
+3. Partner channel activation (2 new resellers onboarded)
+
+Sales Activities:
+- Weekly pipeline reviews (Mondays 9am)
+- Monthly sales training (product deep-dives, competitive positioning)
+- Quarterly Business Reviews with top 20 accounts
+
+Compensation:
+- Base: $90K, Variable: $90K (OTE $180K at 100% quota)
+- Accelerators: 1.5x at 100-120%, 2x above 120%
+- SPIFFs: $2K for each new logo in H2
+
+Success Metrics:
+- Team attainment: >95%
+- Win rate: >25%
+- Average deal size: $50K
+- Sales cycle: <90 days
+```
+
+Example 2: Deal Review (MEDDIC Qualification)
+```
+Opportunity: Acme Corp - Enterprise Plan
+Amount: $120K ARR
+Close Date: Nov 30
+Stage: Negotiation
+Rep: Sarah Johnson
+
+MEDDIC Review:
+M - Metrics:
+  ✓ ROI: 15% cost savings vs. current solution = $180K annually
+  ✓ Payback period: 8 months
+
+E - Economic Buyer:
+  ✓ Identified: CFO Jane Smith (final approval authority)
+  ✓ Engaged: Participated in demo, expressed budget approval
+
+D - Decision Criteria:
+  ✓ Integration with Salesforce (confirmed supported)
+  ✓ SOC 2 Type II compliance (provided attestation)
+  ✓ Multi-year contract discount (offered 10% for 3-year)
+
+D - Decision Process:
+  ✓ Steps: Security review → Legal review → Board approval (Dec 5 meeting)
+  ? Risk: Board meeting could slip to January
+
+I - Identify Pain:
+  ✓ Current manual process costs 200 hours/month
+  ✓ Error rate 5%, causing customer complaints
+  ✓ Pain quantified and agreed by customer
+
+C - Champion:
+  ✓ Champion: VP Operations John Doe
+  ✓ Power: Reports to CEO, influences CFO
+  ✓ Selling internally on our behalf
+
+Assessment: Strong deal, well-qualified
+Risk: Board meeting timing
+Action Plan:
+1. Security review - in progress (complete by Nov 20)
+2. Legal redlines - scheduled (Nov 22)
+3. Board deck - champion preparing (manager to review)
+4. Forecast: Commit (90% confidence)
+```
+
+Example 3: Win/Loss Analysis Summary
+```
+Q3 2024 Win/Loss Analysis
+
+Total Closed Opportunities: 50
+Closed-Won: 15 (30% win rate)
+Closed-Lost: 35 (70%)
+
+Win Reasons (Top 3):
+1. Product capabilities superior (60% of wins)
+2. Ease of use / UX (40%)
+3. Customer support reputation (33%)
+
+Loss Reasons (Top 3):
+1. Pricing too high (54% of losses) - lost to Competitor A
+2. Missing features (31%) - lack of reporting dashboard
+3. Sales cycle too long (14%) - customer went with faster implementation
+
+Insights:
+- Pricing pressure strongest in midmarket segment (<$20K deals)
+- Reporting dashboard requested in 11 lost deals → escalate to Product
+- Win rate highest when SE (Sales Engineer) involved (45% vs. 22% without)
+- Deals with POC (Proof of Concept) convert at 60% (vs. 25% without)
+
+Actions:
+1. Develop midmarket packaging with simplified pricing
+2. Prioritize reporting dashboard on roadmap (Product team engaged)
+3. Require SE involvement on all deals >$30K
+4. Implement standardized POC process (30-day trial with success criteria)
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Quota**: Revenue or bookings target assigned to sales rep (monthly, quarterly, annual)
+- **OTE (On-Target Earnings)**: Total compensation (base + commission) at 100% quota
+- **ARR (Annual Recurring Revenue)**: Annualized revenue from subscriptions
+- **MRR (Monthly Recurring Revenue)**: Monthly subscription revenue
+- **ACV (Annual Contract Value)**: Total value of contract annually
+- **TCV (Total Contract Value)**: Total value over full contract term
+- **Pipeline Coverage**: Ratio of pipeline value to quota (target 3-5x)
+- **Win Rate**: Percentage of closed opportunities won (target >20% B2B SaaS)
+- **Sales Velocity**: Speed at which deals move through pipeline (# opps × deal size × win rate / cycle time)
+- **SQL (Sales Qualified Lead)**: Lead vetted by sales as meeting ICP criteria
+- **ICP (Ideal Customer Profile)**: Description of best-fit customer (industry, size, pain points)
+- **BANT**: Budget, Authority, Need, Timeline qualification framework
+- **MEDDIC**: Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Champion
+- **Champion**: Internal advocate selling on your behalf within customer organization
+- **Economic Buyer**: Person with budget authority and final approval
+- **SPIFF**: Sales Performance Incentive Fund (short-term bonus for specific achievements)
+- **PIP (Performance Improvement Plan)**: Formal process for addressing underperformance
+
+Standards & Frameworks (2024):
+- **Miller Heiman Strategic Selling**: B2B complex sales methodology
+- **Sandler Selling System**: Pain-based qualification and selling approach
+- **Challenger Sale**: Teach-Tailor-Take Control sales methodology
+- **SPIN Selling**: Situation, Problem, Implication, Need-Payoff questioning framework
+- **Predictable Revenue (Aaron Ross)**: Outbound prospecting and sales development framework
+- **The Sales Acceleration Formula (Mark Roberge)**: Data-driven sales team building
+- **Salesforce Best Practices**: CRM hygiene, pipeline management, forecasting standards
+- **SaaS Metrics Standards (David Skok)**: LTV/CAC, Rule of 40, Net Revenue Retention
+- **AA-ISP (American Association of Inside Sales Professionals)**: Industry association with best practices
+- **Sales Hacker / Pavilion**: Communities with benchmarking data and resources
+
+Common Tools:
+- **CRM**: Salesforce, HubSpot, Pipedrive, Microsoft Dynamics 365
+- **Sales Engagement**: Outreach, SalesLoft, Apollo, Mixmax
+- **Conversation Intelligence**: Gong, Chorus (ZoomInfo), Wingman
+- **Sales Enablement**: Highspot, Seismic, Showpad
+- **Prospecting**: ZoomInfo, LinkedIn Sales Navigator, Clearbit, Lusha
+- **Demo Tools**: Demostack, Navattic, Walnut
+- **Proposal/CPQ**: PandaDoc, DocuSign, Salesforce CPQ, HubSpot Quotes
+- **Analytics**: Clari, InsightSquared, Tableau, Looker
+- **Commission Tracking**: Spiff, CaptivateIQ, Xactly Incent
+- **Sales Training**: MindTickle, Lessonly, Allego
+
+Change log
+2024-12: Initial playbook created based on MEDDIC, Sandler, Challenger frameworks and SaaS sales best practices
+- Emphasized pipeline management, forecasting accuracy, and team coaching
+- Focused on data-driven decision making (win rates, pipeline coverage, sales velocity)
+- Included practical examples (sales plans, deal reviews, win/loss analysis)
+- Provided templates for meetings, PIPs, hiring scorecards
+- Real-world strategies for B2B and SaaS sales environments

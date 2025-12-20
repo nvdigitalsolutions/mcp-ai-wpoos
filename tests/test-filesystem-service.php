@@ -107,7 +107,7 @@ class Test_WP_MCP_AI_Filesystem_Service extends WP_UnitTestCase {
 	 * Test exists method.
 	 */
 	public function test_exists() {
-		$existing_file     = $this->temp_dir . '/existing.txt';
+		$existing_file    = $this->temp_dir . '/existing.txt';
 		$nonexistent_file = $this->temp_dir . '/nonexistent.txt';
 
 		$this->filesystem_service->write_file( $existing_file, 'content' );
@@ -140,8 +140,8 @@ class Test_WP_MCP_AI_Filesystem_Service extends WP_UnitTestCase {
 	 * Test copy files.
 	 */
 	public function test_copy() {
-		$source = $this->temp_dir . '/source.txt';
-		$target = $this->temp_dir . '/target.txt';
+		$source  = $this->temp_dir . '/source.txt';
+		$target  = $this->temp_dir . '/target.txt';
 		$content = 'Source content';
 
 		$this->filesystem_service->write_file( $source, $content );

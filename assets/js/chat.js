@@ -51,7 +51,16 @@
 
     // SSE service compatibility layer - use external service if available
     const sseService = window.wpMcpAiSSE || null;
+
+    // HTTP client service compatibility layer - use external service if available
+    const httpClientService = window.wpMcpAiHttpClient || null;
+
+    // Attachments service compatibility layer - use external service if available
+    const attachmentsService = window.wpMcpAiChatAttachments || null;
     let objectUrlRegistry = [];
+
+    // Transcription service compatibility layer - use external service if available
+    const transcriptionService = window.wpMcpAiChatTranscription || null;
 
     // Audio-related constants - use from service if available
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
@@ -82,11 +91,11 @@
     const SAVE_SUCCESS_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
     // Transcription constants
-    const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
-    const TRANSCRIBE_RECORDING_CLASS = audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
+    const TRANSCRIBE_TOOL_NAME = transcriptionService && transcriptionService.TRANSCRIBE_TOOL_NAME || 'transcribe_openai_audio';
+    const TRANSCRIBE_RECORDING_CLASS = transcriptionService && transcriptionService.TRANSCRIBE_RECORDING_CLASS || audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
     const VOICE_CHAT_RECORDING_CLASS = audioService && audioService.VOICE_CHAT_RECORDING_CLASS || 'wp-mcp-ai-chat__voice-chat--recording';
     const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
-    const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
+    const MAX_TRANSCRIBE_BYTES = transcriptionService && transcriptionService.MAX_TRANSCRIBE_BYTES || audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
@@ -602,6 +611,189 @@
         }
         
         return fallback;
+    }
+
+    /**
+     * Helper to create retry notification callback for HTTP client service.
+     * @param {Object} state - Chat state object with container for status messages.
+     * @return {Function} Retry callback function.
+     */
+    function createRetryCallback(state) {
+        return function(retryInfo) {
+            if (state && state.container) {
+                const message = getString('retrying', 'Connection issue, retrying...') + 
+                               ' (' + (retryInfo.retryCount + 1) + '/' + retryInfo.maxRetries + ')';
+                setStatus(state.container, message);
+            }
+        };
+    }
+
+    /**
+     * Perform a POST request with JSON body using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to POST to.
+     * @param {Object} data - Data to send as JSON.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function postJson(url, data, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.postJson) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.postJson(url, data, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a file upload using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to POST to.
+     * @param {File|Blob} file - File or Blob to upload.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function uploadFile(url, file, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.uploadFile) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.uploadFile(url, file, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: file
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a GET request using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to GET.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function httpGet(url, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.get) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.get(url, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'GET',
+            headers: headers,
+            credentials: 'same-origin'
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
+    }
+
+    /**
+     * Perform a DELETE request using HTTP client service.
+     * Falls back to native fetch if service is unavailable.
+     * 
+     * @param {string} url - The URL to DELETE.
+     * @param {Object} headers - Request headers.
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @return {Promise<Response>} Promise that resolves to the response.
+     */
+    function httpDelete(url, headers, options) {
+        options = options || {};
+        
+        // Use HTTP client service if available
+        if (httpClientService && httpClientService.delete) {
+            const clientOptions = {
+                timeout: options.timeout,
+                signal: options.signal
+            };
+            
+            // Add retry callback if state is provided
+            if (options.state) {
+                clientOptions.onRetry = createRetryCallback(options.state);
+            }
+            
+            return httpClientService.delete(url, headers, clientOptions);
+        }
+        
+        // Fallback to native fetch
+        const fetchOptions = {
+            method: 'DELETE',
+            headers: headers,
+            credentials: 'same-origin'
+        };
+        
+        if (options.signal) {
+            fetchOptions.signal = options.signal;
+        }
+        
+        return fetch(url, fetchOptions);
     }
 
     /**
@@ -1248,6 +1440,12 @@
      * @return {boolean} True if URL is a valid HTTP/HTTPS URL, false for blob:/data: or invalid URLs
      */
     function isRealAttachmentUrl(url) {
+        // Use attachments service if available
+        if (attachmentsService && attachmentsService.isRealAttachmentUrl) {
+            return attachmentsService.isRealAttachmentUrl(url);
+        }
+
+        // Fallback implementation
         if (!url || typeof url !== 'string') {
             return false;
         }
@@ -1632,13 +1830,16 @@
                 controller.abort();
             }, timeout);
 
-            return fetch(state.config.transcriptsEndpoint, {
-                method: 'POST',
-                headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            })
+            return postJson(
+                state.config.transcriptsEndpoint,
+                payload,
+                buildJsonHeaders(state),
+                {
+                    timeout: timeout,
+                    signal: controller.signal,
+                    state: state
+                }
+            )
                 .then(function(response) {
                     clearTimeout(timeoutId);
                     
@@ -1954,12 +2155,12 @@
             },
         };
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -2609,6 +2810,10 @@
     }
 
     function supportsAudioRecording() {
+        if (transcriptionService && transcriptionService.supportsAudioRecording) {
+            return transcriptionService.supportsAudioRecording();
+        }
+
         if (audioService && audioService.supportsAudioRecording) {
             return audioService.supportsAudioRecording();
         }
@@ -2639,6 +2844,11 @@
     }
 
     function setTranscribeRecordingState(state, recording) {
+        if (transcriptionService && transcriptionService.setTranscribeRecordingState) {
+            return transcriptionService.setTranscribeRecordingState(state, recording, getString, setStatus);
+        }
+
+        // Fallback implementation
         if (!state) {
             return;
         }
@@ -2672,6 +2882,10 @@
     }
 
     function updateTranscribeButtonState(state) {
+        if (transcriptionService && transcriptionService.updateTranscribeButtonState) {
+            return transcriptionService.updateTranscribeButtonState(state);
+        }
+
         if (audioService && audioService.updateTranscribeButtonState) {
             return audioService.updateTranscribeButtonState(state);
         }
@@ -2707,6 +2921,14 @@
     }
 
     function handleTranscribeButtonClick(state) {
+        if (transcriptionService && transcriptionService.handleTranscribeButtonClick) {
+            const helpers = {
+                startTranscribeRecording: startTranscribeRecording,
+                stopTranscribeRecording: stopTranscribeRecording,
+            };
+            return transcriptionService.handleTranscribeButtonClick(state, helpers);
+        }
+
         if (audioService && audioService.handleTranscribeButtonClick) {
             const helpers = {
                 getString: getString,
@@ -2758,6 +2980,19 @@
     }
 
     function startTranscribeRecording(state) {
+        if (transcriptionService && transcriptionService.startTranscribeRecording) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                transcribeAudioFile: transcribeAudioFile,
+                stopRecordingStream: stopRecordingStream,
+                setTranscribeRecordingState: setTranscribeRecordingState,
+                updateTranscribeButtonState: updateTranscribeButtonState,
+            };
+            return transcriptionService.startTranscribeRecording(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || !supportsAudioRecording()) {
             return;
         }
@@ -2892,6 +3127,16 @@
     }
 
     function stopTranscribeRecording(state) {
+        if (transcriptionService && transcriptionService.stopTranscribeRecording) {
+            const helpers = {
+                stopRecordingStream: stopRecordingStream,
+                setTranscribeRecordingState: setTranscribeRecordingState,
+                updateTranscribeButtonState: updateTranscribeButtonState,
+            };
+            return transcriptionService.stopTranscribeRecording(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || !state.mediaRecorder) {
             return;
         }
@@ -2910,6 +3155,10 @@
     }
 
     function handleTranscribeFileSelection(event, state) {
+        if (transcriptionService && transcriptionService.handleTranscribeFileSelection) {
+            return transcriptionService.handleTranscribeFileSelection(event, state, transcribeAudioFile);
+        }
+
         if (audioService && audioService.handleTranscribeFileSelection) {
             const helpers = {
                 getString: getString,
@@ -3052,12 +3301,12 @@
 
         headers['Content-Type'] = contentType || 'audio/webm';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
-            headers: headers,
-            body: file,
-            credentials: 'same-origin',
-        })
+        return uploadFile(
+            state.config.uploadEndpoint,
+            file,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 if (window.console && console.log) {
                     console.log('Voice chat: Upload response received', {
@@ -3137,12 +3386,12 @@
             });
         }
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        }).then(function (response) {
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        ).then(function (response) {
             if (!response.ok) {
                 if (window.console && console.error) {
                     console.error('Voice chat: Transcription request failed', {
@@ -3847,6 +4096,12 @@
     }
 
     function getFileExtension(file) {
+        // Use attachments service if available
+        if (attachmentsService && attachmentsService.getFileExtension) {
+            return attachmentsService.getFileExtension(file);
+        }
+
+        // Fallback implementation
         if (!file || !file.name) {
             return '';
         }
@@ -4725,11 +4980,7 @@
             });
         }
 
-        fetch(deleteUrl, {
-            method: 'DELETE',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        })
+        httpDelete(deleteUrl, buildHistoryHeaders(state), { state: state })
             .then(function (response) {
                 return response
                     .json()
@@ -4987,11 +5238,7 @@
             });
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildHistoryHeaders(state), { state: state }).then(function (response) {
             return response
                 .json()
                 .catch(function () {
@@ -5060,11 +5307,7 @@
             });
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildHistoryHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildHistoryHeaders(state), { state: state }).then(function (response) {
             // Log response status for debugging
             if (window.console && console.log) {
                 console.log('[WP oOS] Conversation details response:', {
@@ -5474,12 +5717,12 @@
 
         headers['Content-Type'] = file.type || 'application/octet-stream';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
-            headers: headers,
-            body: file,
-            credentials: 'same-origin',
-        })
+        return uploadFile(
+            state.config.uploadEndpoint,
+            file,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -8324,11 +8567,7 @@
             return Promise.reject(new Error('Crawl4AI endpoint not configured.'));
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             // 404 means task not found yet - this is expected early in async execution
             if (response.status === 404) {
                 return null;
@@ -9184,11 +9423,7 @@
             console.log('[WP oOS] Attempting timeout recovery for job:', jobId);
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             if (!response.ok) {
                 return null;
             }
@@ -9244,11 +9479,7 @@
             url += '?assistant_id=' + encodeURIComponent(assistantId);
         }
 
-        return fetch(url, {
-            method: 'GET',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-        }).then(function (response) {
+        return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
             // 404 means job not found yet - this is expected early in async execution
             // Return null to signal "not ready yet" rather than an error
             if (response.status === 404) {
@@ -9585,11 +9816,7 @@
             });
 
             // Make the fetch request
-            return fetch(url, {
-                method: 'GET',
-                headers: headers,
-                credentials: 'same-origin'
-            }).then(function(response) {
+            return httpGet(url, headers, {}).then(function(response) {
                 console.log('[wpMcpAiTestGetTranscript] Response status:', response.status, response.statusText);
                 
                 return response.json().then(function(data) {
@@ -10682,12 +10909,12 @@
         }
 
         // Non-streaming request (original implementation)
-        return fetch(state.config.messagesEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.messagesEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
             .then(function (response) {
                 return response
                     .json()
@@ -10831,12 +11058,12 @@
             updateStreamingStatus(safeContent);
         }
 
-        return fetch(state.config.messagesEndpoint, {
-            method: 'POST',
-            headers: headers,
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        })
+        return postJson(
+            state.config.messagesEndpoint,
+            payload,
+            headers,
+            { state: state }
+        )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)
                 streamingLogger.logResponseReceived(response);
@@ -15069,13 +15296,16 @@
                 controller.abort();
             }, timeout);
 
-            return fetch(state.config.toolsEndpoint, {
-                method: 'POST',
-                headers: buildJsonHeaders(state),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-                signal: controller.signal,
-            })
+            return postJson(
+                state.config.toolsEndpoint,
+                payload,
+                buildJsonHeaders(state),
+                {
+                    timeout: timeout,
+                    signal: controller.signal,
+                    state: state
+                }
+            )
                 .then(function(response) {
                     clearTimeout(timeoutId);
                     

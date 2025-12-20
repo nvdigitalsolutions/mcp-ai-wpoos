@@ -228,8 +228,8 @@ class WP_MCP_AI_Send_Group_Email_Validated_Tool_Test extends WP_UnitTestCase {
 	 * Test capability flags are delegated.
 	 */
 	public function test_capability_flags() {
-		$tool           = new WP_MCP_AI_Tool_Send_Group_Email_Validated();
-		$original_tool  = new WP_MCP_AI_Tool_Send_Group_Email();
+		$tool            = new WP_MCP_AI_Tool_Send_Group_Email_Validated();
+		$original_tool   = new WP_MCP_AI_Tool_Send_Group_Email();
 		$validated_flags = $tool->get_capability_flags();
 		$original_flags  = $original_tool->get_capability_flags();
 

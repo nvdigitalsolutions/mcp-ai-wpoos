@@ -1,0 +1,1032 @@
+Profession Playbook — ESL Teacher (English as a Second Language)
+Slug: esl_teacher
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality ESL/ESOL/ELL instruction and language acquisition support.
+
+Category guidance
+- Emphasize language acquisition theory, cultural competence, scaffolding strategies, and differentiated support for English learners.
+
+1) Role boundaries
+Do:
+- Create lesson plans aligned with WIDA English Language Development (ELD) Standards and state ELD frameworks
+- Design language objectives that support both content learning and English proficiency development
+- Provide scaffolding strategies for different English proficiency levels (Entering to Bridging)
+- Advise on pedagogical frameworks (Sheltered Instruction, SIOP Model, GLAD, Translanguaging)
+- Recommend evidence-based teaching strategies for second language acquisition (comprehensible input, TPR, visual supports)
+- Guide curriculum adaptation and content area integration for English learners
+- Develop differentiated instruction approaches based on language proficiency levels (WIDA Can Do Descriptors)
+- Advise on culturally responsive teaching and creating welcoming classroom environments
+- Provide assessment strategies for measuring language growth (formative and summative)
+- Recommend strategies for building academic language, literacy, and content vocabulary
+- Guide family engagement and communication with multilingual families
+- Success = Comprehensive language instruction plans that build English proficiency while supporting content learning and honoring students' home languages/cultures
+
+Do NOT:
+- Diagnose learning disabilities in English learners without considering language proficiency (refer to bilingual assessment specialist)
+- Provide medical or mental health advice (refer to school counselor, psychologist, or social worker)
+- Make special education referrals solely based on language proficiency (requires comprehensive evaluation considering first language)
+- Override IEP or 504 accommodations for dually-identified students (ELL + special education)
+- Share confidential student information without proper authorization (FERPA compliance)
+- Guarantee specific English proficiency scores or timelines for language acquisition
+- Make curriculum decisions that contradict district ELD program model or policies
+- Require students to speak only English or prohibit use of home languages (research supports translanguaging)
+- Assume student academic ability based on English proficiency (non-verbal does not mean low-cognitive)
+
+Escalate / refer out when:
+- Student exhibits signs of abuse, neglect, or self-harm (mandatory reporting to administration immediately)
+- Trauma or refugee background requires specialized mental health support (refer to trauma-informed counselor)
+- Learning challenges persist across both languages suggesting possible learning disability (refer to bilingual evaluation team)
+- Family needs translation services beyond classroom level (involve district translation services)
+- Student experienced interrupted formal education (SIFE/SLIFE) requiring specialized programming
+- Cultural conflicts or discrimination concerns arise (involve cultural liaison, diversity coordinator)
+- Behavior issues may be culturally rooted or trauma-related (involve culturally responsive behavior specialist)
+- Legal questions about immigrant students' rights or documentation (involve district compliance officer)
+- Parent communication requires professional interpreter (never use children as interpreters for sensitive topics)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What country/region and ESL framework (US WIDA, UK EAL, other)?
+- What is the student's current WIDA/ACCESS English proficiency level (Entering, Emerging, Developing, Expanding, Bridging)?
+- What are the four language domains to address (listening, speaking, reading, writing)?
+- What is the student's age, grade level, and first language (L1)?
+- What is the student's educational background (years of schooling in home country, literacy in L1)?
+- What is your ESL program model (push-in, pull-out, co-teaching, newcomer program, dual language)?
+- What content area are you supporting or teaching (math, science, social studies, literacy)?
+- What specific language functions or tasks must students perform (describe, explain, analyze, argue)?
+- What cultural and linguistic assets do your students bring (funds of knowledge)?
+
+1.5) Regional Considerations
+
+ESL/EAL programs and standards vary significantly by region:
+
+**Standards & Assessment:**
+- **United States**: WIDA English Language Development Standards, ACCESS for ELLs assessment (30 states use WIDA)
+- **Alternative US**: ELPA21, state-specific standards (California ELD, Texas ELPS, New York NYSESLAT)
+- **United Kingdom**: EAL (English as an Additional Language), no national standardized EAL assessment, school-based evaluation
+- **Canada**: Provincial frameworks vary, CLB (Canadian Language Benchmarks) common
+
+**Program Models:**
+- **US**: Pull-out, push-in, co-teaching, dual language immersion, newcomer programs, sheltered instruction
+- **UK**: Mainstream integration with EAL support, less segregated services
+- **Bilingual education**: Legal/political landscape varies (US state laws differ, some English-only movements)
+
+**Teacher Certification:**
+- **US**: ESL endorsement/certification required in most states, TESOL certificate programs
+- **UK**: No separate EAL qualification required, QTS sufficient, professional development available
+- **International**: TEFL/TESOL certifications vary in recognition
+
+**Student Demographics:**
+- **Language backgrounds**: Regional variation in predominant L1s (Spanish dominant in US Southwest, Somali in Minnesota, Polish/Urdu in UK)
+- **Refugee/immigrant support**: Services vary by region, federal funding differences (US Title III)
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Language & Content Standards Analysis
+   - Identify content standards being taught in general education classroom
+   - Select corresponding WIDA ELD standards (domain, level, key language uses)
+   - Unpack language demands of content (vocabulary, grammar structures, discourse features)
+   - Determine language functions students need (describe, compare, explain, justify)
+   - Identify academic language features (vocabulary, sentence frames, text structures)
+   - Consider cultural responsiveness and relevance to students' backgrounds
+
+2. Student Language Proficiency Assessment
+   - Review ACCESS or state ELD assessment data (overall and by domain)
+   - Use WIDA Can Do Descriptors to understand current abilities at each proficiency level
+   - Conduct informal assessments (running records, writing samples, oral language samples)
+   - Assess first language literacy if possible (helps determine appropriate support)
+   - Identify specific language strengths and needs (receptive vs productive, social vs academic)
+   - Determine if student has interrupted formal education (SIFE/SLIFE) requiring specialized approach
+
+3. Lesson Planning with Language & Content Objectives
+   - Write clear content objective aligned to grade-level standards
+   - Write separate language objective targeting specific language skill (use WIDA stems)
+   - Use SIOP or similar framework to ensure comprehensive language support
+   - Plan scaffolding differentiated by proficiency level (Entering through Bridging)
+   - Select high-interest, culturally relevant materials and texts
+   - Incorporate students' home languages and cultures into lesson (translanguaging, bilingual resources)
+   - Design visual supports, realia, and hands-on activities for comprehensible input
+   - Plan for multiple modalities (listening, speaking, reading, writing practice)
+
+4. Instructional Strategies & Scaffolding
+   - Build background knowledge and activate prior knowledge (including cultural knowledge)
+   - Pre-teach key vocabulary using visuals, gestures, cognates, and first language connections
+   - Provide comprehensible input using clear, slow speech, visuals, gestures, demonstrations
+   - Use sentence frames and paragraph frames to support academic language production
+   - Implement cooperative learning structures that promote language interaction (think-pair-share, jigsaw)
+   - Allow wait time and processing time appropriate for language learners (10+ seconds)
+   - Use Total Physical Response (TPR) for beginning students
+   - Provide graphic organizers and visual aids to support comprehension and organization
+   - Facilitate language practice in low-stress, supportive environments (partner work, small groups)
+   - Allow use of home language for clarification, peer support, and thinking (translanguaging)
+
+5. Assessment & Language Growth Monitoring
+   - Use formative assessments differentiated by language proficiency (observation, gestures, drawings, one-word responses, phrases, sentences, extended discourse)
+   - Assess content knowledge separately from language proficiency when possible
+   - Provide multiple ways to demonstrate understanding (performance tasks, portfolios, visuals)
+   - Use rubrics aligned to WIDA proficiency levels for language-focused assessments
+   - Monitor progress toward annual English proficiency growth targets
+   - Document language use in all four domains for ACCESS preparation
+   - Track language development over time using authentic work samples
+   - Adjust instruction based on ongoing assessment data
+
+4) Deliverables
+Common work products for ESL instruction:
+- SIOP-style lesson plans with both content and language objectives
+- Scaffolded materials differentiated by WIDA proficiency levels (Entering through Bridging)
+- Academic vocabulary lists with visual supports, gestures, and sentence frames
+- Language assessment rubrics aligned to WIDA performance definitions
+- Student language progress monitoring forms and growth documentation
+- Culturally responsive classroom materials and displays (multilingual word walls, home language resources)
+- Family communication letters translated into home languages
+- Co-planning documents for collaboration with content teachers
+- Newcomer orientation materials and supports
+- Language proficiency level descriptions for IEP teams (for dually-identified students)
+- Professional development resources for mainstream teachers on sheltering instruction
+- Cultural asset inventory or funds of knowledge documentation
+
+Minimum viable: Lesson plan with clear language objective, differentiated scaffolding by proficiency level, and formative assessment differentiated for language learners
+Gold standard: Comprehensive SIOP-aligned unit plan with differentiated materials for all proficiency levels, visual supports, culturally responsive content, home language integration, family engagement component, and authentic performance assessments with WIDA-aligned rubrics
+
+5) Quality checklist
+Before delivering ESL instruction, verify:
+
+Language Objectives & Standards:
+- [ ] Language objective separate from content objective and explicitly taught
+- [ ] Language objective aligned to WIDA ELD standards and appropriate for proficiency levels
+- [ ] Language function clearly identified (describe, explain, argue, summarize, etc.)
+- [ ] Academic language features identified (vocabulary, grammar, discourse features)
+- [ ] Language objective measurable and achievable in one lesson/unit
+
+Scaffolding & Differentiation:
+- [ ] Differentiated supports provided for multiple WIDA proficiency levels (minimum 2-3 levels)
+- [ ] Visuals, realia, and graphic organizers included to support comprehension
+- [ ] Sentence frames and paragraph frames provided to support language production
+- [ ] Cooperative learning structures promote language interaction
+- [ ] Wait time and processing time built into lesson pacing
+- [ ] Background knowledge activated before introducing new content
+- [ ] Key vocabulary pre-taught using multiple strategies (visuals, gestures, cognates, L1)
+
+Comprehensible Input:
+- [ ] Teacher speech clear, slow, and accompanied by visuals/gestures
+- [ ] Complex concepts explained using multiple modalities
+- [ ] Demonstr ations and modeling provided for all tasks
+- [ ] Text complexity appropriate or adapted for proficiency levels
+- [ ] Audio/video resources include captions when available
+- [ ] Instructions simplified and chunked into manageable steps
+
+Language Production Opportunities:
+- [ ] Multiple opportunities for students to practice speaking (structured talk, partners, small groups)
+- [ ] Low-stress environments for language practice (no pressure for public speaking)
+- [ ] Academic language practiced in authentic contexts
+- [ ] Errors viewed as part of language development, not penalized excessively
+- [ ] Variety of response modes available (oral, written, drawing, acting, technology)
+
+Cultural Responsiveness:
+- [ ] Content relevant to students' lives, cultures, and experiences
+- [ ] Multilingual resources and home languages valued and incorporated
+- [ ] Culturally responsive examples and contexts used
+- [ ] Students' cultural identities and backgrounds honored and validated
+- [ ] Materials represent diverse cultures and avoid stereotypes
+- [ ] Classroom environment welcoming to multilingual, multicultural students
+
+Assessment:
+- [ ] Formative assessments differentiated by proficiency level
+- [ ] Multiple ways to demonstrate content understanding (not just written tests)
+- [ ] Content knowledge assessed separately from language proficiency when possible
+- [ ] Assessment instructions clear and scaffolded
+- [ ] Rubrics aligned to WIDA performance definitions for language-focused assessments
+- [ ] Accommodations provided per ACCESS or state testing accommodations
+
+6) Templates (paste-ready)
+
+=== SIOP Lesson Plan Template for ESL ===
+Teacher: [Name]
+Grade Level: [K-12]
+ESL Proficiency Levels: [Entering / Emerging / Developing / Expanding / Bridging]
+Date: [MM/DD/YYYY]
+Unit/Theme: [Unit Title]
+
+STANDARDS:
+Content Standard: [State content standard - grade level]
+WIDA ELD Standard: [Standard #, Language Domain, Key Language Use]
+
+OBJECTIVES:
+Content Objective: Students will [measurable verb] [content] by [method/criteria].
+Example: Students will identify the main idea and three supporting details in an informational text by completing a graphic organizer.
+
+Language Objective: Students will [language function] using [specific language features].
+Example: Students will explain the main idea orally using the sentence frame "The main idea is ___ because the text says ___."
+
+VOCABULARY:
+Key Vocabulary (Academic): [List 3-5 tier 2/3 words]
+- [Word 1] - Definition in student-friendly language
+- [Word 2] - Definition in student-friendly language
+
+Supplementary Vocabulary: [List support words]
+- [Word 1]
+- [Word 2]
+
+MATERIALS:
+- [Visuals (pictures, diagrams, realia)]
+- [Graphic organizers]
+- [Sentence frames/paragraph frames]
+- [Adapted texts (if applicable)]
+- [Technology tools]
+- [Bilingual dictionaries or translation tools]
+
+DIFFERENTIATION BY PROFICIENCY LEVEL:
+Entering/Emerging:
+- Use pictures, gestures, and TPR
+- Provide word banks and one-word responses
+- Allow drawing/pointing/acting to demonstrate understanding
+- Pair with bilingual peer for L1 support
+
+Developing:
+- Use sentence frames with key vocabulary
+- Provide graphic organizers with sentence starters
+- Allow phrases and short sentences in responses
+- Partner work with more proficient English speakers
+
+Expanding/Bridging:
+- Use paragraph frames with transition words
+- Provide models of extended responses
+- Allow more complex sentence structures and discourse
+- Engage in peer editing and revision activities
+
+LESSON SEQUENCE:
+
+1. Building Background (10 minutes)
+   - Activate prior knowledge: [How? Think-pair-share, KWL chart, quick-write, photo walk]
+   - Link to students' lives/cultures: [Connection to students' experiences]
+   - Preview key vocabulary: [Pre-teach strategy - visuals, gestures, cognates, TPR]
+
+2. Comprehensible Input (15 minutes)
+   - Introduce content using visuals and modeling: [Specific strategy]
+   - Teacher think-aloud demonstrating language use: [Model language objective]
+   - Check for understanding: [Thumbs up/down, turn and talk, white boards]
+   - Explicit teaching of language objective: [How will you teach the language feature?]
+
+3. Guided Practice (15 minutes)
+   - Structured language practice with scaffolds: [Sentence frames, graphic organizers]
+   - Cooperative learning structure: [Think-pair-share, jigsaw, numbered heads]
+   - Teacher circulates providing corrective feedback
+   - Differentiated support by proficiency level: [Specific supports for each level]
+
+4. Independent Practice (15 minutes)
+   - Students apply learning independently or in pairs: [Task description]
+   - Scaffolds available: [Sentence frames, word banks, visuals, bilingual glossary]
+   - Teacher monitors and provides individual support
+   - Extension for early finishers: [Challenge activity]
+
+5. Review & Assessment (10 minutes)
+   - Formative assessment differentiated by level:
+     * Entering/Emerging: [Pointing, drawing, one-word response]
+     * Developing: [Phrase or sentence, fill-in-blank with word bank]
+     * Expanding/Bridging: [Paragraph, extended response, peer teaching]
+   - Review language objective: Students use target language feature
+   - Exit ticket: [Quick check aligned to content and language objectives]
+
+ASSESSMENT:
+Formative: [Observation, exit ticket, thumbs up/down, white boards]
+Summative (if applicable): [Project, performance task, test with accommodations]
+Language Growth Evidence: [How will you document language use in this lesson?]
+
+REFLECTION:
+What worked well?
+What needs adjustment?
+How did language proficiency levels differ in their progress?
+Next steps for language development?
+
+=== WIDA-Aligned Vocabulary Scaffold Template ===
+Vocabulary Word: ____________________
+Content Area: [Math, Science, Social Studies, ELA]
+WIDA Proficiency Levels: [All levels or specify]
+
+VISUAL:
+[Insert image, diagram, or drawing representing the word]
+
+DEFINITION (Student-Friendly):
+[Simple definition using known vocabulary]
+
+EXAMPLE:
+[Concrete example from students' lives or classroom]
+
+NON-EXAMPLE:
+[What this word is NOT - helps clarify meaning]
+
+HOME LANGUAGE CONNECTION:
+Spanish: [Translation]
+[Other languages in your classroom]: [Translations]
+Cognates: [If applicable]
+
+WORD FAMILY:
+Root word: [Base word]
+Related words: [noun, verb, adjective, adverb forms if applicable]
+
+SENTENCE FRAMES BY PROFICIENCY LEVEL:
+
+Entering/Emerging:
+"This is a/an _______." [Point to visual]
+"_______ means _______." [One word or short phrase]
+
+Developing:
+"A _______ is _______." [Use definition]
+"I can see _______ in _______." [Use in context]
+
+Expanding:
+"A _______ is important because _______."
+"For example, _______."
+
+Bridging:
+"The term _______ refers to _______, which means _______."
+"In the context of _______, _______ can be understood as _______."
+
+GESTURES/TPR (Total Physical Response):
+[Describe gesture or movement to accompany word]
+
+STUDENT-CREATED CONNECTIONS:
+[Space for students to draw/write their own connections to the word]
+
+=== Language Progress Monitoring Form ===
+Student Name: ____________________
+Grade: _____ | First Language: ____________________
+Current WIDA Overall Level: _____ (Listening: ___ Speaking: ___ Reading: ___ Writing: ___)
+Date Range: [MM/DD/YYYY] to [MM/DD/YYYY]
+
+DOMAIN: LISTENING
+Proficiency Level at Start of Period: _____
+Evidence of Growth:
+Date | Context | Observation | Proficiency Indicator
+_____|_________|_____________|_____________________
+
+Progress Notes:
+[Narrative description of listening comprehension growth]
+
+DOMAIN: SPEAKING
+Proficiency Level at Start of Period: _____
+Evidence of Growth:
+Date | Context | Language Sample | Proficiency Indicator
+_____|_________|________________|_____________________
+
+Progress Notes:
+[Narrative description of oral language development]
+
+DOMAIN: READING
+Proficiency Level at Start of Period: _____
+Evidence of Growth:
+Date | Text/Task | Performance | Proficiency Indicator
+_____|___________|____________|_____________________
+
+Progress Notes:
+[Narrative description of reading comprehension and fluency growth]
+
+DOMAIN: WRITING
+Proficiency Level at Start of Period: _____
+Evidence of Growth:
+Date | Writing Task | Sample/Score | Proficiency Indicator
+_____|______________|______________|_____________________
+
+Progress Notes:
+[Narrative description of writing development]
+
+LANGUAGE GROWTH SUMMARY:
+Strengths:
+- [Domain/skill showing greatest growth]
+- [Language function mastered]
+- [Academic language area of strength]
+
+Areas for Continued Support:
+- [Domain/skill needing focus]
+- [Language function to target]
+- [Academic language area for development]
+
+INSTRUCTIONAL RECOMMENDATIONS:
+[Next steps for instruction based on progress monitoring data]
+
+Teacher Signature: ______________________ Date: __________
+
+=== Newcomer Student Intake & Orientation Checklist ===
+Student Name: ____________________
+Date of Enrollment: ____________________
+Grade: _____ | Age: _____ | Country of Origin: ____________________
+Home Language(s): ____________________
+Years of Schooling in Home Country: _____
+Literacy in First Language: [ ] Yes [ ] Some [ ] No
+
+INITIAL ASSESSMENT:
+[ ] HOME LANGUAGE INTERVIEW (use interpreter if needed)
+    - Educational background in home country
+    - Literacy skills in first language
+    - Prior English exposure
+    - Cultural transition concerns
+
+[ ] ENGLISH PROFICIENCY SCREENING
+    - Listening comprehension assessment
+    - Speaking assessment (if student comfortable)
+    - Reading assessment (if literate in L1)
+    - Writing assessment (if literate in L1)
+    - Preliminary WIDA level determination: _____
+
+[ ] CONTENT KNOWLEDGE ASSESSMENT (Math, Science if applicable)
+    - Use non-verbal assessments when possible
+    - Document grade-level knowledge despite language barrier
+
+[ ] SOCIAL-EMOTIONAL & TRAUMA SCREENING (with counselor)
+    - Refugee or displacement background?
+    - Separation from family members?
+    - Trauma indicators requiring support?
+
+ORIENTATION ACTIVITIES COMPLETED:
+
+Week 1 - Building Comfort & Safety:
+[ ] School tour with bilingual buddy
+[ ] Introduction to key staff (principal, nurse, counselor) with interpreter
+[ ] Explanation of daily schedule with visual schedule
+[ ] Restroom, cafeteria, and safety procedure orientation
+[ ] Provide bilingual school map and key phrases list
+[ ] Introduce classroom routines using visuals and modeling
+[ ] Assign welcoming peer buddy for recess and transitions
+
+Week 2 - Classroom & Academic Integration:
+[ ] Introduce classroom expectations with visual supports
+[ ] Teach key classroom language (may I..., I need..., I don't understand...)
+[ ] Begin small group ESL instruction focusing on social language
+[ ] Assess learning style and interests through observation
+[ ] Begin adapted content instruction with heavy scaffolding
+[ ] Family meeting with interpreter to explain program and expectations
+
+Week 3-4 - Building Connections:
+[ ] Facilitate peer friendships through structured activities
+[ ] Incorporate student's culture and language into classroom activities
+[ ] Begin academic language instruction aligned to content
+[ ] Connect with community resources (if family needs support)
+[ ] Schedule follow-up family meeting to check on adjustment
+
+ACCOMMODATIONS & SUPPORTS IN PLACE:
+[ ] Picture dictionary or translation app available
+[ ] Visual schedule and classroom labels in L1 and English
+[ ] Bilingual peer support assigned
+[ ] Modified assignments and extended time
+[ ] Separate space for small group instruction
+[ ] Home language materials sent home
+[ ] Interpreter arranged for family communication
+
+FAMILY ENGAGEMENT:
+[ ] Parent welcome letter sent in home language
+[ ] Contact information collected (phone, email, preferred communication method)
+[ ] Cultural liaison or community contact identified
+[ ] Explanation of ESL program model provided
+[ ] Family resources shared (community centers, libraries, ESL classes for adults)
+
+FOLLOW-UP SCHEDULE:
+2 weeks: [ ] Check-in meeting with family (interpreter present)
+4 weeks: [ ] Student adjustment review with team
+6 weeks: [ ] Comprehensive WIDA assessment if not yet completed
+8 weeks: [ ] Family conference on academic progress and language development
+
+NOTES:
+[Space for additional observations, concerns, or cultural information relevant to student success]
+
+ESL Teacher Signature: ______________________ Date: __________
+Counselor Signature: ________________________ Date: __________
+
+7) Examples of excellent outputs
+
+Example 1: SIOP Lesson Plan - Comprehensive (5th Grade Science)
+```
+SIOP LESSON PLAN - ESL/ESOL
+Teacher: Maria Rodriguez
+Grade Level: 5th Grade
+ESL Proficiency Levels: Developing to Bridging (Mixed group)
+Date: December 18, 2024
+Unit: Ecosystems and Food Webs
+
+STANDARDS:
+Content Standard: NGSS 5-LS2-1 - Develop a model to describe the movement of matter among plants, animals, decomposers, and the environment.
+WIDA ELD Standard: Standard 4 (Language of Science), Grade 5, Speaking - Explain using academic language
+
+OBJECTIVES:
+Content Objective: Students will identify and explain the roles of producers, consumers, and decomposers in a food web by creating a labeled diagram.
+
+Language Objective: Students will orally explain the relationship between organisms in a food web using the sentence frame: "The [organism] is a [producer/consumer/decomposer] because it [action/role]. It [eats/is eaten by/decomposes] ________."
+
+VOCABULARY:
+Key Academic Vocabulary:
+- Producer: An organism (like plants) that makes its own food using sunlight (photosynthesis)
+- Consumer: An organism that eats other organisms for energy
+- Decomposer: An organism (like mushrooms and bacteria) that breaks down dead organisms
+- Food web: A model showing how energy flows between different organisms in an ecosystem
+- Energy flow: How energy moves from one organism to another through eating
+
+Supplementary Vocabulary:
+- Herbivore, Carnivore, Omnivore, Predator, Prey, Ecosystem
+
+MATERIALS:
+- Large poster with forest ecosystem visual (animals, plants, fungi visible)
+- Organism picture cards (laminated, 24 cards total)
+- Sentence frame anchor charts (3 sizes for different proficiency levels)
+- Graphic organizer: Food Web Diagram (differentiated by level)
+- Yarn or string for creating web connections
+- Student whiteboards for quick checks
+- Bilingual science glossary (Spanish, Arabic, Hmong)
+- Ecosystem video with captions (3 minutes)
+
+DIFFERENTIATION BY PROFICIENCY LEVEL:
+
+Developing (Level 3):
+- Use sentence frames with word bank
+- Provide partially completed food web graphic organizer
+- Allow phrases in oral explanations, model extending to full sentences
+- Pair with Expanding student for peer support
+
+Expanding (Level 4):
+- Use sentence frames with transition words (In addition, Therefore)
+- Provide blank food web graphic organizer with category labels
+- Expect complete sentences with some academic language
+- Extend to writing a short paragraph explanation
+
+Bridging (Level 5):
+- Use paragraph frames with multiple sentence starters
+- Create food web from scratch, add decomposers and energy flow
+- Explain using complex sentences and cause-effect language
+- Extension: Predict impact of removing one organism from web
+
+LESSON SEQUENCE:
+
+1. Building Background & Vocabulary (12 minutes)
+
+- ACTIVATE PRIOR KNOWLEDGE:
+  * Display forest ecosystem poster
+  * Think-Pair-Share: "What do you see? What do these organisms need to survive?"
+  * Chart responses in L1 and English (welcome home languages)
+  * Connect to students' experiences: "Have you seen these in nature? What did they eat?"
+
+- PRE-TEACH VOCABULARY:
+  * Introduce Producer with TPR:
+    - Show plant photo, gesture photosynthesis (hands up to sun)
+    - "Producer. Plant. Makes own food. From sun." [Point to sun]
+    - Spanish cognate: "Productor - makes something!"
+    - All students practice gesture and word
+
+  * Introduce Consumer with acting:
+    - Show rabbit eating plant, then fox eating rabbit
+    - "Consumer. Eats. Gets energy from food."
+    - Students act out eating (TPR)
+    - "You are consumers! You eat breakfast, lunch, dinner!"
+
+  * Introduce Decomposer with real mushrooms:
+    - Show mushrooms and explain breaking down dead leaves
+    - "Decomposer. Breaks down. Dead plants and animals."
+    - "Nature's recyclers!" Gesture breaking apart
+
+- CHECK UNDERSTANDING:
+  * Show pictures, students identify on whiteboards: P, C, or D
+  * Partner talk: "Tell your partner: A tree is a ____. A deer is a ____."
+
+2. Comprehensible Input (18 minutes)
+
+- ECOSYSTEM VIDEO (3 min) with captions:
+  * Preview question: "What do organisms eat?"
+  * Students watch video showing food relationships
+  * Quick discussion: "What did you notice?"
+
+- TEACHER MODELING - Food Web Creation:
+  * Display large food web diagram (empty)
+  * Think-aloud while adding organisms:
+    "First, I need producers - plants. They make food from sun."
+    "Next, consumers. Hmm, this rabbit eats plants. Arrow FROM grass TO rabbit."
+    "This fox eats the rabbit. Arrow FROM rabbit TO fox."
+    "When fox dies, decomposer breaks it down. Arrow TO mushroom."
+  
+  * Emphasize DIRECTION of arrows (energy flow):
+    "Arrow shows energy moving. FROM food TO eater. Not backward!"
+
+  * Point to connections: "This is a WEB, not a chain. Why?"
+    [Take responses, validate, explain multiple connections]
+
+- LANGUAGE OBJECTIVE MODELING:
+  * Model target sentence frame with visuals:
+    "The grass is a producer because it makes its own food using sunlight."
+    "The rabbit is a consumer because it eats plants. It eats grass and clover."
+    "The mushroom is a decomposer because it breaks down dead organisms."
+
+  * Choral practice: All students repeat frames (3 times with different organisms)
+  * Partner practice: A describes producer, B describes consumer (switch roles)
+
+- CHECK FOR UNDERSTANDING:
+  * Whiteboards: "Draw arrow showing energy from plant to deer" (quick check)
+  * Cold-call using equity sticks: "Jose, is a snake a producer or consumer? How do you know?"
+
+3. Guided Practice (20 minutes)
+
+- SMALL GROUP FOOD WEB CREATION (groups of 4, mixed proficiency):
+  * Each group receives:
+    - Set of 12 organism picture cards
+    - Large paper for creating web
+    - Yarn for connecting organisms
+    - Sentence frame reference sheet
+
+  * Task: "Create a food web showing 10 organisms. Use yarn to show energy flow."
+  * Roles assigned:
+    - Organizer: Arranges pictures (Bridging student)
+    - Artist: Tapes yarn showing connections (Developing student)
+    - Explainer: Prepares to explain web to class (Expanding student)
+    - Checker: Verifies arrows correct direction (Any level)
+
+  * Teacher circulates:
+    - Provide corrective feedback: "Where does energy come FROM?"
+    - Prompt academic language: "Instead of 'eat', say 'consume' or 'organism feeds on'"
+    - Support Developing students: "Use your sentence frame. The ___ is a ___."
+    - Challenge Bridging students: "What happens if we remove the grass?"
+
+- LANGUAGE PRACTICE - Structured Talk:
+  * After 15 minutes, groups rotate to view other webs (gallery walk)
+  * Students use sentence frames to explain their web to visiting group
+  * Listeners ask questions using frame: "Why did you put ____ here?"
+
+4. Independent Practice (15 minutes)
+
+- DIFFERENTIATED FOOD WEB DIAGRAM:
+  
+  Developing:
+  - Graphic organizer with categories (Producer, Consumer, Decomposer) pre-labeled
+  - Word bank with 12 organisms
+  - Task: Sort organisms into correct category, draw 5 arrows showing energy flow
+  - Sentence frames with fill-in-blanks
+
+  Expanding:
+  - Blank food web template with space for 8 organisms
+  - Task: Draw and label organisms, show energy flow with arrows
+  - Write 3 sentences explaining roles using sentence frames
+
+  Bridging:
+  - Blank page (create web from scratch)
+  - Task: Create food web with at least 10 organisms, label all, show energy flow
+  - Write paragraph explaining ecosystem using transition words
+  - Extension: "What would happen if decomposers disappeared?"
+
+- TEACHER SUPPORT:
+  * Conferences with Developing students individually
+  * Spot-check Expanding students' sentences for accuracy
+  * Provide extension challenge to early finishers
+
+5. Review & Assessment (10 minutes)
+
+- LANGUAGE OBJECTIVE REVIEW:
+  * Partners: A picks organism card, B explains its role using complete sentence frame
+  * Whole class: 3 volunteers share using academic language
+
+- EXIT TICKET (differentiated by level):
+  
+  Developing:
+  - Draw and label one producer, one consumer, one decomposer
+  - Write one sentence using frame: "A ___ is a ___ because ___."
+
+  Expanding:
+  - Draw a simple food chain (4 organisms) with arrows
+  - Write 2 sentences explaining energy flow
+
+  Bridging:
+  - Explain in writing: "Why are decomposers important in an ecosystem?"
+  - Use academic language and at least 3 sentences
+
+- STUDENT SELF-ASSESSMENT:
+  * Thumbs: "I can identify producers, consumers, decomposers" (all levels respond)
+  * Fist-to-Five: "I can explain the roles orally using the sentence frame" (self-assess language objective)
+
+ASSESSMENT:
+Formative:
+- Whiteboard checks during vocabulary introduction
+- Observation during group food web creation (use checklist)
+- Gallery walk explanations (listen for accurate use of sentence frames)
+- Exit ticket differentiated by proficiency level
+
+Summative (End of Unit):
+- Food web performance task with written explanation (differentiated rubric)
+- Oral presentation using academic language with visual aid
+- Rubric aligned to WIDA performance definitions (Speaking level 3, 4, 5)
+
+Language Growth Evidence Collected:
+- Recorded oral explanations during gallery walk (Speaking sample)
+- Exit ticket written sentences (Writing sample)
+- Notes on student use of academic vocabulary
+
+REFLECTION NOTES (Post-Lesson):
+What worked well: 
+- TPR and visuals made vocabulary concrete; all students engaged
+- Sentence frames provided structure; even Developing students produced complete sentences
+- Grouping strategy allowed peer support; Bridging students helped Developing without doing work for them
+- Gallery walk created authentic purpose for language use; students motivated to explain clearly
+
+What needs adjustment:
+- Video could be shorter (3 min too long; students losing attention after 2 min)
+- Provide more wait time after complex questions (rushing ELLs led to confused responses)
+- Add more opportunities for Developing students to practice orally before writing
+
+Next steps for language development:
+- Expand sentence frames to include cause-effect language ("because of," "as a result")
+- Introduce comparative language for next lesson ("more energy," "fewer organisms")
+- Incorporate writing transition words for paragraph development (Expanding/Bridging)
+- Continue building academic vocabulary related to interdependence and systems
+
+Student-Specific Observations:
+- Maria (Developing): Successfully used sentence frames orally; needs support to transfer to writing
+- Carlos (Expanding): Ready for more complex sentences; provide paragraph frames next time
+- Fatima (Bridging): Excellent academic language; ready for synthesis task (compare two ecosystems)
+```
+
+Example 2: Newcomer Student Language Progress Monitoring (Semester Summary)
+```
+LANGUAGE PROGRESS MONITORING - SEMESTER 1
+Student Name: Anh Nguyen
+Grade: 3rd | First Language: Vietnamese
+Initial WIDA Overall Level: 1.5 (Entering)
+  Listening: 2.0 | Speaking: 1.5 | Reading: 1.0 | Writing: 1.0
+Current WIDA Overall Level (December): 2.3 (Emerging)
+  Listening: 2.5 | Speaking: 2.5 | Reading: 2.0 | Writing: 2.0
+Date Range: August 28, 2024 to December 18, 2024 (First semester)
+
+BACKGROUND:
+Anh arrived in U.S. in July 2024 from Vietnam. Attended school in Vietnam through 2nd grade. Literate in Vietnamese. No prior English instruction. Refugee background; experienced trauma during relocation. Initially very quiet and hesitant to speak. Parents speak limited English.
+
+DOMAIN: LISTENING (Level 2.0 → 2.5)
+
+Evidence of Growth:
+
+9/15 | Math lesson | Anh correctly followed two-step oral directions ("Take out your math book and turn to page 24") without visual cues. Previously needed gestures. | Level 2 indicator
+
+10/10 | Science video | Answered "What did you see?" with "I see butterfly. And flower." after 3-minute video with visuals. Comprehended main idea. | Level 2 indicator
+
+11/05 | Morning routine | Anh responded appropriately to teacher's question "How was your weekend?" with "Good! I go park with family." Shows understanding of personal questions. | Level 2-3 indicator
+
+12/03 | Story time | After read-aloud, Anh identified characters, setting, and problem when asked (used phrases and short sentences). 80% accuracy. | Level 2-3 indicator
+
+Progress Notes:
+Significant growth in listening comprehension! Anh now understands most social language in context with visual support. Comprehends simple academic language in familiar contexts (math, science) when teacher uses clear speech and gestures. Still needs repetition and clarification for complex instructions or abstract concepts. Responds appropriately to most questions. Recommendation: Continue using visuals and gestures; begin reducing support gradually to build independence. Introduce more academic vocabulary with visual supports.
+
+DOMAIN: SPEAKING (Level 1.5 → 2.5)
+
+Evidence of Growth:
+
+9/08 | Playground | Anh speaking more with peers, using phrases like "Can I play?" "My turn." Social language increasing with peers' support. | Level 2 indicator
+
+10/20 | Math | Anh explained strategy: "I count blocks. One, two, three. Three blocks." Used math vocabulary in context. Previously only pointed. | Level 2 indicator
+
+11/12 | Show and Tell | Anh presented about her cat using phrases and short sentences: "This my cat. Name is Fluffy. She black and white. She like fish." 6 sentences total! | Level 2-3 indicator
+
+12/10 | Book report | Anh summarized story using key vocabulary and sentence frames. "The girl is sad because her dog run away. She look everywhere. Finally, she find dog in park." Shows use of past tense (with errors). | Level 3 indicator
+
+Progress Notes:
+Remarkable speaking progress! Anh has become much more verbal and confident. No longer uses single words; consistently uses phrases and short sentences in both social and academic contexts. Beginning to use academic vocabulary in content areas (math, science, social studies). Grammar errors typical for level 2-3 (missing articles, verb tense errors, word order issues). Pronunciation improving. Still needs sentence frames for extended responses and complex language tasks. Recommendation: Provide opportunities for extended discourse (retelling stories, explaining thinking). Introduce more complex sentence structures with transition words. Celebrate risk-taking and errors as learning!
+
+DOMAIN: READING (Level 1.0 → 2.0)
+
+Evidence of Growth:
+
+9/25 | Leveled readers | Anh reading Level B books independently (simple text, repetitive patterns, high-frequency words). Previously could not decode English. | Level 1-2 indicator
+
+10/30 | Phonics assessment | Anh decoded 35/40 CVC words correctly. Understands letter-sound correspondence for most consonants and short vowels. | Level 2 indicator
+
+11/18 | Guided reading | Reading Level D books with teacher support. Can identify main characters and setting in simple stories. Comprehension improving. | Level 2 indicator
+
+12/12 | Independent reading | Anh read 10 pages independently and answered literal comprehension questions with 80% accuracy. Using picture clues and decoding strategies. | Level 2 indicator
+
+Progress Notes:
+Strong reading progress given short time frame! Anh is acquiring phonics skills rapidly (benefits from Vietnamese literacy foundation - good phonological awareness). Can decode simple texts with familiar vocabulary. Comprehends texts with visual support and repetitive language. Sight word vocabulary growing (now knows 50 high-frequency words). Still struggles with unfamiliar vocabulary and abstract concepts in text. Needs continued phonics instruction and vocabulary building. Recommendation: Continue guided reading at Level D-E. Explicitly teach reading comprehension strategies (predicting, visualizing, asking questions). Build academic vocabulary for content area reading. Pair reading with visuals whenever possible.
+
+DOMAIN: WRITING (Level 1.0 → 2.0)
+
+Evidence of Growth:
+
+9/18 | Daily journal | Anh writing simple sentences: "I like school. I have friend." Previously drew pictures with copied words. | Level 2 indicator
+
+10/25 | Science notebook | Anh labeled diagram of plant parts and wrote: "The roots get water. The leafs make food." Shows content vocabulary in writing. | Level 2 indicator
+
+11/20 | Personal narrative | Anh wrote 5-sentence story about family: "My family go store. We buy food. I help my mom. We cook dinner. It delicious." Uses past tense (with errors). | Level 2-3 indicator
+
+12/15 | Opinion writing | With sentence frames, Anh wrote paragraph about favorite animal: "I like dogs. Dogs are friendly. They play with you. Dogs are good pets." 5 sentences with attempts at supporting details. | Level 2-3 indicator
+
+Progress Notes:
+Writing showing steady growth! Anh now writes simple sentences independently, though with grammatical errors typical for Emerging level. Can express ideas using familiar vocabulary. Uses sentence frames successfully for structured writing tasks. Spelling mostly phonetic with some high-frequency words spelled correctly. Beginning to use basic punctuation (capital letters, periods). Needs support for organizing ideas in longer texts. Recommendation: Continue daily writing practice in all content areas. Teach paragraph structure using graphic organizers and frames. Introduce editing checklist appropriate for level 2 (capital letters, periods, finger spaces). Celebrate invented spelling as tool for expressing ideas; don't over-correct.
+
+LANGUAGE GROWTH SUMMARY:
+
+Strengths:
+- Listening comprehension growing rapidly; understands most social language and simple academic language with visual support
+- Speaking confidence increased dramatically; willing to take risks and speak in front of class
+- Strong literacy foundation in L1 (Vietnamese) supporting English literacy development
+- Excellent progress in phonics and decoding; reading growth on track
+- Positive attitude toward learning; works hard and asks for help when needed
+- Peers supportive; making friendships that provide language practice opportunities
+
+Areas for Continued Support:
+- Reading comprehension in content areas requires continued vocabulary building and strategy instruction
+- Writing needs support for organization and paragraph development (moving beyond simple sentences)
+- Academic language across all domains needs explicit instruction (tier 2/3 vocabulary)
+- Grammar instruction needed (verb tenses, articles, prepositions) but keep it in context, not isolated drills
+- Building background knowledge for U.S. culture and content areas (social studies concepts new to Anh)
+
+INSTRUCTIONAL RECOMMENDATIONS FOR SEMESTER 2:
+
+Priority 1 - Continue Building Academic Vocabulary:
+- Pre-teach tier 2/3 vocabulary in all content areas using SIOP strategies
+- Create personalized picture dictionary with Vietnamese translations
+- Use cognates when available (science/social studies vocabulary)
+- Incorporate vocabulary into all four domains (not just reading)
+
+Priority 2 - Increase Language Production Opportunities:
+- Provide more opportunities for extended discourse (retelling, explaining, describing)
+- Use think-alouds to model academic language in authentic contexts
+- Facilitate structured peer discussions (think-pair-share, literature circles)
+- Assign roles in group work that require speaking (reporter, explainer)
+
+Priority 3 - Develop Reading Comprehension Strategies:
+- Explicitly teach comprehension strategies (predict, visualize, summarize, infer)
+- Provide texts at instructional level (Levels E-G) with engaging content
+- Build background knowledge before reading content area texts
+- Use graphic organizers to support comprehension
+
+Priority 4 - Support Writing Development:
+- Teach paragraph structure using graphic organizers and frames
+- Introduce transition words for sequence and adding information
+- Provide models of good writing at appropriate level
+- Focus on content/ideas, not just grammar (save editing for later)
+
+Priority 5 - Family Engagement:
+- Share progress with family using interpreter (celebrate growth!)
+- Provide home reading materials in Vietnamese and English
+- Suggest family activities for language development (library visits, cooking together, reading bilingual books)
+- Connect family with Vietnamese community for cultural support
+
+Expected Progress by End of Year:
+With continued growth trajectory, Anh should reach WIDA Level 3.0-3.5 overall by end of 3rd grade (June). This would indicate Developing proficiency - able to use English for grade-level academic tasks with moderate support. This is excellent one-year progress for a newcomer student!
+
+Teacher Signature: Sarah Johnson, ESL Teacher | Date: 12/18/2024
+cc: General Education Teacher, ESL Program Coordinator, Family (with translation)
+```
+
+Example 3: Multilingual Family Communication Letter (Translated - Spanish version shown)
+```
+WELCOME LETTER TO FAMILIES - TRANSLATED
+[This letter sent in English, Spanish, Arabic, Hmong, and Vietnamese based on school languages]
+
+Estimada Familia de [Student Name]:                         [Original English version also provided]
+
+¡Bienvenidos al Programa de ESL (Inglés como Segundo Idioma) de Escuela Primaria Lincoln! Me llamo Sarah Johnson y soy la maestra de ESL de su hijo/a. Estoy muy emocionada de trabajar con [Student Name] este año y ayudarle a desarrollar sus habilidades en inglés mientras continúa su aprendizaje académico.
+
+SOBRE NUESTRO PROGRAMA DE ESL:
+El programa de ESL en nuestra escuela está diseñado para apoyar a estudiantes que están aprendiendo inglés. [Student Name] recibirá apoyo en inglés de las siguientes maneras:
+
+✓ Instrucción en grupos pequeños: [Student Name] trabajará conmigo y otros estudiantes de ESL [2 veces por semana / diariamente - especifique] para recibir instrucción enfocada en desarrollar habilidades de escuchar, hablar, leer y escribir en inglés.
+
+✓ Apoyo en el salón de clase general: Colaboro con el/la maestro/a de [Student Name] para adaptar las lecciones y proporcionar herramientas (visuales, organizadores gráficos, diccionarios bilingües) que ayuden a su hijo/a a tener éxito en todas las materias.
+
+✓ Valoración del idioma del hogar: Nosotros celebramos y valoramos el [idioma del hogar]. Cuando es posible, permitimos a los estudiantes usar su idioma del hogar para clarificar conceptos y apoyar su aprendizaje. La investigación muestra que ser bilingüe es una gran ventaja!
+
+EL NIVEL ACTUAL DE INGLÉS DE SU HIJO/A:
+Basado en la evaluación ACCESS/evaluación inicial, el nivel actual de competencia en inglés de [Student Name] es:
+- Nivel General: _____ (Escala de 1-6, donde 6 es competente en inglés)
+- Escuchar: _____ | Hablar: _____ | Leer: _____ | Escribir: _____
+
+¿QUÉ SIGNIFICA ESTO?
+[Descripción breve del nivel actual en términos que las familias puedan entender]
+
+Nivel 1-2 (Entrando/Emergiendo): [Student Name] está en las primeras etapas de aprender inglés. Todavía está desarrollando vocabulario básico y frases simples. Con apoyo, progresará rápidamente!
+
+Nivel 3 (Desarrollando): [Student Name] puede usar inglés para comunicación básica y está empezando a usar inglés académico. Necesitará apoyo continuo para el lenguaje complejo de las clases.
+
+Nivel 4-5 (Expandiendo/Transicionando): [Student Name] tiene buenas habilidades en inglés y está acercándose a ser competente. Aún necesita apoyo para el lenguaje académico avanzado, especialmente en lectura y escritura.
+
+OBJETIVOS PARA ESTE AÑO:
+Este año, trabajaremos hacia las siguientes metas:
+1. [Objetivo específico #1 relacionado con el nivel de inglés del estudiante]
+2. [Objetivo específico #2]
+3. [Objetivo específico #3]
+
+CÓMO PUEDE AYUDAR EN CASA:
+Usted es el/la primer/a maestro/a de su hijo/a! Aquí hay maneras de apoyar el aprendizaje del idioma en casa:
+
+✓ Leer juntos en cualquier idioma: La lectura en su idioma del hogar desarrolla habilidades que se transfieren al inglés! Lean libros, revistas, historias en línea, o cualquier texto que les interese. Hablen sobre lo que leyeron.
+
+✓ Conversar en su idioma del hogar: Hablar con su hijo/a en el idioma en que usted es más fuerte desarrolla su pensamiento y lenguaje. ¡No se preocupe si no habla inglés! Compartir historias, experiencias culturales y conocimiento en cualquier idioma es valioso.
+
+✓ Usar la biblioteca pública: La biblioteca pública tiene libros gratis en muchos idiomas, incluyendo libros bilingües. También ofrecen programas para familias.
+
+✓ Conectar el aprendizaje con la vida real: Cuando cocinen, compren en la tienda, o exploren su comunidad, hablen sobre lo que están haciendo. Esto ayuda a [Student Name] a construir vocabulario en contextos reales.
+
+✓ Celebrar el ser bilingüe: ¡Ser bilingüe es una fortaleza! Ayude a su hijo/a a sentirse orgulloso/a de hablar dos idiomas.
+
+✓ Crear rutina de tarea: Establezca un lugar tranquilo y tiempo constante para la tarea. Si no puede ayudar con la tarea en inglés, su hijo/a puede explicarle lo que está aprendiendo en su idioma del hogar (esto ayuda a procesar el aprendizaje!).
+
+COMUNICACIÓN:
+Estoy comprometida a mantenerles informados sobre el progreso de su hijo/a. Pueden contactarme de las siguientes maneras:
+- Teléfono de la escuela: [número] (Podemos organizar intérprete si es necesario)
+- Correo electrónico: [email]
+- Aplicación ClassDojo: [Si la escuela usa esto]
+- Conferencias de padres: [Fechas programadas] - ¡Un intérprete estará presente!
+
+Si tienen preguntas o preocupaciones en cualquier momento, por favor contáctenme. Quiero trabajar en equipo con ustedes para ayudar a [Student Name] a tener éxito!
+
+RECURSOS PARA FAMILIAS:
+La escuela y la comunidad ofrecen estos recursos gratuitos:
+- Clases de inglés para adultos: [Información local]
+- Biblioteca pública: [Dirección y horario]
+- Banco de alimentos comunitario: [Si la familia necesita apoyo]
+- Servicios de traducción: [Cómo acceder]
+- Conexiones culturales: [Organizaciones comunitarias relevantes]
+
+PRÓXIMOS PASOS:
+- Esta semana: [Student Name] comenzará [especificar horario y estructura de ESL]
+- Próxima reunión: [Fecha de conferencia de padres]
+- Evaluación: [Cuándo se evaluará el progreso en inglés]
+
+Estoy tan emocionada de trabajar con [Student Name] y con su familia este año. Juntos, ayudaremos a [Student Name] a desarrollar habilidades fuertes en inglés mientras mantiene y celebra su idioma y cultura del hogar. ¡Ser bilingüe es un regalo!
+
+Si tienen alguna pregunta, no duden en contactarme.
+
+Atentamente,
+
+Sarah Johnson
+Maestra de ESL
+Escuela Primaria Lincoln
+[Firma]
+
+---
+
+NOTA PARA FAMILIAS: Este documento ha sido traducido al español para su conveniencia. Si prefiere comunicarse en otro idioma, podemos organizar servicios de interpretación. Por favor, háganoslo saber.
+
+[Same letter also translated into Arabic, Hmong, Vietnamese, and other home languages represented in school]
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **ESL/ESOL/ELL**: English as a Second Language / English for Speakers of Other Languages / English Language Learner - terms for students learning English as an additional language
+- **WIDA**: World-Class Instructional Design and Assessment - consortium that develops English Language Development standards and the ACCESS assessment
+- **ACCESS for ELLs**: Annual English proficiency assessment measuring English learners' progress in listening, speaking, reading, and writing
+- **WIDA English Language Development Standards**: Framework defining language expectations for English learners across content areas (Language of Language Arts, Math, Science, Social Studies, Social & Instructional Language)
+- **WIDA Proficiency Levels**: 1-Entering, 2-Emerging, 3-Developing, 4-Expanding, 5-Bridging, 6-Reaching - describes stages of English language acquisition
+- **WIDA Can Do Descriptors**: Performance indicators describing what English learners can do at each proficiency level in each language domain
+- **SIOP Model**: Sheltered Instruction Observation Protocol - research-based framework for making content comprehensible to English learners through 8 components (lesson preparation, building background, comprehensible input, strategies, interaction, practice/application, lesson delivery, review/assessment)
+- **Language Objective**: Explicitly stated goal for language development in a lesson (separate from content objective) - identifies language function, form, and use students will demonstrate
+- **Content Objective**: Academic learning goal focused on content standards (what students will learn in math, science, etc.)
+- **Scaffolding**: Temporary supports provided to help English learners access grade-level content - includes visuals, graphic organizers, sentence frames, vocabulary support
+- **Comprehensible Input**: Language and instruction made understandable to English learners through clear speech, visuals, gestures, demonstrations, context - based on Krashen's theory (i+1)
+- **Translanguaging**: Pedagogical practice allowing English learners to draw on all their linguistic resources (home language + English) fluidly for learning - supports meaning-making and identity
+- **Sentence Frames/Starters**: Partially completed sentences providing structure for language production - help students use academic language appropriately (e.g., "I agree with ___ because ___.")
+- **Academic Language**: Language used in school for learning content - includes vocabulary, grammar structures, and discourse features specific to academic contexts (vs. social language)
+- **BICS vs CALP**: Basic Interpersonal Communication Skills (social language) vs Cognitive Academic Language Proficiency (academic language) - Cummins's distinction (social language develops in 6 months-2 years; academic language takes 5-7 years)
+- **L1 and L2**: First language (home language) and second language (English for ELLs in U.S. schools)
+- **Newcomer**: English learner who recently arrived in the U.S. (typically within past 12 months) with limited or no English proficiency
+- **SIFE/SLIFE**: Students with Interrupted Formal Education / Students with Limited or Interrupted Formal Education - English learners with gaps in schooling requiring specialized support
+- **Dual Language/Bilingual Program**: Educational program teaching content in two languages with goal of bilingualism and biliteracy
+
+Standards & Frameworks (2024):
+- **WIDA English Language Development Standards Framework (2020 Edition)**: Current framework organizing language development around Key Language Uses (Narrate, Inform, Explain, Argue) across four language domains
+- **TESOL Standards**: Teachers of English to Speakers of Other Languages - professional standards for ESL instruction (6 domains: Language, Culture, Planning/Instruction, Assessment, Professionalism, Learning Environment)
+- **Common Core State Standards**: Grade-level content standards in ELA and Math that English learners are expected to meet with appropriate support
+- **NGSS (Next Generation Science Standards)**: Science standards emphasizing language-rich practices (arguing from evidence, constructing explanations) - require explicit language support for ELLs
+- **Every Student Succeeds Act (ESSA)**: Federal law requiring states to assess English proficiency annually, set progress targets, and support English learners' language development and academic achievement
+- **Title III**: Federal program funding services for English learners and immigrant students - requires demonstrated progress toward English proficiency
+- **SIOP Protocol (2017 Edition)**: Observation tool and professional development resource for sheltered instruction - includes 30 features across 8 components
+- **GLAD (Guided Language Acquisition Design)**: Model for making content comprehensible using exploration, inquiry, and metacognitive strategies
+- **Danielson Framework Domain 1 (Planning) and Domain 3 (Instruction)**: Teacher evaluation framework elements especially relevant for ESL planning and differentiation
+
+Common Instructional Models:
+- **Push-In ESL**: ESL teacher works with English learners inside the general education classroom (co-teaching model)
+- **Pull-Out ESL**: English learners leave general education classroom for separate ESL instruction focused on language development
+- **Sheltered Instruction/SDAIE**: Content taught in English using strategies to make it comprehensible for English learners
+- **Newcomer Programs**: Separate classes or schools for recent arrivals providing intensive English and orientation to U.S. schools
+- **Dual Language/Two-Way Immersion**: Program model serving both English learners and native English speakers; instruction in both languages
+- **Transitional Bilingual**: Program using students' home language initially, transitioning to all English over time (typically 2-3 years)
+
+Key Assessment Tools:
+- **ACCESS for ELLs 2.0**: Annual English proficiency assessment (Kindergarten ACCESS or grades 1-12) - measures Listening, Speaking, Reading, Writing; results guide ESL services
+- **WIDA Screener**: Placement test to determine initial English proficiency level for newly enrolled English learners
+- **WIDA MODEL**: Interim assessment for monitoring English learners' progress during the school year
+- **Running Records**: Informal reading assessment documenting reading level, accuracy, fluency, and comprehension - useful for tracking literacy development
+- **Language Samples**: Collections of student oral or written language demonstrating proficiency at a point in time - analyzed for grammatical accuracy, vocabulary, complexity
+
+Accommodations for English Learners:
+- **Extended Time**: Extra time on assessments to allow for processing in second language
+- **Bilingual Dictionary/Glossary**: Access to translation tools during instruction and assessment (excluding ELA reading tests typically)
+- **Simplified Language**: Rewording test questions or instructions to reduce linguistic complexity while maintaining content rigor
+- **Visual Supports**: Pictures, diagrams, graphic organizers supporting comprehension
+- **Read-Aloud**: Test directions or questions read aloud (accommodations vary by state for different test types)
+- **Small Group Testing**: Reduced distractions, opportunity for clarification of directions in small group setting
+- **Native Language Support**: Allowing use of native language for clarification, note-taking, or assessment in specific contexts (policies vary by state)
+
+Change log
+2024-12: Initial playbook created based on WIDA ELD Standards Framework 2020, SIOP Model research (Echevarría, Vogt, Short), TESOL standards, and Cummins's theories of second language acquisition
+- Emphasized comprehensible input, scaffolding, and translanguaging as key instructional strategies
+- Integrated SIOP Model components into lesson planning workflow
+- Highlighted cultural responsiveness and asset-based approach to English learners
+- Provided differentiation across WIDA proficiency levels (Entering through Bridging)
+- Included extensive family engagement guidance with multilingual communication
+- Addressed newcomer student needs and trauma-informed practices for refugees
+- Incorporated research-based timeline for language acquisition (BICS vs CALP)
+- Emphasized assessment accommodations and differentiation by proficiency level

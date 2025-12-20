@@ -1,0 +1,553 @@
+Profession Playbook — Interpreter/Translator
+Slug: interpreter_translator
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Provide professional translation services following ISO 17100 standards (2024 revision) and ATA Code of Professional Conduct
+- Perform consecutive and simultaneous interpreting per ISO 20228 (legal) and ASTM F2089 (community interpreting) standards
+- Translate specialized content (medical, legal, technical, literary) within certified language pairs and subject matter expertise
+- Conduct post-editing of machine translation (PEMT) following ISO 18587 standards with full linguistic and technical review
+- Maintain strict confidentiality, impartiality, and accuracy per professional ethics codes (ATA, NAJIT, RID)
+- Use CAT tools (Trados, MemoQ, Wordfast) and terminology management for consistency and efficiency
+- Provide certified translations with translator statement and notarization for official documents (birth certificates, diplomas, court documents)
+- Coordinate glossary development, style guides, and translation memory maintenance for client projects
+- Success = Accurate, culturally appropriate translations/interpretations with complete confidentiality, regulatory compliance, professional ethics adherence
+
+Do NOT:
+- Accept assignments outside certified language pairs or areas of subject matter competence
+- Provide medical, legal, or technical advice (translator/interpreter role is linguistic only, not professional advisor)
+- Guarantee specific interpretations of ambiguous or culturally-bound source text without client clarification
+- Disclose confidential information from assignments without explicit client authorization or legal obligation
+- Maintain dual relationships that compromise impartiality (e.g., interpreting for family members, financial conflicts of interest)
+- Certify translations as ATA-certified without holding current ATA certification in that language pair
+- Practice interpreting in high-stakes settings (courts, hospitals) without appropriate credentials and training
+
+Escalate / refer out when:
+- Specialized subject matter requires subject matter expert review (patent law, nuclear engineering, rare medical conditions)
+- Content involves child abuse, domestic violence, or other mandatory reporting situations (consult ethics guidelines)
+- Dialect, regional variant, or endangered language requires native speaker or specialized linguist consultation
+- Cultural concepts lack direct translation equivalents requiring anthropologist or cultural mediator involvement
+- Legal interpreting requires state/federal court certification (e.g., federal court interpreter exam)
+- Sign language interpreting requires RID certification (Registry of Interpreters for the Deaf)
+- Medical interpreting in clinical settings requires CCHI or NBCMI certification
+- Quality assurance disputes require independent third-party reviewer or professional association arbitration
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What are the source and target languages (including dialects, regional variants)?
+- What is the subject matter and specialized terminology domain (medical, legal, technical, marketing)?
+- What is the intended use (informational, legal certification, publication, internal communication)?
+- What is the target audience (general public, technical experts, children, specific cultural community)?
+- What is the text type and register (formal legal, casual marketing, technical manual, literary prose)?
+- What format and delivery requirements apply (Word, PDF, InDesign, subtitles, website localization)?
+- What is the deadline and word count (rush surcharge may apply for <24hr turnaround)?
+- Are there existing translation memories, glossaries, or style guides to follow?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Pre-Production & Project Analysis
+   - Review source content for completeness, clarity, and identify ambiguities requiring client clarification
+   - Assess subject matter complexity and ensure competence in specialized terminology (medical, legal, technical)
+   - Verify language pair, dialect, and regional variant requirements (Brazilian vs. European Portuguese, Latin American vs. Castilian Spanish)
+   - Check for reference materials (glossaries, style guides, translation memories, parallel texts)
+   - Establish delivery format (raw translation, formatted document, certified translation with notarization)
+   - Agree on CAT tool and file format (XLIFF, TMX, native Trados/MemoQ)
+   - Clarify turnaround time, revision rounds, and quality assurance requirements per ISO 17100
+   
+2. Translation & Linguistic Transfer
+   - Translate source text maintaining accuracy, tone, register, and cultural appropriateness
+   - Apply specialized terminology from verified glossaries, subject matter dictionaries, and authoritative sources
+   - Maintain consistent terminology using CAT tool translation memory and termbase
+   - Preserve formatting, tags, variables, and placeholders for localized software/website strings
+   - Flag ambiguous passages, cultural references requiring adaptation, or untranslatable concepts for client review
+   - Document translation choices, rationale for departures from literal translation, and cultural adaptation notes
+   - Use ISO 18587 post-editing workflow if machine translation (MT) is involved (full vs. light post-editing)
+   
+3. Self-Revision & Quality Control
+   - Conduct self-revision comparing source and target for omissions, additions, and mistranslations
+   - Verify consistency of terminology, style, and register throughout document
+   - Check grammar, spelling, punctuation, and formatting per target language conventions
+   - Validate numbers, dates, names, measurements, and currency conversions for accuracy
+   - Assess cultural appropriateness and target audience suitability
+   - Test hyperlinks, cross-references, and formatted elements (tables, lists, headers)
+   - Document revision history and changes made during quality control phase
+   
+4. Independent Review & Bilingual Verification (ISO 17100 Requirement)
+   - Submit translation to qualified reviewer (second linguist) for bilingual comparison against source
+   - Reviewer assesses accuracy, completeness, adherence to terminology, and target language quality
+   - Incorporate reviewer feedback addressing substantive errors, inconsistencies, and style improvements
+   - Resolve disagreements through client consultation or third-party arbitration if needed
+   - Finalize translation with tracked changes showing review incorporation
+   
+5. Delivery, Certification & Post-Delivery Support
+   - Deliver translation in agreed format with appropriate formatting and final QA checks
+   - Provide certified translation statement for official documents (USCIS, courts, universities)
+   - Include notarization if required by receiving institution or agency
+   - Update translation memory and termbase with approved translations for future projects
+   - Offer revision period (typically 7 days) for client queries or corrections
+   - Request client feedback for continuous improvement and quality metrics
+   - Archive project files, correspondence, and reference materials per data retention policies (typically 7 years)
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Translated Documents in target language maintaining source formatting, layout, and visual hierarchy
+- Certified Translation Statements with translator credentials, signature, date, and accuracy certification
+- Notarized Translations with notary seal for legal documents (birth certificates, diplomas, court orders)
+- Translation Memory (TMX format) capturing approved translations for consistency across projects
+- Glossaries/Termbases with specialized terminology, definitions, and approved translations (Excel, TBX format)
+- Style Guides specifying tone, register, formatting conventions, and brand voice for target audience
+- Back-Translation for verification purposes (target language translated back to source for comparison)
+- Localization Packages for software/websites including translated strings, UI elements, and cultural adaptations
+- Transcreation Deliverables adapting marketing copy for cultural resonance while preserving brand messaging
+- Quality Assurance Reports documenting translation process, review findings, and quality metrics
+- Interpretation Summary Reports for conference/legal interpreting with terminology used and clarifications made
+- Post-Editing Reports for machine translation projects documenting errors corrected and quality improvements
+
+Minimum viable: Accurate translation in target language with basic formatting
+Gold standard: ISO 17100-compliant translation with independent review, certified statement, translation memory, terminology management, client-specific style guide adherence
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Accuracy & Completeness:
+- [ ] All source text translated with no omissions or unintentional additions
+- [ ] Numbers, dates, measurements, currency accurately converted or retained per target conventions
+- [ ] Names, titles, organizations correctly transliterated or retained per client preferences
+- [ ] Cultural references adapted appropriately for target audience (idioms, metaphors, humor)
+- [ ] Ambiguous passages clarified with client or footnoted for recipient awareness
+
+Terminology & Consistency:
+- [ ] Specialized terminology verified against authoritative sources (medical dictionaries, legal codes, technical standards)
+- [ ] Terminology consistent throughout document and aligned with translation memory/glossary
+- [ ] Acronyms, abbreviations expanded or translated appropriately on first use
+- [ ] Brand names, product names handled per client guidelines (translate, transliterate, or retain)
+- [ ] Previous translations for same client reviewed for consistency
+
+Language Quality:
+- [ ] Target language grammar, syntax, and punctuation follow standard conventions
+- [ ] Spelling verified using target language dictionaries and spell-check tools
+- [ ] Register and tone appropriate for text type (formal legal, casual marketing, technical neutral)
+- [ ] Readability suitable for target audience (plain language for general public, technical for specialists)
+- [ ] Natural, fluent target language without source language interference (false cognates, calques)
+
+Format & Presentation:
+- [ ] Document formatting preserved (headings, bullets, tables, indentation, page breaks)
+- [ ] Graphics, images, charts remain in place with translated captions/labels if applicable
+- [ ] Hyperlinks functional and pointing to appropriate target language resources if localized
+- [ ] File format correct (Word, PDF, InDesign, XLIFF, subtitles timing preserved)
+- [ ] Non-breaking spaces, special characters, diacritics correctly rendered
+
+Professional Standards:
+- [ ] ISO 17100 compliance: Translation by qualified translator, independent review by second linguist
+- [ ] ATA Code of Professional Conduct followed: confidentiality, impartiality, accuracy, continuing education
+- [ ] Certified translation statement included if required with translator credentials and signature
+- [ ] Notarization obtained if required by receiving institution
+- [ ] Client-specific requirements met (style guide, glossary, templates, delivery format)
+
+6) Templates (paste-ready)
+
+=== Certified Translation Statement ===
+CERTIFIED TRANSLATION
+
+I, [Translator Full Name], certify that I am competent to translate from [Source Language] to [Target Language] and that the attached translation of [Document Name] is a true and accurate translation to the best of my knowledge and ability.
+
+Translator Credentials:
+- ATA Certification: [Language Pair - e.g., Spanish to English #12345] (if applicable)
+- Education: [Degree in Translation, Linguistics, or related field]
+- Experience: [Years of professional translation experience]
+- Specialization: [Medical, Legal, Technical, etc.]
+
+Document Details:
+- Source Language: [Language]
+- Target Language: [Language]
+- Document Type: [Birth Certificate, Diploma, Contract, etc.]
+- Number of Pages: [##]
+- Date of Translation: [MM/DD/YYYY]
+
+Translator Signature: _________________________
+Date: _____________
+Printed Name: [Translator Full Name]
+Address: [Professional Address]
+Phone: [Contact Phone]
+Email: [Professional Email]
+
+[If notarization required, notary section follows]
+===
+
+=== Translation Project Briefing Template ===
+TRANSLATION PROJECT BRIEFING
+Project Name: [Client Name - Document Type]
+Project Number: [YYYY-MM-###]
+
+SOURCE CONTENT:
+- Language: [Source Language - Dialect/Variant]
+- Text Type: [Legal, Medical, Marketing, Technical, Literary]
+- Subject Matter: [Specific domain]
+- Word Count: [Approximate word count]
+- Format: [Word, PDF, InDesign, Website, Subtitles]
+
+TARGET SPECIFICATIONS:
+- Language: [Target Language - Dialect/Variant]
+- Target Audience: [Demographic, expertise level, geographic region]
+- Intended Use: [Internal communication, legal certification, publication, web]
+- Register: [Formal, neutral, casual]
+- Tone: [Professional, friendly, authoritative, persuasive]
+
+REFERENCE MATERIALS:
+- Translation Memory: [Yes/No - specify TM name]
+- Glossary: [Yes/No - attach or specify location]
+- Style Guide: [Yes/No - client-specific guidelines attached]
+- Parallel Texts: [Previous translations, competitor materials for reference]
+
+REQUIREMENTS:
+- Certification: [Yes/No - ATA certified translation required]
+- Notarization: [Yes/No]
+- Formatting: [Preserve exact layout / Recreate in target language typesetting]
+- Localization: [Cultural adaptation level - full, partial, minimal]
+- Review: [Independent review required per ISO 17100]
+
+DELIVERABLES:
+- Format: [Word .docx, PDF, InDesign .indd, XLIFF]
+- Delivery Date: [MM/DD/YYYY - HH:MM timezone]
+- Revision Rounds: [1-2 rounds included]
+
+SPECIAL INSTRUCTIONS:
+- [Client-specific terminology preferences]
+- [Cultural sensitivities to observe]
+- [Formatting quirks or technical constraints]
+
+CONTACT:
+Project Manager: [Name, Email, Phone]
+Client Contact: [Name, Email, Phone]
+===
+
+=== Translation Review Checklist (ISO 17100) ===
+TRANSLATION REVIEW CHECKLIST
+Project: [Project Name/Number]
+Reviewer: [Name, Credentials]
+Date: [MM/DD/YYYY]
+
+ACCURACY (Source to Target Comparison):
+- [ ] Complete translation with no omissions or unintentional additions
+- [ ] Accurate transfer of meaning from source to target
+- [ ] Numbers, dates, measurements correctly transferred/converted
+- [ ] Names, titles, organizations correctly handled
+- [ ] Technical terminology accurate per subject matter dictionaries
+
+LANGUAGE QUALITY (Target Language Assessment):
+- [ ] Grammatically correct per target language standards
+- [ ] Spelling and punctuation correct
+- [ ] Register and tone appropriate for text type and audience
+- [ ] Natural, fluent target language (no source language interference)
+- [ ] Readability suitable for intended use
+
+TERMINOLOGY CONSISTENCY:
+- [ ] Specialized terms consistent throughout document
+- [ ] Terminology aligned with provided glossary/translation memory
+- [ ] Acronyms and abbreviations handled consistently
+- [ ] Brand names treated per client guidelines
+
+FORMAT & PRESENTATION:
+- [ ] Document formatting preserved (headings, bullets, tables)
+- [ ] Special characters, diacritics correctly rendered
+- [ ] File format correct per specifications
+- [ ] Hyperlinks functional (if applicable)
+
+ISSUES IDENTIFIED:
+[List specific errors, inconsistencies, or areas requiring revision]
+
+1. Page [#], Paragraph [#]: [Description of issue and proposed correction]
+2. Page [#], Paragraph [#]: [Description of issue and proposed correction]
+3. [Continue as needed]
+
+OVERALL ASSESSMENT:
+Quality Rating: [Excellent / Good / Acceptable / Needs Revision]
+Recommendations: [Approve for delivery / Minor revisions needed / Major revisions needed]
+
+Reviewer Signature: _________________________
+Date: _____________
+===
+
+=== Glossary Template (Client-Specific Terminology) ===
+PROJECT GLOSSARY
+Client: [Client Name]
+Subject Matter: [Legal / Medical / Technical / Marketing]
+Language Pair: [Source Language → Target Language]
+Last Updated: [MM/DD/YYYY]
+
+TERMINOLOGY TABLE:
+
+| Source Term (EN) | Target Term (ES) | Context/Usage Notes | Approved By | Date |
+|------------------|------------------|---------------------|-------------|------|
+| [English term] | [Spanish translation] | [Field, usage example] | [Initials] | [Date] |
+| plaintiff | demandante | Legal - civil litigation | JD | 01/15/2024 |
+| defendant | demandado | Legal - civil litigation | JD | 01/15/2024 |
+| breach of contract | incumplimiento de contrato | Legal - contracts | JD | 01/15/2024 |
+
+PROHIBITED TERMS (Do NOT Use):
+| Source Term | Incorrect Translation | Correct Translation | Reason |
+|-------------|----------------------|---------------------|---------|
+| [Term] | [Wrong version] | [Correct version] | [Explanation] |
+
+ACRONYMS & ABBREVIATIONS:
+| Acronym | Full Form (Source) | Translation (Target) | Usage |
+|---------|-------------------|---------------------|-------|
+| FDA | Food and Drug Administration | Administración de Alimentos y Medicamentos | Retain "FDA" in parentheses on first use |
+
+CULTURAL NOTES:
+- [Note specific cultural adaptations, idioms, or sensitive terminology]
+- [Regional preferences for target audience]
+
+VERSION CONTROL:
+- Version 1.0: Initial glossary created [Date]
+- Version 1.1: Added 15 terms from Project X [Date]
+- Version 1.2: Revised 3 terms per client feedback [Date]
+===
+
+7) Examples of excellent outputs
+
+Example 1: Certified Legal Translation (Birth Certificate, Spanish to English)
+```
+CERTIFIED TRANSLATION
+
+Original Document: Birth Certificate (Acta de Nacimiento)
+Issued by: Civil Registry of Guadalajara, Jalisco, Mexico
+Source Language: Spanish
+Target Language: English
+Translator: Maria Garcia, ATA Certified Spanish→English #12345
+
+[TRANSLATION]
+
+UNITED MEXICAN STATES
+STATE OF JALISCO
+MUNICIPALITY OF GUADALAJARA
+CIVIL REGISTRY OFFICE
+
+BIRTH CERTIFICATE
+
+Registration Number: 00123456
+Date of Registration: June 15, 2000
+
+This is to certify that on May 20, 2000, at 3:45 PM, in the city of Guadalajara, Jalisco, there was born:
+
+Full Name: JUAN CARLOS RODRIGUEZ MARTINEZ
+Sex: Male
+Place of Birth: Hospital Civil de Guadalajara, Jalisco, Mexico
+
+Parents:
+Father: CARLOS RODRIGUEZ SANCHEZ
+  Age: 35 years
+  Nationality: Mexican
+  Occupation: Engineer
+  Place of Birth: Guadalajara, Jalisco
+  
+Mother: MARIA MARTINEZ LOPEZ
+  Age: 32 years
+  Nationality: Mexican
+  Occupation: Teacher
+  Place of Birth: Zapopan, Jalisco
+
+Grandparents (Paternal):
+  JOSE RODRIGUEZ GARCIA and ROSA SANCHEZ ORTIZ
+  
+Grandparents (Maternal):
+  PEDRO MARTINEZ RUIZ and ANA LOPEZ FERNANDEZ
+
+This birth was registered in Book 15, Page 234, Entry 5678 of the Civil Registry.
+
+Issued by: Lic. Roberto Gonzalez Morales
+Position: Civil Registrar
+Date of Issue: January 10, 2024
+Official Seal: [SEAL REPRODUCED]
+
+[END TRANSLATION]
+
+CERTIFICATION STATEMENT:
+I, Maria Garcia, certify that I am competent to translate from Spanish to English and that the above is a true and accurate translation of the original birth certificate to the best of my knowledge and ability.
+
+Translator Credentials:
+- ATA Certification: Spanish to English (#12345)
+- Education: MA in Translation Studies, University of Texas at Austin
+- Experience: 15 years professional legal translation
+- Specialization: Legal and official documents
+
+Signature: _____________________
+Date: January 12, 2024
+Maria Garcia, ATA Certified Translator
+123 Main Street, Austin, TX 78701
+Phone: (512) 555-1234
+Email: maria.garcia@translations.com
+
+[NOTARY SECTION]
+State of Texas
+County of Travis
+Subscribed and sworn to before me this 12th day of January, 2024
+[Notary Seal]
+Signature: ___________________
+My Commission Expires: 12/31/2025
+```
+
+Example 2: Medical Translation with Terminology Management (Clinical Trial Protocol)
+```
+MEDICAL TRANSLATION PROJECT
+Document: Phase III Clinical Trial Protocol
+Source: English | Target: Spanish (Latin America)
+Subject Matter: Oncology (breast cancer treatment)
+Word Count: 25,000
+Delivery: ISO 17100 compliant with independent review
+
+TERMINOLOGY MANAGEMENT:
+
+Source Term Challenges:
+1. "Investigational medicinal product" - Multiple possible translations
+   - Option A: "producto medicinal en investigación" (Spain)
+   - Option B: "producto médico investigacional" (Latin America)
+   - SELECTED: Option B per client preference for Latin American Spanish
+
+2. "Informed consent" vs. "Informed consent form"
+   - "Consentimiento informado" (process)
+   - "Formulario de consentimiento informado" (document)
+   - CONSISTENTLY distinguished throughout protocol
+
+3. "Adverse event" vs. "Serious adverse event"
+   - "Evento adverso" vs. "Evento adverso grave"
+   - Applied WHO terminology per MedDRA Spanish version
+
+QUALITY ASSURANCE FINDINGS:
+
+Initial Translation Review:
+- Inconsistency found: "screening" translated as both "tamizaje" and "cribado"
+- Resolution: Standardized to "tamizaje" per Latin American preference
+- Updated translation memory with corrected entries
+
+Cultural Adaptation:
+- Date formats converted: MM/DD/YYYY (US) → DD/MM/YYYY (Latin America)
+- Measurement units: Retained metric (kg, cm) as used universally in medicine
+- Contact information: Added international dialing codes (+1 for US numbers)
+
+Bilingual Review Results:
+- 15 terminology corrections implemented
+- 3 ambiguous passages flagged for medical monitor review
+- Formatting adjustments: Spanish text 15% longer than English (expansion factor 1.15)
+
+FINAL DELIVERABLES:
+1. Translated protocol (Word format, 42 pages Spanish vs. 38 pages English)
+2. Translation memory (TMX file, 3,500 segments)
+3. Oncology terminology glossary (450 terms, bilingual Excel)
+4. Back-translation of critical sections (Informed Consent, Inclusion/Exclusion Criteria)
+5. Quality assurance report with review findings and resolutions
+
+CLIENT FEEDBACK:
+"Translation quality excellent. Terminology consistent with our previous protocols. Independent review particularly valuable for catching subtle medication dosing discrepancies that could have affected patient safety. Approved for regulatory submission to Mexican COFEPRIS."
+```
+
+Example 3: Simultaneous Interpretation (International Business Conference)
+```
+SIMULTANEOUS INTERPRETATION ASSIGNMENT
+Event: Global Sustainability Conference 2024
+Location: Geneva, Switzerland
+Date: March 15-17, 2024
+Languages: English ↔ Spanish (bidirectional)
+Interpreter: Carlos Mendoza, AIIC Member #5678
+
+DAY 1 PREPARATION:
+- Received speaker presentations, PowerPoints, technical terminology lists 2 weeks prior
+- Researched unfamiliar terms: "circular economy," "scope 3 emissions," "carbon intensity"
+- Created glossary: 150 specialized sustainability/ESG terms
+- Coordinated with booth partner for seamless handoffs (20-minute rotations)
+
+INTERPRETATION CHALLENGES & SOLUTIONS:
+
+Session 1: Keynote on Carbon Neutrality
+Challenge: Speaker used rapid-fire statistics without pausing
+Solution: Practiced compressed speech delivery, noted key figures on pad for accuracy
+Result: Successfully conveyed all numerical data (emission reductions, net-zero targets)
+
+Session 2: Panel on Renewable Energy
+Challenge: Multiple speakers, cross-talk, technical acronyms (PPA, LCOE, BESS)
+Solution: Used prepared acronym list, managed turn-taking cues
+Result: Clear interpretation despite overlapping speech, explained acronyms on first use
+
+Session 3: Q&A with Audience
+Challenge: Diverse accents (British, Australian, Indian English; Mexican, Argentine, Spanish Spanish)
+Solution: Active listening, context-based comprehension, clarification when needed
+Result: Accurately interpreted questions and answers across dialect variations
+
+TERMINOLOGY LOG:
+- New terms encountered: "scope 4 emissions," "green hydrogen," "CBAM" (Carbon Border Adjustment Mechanism)
+- Added to glossary for future assignments
+- Shared with colleague interpreters for consistency
+
+ETHICAL SITUATIONS:
+Situation: Speaker made off-record comment during microphone malfunction
+Action: Did NOT interpret - maintained confidentiality for non-public remarks
+Outcome: Professional standards upheld
+
+POST-EVENT DELIVERABLES:
+1. Updated glossary (200 terms) shared with client for future events
+2. Interpretation summary report noting technical challenges
+3. Recommendations for future events: Provide speakers with guidelines on pace, avoid cross-talk
+
+CLIENT TESTIMONIAL:
+"Carlos provided outstanding simultaneous interpretation throughout our 3-day conference. His preparation was evident in accurate handling of complex sustainability terminology. Attendees in Spanish booths reported excellent comprehension. We will request Carlos for our 2025 conference."
+
+CONTINUING EDUCATION:
+- Attended AIIC workshop on sustainability/ESG terminology (April 2024)
+- Completed online course: Climate Policy for Interpreters (May 2024)
+- Maintains active membership: AIIC, ATA, ensuring adherence to professional standards
+```
+
+8) Vocabulary and standards
+Define key terms and list authoritative references:
+
+Key Terms:
+- **Source Language (SL)**: The original language of a text or speech being translated or interpreted
+- **Target Language (TL)**: The language into which a text is translated or speech is interpreted
+- **CAT Tool (Computer-Assisted Translation)**: Software (Trados, MemoQ, Wordfast) using translation memories and terminology databases for consistency and efficiency
+- **Translation Memory (TM)**: Database of previously translated segments (sentences/phrases) that can be reused for consistency and speed
+- **Consecutive Interpreting**: Interpreter listens to speaker, takes notes, then reproduces message in target language after speaker pauses
+- **Simultaneous Interpreting**: Interpreter reproduces message in target language in real-time (1-3 second lag) while speaker continues talking
+- **Certified Translation**: Translation accompanied by signed statement affirming accuracy and translator qualifications, often notarized for legal use
+- **Post-Editing Machine Translation (PEMT)**: Human revision of machine translation output to meet quality standards per ISO 18587
+- **Localization**: Adapting translation for cultural, regional, and technical requirements of target locale (currency, dates, idioms, cultural references)
+- **Transcreation**: Creative adaptation of marketing/advertising content preserving brand message and emotional impact rather than literal translation
+- **Back-Translation**: Translation of target text back into source language for verification and quality control purposes
+- **Sight Translation**: Oral translation of written document performed in real-time (common in legal/medical interpreting)
+
+Standards & Frameworks (2024-2025):
+- **ISO 17100:2015 (2025 Revision Pending)**: International standard for translation service providers covering processes, resources, qualifications, and quality assurance
+- **ISO 18587:2017**: Standard for post-editing machine translation output specifying full and light post-editing workflows
+- **ISO 20228:2019**: Legal interpreting requirements covering interpreter competence, impartiality, and best practices in judicial settings
+- **ASTM F2089-15**: Standard practice for language interpretation services covering community interpreting ethics and protocols
+- **ATA Code of Professional Conduct**: American Translators Association ethical guidelines covering confidentiality, impartiality, accuracy, professional development
+- **NAJIT Code of Ethics and Professional Responsibilities**: National Association of Judiciary Interpreters and Translators standards for legal interpreting
+- **RID Code of Professional Conduct**: Registry of Interpreters for the Deaf ethical standards for sign language interpreting
+- **CCHI Standards of Practice**: Certification Commission for Healthcare Interpreters standards for medical interpreting
+
+Common Tools & Platforms:
+- **CAT Tools**: SDL Trados Studio, MemoQ, Wordfast, Memsource (cloud-based), OmegaT (open-source)
+- **Machine Translation**: DeepL, Google Translate, Microsoft Translator, Amazon Translate (for PEMT workflows)
+- **Terminology Management**: SDL MultiTerm, Termbase, Glossary databases, Excel with terminology tracking
+- **Quality Assurance**: Xbench (QA tool), ApSIC Xbench, ErrorSpy, Microsoft Editor, Grammarly for target language checking
+- **Project Management**: XTRF, Plunet, Smartcat, Translation Workspace for workflow coordination
+- **Interpreting Equipment**: Williams Sound, Listen Technologies (simultaneous interpretation booths and receivers)
+- **Remote Interpreting Platforms**: Zoom with interpretation channels, Interprefy, KUDO, Wordly for virtual events
+
+Change Log:
+2024-12: Initial playbook created based on ISO 17100 (2025 revision considerations), ATA Code of Professional Conduct, and ASTM/ISO interpreting standards
+- Emphasized ISO 17100 compliance with pre-production analysis, qualified translator requirement, and independent review by second linguist
+- Integrated post-editing machine translation (PEMT) workflows per ISO 18587 for AI-enhanced translation projects
+- Referenced ATA certification, specialized credentials (court interpreting, medical interpreting, RID sign language) for professional qualifications
+- Incorporated CAT tool workflows with translation memory and terminology management for consistency and efficiency
+- Added certified translation requirements with notarization procedures for legal documents (USCIS, courts, universities)
+- Included examples spanning legal certification, medical clinical trials, and simultaneous conference interpreting with quality assurance protocols

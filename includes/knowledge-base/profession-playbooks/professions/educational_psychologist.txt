@@ -1,0 +1,525 @@
+Profession Playbook — Educational Psychologist
+Slug: educational_psychologist
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for Educational Psychologists.
+- It provides actionable workflows, templates, and best practices for psychoeducational assessment and intervention.
+- Based on NASP (National Association of School Psychologists) 2020 Practice Model, APA Ethical Principles 2017,
+  and IDEA 2004 special education regulations.
+
+1) Role boundaries
+
+Do:
+- Conduct comprehensive psychoeducational evaluations (cognitive, academic, behavioral, social-emotional)
+- Administer and interpret standardized assessments (IQ, achievement, adaptive behavior, executive function)
+- Provide consultation to teachers, parents, and administrators on learning and behavior
+- Develop evidence-based interventions for academic, behavioral, and social-emotional difficulties
+- Contribute to IEP and 504 plan development through assessment data and recommendations
+- Provide counseling and therapeutic interventions within school psychology scope
+- Conduct functional behavior assessments (FBA) and create behavior intervention plans (BIP)
+- Support crisis intervention, threat assessment, and mental health services in schools
+- Collaborate with multidisciplinary teams (teachers, speech pathologists, counselors, social workers)
+- Promote positive school climate, bullying prevention, and social-emotional learning initiatives
+- Success = Accurate assessment, evidence-based recommendations, improved student outcomes, ethical practice
+
+Do NOT:
+- Diagnose medical or psychiatric conditions (ADHD, autism, mental health disorders - outside school psychologist scope in most states)
+- Prescribe medications or provide medical advice (refer to physicians/psychiatrists)
+- Provide long-term psychotherapy or clinical counseling (refer to licensed therapists)
+- Make special education eligibility determinations alone (team decision with parents)
+- Share confidential student information without proper consent or legal authority
+- Guarantee specific educational placements or services (IEP team decision)
+- Conduct assessments outside your training and competence areas
+- Provide forensic evaluations for custody, court, or legal proceedings (refer to forensic psychologists)
+
+Escalate / refer out when:
+- Student presents with severe mental health symptoms (suicidal ideation, psychosis, severe depression)
+- Suspected child abuse or neglect (mandated reporting required)
+- Medical issues affecting learning (seizures, traumatic brain injury, sensory impairments)
+- Need for neuropsychological evaluation or complex differential diagnosis
+- Family therapy or intensive mental health treatment needed
+- Autism diagnostic evaluations (if not trained in ADOS-2/ADI-R administration)
+- Legal or forensic psychological services required
+- Medication evaluation needed (refer to psychiatrist or developmental pediatrician)
+- Student safety concerns or threat to harm self/others
+
+2) Quick intake questions
+
+Ask 3–8 questions that materially affect the evaluation or intervention approach:
+- "What country/region and what special education framework applies (US IDEA, UK SEND, other)?"
+- "What are the primary concerns about this student's learning, behavior, or development?" (Presenting problem)
+- "When did these difficulties first become noticeable?" (Onset and duration)
+- "In what settings do these challenges occur?" (Contextual factors - classroom, home, social situations)
+- "What interventions or supports have already been tried, and what were the results?" (Response to intervention)
+- "Are there any medical, developmental, or family history factors that might be relevant?" (Background information)
+- "What are the student's strengths and interests?" (Strength-based assessment)
+- "What is the purpose of this evaluation?" (Special education eligibility, intervention planning, re-evaluation)
+- "Are there any language, cultural, or accessibility considerations for assessment?" (Test selection and fairness)
+
+1.5) Regional Considerations
+
+Educational psychology practice and regulations vary by region:
+
+**Professional Title & Role:**
+- **United States**: School psychologist (NASP standards), typically master's/specialist degree, work in schools
+- **United Kingdom**: Educational psychologist (BPS regulated), doctoral degree (DEdPsy/PhD) required, work with local authorities
+- **Canada**: School/educational psychologists, provincial regulation, mix of master's/doctoral levels
+- **Role differences**: US school psychs focus on assessment/intervention, UK EPs more consultative
+
+**Credentialing:**
+- **US**: State certification, NCSP (Nationally Certified School Psychologist), 60+ graduate credits, internship
+- **UK**: BPS chartered psychologist status, HCPC registration, 3-year doctoral training
+- **Independent practice**: Varies (US some states allow, UK EPs often work independently after experience)
+
+**Assessment & Diagnosis:**
+- **US**: Psychoeducational evaluations for IDEA eligibility, RTI/MTSS frameworks, comprehensive assessments
+- **UK**: Statutory assessments for EHC plans, more emphasis on consultation and systemic work
+- **Test availability**: Some assessments US-only (WISC, WIAT widely available, others regional)
+- **Cultural bias**: Considerations vary by region's demographic diversity and test norming samples
+
+**Legal/Ethical:**
+- **US**: FERPA, IDEA regulations, parental consent requirements, mandated reporting
+- **UK**: GDPR, Data Protection Act, safeguarding responsibilities, consent frameworks
+- **Confidentiality**: Regional variations in student privacy laws and information sharing
+
+3) Default workflow
+
+Use this psychoeducational evaluation framework:
+
+1. **Referral Review and Planning** (1-2 hours)
+   - Review referral reason, background information, and existing data (report cards, standardized tests, RTI data)
+   - Interview referring teacher about specific academic and behavioral concerns
+   - Consult with parents about developmental history, home behavior, and family concerns
+   - Review cumulative file for attendance, disciplinary records, previous evaluations
+   - Develop assessment plan based on referral questions (cognitive, academic, behavioral, social-emotional)
+   - Obtain informed consent from parents for evaluation
+
+2. **Comprehensive Assessment** (4-8 hours over multiple sessions)
+   - **Cognitive Assessment**: Administer intelligence test (WISC-V, WAIS-IV, or nonverbal measures)
+   - **Academic Assessment**: Achievement testing (WIAT-4, WJ-IV, KTEA-3) in reading, math, writing
+   - **Behavioral/Emotional Assessment**: Rating scales from multiple informants (teacher, parent, student)
+   - **Adaptive Behavior**: Vineland-3 or ABAS-3 if intellectual disability or autism suspected
+   - **Executive Function**: BRIEF-2 or performance-based measures (D-KEFS, NEPSY-2)
+   - **Observations**: Classroom observation of academic engagement and social behavior
+   - **Student Interview**: Discuss school experiences, social relationships, self-perception
+   - Ensure culturally and linguistically appropriate assessment methods
+
+3. **Data Analysis and Interpretation** (2-4 hours)
+   - Score and interpret all assessments following test manual guidelines
+   - Look for patterns across cognitive, academic, and behavioral domains
+   - Consider alternative explanations for performance (language barriers, test anxiety, motivation)
+   - Integrate data from multiple sources (tests, observations, interviews, records)
+   - Determine if performance discrepancies indicate specific learning disability, intellectual disability, or other condition
+   - Evaluate eligibility criteria for special education categories under IDEA
+   - Identify specific skill deficits and areas of strength
+
+4. **Report Writing** (3-5 hours)
+   - Write comprehensive psychoeducational report following professional standards
+   - Include: background information, behavioral observations, test results with interpretation, summary, and recommendations
+   - Provide clear, jargon-free explanations for parents and teachers
+   - Support conclusions with specific data and examples
+   - Offer evidence-based intervention recommendations (academic strategies, behavioral supports, accommodations)
+   - Address all referral questions explicitly
+   - Ensure confidentiality and ethical reporting standards
+
+5. **IEP/504 Meeting and Consultation** (1-2 hours)
+   - Present evaluation results to IEP or 504 team in accessible language
+   - Collaborate with team to determine eligibility and appropriate services
+   - Recommend specific accommodations, modifications, and interventions
+   - Provide consultation on implementation of recommendations
+   - Answer parent and teacher questions about findings
+   - Follow up on intervention effectiveness and adjust as needed
+
+4) Deliverables
+
+Psychoeducational evaluations typically produce:
+- **Comprehensive Psychoeducational Report**: Full evaluation report with test results, interpretation, and recommendations (15-25 pages)
+- **IEP/504 Meeting Summary**: Documentation of team decisions and service recommendations
+- **Parent Feedback Letter**: Summary of findings in accessible language for parents
+- **Teacher Consultation Notes**: Specific instructional and behavioral strategies for classroom implementation
+- **Behavior Intervention Plan (BIP)**: If conducting functional behavior assessment
+- **Progress Monitoring Plan**: Data collection methods for tracking intervention effectiveness
+- **Assessment Summary Sheet**: One-page summary of key findings for quick reference
+- **Confidential Student File Documentation**: Consent forms, assessment protocols, raw scores
+
+Minimum viable: Assessment data collected, basic report documenting results, eligibility recommendation, general intervention suggestions.
+Gold standard: Comprehensive multi-modal assessment, detailed report with specific evidence-based recommendations, collaborative consultation with team, follow-up support for intervention implementation, progress monitoring plan.
+
+5) Quality checklist
+
+**Assessment Quality**:
+- [ ] Assessments selected are appropriate for referral questions and student characteristics
+- [ ] Test administration procedures followed standardized protocols
+- [ ] Sufficient rapport established with student for valid results
+- [ ] Cultural and linguistic factors considered in test selection and interpretation
+- [ ] Multiple sources of data collected (tests, observations, interviews, records)
+- [ ] Test scores interpreted in context of student's background and testing behavior
+
+**Ethical Practice**:
+- [ ] Informed consent obtained from parents before evaluation
+- [ ] Assessment conducted within areas of professional competence
+- [ ] Student confidentiality maintained throughout process
+- [ ] No conflicts of interest in assessment or recommendations
+- [ ] Assessment results not used inappropriately (e.g., labeling, tracking)
+- [ ] Parents provided opportunity to ask questions and understand results
+
+**Report Quality**:
+- [ ] Report is clear, well-organized, and free of jargon
+- [ ] All referral questions explicitly addressed
+- [ ] Test results accurately reported with confidence intervals
+- [ ] Interpretations supported by specific data and observations
+- [ ] Recommendations are evidence-based, specific, and feasible
+- [ ] Report reviewed for grammar, clarity, and professionalism
+
+**Compliance**:
+- [ ] Evaluation completed within required timelines (IDEA 60-day rule or state requirements)
+- [ ] All required consent forms completed and filed
+- [ ] Assessment bias and discrimination safeguards followed
+- [ ] Special education eligibility criteria applied correctly
+- [ ] Documentation meets legal and professional standards
+
+**Collaboration**:
+- [ ] Parents kept informed throughout evaluation process
+- [ ] Teacher input incorporated into assessment planning
+- [ ] Multidisciplinary team collaboration occurred when appropriate
+- [ ] IEP/504 meeting scheduled in timely manner
+- [ ] Follow-up consultation provided to support implementation
+
+6) Templates (paste-ready)
+
+=== Parent Consent Letter Template ===
+Dear [Parent/Guardian Name],
+
+Your child, [Student Name], has been referred for a psychoeducational evaluation to better understand [his/her/their] learning and development. This evaluation will help us determine the most appropriate educational supports and services.
+
+**Purpose of Evaluation**:
+[Describe specific concerns and referral questions]
+
+**Assessment Procedures**:
+The evaluation will include:
+- Cognitive assessment (thinking and reasoning skills)
+- Academic achievement testing (reading, math, writing)
+- Behavioral and social-emotional assessment
+- Classroom observation
+- Review of educational records
+
+**Timeline**:
+The evaluation will be completed within [timeframe, typically 60 days], and results will be shared at an IEP/504 meeting scheduled after the assessment is complete.
+
+**Your Rights**:
+You have the right to:
+- Review all assessment procedures and materials
+- Attend the IEP/504 meeting where results are discussed
+- Request an independent educational evaluation if you disagree with findings
+- Receive a copy of the evaluation report
+
+**Consent**:
+Please sign and return this form by [date] to indicate your consent for this evaluation.
+
+If you have questions, please contact me at [phone/email].
+
+Sincerely,
+[Your Name], School Psychologist
+[License #, if required by state]
+
+=== Psychoeducational Report Template (Abbreviated) ===
+**CONFIDENTIAL PSYCHOEDUCATIONAL EVALUATION**
+
+**Student**: [Name]
+**Date of Birth**: [DOB] (Age: [XX] years, [XX] months)
+**Grade**: [Current grade]
+**School**: [School name]
+**Dates of Evaluation**: [Date range]
+**Evaluator**: [Your name], [Credentials]
+
+**REASON FOR REFERRAL**:
+[Brief description of concerns that led to evaluation]
+
+**BACKGROUND INFORMATION**:
+[Developmental, medical, educational, and family history]
+
+**BEHAVIORAL OBSERVATIONS**:
+[Description of student's behavior, engagement, and approach to tasks during assessment]
+
+**TESTS ADMINISTERED**:
+- [Test 1 name and purpose]
+- [Test 2 name and purpose]
+- [Additional assessments]
+
+**TEST RESULTS AND INTERPRETATION**:
+
+*Cognitive Assessment* ([Test name], e.g., WISC-V):
+- Full Scale IQ: [Score] ([Classification])
+- Verbal Comprehension: [Score]
+- Visual Spatial: [Score]
+- Fluid Reasoning: [Score]
+- Working Memory: [Score]
+- Processing Speed: [Score]
+
+[Interpretation of cognitive profile and implications for learning]
+
+*Academic Achievement* ([Test name], e.g., WIAT-4):
+- Reading: [Standard scores and grade equivalents]
+- Mathematics: [Standard scores and grade equivalents]
+- Written Expression: [Standard scores and grade equivalents]
+
+[Analysis of academic strengths and weaknesses]
+
+*Behavioral/Emotional Functioning*:
+[Summary of rating scales, observations, and interviews]
+
+**SUMMARY AND CONCLUSIONS**:
+[Integration of all data, patterns identified, eligibility determination if applicable]
+
+**RECOMMENDATIONS**:
+1. [Evidence-based recommendation 1 with specific strategies]
+2. [Evidence-based recommendation 2]
+3. [Accommodations and modifications needed]
+4. [Related services to consider]
+5. [Follow-up and progress monitoring]
+
+[Your signature and credentials]
+[Date]
+
+=== Teacher Consultation Summary Template ===
+**Student**: [Name]
+**Date**: [Date]
+**Participants**: [Names and roles]
+
+**Purpose of Consultation**:
+[Brief description of consultation goal]
+
+**Summary of Assessment Findings**:
+- Strengths: [List key strengths]
+- Areas of concern: [List specific skill deficits or challenges]
+- Implications for learning: [How findings impact classroom performance]
+
+**Evidence-Based Intervention Strategies**:
+1. **[Strategy 1 name]**: [Specific implementation steps]
+2. **[Strategy 2 name]**: [Specific implementation steps]
+3. **[Strategy 3 name]**: [Specific implementation steps]
+
+**Accommodations Recommended**:
+- [Specific accommodation 1]
+- [Specific accommodation 2]
+- [Specific accommodation 3]
+
+**Progress Monitoring**:
+- Frequency: [How often to collect data]
+- Measure: [What specific skill or behavior to track]
+- Decision rule: [When to adjust intervention]
+
+**Follow-up Plan**:
+[Timeline for check-in meetings, data review, intervention adjustment]
+
+**Next Steps**:
+- [ ] [Action item 1 - responsible person]
+- [ ] [Action item 2 - responsible person]
+
+=== Behavior Intervention Plan (BIP) Template ===
+**Student**: [Name]
+**Grade/Age**: [Grade/Age]
+**Date**: [Date]
+**Team Members**: [Names and roles]
+
+**Target Behavior (Operational Definition)**:
+[Clear, observable, measurable description of problem behavior]
+
+**Baseline Data**:
+Frequency: [How often behavior occurs]
+Duration: [How long behavior lasts]
+Intensity: [Severity rating]
+
+**Functional Behavior Assessment Summary**:
+**Function of Behavior**: [Escape/Avoid, Attention-Seeking, Tangible/Access, Sensory]
+**Antecedents**: [What typically happens before the behavior]
+**Consequences**: [What typically happens after the behavior]
+
+**Prevention Strategies** (Antecedent Interventions):
+1. [Strategy to prevent behavior from occurring]
+2. [Environmental modification]
+3. [Instructional strategies]
+
+**Replacement Behavior** (What to teach instead):
+[Specific appropriate behavior to teach that serves same function]
+
+**Teaching Strategies** (How to teach replacement behavior):
+- [Method 1 for teaching new skill]
+- [Method 2 for teaching new skill]
+
+**Reinforcement Plan** (Consequence Interventions):
+- **When replacement behavior occurs**: [Specific reinforcement]
+- **When problem behavior occurs**: [Planned response - typically withhold reinforcement for function]
+
+**Crisis/Safety Plan** (If behavior poses safety risk):
+[Specific procedures for de-escalation and ensuring safety]
+
+**Data Collection Plan**:
+Who: [Person responsible]
+When: [Frequency of data collection]
+Method: [How data will be recorded]
+
+**Review Date**: [Date for team to review progress and adjust plan]
+
+7) Examples of excellent outputs
+
+Example 1: Cognitive Profile Interpretation
+```
+COGNITIVE ASSESSMENT RESULTS (WISC-V)
+
+Mark obtained a Full Scale IQ score of 88 (Low Average range, 21st percentile), indicating overall intellectual functioning in the low average range. However, significant variability exists across cognitive domains, suggesting the Full Scale IQ may not be the best representation of his cognitive abilities.
+
+**Strengths**:
+- Verbal Comprehension (VCI = 102, Average): Mark demonstrated solid verbal reasoning, vocabulary knowledge, and ability to express ideas verbally. He performed particularly well on tasks requiring verbal concept formation and abstract reasoning.
+
+**Weaknesses**:
+- Working Memory (WMI = 76, Borderline): Mark showed significant difficulty holding and manipulating information in short-term memory. This impacts his ability to follow multi-step directions and perform mental calculations.
+
+- Processing Speed (PSI = 81, Low Average): Mark works slowly and carefully on visual-motor tasks. While accuracy is adequate, his slower processing affects timed academic tasks.
+
+**Implications for Learning**:
+Mark's verbal strengths suggest he can understand concepts when presented through discussion and oral instruction. However, his working memory and processing speed weaknesses create challenges in situations requiring:
+- Following lengthy verbal directions (his working memory capacity is limited)
+- Completing timed tests or assignments
+- Note-taking while listening
+- Mental math calculations
+
+**Recommended Accommodations**:
+1. Break multi-step directions into smaller chunks; provide written backup
+2. Extended time on tests and assignments (1.5x time recommended)
+3. Use of graphic organizers to reduce working memory load
+4. Calculator for math assignments focusing on problem-solving rather than computation
+5. Copies of class notes to reduce note-taking demands
+```
+
+Example 2: Learning Disability Determination
+```
+SPECIFIC LEARNING DISABILITY DETERMINATION
+
+Based on comprehensive evaluation data, Jessica meets criteria for a Specific Learning Disability in the area of Reading under IDEA 2004:
+
+1. **Inadequate Progress Despite High-Quality Instruction**:
+   - Jessica has received 18 months of evidence-based reading intervention (Orton-Gillingham approach) with high fidelity implementation
+   - Progress monitoring data shows slope of improvement significantly below expected rate of growth
+   - Current reading level: 1.8 grade equivalent (3rd grade student)
+
+2. **Significant Discrepancy Between Ability and Achievement**:
+   - Cognitive ability (WISC-V): Full Scale IQ = 108 (Average)
+   - Reading achievement (WIAT-4): Basic Reading = 75 (5th percentile)
+   - 33-point standard score discrepancy represents severe underachievement
+
+3. **Pattern of Processing Weaknesses**:
+   - Phonological processing: CTOPP-2 Phonological Awareness = 72
+   - Rapid Naming: CTOPP-2 Rapid Symbolic Naming = 78
+   - Pattern consistent with dyslexia profile
+
+4. **Exclusionary Factors Ruled Out**:
+   - Not primarily due to: intellectual disability, emotional disturbance, cultural/linguistic factors, inadequate instruction, sensory impairment, or other health impairment
+   - Attendance: 94% this year
+   - English proficiency: First language
+   - Vision/hearing: Screenings within normal limits
+
+**Conclusion**: Jessica's reading difficulties are severe, persistent, and not adequately addressed through general education interventions alone. Special education services are recommended to provide intensive, explicit, systematic phonics instruction and reading comprehension strategy instruction.
+```
+
+Example 3: Evidence-Based Recommendations
+```
+RECOMMENDATIONS FOR SUPPORTING MARK
+
+**Academic Interventions**:
+
+1. **Mathematics Computation** (Address working memory and procedural fluency deficits):
+   - Implement Concrete-Representational-Abstract (CRA) instructional sequence
+   - Provide reference charts for math facts and algorithms (reduce working memory load)
+   - Use Touch Math or similar multisensory approach for basic computation
+   - Explicit instruction in metacognitive strategies (self-talk through problem steps)
+   - Progress monitoring: Weekly computation probes with graphing of accuracy and fluency
+
+2. **Reading Comprehension** (Leverage verbal strengths):
+   - Teach comprehension strategies explicitly (prediction, questioning, summarizing, clarifying)
+   - Use graphic organizers for story structure and main idea identification
+   - Preteach vocabulary using Frayer Model or semantic mapping
+   - Provide access to audiobooks for grade-level content to build background knowledge
+   - Progress monitoring: Bi-weekly curriculum-based measures of reading comprehension
+
+**Behavioral/Social-Emotional Supports**:
+
+3. **Self-Regulation and Frustration Tolerance**:
+   - Teach and reinforce use of self-calming strategies (deep breathing, break requests)
+   - Implement Check-In/Check-Out (CICO) daily behavior support system
+   - Provide advance notice of transitions and changes in routine
+   - Build in brief movement breaks every 20-25 minutes during seat work
+   - Positive reinforcement system for effort and use of coping strategies
+
+**Accommodations** (504 Plan or IEP):
+
+4. **Testing and Assignment Modifications**:
+   - Extended time (1.5x) on all tests and timed assignments
+   - Reduce quantity of practice problems (focus on quality over quantity)
+   - Provide formula sheets and math fact charts during assessments
+   - Allow use of calculator on tasks assessing problem-solving (not computation practice)
+   - Oral administration of tests when reading is not the skill being assessed
+   - Preferential seating near teacher, away from distractions
+
+**Parent Support**:
+
+5. **Home-School Collaboration**:
+   - Weekly communication log between teacher and parents
+   - Provide examples of classroom strategies for parents to use during homework
+   - Connect family with community resources: [Local tutoring program], [Big Brothers Big Sisters]
+   - Encourage involvement in extracurricular activities to build on Mark's strengths (drama club, debate team)
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **Psychoeducational Evaluation**: Comprehensive assessment of cognitive, academic, behavioral, and social-emotional functioning
+- **IEP (Individualized Education Program)**: Special education plan for students with disabilities under IDEA
+- **504 Plan**: Accommodation plan for students with disabilities under Section 504 of the Rehabilitation Act
+- **Specific Learning Disability (SLD)**: Disorder in one or more psychological processes affecting learning (reading, math, writing)
+- **IDEA (Individuals with Disabilities Education Act)**: Federal special education law ensuring FAPE
+- **RTI (Response to Intervention)**: Multi-tiered system of support with increasing intervention intensity
+- **MTSS (Multi-Tiered System of Supports)**: Framework for supporting all students academically and behaviorally
+- **FAPE (Free Appropriate Public Education)**: Legal requirement for students with disabilities
+- **LRE (Least Restrictive Environment)**: Principle that students with disabilities should be educated with non-disabled peers to maximum extent appropriate
+- **FBA (Functional Behavior Assessment)**: Systematic process for identifying function of problem behavior
+- **BIP (Behavior Intervention Plan)**: Written plan for addressing problem behavior based on FBA
+- **Standard Score**: Normalized score (mean=100, SD=15 for most tests) for comparing individual to age peers
+- **Percentile Rank**: Percentage of same-age peers who scored at or below this level
+
+**Assessment Instruments** (Current editions as of 2024):
+- **Cognitive**: WISC-V, WAIS-IV, WJ-IV COG, DAS-II, KABC-II, Leiter-3 (nonverbal), UNIT-2 (nonverbal)
+- **Achievement**: WIAT-4, WJ-IV ACH, KTEA-3, TOWRE-2 (reading fluency), KeyMath-3
+- **Adaptive Behavior**: Vineland-3, ABAS-3
+- **Executive Function**: BRIEF-2 (rating scale), D-KEFS, NEPSY-2 (performance-based)
+- **Behavioral/Emotional**: BASC-3, Conners-4, Achenbach System (ASEBA), Beck Youth Inventories
+- **Social-Emotional**: SSIS-SEL, DESSA-RRE
+- **Autism**: ADOS-2, ADI-R, Childhood Autism Rating Scale (CARS-2)
+
+**Standards & Frameworks**:
+- **NASP Practice Model (2020)**: National Association of School Psychologists' comprehensive framework for school psychology services across 10 domains
+- **APA Ethical Principles of Psychologists (2017)**: American Psychological Association ethics code
+- **IDEA 2004 (reauthorized 2015)**: Federal special education law with 13 disability categories and procedural safeguards
+- **Standards for Educational and Psychological Testing (2014)**: Joint standards from AERA, APA, NCME on test development and use
+- **NASP Test Security Guidelines**: Ethical guidelines for protecting test integrity and security
+- **Every Student Succeeds Act (ESSA 2015)**: Federal law requiring evidence-based interventions
+
+**Evidence-Based Intervention Approaches**:
+- **Academic**: Orton-Gillingham (dyslexia), Wilson Reading, Corrective Reading, Lindamood-Bell, Singapore Math, TouchMath
+- **Behavioral**: PBIS (Positive Behavioral Interventions and Supports), Check-In/Check-Out (CICO), FBA-based interventions
+- **Social-Emotional**: Second Step, Zones of Regulation, MindUP, Cognitive Behavioral Intervention for Trauma in Schools (CBITS)
+- **Executive Function**: Executive function coaching, goal setting and self-monitoring, Unstuck and On Target curriculum
+
+**Legal and Ethical Considerations**:
+- **Informed Consent**: Required before conducting evaluations
+- **Confidentiality**: FERPA (Family Educational Rights and Privacy Act) protections for student records
+- **Mandated Reporting**: School psychologists are mandated reporters of suspected child abuse/neglect
+- **Nondiscriminatory Assessment**: Requirement to use culturally and linguistically appropriate measures
+- **Eligibility Determination**: Must use multiple sources of data; cannot rely on single test score
+
+Change log
+- 2024-12: Initial comprehensive playbook created based on NASP 2020 Practice Model, APA Ethical Principles 2017, and IDEA 2004 regulations
+- Key emphasis: Multi-tiered assessment, evidence-based intervention recommendations, cultural responsiveness, ethical practice
+- Reflects current special education law, best practices in school psychology, and contemporary assessment instruments

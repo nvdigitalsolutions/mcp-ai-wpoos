@@ -9,11 +9,14 @@
  * - SSE Service (Server-Sent Events)
  * - Job Event Bus (event coordination)
  * - Cron Status Service (async job status)
+ * - HTTP Client Service (HTTP with retry logic)
  * - Chat Storage Service (localStorage management)
  * - Chat Clipboard Service (copy functionality)
  * - Chat Markdown Service (markdown rendering)
  * - Chat UI Utilities Service (DOM helpers)
  * - Chat Audio Service (TTS/transcription)
+ * - Chat Attachments Service (file upload/attachment handling)
+ * - Chat Transcription Service (audio recording and transcription)
  * - Main Chat functionality
  *
  * @package WP_MCP_AI
@@ -36,6 +39,8 @@ import './cron-status-service.js';
 
 // 4. Chat service modules (no cross-dependencies)
 // eslint-disable-next-line no-unused-vars
+import './chat-http-client-service.js';
+// eslint-disable-next-line no-unused-vars
 import './chat-storage-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-clipboard-service.js';
@@ -45,6 +50,10 @@ import './chat-markdown-service.js';
 import './chat-ui-utilities-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-audio-service.js';
+// eslint-disable-next-line no-unused-vars
+import './chat-attachments-service.js';
+// eslint-disable-next-line no-unused-vars
+import './chat-transcription-service.js';
 
 // 5. Main chat application (depends on all above)
 // eslint-disable-next-line no-unused-vars

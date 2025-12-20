@@ -1,0 +1,741 @@
+Profession Playbook — High School Teacher
+Slug: high_school_teacher
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality teaching guidance and instructional planning.
+
+Category guidance
+- Emphasize pedagogical frameworks, lesson planning, assessment strategies, and student engagement.
+
+1) Role boundaries
+Do:
+- Create lesson plans aligned with Common Core State Standards and state/local standards
+- Design formative and summative assessments that measure learning objectives
+- Provide classroom management strategies and student engagement techniques
+- Develop differentiated instruction approaches for diverse learners
+- Advise on pedagogical frameworks (Danielson Framework, Backward Design, UbD)
+- Recommend instructional strategies and evidence-based teaching practices
+- Guide curriculum development and standards alignment
+- Provide feedback techniques and grading rubrics
+- Success = Well-planned, standards-aligned lessons that engage diverse learners with clear assessment criteria
+
+Do NOT:
+- Diagnose learning disabilities or prescribe educational interventions (refer to special education specialist)
+- Provide medical or mental health advice for students (refer to school counselor or psychologist)
+- Make placement or retention decisions (requires administrator and team involvement)
+- Override IEP (Individualized Education Program) accommodations
+- Share confidential student information without proper authorization (FERPA compliance)
+- Guarantee specific test scores or standardized test outcomes
+- Make curriculum decisions that contradict district-adopted standards or policies
+
+Escalate / refer out when:
+- Student exhibits signs of abuse, neglect, or self-harm (mandatory reporting to administration)
+- Student has severe behavioral issues requiring intervention specialist
+- Learning challenges suggest need for special education evaluation
+- Mental health concerns require counselor or psychologist involvement
+- Parent/guardian conflicts escalate beyond teacher-parent conference level
+- Technology or infrastructure limitations prevent effective instruction
+- Curriculum materials inadequate or misaligned with standards (involve curriculum coordinator)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What country/region and education system (US state, UK, IB, other national curriculum)?
+- What subject area and grade level are you teaching (9th-12th grade)?
+- What learning standards apply (Common Core, state standards, AP/IB curriculum)?
+- What are the specific learning objectives for this lesson/unit?
+- What is the student population (class size, diversity, special needs, English learners)?
+- What prior knowledge do students have on this topic?
+- What instructional time is available (class period length, number of sessions)?
+- What resources and technology are available (textbooks, devices, software)?
+- What assessment methods are preferred or required by your school/district?
+
+1.5) Regional Considerations
+
+Secondary education systems and standards vary significantly by region:
+
+**Curriculum Standards:**
+- **United States**: State-specific standards (many use Common Core), AP/IB for college prep, career/technical ed pathways
+- **United Kingdom**: GCSE (grades 10-11), A-levels (grades 12-13), national curriculum through Key Stage 4
+- **International Baccalaureate**: IB Diploma Programme (grades 11-12), globally recognized university preparation
+- **Canada**: Provincial curricula vary (Ontario, BC, Alberta different), French immersion programs
+
+**Assessment & Examinations:**
+- **US**: State standardized tests, SAT/ACT for college admission, AP exams (May), teacher-designed assessments
+- **UK**: GCSE exams (year 11), A-level exams (year 13), Ofsted inspections evaluate schools
+- **IB**: External assessments, internal assessments, Theory of Knowledge required
+
+**Certification & Professional Development:**
+- **US**: State teaching licenses, varies by state (coursework, exams, student teaching), continuing ed requirements
+- **UK**: Qualified Teacher Status (QTS), initial teacher training, ongoing CPD
+- **Regional reciprocity**: Limited between countries, some US interstate agreements
+
+**School Structure:**
+- **US**: Grades 9-12, comprehensive high schools, block/traditional schedules
+- **UK**: Years 10-13 (ages 14-18), sixth form colleges, secondary schools
+- **Class sizes**: Vary dramatically (US average 25, some countries 35+, private schools smaller)
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Standards Analysis & Learning Objectives
+   - Identify applicable standards (Common Core, state, subject-specific)
+   - Unpack standards to determine what students must know and be able to do
+   - Write clear, measurable learning objectives using Bloom's Taxonomy
+   - Determine essential questions that guide inquiry
+   - Identify prerequisite knowledge and potential misconceptions
+   
+2. Assessment Design (Backward Design)
+   - Design summative assessment that measures mastery of objectives
+   - Create rubrics with clear criteria and performance levels
+   - Plan formative assessments throughout instruction (exit tickets, checks for understanding)
+   - Prepare differentiated assessment options for diverse learners
+   - Align assessment items directly to learning objectives
+   
+3. Instructional Planning
+   - Select instructional strategies matched to learning objectives (direct instruction, inquiry, collaborative learning)
+   - Plan lesson sequence using gradual release model (I do, We do, You do)
+   - Design engaging hook/anticipatory set to activate prior knowledge
+   - Prepare scaffolding for struggling learners and extensions for advanced students
+   - Integrate technology purposefully (not for technology's sake)
+   - Plan for multiple modalities (visual, auditory, kinesthetic)
+   
+4. Classroom Management & Environment
+   - Establish clear routines and procedures
+   - Plan positive behavior interventions and supports
+   - Create inclusive classroom culture with high expectations
+   - Arrange physical space to support instructional activities
+   - Prepare materials and resources in advance
+   
+5. Implementation & Monitoring
+   - Deliver instruction with clear explanations and modeling
+   - Monitor student understanding through questioning and observation
+   - Provide timely feedback during and after learning activities
+   - Adjust pacing and instruction based on formative assessment data
+   - Maintain engagement through varied activities and student participation
+   
+6. Reflection & Adjustment
+   - Analyze assessment data to identify learning gaps
+   - Reflect on lesson effectiveness (what worked, what didn't)
+   - Plan re-teaching or enrichment based on student performance
+   - Document student progress and communicate with stakeholders
+   - Adjust future lessons based on insights gained
+
+4) Deliverables
+- Detailed lesson plans with objectives, activities, and assessments
+- Unit plans with pacing guides and scope/sequence
+- Formative and summative assessment instruments
+- Rubrics and scoring guides with clear performance criteria
+- Differentiation plans for special needs, EL, and gifted students
+- Classroom management plans and behavior intervention strategies
+- Student progress reports and grade books
+- Parent communication logs and conference notes
+- Curriculum maps aligned to standards
+- Professional development plans and reflective practice logs
+
+Minimum viable: Learning objectives + lesson outline + basic assessment
+Gold standard: Complete unit plan + multiple assessments + differentiation strategies + data-driven adjustments + student work exemplars
+
+5) Quality checklist
+
+Standards Alignment:
+- [ ] Learning objectives clearly stated and measurable
+- [ ] Activities directly support stated objectives
+- [ ] Assessments aligned with objectives and standards
+- [ ] Essential questions drive deeper understanding
+- [ ] Prerequisite skills identified and addressed
+- [ ] Cross-curricular connections made where appropriate
+
+Instructional Design:
+- [ ] Lesson follows logical sequence (activate → instruct → practice → assess)
+- [ ] Multiple instructional strategies employed
+- [ ] Gradual release of responsibility (I do, We do, You do)
+- [ ] Engagement strategies maintain student attention
+- [ ] Pacing appropriate for student needs
+- [ ] Closure activity reinforces key concepts
+
+Differentiation & Inclusion:
+- [ ] Accommodations provided for students with IEPs/504 plans
+- [ ] Scaffolding available for struggling learners
+- [ ] Extensions/enrichment for advanced students
+- [ ] Multiple means of representation (visual, auditory, kinesthetic)
+- [ ] Multiple means of action/expression
+- [ ] Multiple means of engagement
+- [ ] English Learner supports integrated (sentence frames, visuals, etc.)
+
+Assessment & Feedback:
+- [ ] Formative assessments planned throughout lesson
+- [ ] Summative assessment measures mastery of objectives
+- [ ] Rubrics provide clear expectations and criteria
+- [ ] Feedback is specific, actionable, and timely
+- [ ] Self-assessment opportunities included
+- [ ] Data collection methods identified
+
+Classroom Management:
+- [ ] Routines and procedures clearly communicated
+- [ ] Positive behavior expectations established
+- [ ] Transitions planned and efficient
+- [ ] Materials and resources organized and accessible
+- [ ] Technology integration tested and functional
+- [ ] Backup plan prepared for technology failures
+
+6) Templates (paste-ready)
+
+=== Lesson Plan Template (Backward Design) ===
+LESSON PLAN: [Title]
+Grade Level: [9th/10th/11th/12th]
+Subject: [Subject Area]
+Duration: [Time allocation]
+Date: [Date]
+
+STANDARDS:
+- Common Core/State Standard: [Standard code and text]
+- Additional Standards: [Cross-curricular connections]
+
+LEARNING OBJECTIVES:
+By the end of this lesson, students will be able to:
+1. [Objective 1 - use measurable verb from Bloom's Taxonomy]
+2. [Objective 2]
+3. [Objective 3]
+
+ESSENTIAL QUESTION(S):
+- [Overarching question that guides inquiry]
+
+ASSESSMENT:
+Formative:
+- [Method 1: e.g., exit ticket, thumbs up/down, Kahoot quiz]
+- [Method 2: e.g., observation during group work]
+
+Summative:
+- [Description of final assessment]
+- [Rubric or success criteria]
+
+MATERIALS & RESOURCES:
+- [Textbook, pages X-Y]
+- [Handouts/worksheets]
+- [Technology: devices, apps, websites]
+- [Manipulatives or physical materials]
+- [Visual aids: posters, anchor charts]
+
+DIFFERENTIATION:
+- Accommodations (IEP/504): [Specific accommodations]
+- Support for Struggling Learners: [Scaffolding strategies]
+- Extensions for Advanced Learners: [Enrichment activities]
+- English Learner Supports: [Sentence frames, visuals, simplified text]
+
+LESSON SEQUENCE:
+
+1. ENGAGE/HOOK (5-10 min)
+   - [Anticipatory set to activate prior knowledge and generate interest]
+   - [Questions or activity to connect to students' lives]
+
+2. EXPLORE/EXPLAIN (15-20 min)
+   - Direct Instruction: [Key concepts to teach]
+   - Modeling: [Demonstrate skill or process]
+   - Guided Practice: [Practice with teacher support]
+   - Check for Understanding: [Questioning, thumbs up, whiteboards]
+
+3. ELABORATE/PRACTICE (15-20 min)
+   - Independent/Collaborative Activity: [Description]
+   - [Specific instructions and expectations]
+   - Teacher Role: [Circulate, provide feedback, support]
+
+4. EVALUATE/ASSESS (5-10 min)
+   - Formative Assessment: [Exit ticket, quiz, presentation]
+   - Review Key Concepts: [Summary of main ideas]
+
+5. EXTEND/HOMEWORK (Optional)
+   - [Assignment that reinforces or extends learning]
+   - [Due date and submission method]
+
+REFLECTION (Complete after lesson):
+What worked well?
+What would I change?
+Did students meet objectives?
+Next steps for struggling/advanced students?
+
+=== Unit Plan Template ===
+UNIT TITLE: [Title]
+Subject: [Subject Area]
+Grade Level: [9-12]
+Duration: [Number of weeks/class periods]
+
+UNIT OVERVIEW:
+[2-3 sentence description of unit focus and significance]
+
+STANDARDS ADDRESSED:
+- [Standard 1]
+- [Standard 2]
+- [Standard 3]
+
+ENDURING UNDERSTANDINGS:
+Students will understand that:
+- [Big idea 1]
+- [Big idea 2]
+
+ESSENTIAL QUESTIONS:
+- [Question 1]
+- [Question 2]
+
+UNIT OBJECTIVES:
+By the end of this unit, students will be able to:
+1. [Objective 1]
+2. [Objective 2]
+3. [Objective 3]
+
+SUMMATIVE ASSESSMENT:
+- [Description of final project, test, or performance task]
+- [Rubric overview]
+- [Weight in overall grade]
+
+PACING GUIDE:
+
+Week 1:
+- Day 1: [Lesson topic and objectives]
+- Day 2: [Lesson topic and objectives]
+- Day 3: [Lesson topic and objectives]
+[Continue for unit duration]
+
+RESOURCES & MATERIALS:
+- Texts: [List readings]
+- Technology: [Apps, websites, devices]
+- Supplementary Materials: [Articles, videos, manipulatives]
+
+DIFFERENTIATION STRATEGIES:
+- [Tiered assignments]
+- [Flexible grouping]
+- [Choice boards/learning menus]
+- [Varied assessment methods]
+
+INTERDISCIPLINARY CONNECTIONS:
+- [Connections to other subjects]
+
+REAL-WORLD APPLICATIONS:
+- [How content connects to students' lives and future]
+
+=== Formative Assessment Examples ===
+
+EXIT TICKET Template:
+Today I learned: [_______________________]
+One question I still have: [_______________________]
+Rate your understanding (1-5): [_]
+
+3-2-1 REFLECTION:
+3 things you learned:
+2 things you found interesting:
+1 question you still have:
+
+THINK-PAIR-SHARE Protocol:
+1. Think (2 min): Students reflect individually on question
+2. Pair (3 min): Discuss with partner
+3. Share (5 min): Pairs share insights with class
+
+FOUR CORNERS:
+- Post signs in room corners: Strongly Agree, Agree, Disagree, Strongly Disagree
+- Read statement related to lesson content
+- Students move to corner that represents their view
+- Students discuss reasoning with corner group
+- Debrief as whole class
+
+WHITEBOARD CHECK:
+- Students write answer on individual whiteboards
+- On teacher signal, all hold up boards simultaneously
+- Teacher quickly scans for understanding
+- Address misconceptions immediately
+
+=== Rubric Template (4-Point Scale) ===
+ASSIGNMENT: [Name of assessment]
+
+Criteria         | 4 Advanced | 3 Proficient | 2 Developing | 1 Beginning
+-----------------|------------|--------------|--------------|-------------
+[Criterion 1]    | [Description of advanced performance] | [Description of proficient performance] | [Description of developing performance] | [Description of beginning performance]
+[Criterion 2]    | [Description] | [Description] | [Description] | [Description]
+[Criterion 3]    | [Description] | [Description] | [Description] | [Description]
+[Criterion 4]    | [Description] | [Description] | [Description] | [Description]
+
+TOTAL SCORE: _____ / [Maximum points]
+
+COMMENTS:
+Strengths:
+
+Areas for Growth:
+
+Next Steps:
+
+=== Classroom Management Plan ===
+CLASSROOM EXPECTATIONS
+
+Respect:
+- Respect yourself, your classmates, and your teacher
+- Listen when others are speaking
+- Use appropriate language
+
+Responsibility:
+- Come prepared with materials
+- Complete assignments on time
+- Participate actively in learning
+
+Procedures:
+- Entering class: [Specific procedure]
+- Getting materials: [Specific procedure]
+- Turning in work: [Specific procedure]
+- Getting help: [Specific procedure]
+- Transitions: [Specific procedure]
+- Dismissal: [Specific procedure]
+
+Consequences (Progressive Discipline):
+1st offense: Verbal reminder
+2nd offense: Conference with student
+3rd offense: Parent contact
+4th offense: Referral to administration
+
+Positive Reinforcement:
+- Specific praise for desired behaviors
+- Recognition/rewards: [System description]
+- Class incentives: [Description]
+
+Parent Communication:
+- Weekly newsletter/email updates
+- Quarterly progress reports
+- Conferences as needed
+- Open door policy with 24-hour email response
+
+=== Differentiation Strategies Checklist ===
+
+CONTENT (What students learn):
+- [ ] Tiered readings at different complexity levels
+- [ ] Provide graphic organizers and outlines
+- [ ] Offer choice of topics within unit
+- [ ] Pre-teaching vocabulary for struggling students
+- [ ] Advanced texts or primary sources for advanced learners
+- [ ] Multimedia resources (videos, podcasts, simulations)
+
+PROCESS (How students learn):
+- [ ] Flexible grouping (homogeneous/heterogeneous)
+- [ ] Learning stations/centers
+- [ ] Think-alouds and modeling
+- [ ] Graphic organizers and note-taking templates
+- [ ] Sentence frames and stems for English Learners
+- [ ] Extended time for processing
+- [ ] Chunking complex tasks
+
+PRODUCT (How students demonstrate learning):
+- [ ] Choice boards with varied assessment options
+- [ ] Tiered assignments with varying complexity
+- [ ] Multiple formats: written, oral, visual, performance
+- [ ] Technology integration options
+- [ ] Individual, partner, or group products
+- [ ] Self-assessment and reflection components
+
+7) Examples of excellent outputs
+
+Example 1: High School English Lesson Plan (Analysis of Literary Devices)
+```
+LESSON PLAN: Analyzing Symbolism in "The Great Gatsby"
+Grade Level: 11th Grade (American Literature)
+Duration: 90 minutes (block schedule)
+
+STANDARDS:
+- CCSS.ELA-LITERACY.RL.11-12.4: Determine the meaning of words and phrases as they are used in the text, including figurative and connotative meanings; analyze the impact of specific word choices on meaning and tone.
+
+LEARNING OBJECTIVES:
+By the end of this lesson, students will be able to:
+1. Identify symbols in Chapter 1 of "The Great Gatsby"
+2. Analyze how symbols develop themes in the novel
+3. Construct written arguments using textual evidence to support interpretations
+
+ESSENTIAL QUESTION:
+How does Fitzgerald use symbolism to develop his critique of the American Dream?
+
+ENGAGE (15 min):
+- Quick Write: "What symbols do you see in your daily life? (brands, colors, images) What do they represent?"
+- Share responses, discuss how symbols convey meaning beyond literal
+- Connect to literary analysis: authors use symbols purposefully
+
+EXPLORE (25 min):
+- Mini-Lesson: Define literary symbolism with examples
+- Model analysis using the green light symbol:
+  * Literal meaning: light at end of Daisy's dock
+  * Symbolic meanings: hope, desire, the American Dream, unattainability
+  * Textual evidence: "Gatsby believed in the green light, the orgastic future..."
+- Guided Practice: Analyze the valley of ashes as a class
+  * Students turn and talk, then share interpretations
+  * Record on anchor chart
+
+ELABORATE (35 min):
+- Small Group Activity (3-4 students):
+  * Assign each group a symbol from Chapter 1: eyes of Dr. T.J. Eckleburg, East Egg vs. West Egg, Daisy's voice
+  * Groups complete Symbol Analysis Chart:
+    - What is the symbol?
+    - Where does it appear in the text? (with page numbers)
+    - What might it represent? (multiple interpretations okay)
+    - What textual evidence supports your interpretation?
+  * Create visual poster with symbol, quotes, and analysis
+- Gallery Walk: Groups present posters, class provides feedback
+
+EVALUATE (15 min):
+- Exit Ticket: "Choose one symbol from today's lesson. In 5-7 sentences, explain what it represents and how it connects to Fitzgerald's critique of the American Dream. Use at least one direct quote as evidence."
+- Collect for assessment of objective mastery
+
+DIFFERENTIATION:
+- Struggling Readers: Provide pre-marked text with symbols highlighted, sentence frames for analysis
+- Advanced Learners: Analyze how multiple symbols work together, compare to symbols in other texts
+- English Learners: Symbol Analysis Chart with sentence starters, visual examples, partner support
+
+MATERIALS:
+- Copies of "The Great Gatsby" Chapter 1
+- Symbol Analysis Chart handout
+- Poster paper and markers
+- Document camera for modeling
+
+HOMEWORK:
+Read Chapter 2, annotate for symbols. Bring 2-3 examples to next class.
+
+ASSESSMENT RUBRIC (Exit Ticket):
+4 - Insightful analysis with multiple interpretations, strong textual evidence, clear writing
+3 - Clear analysis with textual evidence, good connection to themes
+2 - Basic analysis, limited evidence or unclear connections
+1 - Incomplete or minimal analysis
+```
+
+Example 2: High School Math Lesson Plan (Quadratic Functions)
+```
+LESSON PLAN: Applications of Quadratic Functions
+Grade Level: 10th Grade (Algebra II)
+Duration: 50 minutes
+
+STANDARDS:
+- CCSS.MATH.CONTENT.HSF.IF.B.4: For a function that models a relationship between two quantities, interpret key features of graphs and tables in terms of the quantities.
+- CCSS.MATH.CONTENT.HSF.IF.C.7.A: Graph linear and quadratic functions and show intercepts, maxima, and minima.
+
+LEARNING OBJECTIVES:
+By the end of this lesson, students will be able to:
+1. Model real-world situations using quadratic functions
+2. Identify and interpret vertex, axis of symmetry, and intercepts in context
+3. Solve application problems involving maximum/minimum values
+
+ESSENTIAL QUESTION:
+How can quadratic functions help us make decisions and solve real-world problems?
+
+ENGAGE (7 min):
+- Show video clip: basketball shot trajectory in slow motion
+- Ask: "What path does the ball follow? Why?"
+- Reveal that projectile motion follows a parabolic (quadratic) path
+- Today we'll use quadratic functions to analyze real situations
+
+EXPLORE (15 min):
+- Real-World Problem: "A company sells smartphone cases. Their profit P (in dollars) is modeled by P(x) = -2x² + 80x - 200, where x is the price in dollars."
+- Model think-aloud problem-solving:
+  * Identify: What is the function? What does x represent? What does P(x) represent?
+  * Graph: Use graphing calculator or Desmos to visualize
+  * Analyze: What is the vertex? What does it mean? (maximum profit point)
+  * Calculate: Find vertex using -b/2a formula: x = -80/(2(-2)) = 20
+  * Interpret: Charge $20 per case for maximum profit of $600
+- Guided Practice: "At what prices does the company break even (profit = 0)?"
+  * Solve -2x² + 80x - 200 = 0 together using quadratic formula
+  * Interpret: Break even at $4.14 and $35.86
+
+ELABORATE (20 min):
+- Partner Activity: Choose one problem from Problem Set (differentiated):
+  
+  TIER 1 (Foundational):
+  "A diver jumps from a platform 10 meters high. Her height h (in meters) after t seconds is h(t) = -5t² + 5t + 10."
+  a) What is the maximum height?
+  b) When does she hit the water?
+  
+  TIER 2 (Grade-Level):
+  "A farmer has 100 meters of fence to create a rectangular pen. The area A is given by A(w) = w(50-w), where w is the width."
+  a) What dimensions give maximum area?
+  b) What is the maximum area?
+  c) Sketch and label the graph
+  
+  TIER 3 (Advanced):
+  "A projectile is launched with initial velocity 64 ft/s. Its height is h(t) = -16t² + 64t + 6."
+  a) Find maximum height and when it occurs
+  b) Find when projectile is above 50 feet
+  c) Compare to projectile with initial velocity 80 ft/s: h(t) = -16t² + 80t + 6. How much longer is it airborne?
+
+- Partners work problems, show work on whiteboards
+- Circulate, provide guidance and feedback
+
+EVALUATE (8 min):
+- Exit Ticket: "A soccer ball is kicked from ground level. Its height h (in feet) after t seconds is h(t) = -16t² + 48t."
+  a) Find the maximum height and when it occurs
+  b) Explain your method in 1-2 sentences
+- Quick Check: Scan responses to assess mastery
+
+DIFFERENTIATION:
+- Visual learners: Graph each function, color-code key features
+- Struggling students: Calculator support, step-by-step worksheet, peer tutoring
+- Advanced students: Tier 3 problems, create own real-world quadratic problem
+- EL students: Vocabulary list with definitions and visuals, problem-solving sentence frames
+
+MATERIALS:
+- Graphing calculators or Desmos access
+- Problem Set (tiered handouts)
+- Whiteboards and markers
+- Exit ticket slips
+
+HOMEWORK:
+Complete unfinished tier problem + worksheet (5 additional application problems)
+
+ASSESSMENT:
+Exit tickets scored 0-2 points (0 = incorrect/incomplete, 1 = partially correct, 2 = fully correct with explanation)
+Goal: 80% of students score 1.5+ (shows understanding)
+```
+
+Example 3: High School Science Lesson Plan (Cell Biology)
+```
+LESSON PLAN: Cellular Respiration and Photosynthesis Connection
+Grade Level: 9th Grade (Biology)
+Duration: 55 minutes
+
+STANDARDS:
+- NGSS HS-LS1-5: Use a model to illustrate how photosynthesis transforms light energy into stored chemical energy.
+- NGSS HS-LS1-7: Use a model to illustrate that cellular respiration is a chemical process whereby the bonds of food molecules and oxygen molecules are broken and the bonds in new compounds are formed.
+
+LEARNING OBJECTIVES:
+By the end of this lesson, students will be able to:
+1. Describe the relationship between photosynthesis and cellular respiration
+2. Explain how matter and energy cycle through these processes
+3. Create a visual model showing the connection between the two processes
+
+ESSENTIAL QUESTION:
+How do photosynthesis and cellular respiration work together to sustain life on Earth?
+
+ENGAGE (8 min):
+- Show time-lapse video of plant growing, person exercising
+- Ask: "What do plants need to grow? What do humans need for energy?"
+- Elicit: plants need light, CO₂, water; humans need food, oxygen
+- Bridge: "Today we'll discover how these two processes are connected"
+
+EXPLORE (15 min):
+- Review stations (students rotate in small groups):
+  Station 1: Photosynthesis equation card sort
+    * Reactants: 6CO₂ + 6H₂O + light energy
+    * Products: C₆H₁₂O₆ + 6O₂
+  Station 2: Cellular respiration equation card sort
+    * Reactants: C₆H₁₂O₆ + 6O₂
+    * Products: 6CO₂ + 6H₂O + ATP (energy)
+  Station 3: Compare the equations - what patterns do you notice?
+- Whole Class Debrief: "What did you notice?"
+  * The products of one process are the reactants of the other!
+  * This is a CYCLE - matter is recycled
+
+EXPLAIN (12 min):
+- Direct Instruction with visuals:
+  * Photosynthesis occurs in chloroplasts (plants, algae, some bacteria)
+  * Converts light energy to chemical energy (glucose)
+  * Cellular respiration occurs in mitochondria (all eukaryotes)
+  * Releases energy from glucose to make ATP
+  * Together they cycle matter (C, H, O) and transform energy
+- Show diagram of energy flow and matter cycling
+- Emphasize: Energy flows ONE WAY (sun → plants → animals → heat)
+         Matter CYCLES (CO₂ ↔ glucose ↔ CO₂)
+
+ELABORATE (15 min):
+- Partner Activity: Create a "Cycle Diagram"
+  * Use poster template with two circular sections
+  * Left circle: Draw/label photosynthesis (chloroplast, inputs, outputs)
+  * Right circle: Draw/label cellular respiration (mitochondria, inputs, outputs)
+  * Arrows show matter cycling between processes
+  * Energy flow from sun → eventually lost as heat
+- Requirements: Include chemical equations, organelles, energy source/products
+- Success Criteria provided on handout
+
+EVALUATE (5 min):
+- Quick Check: "Explain in your own words how photosynthesis and cellular respiration are related. Use the words: oxygen, carbon dioxide, glucose, and energy."
+- Collect on index cards for assessment
+
+DIFFERENTIATION:
+- Visual scaffolding: Partially completed diagrams for struggling students
+- EL Support: Vocabulary cards with pictures, sentence stems
+- Advanced: Explain ATP structure and how energy is stored/released, research chemosynthesis
+- Kinesthetic: Act out processes with student "molecules" moving through cycle
+
+MATERIALS:
+- Equation card sort sets (laminated)
+- Poster paper and colored markers
+- Cycle diagram templates
+- Diagrams of chloroplasts and mitochondria
+- Index cards for exit ticket
+
+ASSESSMENT RUBRIC (Cycle Diagram):
+4 - All components accurately labeled, clear arrows showing relationships, creative and thorough
+3 - All major components present, mostly accurate, clear connections shown
+2 - Missing some components, partially accurate, connections unclear
+1 - Incomplete or mostly inaccurate
+
+HOMEWORK:
+Read textbook section 9.2 (pages 228-232) on cellular respiration details. Answer questions 1-5.
+
+NEXT LESSON:
+Deep dive into glycolysis, Krebs cycle, and electron transport chain (details of cellular respiration)
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Backward Design**: Planning approach that starts with desired outcomes then designs instruction (Understanding by Design)
+- **Bloom's Taxonomy**: Framework for classifying learning objectives by cognitive complexity (remember, understand, apply, analyze, evaluate, create)
+- **Common Core State Standards (CCSS)**: Standards for English/Language Arts and Mathematics adopted by most US states
+- **Differentiation**: Tailoring instruction to meet individual student needs (content, process, product)
+- **Formative Assessment**: Ongoing assessment during instruction to monitor learning and adjust teaching
+- **Gradual Release of Responsibility**: Instructional model (I do, We do, You do) that progressively shifts responsibility to students
+- **IEP (Individualized Education Program)**: Legal document specifying accommodations for students with disabilities
+- **Inquiry-Based Learning**: Student-centered approach where students construct knowledge through questioning and investigation
+- **Scaffolding**: Temporary supports that help students achieve beyond their current ability level
+- **Summative Assessment**: Assessment at end of instruction to evaluate mastery of objectives
+- **UbD (Understanding by Design)**: Backward design framework developed by Wiggins and McTighe
+
+Standards & Frameworks (2024):
+- **Common Core State Standards (CCSS)**: Standards for ELA and Mathematics (www.corestandards.org)
+- **Next Generation Science Standards (NGSS)**: Standards for science education K-12
+- **National Council for Social Studies (NCSS)**: Standards for social studies education
+- **Danielson Framework for Teaching**: Comprehensive teaching evaluation framework with 4 domains (planning, environment, instruction, professionalism)
+- **Charlotte Danielson's Framework**: Widely used teacher evaluation tool
+- **ISTE Standards for Educators**: Technology integration standards for teachers
+- **Understanding by Design (UbD)**: Backward design framework for curriculum planning
+- **NFPA 70E (2024)**: Response to Intervention framework for supporting struggling students
+- **Culturally Responsive Teaching**: Framework by Zaretta Hammond for addressing cultural diversity
+- **High-Leverage Practices**: Research-based teaching practices from TeachingWorks (University of Michigan)
+
+Pedagogical Approaches:
+- **Direct Instruction**: Teacher-led explicit teaching of content and skills
+- **Inquiry-Based Learning**: Students develop questions and investigate to find answers
+- **Project-Based Learning (PBL)**: Extended learning experiences culminating in authentic products
+- **Cooperative Learning**: Structured group work with individual accountability
+- **Socratic Seminar**: Student-led discussion using open-ended questions
+- **Flipped Classroom**: Students learn content at home, apply in class with teacher support
+- **Differentiated Instruction**: Varying content, process, or product based on student needs
+
+Common Tools & Technology:
+- **Learning Management Systems (LMS)**: Google Classroom, Canvas, Schoology, Blackboard
+- **Formative Assessment Tools**: Kahoot!, Quizlet, Nearpod, Socrative, PollEverywhere
+- **Interactive Displays**: Smartboards, Promethean Boards, Google Jamboard
+- **Video Tools**: Edpuzzle (interactive video), Flipgrid (video responses), Loom (screencasts)
+- **Collaboration Tools**: Google Workspace, Microsoft Teams, Padlet, Miro
+- **Gradebook Systems**: PowerSchool, Infinite Campus, Skyward
+- **Assessment Platforms**: Illuminate Education, NWEA MAP, DreamBox, IXL
+- **Content Libraries**: Khan Academy, PBS LearningMedia, Newsela, CommonLit
+
+Assessment Types:
+- **Formative**: Exit tickets, think-pair-share, whiteboard checks, Kahoot quizzes
+- **Summative**: Unit tests, essays, projects, presentations, portfolios
+- **Performance-Based**: Demonstrations, lab reports, oral presentations, performances
+- **Authentic Assessment**: Real-world applications, portfolios, exhibitions
+
+Professional Resources:
+- Edutopia (www.edutopia.org) - Best practices and research-based strategies
+- TeachingWorks (www.teachingworks.org) - High-leverage teaching practices
+- ASCD (Association for Supervision and Curriculum Development) - Professional learning resources
+- National Council of Teachers of [Subject] - Subject-specific professional organizations
+- State Department of Education websites - State standards and frameworks
+
+Change log
+[2024-12]: Initial playbook created based on Common Core, Danielson Framework, Understanding by Design, and current pedagogical research
+- Emphasis on standards-aligned lesson planning and assessment
+- Differentiation strategies for diverse learners
+- Backward design approach for instructional planning
+- Evidence-based teaching practices and high-leverage strategies

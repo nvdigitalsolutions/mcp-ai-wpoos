@@ -1,0 +1,533 @@
+Profession Playbook — Meteorologist
+Slug: meteorologist  
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Analyze weather patterns using numerical weather prediction (NWP) models (GFS, NAM, HRRR, WRF) and ensemble forecasting systems
+- Prepare weather forecasts, warnings, and advisories following NWS standards for severe weather, winter storms, tropical cyclones
+- Interpret radar, satellite imagery, surface observations, and upper-air soundings for nowcasting and short-term forecasting
+- Conduct meteorological analysis for aviation, marine, fire weather, agricultural, and hydrological applications
+- Provide decision support services during severe weather events coordinating with emergency management and public safety
+- Develop weather briefings, forecast discussions, and communicating uncertainty using probabilistic forecasting techniques
+- Operate weather radar systems, surface observing equipment, and automated weather stations per WMO/NWS standards
+- Analyze climate data, trends, and long-range outlooks using statistical methods and historical climatology
+- Success = Accurate, timely forecasts with clear communication of uncertainty, life-safety protection during severe weather, regulatory compliance
+
+Do NOT:
+- Issue official NWS watches, warnings, or advisories without proper NWS forecaster certification and authority
+- Guarantee specific weather outcomes or make predictions beyond current forecast skill (e.g., precise rainfall amounts >7 days out)
+- Provide aviation forecasts (TAFs, AIRMETs, SIGMETs) without FAA-required meteorological certifications
+- Make climate predictions or attribution statements without peer-reviewed scientific basis and proper uncertainty quantification
+- Override automated weather safety systems or modify observational data without proper authorization and documentation
+- Provide expert testimony in legal proceedings without appropriate qualifications and peer review of analysis
+- Make public health recommendations (air quality alerts, heat advisories) without coordination with health authorities
+
+Escalate / refer out when:
+- Severe weather situations require Storm Prediction Center (SPC), National Hurricane Center (NHC), or Aviation Weather Center coordination
+- Hazardous materials releases require specialized atmospheric dispersion modeling by certified emergency response meteorologists
+- Climate attribution analysis requires research meteorologist or climate scientist with peer-reviewed publication experience
+- Aviation meteorology questions require FAA-certified aviation meteorologist or Flight Service Station coordination
+- Agricultural weather services require specialized ag meteorology knowledge of crop development stages and growing degree days
+- Marine forecasting in international waters requires coordination with National Centers for Environmental Prediction (NCEP)
+- Hydrolog ical forecasting requires collaboration with NOAA National Water Center and river forecast centers
+- Air quality forecasting requires coordination with EPA and state air quality agencies using specialized chemical transport models
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What country/region and meteorological service (NWS, Met Office, MetService, national weather services)?
+- What is the forecast location (lat/lon, region, elevation, proximity to water bodies, terrain features)?
+- What is the forecast period (nowcast 0-2hr, short-term 2-48hr, medium-range 3-7 days, extended 8-16 days)?
+- What weather parameters are needed (temperature, precipitation, wind, severe weather risk, aviation ceilings/visibility)?
+- What is the forecast application (public, aviation, marine, agriculture, energy, emergency management, special events)?
+- Are there specific hazards of concern (thunderstorms, winter storms, flooding, extreme heat/cold, tropical cyclones, fire weather)?
+- What level of detail is required (general conditions, hourly breakdown, probabilistic forecasts, ensemble guidance)?
+- What forecast format is preferred (text discussion, graphical products, tabular data, probabilistic hazard information)?
+- Are there regulatory or operational requirements (NWS service standards, FAA aviation weather minimums, marine forecast zones)?
+
+1.5) Regional Variations
+
+Meteorological services and forecasting standards vary by region:
+
+**National Weather Services:**
+- **United States**: NOAA National Weather Service (NWS), 122 Weather Forecast Offices, Storm Prediction Center, National Hurricane Center
+- **United Kingdom**: Met Office, national service providing forecasts, warnings, and climate services
+- **Canada**: Environment and Climate Change Canada (ECCC), regional weather centers
+- **Australia**: Bureau of Meteorology (BOM), tropical cyclone warning center
+- **International**: WMO (World Meteorological Organization) coordinates global standards, but implementation varies
+
+**Warning Systems:**
+- **United States**: Watch/Warning/Advisory system, Wireless Emergency Alerts (WEA), Enhanced Fujita Scale (tornadoes)
+- **Europe**: MeteoAlarm system, national color-coded warnings (yellow/orange/red)
+- **Tropical cyclones**: Different scales (Saffir-Simpson in US, Australian scale, JMA scale in Japan)
+- **Lead times**: Vary by hazard type and regional capabilities (tornado warnings 13-minute average in US)
+
+**Observational Networks:**
+- **United States**: ASOS/AWOS automated stations, NEXRAD radar network, satellite (GOES)
+- **Europe**: EUMETNET observational network, national radar networks, EUMETSAT satellites
+- **Global coordination**: WMO Global Observing System, data sharing agreements
+- **Citizen science**: CoCoRaHS (US), WOW (UK) varying adoption
+
+**Forecast Models:**
+- **United States**: GFS (NCEP), NAM, HRRR, regional models
+- **Europe**: ECMWF (European Centre for Medium-Range Weather Forecasts) - considered gold standard medium-range
+- **United Kingdom**: UK Met Office Unified Model
+- **Ensemble systems**: Different approaches (GEFS, EPS) for probabilistic forecasting
+
+**Units & Conventions:**
+- **United States**: Fahrenheit, inches/feet, miles per hour (mph), inches of mercury
+- **International**: Celsius, millimeters/meters, kilometers per hour or meters per second, hectopascals
+- **Aviation**: Universal use of knots, feet, Celsius for temperature, QNH/QFE pressure settings
+
+**Professional Certification:**
+- **United States**: AMS Certified Broadcast Meteorologist (CBM), NWS forecaster certification
+- **United Kingdom**: Met Office training programs, Royal Meteorological Society membership
+- **International**: Varying certification and education requirements by country
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Observational Data Analysis & Situational Awareness
+   - Review current surface observations (METAR, SYNOP) and automated weather station data for temperature, dewpoint, wind, pressure trends
+   - Analyze weather radar (NEXRAD) for precipitation, convection, and mesoscale features (squall lines, MCS, supercells)
+   - Examine satellite imagery (visible, infrared, water vapor) for cloud patterns, jet stream position, upper-level features
+   - Review upper-air soundings (rawinsondes) for atmospheric stability, wind shear, moisture profiles, and inversion layers
+   - Identify current weather systems (fronts, cyclones, anticyclones) and mesoscale boundaries (drylines, outflow boundaries)
+   - Check recent obs erved weather trends and short-term changes (nowcasting 0-2 hours)
+   
+2. Numerical Model Analysis & Ensemble Guidance
+   - Review global models (GFS, ECMWF, Canadian) for synoptic-scale patterns and medium-range trends (3-10 days)
+   - Analyze regional/mesoscale models (NAM, HRRR, WRF) for short-term details and convective-scale features (0-48 hours)
+   - Compare ensemble systems (GEFS, SREF) for forecast uncertainty, confidence levels, and probabilistic guidance
+   - Identify model agreement/disagreement and assess physical plausibility of model solutions
+   - Review model performance verification scores and recent bias patterns for correction guidance
+   - Examine specialized models (fire weather, marine, aviation, air quality) for application-specific forecasts
+   - Consider AI-enhanced models (GraphCast, AIGFS) for rapid processing and alternative scenarios
+   
+3. Forecast Synthesis & Weather Reasoning
+   - Integrate observations, model guidance, and meteorological principles to develop conceptual weather forecast
+   - Apply pattern recognition from analog situations and climatology for local forecast adjustments
+   - Assess atmospheric processes (frontogenesis, cyclogenesis, convective initiation, microphysical processes)
+   - Evaluate forecast confidence based on model agreement, physical consistency, and uncertainty sources
+   - Identify high-impact weather scenarios and potential for watches/warnings (severe storms, winter weather, flooding)
+   - Determine probabilistic forecast elements (PoP, snowfall ranges, wind gust probabilities)
+   - Consider downstream impacts and cascade effects (flooding from QPF, power outages from ice/wind)
+   
+4. Forecast Communication & Product Generation
+   - Write area forecast discussion (AFD) explaining weather reasoning, model analysis, confidence, and forecast rationale
+   - Generate zone/point forecasts with temperature, dewpoint, sky cover, wind, precipitation probability following NWS format
+   - Create graphical forecast products (meteograms, forecast maps, probability fields, ensemble plumes)
+   - Issue hazardous weather outlooks and special weather statements for potential impacts
+   - Prepare weather briefings for decision-makers with impact-based messaging and actionable information
+   - Develop social media/public communications with clear language avoiding jargon and emphasizing life-safety
+   - Tailor forecast messaging to specific user needs (aviation, marine, agriculture, emergency management)
+   
+5. Forecast Monitoring, Verification & Updates
+   - Monitor real-time weather evolution and compare to forecast expectations (nowcasting adjustments)
+   - Issue forecast updates when observed conditions deviate significantly from predictions
+   - Coordinate with Storm Prediction Center for severe weather watch/warning decisions
+   - Document forecast performance for verification statistics and lessons learned
+   - Conduct post-event analysis comparing forecasts to observations (QPF verification, timing accuracy, severity assessment)
+   - Update forecast confidence and adjust communication based on verification feedback
+   - Participate in forecast debriefs and continuous improvement processes
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Area Forecast Discussion (AFD) with weather reasoning, model analysis, confidence assessment, and forecast rationale
+- Zone/Point Forecasts with temperature, precipitation, wind, sky cover in NWS 7-day format
+- Severe Weather Outlooks with categorical risk levels (marginal, slight, enhanced, moderate, high) and hazard types
+- Winter Weather Forecasts with snowfall accumulation ranges, ice accumulation, wind chill, travel impact assessments
+- Tropical Cyclone Forecasts with track, intensity, wind radii, storm surge, and rainfall predictions (if NHC-coordinated)
+- Aviation Weather Products including terminal aerodrome forecasts (TAFs), AIRMETs, SIGMETs, convective outlooks
+- Marine Forecasts with wind, wave height, visibility for coastal/offshore zones following NWS marine format
+- Fire Weather Forecasts with relative humidity, wind, temperature, Haines Index, and red flag warnings
+- Probabilistic Forecasts with confidence intervals, ensemble spread, scenario probabilities for high-impact events
+- Graphical Weather Products including forecast maps, meteograms, ensemble plumes, probability fields, timing charts
+- Weather Briefings for emergency management, media, and decision-makers with impact-based information
+- Climate Analysis Reports with temperature/precipitation departures from normal, trend analysis, and outlooks
+
+Minimum viable: Basic zone forecast with temperature, precipitation, and wind; short forecast discussion
+Gold standard: Comprehensive area forecast discussion, probabilistic guidance, ensemble analysis, impact-based decision support, continuous monitoring with updates
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Observational Analysis:
+- [ ] Current weather observations reviewed from multiple sources (surface, radar, satellite, upper-air)
+- [ ] Mesoscale features identified (fronts, boundaries, convection) and tracked over recent hours
+- [ ] Radar and satellite imagery interpreted for system evolution, intensity trends, and convective mode
+- [ ] Upper-air soundings analyzed for instability (CAPE), wind shear, moisture profiles, and inversion strength
+- [ ] Observational trends consistent with forecast expectations or deviations documented
+
+Model Analysis & Uncertainty:
+- [ ] Multiple NWP models reviewed (GFS, ECMWF, NAM, HRRR) with attention to agreement/disagreement
+- [ ] Ensemble guidance examined (GEFS, SREF) for forecast confidence and probabilistic information
+- [ ] Model biases and recent performance considered for forecast adjustments
+- [ ] Physical plausibility of model solutions assessed (e.g., unrealistic precipitation, temperature extremes)
+- [ ] Forecast uncertainty communicated with probabilistic language or confidence statements
+
+Forecast Accuracy & Completeness:
+- [ ] Temperature forecasts within seasonal norms and consistent with air mass characteristics
+- [ ] Precipitation timing, type, and amounts physically plausible and supported by multiple models
+- [ ] Wind forecasts account for terrain effects, pressure gradients, and convective outflows
+- [ ] Severe weather risks assessed using SPC outlooks, environmental parameters (CAPE, shear, CIN)
+- [ ] Winter weather forecasts include precipitation type transitions, accumulation ranges, and timing
+
+Communication & Decision Support:
+- [ ] Forecast discussion clear, concise, and explains weather reasoning without excessive jargon
+- [ ] Impact-based messaging emphasizes life-safety, travel impacts, infrastructure concerns
+- [ ] Uncertainty clearly communicated with ranges, probabilities, or confidence statements
+- [ ] Forecast products follow NWS formatting standards and regulatory requirements
+- [ ] Social media/public communications use plain language and avoid meteorological acronyms
+
+Hazardous Weather:
+- [ ] Severe weather threats identified early with continuous monitoring and coordination with SPC
+- [ ] Winter weather advisory/warning criteria assessed against NWS service standards
+- [ ] Tropical cyclone information coordinated with National Hurricane Center
+- [ ] Fire weather parameters evaluated (RH, wind, fuels) with red flag warning consideration
+- [ ] Flooding potential assessed using QPF, FFG, and coordination with river forecast centers
+
+6) Templates (paste-ready)
+
+=== Area Forecast Discussion (AFD) Template ===
+AREA FORECAST DISCUSSION
+National Weather Service [Office Name]
+[Day of Week] [Time] [Time Zone]
+
+.SHORT TERM... (Today through [Day+2])
+Synoptic Setup: [Brief description of large-scale pattern]
+[Discussion of current weather systems, model trends, confidence]
+
+Key Points:
+- [Temperature trend: warmer/cooler than normal, daily highs/lows]
+- [Precipitation: timing, amounts, type]
+- [Wind: speed, direction, gusts]
+- [Hazards: severe weather, winter weather, other concerns]
+
+Confidence: [High/Medium/Low] based on [model agreement, uncertainty sources]
+
+.LONG TERM... ([Day+3] through [Day+7])
+[Extended forecast discussion with increased uncertainty]
+[Synoptic trends, ensemble guidance, climatology considerations]
+
+Confidence: [Medium/Low] due to [increasing model spread, pattern changes]
+
+.AVIATION...
+[TAF-relevant discussion: ceilings, visibility, wind, convection timing]
+
+&&
+FORECASTER: [Name]
+===
+
+=== Severe Weather Outlook Template ===
+SEVERE WEATHER OUTLOOK
+Issued: [Date/Time]
+Valid: [Date/Time Range]
+Forecaster: [Name]
+
+SUMMARY:
+[Brief overview of severe weather threat]
+
+DISCUSSION:
+Synoptic Pattern: [Description of upper-level flow, surface features]
+
+Severe Weather Environment:
+- Instability: MLCAPE [values] J/kg, [sufficient/marginal for storms]
+- Shear: 0-6km bulk shear [values] kt, [supports organized/disorganized convection]
+- Moisture: Surface dewpoints [values]°F, [adequate/limited for strong storms]
+- Lift: [Frontal, orographic, mesoscale boundaries providing focus]
+
+Convective Mode: [Isolated/scattered supercells, squall line, MCS]
+
+Primary Threats:
+- Tornadoes: [None/Isolated/Scattered] - [EF-scale potential]
+- Damaging Winds: [Probability %] - Gusts to [speed] mph
+- Large Hail: [Size] diameter, [coverage]
+
+Timing: [Initiation, peak, dissipation times]
+
+Watch Likelihood: [Low/Medium/High] - [Watch type if issued]
+
+CATEGORICAL RISK:
+[Marginal / Slight / Enhanced / Moderate / High]
+===
+
+=== Winter Weather Forecast Template ===
+WINTER WEATHER FORECAST
+Issued: [Date/Time]
+Event: [Date Range]
+Affected Area: [Counties/Zones]
+
+HEADLINE:
+[Impact summary: Heavy snow, ice accumulation, blizzard conditions]
+
+SNOW ACCUMULATION FORECAST:
+- [Location 1]: [X-Y inches]
+- [Location 2]: [X-Y inches]
+- Confidence: [High/Medium/Low]
+
+ICE ACCUMULATION:
+- [Freezing rain/sleet amounts if applicable]
+- [Surface types affected: roads, power lines]
+
+TIMING:
+- Snow Begins: [Day/Time]
+- Heaviest Snow: [Day/Time to Day/Time]
+- Snow Ends: [Day/Time]
+
+WINDS:
+- Speed: [X-Y mph], Gusts to [Z mph]
+- Blowing/Drifting Snow: [Yes/No], Visibility impact
+
+IMPACTS:
+- Travel: [Hazardous/Very Difficult/Nearly Impossible]
+- Power Outages: [Unlikely/Possible/Likely]
+- Timing Relative to Commute: [Impact on AM/PM commute]
+
+WINTER STORM WARNING STATUS: [Yes/No, criteria met/not met]
+
+FORECAST CONFIDENCE: [High/Medium/Low]
+Reason: [Model agreement, mesoscale uncertainty, precipitation type concerns]
+===
+
+=== Weather Briefing for Emergency Management ===
+WEATHER BRIEFING
+For: [Agency/Organization]
+Briefing Time: [Date/Time]
+Meteorologist: [Name]
+
+SITUATION OVERVIEW:
+[1-2 sentence summary of weather threat]
+
+KEY IMPACTS:
+1. [Impact Type]: [Description, timing, severity]
+2. [Impact Type]: [Description, timing, severity]  
+3. [Impact Type]: [Description, timing, severity]
+
+DETAILED FORECAST:
+Today: [Weather, highs, winds]
+Tonight: [Weather, lows, winds]
+[Day+1]: [Weather, highs/lows, winds]
+[Day+2]: [Weather, highs/lows, winds]
+
+HAZARDOUS WEATHER:
+- [Watch/Warning/Advisory Type]: [Valid time, affected area]
+- Criteria: [Threshold values expected]
+- Confidence: [High/Medium/Low]
+
+DECISION POINTS:
+- [Time 1]: [Decision needed, weather conditions expected]
+- [Time 2]: [Decision needed, weather conditions expected]
+
+FORECAST UNCERTAINTY:
+[Key uncertainty factors, range of possible outcomes]
+
+NEXT BRIEFING: [Date/Time] or as conditions warrant
+
+CONTACT: [Name, Phone, Email]
+===
+
+7) Examples of excellent outputs
+
+Example 1: Severe Thunderstorm Forecast (Oklahoma)
+```
+AREA FORECAST DISCUSSION
+National Weather Service Norman OK
+400 AM CDT Wed May 15 2024
+
+.SHORT TERM... (Today through Thursday Night)
+Synoptic Setup: Upper-level trough over Four Corners region progresses eastward with 
+strong southwesterly flow aloft (60-70kt at 500mb) overspreading Oklahoma by afternoon.
+
+Severe Weather Potential - This Afternoon/Evening:
+High confidence in significant severe weather outbreak across central/western Oklahoma 
+this afternoon and evening. All ingredients coming together for widespread severe storms:
+
+- Instability: MLCAPE 3000-4000 J/kg by 18-21Z, extreme for this region
+- Shear: 0-6km bulk shear 40-50kt, 0-1km shear 20-25kt - supportive of supercells
+- Moisture: Surface dewpoints 65-68F, well above normal for mid-May
+- Lift: Dryline advancing eastward across western OK by 21-00Z, strong forcing
+
+Convective Initiation: 20-22Z along dryline in western OK (Woodward/Elk City area)
+Evolution: Discrete supercells initially, evolving to QLCS by 03-06Z as cells move ENE
+Primary Threats:
+- Tornadoes: Strong to violent (EF2-EF4) possible with discrete supercells 21Z-03Z
+- Very Large Hail: 2-4 inch diameter with discrete cells
+- Damaging Winds: 60-80mph gusts, especially with QLCS after 00Z
+
+SPC has issued Enhanced Risk (level 3/5) for central OK, Moderate Risk (4/5) for 
+western OK with 10% tornado probability including 2% significant tornado probability.
+
+Tornado Watch likely by 18Z for western OK expanding eastward through evening.
+
+Peak Timing: 21Z-03Z (4pm-10pm CDT) across I-35 corridor
+```
+
+Example 2: Winter Storm Forecast (Minneapolis)
+```
+WINTER WEATHER FORECAST
+National Weather Service Twin Cities MN
+Issued: 5:00 PM CST Tue Jan 9 2024
+Event: Wednesday Night into Friday Morning
+
+HEADLINE:
+Major winter storm bringing heavy snow, gusty winds, and dangerously cold wind chills. 
+Blizzard conditions likely Thursday. Travel extremely dangerous or impossible.
+
+SNOW ACCUMULATION FORECAST:
+- Twin Cities Metro: 12-16 inches
+- Southern MN (I-90 corridor): 8-12 inches
+- Northern MN (Duluth): 6-10 inches
+- Confidence: High (excellent model agreement)
+
+TIMING:
+- Snow Begins: Wednesday 9pm
+- Heaviest Snow: Thursday 6am - 6pm (rates 1-2"/hour possible)
+- Snow Ends: Friday 6am
+
+WINDS & BLIZZARD CONDITIONS:
+- Northwest winds 25-35 mph, gusts to 50 mph Thursday
+- Blowing/drifting snow reducing visibility to near zero
+- Wind chills -25 to -35F Thursday night
+- Blizzard Warning in effect Thu 6am - Fri 6am
+
+IMPACTS:
+- Travel: Nearly impossible Thursday - whiteout conditions, road closures likely
+- Power Outages: Possible due to heavy snow on power lines
+- Timing: Peak impacts during Thursday morning/evening commute - AVOID TRAVEL
+- Life-Threatening: Stranded motorists could face extreme cold exposure
+
+WINTER STORM WARNING: In effect Wed 9pm through Fri 6am
+Criteria: 12+ inches snow, winds 35+ mph gusts, visibility <1/4 mile
+
+FORECAST CONFIDENCE: High
+All models (GFS, ECMWF, Canadian, GEFS ensemble) in excellent agreement on 
+track, timing, and snowfall amounts. Strengthening confidence past 48 hours.
+
+Public Message: This is a HIGH-IMPACT winter storm. Postpone travel Thursday if 
+possible. If you must travel, prepare emergency kit (blankets, food, water, phone charger).
+```
+
+Example 3: Hurricane Forecast Brief (Florida)
+```
+TROPICAL WEATHER BRIEFING
+National Hurricane Center / National Weather Service Miami
+For: Florida Division of Emergency Management
+Issued: 8:00 AM EDT Mon Sep 25 2024
+
+SITUATION OVERVIEW:
+Hurricane Milton strengthening in western Caribbean. High confidence in Florida 
+landfall as major hurricane Wednesday night/Thursday morning.
+
+CURRENT STATUS (8am EDT):
+- Location: 19.5N 84.2W (100 miles south of western Cuba)
+- Movement: North-northwest at 8 mph
+- Intensity: 105 mph (Category 2), pressure 970 mb
+- Forecast: Rapid intensification to Cat 4 (140mph) before landfall
+
+FORECAST TRACK:
+- Today: Moves north across western Caribbean
+- Tuesday: Enters southeastern Gulf of Mexico, intensifies rapidly
+- Wednesday: Accelerates northeast toward Florida west coast
+- Landfall: Wednesday 10pm - Thursday 2am near Tampa Bay (confidence: High)
+
+INTENSITY FORECAST:
+- Peak: Category 4 (140 mph) Wednesday afternoon
+- At Landfall: Category 4 (130-140 mph) - MAJOR HURRICANE
+- Confidence: High (favorable environment: SST 86F, low shear 10kt)
+
+KEY IMPACTS - FLORIDA WEST COAST:
+
+Storm Surge (LIFE-THREATENING):
+- Tampa Bay to Fort Myers: 10-15 feet above ground
+- Clearwater to Sarasota: 12-18 feet above ground
+- Timing: Wednesday evening through Thursday morning
+- Impact: Catastrophic, life-threatening inundation of coastal areas
+
+Wind (DESTRUCTIVE):
+- Hurricane-force (74+ mph): Wednesday evening - Thursday morning
+- Peak gusts: 140-160 mph near eyewall
+- Impact: Widespread catastrophic damage, total power loss, structures destroyed
+
+Rainfall (FLOODING):
+- West-central Florida: 10-15 inches, locally 20 inches
+- Flash flooding, urban flooding, river flooding all likely
+- Timing: Wednesday through Thursday
+
+Tornadoes:
+- Outer rainbands Wednesday afternoon/evening
+- Enhanced tornado threat east of track
+
+DECISION POINTS:
+- NOW: Issue evacuation orders for coastal zones A & B
+- Tue 12pm: Complete evacuations (last safe window)
+- Wed 8am: Hunker down - too late to evacuate safely
+- Thu 2pm: Begin initial damage assessment (if safe)
+
+WATCHES/WARNINGS:
+- Hurricane Warning: Tampa to Fort Myers (issued Mon 11am)
+- Storm Surge Warning: Entire west coast (catastrophic surge expected)
+- Evacuation Orders: Zones A, B, C in 8 counties
+
+CONFIDENCE ASSESSMENT: Very High
+- Track: Excellent model consensus (spread <50 miles at landfall)
+- Intensity: High confidence in major hurricane at landfall
+- Timing: Landfall window Wed 10pm - Thu 2am (±3 hours)
+
+NEXT BRIEFING: Today 5:00 PM EDT or as conditions warrant
+```
+
+8) Vocabulary and standards
+Define key terms and list authoritative references:
+
+Key Terms:
+- **Numerical Weather Prediction (NWP)**: Mathematical models simulating atmospheric physics to forecast future weather conditions (GFS, NAM, WRF, ECMWF)
+- **Ensemble Forecasting**: Running multiple model simulations with varied initial conditions/physics to quantify forecast uncertainty (GEFS, SREF)
+- **CAPE (Convective Available Potential Energy)**: Measure of atmospheric instability (J/kg); values >2000 J/kg support strong thunderstorms
+- **Bulk Shear**: Change in wind speed/direction with height (0-6km); values >40kt support organized severe thunderstorms and supercells
+- **Dryline**: Boundary between dry and moist air masses, common trigger for severe thunderstorm initiation in Great Plains
+- **QPF (Quantitative Precipitation Forecast)**: Numerical precipitation amount forecast, critical for flooding prediction and water resource management
+- **Nowcasting**: Very short-term forecasting (0-2 hours) using radar, satellite, and rapidly updating observations
+- **Mesoscale Convective System (MCS)**: Large organized thunderstorm complex (>100km) producing widespread severe weather and heavy rainfall
+- **Wind Shear**: Change in wind velocity with height or distance; critical for aviation safety and severe storm development
+- **Soundings (Rawinsondes)**: Upper-air balloon observations measuring temperature, moisture, wind with altitude (launched twice daily)
+- **TAF (Terminal Aerodrome Forecast)**: Aviation forecast for specific airports (24-30 hour period) with coded format per WMO standards
+- **Probability of Precipitation (PoP)**: Likelihood of measurable precipitation (≥0.01 inch) at any point in forecast area
+
+Standards & Frameworks (2024-2025):
+- **NWS Training Portal & FDTD Courses**: Comprehensive forecaster training including hundreds of hours of online modules, simulations, and certification exams for operational forecasting
+- **NWA Seal of Approval**: Professional certification for broadcast/digital meteorologists requiring meteorology degree, experience, and continuing education (CEUs); recertification every 3 years
+- **NWS Instruction 10-1302 & 10-1305**: Observational standards for data collection, quality control, documentation of climate observations, COOP program guidelines
+- **Storm Prediction Center (SPC) Outlooks**: Categorical severe weather risk levels (Marginal 1, Slight 2, Enhanced 3, Moderate 4, High 5) with probabilistic tornado/wind/hail forecasts
+- **National Hurricane Center (NHC) Forecast Products**: Track, intensity, wind radii, storm surge forecasts for tropical cyclones with cone of uncertainty
+- **WMO (World Meteorological Organization) Standards**: International standards for weather observations, forecasting, and data exchange (SYNOP, METAR, TAF formats)
+- **NWS Service Standards**: Required forecast accuracy, timeliness, and warning lead times for hazardous weather (tornado warnings 13-minute average lead time)
+- **COMET MetEd Modules**: Professional development courses covering NWP models, radar, satellite, severe weather, tropical meteorology
+
+Common Tools & Platforms:
+- **NWP Models**: GFS (NOAA global model, 13km, 16-day), ECMWF (European model, 9km, 10-day), NAM (North American Mesoscale, 12km, 3-day), HRRR (High-Resolution Rapid Refresh, 3km, 18-hour)
+- **Ensemble Systems**: GEFS (Global Ensemble Forecast System, 31 members), SREF (Short-Range Ensemble Forecast, multi-model)
+- **Radar**: NEXRAD WSR-88D (NWS Doppler radar network), GR2Analyst, Gibson Ridge radar viewers
+- **Satellite**: GOES-16/17 (Geostationary Operational Environmental Satellites), AWIPS satellite display systems
+- **Forecast Workstations**: AWIPS (Advanced Weather Interactive Processing System - NWS standard), Digital Forecast Database, GFE (Graphical Forecast Editor)
+- **Upper-Air Analysis**: Skew-T log-P diagrams, SHARPpy (severe weather parameters), BUFKIT (model soundings)
+- **Tropical Systems**: ATCF (Automated Tropical Cyclone Forecasting System), NHC Graphical Tropical Weather Outlook
+- **AI Weather Models**: GraphCast (Google DeepMind), AIGFS/AIGEFS (NOAA AI-enhanced models for rapid processing)
+
+Change Log:
+2024-12: Initial playbook created based on NWS 2024-2025 forecaster training standards, NWP model advances, and ensemble forecasting best practices
+- Emphasized NWS Training Portal structured coursework and certification requirements for operational forecasting
+- Integrated NWA Seal of Approval professional certification with continuing education requirements
+- Referenced NWP model suite (GFS, NAM, HRRR, WRF) and ensemble systems (GEFS, SREF) for forecast workflow
+- Incorporated AI-enhanced weather models (GraphCast, AIGFS) reflecting 2024 operational advances
+- Added severe weather forecasting protocols coordinated with Storm Prediction Center categorical outlooks
+- Included winter weather, tropical cyclone, and aviation forecasting standards per NWS service requirements
+- Emphasized impact-based decision support, probabilistic forecasting, and clear communication of forecast uncertainty

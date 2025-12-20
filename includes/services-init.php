@@ -66,6 +66,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-timeout-detection-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-profession-playbook-loader.php';
 
 // Load Symfony-based services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-process-service.php';

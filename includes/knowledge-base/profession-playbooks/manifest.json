@@ -1,0 +1,1025 @@
+{
+  "count": 204,
+  "professions": [
+    {
+      "slug": "accountant",
+      "title": "Accountant",
+      "category": "financial"
+    },
+    {
+      "slug": "actor",
+      "title": "Actor",
+      "category": "creative"
+    },
+    {
+      "slug": "aerospace_engineer",
+      "title": "Aerospace Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "agricultural_engineer",
+      "title": "Agricultural Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "agronomist",
+      "title": "Agronomist",
+      "category": "other"
+    },
+    {
+      "slug": "air_traffic_controller",
+      "title": "Air Traffic Controller",
+      "category": "other"
+    },
+    {
+      "slug": "animal_behaviorist",
+      "title": "Animal Behaviorist",
+      "category": "other"
+    },
+    {
+      "slug": "animator",
+      "title": "Animator",
+      "category": "creative"
+    },
+    {
+      "slug": "anthropologist",
+      "title": "Anthropologist",
+      "category": "technical"
+    },
+    {
+      "slug": "applied_statistician",
+      "title": "Applied Statistician",
+      "category": "technical"
+    },
+    {
+      "slug": "aquaculture_specialist",
+      "title": "Aquaculture Specialist",
+      "category": "other"
+    },
+    {
+      "slug": "archaeologist",
+      "title": "Archaeologist",
+      "category": "technical"
+    },
+    {
+      "slug": "architect",
+      "title": "Architect",
+      "category": "creative"
+    },
+    {
+      "slug": "architectural_drafter",
+      "title": "Architectural Drafter",
+      "category": "technical"
+    },
+    {
+      "slug": "automotive_mechanic",
+      "title": "Automotive Mechanic",
+      "category": "other"
+    },
+    {
+      "slug": "bartender",
+      "title": "Bartender",
+      "category": "other"
+    },
+    {
+      "slug": "bim_coordinator",
+      "title": "BIM Coordinator",
+      "category": "technical"
+    },
+    {
+      "slug": "biologist",
+      "title": "Biologist",
+      "category": "technical"
+    },
+    {
+      "slug": "biomedical_engineer",
+      "title": "Biomedical Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "bookkeeper",
+      "title": "Bookkeeper",
+      "category": "financial"
+    },
+    {
+      "slug": "bus_driver",
+      "title": "Bus Driver",
+      "category": "other"
+    },
+    {
+      "slug": "business_consultant",
+      "title": "Business Consultant",
+      "category": "advisory"
+    },
+    {
+      "slug": "cad_drafter",
+      "title": "CAD Drafter",
+      "category": "technical"
+    },
+    {
+      "slug": "carpenter",
+      "title": "Carpenter",
+      "category": "other"
+    },
+    {
+      "slug": "chef",
+      "title": "Chef",
+      "category": "other"
+    },
+    {
+      "slug": "chemical_engineer",
+      "title": "Chemical Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "chemist",
+      "title": "Chemist",
+      "category": "technical"
+    },
+    {
+      "slug": "cinematographer",
+      "title": "Cinematographer",
+      "category": "creative"
+    },
+    {
+      "slug": "civil_engineer",
+      "title": "Civil Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "clinical_pharmacologist",
+      "title": "Clinical Pharmacologist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "clinical_research_coordinator",
+      "title": "Clinical Research Coordinator",
+      "category": "healthcare"
+    },
+    {
+      "slug": "cloud_architect",
+      "title": "Cloud Architect",
+      "category": "technical"
+    },
+    {
+      "slug": "college_professor",
+      "title": "College Professor",
+      "category": "other"
+    },
+    {
+      "slug": "commercial_pilot",
+      "title": "Commercial Pilot",
+      "category": "other"
+    },
+    {
+      "slug": "computer_scientist",
+      "title": "Computer Scientist",
+      "category": "technical"
+    },
+    {
+      "slug": "construction_estimator",
+      "title": "Construction Estimator",
+      "category": "technical"
+    },
+    {
+      "slug": "construction_manager",
+      "title": "Construction Manager",
+      "category": "other"
+    },
+    {
+      "slug": "construction_painter",
+      "title": "Painter (Construction)",
+      "category": "other"
+    },
+    {
+      "slug": "content_creator",
+      "title": "Content Creator",
+      "category": "creative"
+    },
+    {
+      "slug": "corporate_trainer",
+      "title": "Corporate Trainer",
+      "category": "other"
+    },
+    {
+      "slug": "correctional_officer",
+      "title": "Correctional Officer",
+      "category": "other"
+    },
+    {
+      "slug": "crisis_communications_manager",
+      "title": "Crisis Communications Manager",
+      "category": "other"
+    },
+    {
+      "slug": "customer_service_rep",
+      "title": "Customer Service Representative",
+      "category": "other"
+    },
+    {
+      "slug": "customs_broker",
+      "title": "Customs Broker",
+      "category": "advisory"
+    },
+    {
+      "slug": "cybersecurity_specialist",
+      "title": "Cybersecurity Specialist",
+      "category": "technical"
+    },
+    {
+      "slug": "data_scientist",
+      "title": "Data Scientist",
+      "category": "technical"
+    },
+    {
+      "slug": "database_administrator",
+      "title": "Database Administrator",
+      "category": "technical"
+    },
+    {
+      "slug": "dentist",
+      "title": "Dentist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "devops_engineer",
+      "title": "DevOps Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "disaster_response_coordinator",
+      "title": "Disaster Response Coordinator",
+      "category": "other"
+    },
+    {
+      "slug": "dispatcher",
+      "title": "Dispatcher",
+      "category": "other"
+    },
+    {
+      "slug": "drug_safety_specialist",
+      "title": "Drug Safety Specialist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "economist",
+      "title": "Economist",
+      "category": "financial"
+    },
+    {
+      "slug": "educational_administrator",
+      "title": "Educational Administrator",
+      "category": "other"
+    },
+    {
+      "slug": "educational_psychologist",
+      "title": "Educational Psychologist",
+      "category": "other"
+    },
+    {
+      "slug": "electrical_engineer",
+      "title": "Electrical Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "electrician",
+      "title": "Electrician",
+      "category": "other"
+    },
+    {
+      "slug": "elementary_school_teacher",
+      "title": "Elementary School Teacher",
+      "category": "other"
+    },
+    {
+      "slug": "emergency_management_director",
+      "title": "Emergency Management Director",
+      "category": "other"
+    },
+    {
+      "slug": "emt",
+      "title": "Emergency Medical Technician (EMT)",
+      "category": "healthcare"
+    },
+    {
+      "slug": "entrepreneur",
+      "title": "Entrepreneur",
+      "category": "advisory"
+    },
+    {
+      "slug": "environmental_engineer",
+      "title": "Environmental Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "environmental_scientist",
+      "title": "Environmental Scientist",
+      "category": "other"
+    },
+    {
+      "slug": "epidemiologist",
+      "title": "Epidemiologist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "esl_teacher",
+      "title": "ESL Teacher",
+      "category": "other"
+    },
+    {
+      "slug": "event_planner",
+      "title": "Event Planner",
+      "category": "advisory"
+    },
+    {
+      "slug": "farmer",
+      "title": "Farmer",
+      "category": "other"
+    },
+    {
+      "slug": "film_director",
+      "title": "Film Director",
+      "category": "creative"
+    },
+    {
+      "slug": "film_editor",
+      "title": "Film Editor",
+      "category": "creative"
+    },
+    {
+      "slug": "film_producer",
+      "title": "Film Producer",
+      "category": "creative"
+    },
+    {
+      "slug": "financial_advisor",
+      "title": "Financial Advisor",
+      "category": "financial"
+    },
+    {
+      "slug": "firefighter",
+      "title": "Firefighter",
+      "category": "other"
+    },
+    {
+      "slug": "fisheries_biologist",
+      "title": "Fisheries Biologist",
+      "category": "other"
+    },
+    {
+      "slug": "flight_attendant",
+      "title": "Flight Attendant",
+      "category": "other"
+    },
+    {
+      "slug": "forester",
+      "title": "Forester",
+      "category": "other"
+    },
+    {
+      "slug": "game_designer",
+      "title": "Game Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "geologist",
+      "title": "Geologist",
+      "category": "technical"
+    },
+    {
+      "slug": "global_health_specialist",
+      "title": "Global Health Specialist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "graphic_artist",
+      "title": "Graphic Artist",
+      "category": "creative"
+    },
+    {
+      "slug": "graphic_designer",
+      "title": "Graphic Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "hairstylist",
+      "title": "Hairstylist",
+      "category": "other"
+    },
+    {
+      "slug": "hazard_mitigation_specialist",
+      "title": "Hazard Mitigation Specialist",
+      "category": "other"
+    },
+    {
+      "slug": "healthcare_advisor",
+      "title": "Healthcare Advisor",
+      "category": "healthcare"
+    },
+    {
+      "slug": "heavy_equipment_operator",
+      "title": "Heavy Equipment Operator",
+      "category": "other"
+    },
+    {
+      "slug": "high_school_teacher",
+      "title": "High School Teacher",
+      "category": "other"
+    },
+    {
+      "slug": "historian",
+      "title": "Historian",
+      "category": "other"
+    },
+    {
+      "slug": "horticulturist",
+      "title": "Horticulturist",
+      "category": "other"
+    },
+    {
+      "slug": "hotel_manager",
+      "title": "Hotel Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "hr_consultant",
+      "title": "HR Consultant",
+      "category": "advisory"
+    },
+    {
+      "slug": "hr_manager",
+      "title": "Human Resources Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "hvac_technician",
+      "title": "HVAC Technician",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_biology_tutor",
+      "title": "IGCSE Biology Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_business_studies_tutor",
+      "title": "IGCSE Business Studies Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_chemistry_tutor",
+      "title": "IGCSE Chemistry Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_computer_science_tutor",
+      "title": "IGCSE Computer Science Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_english_tutor",
+      "title": "IGCSE English Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_geography_tutor",
+      "title": "IGCSE Geography Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_history_tutor",
+      "title": "IGCSE History Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_mathematics_tutor",
+      "title": "IGCSE Mathematics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_physics_tutor",
+      "title": "IGCSE Physics Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_sciences_tutor",
+      "title": "IGCSE Sciences Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_9_tutor",
+      "title": "IGCSE Year 9 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_10_tutor",
+      "title": "IGCSE Year 10 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_11_tutor",
+      "title": "IGCSE Year 11 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "import_export_specialist",
+      "title": "Import/Export Specialist",
+      "category": "advisory"
+    },
+    {
+      "slug": "instructional_designer",
+      "title": "Instructional Designer",
+      "category": "other"
+    },
+    {
+      "slug": "interior_designer",
+      "title": "Interior Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "interpreter_translator",
+      "title": "Interpreter/Translator",
+      "category": "other"
+    },
+    {
+      "slug": "it_consultant",
+      "title": "IT Consultant",
+      "category": "technical"
+    },
+    {
+      "slug": "it_support_specialist",
+      "title": "IT Support Specialist",
+      "category": "technical"
+    },
+    {
+      "slug": "journalist",
+      "title": "Journalist",
+      "category": "creative"
+    },
+    {
+      "slug": "judge",
+      "title": "Judge",
+      "category": "legal"
+    },
+    {
+      "slug": "landscape_architect",
+      "title": "Landscape Architect",
+      "category": "creative"
+    },
+    {
+      "slug": "landscaper",
+      "title": "Landscaper",
+      "category": "other"
+    },
+    {
+      "slug": "large_animal_veterinarian",
+      "title": "Veterinarian (Large Animal)",
+      "category": "healthcare"
+    },
+    {
+      "slug": "lawyer",
+      "title": "Lawyer",
+      "category": "legal"
+    },
+    {
+      "slug": "legal_advisor",
+      "title": "Legal Advisor",
+      "category": "legal"
+    },
+    {
+      "slug": "librarian",
+      "title": "Librarian",
+      "category": "other"
+    },
+    {
+      "slug": "logistics_coordinator",
+      "title": "Logistics Coordinator",
+      "category": "advisory"
+    },
+    {
+      "slug": "machinist",
+      "title": "Machinist",
+      "category": "other"
+    },
+    {
+      "slug": "marine_biologist",
+      "title": "Marine Biologist",
+      "category": "other"
+    },
+    {
+      "slug": "marketing_consultant",
+      "title": "Marketing Consultant",
+      "category": "advisory"
+    },
+    {
+      "slug": "mason",
+      "title": "Mason",
+      "category": "other"
+    },
+    {
+      "slug": "massage_therapist",
+      "title": "Massage Therapist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "mathematician",
+      "title": "Mathematician",
+      "category": "technical"
+    },
+    {
+      "slug": "mechanical_engineer",
+      "title": "Mechanical Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "medical_researcher",
+      "title": "Medical Researcher",
+      "category": "healthcare"
+    },
+    {
+      "slug": "medical_science_liaison",
+      "title": "Medical Science Liaison",
+      "category": "healthcare"
+    },
+    {
+      "slug": "medical_writer",
+      "title": "Medical Writer",
+      "category": "healthcare"
+    },
+    {
+      "slug": "mep_engineer",
+      "title": "MEP Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "meteorologist",
+      "title": "Meteorologist",
+      "category": "technical"
+    },
+    {
+      "slug": "mobile_app_developer",
+      "title": "Mobile App Developer",
+      "category": "technical"
+    },
+    {
+      "slug": "musician",
+      "title": "Musician",
+      "category": "creative"
+    },
+    {
+      "slug": "network_administrator",
+      "title": "Network Administrator",
+      "category": "technical"
+    },
+    {
+      "slug": "nurse_practitioner",
+      "title": "Nurse Practitioner",
+      "category": "healthcare"
+    },
+    {
+      "slug": "occupational_therapist",
+      "title": "Occupational Therapist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "oceanographer",
+      "title": "Oceanographer",
+      "category": "other"
+    },
+    {
+      "slug": "paralegal",
+      "title": "Paralegal",
+      "category": "legal"
+    },
+    {
+      "slug": "personal_trainer",
+      "title": "Personal Trainer",
+      "category": "other"
+    },
+    {
+      "slug": "pharmaceutical_researcher",
+      "title": "Pharmaceutical Researcher",
+      "category": "healthcare"
+    },
+    {
+      "slug": "pharmacist",
+      "title": "Pharmacist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "philosopher",
+      "title": "Philosopher",
+      "category": "other"
+    },
+    {
+      "slug": "photographer",
+      "title": "Photographer",
+      "category": "creative"
+    },
+    {
+      "slug": "physical_therapist",
+      "title": "Physical Therapist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "physician",
+      "title": "Physician",
+      "category": "healthcare"
+    },
+    {
+      "slug": "physicist",
+      "title": "Physicist",
+      "category": "technical"
+    },
+    {
+      "slug": "plumber",
+      "title": "Plumber",
+      "category": "other"
+    },
+    {
+      "slug": "police_officer",
+      "title": "Police Officer",
+      "category": "other"
+    },
+    {
+      "slug": "pr_specialist",
+      "title": "Public Relations Specialist",
+      "category": "creative"
+    },
+    {
+      "slug": "private_investigator",
+      "title": "Private Investigator",
+      "category": "other"
+    },
+    {
+      "slug": "probation_officer",
+      "title": "Probation Officer",
+      "category": "other"
+    },
+    {
+      "slug": "production_designer",
+      "title": "Production Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "project_manager",
+      "title": "Project Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "psychologist",
+      "title": "Psychologist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "public_health_advisor",
+      "title": "Public Health Advisor",
+      "category": "healthcare"
+    },
+    {
+      "slug": "qa_engineer",
+      "title": "Quality Assurance Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "qa_manager_pharma",
+      "title": "Quality Assurance Manager (Pharma)",
+      "category": "healthcare"
+    },
+    {
+      "slug": "radiologic_technologist",
+      "title": "Radiologic Technologist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "range_manager",
+      "title": "Range Manager",
+      "category": "other"
+    },
+    {
+      "slug": "real_estate_agent",
+      "title": "Real Estate Agent",
+      "category": "advisory"
+    },
+    {
+      "slug": "registered_nurse",
+      "title": "Registered Nurse",
+      "category": "healthcare"
+    },
+    {
+      "slug": "regulatory_affairs_specialist",
+      "title": "Regulatory Affairs Specialist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "research_scientist",
+      "title": "Research Scientist",
+      "category": "technical"
+    },
+    {
+      "slug": "respiratory_therapist",
+      "title": "Respiratory Therapist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "restaurant_consultant",
+      "title": "Restaurant Consultant",
+      "category": "advisory"
+    },
+    {
+      "slug": "restaurant_manager",
+      "title": "Restaurant Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "retail_manager",
+      "title": "Retail Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "roofer",
+      "title": "Roofer",
+      "category": "other"
+    },
+    {
+      "slug": "sales_manager",
+      "title": "Sales Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "school_counselor",
+      "title": "School Counselor",
+      "category": "other"
+    },
+    {
+      "slug": "screenwriter",
+      "title": "Screenwriter",
+      "category": "creative"
+    },
+    {
+      "slug": "security_guard",
+      "title": "Security Guard",
+      "category": "other"
+    },
+    {
+      "slug": "ship_captain",
+      "title": "Ship Captain",
+      "category": "other"
+    },
+    {
+      "slug": "social_media_manager",
+      "title": "Social Media Manager",
+      "category": "creative"
+    },
+    {
+      "slug": "social_worker",
+      "title": "Social Worker",
+      "category": "other"
+    },
+    {
+      "slug": "software_developer",
+      "title": "Software Developer",
+      "category": "technical"
+    },
+    {
+      "slug": "software_engineer",
+      "title": "Software Engineer",
+      "category": "technical"
+    },
+    {
+      "slug": "soil_scientist",
+      "title": "Soil Scientist",
+      "category": "technical"
+    },
+    {
+      "slug": "sound_designer",
+      "title": "Sound Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "special_education_teacher",
+      "title": "Special Education Teacher",
+      "category": "other"
+    },
+    {
+      "slug": "statistician",
+      "title": "Statistician",
+      "category": "technical"
+    },
+    {
+      "slug": "structural_drafter",
+      "title": "Structural Drafter",
+      "category": "technical"
+    },
+    {
+      "slug": "supply_chain_manager",
+      "title": "Supply Chain Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "systems_administrator",
+      "title": "Systems Administrator",
+      "category": "technical"
+    },
+    {
+      "slug": "tax_advisor",
+      "title": "Tax Advisor",
+      "category": "financial"
+    },
+    {
+      "slug": "taxi_driver",
+      "title": "Taxi/Rideshare Driver",
+      "category": "other"
+    },
+    {
+      "slug": "tour_guide",
+      "title": "Tour Guide",
+      "category": "other"
+    },
+    {
+      "slug": "toxicologist",
+      "title": "Toxicologist",
+      "category": "healthcare"
+    },
+    {
+      "slug": "train_engineer",
+      "title": "Train Engineer",
+      "category": "other"
+    },
+    {
+      "slug": "truck_driver",
+      "title": "Truck Driver",
+      "category": "other"
+    },
+    {
+      "slug": "ui_ux_designer",
+      "title": "UI/UX Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "urban_planner",
+      "title": "Urban Planner",
+      "category": "other"
+    },
+    {
+      "slug": "ux_ui_designer",
+      "title": "UX/UI Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "veterinarian",
+      "title": "Veterinarian",
+      "category": "healthcare"
+    },
+    {
+      "slug": "video_editor",
+      "title": "Video Editor",
+      "category": "creative"
+    },
+    {
+      "slug": "video_producer",
+      "title": "Video Producer",
+      "category": "creative"
+    },
+    {
+      "slug": "warehouse_manager",
+      "title": "Warehouse Manager",
+      "category": "advisory"
+    },
+    {
+      "slug": "web_designer",
+      "title": "Web Designer",
+      "category": "creative"
+    },
+    {
+      "slug": "web_developer",
+      "title": "Web Developer",
+      "category": "technical"
+    },
+    {
+      "slug": "welder",
+      "title": "Welder",
+      "category": "other"
+    },
+    {
+      "slug": "wildlife_biologist",
+      "title": "Wildlife Biologist",
+      "category": "other"
+    },
+    {
+      "slug": "wildlife_conservationist",
+      "title": "Wildlife Conservationist",
+      "category": "other"
+    },
+    {
+      "slug": "wpoos_developer",
+      "title": "WP oOS Developer",
+      "category": "technical"
+    },
+    {
+      "slug": "writer",
+      "title": "Writer",
+      "category": "creative"
+    }
+  ]
+}

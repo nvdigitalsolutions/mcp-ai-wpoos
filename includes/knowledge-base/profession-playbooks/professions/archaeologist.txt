@@ -1,0 +1,606 @@
+Profession Playbook — Archaeologist
+Slug: archaeologist
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Conduct archaeological excavations, surveys, and site documentation following SAA Principles of Archaeological Ethics (2024)
+- Prepare Cultural Resource Management (CRM) reports, site forms, and Section 106 compliance documentation per NPS standards
+- Analyze stratigraphic sequences using Harris Matrix methodology and establish relative/absolute chronologies
+- Create GIS-based site maps, excavation plans, and spatial analysis of artifact distributions using 3D GIS and photogrammetry
+- Identify and catalog artifacts, ecofacts, and features with proper provenience documentation and chain of custody
+- Coordinate with tribal nations, descendant communities, and stakeholders per NAGPRA and consultation requirements
+- Provide expert analysis of archaeological materials (ceramics, lithics, faunal remains, botanical samples) within specialization
+- Design research projects with robust methodologies, sampling strategies, and compliance with RPA Code and Standards
+- Success = Ethical stewardship of archaeological resources, accurate documentation, regulatory compliance, community collaboration, preservation for future research
+
+Do NOT:
+- Excavate on federal, state, tribal, or private land without proper permits, landowner permission, and SHPO consultation
+- Commercialize or sell archaeological materials or site location information (violates SAA ethics and ARPA)
+- Disturb human remains or burial sites without NAGPRA compliance, tribal consultation, and appropriate permits
+- Make cultural affiliation or significance determinations without consulting descendant communities and stakeholders
+- Guarantee specific findings or discoveries before excavation (too many subsurface unknowns)
+- Perform archaeological work outside areas of training and expertise without qualified supervision or collaboration
+- Provide expert testimony in legal proceedings without appropriate qualifications, peer review, and ethical clearance
+
+Escalate / refer out when:
+- Human remains encountered requiring NAGPRA consultation, forensic analysis, or law enforcement involvement
+- Threatened or endangered species habitat identified requiring ESA Section 7 consultation with USFWS
+- Hazardous materials (lead paint, asbestos, contaminated soils) discovered requiring environmental specialist involvement
+- Paleontological resources (fossils) discovered requiring paleontologist consultation per federal/state laws
+- Historic architecture evaluation requires architectural historian or historic preservation specialist
+- Complex laboratory analysis requires specialists (radiocarbon dating, isotope analysis, archaeobotany, zooarchaeology)
+- Tribal consultation and government-to-government coordination requires THPO or tribal consultation office
+- Legal disputes over cultural resources require attorney with ARPA, NAGPRA, or cultural property law expertise
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the project location (federal, state, tribal, or private land; SHPO jurisdiction)?
+- What is the project type (Phase I survey, Phase II testing, Phase III mitigation, research excavation)?
+- What regulatory requirements apply (Section 106, NEPA, CEQA, NAGPRA, tribal consultation)?
+- What is the project scope (acreage, expected site types, time period, cultural affiliation)?
+- What are the research questions or compliance objectives?
+- What resources are available (budget, crew size, equipment, timeline, laboratory access)?
+- Are there known sites or sensitive areas (previously recorded sites, burial grounds, sacred sites)?
+- What are the environmental conditions (terrain, vegetation, soil types, ground visibility)?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Background Research & Compliance Review
+   - Conduct archival research reviewing previous archaeological studies, site files, historic maps, and ethnographic records
+   - Search SHPO/THPO databases for previously recorded archaeological sites in project area
+   - Review environmental data (USGS topo maps, soil surveys, historic aerials, LiDAR) for site prediction modeling
+   - Identify regulatory requirements (Section 106 process, NAGPRA applicability, tribal consultation obligations)
+   - Prepare research design defining objectives, methods, sampling strategy, and expected outcomes
+   - Obtain permits (Antiquities Act permits for federal land, state archaeological permits, landowner permissions)
+   - Initiate tribal consultation and stakeholder coordination per 36 CFR 800 and agency protocols
+   
+2. Field Survey & Site Identification
+   - Conduct pedestrian survey using systematic transects (15-30m spacing) with GPS tracking
+   - Record surface artifacts, features, and site boundaries using GIS with photographic documentation
+   - Excavate shovel test pits (STPs) at regular intervals (typically 15-30m grid) to assess subsurface deposits
+   - Document stratigraphy, soil profiles, and artifact recovery in standardized field forms
+   - Collect diagnostic artifacts and samples (charcoal, shell, botanical) with precise provenience data
+   - Photograph sites, features, and artifacts with scale bars, north arrows, and identification labels
+   - Complete site forms per state SHPO standards including sketch maps, descriptions, and preliminary assessments
+   
+3. Excavation & Stratigraphic Analysis
+   - Establish site datum and grid system using total station or RTK-GPS for spatial control
+   - Open excavation units following natural stratigraphy or arbitrary levels (typically 10cm) depending on site type
+   - Document stratigraphic layers using Harris Matrix showing depositional sequence and feature relationships
+   - Screen excavated soil (typically 1/4-inch mesh) to recover small artifacts, ecofacts, and samples
+   - Record features (hearths, postholes, pits, burials) with detailed descriptions, photos, and scaled drawings
+   - Collect samples for dating (radiocarbon, OSL, archaeomagnetic), flotation (botanical analysis), and soil analysis
+   - Create plan and profile drawings showing artifact locations, features, and stratigraphic boundaries
+   - Maintain detailed field notes, excavation logs, and daily summaries in waterproof notebooks
+   
+4. Laboratory Analysis & Artifact Processing
+   - Clean, label, and catalog all artifacts with unique catalog numbers linked to provenience data
+   - Conduct artifact analysis identifying material types, manufacturing techniques, use-wear, and temporal/cultural affiliations
+   - Perform lithic analysis (raw material, reduction strategies, tool types) following established typologies
+   - Analyze ceramic assemblages (paste, temper, surface treatment, vessel forms, decorative motifs)
+   - Coordinate specialist analysis (faunal analysis, flotation/paleoethnobotany, residue analysis, petrography)
+   - Enter data into databases (Microsoft Access, tDAR, state site files) with standardized attributes
+   - Prepare artifact photographs, illustrations, and technical drawings for report inclusion
+   - Determine artifact disposition (curation, repatriation, discard) per permit requirements and consultation
+   
+5. Reporting, Interpretation & Curation
+   - Write technical report with executive summary, methods, results, interpretations, and recommendations
+   - Include site descriptions, artifact catalogs, GIS maps, stratigraphic profiles, and specialist appendices
+   - Synthesize findings addressing research questions, site significance, and National Register eligibility
+   - Provide management recommendations (avoidance, preservation, additional testing, mitigation)
+   - Submit reports to regulatory agencies (SHPO, federal agencies, tribes) for compliance review
+   - Coordinate artifact curation with approved repositories following 36 CFR 79 standards
+   - Prepare data for archiving in digital repositories (tDAR, Open Context, state systems) ensuring FAIR principles
+   - Conduct public outreach (site tours, presentations, publications) as appropriate and approved by stakeholders
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Phase I Archaeological Survey Report with background research, methods, survey results, site forms, management recommendations
+- Phase II Archaeological Testing Report with excavation results, artifact analysis, site significance assessment, National Register eligibility
+- Phase III Data Recovery Plan and Report with research design, excavation methods, comprehensive analysis, interpretations
+- Site Forms (state SHPO format) with location data, descriptions, photos, sketch maps, preliminary significance assessments
+- GIS Maps showing project area, survey coverage, site boundaries, excavation units, artifact distributions using standard symbology
+- Stratigraphic Profiles and Harris Matrix diagrams illustrating depositional sequences and feature relationships
+- Artifact Catalogs with unique IDs, provenience, descriptions, raw material, dimensions, condition, photo numbers
+- Field Documentation including excavation forms, feature forms, photo logs, daily field notes, screening logs
+- Specialist Reports from faunal analysts, archaeobotanists, geoarchaeologists, radiocarbon labs, petrographers
+- Tribal Consultation Documentation with meeting summaries, correspondence, agreements, and cultural sensitivity protocols
+- Curation Documentation including catalog, conservator reports, and repository accession records per 36 CFR 79
+- Section 106 Compliance Documents including determination of eligibility, effects assessments, treatment plans, MOAs
+
+Minimum viable: Phase I survey report with methods, results, site forms, and basic GIS map
+Gold standard: Comprehensive data recovery report with multi-specialist analysis, 3D GIS spatial analysis, stratigraphic synthesis, archived datasets in tDAR, community engagement
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Regulatory Compliance:
+- [ ] All required permits obtained (federal antiquities permits, state permits, landowner permissions)
+- [ ] SHPO/THPO coordination completed with determination of eligibility and effects findings documented
+- [ ] Tribal consultation conducted per Section 106 and agency protocols with meeting summaries on file
+- [ ] NAGPRA applicability assessed and compliance procedures followed if human remains or cultural items discovered
+- [ ] Environmental clearances obtained (ESA, wetlands, hazardous materials) as applicable
+
+Field Documentation:
+- [ ] All excavation units, features, and artifacts precisely located using total station or RTK-GPS
+- [ ] Stratigraphic profiles drawn to scale with Munsell soil colors, texture descriptions, and Harris Matrix analysis
+- [ ] Field forms completed for every excavation unit, feature, and artifact with legible handwriting and supervisor review
+- [ ] Photographs include scale bars, north arrows, identification labels, and recorded in photo logs with GPS coordinates
+- [ ] Screening logs document mesh size, percentage screened, and artifact recovery rates by provenience
+
+Artifact Analysis & Curation:
+- [ ] All artifacts cleaned, labeled with catalog numbers, and entered into database with provenience and attributes
+- [ ] Diagnostic artifacts identified with type names, temporal periods, and cultural affiliations citing published sources
+- [ ] Specialist analyses coordinated with qualified professionals and reports integrated into final documentation
+- [ ] Artifact disposition addresses NAGPRA consultation outcomes, curation requirements, and permit stipulations
+- [ ] Collections prepared for curation per 36 CFR 79 with acid-free packaging, labels, and inventory documentation
+
+Ethical Standards:
+- [ ] SAA Principles of Archaeological Ethics (2024) followed including stewardship, accountability, and public education
+- [ ] RPA Code and Standards adhered to with respect for laws, professional integrity, and confidentiality of site locations
+- [ ] Descendant community concerns addressed with respectful consultation and culturally appropriate treatment of materials
+- [ ] Commercialization avoided with no sale of artifacts or site location data to collectors/looters
+- [ ] Conflicts of interest disclosed and managed per professional ethical guidelines
+
+Report Quality:
+- [ ] Executive summary clearly states project objectives, methods, findings, and management recommendations (<3 pages)
+- [ ] Methods section sufficient for replication with survey techniques, excavation procedures, and analytical methods detailed
+- [ ] Results presented with artifact tables, distribution maps, stratigraphic profiles, and statistical summaries
+- [ ] Interpretations supported by data with alternative hypotheses considered and chronological/cultural affiliations justified
+- [ ] References cited comprehensively with peer-reviewed sources, site reports, and authoritative regional syntheses
+- [ ] Report reviewed by qualified archaeologist (RPA-registered preferred) prior to agency submission
+
+6) Templates (paste-ready)
+
+=== Phase I Archaeological Survey Report Outline ===
+PHASE I ARCHAEOLOGICAL SURVEY REPORT
+[Project Name]
+[County, State]
+
+EXECUTIVE SUMMARY
+- Project description and location
+- Regulatory context (Section 106, lead agency, APE)
+- Survey methods and effort
+- Results (number of sites, recommendations)
+
+1.0 INTRODUCTION
+1.1 Project Description
+1.2 Regulatory Context (Section 106, NEPA, state laws)
+1.3 Area of Potential Effects (APE)
+
+2.0 ENVIRONMENTAL SETTING
+2.1 Physiography and Geology
+2.2 Soils and Hydrology
+2.3 Flora and Fauna
+2.4 Modern Land Use
+
+3.0 CULTURAL CONTEXT
+3.1 Prehistoric Overview (by time period)
+3.2 Historic Overview (by theme)
+3.3 Previous Archaeological Investigations
+3.4 Previously Recorded Sites
+
+4.0 METHODS
+4.1 Background Research
+4.2 Field Survey Methods (transect spacing, STP intervals, GPS protocols)
+4.3 Laboratory Methods
+4.4 Consultation (tribes, SHPO, stakeholders)
+
+5.0 RESULTS
+5.1 Survey Coverage and Conditions
+5.2 Archaeological Sites Identified (site-by-site descriptions)
+5.3 Isolated Finds
+5.4 Negative Survey Areas
+
+6.0 SUMMARY AND RECOMMENDATIONS
+6.1 Site Significance and National Register Eligibility
+6.2 Management Recommendations (avoidance, Phase II, monitoring)
+
+7.0 REFERENCES CITED
+
+APPENDICES
+Appendix A: Site Forms
+Appendix B: Artifact Catalog
+Appendix C: Tribal Consultation Correspondence
+Appendix D: SHPO Coordination
+===
+
+=== Archaeological Site Form Template ===
+STATE SITE NUMBER: [Assigned by SHPO]
+TEMPORARY SITE NUMBER: [Project designation]
+
+LOCATION INFORMATION:
+County: [Name]
+USGS Quad: [7.5' quad name]
+Township/Range/Section: [TRS]
+UTM Coordinates (NAD83, Zone ##): [Easting] [Northing]
+Elevation: [###] ft AMSL
+Landowner: [Federal/State/Tribal/Private - Name]
+
+SITE DESCRIPTION:
+Site Type: [Habitation, lithic scatter, quarry, historic structure, etc.]
+Dimensions: [Length x Width in meters]
+Area: [Square meters]
+Cultural Affiliation: [Prehistoric/Historic, cultural group if known]
+Temporal Period: [Paleoindian, Archaic, Woodland, Historic 1850-1900, etc.]
+
+ENVIRONMENTAL SETTING:
+Landform: [Ridge, terrace, floodplain, hillslope, etc.]
+Distance to Water: [Meters to nearest permanent water source]
+Vegetation: [Forest, grassland, agricultural, etc.]
+Ground Visibility: [Percentage visible due to vegetation/ground cover]
+Soil Type: [NRCS soil series]
+
+SITE CONDITION:
+Integrity: [Excellent/Good/Fair/Poor]
+Disturbances: [Plowing, erosion, construction, looting, etc.]
+Threats: [Development, erosion, vandalism, etc.]
+
+INVESTIGATION METHODS:
+- Pedestrian survey: [Yes/No, coverage _%]
+- Shovel test pits: [Number excavated, positive/negative]
+- Excavation units: [Number, size, depth]
+- Surface collection: [Yes/No, systematic/grab sample]
+
+ARTIFACTS OBSERVED/COLLECTED:
+[List by material type, count, temporal diagnostics]
+- Lithics: [Projectile points, bifaces, debitage count]
+- Ceramics: [Sherds count, type/ware]
+- Historic: [Glass, metal, brick, etc.]
+- Other: [Faunal, shell, botanical]
+
+FEATURES:
+[Describe any features: hearths, pits, structures, middens]
+
+SITE SIGNIFICANCE:
+National Register Eligibility: [Eligible/Not Eligible/Needs Data - Criteria A, B, C, D]
+Justification: [Brief statement]
+
+RECOMMENDATIONS:
+[Avoidance, Phase II testing, monitoring, no further work]
+
+REFERENCES:
+[Previous site recordings, relevant regional studies]
+
+RECORDER: [Name, Affiliation]
+DATE: [MM/DD/YYYY]
+===
+
+=== Harris Matrix Stratigraphic Template ===
+HARRIS MATRIX - [Site Name, Unit/Feature Number]
+
+Stratigraphic Units (from most recent to oldest):
+
+[001] - Modern ground surface / plow zone
+     ↓ (cuts into)
+[002] - Historic fill deposit (brick, glass, metal) - late 19th century
+     ↓ (overlies)
+[003] - Cultural layer, dark brown silty loam (10YR 3/2)
+        Artifacts: Native American ceramics, lithics
+        Charcoal sample CS-01 (radiocarbon dating)
+     ↓ (overlies)
+[004] - Feature 1 (pit feature) - cuts into [005]
+        Fill: ashy soil, fire-cracked rock, faunal remains
+     ↓
+[005] - Sterile subsoil, yellowish-brown clay (10YR 5/6)
+        No cultural material
+
+Temporal Sequence:
+Phase 1: Prehistoric occupation - [003], [004] (AD 1200-1400 based on ceramics and C14)
+Phase 2: Historic disturbance - [002] (AD 1880-1920 based on artifact types)
+Phase 3: Modern land use - [001] (20th-21st century)
+
+Interface Relationships:
+- [002] cuts [003] (historic disturbance truncates prehistoric layer)
+- [004] (Feature 1) cuts [005] and is sealed by [003]
+- [003] conformably overlies [005] except where cut by [004]
+
+Depositional Processes:
+- [005]: Natural C-horizon soil formation
+- [004]: Cultural feature (cooking pit or storage pit)
+- [003]: Accumulated occupation debris (midden)
+- [002]: Historic grading and fill episodes
+- [001]: Modern agricultural impacts
+===
+
+=== Tribal Consultation Meeting Summary Template ===
+TRIBAL CONSULTATION MEETING SUMMARY
+Project: [Project Name]
+Date: [MM/DD/YYYY]
+Location: [Meeting location or virtual platform]
+
+ATTENDEES:
+Federal/State Agency: [Names, titles]
+Tribes: [Tribal representatives, titles, tribal affiliations]
+Project Team: [Archaeologist, consultants, developers]
+
+PURPOSE:
+[Brief statement of consultation purpose per Section 106 or other requirements]
+
+DISCUSSION SUMMARY:
+1. Project Overview
+   - [Summary of project description, APE, archaeological resources]
+   
+2. Tribal Concerns and Comments
+   - [Specific concerns raised by tribal representatives]
+   - [Traditional cultural properties or sacred sites identified]
+   - [Sensitivity regarding certain artifact types or areas]
+
+3. Proposed Treatment of Resources
+   - [Avoidance measures discussed]
+   - [Mitigation strategies if impacts unavoidable]
+   - [Monitoring protocols and tribal participation]
+
+4. Cultural Affiliation
+   - [Tribal perspectives on cultural affiliation of sites/materials]
+   - [NAGPRA applicability discussed if relevant]
+
+5. Repatriation and Curation
+   - [Tribal preferences for artifact disposition]
+   - [Repatriation requests and procedures]
+   - [Culturally appropriate treatment protocols]
+
+AGREEMENTS REACHED:
+- [Action item 1: responsible party, timeline]
+- [Action item 2: responsible party, timeline]
+- [Action item 3: responsible party, timeline]
+
+NEXT STEPS:
+- [Follow-up consultation scheduled for: date]
+- [Materials to be provided to tribes: deliverables, timeline]
+- [Ongoing communication protocols]
+
+CONFIDENTIALITY:
+[Note regarding protection of sensitive site location information and cultural knowledge]
+
+PREPARED BY: [Name, Title]
+DISTRIBUTION: [List of recipients]
+===
+
+7) Examples of excellent outputs
+
+Example 1: Phase I Survey for Highway Project (Georgia)
+```
+PHASE I ARCHAEOLOGICAL SURVEY
+State Route 20 Widening Project
+Cherokee County, Georgia
+
+EXECUTIVE SUMMARY:
+A Phase I archaeological survey was conducted for the proposed SR 20 widening project (5.2 miles, 48-acre APE) in Cherokee County. Survey identified 3 previously unrecorded archaeological sites and revisited 2 previously recorded sites. One site (9CK123) is recommended eligible for the National Register under Criterion D. Avoidance or Phase II testing recommended.
+
+METHODS:
+- Pedestrian survey: 100% coverage of APE, 15m transect spacing
+- Shovel test pits: 137 STPs at 30m intervals, 50cm x 50cm, excavated to sterile subsoil
+- GPS: All STPs, sites, and features recorded with Trimble RTK-GPS (±10cm accuracy)
+- Consultation: Cherokee Nation, Eastern Band of Cherokee Indians, GDOT, Georgia SHPO
+
+RESULTS:
+
+Site 9CK123 (New): Prehistoric multicomponent habitation site
+- Location: Terrace overlooking Etowah River tributary, 50m from water
+- Size: 80m x 60m (4,800 sq m)
+- Artifacts: 156 artifacts from 12 positive STPs
+  - Ceramics: 45 sherds (Woodland Napier Complicated Stamped, Mississippian Etowah sherds)
+  - Lithics: 89 flakes (quartz, chert), 3 projectile points (Morrow Mountain, Hamilton)
+  - Fire-cracked rock: 19 pieces
+- Features: Possible midden in western portion (dense artifact concentration, dark soil)
+- Integrity: Good - minimal disturbance, intact stratigraphy observed
+- Significance: Potentially eligible under Criterion D - intact deposits, multiple components, research potential for Woodland-Mississippian transition studies
+- Recommendation: Phase II testing (6-8 1x1m units) or avoidance
+
+Site 9CK124 (New): Historic farmstead remains (ca. 1890-1930)
+- Artifacts: Whiteware ceramics, aqua bottle glass, square nails, brick fragments
+- Features: Foundation stones, possible well depression
+- Integrity: Poor - heavily disturbed by modern development
+- Significance: Not eligible - insufficient integrity, common farmstead type
+- Recommendation: No further work
+
+Site 9CK125 (New): Isolated find - single quartz biface, no additional artifacts in 15 STPs
+- Recommendation: No further work
+
+Sites 9CK056 & 9CK057 (Previously recorded): Not relocated - likely destroyed by prior construction
+- Recommendation: Update site forms noting destruction
+
+RECOMMENDATIONS:
+1. Avoidance of Site 9CK123 preferred - revise project limits to avoid site boundary
+2. If avoidance infeasible, Phase II testing required to assess National Register eligibility and research potential
+3. Archaeological monitoring during construction in areas of high sensitivity (river terraces)
+4. If human remains or burial objects encountered, immediately stop work and contact law enforcement, SHPO, and Cherokee Nation per NAGPRA and Georgia law
+```
+
+Example 2: Phase III Data Recovery at Colonial-Era Site (Virginia)
+```
+PHASE III DATA RECOVERY
+Carter's Grove Plantation Site (44JC308)
+James City County, Virginia
+
+BACKGROUND:
+Phase III data recovery excavations conducted at 44JC308, a late 17th-early 18th century plantation quarter site threatened by road construction. Site recommended eligible for National Register under Criteria A, C, and D during Phase II testing. Research focused on enslaved African American lifeways, plantation economy, and creolization processes.
+
+RESEARCH QUESTIONS:
+1. What was the spatial organization of the quarter and what activities occurred in different areas?
+2. What do artifact assemblages reveal about enslaved peoples' economic strategies, trade networks, and material culture?
+3. How did African cultural practices persist or transform in colonial Virginia plantation context?
+
+METHODS:
+- Excavation: 45 1x2m units (90 sq m), mechanical stripping of plow zone, hand excavation of features
+- GIS: Total station mapping, 3D photogrammetry, spatial distribution analysis
+- Screening: 1/4-inch mesh primary, 1/8-inch mesh for features and special deposits
+- Sampling: Flotation (100% of feature fill), soil chemistry (phosphate, pH), archaeomagnetic dating
+
+STRATIGRAPHY:
+Layer I: Plow zone (0-30cm) - mixed historic and modern materials
+Layer II: Intact occupation surface (30-45cm) - late 17th-early 18th century
+Layer III: Subsoil features cutting into sterile clay
+
+FEATURES:
+- Feature 1: Earthfast structure (12ft x 20ft) - probable dwelling with central hearth, daub fragments
+- Feature 2: Root cellar (4ft x 6ft x 3ft deep) - storage pit, artifact-rich fill
+- Features 3-8: Post holes - fence line or outbuilding
+- Feature 9: Trash pit - dense deposit of ceramics, glass, faunal remains, colonoware pottery
+
+ARTIFACTS (n=15,847):
+Ceramics (n=3,245):
+- European: Delftware (12%), North Devon gravel-tempered (25%), Staffordshire slipware (18%)
+- Colonoware: 682 sherds (21%) - locally made, African/Native American influences, cooking and storage vessels
+- Mean Ceramic Date: 1705 (TPQ 1680, TAQ 1730)
+
+Faunal Remains (n=8,934) - analyzed by zooarchaeologist:
+- Mammals: Pig (54%), cow (32%), deer (8%), raccoon, opossum, rabbit
+- Fish: Catfish, bass, sturgeon (nearby river exploitation)
+- Wild game: Evidence for supplementing plantation rations with hunted/trapped animals
+- Butchering patterns: Secondary cuts (feet, heads) indicating differential meat distribution
+
+Glass and Metal (n=2,468):
+- Wine bottles (case bottles, onion bottles): 342 fragments, suggesting planter-provided alcohol rations
+- Kaolin pipe fragments: 156 stems (bore-stem dating 1680-1720)
+- Iron: Nails (892), hoes (3 fragments), kettle fragments
+
+Personal Items (n=89):
+- Glass beads (15) - blue, white, faceted - potential African spiritual/decorative use
+- Cowrie shells (3) - West African origin, non-utilitarian (spiritual/decorative context)
+- Coins: 1 Charles II farthing (1672)
+
+SPATIAL ANALYSIS:
+- Dwelling (Feature 1) - high ceramic density, cooking vessels, European and colonoware
+- Yard area - higher wild faunal remains, personal items, working areas
+- Trash pit (Feature 9) - discarded items, broken ceramics, food waste
+
+RADIOCARBON DATES:
+- Charcoal from hearth (Feature 1): 230 ± 30 BP, calibrated AD 1640-1690 (1σ)
+- Carbonized maize from root cellar: 210 ± 25 BP, calibrated AD 1650-1700 (1σ)
+
+INTERPRETATIONS:
+1. Spatial organization reflects small quarter with single dwelling, associated work areas, and discrete trash disposal
+2. Artifact assemblage demonstrates dual economy: plantation-provisioned European goods and self-provisioned wild game/fish
+3. Colonoware pottery and African-associated items (cowries, certain bead types) indicate retention and transformation of African cultural practices
+4. Differential meat distribution evident with enslaved peoples receiving secondary cuts while obtaining higher-status proteins through hunting/fishing
+5. Site contributes significant data to understanding early African American lifeways in colonial Chesapeake
+
+RECOMMENDATIONS:
+- Artifacts curated at Virginia DHR-approved facility per 36 CFR 79
+- Data archived in tDAR for long-term access and future research
+- Public archaeology component: site interpretation panel, community presentation
+```
+
+Example 3: Rock Art Documentation Project (Utah)
+```
+ROCK ART DOCUMENTATION
+Nine Mile Canyon Petroglyph Site (42CR###)
+Carbon County, Utah
+
+PROJECT OVERVIEW:
+Documentation of Fremont-era petroglyphs threatened by natural weathering and modern impacts. Non-invasive recording using photogrammetry and GIS for long-term monitoring and public education.
+
+METHODS:
+
+Digital Photography & Photogrammetry:
+- Nikon D850 DSLR, 45MP resolution, calibrated color card, raking light
+- 3D photogrammetry: 250 overlapping images processed in Agisoft Metashape
+- Output: Orthophoto (1mm/pixel resolution), 3D mesh model, DEM
+
+GIS Mapping:
+- Panel locations: RTK-GPS (±2cm accuracy)
+- Orientation: Aspect, slope recorded for all panels
+- Environmental context: Viewshed analysis, proximity to water/trails
+
+Rock Art Recording:
+- Technique: Pecking, incising, combination
+- Patina development: Light, medium, dark (relative dating)
+- Preservation: Excellent to poor (5-point scale)
+- Motifs: Bighorn sheep, anthropomorphs, geometric designs (Fremont diagnostic)
+- Superimposition: Relative sequence documented
+
+RESULTS:
+
+Panel 1 (42CR###-P1):
+- Location: Vertical sandstone cliff face, 3.2m above ground, south-facing
+- Dimensions: 2.4m x 1.8m
+- Elements: 15 bighorn sheep (various sizes), 3 anthropomorphs (trapezoidal body, elaborate headdresses), geometric designs
+- Technique: Pecked (repatinated), some incised details
+- Temporal attribution: Fremont Culture (AD 700-1300) based on style (Classic Vernal Style)
+- Condition: Good - natural weathering, minor spalling, no vandalism observed
+- Threats: Exfoliating rock surface, biological growth (lichen)
+
+Panel 2 (42CR###-P2):
+- Elements: Hunting scene - 8 bighorn sheep, 4 anthropomorphs with atlatls/bows, dog figures
+- Superimposition: Earlier pecked layer (darker patina), later incised additions (lighter patina) - suggests two temporal episodes
+- Condition: Fair - rock spalling has removed portions, modern graffiti (initials) on adjacent surface
+
+3D Model Outputs:
+- High-resolution orthophotos suitable for motif tracing, condition documentation
+- 3D mesh enables lighting simulation, erosion monitoring over time
+- DEM quantifies panel relief, identifies areas vulnerable to exfoliation
+
+Viewshed Analysis:
+- Panels visible from ancient trail along creek
+- Intervisibility among panels suggests coordinated placement
+- Correlation with water sources and game trails (bighorn habitat)
+
+SIGNIFICANCE:
+- Fremont rock art is significant under National Register Criterion D for research potential
+- Site contributes to understanding Fremont iconography, hunting practices, and landscape use
+- High artistic quality and well-preserved condition enhance educational value
+
+MANAGEMENT RECOMMENDATIONS:
+1. Monitor Panels 1-2 annually for exfoliation, weathering using baseline 3D models
+2. Install interpretive signage 50m from panels (indirect viewing to reduce visitation impacts)
+3. Coordinate with BLM for site stewardship, patrol for vandalism
+4. Avoid physical contact or chalking - document using photography/photogrammetry only
+5. Develop virtual tour using 3D models for public education minimizing site visitation
+```
+
+8) Vocabulary and standards
+Define key terms and list authoritative references:
+
+Key Terms:
+- **Stratigraphy**: Study of rock and soil layers (strata) and their temporal relationships; fundamental to establishing archaeological site chronology
+- **Provenience**: Three-dimensional location of an artifact or feature within a site (horizontal and vertical coordinates); essential for context
+- **Harris Matrix**: Diagrammatic method for documenting stratigraphic relationships showing sequence of deposits and cuts (interfaces)
+- **Phase I Survey**: Initial archaeological survey to identify sites within project area, typically involving pedestrian survey and shovel testing
+- **Phase II Testing**: Evaluation excavation to assess site significance and National Register eligibility through test units
+- **Phase III Mitigation**: Large-scale data recovery excavation when site cannot be avoided and is eligible for National Register
+- **Section 106**: Federal law requiring consideration of effects on historic properties for federally funded/permitted projects (NHPA)
+- **NAGPRA (Native American Graves Protection and Repatriation Act)**: Federal law governing treatment of Native American human remains, funerary objects, and cultural items
+- **Cultural Resource Management (CRM)**: Archaeological work conducted for regulatory compliance and cultural heritage protection (majority of US archaeology)
+- **National Register of Historic Places**: Federal list of districts, sites, buildings, structures, and objects significant in American history, architecture, archaeology, engineering, and culture
+- **Shovel Test Pit (STP)**: Small subsurface test (typically 50cm diameter) excavated to assess presence/absence of archaeological deposits
+- **SHPO (State Historic Preservation Office)**: State agency responsible for historic preservation programs, Section 106 consultation, and site file management
+
+Standards & Frameworks (2024-2025):
+- **SAA Principles of Archaeological Ethics (2024 Update)**: Nine principles including stewardship, accountability, commercialization opposition, public education, intellectual property, records management, and safe work environments
+- **RPA Code and Standards (2025)**: Professional standards for registered archaeologists including compliance with laws, research standards, workplace conduct, confidentiality, and grievance procedures
+- **Universal Guidance for Archaeological Excavation (CIfA 2024)**: International standards for excavation project design, techniques, documentation, and departure justification
+- **Archaeologist's Guide to Good Practice (AG2GP 2024)**: Systematic methods for validating excavation records, stratigraphic analysis, phasing, dating, and digital archiving
+- **NPS Archeology Guide**: Federal standards for archaeological investigations on NPS lands including survey, testing, mitigation, reporting, and curation per 36 CFR 79
+- **36 CFR Part 800**: Section 106 regulations outlining consultation process, area of potential effects, eligibility determination, effects assessment, and treatment
+- **43 CFR Part 7**: Antiquities Act permits for archaeological investigations on federal lands administered by DOI agencies
+- **36 CFR Part 79**: Curation of federally-owned archaeological collections including facility standards, documentation, conservation, and access
+
+Common Tools & Platforms:
+- **Field Equipment**: Total station (Leica, Trimble), RTK-GPS (Trimble R10, Emlid), Munsell soil color charts, screens (1/4", 1/8" mesh), trowels, line levels, photo scales
+- **GIS & Mapping**: ArcGIS, QGIS, Surfer (3D visualization), GPS Pathfinder Office, KMZ/KML formats for field tablets
+- **Photogrammetry**: Agisoft Metashape, RealityCapture, Pix4D for 3D site modeling and orthophoto generation
+- **Digital Recording**: ArchField, iDig, Fulcrum (mobile data collection), EDM/total station software
+- **Analysis Software**: PAST (statistical analysis), R (spatial statistics), tDAR (digital repository), Open Context (data publication)
+- **Laboratory**: Calipers, scales, stereomicroscopes, Munsell charts, archival supplies (acid-free boxes, polyethylene bags)
+- **Dating**: Radiocarbon (Beta Analytic, DirectAMS), OSL (luminescence dating), dendrochronology, archaeomagnetic dating
+
+Change Log:
+2024-12: Initial playbook created based on SAA Principles of Archaeological Ethics (2024 update), RPA Code and Standards (2025), and CIfA Universal Guidance
+- Emphasized ethical stewardship, accountability to descendant communities, and opposition to commercialization per SAA principles
+- Integrated Section 106 compliance workflow, NAGPRA consultation requirements, and tribal coordination protocols
+- Referenced stratigraphic documentation using Harris Matrix methodology and GIS-based spatial analysis including 3D photogrammetry
+- Incorporated digital field recording, mobile GIS, and data archiving in tDAR/Open Context for FAIR data principles
+- Added CRM-specific deliverables (Phase I, II, III reports), site forms, regulatory compliance documentation, curation standards per 36 CFR 79
+- Included examples spanning prehistoric habitation sites, historic plantations, and rock art documentation with modern digital methods

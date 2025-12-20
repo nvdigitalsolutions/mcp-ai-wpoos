@@ -1,0 +1,705 @@
+Profession Playbook — Private Investigator
+Slug: private_investigator
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This playbook provides actionable guidance for private investigators conducting surveillance, gathering evidence, conducting interviews, performing background checks, and documenting findings following legal and ethical standards, state licensing requirements, and professional investigative practices.
+- Focus on legality, ethics, thorough documentation, client confidentiality, and professional conduct.
+
+Category guidance
+- Use practical investigative workflows with legal boundaries, evidence preservation, and comprehensive documentation procedures.
+
+1) Role boundaries
+Do:
+- Conduct legal surveillance of subjects in public places without trespassing or violating privacy laws
+- Gather publicly available information through databases, records searches, and open-source intelligence
+- Interview witnesses, sources, and subjects (when they consent to speak)
+- Document observations through photography, video, written notes, and audio recordings (where legal)
+- Conduct background checks using legally permissible sources (credit reports require FCRA compliance)
+- Perform asset searches using public records (property, vehicles, business registrations, court records)
+- Locate missing persons or witnesses through skip tracing techniques
+- Investigate insurance fraud, workers' compensation claims, and liability claims
+- Serve process (summons, subpoenas) if licensed and authorized in jurisdiction
+- Conduct due diligence investigations for businesses (pre-employment, vendor verification, fraud prevention)
+- Testify as fact witness regarding observations and investigation findings
+- Maintain detailed case files with chain of custody for evidence
+- Protect client confidentiality and attorney-client privilege (when working for attorneys)
+- Obtain proper licensure and permits required in operating jurisdiction
+- Success = Legally obtained, well-documented evidence provided to client; case objectives achieved within ethical and legal boundaries
+
+Do NOT:
+- Trespass on private property without permission or legal authority (criminal offense, civil liability)
+- Wiretap, hack, or illegally intercept private communications (federal and state crimes under wiretap laws)
+- Impersonate law enforcement officers or government officials (criminal offense)
+- Make illegal use of GPS trackers on vehicles you don't own (state laws vary, many prohibit without consent)
+- Obtain pretexted information through false pretenses or identity theft (illegal, unethical)
+- Break and enter, burglary, or theft to obtain evidence (criminal offenses, evidence inadmissible)
+- Harass, stalk, or threaten subjects (criminal harassment/stalking laws, licensing violations)
+- Disclose confidential client information without authorization (breach of contract, ethical violation)
+- Work without proper licensing in jurisdictions requiring PI licenses (criminal offense, civil penalties)
+- Provide legal advice (unauthorized practice of law)
+- Obstruct justice, tamper with witnesses, or destroy evidence (criminal offenses)
+- Accept contingency fees in criminal defense cases (ethical violations in most jurisdictions)
+
+Escalate / refer out when:
+- Evidence of serious criminal activity discovered (duty to report varies by jurisdiction - consult attorney)
+- Evidence of imminent danger to individuals (child abuse, planned violence - mandatory reporting may apply)
+- Client requests illegal activities or unethical conduct (decline representation, withdraw from case)
+- Situation requires law enforcement powers (arrests, search warrants, subpoena authority)
+- Complex legal issues arise regarding admissibility, privilege, or investigative authority (consult attorney)
+- Surveillance subject becomes aware and threatens investigator (officer safety, case compromise)
+- Evidence requires forensic analysis beyond PI capabilities (digital forensics, DNA, ballistics)
+- International investigation required (different laws, jurisdictions, licensing - partner with local investigators)
+- Expert testimony needed beyond fact witness role (retain qualified expert witnesses)
+- Conflict of interest discovered (representing adverse parties, personal relationship with subject)
+
+2) Quick intake questions
+Ask 6-10 questions that materially affect your investigative approach and legal parameters:
+- What state/jurisdiction are you licensed in and where will investigation occur? (Licensing laws vary dramatically)
+- What is the purpose and objective of the investigation? (Legal case, insurance claim, due diligence, personal matter)
+- Who is the client and what is their relationship to the matter? (Attorney, insurance company, business, individual)
+- What specific information or evidence is being sought? (Proof of activity, location of person, background information, assets)
+- What is the legal basis or authority for the investigation? (Court case, insurance policy, business contract, personal concern)
+- Are there any legal restrictions or special considerations? (Restraining orders, custody disputes, jurisdictional issues)
+- What is the timeframe and urgency? (Immediate surveillance needed, ongoing monitoring, historical research)
+- What is the budget and billing arrangement? (Hourly rate, flat fee, retainer, expense cap)
+- What jurisdictions are involved? (State licensing requirements, multi-state issues, international concerns)
+- What information is already known about the subject? (Name, address, description, vehicle, employment, habits)
+- Are there safety concerns or risk factors? (Dangerous subject, weapons, criminal history, hostile environment)
+
+1.5) Regional Variations
+
+Private investigation is heavily regulated with major state/jurisdiction differences:
+
+**Licensing Requirements:**
+- **United States**: State-specific licensing (47 states require license, Alabama/Colorado/Idaho/Wyoming/South Dakota exempt)
+- **Requirements vary**: Background checks, experience (0-3 years), exams, insurance, bond, fees
+- **Reciprocity**: Very limited, most states require separate license for multi-state work
+- **Federal**: No federal PI license, but some federal investigations require federal background
+
+**Surveillance Laws:**
+- **United States**: One-party vs two-party consent states for recording (12 states require all-party consent)
+- **GPS tracking**: State laws vary dramatically (some prohibit without vehicle owner consent)
+- **Photography**: Generally legal in public spaces, but harassment/stalking laws apply
+- **Europe**: GDPR significantly restricts surveillance and data collection, stricter privacy protections
+
+**Investigative Authority:**
+- **United States**: No arrest powers (except citizen's arrest where available), no search warrant authority
+- **Access to records**: DPPA (Driver's Privacy Protection Act) limits DMV access, FCRA governs consumer reports
+- **Pretexting**: Illegal under federal law (Gramm-Leach-Bliley for financial records)
+- **Trespass laws**: Vary by state, no special exemptions for PIs
+
+**Practice Restrictions:**
+- **Scope limitations**: Some states restrict types of work (domestic only, no criminal defense)
+- **Armed PI licenses**: Separate requirements in most states, training and background checks
+- **Business entity rules**: Some states require PI business ownership by licensed PI
+- **Continuing education**: Required in many states (8-40 hours biennially)
+
+**Professional Standards:**
+- **Ethics codes**: National associations (NALI, WAD) have codes, not legally binding
+- **Confidentiality**: Attorney work product protections vary by state and case type
+- **Testifying**: Fact witness vs expert witness rules, admissibility standards vary by jurisdiction
+
+3) Default workflow
+Use a deterministic, legal, and thorough investigative process:
+
+PRIVATE INVESTIGATION WORKFLOW:
+
+1. Client Intake & Case Assessment (Initial consultation)
+   - Meet with client to understand investigation objectives and desired outcomes
+   - Obtain detailed information about subject, circumstances, and relevant facts
+   - Review any existing documentation, evidence, or previous investigation reports
+   - Assess legal permissibility of requested investigation (ensure lawful objectives and methods)
+   - Identify ethical concerns or conflicts of interest (check against existing client conflicts)
+   - Determine licensing and jurisdictional requirements for investigation location
+   - Provide client with fee agreement, privacy notice, and contract terms (signed agreement)
+   - Obtain retainer payment or deposit per office policy
+   - Verify client identity and authority to request investigation (prevent fraudulent requests)
+   - Document initial consultation and case parameters in case file
+
+2. Investigation Planning & Research (Pre-surveillance preparation)
+   - Conduct preliminary research on subject using open-source intelligence (OSINT)
+   - Search public databases: property records, court records, business registrations, social media
+   - Develop subject profile: description, photo, known addresses, vehicles, employment, associates
+   - Identify subject's routine, schedule, and frequent locations (reduces surveillance time)
+   - Plan surveillance strategy: fixed surveillance, mobile surveillance, or combination
+   - Determine equipment needs: cameras, video, GPS (if legal), disguises, vehicles
+   - Conduct location reconnaissance if surveillance location known in advance
+   - Review applicable laws: trespassing, privacy, recording consent, licensing requirements
+   - Develop contingency plans for various scenarios (subject awareness, multiple locations, dead ends)
+   - Prepare case file materials: forms, log sheets, evidence bags, chain of custody documents
+
+3. Surveillance Operations (Field investigation)
+   - Arrive at surveillance location early and establish position with good vantage point
+   - Maintain covert positioning to avoid detection (parked vehicles, public locations, distance)
+   - Observe and document subject's activities, visitors, behaviors with time-stamped notes
+   - Take photographs and video of relevant activities (use timestamps, GPS coordinates)
+   - Maintain detailed surveillance log: times, locations, activities, persons present, vehicles
+   - Follow subject if mobile surveillance required (maintain distance, use multiple vehicles if available)
+   - Avoid trespassing, stay in public places or areas with legal access permission
+   - Document chain of custody for all evidence collected (photos, video, physical items)
+   - Communicate with client or attorney as agreed (daily updates, emergency notifications)
+   - Discontinue surveillance if detected or if continuing would be unsafe or illegal
+   - End surveillance after objectives achieved or at predetermined time
+   - Secure all evidence and equipment at end of surveillance day
+
+4. Interviews & Witness Contact (When appropriate)
+   - Identify potential witnesses or sources with relevant information
+   - Approach witnesses in professional manner, identify yourself as private investigator
+   - Explain purpose of investigation and ask for voluntary cooperation (no coercion)
+   - Obtain consent before recording interview (state laws vary - some require two-party consent)
+   - Conduct interview in neutral location or at witness's preference
+   - Ask open-ended questions and listen actively without leading or suggesting answers
+   - Document interview with audio recording (if consented) or detailed written notes
+   - Obtain written statement if witness willing to provide sworn statement
+   - Get contact information for follow-up or court testimony
+   - Maintain professional demeanor and respect witness's decision to participate or decline
+   - Do not make promises about case outcomes or compensation for testimony
+   - Thank witness for their time and cooperation
+
+5. Records Research & Database Searches (Documentary evidence)
+   - Conduct searches of public records databases for relevant information
+   - Obtain property records, deed transfers, mortgage information (county recorder)
+   - Search court records: civil suits, criminal records, bankruptcy, liens, judgments
+   - Run DMV records if authorized and legally permissible in jurisdiction (may require permissible purpose)
+   - Conduct business searches: corporate registrations, UCC filings, professional licenses
+   - Review social media, online presence, and publicly available information
+   - Obtain credit reports only if permissible purpose under FCRA (employment, insurance underwriting, etc.)
+   - Request records through public records requests (FOIA/state equivalents) when necessary
+   - Verify information across multiple sources for accuracy
+   - Maintain documentation of sources and dates for all information gathered
+   - Respect privacy laws and terms of service for databases and online platforms
+
+6. Evidence Analysis & Report Preparation (Case compilation)
+   - Review all evidence collected: photographs, video, documents, witness statements, notes
+   - Organize evidence chronologically and by relevance to case objectives
+   - Analyze findings and identify patterns, connections, or significant facts
+   - Cross-reference information from multiple sources to verify accuracy
+   - Identify gaps in evidence or areas requiring additional investigation
+   - Prepare written investigative report with executive summary and detailed findings
+   - Include exhibits: photographs, video stills, documents, maps, timelines
+   - Document sources and methods used (without compromising confidential techniques)
+   - Maintain objectivity and report facts without conclusions or legal opinions
+   - Preserve original evidence and maintain backup copies
+   - Prepare evidence for potential court presentation (chain of custody documentation)
+
+7. Client Reporting & Case Closure (Deliverables)
+   - Schedule meeting or call with client to present findings
+   - Provide written investigative report with all evidence and exhibits
+   - Walk through key findings and evidence with client
+   - Answer client questions and provide clarification on report contents
+   - Discuss potential next steps or additional investigation if needed
+   - Provide original evidence or copies as agreed in contract
+   - Maintain case file for required retention period per jurisdiction requirements
+   - Issue final invoice with itemized expenses and time
+   - Obtain signed acknowledgment of case closure and report receipt
+   - Make self available for follow-up questions or testimony if case proceeds to litigation
+
+4) Deliverables
+Common outputs and artifacts for private investigations:
+
+- Investigative reports: comprehensive written reports with findings, evidence, and chronology
+- Surveillance logs: detailed time-stamped documentation of observations during surveillance operations
+- Photographic evidence: date/time-stamped photographs documenting subject activities and relevant facts
+- Video evidence: recorded video of surveillance with metadata (date, time, location)
+- Background check reports: compilation of public records, employment history, criminal records, assets
+- Witness statements: written or recorded interviews with witnesses providing relevant information
+- Asset search reports: documentation of property ownership, vehicles, business interests, financial records
+- Timeline analysis: chronological representation of events, activities, or transactions
+- Chain of custody documentation: evidence tracking forms documenting handling of physical evidence
+- Court-ready evidence packages: organized exhibits with proper authentication for legal proceedings
+
+Minimum viable deliverable: Brief written report with basic findings, few photographs, and timeline of activities
+Gold standard deliverable: Comprehensive investigative report with executive summary, detailed narrative, extensive photographic/video evidence, witness statements, supporting documents, timeline analysis, and evidence appendix ready for court presentation
+
+5) Quality checklist
+Ensure legal compliance and professional standards:
+
+Legal Compliance:
+- [ ] All investigative activities conducted legally without trespassing, wiretapping, or illegal surveillance
+- [ ] Proper licensing maintained and displayed per jurisdiction requirements
+- [ ] No impersonation of law enforcement or government officials
+- [ ] Recording consent obtained where required by state law (two-party consent states)
+- [ ] GPS tracking (if used) complied with state laws regarding vehicle tracking
+- [ ] Database searches conducted with permissible purpose (FCRA compliance for credit reports)
+- [ ] No harassment, stalking, or threatening behavior toward subjects
+
+Evidence Quality:
+- [ ] Photographs and video have accurate date/time stamps and GPS coordinates where possible
+- [ ] Surveillance logs contain detailed chronological observations with specific times
+- [ ] Chain of custody maintained for all physical evidence
+- [ ] Evidence authenticated and admissible under rules of evidence
+- [ ] Original evidence preserved and backup copies created
+- [ ] Witness statements documented accurately with contact information
+
+Professionalism:
+- [ ] Client confidentiality maintained throughout investigation
+- [ ] Objective reporting of facts without bias or unsupported conclusions
+- [ ] Professional conduct in all interactions (witnesses, subjects, clients)
+- [ ] Accurate and truthful documentation (no fabrication or exaggeration)
+- [ ] Conflicts of interest identified and disclosed
+- [ ] Attorney work product privilege protected when working for attorneys
+
+Documentation:
+- [ ] Comprehensive case file maintained with all evidence and notes
+- [ ] Reports clearly written, well-organized, and professionally presented
+- [ ] Sources documented for all information obtained
+- [ ] Spelling, grammar, and formatting reviewed for accuracy
+- [ ] Executive summary provided highlighting key findings
+- [ ] Evidence exhibits properly labeled and cross-referenced in report
+
+6) Templates (paste-ready)
+
+=== Surveillance Log Template ===
+SURVEILLANCE LOG
+
+Case #: [Number]  Subject: [Last, First]
+Date: [MM/DD/YYYY]  Location: [Address or area]
+Investigator: [Name, License #]  Start Time: [HH:MM]  End Time: [HH:MM]
+
+| Time | Location/Activity | Persons Present | Vehicle | Photo/Video | Notes |
+|------|------------------|-----------------|---------|-------------|-------|
+| 0830 | Subject exits residence at [address] | Subject alone | [Make/model/plate] | Photo #001 | Wearing [description] |
+| 0845 | Subject drives to [location] | Subject | Same vehicle | Video 0845-0847 | Parks in front lot |
+| 0900 | Subject meets with [person] | Subject + male [description] | - | Photos #002-005 | Conversation 15 min |
+
+END OF SURVEILLANCE: [Time]
+TOTAL HOURS: [X.X hours]
+MILES DRIVEN: [XXX miles]
+
+SUMMARY OF OBSERVATIONS:
+[Brief paragraph summarizing key activities, locations visited, persons met, and relevant findings]
+
+EVIDENCE COLLECTED:
+- Photographs: #001-#025 (SD card labeled CS-2024-001)
+- Video: 3 clips totaling 12 minutes (files CS-2024-001-V1, V2, V3)
+- Notes: This surveillance log
+
+NEXT STEPS:
+[Follow-up surveillance needed, additional investigation required, reporting to client]
+
+Investigator Signature: ________________  Date: __________
+
+=== Investigative Report Template ===
+CONFIDENTIAL INVESTIGATIVE REPORT
+
+Case #: [Number]  
+Client: [Name/Attorney/Company]
+Subject: [Name or matter]  
+Date of Report: [MM/DD/YYYY]
+Prepared by: [Investigator Name, License #]
+
+EXECUTIVE SUMMARY:
+[2-3 paragraph overview of case objectives, investigation conducted, and key findings]
+
+BACKGROUND:
+[Description of case circumstances, why investigation was initiated, relevant history]
+
+SCOPE OF INVESTIGATION:
+Dates of Investigation: [Start date] to [End date]
+Locations: [Cities/states where investigation conducted]
+Methods Used: [Surveillance, interviews, records research, database searches]
+
+INVESTIGATION ACTIVITIES:
+
+Date: [MM/DD/YYYY]
+Activity: [Surveillance of subject at residence]
+Time: [Start-End times]
+Location: [Address]
+Summary: [Detailed narrative of activities observed, persons present, vehicles, relevant facts]
+Evidence: [Photos #001-015, Video clip 1, Surveillance log]
+
+Date: [MM/DD/YYYY]
+Activity: [Interview with witness]
+Time: [Start-End times]
+Location: [Address]
+Summary: [Narrative of interview, information provided, witness credibility assessment]
+Evidence: [Written statement, audio recording file]
+
+[Continue for each investigation activity chronologically]
+
+FINDINGS:
+
+Finding #1: [Specific fact or conclusion supported by evidence]
+Supporting Evidence: [Photos, documents, witness statements]
+
+Finding #2: [Specific fact or conclusion supported by evidence]
+Supporting Evidence: [Evidence references]
+
+[Continue for each major finding]
+
+CONCLUSION:
+[Summary of what was established or determined through investigation]
+
+EXHIBITS:
+Exhibit A: Surveillance logs
+Exhibit B: Photographic evidence (25 images)
+Exhibit C: Video evidence (3 clips)
+Exhibit D: Witness statement - [Name]
+Exhibit E: Property records
+[List all attached exhibits]
+
+This report contains confidential information and is prepared for the exclusive use of the client. Distribution or disclosure to third parties without client authorization is prohibited.
+
+Respectfully submitted,
+
+[Investigator Name, License #]
+[Company Name]
+[Date]
+
+=== Background Check Report Template ===
+BACKGROUND INVESTIGATION REPORT
+
+Subject: [Last, First, Middle]
+DOB: [MM/DD/YYYY]  SSN: [Last 4: XXXX]
+Current Address: [Full address]
+Report Date: [MM/DD/YYYY]  Investigator: [Name, License #]
+
+IDENTITY VERIFICATION:
+- Full Legal Name: [Name per official documents]
+- Known Aliases: [Other names used]
+- Date of Birth: [Verified through: _______]
+- Social Security Number: [Verified through: _______]
+- Driver's License: [Number, State, Expiration]
+
+ADDRESS HISTORY (Past 7 years):
+[Current address] - [Start date] to Present
+[Previous address] - [Start date] to [End date]
+[Previous address] - [Start date] to [End date]
+
+CRIMINAL HISTORY:
+Jurisdiction: [County, State] - Search conducted [Date]
+Results: [ ] No records found  [ ] Records found (detailed below)
+
+[If records found:]
+Case #: [Number]  Date: [MM/DD/YYYY]  Charge: [Offense]
+Disposition: [Guilty/Dismissed/Pending]  Sentence: [If applicable]
+
+[Repeat for each jurisdiction searched]
+
+CIVIL COURT RECORDS:
+Jurisdiction: [County, State] - Search conducted [Date]
+Results: [ ] No records found  [ ] Records found (detailed below)
+
+[If records found:]
+Case Type: [Lawsuit/Judgment/Lien/Bankruptcy]
+Case #: [Number]  Filed: [Date]  
+Parties: [Plaintiff v. Defendant]
+Status: [Active/Satisfied/Dismissed]
+Amount: [If applicable]
+
+PROPERTY OWNERSHIP:
+[Address] - Purchased [Date] for $[Amount]
+Owner: [Names on deed]
+Current Value: $[Amount] (per county assessor)
+Liens: [ ] None  [ ] Present: [Details]
+
+VEHICLE REGISTRATIONS:
+[Year Make Model] - [State] Plate: [Number]
+VIN: [Number]  Registered to: [Name]
+
+PROFESSIONAL LICENSES:
+License Type: [Profession]
+License #: [Number]  State: [State]
+Status: [Active/Expired/Suspended]  Expiration: [Date]
+Disciplinary Actions: [ ] None  [ ] Yes: [Details]
+
+EMPLOYMENT VERIFICATION:
+Employer: [Company name]
+Position: [Title]
+Employment Dates: [Start] to [End or Present]
+Verification Method: [Pay stub/HR contact/Public records]
+
+SOCIAL MEDIA & ONLINE PRESENCE:
+Platforms Identified: [Facebook, LinkedIn, Instagram, Twitter, etc.]
+Profile Names: [Usernames or URLs]
+Summary: [Brief description of online presence, public posts, connections]
+
+CREDIT REPORT: [Only if permissible purpose under FCRA]
+[Summary of credit standing - full report attached if authorized]
+
+SOURCES:
+- [County] Court Records - [Search date]
+- [State] Department of Motor Vehicles - [Search date]
+- [County] Property Records - [Search date]
+- [Database name] - [Search date]
+[List all sources used]
+
+LIMITATIONS:
+This report reflects information available as of [date] from sources accessed. Criminal records searched in jurisdictions where subject is known to have lived or worked. Information is subject to errors in public records or databases.
+
+CONCLUSION:
+[Brief summary assessment]
+
+Report prepared by: [Investigator Name, License #]
+Date: [MM/DD/YYYY]
+
+=== Chain of Custody Form ===
+EVIDENCE CHAIN OF CUSTODY
+
+Case #: [Number]  Evidence Item #: [Number]
+
+ITEM DESCRIPTION:
+[Detailed description of evidence item - physical object, storage media, documents, etc.]
+
+COLLECTION INFORMATION:
+Collected by: [Name]  Date: [MM/DD/YYYY]  Time: [HH:MM]
+Location: [Where item was collected]
+Method: [How item was collected]
+Condition: [Description of item condition when collected]
+
+CHAIN OF CUSTODY LOG:
+
+| Date | Time | Released By | Received By | Purpose | Location | Signature |
+|------|------|-------------|-------------|---------|----------|-----------|
+| MM/DD/YY | HH:MM | [Name] | [Name] | [Evidence collection] | [Location] | _____ |
+| MM/DD/YY | HH:MM | [Name] | [Name] | [Transfer to storage] | [Location] | _____ |
+| MM/DD/YY | HH:MM | [Name] | [Name] | [Analysis/Review] | [Location] | _____ |
+
+STORAGE LOCATION:
+[Secured evidence locker, file cabinet, digital storage with description]
+
+FINAL DISPOSITION:
+[ ] Returned to owner
+[ ] Retained in case file
+[ ] Submitted to court
+[ ] Destroyed (per retention policy)
+
+Date: [MM/DD/YYYY]  Authority: [Name, Title]
+
+7) Examples of excellent outputs
+
+Example 1: Surveillance Report (Insurance Fraud)
+```
+SURVEILLANCE REPORT
+
+Case #: WC-2024-8742
+Client: ABC Insurance Company
+Subject: Johnson, Robert (Claimant)
+Investigation Dates: 11/10/2024 - 11/15/2024
+Investigator: Private Investigator Jane Smith, License #PI-45821
+
+BACKGROUND:
+Subject Robert Johnson filed a workers' compensation claim on 08/15/2024 alleging he sustained a severe back injury while lifting heavy boxes at work. He claimed total disability and inability to perform physical activities including lifting, bending, or prolonged standing. The purpose of this surveillance was to document subject's actual physical capabilities.
+
+SURVEILLANCE ACTIVITIES:
+
+Date: 11/10/2024  Location: Subject's residence, 456 Oak Street, [City]
+Time: 0700-1600  Weather: Clear, 68°F
+
+0715: I established surveillance position on public street with view of subject's residence. Subject's vehicle (2018 Ford F-150, [State] plate ABC-1234) was parked in driveway.
+
+0845: Subject exited residence and walked to his truck without visible difficulty. He did not use any assistive device (no cane, walker, or brace observed). He wore casual clothing and appeared to move normally without limping or guarding behavior. (Photos #001-003)
+
+0900: Subject drove to Home Depot located at [address]. I followed at safe distance maintaining visual contact.
+
+0915: Subject parked and entered Home Depot. I entered store and observed from distance. Subject walked through store aisles without difficulty, looking at various items in the lumber and hardware sections. (Photos #004-006)
+
+0935: Subject selected multiple items and proceeded to checkout. I observed him load the following items onto the checkout counter without assistance:
+- Six 8-foot 2x4 lumber boards
+- One 50-pound bag of concrete mix
+- Various hand tools
+Subject lifted and moved these items without visible signs of pain or limitation. (Photos #007-012, Video clip #1: 2 minutes showing subject loading items)
+
+0950: Subject paid for purchases and loaded them into his truck bed. He lifted the lumber boards overhead to place them in the truck bed and hoisted the 50-pound concrete bag. No signs of back pain or limitation observed during this activity. (Photos #013-018, Video clip #2: 3 minutes showing subject loading truck)
+
+1005: Subject drove from Home Depot to his residence.
+
+1025: Subject backed his truck into driveway and began unloading materials. He carried the lumber boards from truck to backyard. He lifted and carried the 50-pound concrete bag from truck to garage. All activities were performed without assistance and without visible pain behavior. (Photos #019-030, Video clip #3: 5 minutes showing unloading activities)
+
+1100-1400: Subject worked in backyard. He appeared to be constructing a fence or deck. Observed subject using power tools, bending, kneeling, reaching overhead, and lifting lumber. He worked continuously for 3 hours with normal breaks. No visible signs of disability, pain behavior, or physical limitation. (Photos #031-065, Video clips #4-7: Total 15 minutes showing various work activities)
+
+1430: Subject completed work and cleaned up tools. He entered residence.
+
+1600: Surveillance concluded for the day.
+
+[Similar detailed entries for surveillance days 11/11-11/15/2024]
+
+FINDINGS:
+1. Physical Capabilities: Subject demonstrated ability to lift, carry, bend, reach overhead, kneel, and perform sustained physical labor inconsistent with claimed total disability.
+
+2. Specific Activities Observed: Subject lifted 50-pound bag, carried multiple lumber boards, used power tools, constructed fence/deck, performed yard work, all without assistive devices or visible pain behaviors.
+
+3. Duration: Activities observed over 6 days of surveillance on multiple occasions, indicating consistent physical capabilities.
+
+4. Inconsistency with Claim: Observed activities directly contradict subject's claimed inability to lift, bend, or perform physical activities due to back injury.
+
+EVIDENCE:
+- Surveillance logs: 6 days detailed observations
+- Photographs: 187 images total documenting activities
+- Video: 12 video clips totaling 38 minutes
+- All evidence includes date/time stamps and GPS coordinates
+- Evidence stored on secure SD cards labeled WC-2024-8742-A, B
+
+CONCLUSION:
+Surveillance documented subject performing physical activities inconsistent with his claimed disability. Subject demonstrated capacity for sustained physical labor including lifting, carrying, bending, and overhead reaching without apparent limitation.
+
+This report is confidential and prepared for the exclusive use of ABC Insurance Company for claims investigation purposes.
+
+Respectfully submitted,
+Jane Smith, Private Investigator License #PI-45821
+Smith Investigations, Inc.
+Date: 11/16/2024
+```
+
+Example 2: Background Investigation Report (Pre-Employment)
+```
+BACKGROUND INVESTIGATION REPORT
+
+Subject: Martinez, Carlos J.
+DOB: 05/20/1985  SSN: Last 4: 7823
+Report Date: 12/05/2024  
+Investigator: Private Investigator John Davis, License #PI-29384
+Client: XYZ Corporation (Pre-Employment Screening)
+
+SCOPE OF INVESTIGATION:
+Identity verification, address history, criminal records (7 years), civil court records, employment verification, education verification, professional licenses, and credit check (with FCRA compliant authorization).
+
+IDENTITY VERIFICATION:
+- Full Legal Name: Carlos Juan Martinez
+- Known Aliases: None identified
+- Date of Birth: 05/20/1985 (verified via driver's license and SSN trace)
+- Social Security Number: Valid, issued in Texas, no deceased indicator
+- Driver's License: [State] #M283746592, Expiration 05/2027, Status: Valid
+
+ADDRESS HISTORY (Past 7 years):
+1. 789 Elm Avenue, Apt 3C, [City, State, ZIP] - 06/2022 to Present (Current)
+2. 456 Oak Street, [City, State, ZIP] - 08/2019 to 05/2022
+3. 123 Pine Road, [City, State, ZIP] - 01/2018 to 07/2019
+
+All addresses verified through credit bureau data and public records.
+
+CRIMINAL HISTORY:
+Jurisdictions Searched: [County 1], [County 2], [County 3] where subject lived/worked
+Search Dates: 12/01/2024 to 12/03/2024
+Results: NO CRIMINAL RECORDS FOUND
+
+Specific searches conducted:
+- [County] Superior Court criminal records (7 years)
+- [County] District Court criminal records (7 years)
+- [State] statewide criminal database
+- National Sex Offender Registry - No match
+
+CIVIL COURT RECORDS:
+Jurisdictions Searched: [County 1], [County 2]
+Search Dates: 12/01/2024 to 12/03/2024
+Results: NO CIVIL JUDGMENTS, LIENS, OR BANKRUPTCIES FOUND
+
+- No civil lawsuits as plaintiff or defendant
+- No judgments or liens recorded
+- No bankruptcy filings
+
+EMPLOYMENT VERIFICATION:
+
+Current Employer: ABC Company, [City, State]
+Position: Senior Accountant
+Employment Dates: 06/2022 to Present
+Salary: $95,000 annual (per subject's authorization)
+Verification Method: Direct contact with HR department on 12/03/2024
+HR Contact: [Name], phone [number]
+Verification Status: CONFIRMED - Employment dates, position, and salary verified
+
+Previous Employer: DEF Corporation, [City, State]
+Position: Staff Accountant
+Employment Dates: 08/2019 to 05/2022
+Verification Method: Direct contact with HR department on 12/03/2024
+Verification Status: CONFIRMED - Subject left in good standing, eligible for rehire
+
+EDUCATION VERIFICATION:
+
+Bachelor of Science in Accounting
+University of [State], [City]
+Graduation Date: May 2007
+Verification Method: National Student Clearinghouse verification
+Verification Status: CONFIRMED - Degree conferred 05/15/2007
+
+PROFESSIONAL LICENSES:
+License: Certified Public Accountant (CPA)
+State: [State]
+License #: CPA-45892
+Status: ACTIVE AND IN GOOD STANDING
+Expiration: 12/31/2025
+Disciplinary Actions: None found (verified via State Board of Accountancy website 12/03/2024)
+
+CREDIT REPORT: (Permissible purpose: Employment screening with applicant's written authorization under FCRA)
+Credit Score: 752 (Good)
+Open Accounts: 8 (all current, no delinquencies)
+Derogatory Marks: None
+Public Records: None (no bankruptcies, liens, judgments)
+Credit History: 15 years established credit
+Summary: Subject demonstrates responsible financial management with strong credit history.
+
+SOURCES CONSULTED:
+- [County 1] Superior Court Records (online portal) - 12/01/2024
+- [County 2] District Court Records (online portal) - 12/01/2024
+- [State] Department of Motor Vehicles - 12/02/2024
+- [State] Board of Accountancy (license verification) - 12/03/2024
+- National Student Clearinghouse - 12/03/2024
+- ABC Company HR Department - 12/03/2024
+- DEF Corporation HR Department - 12/03/2024
+- [Credit Bureau Name] - 12/04/2024 (with FCRA compliant authorization)
+- National Sex Offender Public Website - 12/03/2024
+
+LIMITATIONS:
+This report reflects information available as of 12/05/2024 from sources indicated above. Criminal records were searched in jurisdictions where subject is known to have resided or worked based on address history. Records may exist in other jurisdictions not searched. Information is subject to errors or omissions in public records or databases. This report is prepared for pre-employment screening purposes in compliance with Fair Credit Reporting Act (FCRA) requirements.
+
+CONCLUSION:
+Background investigation of Carlos J. Martinez revealed no adverse information. Subject's identity, employment history, education, and professional license were verified. No criminal records, civil judgments, or credit issues were identified. Subject appears to be suitable for consideration for employment position.
+
+This report is confidential and prepared exclusively for XYZ Corporation for employment screening purposes in compliance with FCRA.
+
+Report prepared by: John Davis, Private Investigator License #PI-29384
+Davis Investigative Services
+Date: 12/05/2024
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Surveillance**: Covert observation of a subject's activities, movements, and associations for investigative purposes
+- **OSINT (Open-Source Intelligence)**: Information gathered from publicly available sources including social media, public records, news, and websites
+- **Skip Tracing**: Locating individuals who have moved, disappeared, or are avoiding contact using databases and investigative techniques
+- **Pretexting**: Obtaining information under false pretenses or false identity (illegal in most contexts, particularly for financial records)
+- **Permissible Purpose**: Legal justification required under FCRA for obtaining consumer credit reports (employment, insurance underwriting, credit transactions)
+- **Due Diligence**: Investigation conducted to verify facts, assess risks, or confirm representations (business transactions, employment, partnerships)
+- **Chain of Custody**: Documentation tracking handling and storage of evidence from collection through presentation to maintain integrity
+- **Work Product Privilege**: Legal protection for investigative materials prepared for attorney in anticipation of litigation (not discoverable)
+- **Service of Process**: Delivery of legal documents (summons, subpoenas) to parties in legal proceedings per court rules
+- **Admissibility**: Requirement that evidence meet legal standards to be presented in court (relevant, authentic, legally obtained)
+
+Standards & Frameworks (2024):
+- **State Licensing Requirements**: Most states require PI licensing with requirements including minimum age, training, exam, background check, bonding, insurance (vary by state)
+- **Fair Credit Reporting Act (FCRA) 15 USC § 1681**: Federal law regulating access to consumer credit reports requiring permissible purpose and consumer disclosures
+- **Electronic Communications Privacy Act (ECPA)**: Federal wiretap law prohibiting illegal interception of wire, oral, or electronic communications (18 USC § 2510-2522)
+- **State Privacy Laws**: State-specific laws governing surveillance, recording consent, GPS tracking, and privacy expectations (vary widely)
+- **Recording Consent Laws**: 
+  * One-Party Consent States: Recording permitted with consent of one party to conversation (38 states)
+  * Two-Party Consent States: Recording requires consent of all parties (12 states including California, Florida, Pennsylvania)
+- **GPS Tracking Laws**: State laws vary - some require vehicle owner consent, some prohibit tracking spouses' vehicles, some require court order
+- **Rules of Evidence**: Federal Rules of Evidence (FRE) and state equivalents governing admissibility of evidence in court (authentication, hearsay, relevance)
+- **Professional Ethics Codes**:
+  * ASIS International Guidelines for Investigation
+  * National Association of Legal Investigators (NALI) Code of Ethics
+  * World Association of Detectives (WAD) Code of Ethics
+- **Fourth Amendment**: Constitutional protection against unreasonable searches and seizures (limited application to private investigators as non-government actors)
+
+Common Tools & Equipment:
+- **Surveillance Equipment**: Digital cameras with telephoto lenses, video cameras, covert cameras, night vision, binoculars
+- **GPS Tracking Devices**: Real-time GPS trackers (use only where legally permitted and authorized)
+- **Database Access**: Public records databases (LexisNexis, Accurint, TLO, IRB), court records, property records, business registrations
+- **Vehicle Equipment**: Surveillance vehicles (non-descript, tinted windows), dashcams, mobile Wi-Fi, charging equipment
+- **Recording Equipment**: Digital audio recorders, body-worn cameras, interview recording systems (use per consent laws)
+- **Communication**: Encrypted phones, two-way radios, covert communication devices
+- **Documentation Tools**: Digital notepads, surveillance log software, timestamp cameras, evidence management systems
+- **Analysis Software**: Timeline software, mapping tools, social media analysis tools, link analysis software
+- **Skip Tracing Resources**: Database searches, phone number lookups, social media investigations, public records
+
+Change log:
+- 2024-12: Initial playbook created based on state licensing standards, FCRA requirements, ECPA wiretap laws, professional ethics codes, and investigative best practices
+  * Emphasis on legal boundaries and ethical conduct (no trespassing, wiretapping, impersonation, harassment)
+  * State licensing requirements and jurisdictional considerations
+  * Evidence collection with chain of custody and admissibility standards
+  * Client confidentiality and attorney work product privilege
+  * Recording consent laws and privacy protections
+  * Professional documentation and reporting standards

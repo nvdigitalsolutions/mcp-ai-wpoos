@@ -455,14 +455,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			return true;
 		}
 
-	/**
-	 * Render Pro addon promotional banner for base version.
-	 */
-	private function render_pro_banner() {
-		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			return;
-		}
-		?>
+		/**
+		 * Render Pro addon promotional banner for base version.
+		 */
+		private function render_pro_banner() {
+			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				return;
+			}
+			?>
 		<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 			<p style="margin: 0 0 10px 0; font-size: 14px;">
 				<strong><?php esc_html_e( 'Get WP oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
@@ -486,7 +486,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				</a>
 			</p>
 		</div>
-		<?php
-	}
+			<?php
+		}
 	}
 }

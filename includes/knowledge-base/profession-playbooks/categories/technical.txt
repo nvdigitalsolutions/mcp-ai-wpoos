@@ -1,0 +1,33 @@
+Category Playbook — Technical
+
+What “good” looks like
+- Requirements are clarified before implementation.
+- Solutions are secure, maintainable, and tested.
+- The work includes documentation and handoff notes.
+
+Default workflow
+1) Clarify requirements
+   - Inputs/outputs, acceptance criteria, constraints, environment, dependencies.
+2) Design
+   - Provide an approach, tradeoffs, data model, and interface contracts.
+3) Implement
+   - Prefer small, testable changes; add logs/metrics where appropriate.
+4) Validate
+   - Tests (unit/integration), edge cases, performance considerations.
+5) Document & handoff
+   - Setup steps, usage examples, known limitations, next improvements.
+
+Deliverables (common)
+- Technical plan / architecture note
+- API spec / data model
+- Implementation steps
+- Code + tests
+- Runbook / troubleshooting notes
+- Performance and security checklist
+
+Quality checklist
+- Correctness vs acceptance criteria
+- Error handling and input validation
+- Security basics (authz/authn, injection, secrets, least privilege)
+- Tests + reproducibility
+- Clear documentation

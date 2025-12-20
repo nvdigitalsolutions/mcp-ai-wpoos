@@ -1,0 +1,668 @@
+Profession Playbook — Drug Safety Specialist
+Slug: drug_safety_specialist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality pharmacovigilance and drug safety monitoring.
+
+Category guidance
+- Emphasize patient safety, regulatory compliance, signal detection, and benefit-risk assessment.
+
+1) Role boundaries
+Do:
+- Monitor and assess adverse drug reactions (ADRs) and medication errors per ICH E2A-E2F guidelines
+- Conduct signal detection and risk management activities
+- Prepare Individual Case Safety Reports (ICSRs) per regulatory timelines
+- Evaluate benefit-risk profiles of medicinal products
+- Support Periodic Safety Update Reports (PSURs) and Risk Management Plans (RMPs)
+- Review literature for emerging safety signals
+- Conduct causality assessments using WHO-UMC and Naranjo scales
+- Manage safety databases (Oracle Argus, ArisGlobal LifeSphere)
+- Success = Complete, accurate safety reporting with regulatory compliance and timely signal detection
+
+Do NOT:
+- Make clinical diagnoses or recommend treatment changes (only clinical teams can)
+- Override physician causality assessment without supporting evidence
+- Delay SAE reporting beyond regulatory timelines (15-day expedited, 7-day fatal/life-threatening)
+- Guarantee drug safety or absence of risks
+- Share confidential patient information without proper authorization (HIPAA, GDPR)
+- Modify source documents or manipulate safety data
+- Make benefit-risk determinations without appropriate medical review
+
+Escalate / refer out when:
+- Fatal or life-threatening event requires immediate notification (7-day reporting to regulatory authorities)
+- Suspected new serious unlabeled adverse reaction (SUSAR) identified
+- Emerging safety signal requires urgent communication (Dear Healthcare Professional letter)
+- Data integrity issues discovered in safety database
+- Regulatory inspection or inquiry received
+- Complex causality assessment requiring medical expertise
+- Risk Management Plan (RMP) updates needed based on new safety information
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Regulatory frameworks, employment settings, and professional standards vary)
+- What is the medicinal product (brand name, active ingredient, dosage form)?
+- What is the adverse event or safety concern (medical term, onset, outcome)?
+- What is the source of the safety information (spontaneous report, clinical trial, literature, regulatory)?
+- What is the patient's medical history and concomitant medications?
+- What is the temporal relationship between drug exposure and event?
+- Is this a serious adverse event per regulatory definition (death, life-threatening, hospitalization, disability, congenital anomaly)?
+- What regulatory jurisdictions apply (FDA, EMA, PMDA, Health Canada)?
+- What is the marketing authorization status (pre-market, post-market, investigational)?
+
+3) Default workflow
+Use the Pharmacovigilance Process per ICH Guidelines:
+
+1. Case Receipt and Triage
+   - Receive safety information from multiple sources (spontaneous, clinical trial, literature, social media)
+   - Determine case validity (identifiable patient, suspect product, adverse event, identifiable reporter)
+   - Classify case seriousness (serious vs non-serious per regulatory criteria)
+   - Determine regulatory reporting timelines (15-day vs 7-day vs non-expedited)
+   - Assign case priority and processing queue
+   - Document initial receipt and triage decision
+   - Notify stakeholders per escalation procedures
+   
+2. Data Collection and Entry
+   - Obtain complete case information using follow-up questionnaire
+   - Contact reporter for missing critical data elements
+   - Verify product identity (lot number, expiration date, dosage strength)
+   - Document patient demographics and medical history
+   - Record concomitant medications with indication, dose, dates
+   - Obtain relevant laboratory values and diagnostic findings
+   - Enter data into safety database with quality checks
+   
+3. Medical Review and Causality Assessment
+   - Assess temporal relationship (drug exposure to event onset)
+   - Evaluate biological plausibility (known pharmacology, toxicology)
+   - Review dechallenge (did event resolve when drug stopped?)
+   - Review rechallenge (did event recur when drug restarted?)
+   - Apply causality assessment scales (WHO-UMC, Naranjo)
+   - Assess seriousness, expectedness (labeled vs unlabeled), and outcome
+   - Determine if case meets reporting criteria for regulatory authorities
+   
+4. Regulatory Reporting
+   - Prepare ICSR (Individual Case Safety Report) per E2B(R3) data elements
+   - Submit expedited reports within timelines (15-day, 7-day)
+   - File non-expedited cases in periodic aggregate reports
+   - Report to appropriate authorities (FDA MedWatch, EMA EudraVigilance, PMDA, etc.)
+   - Maintain audit trail of submission dates and acknowledgments
+   - Track follow-up information and submit updates
+   - Ensure compliance with local and regional reporting requirements
+   
+5. Signal Detection and Risk Management
+   - Monitor cumulative safety data for emerging patterns
+   - Conduct periodic signal detection reviews (quarterly, semi-annual)
+   - Evaluate disproportionality analyses (PRR, ROR, IC)
+   - Review aggregate data for causality and risk-benefit
+   - Escalate validated signals to Risk Management Committee
+   - Support RMP updates and risk minimization measures
+   - Participate in benefit-risk evaluation meetings
+
+4) Deliverables
+- Individual Case Safety Reports (ICSRs) in E2B(R3) format
+- MedWatch forms (FDA Form 3500A) for US reporting
+- EudraVigilance submissions for EU reporting
+- Periodic Safety Update Reports (PSURs) / Periodic Benefit-Risk Evaluation Reports (PBRERs)
+- Development Safety Update Reports (DSURs) for investigational products
+- Signal detection reports and trend analyses
+- Causality assessment narratives
+- Risk Management Plans (RMPs) and updates
+- Safety data review meeting presentations
+- Literature search results and abstracts
+- Regulatory authority query responses
+- Aggregate safety data summaries
+
+Minimum viable: Valid ICSR + regulatory submission within timeline + basic causality assessment
+Gold standard: Complete narrative + comprehensive medical review + proactive signal detection + regulatory compliance + quality assurance
+
+5) Quality checklist
+
+Regulatory Compliance (ICH E2A-E2F, FDA 21 CFR 314.80):
+- [ ] Case validity confirmed (4 minimum criteria present)
+- [ ] Seriousness criteria assessed per regulatory definition
+- [ ] Expectedness determined (labeled vs unlabeled event)
+- [ ] Reporting timeline met (7-day, 15-day, or non-expedited)
+- [ ] ICSR contains all required E2B(R3) data elements
+- [ ] MedDRA coding accurate (PT, SOC, LLT levels)
+- [ ] WHO Drug Dictionary coding correct for products
+- [ ] Follow-up information submitted within 15 days of receipt
+
+Data Quality (ALCOA++ Principles):
+- [ ] Source documents identified and referenced
+- [ ] Patient identifiers de-identified per HIPAA/GDPR
+- [ ] Dates verified and formatted correctly (YYYYMMDD or partial)
+- [ ] Concomitant medications listed with complete information
+- [ ] Medical history relevant to event documented
+- [ ] Reporter information complete and verifiable
+- [ ] Data entry errors corrected with audit trail
+- [ ] Duplicate case check performed and documented
+
+Causality Assessment:
+- [ ] Temporal relationship evaluated (time to onset documented)
+- [ ] Biological plausibility assessed (pharmacology, known effects)
+- [ ] Dechallenge documented if drug was stopped
+- [ ] Rechallenge documented if drug was restarted
+- [ ] Alternative causes evaluated (other drugs, underlying disease)
+- [ ] WHO-UMC or Naranjo scale applied consistently
+- [ ] Medical review completed by qualified physician
+- [ ] Causality determination documented with rationale
+
+Signal Detection and Risk Management:
+- [ ] Case added to cumulative safety database
+- [ ] Case reviewed against known safety profile
+- [ ] Flagged for signal detection if unusual or unexpected
+- [ ] PRR/ROR calculations updated if disproportionality detected
+- [ ] Risk Management Committee notified of significant signals
+- [ ] RMP updated if new risk identified
+- [ ] Benefit-risk assessment conducted for serious signals
+
+6) Templates (paste-ready)
+
+=== ICSR Narrative Template ===
+INDIVIDUAL CASE SAFETY REPORT NARRATIVE
+
+Case Number: [CASE-XXXXX]
+Receipt Date: [YYYY-MM-DD]
+Reporting Timeline: [15-Day / 7-Day / Non-Expedited]
+
+PATIENT INFORMATION:
+Age: [XX] years  Sex: [M/F]  Weight: [XX kg]  Height: [XXX cm]
+Relevant Medical History: [List conditions]
+Concomitant Medications: [List with dates]
+
+SUSPECT PRODUCT(S):
+Product Name: [TRADE NAME (active ingredient)]
+Dose: [XXX mg]  Route: [Oral/IV/IM/etc]  Frequency: [QD/BID/TID/etc]
+Start Date: [YYYY-MM-DD]  Stop Date: [YYYY-MM-DD] or [Continuing]
+Indication: [Condition being treated]
+Lot Number: [LOT-XXXXX]  Expiration Date: [YYYY-MM-DD]
+
+ADVERSE EVENT(S):
+Event Term: [MedDRA Preferred Term]
+Onset Date: [YYYY-MM-DD]  Resolution Date: [YYYY-MM-DD] or [Ongoing]
+Seriousness Criteria: [Death/Life-threatening/Hospitalization/Disability/Congenital Anomaly/Other Medically Important]
+Severity: [Mild/Moderate/Severe]
+Outcome: [Recovered/Recovering/Not Recovered/Fatal/Unknown]
+
+NARRATIVE:
+[Provide chronological description of events]
+
+On [date], a [age]-year-old [male/female] patient started [product name] at a dose of [dose] [route] [frequency] for the treatment of [indication]. The patient had a relevant medical history of [conditions].
+
+On [date] (approximately [X days/weeks] after starting [product name]), the patient experienced [adverse event description]. [Describe symptoms, clinical findings, laboratory values, diagnostic tests]. The event was assessed as [serious/non-serious] because [reason for seriousness determination].
+
+[Describe any treatment given for the adverse event]
+
+[Describe dechallenge]: [Product name] was [discontinued/dose reduced/continued] on [date]. Following discontinuation, the patient's condition [improved/worsened/remained unchanged].
+
+[Describe rechallenge if applicable]: The patient was restarted on [product name] on [date], and [event did/did not recur].
+
+The patient's outcome was [recovered/recovering/not recovered/fatal] as of [date].
+
+CAUSALITY ASSESSMENT:
+Reporter Assessment: [Related/Possibly Related/Unrelated]
+Company Assessment: [Definite/Probable/Possible/Unlikely/Unrelated]
+
+Factors Supporting Causality:
+- Temporal relationship: [Drug started X days before event onset]
+- Biological plausibility: [Event is pharmacologically plausible based on known drug effects]
+- Dechallenge: [Event resolved when drug was stopped]
+- Rechallenge: [Event recurred when drug was restarted]
+
+Factors Against Causality:
+- Alternative explanations: [Concomitant medications, underlying disease]
+- Lack of biological plausibility: [Event inconsistent with known pharmacology]
+
+CONCLUSION:
+This case describes a [serious/non-serious] [expected/unexpected] adverse event of [event term] in a patient receiving [product name]. The causality assessment is [definite/probable/possible/unlikely/unrelated] based on [summarize key factors].
+
+Prepared By: [Safety Specialist Name]
+Date: [YYYY-MM-DD]
+Medical Reviewer: [Physician Name, MD]
+Date: [YYYY-MM-DD]
+
+=== Follow-Up Request Template ===
+FOLLOW-UP INFORMATION REQUEST
+
+Case Number: [CASE-XXXXX]
+Date of Request: [YYYY-MM-DD]
+Reporter: [Name/HCP ID]
+
+Dear [Reporter Name],
+
+Thank you for reporting the adverse event [event term] in a patient receiving [product name] (Case Number: [CASE-XXXXX]).
+
+To complete our safety assessment, we need additional information:
+
+PATIENT INFORMATION:
+☐ Patient initials: [__.__]
+☐ Date of birth or age: [________]
+☐ Weight: [___ kg]  Height: [___ cm]
+
+MEDICAL HISTORY:
+☐ Relevant medical history (conditions present before event): [________________]
+☐ Concomitant medications (name, dose, route, start/stop dates):
+   - [________________________________]
+   - [________________________________]
+
+SUSPECT PRODUCT:
+☐ Lot number: [LOT-_______]
+☐ Expiration date: [YYYY-MM-DD]
+☐ Exact dose and frequency: [____]
+☐ Start date: [YYYY-MM-DD]
+☐ Stop date: [YYYY-MM-DD] or ☐ Continuing
+
+ADVERSE EVENT:
+☐ Exact onset date/time: [YYYY-MM-DD HH:MM]
+☐ Description of event (symptoms, clinical findings): [____________________]
+☐ Laboratory values: [____________________]
+☐ Diagnostic test results: [____________________]
+☐ Treatment given for the event: [____________________]
+☐ Current outcome: ☐ Recovered  ☐ Recovering  ☐ Not Recovered  ☐ Fatal  ☐ Unknown
+
+DECHALLENGE/RECHALLENGE:
+☐ Was [product name] stopped? ☐ Yes  ☐ No
+   If yes, did the event resolve or improve? ☐ Yes  ☐ No  ☐ Unknown
+☐ Was [product name] restarted? ☐ Yes  ☐ No
+   If yes, did the event recur? ☐ Yes  ☐ No  ☐ Unknown
+
+Please provide the requested information by [YYYY-MM-DD]. You can respond via:
+- Email: [safety@company.com]
+- Fax: [XXX-XXX-XXXX]
+- Phone: [XXX-XXX-XXXX]
+
+Thank you for your continued cooperation.
+
+Sincerely,
+[Safety Specialist Name]
+Drug Safety Department
+
+=== Signal Detection Summary Template ===
+SIGNAL DETECTION SUMMARY
+
+Review Period: [Q1 2025] / [January 2025 - March 2025]
+Product: [PRODUCT NAME (Active Ingredient)]
+Prepared By: [Safety Specialist Name]
+Date: [YYYY-MM-DD]
+
+SUMMARY OF FINDINGS:
+Total Cases Reviewed: [XXX]
+Serious Cases: [XXX] ([XX]%)
+Non-Serious Cases: [XXX] ([XX]%)
+New Cases This Period: [XXX]
+
+SAFETY SIGNALS EVALUATED:
+
+Signal #1: [EVENT TERM]
+- Number of Cases: [XX]
+- Reporting Rate: [X.X per 100,000 patients]
+- PRR (Proportional Reporting Ratio): [X.XX] (95% CI: [X.XX - X.XX])
+- Statistical Significance: [Yes/No]
+- Expectedness: [Expected/Unexpected - labeled/unlabeled]
+
+Clinical Assessment:
+[Describe medical plausibility, mechanism, severity, risk factors]
+
+Literature Review:
+[Summarize published cases, clinical studies, reviews]
+
+Regulatory Status:
+[FDA label status, EMA SmPC status, PMDA label status]
+
+Recommendation:
+☐ No action needed - known and adequately labeled
+☐ Monitor closely - emerging signal requiring additional data
+☐ Label update needed - add to Warnings and Precautions
+☐ Risk minimization measure - Dear HCP letter, REMS, contraindication
+☐ Further investigation - conduct targeted safety study
+
+Signal #2: [EVENT TERM]
+[Repeat structure for additional signals]
+
+AGGREGATE DATA REVIEW:
+
+Most Frequently Reported Events (Top 10):
+1. [Event Term]: [XX cases] ([X.X]%)
+2. [Event Term]: [XX cases] ([X.X]%)
+[Continue listing]
+
+Events by System Organ Class (SOC):
+- [SOC Name]: [XX cases] ([X.X]%)
+[List all SOCs with cases]
+
+Serious Outcomes Distribution:
+- Death: [XX cases] ([X.X]%)
+- Life-Threatening: [XX cases] ([X.X]%)
+- Hospitalization: [XX cases] ([X.X]%)
+- Disability: [XX cases] ([X.X]%)
+- Congenital Anomaly: [XX cases] ([X.X]%)
+- Other Medically Important: [XX cases] ([X.X]%)
+
+BENEFIT-RISK ASSESSMENT:
+Current labeled indications remain favorable with known safety profile. [Elaborate on benefit-risk balance, risk minimization measures in place, and any changes recommended]
+
+CONCLUSION:
+[Summarize key findings, signals requiring action, and next steps]
+
+NEXT STEPS:
+☐ Continue routine monitoring
+☐ Schedule Risk Management Committee review
+☐ Initiate regulatory submission for label update
+☐ Implement additional risk minimization measures
+☐ Conduct post-authorization safety study (PASS)
+
+Reviewed By: [Medical Officer Name, MD]
+Date: [YYYY-MM-DD]
+
+=== Causality Assessment Worksheet ===
+CAUSALITY ASSESSMENT WORKSHEET
+
+Case Number: [CASE-XXXXX]
+Patient: [Initials XX]  Age/Sex: [XX/M/F]
+Suspect Product: [PRODUCT NAME]
+Adverse Event: [EVENT TERM]
+
+WHO-UMC CAUSALITY CATEGORIES:
+
+Temporal Relationship:
+☐ Drug administered before event onset
+☐ Reasonable time to onset documented
+Time from drug start to event: [XX days/hours]
+
+Response to Dechallenge:
+☐ Not applicable (drug not stopped)
+☐ Event resolved when drug stopped
+☐ Event improved when drug stopped
+☐ No change when drug stopped
+☐ Event worsened when drug stopped
+☐ Unknown (insufficient information)
+
+Response to Rechallenge:
+☐ Not applicable (drug not restarted)
+☐ Event recurred when drug restarted
+☐ Event did not recur when drug restarted
+☐ Unknown (insufficient information)
+
+Alternative Explanation:
+☐ No alternative explanation identified
+☐ Concomitant medication(s) could explain event: [List]
+☐ Underlying disease could explain event: [Describe]
+☐ Other factors present: [Describe]
+
+Known Effect of Drug:
+☐ Event is well-documented for this drug (labeled)
+☐ Event is reported but not well-established (unlabeled)
+☐ Event is not known for this drug (novel)
+☐ Event is pharmacologically plausible
+
+NARANJO ALGORITHM SCORE:
+
+Question | Yes | No | Don't Know | Score
+---------|-----|----|-----------|---------
+1. Are there previous conclusive reports on this reaction? | +1 | 0 | 0 | [  ]
+2. Did the adverse event appear after the drug was administered? | +2 | -1 | 0 | [  ]
+3. Did the adverse reaction improve when drug was discontinued or antagonist administered? | +1 | 0 | 0 | [  ]
+4. Did the adverse reaction reappear when drug was readministered? | +2 | -1 | 0 | [  ]
+5. Are there alternative causes that could have caused the reaction? | -1 | +2 | 0 | [  ]
+6. Did the reaction reappear when placebo was given? | -1 | +1 | 0 | [  ]
+7. Was the drug detected in blood/bodily fluids in toxic concentrations? | +1 | 0 | 0 | [  ]
+8. Was the reaction more severe when dose increased or less severe when dose decreased? | +1 | 0 | 0 | [  ]
+9. Did the patient have a similar reaction to the same or similar drug in any previous exposure? | +1 | 0 | 0 | [  ]
+10. Was the adverse event confirmed by any objective evidence? | +1 | 0 | 0 | [  ]
+
+TOTAL NARANJO SCORE: [__]
+
+Score Interpretation:
+- ≥9: Definite
+- 5-8: Probable
+- 1-4: Possible
+- ≤0: Doubtful
+
+FINAL CAUSALITY ASSESSMENT:
+Company Assessment: ☐ Definite  ☐ Probable  ☐ Possible  ☐ Unlikely  ☐ Unrelated
+
+Rationale:
+[Provide detailed justification for causality determination based on factors above]
+
+Assessed By: [Safety Specialist Name]
+Date: [YYYY-MM-DD]
+Medical Review: [Physician Name, MD]
+Date: [YYYY-MM-DD]
+
+7) Examples of excellent outputs
+
+Example 1: ICSR Summary Table
+```
+INDIVIDUAL CASE SAFETY REPORTS - MONTHLY SUMMARY
+Product: DrugX (Active Ingredient A)
+Report Period: January 2025
+
+Case #      | Receipt   | Event Term           | Seriousness | Outcome      | Reporter | Submission
+            | Date      |                      |             |              | Type     | Date
+------------|-----------|----------------------|-------------|--------------|----------|------------
+2025-00123  | 01/05/25  | Anaphylaxis          | Serious     | Recovered    | HCP      | 01/12/25
+2025-00124  | 01/08/25  | Rash                 | Non-Serious | Recovered    | Consumer | 01/22/25
+2025-00125  | 01/10/25  | Hepatotoxicity       | Serious     | Recovering   | HCP      | 01/17/25
+2025-00126  | 01/15/25  | Dizziness            | Non-Serious | Recovered    | HCP      | 01/29/25
+2025-00127  | 01/18/25  | Myocardial Infarction| Serious     | Fatal        | HCP      | 01/22/25*
+2025-00128  | 01/22/25  | Nausea               | Non-Serious | Recovered    | Consumer | 02/05/25
+2025-00129  | 01/25/25  | QT Prolongation      | Serious     | Not Recovered| HCP      | 02/01/25
+2025-00130  | 01/28/25  | Headache             | Non-Serious | Recovered    | Consumer | 02/11/25
+
+*7-day expedited report submitted for fatal case
+
+SUMMARY STATISTICS:
+- Total Cases: 8
+- Serious Cases: 4 (50%)
+- Non-Serious Cases: 4 (50%)
+- Fatal Outcomes: 1 (12.5%)
+- HCP Reports: 5 (62.5%)
+- Consumer Reports: 3 (37.5%)
+- Expedited Reports: 4 (all serious cases submitted within timelines)
+- Follow-up Pending: 2 cases (awaiting additional information)
+```
+
+Example 2: Signal Detection Report
+```
+QUARTERLY SIGNAL DETECTION REPORT
+Product: DrugX (Active Ingredient A)
+Period: Q4 2024 (October - December 2024)
+
+EXECUTIVE SUMMARY:
+One new safety signal requiring evaluation (hepatotoxicity). All other events consistent with known safety profile.
+
+CUMULATIVE SAFETY DATA:
+- Total Cases in Database: 1,247
+- Cases This Quarter: 156
+- Serious Cases: 423 (33.9%)
+- Fatal Cases: 12 (0.96%)
+
+SIGNAL ANALYSIS:
+
+Signal: Hepatotoxicity (Liver Injury)
+- Cases This Quarter: 8
+- Cumulative Cases: 24
+- PRR: 3.45 (95% CI: 2.12 - 5.61) ← Statistically significant
+- ROR: 3.58 (95% CI: 2.18 - 5.87) ← Statistically significant
+- Reporting Rate: 0.19 per 10,000 patient-years
+
+Clinical Characteristics:
+- Median Time to Onset: 45 days (range: 14-120 days)
+- Severity: 6 mild, 10 moderate, 8 severe
+- Outcomes: 22 recovered, 2 ongoing (no deaths)
+- Risk Factors: Female sex (67%), age >60 (58%), concomitant hepatotoxic drugs (33%)
+
+Literature Review:
+- 3 published case reports of hepatotoxicity with DrugX
+- Animal toxicology studies showed dose-dependent hepatic enzyme elevations
+- Similar drug in class has labeled hepatotoxicity warning
+
+Current Labeling:
+- US Label: ALT/AST monitoring mentioned in Precautions section
+- EU SmPC: Hepatic monitoring recommended in section 4.4
+- Japan Label: No specific hepatotoxicity warning
+
+RECOMMENDATION:
+1. Enhance hepatotoxicity warning in label (move to Warnings section)
+2. Add recommendation for baseline and periodic LFT monitoring
+3. Issue Dear Healthcare Provider letter to inform prescribers
+4. Consider REMS with LFT monitoring requirements
+5. Conduct post-authorization safety study (PASS) to characterize risk factors
+
+Risk Management Committee review scheduled: [Date]
+
+Prepared By: [Safety Specialist Name]
+Medical Review: [Chief Medical Officer, MD]
+Date: [YYYY-MM-DD]
+```
+
+Example 3: Regulatory Authority Query Response
+```
+RESPONSE TO FDA INFORMATION REQUEST
+
+Case Number: US-COMPANY-2025-00127
+FDA Reference: FDA-2025-XXXX
+Receipt Date of Query: 02/05/2025
+Response Due Date: 02/19/2025 (15 calendar days)
+Response Submitted: 02/15/2025
+
+ORIGINAL QUERY FROM FDA:
+"The Agency has reviewed the ICSR for Case US-COMPANY-2025-00127 (fatal myocardial infarction in 68-year-old male). Please provide the following additional information:
+1. Complete cardiac medical history including previous MI, CAD, risk factors
+2. Exact timeline of drug administration relative to onset of chest pain
+3. Troponin levels and ECG findings
+4. Autopsy results if available
+5. Company causality assessment with detailed rationale"
+
+RESPONSE:
+
+1. COMPLETE CARDIAC MEDICAL HISTORY:
+The patient had the following relevant cardiac history:
+- Previous myocardial infarction (anterior wall MI) in 2018, treated with PCI and stent placement
+- Coronary artery disease (CAD) with 3-vessel disease documented on cardiac catheterization (2018)
+- Hypertension for 15 years, controlled on lisinopril 20 mg daily
+- Hyperlipidemia for 10 years, controlled on atorvastatin 40 mg daily
+- Type 2 diabetes mellitus for 8 years, HbA1c 7.2%
+- Former smoker (40 pack-years, quit 2019)
+- BMI 31 (obese)
+- Family history of premature CAD (father MI at age 55)
+
+2. TIMELINE OF DRUG ADMINISTRATION AND EVENT ONSET:
+- DrugX initiated: January 5, 2025 at 09:00
+- Dose: 100 mg oral once daily
+- Indication: [Non-cardiac indication]
+- Day 13 of therapy: January 18, 2025 at approximately 14:30, patient experienced acute onset of severe substernal chest pain radiating to left arm
+- Patient called 911 at 14:45
+- EMS arrived at 15:00, patient in cardiogenic shock
+- Arrived at ED at 15:30
+- Patient went into cardiac arrest at 15:45, resuscitation unsuccessful
+- Time of death: 16:15
+
+3. TROPONIN LEVELS AND ECG FINDINGS:
+Initial ED Labs (15:30):
+- Troponin I: 12.5 ng/mL (normal <0.04 ng/mL) ← Markedly elevated
+- CK-MB: 89 ng/mL (normal <5 ng/mL)
+- BNP: 1,450 pg/mL
+
+ECG Findings:
+- ST-segment elevation in leads V1-V4 (anterior STEMI)
+- Reciprocal ST depression in inferior leads
+- New left bundle branch block
+- Ventricular tachycardia progressing to ventricular fibrillation
+
+4. AUTOPSY RESULTS:
+Autopsy performed January 19, 2025 by County Medical Examiner.
+Findings:
+- Acute extensive anterior wall myocardial infarction
+- Complete occlusion of left anterior descending (LAD) artery with acute thrombus
+- Previous infarct scar in same territory (2018 MI)
+- Severe 3-vessel coronary atherosclerosis (>70% stenosis all major vessels)
+- Mild left ventricular hypertrophy
+- No evidence of drug-induced myocarditis or other pathology
+- Toxicology: Therapeutic levels of lisinopril, atorvastatin, DrugX
+
+Cause of Death: Acute myocardial infarction due to coronary artery disease
+Manner of Death: Natural
+
+5. COMPANY CAUSALITY ASSESSMENT:
+Assessment: UNRELATED
+
+Rationale:
+The company assesses the fatal myocardial infarction as UNRELATED to DrugX for the following reasons:
+
+Alternative Explanation:
+- Patient had extensive cardiac risk factors (previous MI, severe CAD, HTN, DM, obesity, smoking history)
+- Autopsy confirmed acute thrombotic occlusion of LAD on background of severe atherosclerotic disease
+- Mechanism of death consistent with natural progression of underlying cardiovascular disease
+- No evidence of drug-induced cardiac toxicity on autopsy
+
+Temporal Relationship:
+- While patient was taking DrugX at time of event, the 13-day interval is not particularly suggestive given the acute thrombotic nature of the event and chronic underlying disease
+
+Biological Plausibility:
+- DrugX has no known cardiac effects or procoagulant properties
+- Pre-clinical and clinical development program showed no cardiovascular safety signals
+- Post-marketing surveillance (>2 million patient-years exposure) shows no disproportionality for MI or cardiovascular events
+- Current labeling does not include cardiovascular warnings
+
+Medical Review Conclusion:
+The Medical Officer concurs with the UNRELATED assessment. The patient's death was due to natural progression of severe underlying coronary artery disease. There is no pharmacological basis to suspect DrugX contributed to the thrombotic event.
+
+ADDITIONAL INFORMATION:
+- Case has been coded as "Death - Natural Causes - Cardiovascular Disease" in company safety database
+- Case will be included in next PSUR with confounded/pre-existing disease annotation
+- Cumulative review of cardiovascular events shows no safety signal for DrugX
+
+If FDA requires additional information, please contact:
+[Name], Senior Drug Safety Specialist
+Email: [safety@company.com]
+Phone: [XXX-XXX-XXXX]
+
+Respectfully submitted,
+[Drug Safety Manager Name]
+[Date]
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **ICSR**: Individual Case Safety Report - detailed report of a single adverse event case
+- **SAE**: Serious Adverse Event - event causing death, life-threatening condition, hospitalization, disability, congenital anomaly, or medically important condition
+- **SUSAR**: Suspected Unexpected Serious Adverse Reaction - serious adverse reaction that is both unlabeled and related to drug
+- **ADR**: Adverse Drug Reaction - response to medicinal product which is noxious and unintended
+- **E2B(R3)**: ICH electronic transmission standard for ICSRs (version 3)
+- **MedDRA**: Medical Dictionary for Regulatory Activities - standardized medical terminology for safety reporting
+- **PRR**: Proportional Reporting Ratio - disproportionality measure for signal detection
+- **ROR**: Reporting Odds Ratio - another disproportionality statistic
+- **PSUR/PBRER**: Periodic Safety Update Report / Periodic Benefit-Risk Evaluation Report
+- **RMP**: Risk Management Plan - document describing risk minimization strategies
+- **REMS**: Risk Evaluation and Mitigation Strategy - FDA-required risk management program
+- **WHO-UMC**: World Health Organization Uppsala Monitoring Centre - maintains global adverse event database (VigiBase)
+
+Standards & Frameworks (2024-2025):
+- **ICH E2A**: Clinical Safety Data Management - Definitions and Standards for Expedited Reporting (1994, current)
+- **ICH E2B(R3)**: Clinical Safety Data Management - Data Elements for Transmission of ICSRs (2016, current)
+- **ICH E2C(R2)**: Periodic Benefit-Risk Evaluation Report (PBRER) (2012, current)
+- **ICH E2D**: Post-Approval Safety Data Management (2003, current)
+- **ICH E2E**: Pharmacovigilance Planning (2004, current)
+- **ICH E2F**: Development Safety Update Report (DSUR) (2010, current)
+- **FDA 21 CFR 314.80**: Postmarketing Reporting of Adverse Drug Experiences (current)
+- **EU Directive 2010/84/EU**: Pharmacovigilance legislation (as amended, current)
+- **EMA GVP Modules**: Good Pharmacovigilance Practices (2024 revisions)
+- **MedDRA Version 27.0**: Current version (March 2024)
+
+Common Tools:
+- **Safety Databases**: Oracle Argus Safety, ArisGlobal LifeSphere Safety, Veeva Vault Safety
+- **Coding Tools**: MedDRA Browser, WHO Drug Dictionary
+- **Regulatory Portals**: FDA FAERS, EudraVigilance, VigiBase
+- **Signal Detection**: Empirica Signal, Oracle Argus Signal Management
+- **Literature Monitoring**: Embase, PubMed, Adis Adverse Drug Reaction Database
+
+Change log
+2025-01: Initial playbook created based on ICH E2A-E2F, FDA 21 CFR 314.80, and EMA GVP standards
+- Emphasis on regulatory reporting timelines and ICSR quality per E2B(R3)
+- Signal detection methodologies (PRR, ROR) for proactive safety monitoring
+- Causality assessment per WHO-UMC and Naranjo scales
+- ALCOA++ data quality principles for pharmacovigilance

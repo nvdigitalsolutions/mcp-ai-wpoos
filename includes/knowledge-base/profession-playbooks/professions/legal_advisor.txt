@@ -1,0 +1,538 @@
+Profession Playbook — Legal Advisor
+Slug: legal_advisor
+Category: legal
+Includes: global.txt + categories/legal.txt + this file
+
+Intent
+- This file provides guidance for in-house counsel, corporate legal advisors, and business-aligned legal professionals.
+- Focus on providing legal support to organizations while managing legal operations and strategic business partnerships.
+
+Category guidance
+- Balance legal rigor with business pragmatism; focus on risk management and enabling business objectives.
+
+1) Role boundaries
+Do:
+- Provide legal advice and counsel to organizational stakeholders (executive team, departments, board)
+- Review and negotiate contracts and commercial agreements
+- Advise on regulatory compliance (corporate governance, securities, employment, data privacy, IP)
+- Manage litigation and disputes (including selection and oversight of external counsel)
+- Conduct legal risk assessments and develop mitigation strategies
+- Draft and review corporate policies and procedures
+- Support M&A transactions and corporate restructurings
+- Manage legal department operations (budget, technology, vendors)
+- Success = Legal support that enables business while minimizing risk and ensuring compliance
+
+Do NOT:
+- Provide legal services outside organizational scope (requires law firm engagement or separate attorney-client relationship)
+- Guarantee legal outcomes or make business decisions on behalf of management
+- Practice in areas requiring specialized licenses without credentials (patent prosecution, immigration representation)
+- Create conflicts of interest between organization and personal interests
+- Disclose confidential or privileged information without proper authority
+- Ignore potential conflicts between duties to organization vs. individual employees
+- Make unauthorized settlements or commit to positions without client approval
+
+Escalate / refer out when:
+- Matter requires specialized expertise beyond capabilities (patent lit, securities class actions, criminal)
+- Conflict of interest exists (organization vs. individual employees, related party transactions)
+- Significant litigation or regulatory investigation emerges (engage specialized outside counsel)
+- Cross-border issues require local counsel in foreign jurisdictions
+- Matter involves potential personal liability for officers/directors (independent counsel needed)
+- Capacity constraints require additional resources (ALSPs, contract attorneys, law firms)
+- Ethics questions arise about duties to organization vs. individuals
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What jurisdictions are involved? (Legal compliance requirements vary significantly by region)
+- What is the business objective or problem you're trying to solve?
+- What are the legal risks and potential liabilities involved?
+- What is the timeline and business urgency (board meeting, deal closing, regulatory deadline)?
+- What is the budget or cost constraint for legal support?
+- Who are the key stakeholders and decision-makers?
+- What contracts, regulations, or prior legal advice apply?
+- Have outside counsel or other advisors been consulted?
+
+1.5) Regional Variations - In-House Legal Practice
+
+**NOTE**: In-house legal advisors must be familiar with jurisdictional legal systems (see lawyer playbook for details).
+
+**United States:**
+- Bar Admission: Must be licensed attorney in at least one state; corporate counsel rules allow limited multi-state practice
+- Professional Conduct: Model Rules apply; duty to organization (not individuals); up-the-ladder reporting
+- Privilege: Attorney-client privilege applies; work product doctrine protects strategic materials
+- Regulatory: SEC (public companies), FTC, DOJ, state AGs, industry-specific regulators
+- Corporate Governance: SOX compliance (public), Dodd-Frank, FCPA (anti-corruption), antitrust
+- Employment Law: Federal (Title VII, FLSA, FMLA, ADA) + state employment laws (vary significantly)
+- Contracts: State-specific contract law; UCC for commercial transactions
+- IP: Federal (patents, trademarks, copyrights); state (trade secrets)
+- Data Privacy: State laws (CCPA California, others); no comprehensive federal law
+- Professional Org: Association of Corporate Counsel (ACC)
+
+**United Kingdom:**
+- Qualification: Solicitor (Law Society) or barrister; qualified lawyers from other jurisdictions can requalify
+- Professional Conduct: SRA Code of Conduct (solicitors); in-house exemption from some requirements
+- Privilege: Legal professional privilege (advice and litigation privilege)
+- Regulatory: FCA (financial services), CMA (competition), ICO (data protection), HSE, sector regulators
+- Corporate Governance: Companies Act 2006, UK Corporate Governance Code (listed companies)
+- Employment Law: Employment Rights Act 1996, Equality Act 2010, TUPE, Working Time Regulations
+- Contracts: English common law; some consumer protection EU-derived
+- IP: UK IPO; European Patent Office; post-Brexit UK-specific regime
+- Data Privacy: UK GDPR, Data Protection Act 2018
+- Professional Org: The In-House Lawyers Group, Law Society In-House Division
+
+**European Union:**
+- Qualification: National bar admission; Lawyers' Services Directive allows cross-border practice
+- Professional Conduct: CCBE Code of Conduct; national codes
+- Privilege: Varies by member state; EU law recognizes lawyer-client confidentiality (limited)
+- Regulatory: EU-level (competition, data protection, financial services) + national regulators
+- Corporate Governance: Company Law Directive, Shareholder Rights Directive, national company laws
+- Employment Law: EU directives (working time, equal treatment, collective redundancies) + national laws
+- Contracts: National contract law varies (civil law codes)
+- IP: EU trademarks, EU designs; European Patent Convention
+- Data Privacy: GDPR (EU Regulation 2016/679) - directly applicable; national DPAs enforce
+- Compliance: GDPR, Anti-Money Laundering Directives, sanctions compliance
+
+**Canada:**
+- Qualification: Provincial law society admission; typically qualify in province of employment
+- Professional Conduct: Federation of Law Societies Model Code; provincial variations
+- Privilege: Solicitor-client privilege protected; Wigmore test
+- Regulatory: Federal (competition, securities (OSC), privacy) + provincial regulators
+- Corporate Governance: CBCA (federal), provincial corporation acts, securities laws
+- Employment Law: Federal (Canada Labour Code) for federally regulated; provincial employment standards
+- Contracts: Provincial contract law (common law except Quebec civil law)
+- IP: Federal (patents, trademarks, copyright, industrial designs)
+- Data Privacy: PIPEDA (federal commercial), provincial laws (Quebec, BC, Alberta)
+- Bilingual: Federal government and some provincially regulated entities require bilingual capacity
+
+**Australia:**
+- Qualification: State/territory admission; automatic national mutual recognition
+- Professional Conduct: Australian Solicitors' Conduct Rules; state-based regulation
+- Privilege: Legal professional privilege (advice and litigation privilege)
+- Regulatory: ASIC (corporations, financial services), ACCC (competition), OAIC (privacy), state/territory regulators
+- Corporate Governance: Corporations Act 2001, ASX Corporate Governance Principles (listed)
+- Employment Law: Fair Work Act 2009 (national system); state systems for some industries
+- Contracts: Common law (state-based but nationally consistent)
+- IP: Federal (IP Australia) for patents, trademarks, designs, copyright
+- Data Privacy: Privacy Act 1988 (Australian Privacy Principles), Notifiable Data Breaches scheme
+- Professional Org: Corporate Lawyers Association of Australia
+
+**Key Regional Differences for In-House Counsel:**
+- **Bar Admission**: US multi-state flexibility; others require qualification in jurisdiction
+- **Privilege**: US strong attorney-client privilege; EU more limited; varies by jurisdiction
+- **Regulatory Landscape**: US federal + 50 states complex; EU harmonized in some areas; varies
+- **Data Privacy**: EU/UK GDPR comprehensive; US state-by-state patchwork; Canada PIPEDA; Australia Privacy Act
+- **Employment Law**: Varies significantly (US at-will employment with exceptions; EU/UK stronger protections)
+- **Corporate Governance**: US (SOX for public, state corporate law); UK (Companies Act); EU directives; Canada CBCA/provincial
+- **Professional Obligations**: All have duty to organization, confidentiality; specifics vary
+
+3) Default workflow
+Use ACC standards for in-house legal management:
+
+1. Business Intake & Issue Spotting
+   - Meet with business stakeholder to understand request and context
+   - Identify legal issues (contract, compliance, litigation, IP, employment, etc.)
+   - Assess urgency, timeline, and business impact
+   - Determine if matter requires outside counsel or can be handled internally
+   - Check for conflicts of interest
+   - Document scope, assumptions, and limitations
+   - Estimate time and budget requirements
+
+2. Legal Research & Analysis
+   - Research applicable laws, regulations, and precedents
+   - Review relevant contracts, policies, and prior advice
+   - Analyze risks, liabilities, and compliance obligations
+   - Consider best practices and industry standards
+   - Identify alternative approaches and tradeoffs
+   - Assess enforcement likelihood and potential damages
+   - Benchmark against peers and market practices
+   - Prepare risk matrix or decision framework
+
+3. Strategic Counsel & Risk Management
+   - Provide practical legal advice aligned with business objectives
+   - Present options with pros, cons, and risk levels
+   - Recommend preferred approach with clear rationale
+   - Quantify legal and business risks where possible
+   - Develop risk mitigation strategies and controls
+   - Consider reputational, regulatory, and financial implications
+   - Advise on disclosure obligations and reporting requirements
+   - Document advice and recommendations in writing
+
+4. Document Drafting & Negotiation
+   - Draft or review contracts, policies, and legal documents
+   - Negotiate terms with counterparties or their counsel
+   - Protect company interests while enabling deal closure
+   - Include appropriate risk allocation (indemnification, limitations of liability, warranties)
+   - Ensure compliance with legal requirements and corporate policies
+   - Use company-approved templates and playbooks when available
+   - Obtain necessary internal approvals (business owner, CFO, CEO, board)
+   - Maintain organized files and executed versions
+
+5. Compliance & Risk Monitoring
+   - Develop and implement compliance programs (SOX, GDPR, FCPA, etc.)
+   - Create policies and training materials
+   - Conduct compliance audits and risk assessments
+   - Monitor regulatory changes and advise on implications
+   - Manage internal investigations and whistleblower reports
+   - Coordinate with compliance, audit, and risk management functions
+   - Report to board audit or compliance committee as required
+   - Document compliance efforts for regulatory examinations
+
+6. Litigation & Dispute Management
+   - Assess litigation risk and settlement value
+   - Engage and supervise outside litigation counsel
+   - Review pleadings, discovery, and motion strategy
+   - Approve litigation budgets and fee arrangements
+   - Participate in settlement negotiations
+   - Coordinate with insurance carriers on coverage
+   - Manage e-discovery and document hold processes
+   - Keep leadership informed of significant developments
+
+7. Legal Operations & Department Management
+   - Manage legal department budget and forecast spend
+   - Select and manage outside counsel and vendors (RFPs, rate negotiations, performance reviews)
+   - Implement legal technology (CLM, matter management, e-billing, AI tools)
+   - Track metrics and KPIs (spend, cycle time, SLAs, NPS)
+   - Develop standardized processes and playbooks
+   - Manage department staffing and professional development
+   - Foster collaboration between legal and business teams
+   - Benchmark against ACC standards and peer companies
+
+8. Strategic Business Partnership
+   - Participate in strategic planning and business development
+   - Advise on M&A targets, due diligence, and integration
+   - Support new product launches and market expansions
+   - Advise on ESG initiatives and corporate social responsibility
+   - Counsel board and executives on governance matters
+   - Build relationships with business stakeholders
+   - Translate legal issues into business language
+   - Enable business while protecting company interests
+
+4) Deliverables
+- Legal opinions and memoranda
+- Contract drafts and redlines (MSAs, NDAs, terms of service, SaaS agreements)
+- Board resolutions and meeting minutes
+- Compliance policies and training materials
+- Due diligence reports and deal memos
+- Litigation hold notices and document requests
+- Regulatory filings and disclosures
+- Risk assessments and mitigation plans
+- Legal department metrics and benchmarking reports
+- External counsel management reports (spend, performance)
+
+Minimum viable: Clear legal advice + risk assessment + recommended action
+Gold standard: Strategic counsel + practical solutions + documented analysis + proactive risk management
+
+5) Quality checklist
+Legal Analysis:
+- [ ] Applicable laws and regulations identified correctly
+- [ ] Relevant precedents and case law researched
+- [ ] Contractual obligations and rights analyzed
+- [ ] Legal risks quantified and prioritized
+- [ ] Alternative approaches considered
+- [ ] Advice consistent with prior guidance on similar issues
+
+Business Alignment:
+- [ ] Business objectives and constraints understood
+- [ ] Legal advice is practical and actionable
+- [ ] Cost-benefit tradeoffs explained clearly
+- [ ] Timeline realistic for business needs
+- [ ] Stakeholders identified and consulted
+- [ ] Solutions enable business while managing risk
+
+Risk Management:
+- [ ] Key legal risks identified and assessed (likelihood x impact)
+- [ ] Risk mitigation strategies developed
+- [ ] Residual risks disclosed to decision-makers
+- [ ] Insurance coverage reviewed where applicable
+- [ ] Compliance obligations addressed
+- [ ] Reputation and ESG risks considered
+
+Documentation:
+- [ ] Legal advice documented in writing (email or memo)
+- [ ] Assumptions and limitations clearly stated
+- [ ] Privileged/confidential markings applied
+- [ ] Files organized and accessible
+- [ ] Contracts executed and stored properly
+- [ ] Version control maintained
+
+Ethics & Professionalism:
+- [ ] Conflicts of interest checked and resolved
+- [ ] Attorney-client privilege protected
+- [ ] Confidential information secured
+- [ ] Professional conduct standards met (Model Rules)
+- [ ] Independent judgment exercised
+- [ ] Duty to organization (not individuals) maintained
+
+6) Templates (paste-ready)
+
+=== Legal Opinion Memo Template ===
+CONFIDENTIAL ATTORNEY-CLIENT COMMUNICATION
+
+To: [Business Stakeholder]
+From: Legal Department
+Date: [Date]
+Re: Legal Analysis - [Matter Description]
+
+EXECUTIVE SUMMARY
+[One-paragraph summary of issue, analysis, and recommendation]
+
+BACKGROUND
+[Factual context and business situation]
+
+LEGAL ISSUE
+[Specific legal question to be addressed]
+
+APPLICABLE LAW
+[Relevant statutes, regulations, case law, and contractual provisions]
+
+ANALYSIS
+[Detailed legal analysis applying law to facts]
+
+RISKS
+- [Risk 1]: [Description, likelihood, impact]
+- [Risk 2]: [Description, likelihood, impact]
+- [Risk 3]: [Description, likelihood, impact]
+
+RECOMMENDATION
+[Preferred course of action with rationale]
+
+ALTERNATIVE APPROACHES
+[Other options considered and why not recommended]
+
+ASSUMPTIONS & LIMITATIONS
+- [Assumption or limitation 1]
+- [Assumption or limitation 2]
+
+Please contact me if you have questions or would like to discuss further.
+
+[Name]
+[Title]
+
+=== Contract Review Summary Template ===
+CONTRACT REVIEW SUMMARY
+Agreement: [Agreement Type and Title]
+Counterparty: [Other Party Name]
+Business Owner: [Internal Stakeholder]
+Reviewed by: [Legal Advisor Name]
+Date: [Date]
+
+SUMMARY
+[Brief description of deal and key terms]
+
+KEY BUSINESS TERMS
+- Term: [Length, renewal]
+- Fees: [Pricing structure]
+- Scope: [Services or deliverables]
+- [Other material terms]
+
+LEGAL ISSUES & RISKS
+HIGH PRIORITY (Address before signing):
+1. [Issue]: [Description and proposed resolution]
+2. [Issue]: [Description and proposed resolution]
+
+MEDIUM PRIORITY (Negotiate if possible):
+1. [Issue]: [Description]
+2. [Issue]: [Description]
+
+LOW PRIORITY (Accept or minor changes):
+1. [Issue]: [Description]
+
+KEY CLAUSES TO NEGOTIATE
+- Limitation of Liability: [Current vs. requested]
+- Indemnification: [Scope and concerns]
+- Termination: [Rights and notice periods]
+- Warranties: [Representations and disclaimers]
+- IP Ownership: [Who owns what]
+- Data Privacy: [GDPR, CCPA compliance]
+
+RECOMMENDATION
+☐ Approved as-is
+☐ Approved with minor changes (redline attached)
+☐ Requires negotiation on key issues before approval
+☐ Not recommended (business should reconsider)
+
+NEXT STEPS
+[What needs to happen before execution]
+
+=== Board Resolution Template ===
+RESOLUTIONS OF THE BOARD OF DIRECTORS
+[COMPANY NAME]
+[DATE]
+
+WHEREAS, [background and recitals]; and
+
+WHEREAS, [additional context if needed];
+
+NOW, THEREFORE, BE IT RESOLVED, that:
+
+1. [First resolution - specific action to be taken]
+
+2. [Second resolution - authorization of specific persons]
+
+3. [Third resolution - delegation of authority or other action]
+
+FURTHER RESOLVED, that the officers of the Corporation are hereby authorized 
+to take all actions necessary to implement these resolutions.
+
+This resolution was approved by [unanimous written consent / vote of X-Y at meeting 
+held on [DATE]].
+
+___________________________
+[Name], Secretary
+
+[SEAL]
+
+=== Litigation Hold Notice Template ===
+SUBJECT: LEGAL HOLD - PRESERVATION OF DOCUMENTS AND DATA
+
+TO: [Recipients]
+FROM: Legal Department
+DATE: [Date]
+RE: Document Preservation - [Matter Description]
+
+This memo provides notice of a legal hold requiring preservation of documents 
+and data related to [describe matter or litigation].
+
+EFFECTIVE IMMEDIATELY, you must preserve all documents, emails, electronic files, 
+and other materials related to [subject matter]. This includes:
+
+- Emails (sent and received)
+- Text messages and instant messages
+- Documents (drafts and final versions)
+- Spreadsheets and presentations
+- Voicemails
+- Social media posts
+- Any other potentially relevant materials
+
+SCOPE: Preserve materials from [date range] relating to [specific topics, parties, 
+transactions].
+
+DO NOT delete, destroy, or alter any materials within scope.
+DO suspend auto-delete functions and document retention policies.
+DO notify Legal if you have questions about what to preserve.
+
+Failure to comply may result in sanctions against the company and individuals.
+
+Questions? Contact [Legal Contact] at [email/phone].
+
+7) Examples of excellent outputs
+
+Example 1: Contract Negotiation Guidance
+```
+Re: SaaS Vendor Agreement - Key Issues
+
+Business Team,
+
+I've reviewed the proposed agreement with [Vendor]. Overall terms are market-standard, 
+but three issues need resolution before we can sign:
+
+1. DATA SECURITY (HIGH): Agreement lacks SOC 2 certification requirement and GDPR-compliant 
+   data processing addendum. Given we'll share customer data, we need both. 
+   → Proposed language attached. This is non-negotiable for GDPR compliance.
+
+2. LIABILITY CAP (HIGH): Current cap is $10K but our annual spend is $100K. If their 
+   service fails, our damages could exceed cap significantly.
+   → Negotiate cap to 1x annual fees ($100K minimum) or 2x if possible.
+
+3. TERMINATION (MEDIUM): 90-day notice required but they can terminate for convenience 
+   with 30-day notice (asymmetric).
+   → Ask for mutual 30-day or 60-day termination rights.
+
+RECOMMENDATION: Negotiate items #1 and #2 (must-haves), push on #3 (nice-to-have). 
+If they agree on data security and reasonable liability cap, I'll approve.
+
+Redline attached. Let me know if you need me on the negotiation call.
+```
+
+Example 2: Risk Assessment for New Product
+```
+LEGAL RISK ASSESSMENT - AI-Powered Product Feature
+
+OVERVIEW: Business proposes launching AI-powered feature that analyzes user data 
+and provides personalized recommendations.
+
+LEGAL RISKS:
+
+HIGH RISK - Data Privacy (Likelihood: High | Impact: Severe)
+- Feature requires processing personal data, potentially sensitive categories
+- GDPR, CCPA require explicit consent, purpose limitation, data minimization
+- Failure to comply: €20M fine (GDPR) + private litigation + reputational harm
+→ MITIGATION: Conduct DPIA, update privacy policy, implement consent workflow, 
+  data minimization by design
+
+MEDIUM RISK - AI Bias & Discrimination (Likelihood: Medium | Impact: High)
+- AI models may produce discriminatory outputs affecting protected classes
+- EU AI Act (2024) classifies this as high-risk AI requiring conformity assessment
+- Failure: Regulatory action, discrimination lawsuits, brand damage
+→ MITIGATION: Bias testing pre-launch, ongoing monitoring, human review for 
+  sensitive decisions, EU AI Act compliance roadmap
+
+LOW RISK - IP Ownership (Likelihood: Low | Impact: Medium)
+- Training data may include third-party IP
+- AI-generated outputs ownership unclear in some jurisdictions
+→ MITIGATION: Verify training data licenses, Terms of Service clarify output ownership
+
+RECOMMENDATION:
+Proceed with launch ONLY IF:
+1. DPIA completed and approved by DPO
+2. Privacy policy updated with user consent flow
+3. Bias testing completed with acceptable results
+4. EU AI Act compliance plan in place (6-month timeline)
+5. Product liability insurance increased
+
+Timeline: 4-6 weeks for legal workstream (parallel to product development).
+
+Budget: €50K (DPIA consultant, AI audit, policy updates, insurance).
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **In-House Counsel**: Attorney employed by organization (vs. external law firm)
+- **General Counsel (GC)**: Senior legal executive, often reports to CEO
+- **Chief Legal Officer (CLO)**: GC with additional business/operational responsibilities
+- **Legal Operations (Legal Ops)**: Function focused on department efficiency, technology, process improvement
+- **Outside Counsel**: External law firms retained for specialized matters
+- **ALSP (Alternative Legal Service Provider)**: Non-law firm providers (contract attorneys, legal tech, LPO)
+- **Matter Management**: System and process for tracking legal work and spend
+- **CLM (Contract Lifecycle Management)**: Software platform for contract drafting, negotiation, execution, renewal
+- **Privilege**: Attorney-client privilege protecting confidential communications
+- **Work Product Doctrine**: Protection for materials prepared in anticipation of litigation
+- **Conflicts of Interest**: Situations where lawyer's duties to organization conflict with personal or other client interests
+
+Standards & Frameworks (2024-2025):
+- **ABA Model Rules of Professional Conduct**: Ethical rules for attorneys (including in-house)
+- **ACC (Association of Corporate Counsel) Law Department Management Benchmarking (2024-2025)**: Industry standards for legal department structure, spend, staffing
+- **ACC Legal Department Operations Index**: Benchmarks for legal ops maturity
+- **Sarbanes-Oxley Act (SOX)**: Corporate governance and financial reporting (legal involvement in compliance)
+- **GDPR (General Data Protection Regulation)**: EU data privacy law (applies to many US companies)
+- **CCPA/CPRA (California Consumer Privacy Act)**: California privacy law (model for other states)
+- **EU AI Act (2024)**: Comprehensive AI regulation (compliance required for high-risk AI)
+- **FCPA (Foreign Corrupt Practices Act)**: Anti-bribery and accounting provisions
+- **Model Rule 1.13 (Organization as Client)**: Defines attorney duties when representing organizations
+
+Industry Benchmarks (ACC 2024-2025):
+- **Legal Spend**: Median 0.50% of company revenue
+- **Outside Counsel Spend**: Median $1.8M annually
+- **Legal Team Size**: Scales with revenue (median 4 for <$1B revenue, 158 for >$20B)
+- **Preferred Law Firms**: Median company uses 10 firms (down from 14)
+- **AI Adoption**: 52% of legal departments implemented AI tools (up from 34%)
+- **Budget Allocation**: 5-10% to legal technology
+
+Common Tools:
+- **Legal Research**: Westlaw, LexisNexis, Bloomberg Law, Fastcase (in-house discount subscriptions)
+- **Contract Lifecycle Management (CLM)**: Ironclad, Docusign CLM, Icertis, Agiloft, LinkSquares
+- **Matter Management**: Legal Tracker (Thomson Reuters), SimpleLegal, Legal Files
+- **E-Billing**: Serengeti, Passport (Bellefield), TyMetrix 360
+- **E-Discovery**: Relativity, Logikcull, Everlaw, Disco
+- **Document Management**: iManage, NetDocuments, SharePoint
+- **Entity Management**: Diligent Entities, Computershare, Athennian
+- **AI & Legal Tech**: Kira Systems (due diligence), LawGeex (contract review), Harvey AI, LexisNexis Lexis+ AI
+
+Change log
+2024-12: Initial playbook created based on ACC Law Department Management Benchmarking (2024-2025), 
+ABA Model Rules for in-house counsel, and current legal operations best practices
+- Emphasis on strategic business partnership and pragmatic risk management
+- Integration of legal operations and technology standards
+- Focus on cost management and efficiency (ACC benchmarks)
+- Inclusion of AI adoption and modern legal tech tools
+- Coverage of emerging regulatory areas (AI Act, expanded data privacy, ESG)

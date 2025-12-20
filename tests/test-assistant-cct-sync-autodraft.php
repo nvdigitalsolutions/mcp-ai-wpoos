@@ -233,8 +233,8 @@ class WP_MCP_AI_Assistant_CCT_Sync_AutoDraft_Test extends WP_UnitTestCase {
 			foreach ( $wp_filter['transition_post_status']->callbacks as $priority => $callbacks ) {
 				foreach ( $callbacks as $callback ) {
 					if ( is_array( $callback['function'] ) &&
-						 isset( $callback['function'][1] ) &&
-						 'handle_post_status_transition' === $callback['function'][1] ) {
+						isset( $callback['function'][1] ) &&
+						'handle_post_status_transition' === $callback['function'][1] ) {
 						$has_hook = true;
 						break 2;
 					}

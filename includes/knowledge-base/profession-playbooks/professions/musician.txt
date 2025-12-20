@@ -1,0 +1,685 @@
+Profession Playbook — Musician
+Slug: musician
+Category: creative
+Includes: global.txt + categories/creative.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality music creation, performance, and production.
+
+Category guidance
+- Emphasize brief → concepts → refinement → final deliverables, with tone/brand alignment.
+
+1) Role boundaries
+Do:
+- Provide guidance on music composition, arrangement, and song structure
+- Assist with music theory, harmony, melody, and rhythmic concepts
+- Guide on recording techniques, production, mixing, and mastering basics
+- Help with practice routines, technique development, and performance preparation
+- Advise on music business (copyright, royalties, distribution, contracts)
+- Support with gear selection (instruments, recording equipment, software)
+- Guide on different music genres, styles, and industry standards
+- Provide templates for song charts, set lists, and session planning
+- Success = Musically strong, well-produced, emotionally engaging music that meets artistic and commercial goals
+
+Do NOT:
+- Provide medical advice on physical injuries (carpal tunnel, hearing damage, vocal strain)
+- Guarantee commercial success or promise specific chart positions
+- Provide legal advice on contracts, copyright disputes, or royalty agreements (requires entertainment attorney)
+- Make investment recommendations for expensive equipment without proper context
+- Diagnose or treat hearing-related medical conditions (requires audiologist/ENT)
+- Promise to fix fundamental recording/performance issues that require re-recording
+- Negotiate contracts on behalf of the musician (requires manager or attorney)
+- Violate copyright by suggesting unauthorized sampling or covers without licensing
+
+Escalate / refer out when:
+- Copyright infringement claims or licensing disputes arise (engage music attorney)
+- Complex contract negotiations with labels or publishers (engage entertainment attorney/manager)
+- Physical injuries from playing (repetitive stress, hearing damage) (refer to specialist)
+- Mental health concerns (performance anxiety, depression, burnout) (refer to therapist)
+- Tax implications of royalty income or business structure (engage music accountant/CPA)
+- Technical audio engineering beyond basic mixing (engage professional mix/mastering engineer)
+- Music publishing administration and royalty collection (engage publisher or administrator)
+- Tour planning and logistics at scale (engage tour manager or booking agent)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What type of music project (original composition, cover, arrangement, production, live performance)?
+- What is the genre and style (pop, rock, jazz, classical, electronic, hip-hop, country)?
+- What is the intended use (personal, streaming release, sync licensing, live performance, commercial)?
+- What instruments/voices are involved?
+- What is your experience level with music theory, performance, and production?
+- What equipment and software do you have available (DAW, instruments, recording gear)?
+- What is the timeline for completion and any deadlines?
+- What are the deliverables (demo, finished track, sheet music, live set)?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Concept & Pre-Production
+   - Define song concept, mood, and message
+   - Identify genre conventions and reference tracks
+   - Sketch melody, harmony, and rhythm ideas
+   - Create basic song structure (verse, chorus, bridge)
+   - Determine instrumentation and arrangement approach
+   - Set tempo (BPM) and key signature
+   - Create scratch demo or voice memo of ideas
+
+2. Composition & Arrangement
+   - Develop full melody and harmonic progression
+   - Write lyrics if applicable (theme, rhyme scheme, phrasing)
+   - Arrange parts for each instrument/voice
+   - Create dynamics and build throughout song
+   - Add transitions, fills, and production elements
+   - Notate charts if needed for session musicians
+   - Program MIDI or create click track for recording
+
+3. Recording & Production
+   - Set up recording environment (acoustic treatment, minimal noise)
+   - Record foundation tracks (drums, bass, rhythm instruments)
+   - Record melodic and harmonic instruments
+   - Record lead and background vocals
+   - Comp best takes from multiple recordings
+   - Edit for timing and tuning (pitch correction if needed)
+   - Add effects and processing (reverb, delay, compression)
+   - Layer and build production elements
+
+4. Mixing
+   - Balance levels across all tracks
+   - Pan instruments for stereo width
+   - Apply EQ to carve space for each element
+   - Apply compression for consistency and punch
+   - Add spatial effects (reverb, delay)
+   - Automate levels, effects, and transitions
+   - Check mix on multiple playback systems
+   - Export mix stems for mastering
+
+5. Mastering & Distribution
+   - Master for loudness, EQ, and competitive sound
+   - Ensure proper headroom and no clipping
+   - Create different versions (streaming, CD, vinyl)
+   - Register copyright with PRO (ASCAP, BMI, SESAC)
+   - Distribute to streaming platforms (DistroKid, CD Baby, TuneCore)
+   - Create album artwork and metadata
+   - Plan release strategy and promotion
+
+4) Deliverables
+- Song demo (sketch or rough mix)
+- Finished audio tracks (mixed and mastered)
+- Sheet music or lead sheets for performance
+- Lyric sheets with chord charts
+- Stems (individual track exports for remixing/licensing)
+- MIDI files for arrangement reference
+- Set list and performance notes for live shows
+- Production notes documenting creative decisions
+
+Minimum viable: Well-structured song with clear melody, harmony, and production that serves the genre
+Gold standard: Radio-ready, professionally mixed/mastered track with strong commercial appeal and artistic integrity
+
+5) Quality checklist
+Musical Content:
+- [ ] Melody is memorable and singable
+- [ ] Harmony supports and enhances melody
+- [ ] Rhythm and groove are engaging and appropriate for genre
+- [ ] Song structure is clear (intro, verse, chorus, bridge, outro)
+- [ ] Dynamics build and release tension effectively
+- [ ] Arrangement serves the song (no clutter, proper space)
+- [ ] Lyrics (if applicable) are meaningful and well-crafted
+- [ ] Genre conventions respected or intentionally subverted
+
+Technical Quality (Recording):
+- [ ] Recordings are clean with minimal noise and artifacts
+- [ ] Performances are in tune and in time
+- [ ] Takes are properly comped (best performances selected)
+- [ ] Audio files are properly organized and labeled
+- [ ] Recording levels are appropriate (no clipping, good signal-to-noise ratio)
+- [ ] Instrument tones are captured well
+- [ ] Stereo imaging is balanced and intentional
+
+Mix Quality:
+- [ ] All elements are clearly audible and balanced
+- [ ] Frequency spectrum is well-distributed (no muddy or harsh frequencies)
+- [ ] Stereo field is wide and interesting
+- [ ] Depth created with reverb and delay
+- [ ] Dynamics are controlled but not over-compressed
+- [ ] Mix translates well across playback systems (speakers, headphones, phone, car)
+- [ ] No phase issues or unwanted artifacts
+- [ ] Automation adds movement and interest
+
+Master Quality:
+- [ ] Loudness competitive with genre standards (LUFS measurement)
+- [ ] No clipping or distortion
+- [ ] Frequency balance translates across systems
+- [ ] Stereo image preserved and enhanced
+- [ ] Transitions are smooth
+- [ ] Metadata embedded correctly (title, artist, album, ISRC)
+- [ ] File formats appropriate for delivery (WAV for mastering, MP3/AAC for streaming)
+
+Business & Legal:
+- [ ] Copyright registered with appropriate organizations
+- [ ] All samples cleared or royalty-free
+- [ ] Collaborators credited and agreements documented
+- [ ] Mechanical and performance rights registered
+- [ ] Distribution strategy in place
+
+6) Templates (paste-ready)
+
+=== Song Structure Template ===
+Title: [Song Title]
+Artist: [Artist Name]
+Key: [Key] | Tempo: [BPM] | Time Signature: [4/4, 3/4, etc.]
+
+INTRO (0:00-0:15) - [8 bars]
+- Instrumentation: [List]
+- Dynamics: [Soft, Building]
+- Notes: [Establish mood, hook listener]
+
+VERSE 1 (0:15-0:45) - [16 bars]
+- Vocals: [Lead melody, delivery style]
+- Instrumentation: [List active instruments]
+- Dynamics: [Medium, Building]
+- Lyric Theme: [Story setup, scene setting]
+- Notes: [Keep space, build toward chorus]
+
+PRE-CHORUS (0:45-0:55) - [8 bars] (optional)
+- Build tension before chorus
+- Instrumentation: [Add elements]
+- Dynamics: [Building]
+
+CHORUS (0:55-1:20) - [16 bars]
+- Vocals: [Hook, memorable melody]
+- Instrumentation: [Full arrangement]
+- Dynamics: [High energy, full]
+- Lyric Theme: [Main message, emotional peak]
+- Notes: [Most memorable part, repeat hook]
+
+VERSE 2 (1:20-1:50) - [16 bars]
+- Vocals: [Continue story]
+- Instrumentation: [Similar to V1 or add variation]
+- Dynamics: [Building]
+- Lyric Theme: [Story development]
+- Notes: [Add new information]
+
+CHORUS (1:50-2:15) - [16 bars]
+- [Same as first chorus or with variation]
+
+BRIDGE (2:15-2:40) - [12-16 bars]
+- Vocals: [New melody or perspective]
+- Instrumentation: [Contrasting arrangement]
+- Dynamics: [Break down or build up]
+- Lyric Theme: [New perspective, revelation]
+- Notes: [Provide contrast, reset energy]
+
+FINAL CHORUS (2:40-3:10) - [16 bars]
+- [Full chorus with possible key change or variation]
+- Dynamics: [Peak energy]
+
+OUTRO (3:10-3:30) - [8 bars]
+- Instrumentation: [Fade or resolve]
+- Dynamics: [Resolving to end]
+- Notes: [Satisfying conclusion]
+
+Total Length: ~3:30
+
+=== Recording Session Plan ===
+Project: [Song Title]
+Session Date: [Date]
+Studio/Location: [Where]
+Engineer: [Name]
+
+Pre-Session:
+- [ ] Charts and lyrics prepared for all musicians
+- [ ] Click track and guide tracks created
+- [ ] Tempo and key confirmed
+- [ ] Equipment tested and working
+- [ ] Backup files of all project files
+- [ ] Session musicians confirmed and briefed
+
+Session Schedule:
+9:00-9:30 AM - Setup & Sound Check
+- Set up instruments and mics
+- Get headphone mixes for all players
+- Test signal flow
+
+9:30-11:00 AM - Rhythm Section (Drums, Bass)
+- Record drums with click (multiple takes)
+- Record bass following drums
+- Comp best takes
+
+11:00 AM-12:30 PM - Rhythm Instruments
+- Record rhythm guitar/keys
+- Record additional percussion if needed
+
+12:30-1:30 PM - LUNCH BREAK
+
+1:30-3:30 PM - Lead Instruments & Solos
+- Record lead guitar/keyboard parts
+- Record any specialty instruments
+- Multiple takes for comping
+
+3:30-5:30 PM - Vocals
+- Record lead vocal (verse, chorus, bridge)
+- Comp best vocal takes
+- Record harmonies and background vocals
+
+5:30-6:00 PM - Review & Backup
+- Review all takes with artist/producer
+- Identify any needed pickups
+- Backup session files to multiple locations
+- Schedule mixing session
+
+Equipment Needed:
+- [ ] Instruments: [List]
+- [ ] Microphones: [List with placement]
+- [ ] Cables and stands
+- [ ] Headphones for all musicians
+- [ ] Extra strings, drum sticks, picks
+- [ ] Music stands and lighting
+
+Files to Bring:
+- [ ] Session files and templates
+- [ ] Click tracks
+- [ ] Reference mixes
+- [ ] Charts and lyrics
+
+=== Mix Notes Template ===
+Song: [Title]
+Artist: [Name]
+Version: [Mix v1, v2, etc.]
+Date: [Date]
+
+Reference Tracks:
+1. [Song by Artist] - [What to reference: drum sound, vocal clarity, overall balance]
+2. [Song by Artist] - [What to reference]
+3. [Song by Artist] - [What to reference]
+
+Overall Vision:
+[Description of desired sound, mood, and commercial positioning]
+
+Track-by-Track Notes:
+
+DRUMS:
+- Kick: [Level, EQ notes, compression]
+- Snare: [Level, EQ, reverb]
+- Hi-hats: [Level, stereo width]
+- Toms: [EQ, tuning]
+- Overheads: [Stereo width, brightness]
+- Room mics: [Depth, ambience]
+
+BASS:
+- Level: [Relationship to kick]
+- EQ: [Low-end clarity, presence]
+- Compression: [Consistency]
+- Effects: [Saturation, etc.]
+
+GUITARS:
+- Rhythm L/R: [Pan, EQ, level]
+- Lead: [Center or pan, effects]
+- Acoustic: [Stereo or mono, brightness]
+
+KEYS/SYNTH:
+- Pad: [Level, stereo width, filter]
+- Lead: [Effects, positioning]
+- Bass: [Relationship to bass guitar]
+
+VOCALS:
+- Lead: [Level on top of mix, EQ, compression, de-essing]
+- Reverb: [Type, decay time]
+- Delay: [Tempo-synced, feedback]
+- Harmonies: [Level below lead, pan]
+- Backgrounds: [Wide stereo, level]
+
+EFFECTS:
+- Reverbs: [Types used per element]
+- Delays: [Tempo-synced or free]
+- Special effects: [Where and why]
+
+Automation:
+- [ ] Vocal rides for clarity
+- [ ] Instrument level changes between sections
+- [ ] Effect throws and builds
+- [ ] Stereo width variations
+
+Final Checks:
+- [ ] Mix mono to check phase
+- [ ] Check on multiple systems (studio monitors, headphones, laptop, phone, car)
+- [ ] A/B against reference tracks
+- [ ] Check for clipping and headroom (-6dB to -3dB peak)
+- [ ] Export stems for mastering
+
+=== Set List Template ===
+Artist: [Name]
+Venue: [Location]
+Date: [Date]
+Set Length: [Duration]
+
+Equipment Setup:
+- [ ] Instruments tuned and ready
+- [ ] Cables and pedals tested
+- [ ] Monitor mix dialed in
+- [ ] In-ear monitors charged (if applicable)
+- [ ] Setlist taped to floor/music stand
+- [ ] Water/throat spray nearby
+
+Set List:
+
+1. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Opening energy, establish presence]
+   Transition: [How to lead into next song]
+
+2. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Maintain energy]
+   Transition: [Brief story or thank you]
+
+3. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [First slower moment, build intimacy]
+   Transition: [Engage audience]
+
+4. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Build back up]
+
+5. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Peak energy before mid-set breather]
+   Transition: [Band introductions]
+
+--- MID-SET BREAK (if applicable) ---
+
+6. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Re-establish energy]
+
+7. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Crowd favorite, singalong]
+
+8. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Build toward finale]
+
+9. [Song Title] - [Key] - [Tempo] - [Duration]
+   Notes: [Closer, high energy]
+   Transition: [Thank audience, leave stage]
+
+--- ENCORE ---
+
+10. [Song Title] - [Key] - [Tempo] - [Duration]
+    Notes: [Fan favorite or new single]
+
+Total Time: [Duration]
+
+Backup Songs (if needed):
+- [Song Title] - [Key] - [For tech issues or crowd requests]
+- [Song Title] - [Key] - [Alternative slower song]
+
+Tech Notes:
+- Guitar changes: [When and which guitar]
+- Pedal changes: [Settings per song]
+- Vocal effects: [When to activate]
+
+7) Examples of excellent outputs
+
+Example 1: Song Structure Analysis
+```
+Song: "Someone Like You" by Adele
+Analysis for Understanding Effective Pop Ballad Structure
+
+INTRO (0:00-0:06)
+- Sparse piano only
+- Establishes key (A major) and emotional tone
+- Simple arpeggio pattern that continues throughout
+
+VERSE 1 (0:06-0:36)
+- Vocal enters, intimate delivery
+- Piano only, creating space
+- Lyrics tell specific story ("I heard that you're settled down")
+- Builds gradually with slight vocal intensity
+
+PRE-CHORUS (0:36-0:46)
+- Vocal melody shifts up in range
+- Tension building ("Sometimes it lasts in love...")
+- Leading toward emotional release
+
+CHORUS (0:46-1:11)
+- Full vocal power, emotional peak
+- Simple but effective melodic hook ("Never mind, I'll find someone like you")
+- Piano remains consistent (signature of song)
+- Most memorable section, repeatable
+
+VERSE 2 (1:11-1:41)
+- Returns to intimate verse setting
+- Continues story
+- Similar arrangement to V1 but with added confidence in vocal
+
+PRE-CHORUS & CHORUS 2 (1:41-2:16)
+- Same as first time through
+- Slight variations in vocal delivery
+
+BRIDGE (2:16-2:48)
+- Change in melody and perspective
+- Backing vocals added for first time
+- Emotional climax building
+
+FINAL CHORUS (2:48-3:32)
+- Extended version
+- Vocal ad-libs and variations
+- Backing vocals added
+- Builds to final emotional release
+
+OUTRO (3:32-3:47)
+- Piano returns to intro pattern
+- Vocal fades with final statement
+- Satisfying resolution
+
+Key Takeaways:
+- Restraint in arrangement keeps focus on vocal and lyrics
+- Dynamics created through vocal intensity rather than instrumentation
+- Memorable, singable chorus hook
+- Emotional arc builds throughout song
+```
+
+Example 2: Recording Session Notes
+```
+Session: "Midnight Drive" - Indie Pop Track
+Date: October 15, 2024
+Studio: Home Studio
+Goal: Complete all tracking for verses and chorus
+
+DRUMS (9:00-10:30 AM):
+- Recorded 8 full takes with click at 118 BPM
+- Best takes: Take 3 (verse feel), Take 5 (chorus energy)
+- Comped intro from Take 2
+- Mic setup: D112 on kick, SM57 on snare, overhead pair
+- Notes: Drummer nailed the groove on Take 5, keep that for choruses
+
+BASS (10:30-11:30 AM):
+- Recorded direct with J-bass
+- Take 3 was the winner - locked in with drums perfectly
+- Minor timing edit needed on bridge entrance (fixed)
+- Tone: Slight compression, no effects yet
+
+ACOUSTIC GUITAR (11:30 AM-12:30 PM):
+- Finger-picking pattern throughout
+- Recorded stereo with SM81 pair
+- Take 2 was cleanest
+- Notes: Beautiful natural reverb in room, captured well
+
+ELECTRIC GUITAR (1:30-2:30 PM - After Lunch):
+- Ambient, delay-heavy texture
+- Used Strat neck pickup through Strymon Timeline
+- Three layers recorded: low, mid, high octaves
+- Very gentle playing to sit behind vocal
+
+SYNTH PAD (2:30-3:00 PM):
+- MIDI recorded, then printed through Juno-60
+- Slow attack, lush pad sound
+- Adds warmth without taking space from vocals
+
+LEAD VOCAL (3:00-5:00 PM):
+- Six complete takes
+- Comp'd best phrases from Takes 3, 4, and 6
+- Intimate mic technique (Neumann U87, 6 inches away)
+- Slight pitch correction needed on bridge (natural variation kept)
+- Emotion strongest on Take 4, used for most of chorus
+
+BACKGROUND VOCALS (5:00-5:45 PM):
+- Three-part harmony in chorus
+- Each part recorded twice and panned L/R
+- Creates wide, lush vocal bed
+
+NEXT SESSION:
+- Record remaining transitions and production elements
+- Add guitar solo in bridge
+- Record harmony variations for final chorus
+- Begin rough mix
+
+FILES BACKED UP TO:
+- External SSD
+- Cloud storage (Dropbox)
+- Second internal drive
+```
+
+Example 3: Mix Revision Notes
+```
+Song: "Midnight Drive"
+Mix Version: v2 (addressing client feedback from v1)
+
+CLIENT FEEDBACK:
+1. "Vocals need to be clearer and more upfront"
+2. "Drums feel too far away"
+3. "Love the vibe but needs more energy in chorus"
+4. "Bridge feels disconnected from rest of song"
+
+ACTIONS TAKEN IN V2:
+
+1. VOCAL CLARITY:
+   - Reduced reverb send by 2dB
+   - Added 2dB boost at 3.5kHz (presence range)
+   - Tightened compression (4:1 ratio, faster attack)
+   - Automated vocal up 1.5dB in verses where guitars are busy
+   - De-essed more aggressively at 7-9kHz
+   Result: Vocal now sits clearly on top without losing intimate feel
+
+2. DRUM PRESENCE:
+   - Brought up room mics 3dB
+   - Added parallel compression on drum bus for punch
+   - Kick given slight 60Hz boost for weight
+   - Snare brightened at 5kHz for snap
+   Result: Drums now feel immediate and driving
+
+3. CHORUS ENERGY:
+   - Added doubled electric guitar part (was missing before)
+   - Stereo synth width increased with Haas effect
+   - Background vocals brought up 1.5dB
+   - Subtle distortion on bass for grit
+   - Ride cymbal emphasized in overhead mix
+   Result: Clear lift when chorus hits
+
+4. BRIDGE COHESION:
+   - Kept acoustic guitar going (was dropped before)
+   - Matched reverb tail length to verse/chorus
+   - Added subtle pad underneath to maintain low-end warmth
+   - Smoothed transition automation from chorus to bridge
+   Result: Bridge feels like natural evolution not departure
+
+ADDITIONAL IMPROVEMENTS:
+- Stereo width slightly narrowed on bass (was too wide)
+- Fixed slight phase issue between overhead mics
+- Reduced harsh resonance at 3.2kHz on acoustic guitar
+- Added automation on delay throw at end of final chorus
+
+EXPORT SETTINGS:
+- 24-bit WAV, -6dB headroom for mastering
+- Sample rate: 48kHz (matching session)
+- No limiting on master bus
+
+NEXT STEPS:
+- Client review of v2
+- Address any final tweaks
+- Send to mastering engineer
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **BPM (Beats Per Minute)**: Tempo measurement; 60-80 = slow, 100-120 = moderate, 140+ = fast
+- **Key Signature**: Tonal center (C major, A minor, etc.)
+- **Time Signature**: Rhythmic organization (4/4 = four beats per bar, 3/4 = waltz time)
+- **Chord Progression**: Sequence of chords (I-IV-V, ii-V-I, etc.)
+- **Hook**: Catchy, memorable musical phrase
+- **Verse-Chorus Form**: Common song structure alternating storytelling verses with repeated chorus
+- **Bridge**: Contrasting section providing variety (typically after second chorus)
+- **Pre-Chorus**: Transitional section building tension before chorus
+- **Intro/Outro**: Opening and closing sections
+- **Turnaround**: Short progression connecting sections
+
+Music Theory:
+- **Scale**: Series of notes (major, minor, pentatonic, blues, modes)
+- **Interval**: Distance between two notes (third, fifth, octave)
+- **Harmony**: Simultaneous notes creating chords
+- **Melody**: Single-note sequence forming tune
+- **Rhythm**: Pattern of durations and accents
+- **Dynamics**: Volume variations (pp, p, mp, mf, f, ff)
+- **Articulation**: How notes are played (staccato, legato, accent)
+- **Modulation**: Changing keys within song
+
+Recording Terms:
+- **DAW (Digital Audio Workstation)**: Software for recording/editing (Logic, Ableton, Pro Tools, FL Studio)
+- **MIDI**: Musical Instrument Digital Interface (note data, not audio)
+- **Audio Interface**: Hardware converting analog to digital signal
+- **Sample Rate**: Recordings per second (44.1kHz = CD quality, 48kHz = video standard, 96kHz = hi-res)
+- **Bit Depth**: Dynamic range resolution (16-bit = CD, 24-bit = professional)
+- **Latency**: Delay between input and output (aim for <10ms)
+- **Buffer Size**: Affects latency vs. processing power tradeoff
+- **Comping**: Combining best parts from multiple takes
+
+Mixing Terms:
+- **Fader**: Volume control for individual track
+- **Pan**: Left-right stereo positioning
+- **EQ (Equalization)**: Frequency balance adjustment
+- **Compression**: Reducing dynamic range for consistency
+- **Reverb**: Simulated acoustic space
+- **Delay**: Repeated echo effect
+- **Stereo Width**: Apparent space between L/R channels
+- **Headroom**: Space below 0dB to prevent clipping
+- **Gain Staging**: Proper level management throughout signal chain
+- **Automation**: Time-based parameter changes
+
+Mastering Terms:
+- **LUFS (Loudness Units Full Scale)**: Standard loudness measurement (-14 LUFS for streaming)
+- **Limiting**: Ceiling preventing signal from exceeding maximum level
+- **Dithering**: Noise added when reducing bit depth
+- **Stems**: Grouped tracks for mastering (drums, bass, guitars, vocals, etc.)
+- **Red Book Standard**: CD audio specifications
+
+Music Business:
+- **Copyright**: Legal ownership of composition and recording (two separate copyrights)
+- **Publishing**: Rights to song composition (lyrics and melody)
+- **Master Recording**: Rights to specific recorded version
+- **Mechanical Royalties**: Payment for physical or download sales
+- **Performance Royalties**: Payment for public performance or streaming
+- **Sync Licensing**: License for use in film, TV, ads
+- **PRO (Performance Rights Organization)**: ASCAP, BMI, SESAC (collect performance royalties)
+- **Distributor**: Company delivering music to streaming platforms (DistroKid, CD Baby, TuneCore)
+- **ISRC**: International Standard Recording Code (unique identifier per recording)
+- **Split Sheet**: Document showing ownership percentages among collaborators
+
+Common Tools:
+- **DAWs**: Ableton Live (electronic), Logic Pro (Mac), Pro Tools (industry standard), FL Studio (hip-hop), Reaper (affordable)
+- **Notation**: Sibelius, Finale, MuseScore (sheet music)
+- **Distribution**: DistroKid, CD Baby, TuneCore, Amuse
+- **Collaboration**: Splice, BandLab, Soundtrap
+- **Mastering**: LANDR (AI), iZotope Ozone, FabFilter Pro-L2
+- **Plugins**: Waves, FabFilter, Soundtoys, Universal Audio
+- **Tuning**: Melodyne, Auto-Tune, Waves Tune
+
+Industry Standards:
+- **Streaming Loudness**: -14 LUFS (Spotify, Apple Music), -13 LUFS (YouTube)
+- **File Formats**: WAV/AIFF (uncompressed), FLAC (lossless), MP3/AAC (lossy)
+- **Session Sample Rates**: 48kHz (most common), 44.1kHz (CD), 96kHz (hi-res)
+- **Bit Depth**: 24-bit for recording/mixing, 16-bit for final delivery
+- **Headroom for Mastering**: -6dB to -3dB peak level
+- **Song Length**: 3-4 minutes ideal for streaming and radio
+
+Change log
+2024-12: Initial playbook created for musician profession
+- Comprehensive coverage of composition, recording, mixing, and mastering
+- Templates for song structure, session planning, mix notes, and set lists
+- Music theory, technical, and business fundamentals
+- Industry-standard tools and loudness specifications
+- Copyright, royalties, and distribution guidance

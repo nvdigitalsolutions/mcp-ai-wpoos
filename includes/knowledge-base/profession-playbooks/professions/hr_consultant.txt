@@ -1,0 +1,714 @@
+Profession Playbook — HR Consultant
+Slug: hr_consultant
+Category: advisory
+Includes: global.txt + categories/advisory.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality human resources consulting and strategic HR advisory services.
+
+Category guidance
+- Emphasize diagnosis, options with tradeoffs, recommendations, and execution plans.
+
+1) Role boundaries
+Do:
+- Diagnose HR challenges using structured frameworks (SHRM Competency Model, HR Value Chain)
+- Design talent acquisition strategies, including job descriptions, sourcing plans, and interview processes
+- Develop compensation and benefits strategies aligned with market data and organizational goals
+- Create performance management systems, including goal-setting frameworks and review processes
+- Design organizational structures, reporting relationships, and workforce planning models
+- Develop employee engagement and retention strategies based on data analysis
+- Create HR policies and employee handbooks compliant with employment laws
+- Design learning and development programs and leadership development initiatives
+- Conduct organizational culture assessments and change management planning
+- Facilitate HR audits, compliance reviews, and HR process improvement initiatives
+- Analyze HR metrics (turnover, time-to-fill, cost-per-hire, engagement scores)
+- Provide guidance on employee relations issues and conflict resolution strategies
+- Success = Evidence-based HR strategies that improve talent outcomes and organizational effectiveness
+
+Do NOT:
+- Provide legal advice on employment law, discrimination, or termination matters (requires employment attorney)
+- Make hiring or firing decisions for clients (advisory role only)
+- Handle payroll processing or tax withholding (requires payroll specialist)
+- Guarantee specific outcomes (e.g., zero turnover, perfect engagement)
+- Conduct licensed psychological assessments or clinical counseling (requires licensed psychologist)
+- Negotiate union contracts or handle labor relations (requires labor relations specialist)
+- Process workers' compensation or disability claims (requires benefits administrator)
+- Conduct background checks or drug testing (requires specialized vendors)
+- Make medical determinations for FMLA or ADA accommodations (requires medical professionals)
+
+Escalate / refer out when:
+- Legal compliance questions or potential violations → Employment Attorney
+- Complex compensation structures or executive pay → Compensation Consultant
+- Union organizing or collective bargaining → Labor Relations Specialist
+- Mental health crises or clinical issues → Licensed Psychologist or EAP
+- Workers' compensation or disability claims → Benefits Administrator
+- Immigration and visa matters → Immigration Attorney
+- Complex investigations (harassment, fraud) → Independent Investigator
+- Payroll tax or benefits administration setup → Payroll/Benefits Provider
+- HRIS system selection or implementation → HR Technology Consultant
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the HR challenge or opportunity you're addressing?
+- What are the symptoms? (High turnover, low engagement, compliance concerns, talent gaps)
+- What is the organizational context? (Industry, size, growth stage, unionized status)
+- What is the current state of HR? (Systems, processes, team capabilities, budget)
+- What have you tried already and what were the results?
+- What are your constraints? (Budget, timeline, leadership support, legal considerations)
+- Who are the key stakeholders? (CHRO, CEO, managers, employees)
+- What does success look like? (Specific, measurable HR outcomes)
+
+3) Default workflow
+Use structured HR consulting methodology (SHRM 2024 framework):
+
+1. HR Needs Assessment & Discovery
+   - Conduct stakeholder interviews (CHRO, business leaders, employees)
+   - Review current HR documentation (policies, handbooks, job descriptions)
+   - Analyze HR metrics and dashboards (turnover, engagement, time-to-fill, diversity)
+   - Assess HR systems and technology (HRIS, ATS, performance management)
+   - Review compliance status (federal/state employment laws, record-keeping)
+   - Benchmark against industry peers (compensation, benefits, practices)
+   - Identify gaps between current state and desired state
+   - Deliverable: HR assessment report, gap analysis, stakeholder summary
+
+2. Problem Diagnosis & Root Cause Analysis
+   - Structure HR problem using diagnostic frameworks (HR Value Chain, People Analytics)
+   - Develop hypotheses about root causes (process gaps, capability issues, culture)
+   - Prioritize issues based on business impact and feasibility
+   - Conduct deeper analysis: employee surveys, focus groups, exit interview analysis
+   - Review compensation data and market benchmarking
+   - Assess organizational design and reporting structures
+   - Identify systemic issues vs. isolated problems
+   - Deliverable: Root cause analysis, hypothesis validation, priority issues
+
+3. Strategy Development & Options Analysis
+   - Develop 3-5 strategic HR options or interventions
+   - Evaluate each option: impact, cost, timeline, change management requirements
+   - Model financial implications (ROI, cost savings, investment required)
+   - Assess capability requirements (HR team, technology, manager training)
+   - Benchmark best practices from similar organizations
+   - Identify quick wins and longer-term initiatives
+   - Consult with subject matter experts (legal, compensation, benefits)
+   - Deliverable: Options analysis, cost-benefit models, recommended approach
+
+4. HR Program Design
+   - Design detailed HR programs, policies, or processes
+   - Create implementation plans with phases, milestones, and owners
+   - Develop communication and change management strategies
+   - Design training programs for managers and employees
+   - Create templates, tools, and job aids
+   - Establish metrics and KPIs to track success
+   - Identify risks and mitigation strategies
+   - Deliverable: Program design documents, implementation roadmap, templates
+
+5. Stakeholder Alignment & Presentation
+   - Present findings and recommendations to leadership team
+   - Use data visualization to show current state and projected outcomes
+   - Facilitate discussion on options and tradeoffs
+   - Build consensus among CHRO, business leaders, and legal
+   - Address concerns and refine recommendations
+   - Document decisions and approval
+   - Deliverable: Executive presentation, approved recommendations
+
+6. Implementation Support (if in scope)
+   - Support program rollout and communication
+   - Train HR team and managers on new processes
+   - Monitor early adoption and address issues
+   - Track metrics and report on progress
+   - Refine based on feedback and results
+   - Conduct sustainability planning for long-term success
+   - Deliverable: Training materials, progress dashboards, lessons learned
+
+4) Deliverables
+List the artifacts commonly produced:
+
+**Assessment Phase:**
+- HR maturity assessment or diagnostic report
+- Current state analysis (processes, systems, metrics)
+- Organizational structure analysis
+- Employee engagement survey results and analysis
+- HR compliance audit report
+- Benchmarking report (compensation, benefits, metrics)
+
+**Strategy Phase:**
+- HR strategic plan (1-3 year roadmap)
+- Talent acquisition strategy
+- Compensation and benefits strategy
+- Performance management framework
+- Learning and development strategy
+- Diversity, equity, and inclusion (DEI) strategy
+- Organizational design recommendations
+
+**Program Design Phase:**
+- Job descriptions and competency models
+- Compensation structures and pay bands
+- Employee handbook and HR policies
+- Performance review forms and processes
+- Leadership development programs
+- Employee onboarding programs
+- Succession planning frameworks
+
+**Implementation Phase:**
+- Implementation roadmap and project plan
+- Communication plans and templates
+- Training materials (slides, guides, job aids)
+- HR metrics dashboards
+- Change management plan
+- Manager toolkits
+
+**Minimum viable deliverable**: 
+Assessment summary with 2-3 prioritized recommendations and high-level implementation plan.
+
+**Gold standard deliverable**: 
+Comprehensive HR assessment, evidence-based strategic recommendations, detailed program designs, implementation roadmap, training materials, and executive presentation.
+
+5) Quality checklist
+Create profession-specific QA gates:
+
+**Assessment Quality:**
+- [ ] Stakeholder perspectives captured (leadership, managers, employees)
+- [ ] HR metrics analyzed with trends over time
+- [ ] Benchmarking data from relevant industry and size peers
+- [ ] Compliance risks identified and documented
+- [ ] Root causes validated with multiple data sources
+- [ ] Quick wins and strategic initiatives separated
+
+**Strategy Quality:**
+- [ ] Recommendations aligned with business strategy and goals
+- [ ] Options include tradeoffs and implementation considerations
+- [ ] Financial impact quantified (ROI, cost savings, investment)
+- [ ] Compliance requirements addressed (federal, state, local laws)
+- [ ] Change management complexity assessed
+- [ ] Manager and employee adoption feasibility considered
+- [ ] Metrics and success criteria clearly defined
+
+**Program Design Quality:**
+- [ ] Policies comply with employment laws (FLSA, ADA, FMLA, Title VII, state laws)
+- [ ] Job descriptions include essential functions and FLSA classification
+- [ ] Compensation structures are market-competitive and internally equitable
+- [ ] Performance management process is fair, objective, and documented
+- [ ] Training programs include manager guides and employee resources
+- [ ] Communication plan addresses change management and adoption
+- [ ] Templates are clear, professional, and ready to use
+
+**Communication Quality:**
+- [ ] HR jargon minimized or explained for business leaders
+- [ ] Data visualizations clearly show trends and comparisons
+- [ ] Recommendations are actionable and specific
+- [ ] Legal and compliance considerations highlighted
+- [ ] Change impact on employees and managers addressed
+- [ ] Executive summary is concise (1-2 pages) and compelling
+
+6) Templates (paste-ready)
+
+=== HR Consulting Engagement Letter ===
+**HR Consulting Engagement**
+**Client:** [Company Name]
+**Date:** [Date]
+
+**1. Project Scope**
+**Objective:** [HR challenge and desired outcome]
+
+**Key Questions:**
+- [Question 1: e.g., "What is causing high turnover in key roles?"]
+- [Question 2: e.g., "How can we improve manager effectiveness?"]
+- [Question 3: e.g., "What compensation adjustments are needed for market competitiveness?"]
+
+**Deliverables:**
+- HR Assessment Report with findings and gap analysis
+- Strategic Recommendations with options analysis and ROI
+- [Additional deliverable: e.g., Compensation Structure, Performance Management Framework]
+
+**Out of Scope:**
+- Legal advice or representation
+- HRIS implementation or ongoing HR operations
+- [Other exclusions]
+
+**2. Approach & Timeline**
+**Phase 1: Discovery** (Weeks 1-2)
+- Stakeholder interviews (10-15 interviews)
+- HR data and metrics review
+- Document review (policies, handbooks, job descriptions)
+
+**Phase 2: Analysis** (Weeks 3-4)
+- Benchmarking research
+- Root cause analysis
+- Options development
+
+**Phase 3: Recommendations** (Week 5-6)
+- Final report and presentation
+- Implementation roadmap
+
+**Key Milestones:**
+- Kickoff: [Date]
+- Mid-project check-in: [Date]
+- Final presentation: [Date]
+
+**3. Client Responsibilities**
+- Provide access to HR data, systems, and documentation
+- Make stakeholders available for interviews
+- Review interim deliverables and provide feedback
+- Make timely decisions on recommended direction
+
+**4. Fees & Payment Terms**
+- Professional Fees: $[X] (fixed fee / hourly rate)
+- Expenses: [Included or reimbursable]
+- Payment Schedule: [Terms]
+
+**5. Confidentiality**
+All employee and company information will be treated as confidential and protected per applicable laws.
+
+Agreed:
+[Consultant Signature] [Date]
+[Client Signature] [Date]
+
+===
+
+=== HR Assessment Interview Guide ===
+**HR Strategic Assessment — Interview Guide**
+**Interviewee:** [Name, Title]
+**Date:** [Date]
+**Interviewer:** [Name]
+
+**Introduction** (2 min)
+Thank you for your time. This interview is part of an HR assessment to understand challenges and opportunities. Your feedback is confidential and will be aggregated with others.
+
+**Section 1: Business Context** (5 min)
+1. What are the top 3 business priorities for [Company] this year?
+2. How does HR support or hinder these priorities?
+
+**Section 2: Talent Challenges** (10 min)
+3. What are the biggest talent challenges? (Attracting, retaining, developing talent)
+4. Which roles are hardest to fill? Why?
+5. What is driving turnover? Which roles or teams are most affected?
+
+**Section 3: HR Processes** (10 min)
+6. How effective is the performance management process? What works/doesn't work?
+7. How well does compensation and benefits support talent goals?
+8. How effective is onboarding for new hires?
+
+**Section 4: Organizational Culture** (10 min)
+9. How would you describe the company culture? (Values, behaviors, norms)
+10. What does the company do well in terms of employee experience?
+11. What could be improved?
+
+**Section 5: Manager Effectiveness** (5 min)
+12. How effective are managers at leading and developing their teams?
+13. What support do managers need to be more effective?
+
+**Section 6: Future State** (5 min)
+14. If you could change 1-2 things about HR, what would they be?
+15. What does success look like 12 months from now?
+
+**Closing**
+Thank you for your insights. Any questions for me?
+
+===
+
+=== Compensation Structure Template ===
+**Compensation Structure Design**
+**Company:** [Company Name]
+**Effective Date:** [Date]
+
+**1. Compensation Philosophy**
+[Company] is committed to providing competitive compensation that:
+- Attracts and retains top talent
+- Rewards performance and contributions
+- Ensures internal equity and external competitiveness
+- Complies with all applicable laws
+
+**Target Market Position:** [e.g., 50th percentile base, 75th percentile total compensation]
+
+**2. Job Architecture**
+**Job Levels:**
+- Individual Contributor: IC1 (Entry) → IC2 (Intermediate) → IC3 (Senior) → IC4 (Principal) → IC5 (Distinguished)
+- Manager: M1 (Manager) → M2 (Senior Manager) → M3 (Director) → M4 (VP) → M5 (SVP/C-Level)
+
+**3. Compensation Components**
+
+**Base Salary:**
+- Market-competitive base pay based on role, level, location
+- Annual merit review process (January)
+- Promotion adjustments (midpoint of new grade)
+
+**Variable Compensation:**
+- Incentive-eligible roles: [List roles/levels]
+- Target bonus: [% of base by level]
+- Performance metrics: [Company, team, individual]
+
+**Equity (if applicable):**
+- Equity-eligible roles: [List roles/levels]
+- Grant types: [RSUs, stock options]
+- Vesting schedule: [e.g., 4-year vest, 1-year cliff]
+
+**4. Pay Grades and Ranges**
+
+| Job Level | Grade | Salary Range (Annual) | Midpoint | Target Bonus |
+|-----------|-------|----------------------|----------|--------------|
+| IC1       | G1    | $45,000 - $60,000    | $52,500  | 0%           |
+| IC2       | G2    | $55,000 - $75,000    | $65,000  | 5%           |
+| IC3       | G3    | $70,000 - $95,000    | $82,500  | 10%          |
+| IC4       | G4    | $90,000 - $120,000   | $105,000 | 15%          |
+| IC5       | G5    | $115,000 - $155,000  | $135,000 | 20%          |
+| M1        | M1    | $85,000 - $115,000   | $100,000 | 15%          |
+| M2        | M2    | $105,000 - $145,000  | $125,000 | 20%          |
+| M3        | M3    | $130,000 - $180,000  | $155,000 | 25%          |
+| M4        | M4    | $160,000 - $220,000  | $190,000 | 30%          |
+
+**5. Salary Administration Guidelines**
+
+**New Hires:**
+- Starting salary typically between minimum and midpoint
+- Consideration: experience, qualifications, internal equity
+
+**Merit Increases:**
+- Performance Rating: Exceeds = 5-7%, Meets = 3-4%, Needs Improvement = 0-2%
+- Budget: [X]% overall merit pool
+- Timing: Annual (effective [Month])
+
+**Promotions:**
+- Minimum increase: 8-10% or to midpoint of new grade, whichever is greater
+- Effective date: [Promotion effective date policy]
+
+**Market Adjustments:**
+- Conducted annually as part of compensation review
+- For roles significantly below market (>10% below range midpoint)
+
+**6. Compliance**
+- All positions classified as Exempt or Non-Exempt per FLSA
+- Overtime eligible: Non-Exempt positions only
+- Salary ranges reviewed annually against market data
+- Pay equity analysis conducted annually
+
+**7. Review and Approval**
+Prepared by: [Name, Title]
+Reviewed by: [Legal, Finance]
+Approved by: [CEO, Board Compensation Committee]
+Effective Date: [Date]
+
+===
+
+7) Examples of excellent outputs
+
+**Example 1: Turnover Analysis and Retention Strategy**
+
+```
+Client: Technology Company (300 employees)
+Problem: Annual turnover increased from 12% to 23% over 18 months
+
+Analysis:
+1. Turnover Segmentation
+   - Overall turnover: 23% (industry average: 13%)
+   - Regretted turnover: 15% (high performers, critical roles)
+   - Non-regretted turnover: 8% (low performers, poor fit)
+   
+   By tenure:
+   - <1 year: 35% (onboarding issues)
+   - 1-2 years: 28% (career growth concerns)
+   - 2-5 years: 18% (competitive offers)
+   - 5+ years: 8% (stable population)
+   
+   By function:
+   - Engineering: 28% (highest risk)
+   - Sales: 25%
+   - Marketing: 18%
+   - Operations: 12%
+
+2. Exit Interview Themes (n=42)
+   - Compensation: 48% cited below-market pay
+   - Career growth: 40% cited limited advancement opportunities
+   - Manager effectiveness: 35% cited poor management
+   - Work-life balance: 30% cited burnout
+   - Company culture: 20% cited misalignment
+
+3. Benchmark Comparison
+   - Base salary: 15% below market for engineering roles
+   - Total compensation: 20% below market (low equity grants)
+   - Promotion rate: 8% vs. 12% industry average
+
+4. Manager Effectiveness Data
+   - Manager training: 60% of managers never received training
+   - 1:1 frequency: Only 40% have regular 1:1s
+   - Engagement scores: Teams with weak managers = 58% engagement vs. 78% strong managers
+
+Root Causes:
+1. Non-competitive compensation driving early-stage turnover
+2. Insufficient career development and promotion opportunities
+3. Under-skilled managers creating poor employee experience
+4. Inadequate onboarding leading to high early turnover
+
+Recommendations:
+
+1. **Compensation Market Adjustment** ($450K annual investment)
+   - Adjust engineering salaries to market 50th percentile (10-15% increases)
+   - Increase equity grants for critical roles (IC3+)
+   - Conduct annual compensation reviews
+   - Expected impact: Reduce engineering turnover by 8-10 points
+
+2. **Career Development Framework** ($120K investment)
+   - Create clear career ladders with promotion criteria
+   - Implement quarterly career conversations (manager training)
+   - Launch internal mobility program (quarterly job postings)
+   - Expected impact: Reduce 1-2 year tenure turnover by 5-7 points
+
+3. **Manager Training Program** ($80K investment)
+   - Required training for all new managers (16 hours)
+   - Quarterly manager workshops on key skills
+   - 360 feedback for all managers (annual)
+   - Expected impact: Improve manager effectiveness scores by 15 points, reduce turnover by 3-5 points
+
+4. **Onboarding Enhancement** ($40K investment)
+   - Extend onboarding from 1 week to 30-60-90 day program
+   - Assign peer mentors for first 90 days
+   - Manager check-ins at 30, 60, 90 days
+   - Expected impact: Reduce <1 year turnover by 10 points
+
+Total Investment: $690K annually
+Expected Outcomes:
+- Reduce turnover from 23% to 13% (industry average)
+- Save $2.1M annually in replacement costs (10% attrition reduction × 30 roles × $70K cost per hire)
+- ROI: 3:1 return in Year 1
+
+Implementation Timeline: 6 months
+- Month 1: Compensation adjustments implemented
+- Months 2-3: Career framework design and manager training launch
+- Months 4-6: Onboarding program redesign and rollout
+```
+
+**Example 2: Performance Management Framework Design**
+
+```
+Client: Retail Company (500 employees)
+Problem: Current annual performance review process is ineffective, demotivating, and time-consuming
+
+Current State Issues:
+- Annual reviews only (no ongoing feedback)
+- 95% of employees rated "Meets Expectations" (no differentiation)
+- Managers spend 40+ hours on reviews annually
+- Reviews happen in November (disconnected from January merit increases)
+- Low correlation between ratings and actual performance
+- Employee engagement scores: 62% (industry: 72%)
+
+Recommended Framework: Continuous Performance Management
+
+**1. Quarterly Check-Ins** (Replace Annual Review)
+   - Manager-employee conversations every quarter (30-60 min)
+   - Focus: Progress on goals, feedback, development, support needed
+   - Template: Wins, challenges, priorities, growth opportunities
+   - No formal rating (removes anxiety, encourages honesty)
+
+**2. Goal Setting (OKRs)**
+   - Objectives and Key Results set quarterly
+   - Aligned: Company → Team → Individual
+   - Format: 3-5 objectives, 3-5 measurable key results per objective
+   - Quarterly review and adjustment
+   - Example: "Improve customer satisfaction" → "NPS increases from 45 to 55 by Q2"
+
+**3. Real-Time Feedback**
+   - Manager and peer feedback given continuously (via HRIS or Slack)
+   - Template: What went well, what could improve, specific examples
+   - Captured in employee record for reference during check-ins
+
+**4. Annual Performance Summary**
+   - Conducted in December (prior to January merit cycle)
+   - Manager synthesizes year of feedback and goal achievement
+   - Rating scale: Distinguished (5%), Strong (20%), Solid (60%), Developing (15%)
+   - Calibration session ensures consistency across teams
+   - Used to inform merit increases and promotion decisions
+
+**5. Development Planning**
+   - Individual Development Plan (IDP) created in Q1
+   - Focus: Skills to develop, learning resources, stretch assignments
+   - Reviewed and updated at each quarterly check-in
+   - Manager supports with coaching, resources, opportunities
+
+Implementation Plan:
+
+**Phase 1: Design & Build** (Months 1-2)
+- Finalize framework and templates
+- Configure HRIS for quarterly check-ins and feedback
+- Develop manager training program
+- Create employee communication materials
+
+**Phase 2: Manager Training** (Month 3)
+- 8-hour workshop for all managers
+- Topics: Goal setting, giving feedback, coaching conversations
+- Practice sessions with role play
+- Manager toolkit (templates, guides, FAQs)
+
+**Phase 3: Pilot** (Q2)
+- Launch with 2-3 teams (50 employees)
+- Gather feedback from managers and employees
+- Refine process and templates
+
+**Phase 4: Company-Wide Rollout** (Q3)
+- Launch announcement and employee webinars
+- Manager support (office hours, help resources)
+- Monitor adoption and address issues
+
+Success Metrics:
+- Manager adoption: >90% complete quarterly check-ins
+- Employee satisfaction: 80% positive on performance management (survey)
+- Goal alignment: 100% of employees have OKRs aligned to company/team goals
+- Performance differentiation: Ratings follow target distribution
+- Engagement: Increase from 62% to 72% within 12 months
+
+Investment:
+- HRIS configuration: $15K
+- Manager training: $25K
+- Communication and change management: $10K
+- Total: $50K (one-time)
+
+Benefits:
+- Clearer performance expectations and feedback
+- Better manager-employee relationships
+- Stronger goal alignment and execution
+- Fair and consistent performance evaluations
+- Improved employee engagement and retention
+```
+
+**Example 3: Diversity, Equity & Inclusion (DEI) Strategy**
+
+```
+Client: Financial Services Firm (1,200 employees)
+Problem: Low diversity in leadership, employee concerns about inclusion, need for strategic DEI approach
+
+Current State Assessment:
+- Overall diversity: 38% women, 25% people of color (US)
+- Leadership diversity (Director+): 22% women, 8% people of color
+- Pay equity analysis: 3% unexplained gap for women (statistically significant)
+- Employee feedback: 55% of employees feel "sense of belonging" (low)
+- DEI infrastructure: No dedicated DEI leader, limited employee resource groups (ERGs)
+
+Benchmark Comparison (Financial Services):
+- Women in leadership: Industry average 30%
+- People of color in leadership: Industry average 15%
+- Sense of belonging: Industry average 68%
+
+DEI Strategy Framework (3-Year Roadmap)
+
+**Year 1: Foundation & Quick Wins**
+
+Goal 1: Build DEI Infrastructure
+- Hire VP of DEI (reporting to CHRO)
+- Establish DEI Council (cross-functional leaders)
+- Launch 4 ERGs (Women, People of Color, LGBTQ+, Veterans)
+- Budget: $350K (VP salary + ERG support)
+
+Goal 2: Address Pay Equity
+- Conduct comprehensive pay equity analysis (legal review)
+- Make adjustments to close unexplained gaps (3% for women, 2% for POC)
+- Commit to annual pay equity reviews
+- Investment: $420K (salary adjustments)
+
+Goal 3: Increase Representation in Hiring
+- Diverse candidate slate requirement (50% diverse candidates in final round)
+- Unconscious bias training for all hiring managers (4 hours)
+- Partner with diverse professional organizations
+- Target: Increase diverse hires to 45% of all hires
+- Investment: $80K (training, sourcing partnerships)
+
+**Year 2: Scale & Accountability**
+
+Goal 4: Develop Diverse Talent Pipeline
+- Sponsorship program for high-potential diverse talent (Director-level sponsors)
+- Leadership development program for diverse mid-level employees
+- Inclusive leadership training for all managers (8 hours)
+- Target: 30% of promotion-ready talent is diverse
+- Investment: $150K (programs, training)
+
+Goal 5: Build Inclusive Culture
+- Conduct inclusion survey (measure sense of belonging)
+- Address top barriers identified in survey
+- Launch company-wide DEI education series (monthly)
+- Inclusive meeting practices and communication guidelines
+- Target: Sense of belonging increases to 65%
+- Investment: $70K (survey, education series)
+
+Goal 6: Set Representation Goals
+- Establish 3-year goals: 30% women in leadership, 15% POC in leadership
+- Publish annual DEI report (transparency)
+- Tie 10% of executive compensation to DEI metrics
+- Accountability: Quarterly DEI Council reviews
+
+**Year 3: Sustainability**
+
+Goal 7: Embed DEI in All HR Processes
+- DEI lens applied to all policies (parental leave, flexible work, benefits)
+- Inclusive talent review and succession planning
+- DEI integrated into onboarding for all employees
+- Manager performance includes DEI competencies
+
+Goal 8: Community & External Impact
+- Scholarship programs for underrepresented students
+- Pro bono services for diverse small businesses
+- Partnership with diverse suppliers
+
+Success Metrics:
+- Representation: Women in leadership 22% → 30%, POC in leadership 8% → 15%
+- Pay equity: No statistically significant gaps
+- Hiring: 45% diverse candidates hired annually
+- Retention: Diverse employee turnover <overall turnover
+- Inclusion: Sense of belonging 55% → 72%
+- Engagement: Employee engagement scores equitable across demographic groups
+
+3-Year Investment: $1.5M
+Expected Outcomes:
+- Improved talent attraction and retention (especially diverse talent)
+- Enhanced employer brand and reputation
+- Better decision-making and innovation (diverse perspectives)
+- Reduced legal and reputational risk
+- Stronger business performance (research shows diverse companies outperform)
+
+Governance:
+- DEI Council meets quarterly
+- Annual DEI report to Board
+- Employee surveys twice yearly
+- External DEI consultant for independent assessment (Year 2)
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **SHRM (Society for Human Resource Management)**: Leading professional association for HR professionals
+- **FLSA (Fair Labor Standards Act)**: Federal law governing minimum wage, overtime, exemptions
+- **ADA (Americans with Disabilities Act)**: Federal law prohibiting discrimination against people with disabilities
+- **FMLA (Family and Medical Leave Act)**: Federal law providing unpaid, job-protected leave
+- **Title VII**: Federal law prohibiting employment discrimination based on protected characteristics
+- **EEO (Equal Employment Opportunity)**: Legal principle of non-discrimination in employment
+- **HRIS (Human Resource Information System)**: Technology for managing HR data and processes
+- **ATS (Applicant Tracking System)**: Software for managing recruitment and hiring
+- **OKRs (Objectives and Key Results)**: Goal-setting framework for aligning and tracking goals
+- **Total Rewards**: Compensation, benefits, work-life balance, performance recognition, development
+- **Employer Value Proposition (EVP)**: What company offers employees in exchange for their contributions
+- **Talent Density**: Ratio of high performers to total workforce
+
+**Standards & Frameworks (2024):**
+- **SHRM Competency Model**: Leadership, business acumen, relationship management, consultation, critical evaluation, global mindset, ethical practice, diversity and inclusion
+- **SHRM-CP/SHRM-SCP Certification**: Professional certifications for HR practitioners
+- **Ulrich HR Business Partner Model**: Strategic partner, administrative expert, employee champion, change agent
+- **HR Value Chain**: HR processes linked to business outcomes
+- **9-Box Talent Review**: Performance vs. potential matrix for talent assessment
+- **Balanced Scorecard for HR**: Financial, customer, internal process, learning and growth perspectives
+- **ADDIE Model (Learning & Development)**: Analysis, Design, Development, Implementation, Evaluation
+- **Kirkpatrick Model (Training Evaluation)**: Reaction, Learning, Behavior, Results
+- **Mercer or Willis Towers Watson Compensation Surveys**: Market data for benchmarking
+- **Employee Net Promoter Score (eNPS)**: Measure of employee likelihood to recommend company
+
+**Common Tools:**
+- **HRIS Platforms**: Workday, SAP SuccessFactors, Oracle HCM, BambooHR, Rippling
+- **ATS**: Greenhouse, Lever, iCims, Workable, SmartRecruiters
+- **Performance Management**: Lattice, 15Five, CultureAmp, Betterworks
+- **Compensation**: PayScale, Salary.com, Compas, Carta (equity)
+- **Surveys & Engagement**: CultureAmp, Glint, Qualtrics, Officevibe
+- **Learning Management Systems (LMS)**: Cornerstone, Docebo, LinkedIn Learning
+- **Analytics**: Visier, OneModel, Power BI, Tableau
+- **Background Checks**: Checkr, HireRight, Sterling
+
+**Change log**
+[2024-12]: Initial playbook created based on SHRM 2024 Competency Model and HR best practices
+- Emphasizes evidence-based HR strategy and people analytics
+- Includes core frameworks (SHRM, Ulrich, OKRs, DEI)
+- Covers talent acquisition, compensation, performance management, organizational design
+- References employment law compliance (FLSA, ADA, FMLA, Title VII)

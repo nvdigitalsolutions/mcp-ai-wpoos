@@ -64,6 +64,11 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		$output = $cpt->sanitize_memory_files( $input );
 		$this->assertEquals( array( 123, 456 ), array_values( $output ) );
 
+		// Test with duplicate values (duplicates should be removed).
+		$input  = array( '123', '456', '123', '789', '456' );
+		$output = $cpt->sanitize_memory_files( $input );
+		$this->assertEquals( array( 123, 456, 789 ), $output );
+
 		// Test non-array input.
 		$output = $cpt->sanitize_memory_files( 'not-an-array' );
 		$this->assertEquals( array(), $output );
@@ -217,6 +222,38 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		unset( $_POST['wp_mcp_ai_profession_memory_files'] );
 		unset( $_POST['wp_mcp_ai_profession_vector_store_id'] );
 		unset( $_POST['wp_mcp_ai_profession_mime_types'] );
+	}
+
+	/**
+	 * Test metabox save with duplicate memory files.
+	 */
+	public function test_metabox_save_with_duplicate_memory_files() {
+		// Create a profession post.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type' => WP_MCP_AI_Profession_CPT::POST_TYPE,
+			)
+		);
+		$post    = get_post( $post_id );
+
+		// Simulate POST data with duplicate IDs (like the issue with playbooks).
+		$_POST['wp_mcp_ai_profession_memory_files'] = array( '3267', '3460', '3267' );
+
+		// Create metabox instance and save.
+		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
+
+		// Mock current user as admin.
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		$metabox->save( $post_id, $post );
+
+		// Verify saved data has duplicates removed.
+		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$this->assertEquals( array( 3267, 3460 ), $memory_files );
+		$this->assertCount( 2, $memory_files, 'Should have exactly 2 unique files, not 3' );
+
+		// Clean up.
+		unset( $_POST['wp_mcp_ai_profession_memory_files'] );
 	}
 
 	/**

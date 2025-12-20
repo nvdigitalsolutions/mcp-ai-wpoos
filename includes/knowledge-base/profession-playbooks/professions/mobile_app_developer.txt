@@ -1,0 +1,1578 @@
+Profession Playbook — Mobile App Developer
+Slug: mobile_app_developer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design and develop native and cross-platform mobile applications for iOS and Android
+- Implement responsive UI/UX following platform-specific design guidelines (Human Interface Guidelines, Material Design)
+- Integrate mobile apps with REST APIs, GraphQL endpoints, and backend services
+- Implement local data storage (SQLite, Realm, Core Data, Room) and state management
+- Configure push notifications, deep linking, and app analytics
+- Optimize app performance, battery usage, and memory management
+- Implement mobile security best practices (SSL pinning, secure storage, obfuscation)
+- Handle app permissions, biometric authentication, and privacy requirements
+- Publish apps to App Store and Google Play following submission guidelines
+- Write unit tests, UI tests, and implement CI/CD pipelines for mobile
+- Success = Stable, performant mobile app that meets requirements, passes app store review, and provides great user experience
+
+Do NOT:
+- Deploy apps to production stores without proper testing and approval
+- Implement features that violate app store policies or privacy regulations
+- Hardcode API keys, secrets, or sensitive data in the app code
+- Bypass platform security features or jailbreak detection mechanisms
+- Make promises about specific app store approval timelines
+- Implement features requiring permissions without clear user benefit justification
+- Copy code or assets that violate intellectual property or licensing terms
+- Guarantee cross-platform feature parity without platform-specific analysis
+
+Escalate / refer out when:
+- App store rejections require policy interpretation or appeals
+- Security vulnerabilities discovered in production apps (engage security team)
+- Performance issues require backend optimization or infrastructure changes
+- Complex animations or custom UI require specialized designer/animator
+- Legal compliance questions (GDPR, COPPA, medical device regulations)
+- Native platform features require advanced platform-specific expertise
+- Third-party SDK integration issues require vendor support
+- App architecture decisions impact multiple teams or services
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What geographic markets will the app target? (Affects localization, regulations, app store requirements)
+- What platforms do we need to support? (iOS, Android, or both? Minimum OS versions?)
+- Is this a new app or enhancement to existing app? (Greenfield vs legacy codebase)
+- What is the target audience and expected user base? (Consumer, enterprise, geographic regions)
+- What are the key features and user flows? (Core functionality, must-haves vs nice-to-haves)
+- What backend services and APIs will the app integrate with? (Existing APIs, authentication method)
+- What are the performance and offline requirements? (Must work offline? Response time expectations?)
+- What is the timeline and release strategy? (Launch date, phased rollout, beta testing)
+- Are there specific compliance or security requirements? (HIPAA, PCI-DSS, biometric auth, data encryption)
+
+1.5) Regional Considerations
+
+Mobile app development faces important regional variations:
+
+**App Store Requirements & Regulations:**
+- **China**: Requires ICP license, must use iOS China region, compliance with local content regulations, restricted API usage (no Google services)
+- **Europe (EU/EEA)**: GDPR consent requirements, DMA (Digital Markets Act) for large platforms, cookie consent for tracking
+- **India**: Data localization requirements, payment processing regulations, content rating by IARC
+- **United States**: COPPA (children under 13), state privacy laws (CCPA, VCDPA), accessibility (ADA)
+- App store compliance varies (Apple App Store, Google Play Store have different regional requirements)
+
+**Localization & Market Considerations:**
+- Language support and right-to-left (RTL) layouts for Arabic, Hebrew markets
+- Currency and payment method preferences (credit cards in US, mobile payments in Asia, bank transfers in Europe)
+- Regional app stores (Huawei AppGallery in China, Samsung Galaxy Store, Amazon Appstore)
+- Cultural sensitivity in UI/UX design and content (colors, symbols, imagery)
+
+**Privacy & Data Protection:**
+- Location permission requirements vary (always precise in US, background restrictions increasing)
+- Biometric authentication regulations (GDPR, BIPA in Illinois)
+- Data collection transparency (App Privacy labels on iOS, Data Safety on Android)
+- Third-party SDK compliance (advertising IDs, analytics tracking consent)
+
+**Performance & Connectivity:**
+- Network quality varies by region (3G/4G/5G prevalence, reliability)
+- App size considerations for markets with limited bandwidth or expensive data
+- Offline-first architecture for regions with poor connectivity
+- CDN and API latency considerations for global users
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Requirements & Discovery
+   - Gather functional requirements and user stories
+   - Review designs, mockups, and style guides
+   - Identify third-party integrations and SDKs needed
+   - Clarify platform-specific requirements (iOS vs Android differences)
+   - Define success metrics and analytics requirements
+   - Review app store guidelines for compliance
+   
+2. Architecture & Planning
+   - Design app architecture (MVVM, MVP, Clean Architecture, etc.)
+   - Plan navigation flow and screen hierarchy
+   - Design local data model and caching strategy
+   - Select appropriate libraries and frameworks
+   - Plan state management approach
+   - Define API contracts and data models
+   - Create test strategy (unit, integration, UI tests)
+   
+3. Implementation
+   - Set up project structure and dev environment
+   - Implement UI components following design system
+   - Build business logic and data layer
+   - Integrate with backend APIs and services
+   - Implement offline support and sync logic
+   - Add analytics, crash reporting, and logging
+   - Configure push notifications and deep links
+   - Implement security measures (SSL pinning, secure storage)
+   
+4. Testing & Quality Assurance
+   - Write and run unit tests (aim for >70% coverage)
+   - Perform UI/automation tests for critical flows
+   - Test on multiple devices and OS versions
+   - Conduct performance testing (startup time, memory, battery)
+   - Test edge cases (poor network, offline mode, interruptions)
+   - Security testing (penetration testing, SSL validation)
+   - Accessibility testing (VoiceOver, TalkBack, dynamic type)
+   
+5. Release & Deployment
+   - Prepare app store listings (screenshots, descriptions, keywords)
+   - Submit builds for internal testing (TestFlight, Internal Testing)
+   - Conduct beta testing with external users
+   - Address feedback and fix critical bugs
+   - Submit to App Store and Google Play
+   - Monitor app store review status and respond to feedback
+   - Configure phased rollout and monitoring
+   - Set up crash reporting and analytics dashboards
+   - Document release notes and known issues
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Working mobile application (iOS .ipa, Android .apk/.aab)
+- Source code in version control (Git) with clear branching strategy
+- App architecture documentation and design patterns used
+- API integration documentation and data flow diagrams
+- Unit and UI test suites with reasonable coverage (>70%)
+- App store listing materials (screenshots, descriptions, keywords)
+- Release notes and version history
+- CI/CD pipeline configuration (fastlane, GitHub Actions, Bitrise)
+- Security documentation (data encryption, secure storage, permissions)
+- Performance benchmarks and optimization recommendations
+- User documentation or in-app onboarding flows
+
+Minimum viable deliverable: Working app + basic tests + app store submission + README
+Gold standard deliverable: Above + comprehensive tests (>80% coverage) + CI/CD automation + analytics + crash reporting + A/B testing + detailed documentation
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+Functionality:
+- [ ] All user stories and acceptance criteria met
+- [ ] Core features working as designed
+- [ ] Navigation and user flows intuitive
+- [ ] Forms and input validation working correctly
+- [ ] Error handling graceful with user-friendly messages
+- [ ] Edge cases handled (empty states, loading, errors)
+
+Performance:
+- [ ] App launch time < 2 seconds (cold start < 5 seconds)
+- [ ] UI responsive (60fps for animations)
+- [ ] Memory usage within acceptable limits (no leaks)
+- [ ] Battery consumption reasonable
+- [ ] Network requests optimized (batching, caching)
+- [ ] App size optimized (< 50MB for iOS, < 20MB for Android base)
+- [ ] Offline mode functional (if applicable)
+
+User Experience:
+- [ ] Follows platform design guidelines (HIG/Material Design)
+- [ ] Consistent styling and theming throughout
+- [ ] Accessibility features implemented (VoiceOver, TalkBack, dynamic type)
+- [ ] Loading states and progress indicators present
+- [ ] Appropriate haptic feedback and animations
+- [ ] Onboarding clear and helpful
+- [ ] Deep linking and universal links working
+
+Security & Privacy:
+- [ ] No hardcoded secrets, API keys, or passwords
+- [ ] Sensitive data encrypted at rest and in transit
+- [ ] SSL certificate pinning implemented
+- [ ] Biometric authentication working correctly
+- [ ] Appropriate permissions requested with clear rationale
+- [ ] Privacy policy linked and compliant
+- [ ] User data handling follows GDPR/CCPA requirements
+- [ ] Third-party SDKs audited for privacy compliance
+
+Testing & CI/CD:
+- [ ] Unit tests written and passing (>70% coverage)
+- [ ] UI tests for critical user paths
+- [ ] Tested on minimum supported OS version
+- [ ] Tested on multiple device sizes and resolutions
+- [ ] CI/CD pipeline configured and running
+- [ ] Crash reporting configured (Firebase, Sentry)
+- [ ] Analytics implemented for key events
+
+App Store Readiness:
+- [ ] App icons for all required sizes provided
+- [ ] Screenshots and preview videos prepared
+- [ ] App description clear and compelling
+- [ ] Keywords researched and optimized
+- [ ] Age rating appropriate
+- [ ] Complies with app store guidelines
+- [ ] Test builds submitted and validated
+
+6) Templates (paste-ready)
+Provide at least 2–5 reusable snippets the assistant can copy into answers:
+
+=== App Architecture Document Template ===
+# Mobile App Architecture
+App: [App Name]
+Platform: [iOS / Android / Both]
+Last Updated: [YYYY-MM-DD]
+
+## Tech Stack
+- **Language**: [Swift / Kotlin / React Native / Flutter]
+- **Min SDK**: [iOS 15+ / Android 8.0 (API 26)+]
+- **Architecture**: [MVVM / MVP / Clean Architecture / MVI]
+- **Dependency Injection**: [SwiftUI native / Koin / Dagger / Hilt]
+- **Network**: [Alamofire / Retrofit / URLSession]
+- **Local Database**: [Core Data / Room / Realm / SQLite]
+- **State Management**: [Combine / Flow / Redux / BLoC]
+
+## Application Layers
+```
+├── Presentation Layer (UI)
+│   ├── Views / Screens
+│   ├── ViewModels
+│   └── UI Components
+├── Domain Layer (Business Logic)
+│   ├── Use Cases
+│   ├── Domain Models
+│   └── Repository Interfaces
+├── Data Layer
+│   ├── Repositories (Implementation)
+│   ├── Network (API Client)
+│   ├── Local (Database, Cache)
+│   └── Data Models (DTOs)
+└── Cross-Cutting
+    ├── Dependency Injection
+    ├── Navigation
+    ├── Utilities
+    └── Extensions
+```
+
+## Key Design Decisions
+1. **Architecture Pattern**: [MVVM chosen for strong iOS/Android support, testability, reactive programming]
+2. **Navigation**: [Coordinator pattern / Navigation Component / React Navigation]
+3. **Data Persistence**: [Room database for offline-first approach]
+4. **Networking**: [Retrofit with OkHttp for type-safe API calls]
+5. **Image Loading**: [Coil / Kingfisher / SDWebImage for efficient caching]
+
+## API Integration
+**Base URL**: https://api.example.com/v1
+**Authentication**: Bearer token (JWT)
+**Endpoints**:
+- GET /users/me - User profile
+- POST /auth/login - Authentication
+- GET /items - List items
+- POST /items - Create item
+
+## Data Flow
+1. User Action → View
+2. View calls ViewModel method
+3. ViewModel calls Use Case
+4. Use Case calls Repository
+5. Repository fetches from Network or Local DB
+6. Data flows back through layers
+7. ViewModel updates LiveData/StateFlow
+8. View observes and updates UI
+
+## Security Measures
+- SSL certificate pinning for API calls
+- Keychain/Keystore for sensitive data storage
+- ProGuard/R8 code obfuscation (Android)
+- Biometric authentication for sensitive operations
+- No sensitive data in logs
+
+## Testing Strategy
+- Unit Tests: ViewModels, Use Cases, Repositories
+- Integration Tests: Database, API integration
+- UI Tests: Critical user flows (login, checkout, etc.)
+- Target Coverage: 70%+ for business logic
+
+## Performance Targets
+- Cold start: < 5 seconds
+- Warm start: < 2 seconds
+- Screen transitions: 60fps
+- Memory usage: < 200MB typical
+- APK size: < 20MB (Android base)
+
+=== Feature Implementation Checklist ===
+# Feature: [Feature Name]
+Sprint: [Sprint Number]
+Developer: [Name]
+Status: [In Progress / Code Review / Testing / Done]
+
+## Requirements
+- [ ] User story reviewed and understood
+- [ ] Designs reviewed (Figma/Sketch/XD)
+- [ ] API contracts confirmed with backend team
+- [ ] Edge cases identified and planned
+- [ ] Acceptance criteria clear
+
+## Implementation
+- [ ] UI components implemented
+- [ ] Business logic in ViewModel/Presenter
+- [ ] API integration completed
+- [ ] Local data persistence (if needed)
+- [ ] Error handling implemented
+- [ ] Loading states added
+- [ ] Offline mode support (if applicable)
+- [ ] Analytics events added
+- [ ] Accessibility labels added
+
+## Testing
+- [ ] Unit tests written for business logic
+- [ ] UI tests for happy path
+- [ ] Tested on minimum OS version
+- [ ] Tested on small and large screens
+- [ ] Tested error scenarios
+- [ ] Tested poor network conditions
+- [ ] Tested with VoiceOver/TalkBack
+- [ ] Tested deep linking (if applicable)
+
+## Code Quality
+- [ ] Code follows style guide
+- [ ] No compiler warnings
+- [ ] No memory leaks detected
+- [ ] Performance acceptable
+- [ ] Code reviewed by peer
+- [ ] Strings externalized for localization
+- [ ] No hardcoded values
+
+## Documentation
+- [ ] Architecture doc updated
+- [ ] README updated (if needed)
+- [ ] API integration documented
+- [ ] Known issues documented
+- [ ] Release notes prepared
+
+=== App Store Submission Checklist ===
+# App Store Submission Checklist
+App: [App Name]
+Version: [X.Y.Z]
+Build Number: [###]
+Release Date: [YYYY-MM-DD]
+
+## Pre-Submission (iOS)
+- [ ] Increment version number (CFBundleShortVersionString)
+- [ ] Increment build number (CFBundleVersion)
+- [ ] Archive build for distribution
+- [ ] Upload to App Store Connect via Xcode or Transporter
+- [ ] Select build in App Store Connect
+- [ ] TestFlight testing completed (minimum 3 testers)
+- [ ] All crashes fixed (crash-free rate >99%)
+
+## Pre-Submission (Android)
+- [ ] Increment versionCode and versionName
+- [ ] Generate signed release AAB (Android App Bundle)
+- [ ] Upload to Google Play Console
+- [ ] Internal testing track tested
+- [ ] Closed beta testing completed (minimum 20 testers for 14 days)
+- [ ] Pre-launch report reviewed and issues fixed
+- [ ] All required API declarations completed
+
+## App Store Connect / Google Play Console Setup
+- [ ] App name and subtitle/short description
+- [ ] Description (4000 chars iOS, 4000 chars Android)
+- [ ] Keywords optimized (100 chars iOS)
+- [ ] Category selected
+- [ ] Age rating completed
+- [ ] Privacy policy URL provided
+- [ ] Support URL provided
+- [ ] Marketing URL (optional)
+- [ ] Promotional text (170 chars iOS)
+
+## Visual Assets
+iOS:
+- [ ] App Icon 1024x1024px
+- [ ] iPhone 6.7" screenshots (5)
+- [ ] iPhone 6.5" screenshots (5)
+- [ ] iPhone 5.5" screenshots (5)
+- [ ] iPad Pro 12.9" screenshots (5)
+- [ ] App Preview video (optional)
+
+Android:
+- [ ] App Icon 512x512px
+- [ ] Feature Graphic 1024x500px
+- [ ] Phone screenshots (minimum 2, max 8)
+- [ ] 7" Tablet screenshots (minimum 2)
+- [ ] 10" Tablet screenshots (minimum 2)
+- [ ] Promo video (YouTube URL, optional)
+
+## Release Notes
+- [ ] What's New text written (4000 chars)
+- [ ] Highlights new features
+- [ ] Mentions bug fixes
+- [ ] Professional and clear language
+
+## Compliance & Privacy
+- [ ] Privacy policy up to date
+- [ ] Data collection disclosures accurate
+- [ ] Third-party SDKs disclosed
+- [ ] Age rating appropriate
+- [ ] Content rating questionnaire completed (Android)
+- [ ] Export compliance (encryption) completed (iOS)
+
+## Pricing & Availability
+- [ ] Price tier selected
+- [ ] Availability territories selected
+- [ ] Release type (manual / automatic)
+- [ ] Phased rollout configured (optional)
+
+## Testing & Validation
+- [ ] Internal testing passed
+- [ ] Beta testing feedback addressed
+- [ ] No critical bugs outstanding
+- [ ] Performance metrics acceptable
+- [ ] App Store guidelines reviewed and followed
+- [ ] Common rejection reasons checked
+
+## Post-Submission
+- [ ] Monitoring app review status
+- [ ] Team notified of submission
+- [ ] Prepared to respond to review feedback
+- [ ] Analytics dashboard ready
+- [ ] Crash reporting monitoring active
+- [ ] Social media announcement prepared
+
+=== Bug Report Template (Mobile) ===
+# Bug Report: [Short Description]
+Priority: [Critical / High / Medium / Low]
+Reported: [YYYY-MM-DD]
+Reporter: [Name]
+Status: [New / In Progress / Fixed / Won't Fix]
+
+## Device Information
+- **Device**: [iPhone 14 Pro / Samsung Galaxy S23]
+- **OS Version**: [iOS 17.2 / Android 14]
+- **App Version**: [X.Y.Z (Build ###)]
+- **Network**: [WiFi / Cellular / Offline]
+
+## Description
+[Clear description of the bug]
+
+## Steps to Reproduce
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+## Expected Behavior
+[What should happen]
+
+## Actual Behavior
+[What actually happens]
+
+## Screenshots/Video
+[Attach visual evidence]
+
+## Logs/Crash Reports
+```
+[Paste relevant logs or crash stack trace]
+```
+
+## Frequency
+- [ ] Happens every time
+- [ ] Happens sometimes
+- [ ] Happened once
+
+## Impact
+- **Users Affected**: [All / % of users / Specific cohort]
+- **Workaround Available**: [Yes/No - describe if yes]
+- **Business Impact**: [Critical feature broken / Minor UI issue]
+
+## Additional Context
+[Any other relevant information]
+
+## Investigation Notes
+[Technical findings during debugging]
+
+## Fix
+**Root Cause**: [Technical explanation]
+**Solution**: [Description of fix]
+**Fixed in**: [Version X.Y.Z]
+**Verification**: [How to verify fix]
+
+=== API Integration Template ===
+# API Integration: [API Name]
+Developer: [Name]
+Date: [YYYY-MM-DD]
+
+## Endpoint Details
+**URL**: https://api.example.com/v1/users
+**Method**: POST
+**Authentication**: Bearer token
+**Content-Type**: application/json
+
+## Request
+```json
+{
+  "username": "string",
+  "email": "string",
+  "password": "string"
+}
+```
+
+## Response (Success - 200)
+```json
+{
+  "id": 123,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "created_at": "2024-12-18T10:00:00Z",
+  "token": "eyJhbGc..."
+}
+```
+
+## Response (Error - 400)
+```json
+{
+  "error": "validation_error",
+  "message": "Email already exists",
+  "field": "email"
+}
+```
+
+## Error Handling
+| Status Code | Meaning | User Message |
+|-------------|---------|--------------|
+| 400 | Bad Request | "Please check your input and try again" |
+| 401 | Unauthorized | "Please log in again" |
+| 403 | Forbidden | "You don't have permission to perform this action" |
+| 404 | Not Found | "The requested resource was not found" |
+| 429 | Too Many Requests | "Too many attempts. Please try again later" |
+| 500 | Server Error | "Something went wrong. Please try again" |
+
+## Implementation (Swift)
+```swift
+struct CreateUserRequest: Encodable {
+    let username: String
+    let email: String
+    let password: String
+}
+
+struct CreateUserResponse: Decodable {
+    let id: Int
+    let username: String
+    let email: String
+    let createdAt: Date
+    let token: String
+}
+
+func createUser(request: CreateUserRequest) async throws -> CreateUserResponse {
+    let url = URL(string: "https://api.example.com/v1/users")!
+    var urlRequest = URLRequest(url: url)
+    urlRequest.httpMethod = "POST"
+    urlRequest.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+    urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    
+    let encoder = JSONEncoder()
+    encoder.keyEncodingStrategy = .convertToSnakeCase
+    urlRequest.httpBody = try encoder.encode(request)
+    
+    let (data, response) = try await URLSession.shared.data(for: urlRequest)
+    
+    guard let httpResponse = response as? HTTPURLResponse else {
+        throw APIError.invalidResponse
+    }
+    
+    guard (200...299).contains(httpResponse.statusCode) else {
+        throw APIError.httpError(statusCode: httpResponse.statusCode)
+    }
+    
+    let decoder = JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+    decoder.dateDecodingStrategy = .iso8601
+    
+    return try decoder.decode(CreateUserResponse.self, from: data)
+}
+```
+
+## Implementation (Kotlin)
+```kotlin
+data class CreateUserRequest(
+    val username: String,
+    val email: String,
+    val password: String
+)
+
+data class CreateUserResponse(
+    val id: Int,
+    val username: String,
+    val email: String,
+    @Json(name = "created_at") val createdAt: String,
+    val token: String
+)
+
+suspend fun createUser(request: CreateUserRequest): CreateUserResponse {
+    return apiService.createUser(request)
+}
+```
+
+## Testing
+- [ ] Successfully creates user with valid data
+- [ ] Returns 400 for invalid email format
+- [ ] Returns 400 for duplicate email
+- [ ] Returns 401 for missing/invalid auth token
+- [ ] Handles network timeouts gracefully
+- [ ] Retries on transient failures
+
+## Caching Strategy
+- Not cached (mutation operation)
+- Invalidate user list cache after successful creation
+
+7) Examples of excellent outputs
+
+Example 1: SwiftUI View with MVVM (iOS)
+```swift
+// UserProfileView.swift
+import SwiftUI
+import Combine
+
+// MARK: - View
+struct UserProfileView: View {
+    @StateObject private var viewModel = UserProfileViewModel()
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            content
+                .navigationTitle("Profile")
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Save") {
+                            Task {
+                                await viewModel.saveProfile()
+                            }
+                        }
+                        .disabled(!viewModel.hasChanges || viewModel.isLoading)
+                    }
+                }
+        }
+        .onAppear {
+            Task {
+                await viewModel.loadProfile()
+            }
+        }
+        .alert("Error", isPresented: $viewModel.showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
+    }
+    
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Form {
+                Section("Personal Information") {
+                    TextField("Name", text: $viewModel.name)
+                        .textContentType(.name)
+                        .autocorrectionDisabled()
+                    
+                    TextField("Email", text: $viewModel.email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                    
+                    DatePicker("Birthday", selection: $viewModel.birthday, displayedComponents: .date)
+                }
+                
+                Section("Settings") {
+                    Toggle("Push Notifications", isOn: $viewModel.pushEnabled)
+                    Toggle("Dark Mode", isOn: $viewModel.darkModeEnabled)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - ViewModel
+@MainActor
+class UserProfileViewModel: ObservableObject {
+    @Published var name: String = ""
+    @Published var email: String = ""
+    @Published var birthday: Date = Date()
+    @Published var pushEnabled: Bool = false
+    @Published var darkModeEnabled: Bool = false
+    
+    @Published var isLoading: Bool = false
+    @Published var showError: Bool = false
+    @Published var errorMessage: String = ""
+    
+    private let userRepository: UserRepository
+    private var cancellables = Set<AnyCancellable>()
+    private var originalUser: User?
+    
+    var hasChanges: Bool {
+        guard let original = originalUser else { return false }
+        return name != original.name ||
+               email != original.email ||
+               birthday != original.birthday ||
+               pushEnabled != original.pushEnabled ||
+               darkModeEnabled != original.darkModeEnabled
+    }
+    
+    init(userRepository: UserRepository = UserRepositoryImpl()) {
+        self.userRepository = userRepository
+    }
+    
+    func loadProfile() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            let user = try await userRepository.getCurrentUser()
+            self.originalUser = user
+            self.name = user.name
+            self.email = user.email
+            self.birthday = user.birthday
+            self.pushEnabled = user.pushEnabled
+            self.darkModeEnabled = user.darkModeEnabled
+        } catch {
+            showErrorAlert("Failed to load profile: \(error.localizedDescription)")
+        }
+    }
+    
+    func saveProfile() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        guard hasChanges else { return }
+        
+        let updatedUser = User(
+            id: originalUser?.id ?? "",
+            name: name,
+            email: email,
+            birthday: birthday,
+            pushEnabled: pushEnabled,
+            darkModeEnabled: darkModeEnabled
+        )
+        
+        do {
+            try await userRepository.updateUser(updatedUser)
+            self.originalUser = updatedUser
+            
+            // Show success feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        } catch {
+            showErrorAlert("Failed to save profile: \(error.localizedDescription)")
+        }
+    }
+    
+    private func showErrorAlert(_ message: String) {
+        errorMessage = message
+        showError = true
+    }
+}
+
+// MARK: - Model
+struct User: Codable, Identifiable {
+    let id: String
+    var name: String
+    var email: String
+    var birthday: Date
+    var pushEnabled: Bool
+    var darkModeEnabled: Bool
+}
+
+// MARK: - Repository
+protocol UserRepository {
+    func getCurrentUser() async throws -> User
+    func updateUser(_ user: User) async throws
+}
+
+class UserRepositoryImpl: UserRepository {
+    private let apiClient: APIClient
+    
+    init(apiClient: APIClient = .shared) {
+        self.apiClient = apiClient
+    }
+    
+    func getCurrentUser() async throws -> User {
+        try await apiClient.request(endpoint: .getCurrentUser)
+    }
+    
+    func updateUser(_ user: User) async throws {
+        try await apiClient.request(endpoint: .updateUser(user))
+    }
+}
+
+// MARK: - Tests
+import XCTest
+@testable import MyApp
+
+class UserProfileViewModelTests: XCTestCase {
+    var viewModel: UserProfileViewModel!
+    var mockRepository: MockUserRepository!
+    
+    override func setUp() {
+        super.setUp()
+        mockRepository = MockUserRepository()
+        viewModel = UserProfileViewModel(userRepository: mockRepository)
+    }
+    
+    func testLoadProfile_Success() async {
+        // Given
+        let expectedUser = User(
+            id: "123",
+            name: "John Doe",
+            email: "john@example.com",
+            birthday: Date(),
+            pushEnabled: true,
+            darkModeEnabled: false
+        )
+        mockRepository.userToReturn = expectedUser
+        
+        // When
+        await viewModel.loadProfile()
+        
+        // Then
+        XCTAssertEqual(viewModel.name, "John Doe")
+        XCTAssertEqual(viewModel.email, "john@example.com")
+        XCTAssertEqual(viewModel.pushEnabled, true)
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.showError)
+    }
+    
+    func testLoadProfile_Error() async {
+        // Given
+        mockRepository.shouldFail = true
+        
+        // When
+        await viewModel.loadProfile()
+        
+        // Then
+        XCTAssertTrue(viewModel.showError)
+        XCTAssertFalse(viewModel.errorMessage.isEmpty)
+    }
+    
+    func testHasChanges_ReturnsTrueWhenModified() async {
+        // Given
+        mockRepository.userToReturn = User(
+            id: "123",
+            name: "John",
+            email: "john@example.com",
+            birthday: Date(),
+            pushEnabled: false,
+            darkModeEnabled: false
+        )
+        await viewModel.loadProfile()
+        
+        // When
+        viewModel.name = "Jane"
+        
+        // Then
+        XCTAssertTrue(viewModel.hasChanges)
+    }
+}
+
+class MockUserRepository: UserRepository {
+    var userToReturn: User?
+    var shouldFail = false
+    
+    func getCurrentUser() async throws -> User {
+        if shouldFail {
+            throw NSError(domain: "test", code: 1)
+        }
+        return userToReturn ?? User(id: "1", name: "", email: "", birthday: Date(), pushEnabled: false, darkModeEnabled: false)
+    }
+    
+    func updateUser(_ user: User) async throws {
+        if shouldFail {
+            throw NSError(domain: "test", code: 1)
+        }
+    }
+}
+```
+
+Example 2: Jetpack Compose MVVM (Android)
+```kotlin
+// UserProfileScreen.kt
+package com.example.app.ui.profile
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+// MARK: - Screen
+@Composable
+fun UserProfileScreen(
+    viewModel: UserProfileViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile") },
+                actions = {
+                    TextButton(
+                        onClick = { viewModel.saveProfile() },
+                        enabled = uiState.hasChanges && !uiState.isLoading
+                    ) {
+                        Text("Save")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            else -> {
+                ProfileContent(
+                    uiState = uiState,
+                    onNameChange = viewModel::updateName,
+                    onEmailChange = viewModel::updateEmail,
+                    onPushToggle = viewModel::togglePush,
+                    onDarkModeToggle = viewModel::toggleDarkMode,
+                    modifier = Modifier.padding(padding)
+                )
+            }
+        }
+    }
+    
+    // Error dialog
+    uiState.errorMessage?.let { error ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Error") },
+            text = { Text(error) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ProfileContent(
+    uiState: UserProfileUiState,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPushToggle: (Boolean) -> Unit,
+    onDarkModeToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Personal Information",
+            style = MaterialTheme.typography.titleMedium
+        )
+        
+        OutlinedTextField(
+            value = uiState.name,
+            onValueChange = onNameChange,
+            label = { Text("Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        OutlinedTextField(
+            value = uiState.email,
+            onValueChange = onEmailChange,
+            label = { Text("Email") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = "Settings",
+            style = MaterialTheme.typography.titleMedium
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Push Notifications")
+            Switch(
+                checked = uiState.pushEnabled,
+                onCheckedChange = onPushToggle
+            )
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Dark Mode")
+            Switch(
+                checked = uiState.darkModeEnabled,
+                onCheckedChange = onDarkModeToggle
+            )
+        }
+    }
+}
+
+// MARK: - ViewModel
+@HiltViewModel
+class UserProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow(UserProfileUiState())
+    val uiState: StateFlow<UserProfileUiState> = _uiState
+    
+    private var originalUser: User? = null
+    
+    fun loadProfile() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            userRepository.getCurrentUser()
+                .onSuccess { user ->
+                    originalUser = user
+                    _uiState.value = UserProfileUiState(
+                        name = user.name,
+                        email = user.email,
+                        pushEnabled = user.pushEnabled,
+                        darkModeEnabled = user.darkModeEnabled,
+                        isLoading = false
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to load profile: ${error.message}"
+                    )
+                }
+        }
+    }
+    
+    fun saveProfile() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            val updatedUser = User(
+                id = originalUser?.id ?: "",
+                name = _uiState.value.name,
+                email = _uiState.value.email,
+                pushEnabled = _uiState.value.pushEnabled,
+                darkModeEnabled = _uiState.value.darkModeEnabled
+            )
+            
+            userRepository.updateUser(updatedUser)
+                .onSuccess {
+                    originalUser = updatedUser
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        hasChanges = false
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to save profile: ${error.message}"
+                    )
+                }
+        }
+    }
+    
+    fun updateName(name: String) {
+        _uiState.value = _uiState.value.copy(
+            name = name,
+            hasChanges = true
+        )
+    }
+    
+    fun updateEmail(email: String) {
+        _uiState.value = _uiState.value.copy(
+            email = email,
+            hasChanges = true
+        )
+    }
+    
+    fun togglePush(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            pushEnabled = enabled,
+            hasChanges = true
+        )
+    }
+    
+    fun toggleDarkMode(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            darkModeEnabled = enabled,
+            hasChanges = true
+        )
+    }
+    
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+}
+
+// MARK: - UI State
+data class UserProfileUiState(
+    val name: String = "",
+    val email: String = "",
+    val pushEnabled: Boolean = false,
+    val darkModeEnabled: Boolean = false,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val hasChanges: Boolean = false
+)
+
+// MARK: - Tests
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+import org.junit.Assert.*
+
+class UserProfileViewModelTest {
+    private lateinit var viewModel: UserProfileViewModel
+    private lateinit var mockRepository: MockUserRepository
+    
+    @Before
+    fun setup() {
+        mockRepository = MockUserRepository()
+        viewModel = UserProfileViewModel(mockRepository)
+    }
+    
+    @Test
+    fun `loadProfile success updates UI state`() = runTest {
+        // Given
+        val user = User("123", "John", "john@example.com", true, false)
+        mockRepository.userToReturn = Result.success(user)
+        
+        // When
+        viewModel.loadProfile()
+        advanceUntilIdle()
+        
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals("John", state.name)
+        assertEquals("john@example.com", state.email)
+        assertTrue(state.pushEnabled)
+        assertFalse(state.isLoading)
+        assertNull(state.errorMessage)
+    }
+    
+    @Test
+    fun `updateName sets hasChanges to true`() {
+        // When
+        viewModel.updateName("Jane")
+        
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals("Jane", state.name)
+        assertTrue(state.hasChanges)
+    }
+}
+```
+
+Example 3: CI/CD Pipeline Configuration (fastlane + GitHub Actions)
+```ruby
+# fastlane/Fastfile
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_ci if ENV['CI']
+  end
+
+  desc "Run tests"
+  lane :test do
+    scan(
+      scheme: "MyApp",
+      devices: ["iPhone 14 Pro", "iPhone SE (3rd generation)"],
+      clean: true,
+      code_coverage: true,
+      output_directory: "./test_output",
+      result_bundle: true
+    )
+  end
+
+  desc "Build for App Store"
+  lane :release do
+    # Increment build number
+    increment_build_number(
+      build_number: ENV['BUILD_NUMBER'] || number_of_commits
+    )
+    
+    # Match certificates
+    match(
+      type: "appstore",
+      readonly: true
+    )
+    
+    # Build app
+    gym(
+      scheme: "MyApp",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "./build",
+      export_options: {
+        provisioningProfiles: {
+          "com.example.myapp" => "match AppStore com.example.myapp"
+        }
+      }
+    )
+    
+    # Upload to TestFlight
+    pilot(
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      notify_external_testers: false,
+      changelog: "Bug fixes and improvements"
+    )
+    
+    # Send Slack notification
+    slack(
+      message: "New build uploaded to TestFlight!",
+      success: true,
+      slack_url: ENV['SLACK_WEBHOOK_URL']
+    )
+  end
+end
+
+platform :android do
+  desc "Run tests"
+  lane :test do
+    gradle(task: "test")
+    gradle(task: "connectedAndroidTest") if ENV['RUN_INSTRUMENTED_TESTS']
+  end
+
+  desc "Build and deploy to Google Play"
+  lane :release do
+    # Increment version code
+    android_set_version_code(
+      version_code: ENV['BUILD_NUMBER'] || number_of_commits
+    )
+    
+    # Build release AAB
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      print_command: false,
+      properties: {
+        "android.injected.signing.store.file" => ENV['KEYSTORE_FILE'],
+        "android.injected.signing.store.password" => ENV['KEYSTORE_PASSWORD'],
+        "android.injected.signing.key.alias" => ENV['KEY_ALIAS'],
+        "android.injected.signing.key.password" => ENV['KEY_PASSWORD']
+      }
+    )
+    
+    # Upload to Google Play (internal testing track)
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_screenshots: true,
+      skip_upload_images: true
+    )
+    
+    # Send Slack notification
+    slack(
+      message: "New build uploaded to Google Play Internal Testing!",
+      success: true,
+      slack_url: ENV['SLACK_WEBHOOK_URL']
+    )
+  end
+end
+```
+
+```yaml
+# .github/workflows/ios.yml
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+      
+      - name: Install dependencies
+        run: |
+          bundle install
+          pod install
+      
+      - name: Run tests
+        run: bundle exec fastlane test
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test_output/
+      
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./test_output/coverage.xml
+
+  release:
+    runs-on: macos-13
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+      
+      - name: Install dependencies
+        run: |
+          bundle install
+          pod install
+      
+      - name: Build and deploy
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: bundle exec fastlane release
+```
+
+```yaml
+# .github/workflows/android.yml
+name: Android CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      
+      - name: Run unit tests
+        run: ./gradlew test
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: app/build/reports/tests/
+      
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./app/build/reports/jacoco/test/jacocoTestReport.xml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo $KEYSTORE_BASE64 | base64 -d > keystore.jks
+      
+      - name: Build and deploy
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          bundle install
+          bundle exec fastlane release
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Native App**: App built with platform-specific languages (Swift/Objective-C for iOS, Kotlin/Java for Android)
+- **Cross-Platform**: Single codebase for multiple platforms (React Native, Flutter, Xamarin)
+- **MVVM**: Model-View-ViewModel architecture pattern
+- **MVP**: Model-View-Presenter architecture pattern
+- **Clean Architecture**: Layered architecture with separation of concerns
+- **State Management**: Managing app state (Redux, BLoC, Combine, Flow)
+- **Dependency Injection**: Providing dependencies from external sources (Hilt, Koin, Swinject)
+- **Deep Linking**: URLs that open specific app screens
+- **Universal Links**: iOS feature allowing web URLs to open app
+- **App Links**: Android feature allowing web URLs to open app
+- **Push Notifications**: Remote notifications sent from server
+- **APK**: Android Package Kit - Android app package format
+- **AAB**: Android App Bundle - optimized Android distribution format
+- **IPA**: iOS App Store Package - iOS app package format
+- **TestFlight**: Apple's beta testing platform
+- **Internal Testing**: Google Play's closed testing track
+
+Standards & Frameworks (2024):
+- **iOS Human Interface Guidelines** (2024): Apple's official design guidelines
+- **Material Design 3** (2023): Google's design system for Android
+- **Swift 5.9** / **SwiftUI**: Modern iOS development
+- **Kotlin 1.9** / **Jetpack Compose**: Modern Android development
+- **App Store Review Guidelines** (2024): Apple submission requirements
+- **Google Play Policies** (2024): Android submission requirements
+- **OWASP Mobile Top 10** (2024): Mobile security vulnerabilities
+- **iOS 15+** / **Android 8.0+** (API 26): Typical minimum deployment targets
+
+Architecture Patterns:
+- **MVVM** (Model-View-ViewModel): Separation of UI and business logic
+- **MVP** (Model-View-Presenter): Alternative to MVVM
+- **Clean Architecture**: Uncle Bob's layered architecture
+- **MVI** (Model-View-Intent): Unidirectional data flow
+- **Redux/Flux**: Predictable state management
+- **Repository Pattern**: Data source abstraction
+- **Coordinator Pattern**: Navigation management (iOS)
+
+Common Tools & Technologies:
+iOS Development:
+- **Xcode 15+**: Apple's IDE
+- **Swift Package Manager**: Dependency management
+- **CocoaPods**: Alternative dependency manager
+- **SwiftUI**: Declarative UI framework
+- **UIKit**: Traditional iOS UI framework
+- **Combine**: Reactive programming framework
+- **Core Data**: Local database
+- **Alamofire**: Networking library
+- **Kingfisher/SDWebImage**: Image loading and caching
+
+Android Development:
+- **Android Studio**: Official IDE
+- **Gradle**: Build system
+- **Jetpack Compose**: Modern declarative UI
+- **Android Views**: Traditional UI system
+- **Kotlin Coroutines/Flow**: Asynchronous programming
+- **Room**: Local database (SQLite wrapper)
+- **Retrofit**: Type-safe HTTP client
+- **Hilt/Dagger**: Dependency injection
+- **Coil/Glide**: Image loading
+
+Cross-Platform:
+- **React Native**: JavaScript framework
+- **Flutter**: Dart framework by Google
+- **Xamarin**: C# framework by Microsoft
+
+Testing:
+- **XCTest**: iOS unit and UI testing
+- **JUnit 5**: Android unit testing
+- **Espresso**: Android UI testing
+- **XCUITest**: iOS UI testing
+- **Detox**: Cross-platform E2E testing
+- **Appium**: Cross-platform mobile automation
+
+CI/CD & DevOps:
+- **fastlane**: Automation tool for iOS and Android
+- **GitHub Actions**: CI/CD platform
+- **Bitrise**: Mobile-focused CI/CD
+- **CircleCI**: Popular CI/CD platform
+- **Jenkins**: Self-hosted CI/CD
+
+Analytics & Monitoring:
+- **Firebase Analytics**: Google's analytics platform
+- **Firebase Crashlytics**: Crash reporting
+- **Sentry**: Error tracking and performance monitoring
+- **Mixpanel**: Product analytics
+- **Amplitude**: Behavioral analytics
+
+App Store Optimization (ASO):
+- **App Store Connect**: Apple's developer portal
+- **Google Play Console**: Google's developer portal
+- **Sensor Tower**: ASO and market intelligence
+- **App Annie**: App market data
+
+Design Tools:
+- **Figma**: Collaborative design tool
+- **Sketch**: macOS design tool
+- **Adobe XD**: Design and prototyping
+- **Zeplin**: Design handoff tool
+
+Change log
+2024-12: Initial playbook created based on iOS 17, Android 14, and 2024 mobile development best practices
+- Emphasis on modern declarative UI (SwiftUI, Jetpack Compose)
+- MVVM architecture pattern with clean separation
+- Async/await for iOS, Coroutines/Flow for Android
+- CI/CD automation with fastlane and GitHub Actions
+- App Store and Google Play submission guidelines (2024)
+- Security best practices and OWASP Mobile Top 10
+- Comprehensive testing strategies and code examples

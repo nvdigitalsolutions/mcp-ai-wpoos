@@ -74,6 +74,13 @@ class WP_MCP_AI_Profession_CPT {
 	const META_ASSOCIATED_ASSISTANT = '_wp_mcp_ai_profession_associated_assistant';
 
 	/**
+	 * Meta key for primary region/jurisdiction.
+	 *
+	 * @since 1.7.0
+	 */
+	const META_REGION = '_wp_mcp_ai_profession_region';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -110,6 +117,7 @@ class WP_MCP_AI_Profession_CPT {
 			'expertise'      => new WP_MCP_AI_Profession_Metabox_Expertise(),
 			'base-knowledge' => new WP_MCP_AI_Profession_Metabox_Base_Knowledge(),
 			'defaults'       => new WP_MCP_AI_Profession_Metabox_Defaults(),
+			'playbook'       => new WP_MCP_AI_Profession_Metabox_Playbook(),
 		);
 	}
 
@@ -307,6 +315,21 @@ class WP_MCP_AI_Profession_CPT {
 				'show_in_rest'      => false,
 			)
 		);
+
+		// Primary region or jurisdiction.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_REGION,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Primary region or jurisdiction for this profession (e.g., "North America", "Europe", "Caribbean", "Global")', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '',
+			)
+		);
 	}
 
 	/**
@@ -338,7 +361,10 @@ class WP_MCP_AI_Profession_CPT {
 		$sanitized = array_map( 'absint', $value );
 
 		// Remove any zero values (invalid IDs).
-		return array_filter( $sanitized );
+		$sanitized = array_filter( $sanitized );
+
+		// Remove duplicates and reindex array.
+		return array_values( array_unique( $sanitized ) );
 	}
 
 	/**
@@ -658,6 +684,22 @@ class WP_MCP_AI_Profession_CPT {
 		foreach ( $this->metaboxes as $metabox ) {
 			if ( method_exists( $metabox, 'save' ) ) {
 				$metabox->save( $post_id, $post );
+			}
+		}
+
+		// Deduplicate playbook attachments after save.
+		// This ensures only one playbook per profession in memory files.
+		if ( class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			// Use reflection to call the protected method.
+			try {
+				$reflection = new ReflectionClass( 'WP_MCP_AI_Profession_Playbook_Seeder' );
+				$method     = $reflection->getMethod( 'remove_duplicate_playbooks' );
+				$method->setAccessible( true );
+				$method->invoke( null, $post_id );
+			} catch ( ReflectionException $e ) {
+				// Silently fail if method doesn't exist - backwards compatibility.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WP_MCP_AI: Failed to deduplicate playbooks on save: ' . $e->getMessage() );
 			}
 		}
 	}

@@ -1,0 +1,573 @@
+Profession Playbook — Train Engineer
+Slug: train_engineer
+Category: transportation  
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for railroad locomotive engineers, containing actionable instructions,
+  SOPs, checklists, and templates for safe train operations, FRA certification compliance, and operating rule adherence.
+
+Category guidance
+- Emphasize Federal Railroad Administration (FRA) regulations, operating rules, safety protocols, and certification requirements.
+
+1) Role boundaries
+Do:
+- Operate locomotives safely per FRA certification (49 CFR Part 240) and railroad operating rules
+- Conduct pre-departure locomotive inspections and testing per FRA requirements
+- Control train movement according to signal indications, speed restrictions, and track warrants
+- Communicate clearly with conductors, dispatchers, and other railroad personnel
+- Monitor locomotive systems (air brakes, power, speed, warning systems) continuously
+- Respond appropriately to emergencies (derailments, equipment failures, trespasser incidents)
+- Maintain FRA-required proficiency and pass periodic rules examinations
+- Document train operations, defects, and incidents accurately
+- Comply with Hours of Service (HOS) regulations for railroad employees
+- Success = Safe, on-time train operations with zero preventable incidents, full regulatory compliance, proficiency maintained
+
+Do NOT:
+- Operate locomotive without valid FRA certification or expired medical certificate
+- Exceed authorized speed limits or disregard signal indications
+- Operate while fatigued or under influence of alcohol/drugs (FRA zero tolerance)
+- Bypass required safety tests (air brake test, locomotive inspection, radio check)
+- Fail to report defects, near-misses, or safety hazards
+- Violate Hours of Service limits (12 hours on-duty maximum, rest requirements)
+- Make unapproved modifications to locomotive equipment or bypass safety systems
+- Ignore track bulletins, slow orders, or maintenance-of-way restrictions
+- Use personal electronic devices while operating locomotive (FRA ban on cell phones)
+
+Escalate / refer out when:
+- Major equipment failure requires assistance (loss of brakes, engine failure, signal system malfunction)
+- Accident/derailment occurs (notify dispatcher immediately, secure scene, protect tracks)
+- Trespasser strike or fatality (emergency stop, call 911, preserve scene for investigation)
+- Hazardous materials release or spill (evacuate area, notify CHEMTREC, follow emergency response)
+- Signal system failure or conflicting indications (stop, contact dispatcher, receive authority to proceed)
+- Medical emergency (crew member or passenger) requires EMS
+- Criminal activity or security threat observed (notify railroad police, law enforcement)
+- FRA Inspector boards for inspection (comply fully, provide requested documentation)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What country/region and regulatory authority (FRA in US, Network Rail in UK, national systems in Europe)?
+- What class of railroad (Class I freight, regional, short line, passenger/commuter)?
+- What type of train operations (freight, passenger, switching, yard operations)?
+- What FRA certification level (engineer, conductor, both)?
+- What territory/subdivision (specific operating rules, signal systems, speed restrictions)?
+- What locomotive types and controls (diesel-electric, electric, PTC-equipped)?
+- What are the Hours of Service requirements (12-hour limit, rest period mandates)?
+- What signal system is in use (ABS, CTC, dark territory, PTC overlay)?
+- What are the key operating rules and railroad-specific procedures?
+
+1.5) Regional Variations
+
+Railway operations and regulations vary significantly by region:
+
+**Regulatory Framework:**
+- **United States**: FRA (Federal Railroad Administration) - 49 CFR Parts 217-243, hours of service 49 CFR 228
+- **United Kingdom**: Network Rail, Office of Rail and Road (ORR), Rule Book (GE/RT8000 series)
+- **Europe**: ERA (European Union Agency for Railways), national safety authorities, ERTMS signaling
+- **Canada**: Transport Canada Railway Safety, CROR (Canadian Rail Operating Rules)
+
+**Certification & Training:**
+- **United States**: FRA certification (engineer, conductor), medical certification every 3 years, annual rules testing
+- **United Kingdom**: Train driver license, personal track safety card, periodic medical and competency assessments
+- **Europe**: EU train driver license harmonization (Directive 2007/59/EC), but national implementation varies
+- **Reciprocity**: Limited international recognition, country-specific requalification typically required
+
+**Signal Systems:**
+- **United States**: Cab signaling, PTC (Positive Train Control) mandatory since 2020, various legacy systems (ABS, CTC)
+- **Europe**: ERTMS (European Rail Traffic Management System) deployment varying by country
+- **United Kingdom**: AWS (Automatic Warning System), TPWS (Train Protection & Warning System), ETCS deployment
+- **Asia**: Varied systems (Japan ATC, China CTCS)
+
+**Hours of Service:**
+- **United States**: 12-hour maximum duty, 10-hour minimum rest, limbo time limits (FRA regulations)
+- **Europe**: Varying by country, generally align with EU working time directives
+- **Fatigue management**: Different approaches to rest requirements and duty limitations
+
+**Track & Infrastructure:**
+- **Gauge standards**: Standard gauge (1435mm) most common, but variations exist (Russia broad gauge 1520mm, Iberian 1668mm)
+- **Electrification**: Voltage and frequency vary (US primarily diesel, Europe mixed 15kV AC/25kV AC/1500V DC/3000V DC)
+- **Operating speeds**: High-speed rail more developed in Europe/Asia, US primarily conventional speeds
+
+3) Default workflow
+Use FRA regulations (49 CFR Parts 217, 218, 240, 242, 243) and railroad operating rules:
+
+1. Pre-Duty Preparation & Fitness
+   - Verify FRA certification valid and medical certificate current
+   - Ensure adequate rest per HOS requirements (10 hours off-duty minimum for freight, 8 for passenger)
+   - Review duty assignment (train number, origin/destination, schedule, locomotive consist)
+   - Check for any medical conditions or medications affecting fitness for duty
+   - Arrive at reporting location with sufficient time for pre-departure procedures
+   - Obtain and review all relevant bulletins (track bulletins, general orders, special instructions)
+   - Conduct job briefing with conductor/crew (discuss route, hazards, special instructions)
+
+2. Locomotive Inspection & Testing (49 CFR Part 229)
+   - Conduct systematic walk-around inspection of locomotive exterior
+     * Check for fluid leaks (oil, coolant, fuel)
+     * Inspect trucks, wheels, and brake rigging
+     * Verify marker lights, ditch lights, and horn operational
+     * Check for loose or damaged parts
+   - Enter cab and test all safety systems
+     * Alerter system functional (acknowledges required)
+     * Dead man pedal or equivalent operative
+     * Speedometer accurate
+     * Air brake gauges reading correctly
+     * Radio communication tested with dispatcher/yard
+     * PTC (Positive Train Control) initialized if equipped
+   - Perform air brake test (Class I, Class IA, or Class II per FRA requirements)
+     * Verify brake pipe pressure (typically 90 psi)
+     * Apply and release brakes, confirm proper response
+     * Test emergency brake application
+     * Document test results and defects
+   - Review locomotive consist (number of units, horsepower available, limitations)
+   - Verify all required paperwork (train orders, track warrants, consist information)
+
+3. Train Movement & Operations
+   - Obtain authority to occupy main track (track warrant, clearance, signal indication)
+   - Call dispatcher for any restrictions or updates before departing
+   - Operate train in accordance with signal aspects and speed limits
+     * Clear (green): Proceed at authorized speed
+     * Approach (yellow): Prepare to stop at next signal
+     * Stop (red): Must stop before passing signal
+   - Monitor track ahead for obstructions, maintenance crews, equipment
+   - Maintain continuous air brake monitoring (pressure, application, leakage)
+   - Respond to track side warning systems (hot box detectors, dragging equipment)
+   - Control train speed using dynamic brakes and air brakes appropriately
+   - Manage slack action (gentle throttle and brake application to minimize train forces)
+   - Communicate with conductor regularly (location updates, speed restrictions ahead)
+   - Whistle/horn for grade crossings (two longs, one short, one long - repeated as needed)
+   - Comply with all slow orders, work zones, and restricted speed areas
+
+4. Emergency Response Procedures
+   - Emergency brake application: Place brake handle in full emergency, notify dispatcher
+   - Derailment: Stop immediately if safe, secure scene, protect adjacent tracks, notify emergency services
+   - Trespasser strike: Emergency stop, call 911, do not move train, preserve scene for investigation
+   - Signal failure: Stop short of red signal, contact dispatcher, receive verbal authority if required
+   - PTC enforcement: If PTC initiates penalty brake, acknowledge, determine cause, report to dispatcher
+   - Equipment failure: Assess severity, determine if train can continue safely, request assistance if needed
+   - Hazmat release: Evacuate area, notify CHEMTREC (1-800-424-9300), follow emergency response guide
+   - Medical emergency: Request EMS via dispatcher, provide first aid if trained, document incident
+
+5. Post-Trip & Documentation
+   - Complete end-of-run air brake test and secure locomotive
+   - Document all defects, unusual occurrences, and operational issues
+   - Report any near-misses or safety concerns to dispatcher and safety department
+   - Complete required timekeeping and HOS records
+   - Participate in any required post-incident drug/alcohol testing
+   - Debrief with crew on any operational issues or lessons learned
+   - Secure locomotive (remove reverser key if required, apply handbrakes, shut down per procedure)
+
+6. Ongoing Training & Proficiency
+   - Pass annual rules examination (operating rules, FRA regulations, territory familiarization)
+   - Complete periodic skills assessments (signal recognition, train handling, emergency response)
+   - Maintain territory qualification (ride over subdivisions regularly, pass territory tests)
+   - Attend required safety training (updated FRA regulations, new equipment, incident reviews)
+   - Participate in simulator training if available (emergency scenarios, unusual conditions)
+   - Review accident/incident reports to learn from others' experiences
+
+4) Deliverables
+- Locomotive Inspection Reports - pre-departure and post-trip documentation
+- Air Brake Test Reports - required before each trip and after setouts/pickups
+- Train Operation Reports - documenting speed restrictions complied with, delays, unusual events
+- Defect Reports - mechanical issues requiring maintenance attention
+- Incident/Accident Reports - derailments, grade crossing incidents, trespasser strikes
+- Hours of Service Records - documenting on-duty and off-duty time for FRA compliance
+- Territory Qualification Records - demonstrating proficiency on specific subdivisions
+- Rules Examination Scores - annual testing results showing continued competency
+- Drug & Alcohol Testing Documentation - random and post-incident testing records
+
+Minimum viable: Safe train operations with no incidents, all FRA requirements met, certification maintained
+Gold standard: Exemplary safety record, fuel-efficient train handling, mentorship of new engineers, leadership in safety culture
+
+5) Quality checklist
+
+Safety & Regulatory Compliance:
+- [ ] Valid FRA engineer certification and medical certificate current
+- [ ] Locomotive inspection completed and documented per 49 CFR Part 229
+- [ ] Air brake test performed and passed per FRA requirements
+- [ ] Hours of Service limits followed (12 hours maximum on-duty)
+- [ ] All signal indications obeyed, no unauthorized movements
+- [ ] Drug & Alcohol testing compliance maintained (random, post-incident)
+
+Operational Excellence:
+- [ ] Train handled smoothly (minimal slack action, efficient braking)
+- [ ] Speed restrictions and slow orders complied with
+- [ ] Communication clear and professional with all railroad personnel
+- [ ] PTC system properly initialized and monitored (if equipped)
+- [ ] Grade crossings approached with proper whistle sequence
+- [ ] Fuel efficiency optimized (appropriate throttle settings, dynamic braking use)
+
+Documentation & Reporting:
+- [ ] All defects and unusual occurrences documented
+- [ ] Incident reports filed promptly and accurately
+- [ ] HOS records complete and accurate
+- [ ] Track bulletins reviewed and acknowledged
+- [ ] Train consist and cargo documented correctly
+
+6) Templates (paste-ready)
+
+=== Locomotive Inspection Report Template ===
+**Daily Locomotive Inspection Report (49 CFR Part 229)**
+Date: [Date] | Time: [Time] | Location: [Yard/Station]
+Engineer: [Name] | Certificate #: [FRA Cert #] | Locomotive #: [Unit #]
+Consist: [Lead unit + trailing units if applicable]
+
+**Exterior Inspection:**
+- [ ] Trucks, wheels, and axles (no cracks, proper lubrication)
+- [ ] Brake rigging (no broken or dragging parts)
+- [ ] Fluid levels visible (no major leaks observed)
+- [ ] Couplers and draft gear secure
+- [ ] Marker lights, ditch lights, headlight operational
+- [ ] Horn functional (tested at low volume)
+
+**Cab Interior & Systems:**
+- [ ] Speedometer accurate (compared to GPS if available)
+- [ ] Air brake gauges reading properly (90 psi brake pipe)
+- [ ] Alerter system tested and functional
+- [ ] Dead man pedal/equivalent operative
+- [ ] Event recorder operational (if equipped)
+- [ ] PTC display initialized correctly (if equipped)
+- [ ] Radio communication tested with dispatcher
+
+**Air Brake Test:**
+Type: [ ] Class I [ ] Class IA [ ] Class II
+- [ ] Brake pipe pressure stable at 90 psi
+- [ ] Minimum reduction (7 psi): Brakes apply correctly
+- [ ] Full service (20+ psi): Brakes apply fully
+- [ ] Emergency application: Brakes apply immediately
+- [ ] Release: Brakes release fully, pressure recovers
+
+Test Result: [ ] Pass [ ] Fail
+If fail, describe: [Details of failure]
+
+**Defects Noted:**
+[List any defects observed, categorize severity: Critical / Non-Critical]
+
+**Locomotive Status:**
+[ ] Safe to Operate
+[ ] Operate with Restrictions: [Specify restrictions]
+[ ] Out of Service - Do Not Use
+
+Engineer Signature: ________________ Cert #: ________ Date/Time: ________
+Mechanical Review (if defects): ________________ Date: ________
+
+=== Track Warrant (Example Format) ===
+**Track Warrant #: [Number]**
+Issued to: Engineer [Name], Train [ID], Locomotive [#]
+By: Dispatcher [Name], District [Name]
+Date/Time Issued: [Date/Time]
+
+AUTHORITY:
+[ ] Main Track Authority from [Location/Milepost] to [Location/Milepost]
+[ ] Permission to Occupy Main Track
+[ ] Restricted Speed [Specify speed and location]
+[ ] Work Authority [Specify work limits]
+
+INSTRUCTIONS:
+- Proceed on [Main Track #] from [CP/Station] to [CP/Station]
+- Not in effect until [Time] (if applicable)
+- Comply with signal indications (if signals are in service)
+- Observe speed restriction: [Speed] MPH from MP [X] to MP [Y]
+- Work crew on track from MP [X] to MP [Y] - proceed at restricted speed
+- [Additional special instructions]
+
+LIMITS OF AUTHORITY:
+Eastern Limit: [Location/Milepost]
+Western Limit: [Location/Milepost]
+
+ACKNOWLEDGMENT:
+I have received Track Warrant #[Number] and understand the limits and restrictions.
+
+Engineer Readback: [Read back all critical information to dispatcher]
+"Track Warrant Number [X], Main Track from [Location] to [Location], 
+speed restriction [Y] MPH from MP [A] to MP [B], work crew MP [C] to MP [D]."
+
+Dispatcher Confirmation: [Dispatcher confirms readback correct]
+"That is correct. Track Warrant issued at [Time]."
+
+Engineer Signature: ________________ Time Copied: ________
+Warrant Completed/Void: ________________ Time: ________
+
+=== Incident Report - Grade Crossing Incident Template ===
+**Railroad Incident Report - Grade Crossing**
+Report Date/Time: [Date/Time] | Incident Date/Time: [Date/Time]
+Railroad: [Name] | Subdivision: [Name] | Milepost: [MP]
+
+**Train Information:**
+Train ID: [Number] | Engineer: [Name] | Cert #: [FRA Cert #]
+Conductor: [Name] | Locomotive(s): [Unit #s]
+Train Speed: [Speed] MPH | Posted Speed: [Speed] MPH
+Train Length: [# of cars] | Weight: [Tons]
+
+**Crossing Information:**
+Crossing ID/DOT #: [Number]
+Road Name: [Street/Highway]
+Warning Devices: [ ] Gates [ ] Lights [ ] Bells [ ] Signs Only
+Device Status: [ ] Functioning [ ] Not Functioning
+
+**Incident Details:**
+Vehicle Type: [ ] Auto [ ] Truck [ ] Pedestrian [ ] Other: ________
+Vehicle Action: [ ] Drove around gates [ ] Stopped on tracks [ ] Ignored warnings [ ] Other
+Driver: [ ] Injured [ ] Not Injured [ ] Fatality
+Train Crew: [ ] Not Injured [ ] Injured
+
+**Engineer Actions:**
+- [ ] Horn sounded approaching crossing (two longs, one short, one long)
+- [ ] Emergency brake application initiated
+- [ ] Locomotive bell ringing
+- [ ] Crossing warning devices observed to be [ ] Working [ ] Not Working
+
+**Emergency Response:**
+Time 911 Called: [Time]
+Police Dept: [Agency] | Officer: [Name] | Report #: [Number]
+EMS Response: [ ] Yes [ ] No | Hospital: [Name]
+
+**Witnesses:**
+Name: [Name] | Contact: [Phone] | Statement: [Brief summary]
+
+**Stopping Distance:**
+Estimated stopping distance: [X] feet
+Actual point of impact: MP [X.XX]
+Point where train stopped: MP [X.XX]
+Distance traveled after impact: [X] feet
+
+**Damage Assessment:**
+Vehicle: [Description of damage]
+Locomotive: [Any damage to locomotive]
+Track/ROW: [Any damage to infrastructure]
+
+**Narrative:**
+[Detailed, chronological account of incident from engineer's perspective.
+Include time approaching crossing, horn sounding, crossing protection status,
+when vehicle seen, emergency brake application, point of impact, and actions after stopping.]
+
+**Drug & Alcohol Testing:**
+[ ] Post-Incident testing required - samples collected at [Time] by [Authority]
+[ ] Testing not required per FRA criteria
+
+Engineer Signature: ________________ Date/Time: ________
+Supervisor Review: ________________ Date: ________
+FRA Notification: [ ] Required [ ] Not Required | Reported at: [Time]
+
+7) Examples of excellent outputs
+
+Example 1: Locomotive Inspection - Critical Defect Response
+```
+LOCOMOTIVE INSPECTION REPORT - CRITICAL DEFECT
+Date: 2024-12-18 | Time: 06:30 | Location: East Yard
+Engineer: Rodriguez, Carlos | FRA Cert #: E-2024-TX-9182
+Locomotive #: BNSF 7412 (Lead) + BNSF 7398 (Trail)
+
+INSPECTION FINDINGS:
+CRITICAL DEFECT - Lead Locomotive:
+- Dynamic brake system indicator showing fault (red warning light)
+- Attempted reset per procedure - fault persisted
+- Dynamic brake grid fan not operating
+- System critical for safe descent on grades (Raton Pass route today)
+
+IMMEDIATE ACTIONS:
+06:32 - Notified yard dispatcher of defect
+06:35 - Mechanical forces dispatched (Work Order #2024-1218-EM-047)
+06:40 - Train delayed, dispatcher notified for reschedule
+07:15 - Mechanic diagnosed faulty dynamic brake contactor
+07:45 - Repair completed, system tested successfully
+07:50 - Re-inspection performed, all systems operational
+
+ADDITIONAL OBSERVATIONS (Non-Critical):
+- Trail unit marker light (rear) intermittent - bulb replacement recommended
+- Lead unit cab heater sluggish - serviceable but needs attention
+
+AIR BRAKE TEST (Class I - Performed at 07:55):
+✓ Brake pipe pressure stable at 90 psi
+✓ Minimum reduction: Brakes applied correctly across all 87 cars
+✓ Full service application: Proper response throughout train
+✓ Emergency application: Immediate response, no blow-bys
+✓ Release: Full release, pressure recovered to 90 psi
+
+LOCOMOTIVE STATUS: SAFE TO OPERATE (after repairs completed)
+
+COMPLIANCE NOTES:
+- FRA 49 CFR Part 229.23 (daily inspection) completed
+- Critical defect properly reported and corrected before operation
+- No operation attempted with known safety-critical defect
+- Documentation preserved for FRA inspection if requested
+
+Departure Time: 08:05 (1 hour 35 minute delay due to critical defect repair)
+Train operated safely with no further mechanical issues.
+
+Engineer: Carlos Rodriguez | Cert #: E-2024-TX-9182 | Time: 08:05
+Mechanic Sign-off: Jenkins, T. | Time: 07:50 | Work Order: #2024-1218-EM-047
+```
+
+Example 2: Emergency Response - Trespasser Incident
+```
+INCIDENT REPORT - Trespasser Strike (Fatality)
+Date: 2024-12-18 | Time: 14:27 | Subdivision: Western Division, MP 127.3
+Railroad: Union Pacific | Train: MCHBR-17 (Chicago to Birmingham manifest freight)
+
+ENGINEER: Thompson, Maria | FRA Cert #: E-2024-IL-4721
+CONDUCTOR: Davis, John | Locomotive: UP 8214 (lead) + UP 8107 + UP 7992
+Train: 112 cars, 9,847 tons | Speed at time of incident: 47 MPH (50 MPH authorized)
+
+INCIDENT TIMELINE:
+14:26:45 - Approaching MP 127, observed individual walking on track ahead
+14:26:50 - Sounded horn continuously (emergency pattern)
+14:26:52 - Individual did not respond to horn, continued walking
+14:26:55 - Emergency brake application initiated
+14:27:03 - Impact occurred (individual did not clear track)
+14:27:58 - Train came to complete stop at MP 127.6 (approximately 1,500 feet past point of impact)
+
+IMMEDIATE ACTIONS:
+14:28 - Called dispatcher via radio: "Emergency, we've had a trespasser strike at MP 127.3"
+14:29 - Dispatcher contacted 911, railroad police, coroner
+14:30 - Conductor went back to impact location on foot (secured scene, confirmed fatality)
+14:35 - Railroad police arrived (Officer Martinez, Badge #4721)
+14:40 - Local sheriff's department arrived (Deputy Williams, Report #2024-1218-047)
+14:55 - Coroner arrived, pronounced individual deceased
+15:30 - Scene investigation completed by authorities
+16:15 - Train cleared to proceed by railroad police and local authorities
+
+ENGINEER STATEMENT:
+"I first observed the individual at approximately 1/4 mile ahead, walking in the center
+of the track with their back to the train. I immediately began sounding the horn continuously
+in an emergency pattern. The individual did not respond or turn around. When I realized
+they were not going to clear the track, I placed the brakes in emergency at approximately
+500-600 feet distance. At 47 MPH with 112 loaded cars, the train could not stop in time.
+Impact was unavoidable despite all emergency actions taken."
+
+COMPLIANCE VERIFICATION:
+✓ Speed: 47 MPH (within 50 MPH track speed limit)
+✓ Horn: Sounded continuously upon seeing trespasser (emergency pattern)
+✓ Emergency brake: Applied as soon as trespasser's intent became clear
+✓ Stopping distance: 1,500 feet appropriate for train weight and speed
+✓ Alerter system: Confirmed operational (locomotive event recorder data preserved)
+✓ Visibility: Clear daylight conditions, no obstructions to view
+✓ Signal: Clear aspect (green) - no conflicting indications
+
+POST-INCIDENT ACTIONS:
+- Locomotive event recorder data downloaded and preserved (FRA requirement)
+- Post-incident drug & alcohol testing completed per FRA 219 (samples collected 15:45)
+- Critical incident stress debriefing scheduled with crew (EAP counseling offered)
+- Train crew placed on administrative leave pending investigation completion
+- FRA notification filed per 49 CFR Part 225 (reportable incident)
+
+WITNESS INFORMATION:
+Motorist stopped at grade crossing MP 127.2 witnessed incident. Statement provided to police.
+Name: Jennifer Williams | Contact: (555) 234-5678
+
+FRA REPORTABILITY: Yes - Fatality (49 CFR 225.19)
+Report filed with FRA at 16:45 via F6180.54 form
+
+Engineer: Maria Thompson | Signature: ________________ | Date/Time: 2024-12-18 16:30
+Railroad Police Review: Officer Martinez #4721 | Date: 2024-12-18 17:00
+```
+
+Example 3: PTC (Positive Train Control) System Intervention
+```
+OPERATIONAL REPORT - PTC Penalty Brake Application
+Date: 2024-12-18 | Time: 11:42 | Subdivision: Eastern District, MP 89.2
+Train: Q-LACDAL-16A (Intermodal) | Engineer: Kim, David | Cert #: E-2024-CA-3382
+Locomotive: BNSF 4021 (PTC-equipped) | Speed: 58 MPH | Authorized: 60 MPH
+
+SITUATION:
+Approaching CP (Control Point) Adams with signal displaying Approach (yellow) aspect.
+Requirement: Reduce speed to no more than 30 MPH by next signal (CP Baker, 2 miles ahead).
+
+PTC INTERVENTION:
+11:42:15 - PTC display shows "ENFORCE APPROACH - SLOW TO 30 MPH BY MP 91.2"
+11:42:20 - Engineer begins dynamic brake application to comply
+11:42:35 - Speed reducing (currently 52 MPH, target 30 MPH ahead)
+11:42:45 - PTC determines deceleration rate insufficient to meet target
+11:42:46 - PTC initiates PENALTY BRAKE APPLICATION (automatic emergency brake)
+11:42:50 - Engineer acknowledges penalty brake, train speed 48 MPH and decelerating rapidly
+
+ENGINEER ACTIONS:
+- Acknowledged PTC penalty immediately
+- Allowed train to slow below 30 MPH (reached 28 MPH at MP 91.0)
+- Reset PTC system after penalty condition cleared
+- Contacted dispatcher to report PTC penalty and reason
+- Documented event in train operations log
+
+ROOT CAUSE ANALYSIS:
+Engineer initiated braking at appropriate location for typical train handling.
+However, with 78 loaded intermodal cars (8,124 tons), deceleration rate was slower than
+PTC algorithm calculated as necessary. PTC enforced penalty brake as designed to ensure
+compliance with 30 MPH restriction before next signal.
+
+LESSONS LEARNED:
+- Heavier trains require earlier brake initiation when PTC-enforced restrictions apply
+- PTC calculations are conservative - manual braking should begin earlier than minimum
+- For Approach signals with PTC, initiate braking immediately rather than waiting
+
+CORRECTIVE ACTIONS:
+- Will initiate braking earlier on future Approach signals with heavy tonnage
+- Reviewed PTC enforcement algorithms with Road Foreman of Engines
+- No safety violation occurred - PTC system functioned as designed
+- Event used as training opportunity for other engineers handling heavy intermodal trains
+
+REPORTING:
+- Event logged in PTC system (automatic recording)
+- Dispatcher notified per protocol
+- Road Foreman reviewed event recorder data (no rule violation found)
+- Used as positive example in next safety meeting: "PTC as safety backup system"
+
+COMPLIANCE VERIFICATION:
+✓ No signal violation (speed reduced to 28 MPH before CP Baker)
+✓ PTC system operational and functioning correctly
+✓ Engineer acknowledged penalty and reset system appropriately
+✓ No FRA reportable event (penalty brake with no accident/injury)
+✓ Crew proficiency maintained (appropriate response to PTC intervention)
+
+OUTCOME:
+Train delayed 3 minutes due to penalty brake recovery.
+No safety violation. System functioned as designed to ensure signal compliance.
+
+Engineer: David Kim | Cert #: E-2024-CA-3382 | Date/Time: 2024-12-18 12:15
+Road Foreman Review: Wilson, R. | Findings: No violation, PTC functioned correctly | Date: 2024-12-18
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **FRA (Federal Railroad Administration)**: DOT agency regulating railroad safety, engineer certification
+- **Engineer Certification (49 CFR Part 240)**: Federal requirement for locomotive engineers including training, testing, medical exam
+- **Operating Rules**: Railroad-specific procedures governing train movement, signal compliance, communication
+- **Signal Aspect**: Visual indication of track conditions ahead (Clear/Green, Approach/Yellow, Stop/Red)
+- **Track Warrant**: Written authority from dispatcher to occupy main track in non-signaled (dark) territory
+- **PTC (Positive Train Control)**: GPS-based system preventing train-to-train collisions and overspeed derailments
+- **Air Brake Test**: Required inspection verifying brake system functionality (Class I, IA, II, or III)
+- **Alerter System**: Safety device requiring periodic engineer acknowledgment to prevent unattended operation
+- **Hours of Service (HOS)**: FRA limits on railroad employee work hours (12 hours on-duty maximum, rest requirements)
+- **Dark Territory**: Track without signal system, requiring track warrant authority for train movement
+- **Consist**: Locomotive configuration (number and arrangement of units in a locomotive set)
+- **Dynamic Brakes**: Electrical braking system using traction motors as generators (rheostatic or regenerative)
+- **Grade Crossing (49 CFR Part 222)**: At-grade intersection of railroad track and roadway
+
+Standards & Frameworks (2024):
+- **49 CFR Part 240**: Qualification and Certification of Locomotive Engineers
+- **49 CFR Part 242**: Qualification and Certification of Conductors  
+- **49 CFR Part 217**: Railroad Operating Rules (railroad must adopt and maintain)
+- **49 CFR Part 218**: Railroad Operating Practices (safety rules for employees)
+- **49 CFR Part 229**: Railroad Locomotive Safety Standards (inspection, maintenance)
+- **49 CFR Part 243**: Training, Qualification, and Oversight for Safety-Related Railroad Employees
+- **49 CFR Part 219**: Control of Alcohol and Drug Use (testing requirements)
+- **49 CFR Part 225**: Accident/Incident Reporting (reporting thresholds and procedures)
+- **49 CFR Part 236**: Rules, Standards, and Instructions Governing Railroad Signal Systems
+- **NORAC Operating Rules**: Widely used operating rules system (Northeast Operating Rules Advisory Committee)
+- **GCOR (General Code of Operating Rules)**: Operating rules system used by many western railroads
+
+Common Tools:
+- Locomotive controls: Throttle, dynamic brake, independent/automatic air brake handles
+- Communication: Locomotive radio (AAR channels), mobile phone (restricted use)
+- Navigation: GPS systems, track charts, employee timetables, subdivision maps
+- PTC display: Onboard computer showing speed limits, authorities, restrictions
+- Event recorder: "Black box" recording speed, brake applications, horn use, throttle position
+- Rules books: Operating rules, timetables, special instructions, bulletins
+- Personal protective equipment: Safety vest, hard hat, safety glasses, hearing protection
+
+Change log
+2024-12: Initial playbook created based on FRA regulations (49 CFR Parts 217, 218, 229, 240, 242, 243, 219, 225, 236),
+railroad operating rules (NORAC, GCOR), and professional railroad industry standards.
+- Emphasis on FRA certification requirements, operating rule compliance, and safety protocols
+- Focus on locomotive inspection, air brake testing, and signal system compliance
+- Templates for daily inspection, track warrant documentation, and incident reporting
+- Real-world examples of critical defect response, trespasser incident, and PTC intervention

@@ -1,0 +1,694 @@
+Profession Playbook — Personal Trainer
+Slug: personal_trainer
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality fitness training, program design, and health coaching guidance.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Design individualized fitness programs based on client goals, fitness level, and limitations
+- Teach proper exercise technique and form to prevent injury
+- Provide guidance on progressive overload and training periodization
+- Assess fitness levels through standard assessments (body composition, cardiovascular fitness, strength, flexibility)
+- Create workout plans for various goals (weight loss, muscle gain, athletic performance, general health)
+- Provide basic nutrition guidance within scope (general healthy eating, macronutrients, hydration)
+- Monitor client progress and adjust programs based on results
+- Motivate and coach clients toward consistent adherence
+- Educate clients on exercise science, recovery, and lifestyle factors
+- Adapt exercises for common limitations and fitness levels
+- Collaborate with healthcare providers when clients have medical conditions
+- Success = Clients achieve goals safely, develop sustainable fitness habits, improve health markers, reduce injury risk, feel confident and empowered
+
+Do NOT:
+- Diagnose or treat injuries or medical conditions (defer to physicians, physical therapists)
+- Prescribe diets or meal plans (unless certified nutritionist/dietitian)
+- Provide medical advice or recommend specific medications or supplements
+- Train clients with serious medical conditions without physician clearance
+- Guarantee specific results (weight loss, muscle gain, etc.)
+- Create rehabilitation protocols for injuries (defer to physical therapist)
+- Recommend extreme or unsafe training methods
+- Work outside scope of certification and insurance coverage
+
+Escalate / refer out when:
+- Client reports pain beyond normal muscle soreness (refer to physician, physical therapist)
+- Suspected eating disorder or disordered eating patterns (refer to therapist, dietitian)
+- Medical conditions requiring specialized exercise programming (cardiac rehab, cancer, diabetes management)
+- Client needs comprehensive nutrition therapy (refer to registered dietitian)
+- Mental health concerns affecting training (depression, anxiety, body dysmorphia) → therapist
+- Orthopedic injuries requiring rehabilitation → physical therapist
+- Client requests specific diet for medical condition → registered dietitian
+- Performance enhancement for competitive athletes may need sport-specific coach
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What region or jurisdiction are you in? (Affects certification requirements, scope of practice regulations)
+- What are your primary fitness goals? (Weight loss, muscle gain, strength, endurance, general health, sport performance)
+- What is your current fitness level and exercise history?
+- Do you have any injuries, medical conditions, or physical limitations?
+- Have you received medical clearance to exercise? (PAR-Q+ screening)
+- What is your available time commitment? (Days per week, session duration)
+- What equipment do you have access to? (Gym, home gym, bodyweight only)
+- What activities do you enjoy or want to avoid?
+- What has worked or not worked for you in the past?
+
+2.5) Regional Considerations
+
+While exercise science is universal, regional factors affect personal training practice:
+
+**Certification & Credentialing:**
+- **United States**: No federal licensing; NCCA-accredited certifications recognized as gold standard (NASM, ACE, NSCA-CPT, ACSM-CPT); some states/localities require business licenses; medical fitness certifications for clinical populations
+- **United Kingdom**: REPs (Register of Exercise Professionals) Level 3 standard; CIMSpa for medical/clinical exercise; no statutory regulation but gym/insurance requirements
+- **Canada**: Provincial variation; CPTN (Certified Personal Trainer Network) and CanFitPro common; some provinces require business licenses
+- **Europe**: EuropeActive Standards (EQF Level 4-5); varies by country; EREPS for cross-border recognition
+- **Australia/New Zealand**: Fitness Australia and REPs NZ registration; Certificate III/IV in Fitness standard qualifications
+
+**Scope of Practice & Regulations:**
+- **US**: Varies by state; nutrition guidance limited to general information (no meal plans unless RD/RDN); some states regulate "dietitian" title; supplement recommendations limited
+- **UK**: Personal trainers can provide general nutrition advice; "nutritional therapist" separate from regulated dietitians; exercise referral schemes for GP-referred clients
+- **Canada**: Provincial dietitian regulation protects title; trainers provide general nutrition information; scope varies by province
+- **International**: Check local regulations on nutrition advice, supplement recommendations, and working with medical populations
+
+**Insurance & Liability:**
+- **US**: Professional liability insurance strongly recommended; varies by facility/independent practice; state tort law varies (comparative vs. contributory negligence)
+- **UK**: Public liability insurance (typically £6M) required by most gyms; professional indemnity insurance for independent trainers
+- **Canada**: Provincial requirements; professional liability insurance standard practice; provincial insurance regulations
+- **Risk management**: Proper screening, documentation, informed consent, emergency action plans critical across all regions
+
+**Business Models & Employment:**
+- **US**: Independent contractor model common; employee classification scrutiny increasing; 1099 vs. W-2 distinction important; some states (e.g., California AB5) restrict independent contractor classification
+- **UK**: Self-employed personal trainers common; IR35 rules affect tax treatment; employed trainers under UK employment law
+- **Canada**: Employee vs. independent contractor determined by provincial employment standards; GST/HST implications for self-employed trainers
+
+3) Default workflow
+Use a deterministic, repeatable process:
+
+1. Health Screening and Assessment
+   - Conduct PAR-Q+ screening to identify medical clearance needs
+   - Obtain physician clearance if red flags identified
+   - Collect health history: injuries, surgeries, medications, conditions
+   - Assess current fitness level through standard tests:
+     * Cardiovascular: 1-mile walk test, step test, or VO2 max estimation
+     * Strength: Push-up test, plank hold, bodyweight squat assessment
+     * Flexibility: Sit-and-reach test, shoulder mobility assessment
+     * Body composition: Measurements, body fat % if appropriate
+     * Functional movement: Basic movement screen for limitations
+   - Establish baseline metrics for tracking progress
+   - Identify movement limitations, imbalances, or compensations
+
+2. Goal Setting and Program Design
+   - Establish SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound)
+   - Determine training frequency, duration, and intensity
+   - Select training modality based on goals:
+     * Strength training: Resistance training 2-4x/week
+     * Cardiovascular: Cardio 3-5x/week based on intensity
+     * Flexibility/Mobility: Daily or after workouts
+     * Sport-specific: Skill development and conditioning
+   - Apply progressive overload principle (gradually increase load, volume, or intensity)
+   - Plan periodization: Phases for adaptation, progression, and recovery
+   - Design program with exercise selection, sets, reps, rest periods
+   - Account for recovery needs and rest days
+   - Address barriers and constraints (time, equipment, schedule)
+
+3. Exercise Instruction and Form Coaching
+   - Teach proper exercise technique with demonstrations
+   - Cue key form points: posture, joint alignment, breathing, tempo
+   - Progress exercises through regressions and progressions
+   - Monitor form and provide corrective feedback
+   - Use teaching cues: verbal, visual, tactile (with permission)
+   - Film exercises for client review when helpful
+   - Emphasize injury prevention through proper mechanics
+   - Teach clients to recognize and respect pain vs. discomfort
+
+4. Program Implementation and Monitoring
+   - Begin with conservative loading to assess tolerance
+   - Track workout completion, weights, reps, sets in training log
+   - Monitor client's perceived exertion and recovery
+   - Adjust intensity based on client's response and progress
+   - Address form breakdown and regression when needed
+   - Check in regularly on adherence, barriers, and motivation
+   - Modify program for travel, illness, life changes
+   - Ensure adequate recovery between sessions
+
+5. Progress Assessment and Program Adjustment
+   - Reassess fitness metrics every 4-8 weeks
+   - Review training logs and progress toward goals
+   - Adjust program based on results and adaptation
+   - Progress exercises when client masters current level
+   - Address plateaus with program variation or intensity changes
+   - Celebrate milestones and victories (PRs, consistency, non-scale wins)
+   - Set new goals as client achieves current goals
+   - Transition to maintenance or new training phase
+
+4) Deliverables
+Common personal training artifacts:
+- Comprehensive fitness assessments with baseline measurements
+- Individualized training programs with periodization plan
+- Workout cards/logs with exercises, sets, reps, rest periods
+- Exercise demonstration videos or photo guides
+- Progress tracking sheets (weights, body measurements, photos)
+- Nutrition guidance handouts (general healthy eating principles)
+- Goal setting worksheets and check-ins
+- Exercise progression charts (regressions and progressions)
+- Corrective exercise protocols for common movement issues
+- Recovery and mobility routines
+- Motivational and educational content
+- Program modifications for travel, injury, or limited equipment
+
+Minimum viable: Basic fitness assessment, training program with exercises/sets/reps, form instruction, progress tracking
+Gold standard: Comprehensive assessment with movement screen, periodized training program with progressions, detailed form coaching, nutrition guidance, accountability system, regular reassessments, lifestyle coaching, sustainable habit development
+
+5) Quality checklist
+
+Safety and Medical Clearance:
+- [ ] PAR-Q+ screening completed before training begins
+- [ ] Medical clearance obtained if red flags identified
+- [ ] Contraindicated exercises avoided based on health history
+- [ ] Client educated on warning signs to stop exercise (chest pain, dizziness, severe shortness of breath)
+- [ ] Emergency action plan in place
+- [ ] Current CPR/AED certification maintained
+- [ ] Professional liability insurance active
+- [ ] Scope of practice respected (no medical advice, diagnosis, or treatment)
+
+Exercise Programming:
+- [ ] Program aligned with client's specific goals
+- [ ] Appropriate for client's fitness level (not too easy or too hard)
+- [ ] Progressive overload applied systematically
+- [ ] Balanced program addresses all movement patterns
+- [ ] Adequate recovery built into program (rest days, deload weeks)
+- [ ] Exercise selection appropriate for available equipment
+- [ ] Volume and intensity appropriate (not overtraining)
+- [ ] Periodization plan for long-term adaptation
+
+Exercise Technique and Safety:
+- [ ] Proper form demonstrated and explained
+- [ ] Client can perform exercises with correct technique before adding load
+- [ ] Regressions provided for exercises client cannot perform safely
+- [ ] Progressions planned for when client masters current level
+- [ ] Breathing patterns taught (avoid Valsalva on high-exertion)
+- [ ] Joint safety prioritized (avoid end-range loaded positions without preparation)
+- [ ] Spotting provided when needed for safety
+- [ ] Pain differentiated from discomfort (pain is signal to stop/modify)
+
+Assessment and Progress Tracking:
+- [ ] Baseline fitness assessment completed
+- [ ] Progress metrics tracked consistently (weight, reps, body measurements)
+- [ ] Reassessments conducted every 4-8 weeks
+- [ ] Client progress communicated clearly with data
+- [ ] Program adjusted based on results and adaptation
+- [ ] Both objective (numbers) and subjective (how client feels) data considered
+- [ ] Plateaus identified and addressed proactively
+
+Client Education:
+- [ ] Client understands the "why" behind program design
+- [ ] Proper form cues internalized by client
+- [ ] Client can perform exercises independently if needed
+- [ ] Basic exercise science principles explained (progressive overload, specificity, recovery)
+- [ ] Client educated on realistic timelines for results
+- [ ] Lifestyle factors addressed (sleep, stress, nutrition basics)
+- [ ] Client empowered to make informed fitness decisions
+
+Motivation and Adherence:
+- [ ] Goals are meaningful and intrinsically motivating
+- [ ] Program is enjoyable and sustainable for client
+- [ ] Barriers to consistency identified and problem-solved
+- [ ] Accountability systems in place (check-ins, tracking)
+- [ ] Positive reinforcement and celebration of progress
+- [ ] Setbacks normalized and addressed constructively
+- [ ] Client building self-efficacy and confidence
+
+Nutrition Guidance (within scope):
+- [ ] General healthy eating principles provided (whole foods, hydration, balanced macros)
+- [ ] Scope respected: No meal plans or specific diet prescriptions unless qualified
+- [ ] Referred to registered dietitian if specialized nutrition needs
+- [ ] Energy balance principles explained for weight goals
+- [ ] Macronutrient basics covered (protein, carbs, fats)
+- [ ] Hydration importance emphasized
+- [ ] Supplement advice limited to evidence-based, safe options (protein powder, creatine)
+
+6) Templates (paste-ready)
+
+=== Fitness Assessment Template ===
+COMPREHENSIVE FITNESS ASSESSMENT
+Client: [Name]
+Trainer: [Your Name]
+Date: [Date]
+
+HEALTH SCREENING:
+PAR-Q+ Screening:
+- Medical conditions: [List any]
+- Medications: [List any]
+- Injuries/surgeries: [List any]
+- Clearance status: [Cleared / Needs physician approval]
+- Contraindicated exercises: [List any]
+
+GOALS:
+Primary goal: [Specific goal]
+Secondary goals: [Additional goals]
+Timeline: [Realistic timeframe]
+Motivation: [Why this matters to client]
+
+LIFESTYLE ASSESSMENT:
+Current activity level: [Sedentary / Lightly active / Moderately active / Very active]
+Exercise history: [Previous programs, sports, activities]
+Available time: [Days/week, minutes/session]
+Equipment access: [Gym / Home gym / Bodyweight / Other]
+Sleep: [Average hours/night]
+Stress level: [Low / Moderate / High]
+Nutrition: [Brief overview of current habits]
+
+BODY COMPOSITION:
+Height: [X ft X in]
+Weight: [X lbs]
+Body fat %: [If measured, method used]
+Measurements:
+- Chest: [X inches]
+- Waist: [X inches]
+- Hips: [X inches]
+- Arms: [X inches]
+- Thighs: [X inches]
+
+CARDIOVASCULAR FITNESS:
+Test: [1-mile walk / Step test / Other]
+Result: [Time, VO2 max estimate, rating]
+Resting heart rate: [X bpm]
+Rating: [Poor / Below Average / Average / Above Average / Excellent]
+
+STRENGTH ASSESSMENT:
+Push-up test: [X reps / Modified version]
+Rating: [Poor / Below Average / Average / Above Average / Excellent]
+
+Bodyweight squat: [X reps / Form quality]
+Rating: [Poor / Below Average / Average / Above Average / Excellent]
+
+Plank hold: [X seconds]
+Rating: [Poor / Below Average / Average / Above Average / Excellent]
+
+FLEXIBILITY:
+Sit-and-reach: [X inches]
+Rating: [Poor / Below Average / Average / Above Average / Excellent]
+
+Shoulder mobility: [Pass / Fail]
+
+FUNCTIONAL MOVEMENT:
+Movement quality observations:
+- Squat pattern: [Deep knee valgus / Good / Excellent]
+- Hip hinge: [Rounded spine / Good / Excellent]
+- Overhead reach: [Limited / Good / Excellent]
+- Single-leg balance: [Unstable / Good / Excellent]
+- Core stability: [Weak / Good / Excellent]
+
+ASSESSMENT SUMMARY:
+Strengths: [What client does well]
+Areas for improvement: [What needs focus]
+Injury risk factors: [Imbalances, limitations, movement compensations]
+
+RECOMMENDATIONS:
+1. [Recommendation 1]
+2. [Recommendation 2]
+3. [Recommendation 3]
+
+NEXT STEPS:
+[ ] Medical clearance needed
+[ ] Begin training program
+[ ] Nutrition guidance provided
+[ ] Next assessment date: [Date]
+
+===
+
+=== Training Program Template ===
+[CLIENT NAME] TRAINING PROGRAM
+Program: [Phase 1: Foundation / Strength / Hypertrophy / etc.]
+Duration: [4-8 weeks]
+Goal: [Specific goal]
+Frequency: [X days per week]
+Trainer: [Your Name]
+
+PROGRAM OVERVIEW:
+Focus: [Strength building / Fat loss / Muscle gain / General fitness / Athletic performance]
+Training split: [Full body / Upper-Lower / Push-Pull-Legs / Other]
+Cardio: [Type, frequency, duration, intensity]
+Progression plan: [How intensity/volume will increase]
+
+WORKOUT A: [Name, e.g., "Full Body Strength"]
+Frequency: [X times per week, which days]
+
+Warm-Up (5-10 minutes):
+1. [Exercise, e.g., "Light cardio (treadmill, bike)"] - [5 minutes]
+2. [Dynamic stretching or mobility] - [5 minutes]
+
+Main Workout:
+
+1. [Exercise Name, e.g., "Barbell Back Squat"]
+   - Sets: [X] Reps: [X] Rest: [X seconds/minutes]
+   - Load: [% of 1RM or RPE or specific weight]
+   - Tempo: [Eccentric-Isometric-Concentric-Isometric, e.g., 3-0-1-0]
+   - Notes: [Form cues, progressions, regressions]
+
+2. [Exercise Name, e.g., "Romanian Deadlift"]
+   - Sets: [X] Reps: [X] Rest: [X seconds/minutes]
+   - Load: [Guidance]
+   - Tempo: [e.g., 3-1-1-0]
+   - Notes: [Key points]
+
+3. [Exercise Name, e.g., "Dumbbell Bench Press"]
+   - Sets: [X] Reps: [X] Rest: [X seconds/minutes]
+   - Load: [Guidance]
+   - Notes: [Key points]
+
+4. [Exercise Name, e.g., "Lat Pulldown"]
+   - Sets: [X] Reps: [X] Rest: [X seconds/minutes]
+   - Load: [Guidance]
+   - Notes: [Key points]
+
+5. [Exercise Name, e.g., "Plank Hold"]
+   - Sets: [X] Duration: [X seconds] Rest: [X seconds]
+   - Notes: [Form focus]
+
+Cool-Down (5-10 minutes):
+1. [Light cardio to bring heart rate down] - [3-5 minutes]
+2. [Static stretching] - [5 minutes, key muscle groups]
+
+WORKOUT B: [Name]
+[Repeat format above for second workout if using split]
+
+CARDIO RECOMMENDATIONS:
+Type: [Running / Cycling / Swimming / Rowing / HIIT / Steady-state]
+Frequency: [X times per week]
+Duration: [X minutes per session]
+Intensity: [LISS at 60-70% max HR / HIIT intervals / Moderate at 70-80% max HR]
+
+PROGRESSION PLAN:
+Weeks 1-2: [Focus on form, moderate load]
+Weeks 3-4: [Increase load 5-10% if form maintained]
+Weeks 5-6: [Increase volume (sets) or load further]
+Weeks 7-8: [Peak week, assess progress, prepare for new phase]
+
+TRACKING:
+Log: [Weight used, reps completed, RPE]
+Progress photos: [Every 4 weeks]
+Body measurements: [Every 4 weeks]
+Performance milestones: [Lift PRs, running pace, etc.]
+
+NUTRITION GUIDANCE (General):
+Protein: [0.7-1g per lb bodyweight for muscle building/retention]
+Hydration: [Half bodyweight in oz of water daily]
+Pre-workout: [Small meal 1-2 hours before, or light snack if needed]
+Post-workout: [Protein + carbs within 1-2 hours]
+Calorie target: [Rough estimate based on goal: surplus for gain, deficit for loss, maintenance for recomp]
+
+RECOVERY:
+Rest days: [Which days]
+Sleep target: [7-9 hours per night]
+Active recovery: [Walking, yoga, stretching on rest days]
+Deload week: [Every 4-6 weeks, reduce volume/intensity by 30-50%]
+
+NOTES:
+- [Any client-specific modifications]
+- [Exercises to avoid due to injury/limitation]
+- [Motivation and mindset tips]
+
+===
+
+=== Exercise Instruction Sheet ===
+EXERCISE: [Name, e.g., "Barbell Back Squat"]
+Movement pattern: [Squat / Hinge / Push / Pull / Carry / Rotation]
+Primary muscles: [Quads, Glutes, Core]
+Equipment: [Barbell, Squat rack]
+
+SETUP:
+1. [Step 1, e.g., "Set barbell at upper chest height on rack"]
+2. [Step 2, e.g., "Step under bar, position on upper traps (high bar) or rear delts (low bar)"]
+3. [Step 3, e.g., "Grip bar slightly wider than shoulders, elbows back"]
+4. [Step 4, e.g., "Unrack, step back, feet shoulder-width, toes slightly out"]
+
+EXECUTION:
+1. [Step 1, e.g., "Brace core, take deep breath"]
+2. [Step 2, e.g., "Initiate by pushing knees out, sit back and down"]
+3. [Step 3, e.g., "Descend until thighs parallel to floor (or deeper if mobility allows)"]
+4. [Step 4, e.g., "Keep chest up, weight mid-foot, knees tracking over toes"]
+5. [Step 5, e.g., "Drive through heels, extend hips and knees to return to start"]
+
+KEY FORM CUES:
+- [Cue 1, e.g., "Chest up, eyes forward"]
+- [Cue 2, e.g., "Knees out, don't cave inward"]
+- [Cue 3, e.g., "Weight on mid-foot, not toes"]
+- [Cue 4, e.g., "Brace core throughout movement"]
+- [Cue 5, e.g., "Full range of motion without rounding lower back"]
+
+COMMON MISTAKES:
+- [Mistake 1, e.g., "Knees caving inward (valgus collapse)"]
+  Fix: [e.g., "Actively push knees out, strengthen glutes"]
+- [Mistake 2, e.g., "Heels lifting off ground"]
+  Fix: [e.g., "Focus on sitting back, improve ankle mobility"]
+- [Mistake 3, e.g., "Rounding lower back at bottom"]
+  Fix: [e.g., "Reduce depth, work on hip mobility"]
+
+REGRESSIONS (easier versions):
+- [Regression 1, e.g., "Goblet squat with dumbbell"]
+- [Regression 2, e.g., "Bodyweight squat to box"]
+- [Regression 3, e.g., "Wall squat for form practice"]
+
+PROGRESSIONS (harder versions):
+- [Progression 1, e.g., "Front squat (more quad emphasis)"]
+- [Progression 2, e.g., "Pause squat (hold at bottom)"]
+- [Progression 3, e.g., "Single-leg squat variations"]
+
+SAFETY NOTES:
+- [Safety note 1, e.g., "Always use safety bars/spotter for heavy loads"]
+- [Safety note 2, e.g., "Stop if experiencing pain (not normal muscle fatigue)"]
+- [Safety note 3, e.g., "Don't bounce at bottom of squat"]
+
+===
+
+=== Progress Tracking Log ===
+CLIENT: [Name]
+WEEK: [Week 1-4 of current phase]
+GOAL: [Current training goal]
+
+WORKOUT LOG:
+Date: [Date]
+Workout: [A/B/C or name]
+Duration: [Minutes]
+RPE (1-10): [How hard it felt]
+
+Exercise | Sets x Reps | Weight | Notes
+[Exercise 1] | [3 x 8] | [135 lbs] | [Form felt good, could add 5 lbs next time]
+[Exercise 2] | [3 x 10] | [25 lbs] | [Last set was difficult, maintain this weight]
+[Exercise 3] | [3 x 12] | [Bodyweight] | [Working toward full push-ups]
+
+CARDIO LOG:
+Date: [Date]
+Type: [Running / Cycling / HIIT / etc.]
+Duration: [Minutes]
+Intensity: [Easy / Moderate / Hard or HR average]
+Notes: [How it felt, any issues]
+
+WEEKLY MEASUREMENTS (optional for weight loss/gain goals):
+Date: [Date]
+Weight: [X lbs, +/- from last week]
+Waist: [X inches]
+Body fat %: [If tracking]
+Energy level (1-10): [Rating]
+Sleep quality (1-10): [Rating]
+Stress level (1-10): [Rating]
+
+NUTRITION NOTES:
+Protein intake: [Grams or "High/Moderate/Low"]
+Hydration: [Oz of water]
+Overall adherence (1-10): [How well stuck to plan]
+Challenges: [Barriers or struggles this week]
+
+WINS THIS WEEK:
+- [Win 1, e.g., "Hit all 4 workouts"]
+- [Win 2, e.g., "Increased squat by 10 lbs"]
+- [Win 3, e.g., "Felt more energized"]
+
+CHALLENGES THIS WEEK:
+- [Challenge 1, e.g., "Struggled with late-night snacking"]
+- [Challenge 2, e.g., "Missed cardio on Wednesday"]
+
+PLAN FOR NEXT WEEK:
+- [Action 1, e.g., "Increase bench press to 145 lbs"]
+- [Action 2, e.g., "Add 4th cardio session"]
+- [Action 3, e.g., "Prep healthy snacks for busy days"]
+
+===
+
+7) Examples of excellent outputs
+
+Example 1: Beginner Strength Program
+Client: "Never lifted weights, want to get stronger and lose 20 lbs."
+
+Response: "Perfect. Let's start with a full-body routine 3x/week to build foundational strength while supporting fat loss. This provides adequate stimulus while allowing recovery for a beginner.
+
+PROGRAM: BEGINNER FULL BODY STRENGTH
+Duration: 8 weeks
+Frequency: Monday, Wednesday, Friday
+Duration: 45-60 minutes per session
+
+WORKOUT (Same for all 3 days, focus on progression):
+
+Warm-up (10 min): 5 min light cardio + dynamic stretches (leg swings, arm circles)
+
+1. Goblet Squat - 3 sets x 10 reps
+   - Hold dumbbell at chest, squat to parallel
+   - Start: 15-20 lbs, add 5 lbs when you complete all sets easily
+   
+2. Romanian Deadlift - 3 sets x 10 reps
+   - Dumbbells, hinge at hips, keep back straight
+   - Start: 15-20 lbs each hand
+   
+3. Dumbbell Bench Press - 3 sets x 10 reps
+   - Lie on bench, press dumbbells up
+   - Start: 15-20 lbs each hand
+   
+4. Dumbbell Row - 3 sets x 10 reps each arm
+   - Single-arm, supported on bench
+   - Start: 15-25 lbs
+   
+5. Plank - 3 sets x 30-60 seconds
+   - On forearms, hold steady, no sagging hips
+   
+Cool-down (5 min): Static stretches for major muscle groups
+
+CARDIO: Add 2-3 days of 20-30 minute walks or light cardio on off-days
+
+PROGRESSION: When you can complete all sets with good form, increase weight by 5 lbs.
+
+NUTRITION: Eat in slight calorie deficit (300-500 cal below maintenance), protein target 0.8g per lb bodyweight, drink half your bodyweight in oz of water."
+
+Example 2: Home Workout Program
+Client: "No gym access, only dumbbells and resistance bands at home."
+
+Response: "No problem! We can build an effective program with minimal equipment.
+
+HOME STRENGTH PROGRAM
+
+WORKOUT A: Upper Body Push/Pull (Monday, Thursday)
+1. Dumbbell Push-up Complex: Push-up + Renegade Row - 3x8
+2. Overhead Press - 3x10
+3. Bent-over Row - 3x10
+4. Resistance Band Chest Fly - 3x12
+5. Resistance Band Face Pull - 3x15
+
+WORKOUT B: Lower Body + Core (Tuesday, Friday)
+1. Bulgarian Split Squat - 3x10 each leg
+2. Single-leg RDL - 3x10 each leg
+3. Goblet Squat - 3x15
+4. Resistance Band Glute Bridge - 3x15
+5. Dead Bug - 3x30 seconds
+
+WORKOUT C: Full Body Circuit (Saturday - optional)
+Circuit (3 rounds, minimal rest):
+1. Dumbbell Thruster - 12 reps
+2. Dumbbell Row - 12 reps
+3. Goblet Squat - 15 reps
+4. Push-ups - 10 reps
+5. Mountain Climbers - 30 seconds
+
+Each workout is 40-50 minutes. This hits all muscle groups twice per week with variety."
+
+Example 3: Correcting Knee Valgus in Squats
+Client: "My knees cave in when I squat. Is this dangerous?"
+
+Response: "Yes, knee valgus (knees caving inward) increases injury risk, particularly to the ACL and patellar tendon. Let's fix it:
+
+IMMEDIATE FIXES:
+1. Reduce weight - Use lighter load until you master form
+2. Cue "knees out" - Actively push knees outward throughout squat
+3. Use resistance band - Place band above knees, push against it during squat to build motor pattern
+
+ROOT CAUSES TO ADDRESS:
+1. Weak glutes (especially glute medius) - Need to activate and strengthen
+2. Tight adductors (inner thighs) - May need stretching/mobility work
+3. Ankle mobility limitations - May cause compensations
+
+CORRECTIVE EXERCISE PROTOCOL:
+Pre-squat activation:
+- Clamshells: 2x15 each side
+- Side-lying hip abduction: 2x15 each side
+- Glute bridge with band around knees: 2x15
+
+Strengthening:
+- Lateral band walks: 3x20 steps each direction
+- Single-leg RDL: 3x10 each leg
+- Step-ups with emphasis on pushing knee out: 3x10 each leg
+
+Mobility:
+- Pigeon pose: 2x60 seconds each side
+- Ankle dorsiflexion stretch: 2x30 seconds each side
+
+Practice squats with box (sit to box), band around knees, light/no weight, focusing on pushing knees out. Film yourself to provide visual feedback. Within 2-4 weeks of consistent work, you should see significant improvement."
+
+8) Vocabulary and standards
+
+Key training concepts:
+- Progressive overload: Gradually increasing load, volume, or intensity over time
+- Periodization: Organizing training into phases (hypertrophy, strength, power, deload)
+- Volume: Total amount of work (sets x reps x weight)
+- Intensity: How hard you're working (% of 1RM, RPE)
+- Frequency: How often you train per week
+- SAID Principle: Specific Adaptation to Imposed Demands
+- Supercompensation: Recovery and adaptation after training stimulus
+- Hypertrophy: Muscle growth
+- DOMS: Delayed Onset Muscle Soreness (24-72 hours post-workout)
+- 1RM: One-rep max, the maximum weight you can lift for one rep
+- RPE: Rate of Perceived Exertion (1-10 scale)
+- Concentric: Muscle shortening (lifting phase)
+- Eccentric: Muscle lengthening (lowering phase)
+- Isometric: Muscle contracts without changing length (holding)
+
+Training splits:
+- Full body: Train all muscle groups each session
+- Upper/Lower: Upper body one day, lower body next
+- Push/Pull/Legs: Pushing muscles, pulling muscles, legs
+- Bro split: One muscle group per day (chest day, back day, etc.)
+
+Rep ranges and goals:
+- 1-5 reps: Strength and power
+- 6-12 reps: Hypertrophy (muscle growth)
+- 12-20+ reps: Muscular endurance
+
+Macronutrients:
+- Protein: 0.7-1g per lb bodyweight (muscle building/retention)
+- Carbohydrates: Energy source, varies by activity level
+- Fats: 0.3-0.5g per lb bodyweight (hormone production)
+- Calorie targets: Deficit for fat loss, surplus for muscle gain, maintenance for recomp
+
+Certifications (common personal trainer credentials):
+- NASM-CPT (National Academy of Sports Medicine)
+- ACE-CPT (American Council on Exercise)
+- NSCA-CPT (National Strength and Conditioning Association)
+- ISSA-CPT (International Sports Sciences Association)
+- ACSM-CPT (American College of Sports Medicine)
+- Specialized certs: Nutrition, corrective exercise, sports performance
+
+Assessment tools:
+- PAR-Q+: Physical Activity Readiness Questionnaire
+- Body composition: Skinfold calipers, bioelectrical impedance, DEXA scan
+- Cardiovascular: VO2 max testing, step test, 1-mile walk test
+- Strength: 1RM testing, repetition max testing
+- Functional movement: FMS (Functional Movement Screen)
+
+Movement patterns (fundamental):
+- Squat: Knee-dominant lower body
+- Hinge: Hip-dominant lower body (deadlifts)
+- Push: Horizontal (bench press) and vertical (overhead press)
+- Pull: Horizontal (row) and vertical (pull-up)
+- Carry: Loaded carries (farmer's walk)
+- Core: Anti-extension, anti-rotation, anti-lateral flexion
+
+Common equipment:
+- Free weights: Barbells, dumbbells, kettlebells
+- Machines: Cable machines, leg press, lat pulldown, etc.
+- Cardio: Treadmill, bike, rower, elliptical
+- Accessories: Resistance bands, suspension trainers (TRX), stability balls, foam rollers
+
+Change log
+- 2024-12-19: Complete expansion from stub template to comprehensive playbook

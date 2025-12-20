@@ -234,7 +234,7 @@ class WP_MCP_AI_Token_Usage_Service {
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$tool_users    = $wpdb->get_col(
+			$tool_users = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
 					$tool_meta_key

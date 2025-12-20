@@ -185,8 +185,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 					$desc = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 
 					return false !== stripos( $slug, $search_term ) ||
-						   false !== stripos( $name, $search_term ) ||
-						   false !== stripos( $desc, $search_term );
+							false !== stripos( $name, $search_term ) ||
+							false !== stripos( $desc, $search_term );
 				}
 			);
 		}

@@ -57,14 +57,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'memory_max_file_bytes'        => array(
+				'memory_max_file_bytes'       => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'wp-mcp-ai' ),
 					'default'     => 5242880,
 					'placeholder' => '5242880',
 				),
-				'enable_opcache_reset'         => array(
+				'enable_opcache_reset'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Auto OPcache Reset', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'wp-mcp-ai' ),
@@ -72,28 +72,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
-				'enable_federation_directory'  => array(
+				'enable_federation_directory' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'federation_regions'           => array(
+				'federation_regions'          => array(
 					'type'        => 'text',
 					'label'       => __( 'Federation Regions', 'wp-mcp-ai' ),
 					'description' => __( 'Comma-separated list of geographic regions where this site operates (e.g., "us-east,us-west,eu-central"). Used for regional routing and data residency compliance.', 'wp-mcp-ai' ),
 					'default'     => 'global',
 					'placeholder' => 'global, us-east, eu-central',
 				),
-				'federation_data_tags'         => array(
+				'federation_data_tags'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Federation Data Tags', 'wp-mcp-ai' ),
 					'description' => __( 'Comma-separated data classification tags (e.g., "public,internal,confidential"). Used for data governance and access control in federated operations.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'public, internal',
 				),
-				'federation_qps'               => array(
+				'federation_qps'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Federation QPS Limit', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum queries per second (QPS) allowed for federation API requests. Prevents resource exhaustion from federated queries. Default: 5 QPS.', 'wp-mcp-ai' ),
@@ -102,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'max'         => 1000,
 					'placeholder' => '5',
 				),
-				'federation_burst'             => array(
+				'federation_burst'            => array(
 					'type'        => 'number',
 					'label'       => __( 'Federation Burst Capacity', 'wp-mcp-ai' ),
 					'description' => __( 'Burst capacity for federation rate limiting. Allows temporary spikes above QPS limit. Default: 10.', 'wp-mcp-ai' ),
@@ -111,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'max'         => 10000,
 					'placeholder' => '10',
 				),
-				'federation_jwks_keys'         => array(
+				'federation_jwks_keys'        => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Federation JWKS Keys', 'wp-mcp-ai' ),
 					'description' => __( 'JSON Web Key Set (JWKS) for federation authentication. Advanced setting - only modify if implementing custom federation authentication. Must be valid JSON array of JWK objects.', 'wp-mcp-ai' ),
@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'placeholder' => '[{"kty":"RSA","use":"sig","kid":"...","n":"...","e":"AQAB"}]',
 					'rows'        => 6,
 				),
-				'federation_price_hints'       => array(
+				'federation_price_hints'      => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Federation Price Hints', 'wp-mcp-ai' ),
 					'description' => __( 'JSON object with pricing information for federation services. Used for cost attribution in federated AI operations. Advanced setting. Format: {"model": "gpt-4", "cost_per_1k_tokens": 0.03}', 'wp-mcp-ai' ),
@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'placeholder' => '{"gpt-4": {"input": 0.03, "output": 0.06}}',
 					'rows'        => 5,
 				),
-				'mesh_inbound_api_key'         => array(
+				'mesh_inbound_api_key'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Mesh Inbound API Key', 'wp-mcp-ai' ),
 					'description' => __( 'Auto-generated API key for receiving mesh network requests. This key is used by peer sites to authenticate inbound connections. Copy this key to configure peer sites. Key is auto-generated when mesh networking is enabled.', 'wp-mcp-ai' ),
@@ -136,7 +136,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'readonly'    => true,
 					'class'       => 'regular-text code',
 				),
-				'mesh_peer_sites'              => array(
+				'mesh_peer_sites'             => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Mesh Peer Sites Configuration', 'wp-mcp-ai' ),
 					'description' => __( 'JSON array of mesh network peer configurations. Each peer should have: url (peer site URL), api_key (their inbound key), name (friendly name), and enabled (boolean). Example: [{"url":"https://peer1.com","api_key":"mesh_xxx","name":"Peer 1","enabled":true}]', 'wp-mcp-ai' ),
@@ -207,8 +207,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$subtab        = '';
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
+			// Use section-specific field name to avoid conflicts with other sections.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-			if ( isset( $_POST['subtab'] ) ) {
+			$subtab_field_name = 'subtab_' . $this->get_id();
+			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+			} elseif ( isset( $_POST['subtab'] ) ) {
+				// Fallback to legacy field name for backward compatibility.
 				$subtab = sanitize_key( $_POST['subtab'] );
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				$subtab = sanitize_key( $_GET['subtab'] );
@@ -297,7 +302,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</nav>
 
 					<!-- Hidden field to preserve subtab during form submission -->
-					<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">
@@ -544,6 +549,60 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 
 					<div id="wp-mcp-ai-reseed-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-playbook-sync-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+					<h4><?php esc_html_e( 'Sync Profession Playbooks', 'wp-mcp-ai' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Regenerate playbook attachments from the modular text files. This is useful after editing playbook content in includes/knowledge-base/profession-playbooks/', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<?php
+					// Get playbook statistics.
+					$playbook_stats = $this->get_playbook_statistics();
+					?>
+
+					<div class="wp-mcp-ai-playbook-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Playbook Status', 'wp-mcp-ai' ); ?></h4>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
+							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'wp-mcp-ai' ); ?></strong> 
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
+									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' ) ); ?>
+								</span>
+							</li>
+							<?php if ( $playbook_stats['last_sync'] ) : ?>
+								<li><strong><?php esc_html_e( 'Last Sync:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
+							<?php endif; ?>
+						</ul>
+					</div>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-playbooks-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Sync Changed Playbooks', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Regenerates playbooks where content has changed and removes duplicates (fast, safe).', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-playbooks-force-btn">
+								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Force Regenerate All Playbooks', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-playbook-sync-message" class="notice" style="display: none; margin: 15px 0;">
 						<p></p>
 					</div>
 				</div>
@@ -960,9 +1019,149 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						}
 					});
 				});
+
+				// Sync playbooks handlers
+				jQuery(document).ready(function($) {
+					function syncPlaybooks(force) {
+						var $button = force ? $('#wp-mcp-ai-sync-playbooks-force-btn') : $('#wp-mcp-ai-sync-playbooks-btn');
+						var $message = $('#wp-mcp-ai-playbook-sync-message');
+						var originalText = $button.html();
+
+						// Disable both buttons
+						$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_sync_all_playbooks',
+								force: force ? 'true' : 'false',
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_sync_all_playbooks' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload after a short delay
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-sync-playbooks-btn').on('click', function(e) {
+						e.preventDefault();
+						syncPlaybooks(false);
+					});
+
+					$('#wp-mcp-ai-sync-playbooks-force-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will force regenerate all profession playbooks even if unchanged. This may take a moment. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							syncPlaybooks(true);
+						}
+					});
+				});
 				</script>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get playbook statistics for display.
+		 *
+		 * @return array Array with playbook statistics.
+		 */
+		private function get_playbook_statistics() {
+			global $wpdb;
+
+			// Load required class if not loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+
+			// Get total number of playbook attachments.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total_attachments = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT p.ID)
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					WHERE p.post_type = %s
+					AND p.post_status = %s
+					AND pm.meta_key = %s",
+					'attachment',
+					'inherit',
+					'_wp_mcp_ai_playbook_profession_id'
+				)
+			);
+
+			// Get number of unique professions with playbooks.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$professions_with_playbooks = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT pm.meta_value)
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					WHERE p.post_type = %s
+					AND p.post_status = %s
+					AND pm.meta_key = %s
+					AND pm.meta_value != ''",
+					'attachment',
+					'inherit',
+					'_wp_mcp_ai_playbook_profession_id'
+				)
+			);
+
+			// Check if playbooks were seeded.
+			$playbooks_seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );
+
+			// Get last sync timestamp if available.
+			$last_sync_timestamp = get_option( 'wp_mcp_ai_playbooks_last_sync', 0 );
+			$last_sync           = '';
+			if ( $last_sync_timestamp ) {
+				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'wp-mcp-ai' );
+			}
+
+			return array(
+				'total_attachments'          => absint( $total_attachments ),
+				'professions_with_playbooks' => absint( $professions_with_playbooks ),
+				'seeded'                     => $playbooks_seeded,
+				'last_sync'                  => $last_sync,
+			);
 		}
 	}
 }

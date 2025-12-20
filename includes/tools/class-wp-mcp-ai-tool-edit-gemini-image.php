@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
  */
 class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';

@@ -754,7 +754,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 			?>
 </div>
-<?php $this->render_pro_banner(); ?>
+			<?php $this->render_pro_banner(); ?>
 </div>
 			<?php
 		}

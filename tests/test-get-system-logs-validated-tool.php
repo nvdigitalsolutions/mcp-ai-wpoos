@@ -51,7 +51,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'summary', $result );
 		$this->assertArrayHasKey( 'wp_mcp_ai', $result );
-		$this->assertArrayHasKey( 'wordpress', $result );
+		$this->assertArrayHasKey( 'WordPress', $result );
 		$this->assertArrayHasKey( 'plugin_logs', $result );
 	}
 
@@ -154,7 +154,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'wordpress', $result );
+		$this->assertArrayHasKey( 'WordPress', $result );
 	}
 
 	/**

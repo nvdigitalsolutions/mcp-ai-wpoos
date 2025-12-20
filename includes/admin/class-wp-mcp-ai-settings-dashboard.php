@@ -71,6 +71,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_professions', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_teams', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_model_config', array( $this->ajax_handlers, 'handle_save_model_config' ) );
 		}
 
@@ -169,8 +172,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			$active_subtab   = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+
+			// Find subtab from section-specific subtab fields (subtab_sectionid format).
+			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
+			$active_subtab = '';
+			foreach ( $_POST as $key => $value ) {
+				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
+					$active_subtab = sanitize_key( $value );
+					break; // Use the first subtab found.
+				}
+			}
+
+			// Fallback to legacy 'subtab' field for backward compatibility.
+			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
+				$active_subtab = sanitize_key( $_POST['subtab'] );
+			}
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -262,6 +279,43 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		}
 
 		/**
+		 * Get the appropriate asset file (minified or unminified).
+		 *
+		 * Uses minified version in production, unminified when SCRIPT_DEBUG is enabled.
+		 * Falls back to unminified if minified doesn't exist.
+		 *
+		 * @param string $file_path Relative path to the asset file (e.g., 'assets/js/settings-dashboard.js').
+		 * @return array Array with 'url', 'path', and 'version' keys.
+		 */
+		private function get_asset_file( $file_path ) {
+			$use_minified = ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
+			$extension    = pathinfo( $file_path, PATHINFO_EXTENSION );
+			$base_path    = preg_replace( '/\.' . $extension . '$/', '', $file_path );
+
+			// Try minified version first if not in debug mode.
+			if ( $use_minified ) {
+				$minified_path = $base_path . '.min.' . $extension;
+				$full_path     = WP_MCP_AI_PATH . $minified_path;
+
+				if ( file_exists( $full_path ) ) {
+					return array(
+						'url'     => WP_MCP_AI_URL . $minified_path,
+						'path'    => $full_path,
+						'version' => filemtime( $full_path ),
+					);
+				}
+			}
+
+			// Fall back to unminified version.
+			$full_path = WP_MCP_AI_PATH . $file_path;
+			return array(
+				'url'     => WP_MCP_AI_URL . $file_path,
+				'path'    => $full_path,
+				'version' => file_exists( $full_path ) ? filemtime( $full_path ) : WP_MCP_AI_VERSION,
+			);
+		}
+
+		/**
 		 * Enqueue CSS and JavaScript assets for the dashboard.
 		 *
 		 * @param string $hook Current admin page hook.
@@ -271,58 +325,58 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				return;
 			}
 
-			// Use WP_MCP_AI_PATH and WP_MCP_AI_URL constants for consistency.
-			$css_path           = WP_MCP_AI_PATH . 'assets/css/settings-dashboard.css';
-			$js_ajax_error_path = WP_MCP_AI_PATH . 'assets/js/ajax-error-service.js';
-			$js_dashboard_path  = WP_MCP_AI_PATH . 'assets/js/settings-dashboard.js';
+			// Get asset files (automatically uses minified in production, unminified in debug mode).
+			$dashboard_css = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
+			$ajax_error_js = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
+			$dashboard_js  = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
 
 			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
-				WP_MCP_AI_URL . 'assets/css/settings-dashboard.css',
+				$dashboard_css['url'],
 				array(),
-				file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
+				$dashboard_css['version']
 			);
 
 			// Enqueue tools manager styles if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
 			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
-				$tools_css_path = WP_MCP_AI_PATH . 'assets/css/tools-manager.css';
+				$tools_css = $this->get_asset_file( 'assets/css/tools-manager.css' );
 				wp_enqueue_style(
 					'wp-mcp-ai-tools-manager',
-					WP_MCP_AI_URL . 'assets/css/tools-manager.css',
+					$tools_css['url'],
 					array( 'wp-mcp-ai-dashboard' ),
-					file_exists( $tools_css_path ) ? filemtime( $tools_css_path ) : '1.0.0'
+					$tools_css['version']
 				);
 			}
 
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-ajax-error-service',
-				WP_MCP_AI_URL . 'assets/js/ajax-error-service.js',
+				$ajax_error_js['url'],
 				array( 'jquery' ),
-				file_exists( $js_ajax_error_path ) ? filemtime( $js_ajax_error_path ) : '1.0.0',
+				$ajax_error_js['version'],
 				true
 			);
 
 			// Enqueue dashboard scripts with jQuery UI Sortable dependency and filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
-				WP_MCP_AI_URL . 'assets/js/settings-dashboard.js',
+				$dashboard_js['url'],
 				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
-				file_exists( $js_dashboard_path ) ? filemtime( $js_dashboard_path ) : '1.0.0',
+				$dashboard_js['version'],
 				true
 			);
 
 			// Enqueue tools manager scripts if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
 			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
-				$tools_js_path = WP_MCP_AI_PATH . 'assets/js/tools-manager.js';
+				$tools_js = $this->get_asset_file( 'assets/js/tools-manager.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tools-manager',
-					WP_MCP_AI_URL . 'assets/js/tools-manager.js',
+					$tools_js['url'],
 					array( 'jquery', 'wp-mcp-ai-ajax-error-service' ),
-					file_exists( $tools_js_path ) ? filemtime( $tools_js_path ) : '1.0.0',
+					$tools_js['version'],
 					true
 				);
 			}
@@ -330,12 +384,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Enqueue tool orchestration scripts if on orchestration tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
 			if ( isset( $_GET['tab'] ) && 'orchestration' === $_GET['tab'] ) {
-				$orchestration_js_path = WP_MCP_AI_PATH . 'assets/js/admin-tool-orchestration.js';
+				$orchestration_js = $this->get_asset_file( 'assets/js/admin-tool-orchestration.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tool-orchestration',
-					WP_MCP_AI_URL . 'assets/js/admin-tool-orchestration.js',
+					$orchestration_js['url'],
 					array( 'jquery', 'wp-mcp-ai-ajax-error-service', 'wp-i18n' ),
-					file_exists( $orchestration_js_path ) ? filemtime( $orchestration_js_path ) : '1.0.0',
+					$orchestration_js['version'],
 					true
 				);
 				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'wp-mcp-ai' );
@@ -344,12 +398,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
 			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'performance_monitoring' === $_GET['subtab'] ) {
-				$performance_admin_js_path = WP_MCP_AI_PATH . 'assets/js/performance-admin.js';
+				$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-performance-admin',
-					WP_MCP_AI_URL . 'assets/js/performance-admin.js',
+					$performance_js['url'],
 					array( 'jquery' ),
-					file_exists( $performance_admin_js_path ) ? filemtime( $performance_admin_js_path ) : WP_MCP_AI_VERSION,
+					$performance_js['version'],
 					true
 				);
 

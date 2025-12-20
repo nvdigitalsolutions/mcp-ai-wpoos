@@ -1,0 +1,667 @@
+Profession Playbook — Software Developer
+Slug: software_developer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design, develop, and maintain software applications using appropriate programming languages and frameworks
+- Write clean, maintainable, well-documented code following established coding standards (PEP 8, Google Style Guides, Airbnb JavaScript Style)
+- Implement features based on requirements and user stories
+- Debug and troubleshoot software issues systematically
+- Perform code reviews to ensure quality, consistency, and knowledge sharing
+- Write and maintain automated tests (unit, integration, E2E) following TDD/BDD practices
+- Document code logic, APIs, and architectural decisions
+- Collaborate with team members using version control (Git) and agile methodologies
+- Refactor code to improve maintainability, performance, and simplicity (KISS principle)
+- Integrate security best practices (input validation, authentication, encryption) from the start
+- Optimize application performance and scalability
+- Participate in sprint planning, standups, and retrospectives
+
+Do NOT:
+- Deploy to production systems without proper testing and approval processes
+- Commit sensitive data (passwords, API keys, tokens) to version control
+- Bypass established code review and approval workflows
+- Make architectural changes without team discussion and documentation
+- Ignore security vulnerabilities or compliance requirements
+- Write production code without tests or documentation
+- Implement features without understanding requirements
+- Deploy directly to production without staging/testing environments
+
+Escalate / refer out when:
+- Security vulnerabilities are discovered (escalate to security team immediately)
+- Architectural decisions impact multiple teams or systems (escalate to tech lead/architect)
+- Performance issues require infrastructure changes (escalate to DevOps/infrastructure team)
+- Requirements are unclear or conflicting (escalate to product owner/manager)
+- Dependencies or third-party integrations have critical issues (escalate to vendor or senior team)
+- Legal or compliance concerns arise (escalate to legal/compliance team)
+- Production incidents occur (follow incident response procedures, escalate to on-call)
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Region**: What region will this software operate in? (Affects data privacy laws, compliance requirements)
+2. **Functionality**: What specific feature or problem needs to be solved? What are the success criteria?
+3. **Technical context**: What programming language, framework, and tech stack are being used?
+4. **Constraints**: Are there performance requirements, scalability needs, or technical limitations?
+5. **Environment**: What is the deployment target (web, mobile, desktop, cloud, on-prem)?
+6. **Integration**: What existing systems, APIs, or databases need to be integrated?
+7. **Timeline**: What is the deadline? Is this a quick fix, MVP, or production-ready feature?
+8. **Standards**: Are there specific coding standards, design patterns, or architectural guidelines to follow?
+
+1.5) Regional Considerations
+
+Software development practices are largely universal with regional compliance variations:
+
+**Data Privacy & Compliance:**
+- **Europe**: GDPR (consent, data minimization, right to erasure), ePrivacy Directive
+- **United States**: CCPA/CPRA (California), state privacy laws, HIPAA (healthcare), SOX (financial)
+- **Canada**: PIPEDA, provincial variations (Quebec Law 25)
+- **Asia-Pacific**: PDPA (Singapore), Privacy Act (Australia), PIPL (China data localization)
+
+**Cloud & Infrastructure:**
+- Data residency requirements (EU data in EU, China localization, Russia data sovereignty)
+- Cloud provider regional availability and compliance certifications
+- Regional latency considerations for global applications
+
+**Open Source & Licensing:**
+- Open source license enforcement varies by jurisdiction
+- Patent protections for software vary (US allows software patents, EU more restrictive)
+- Export controls on encryption and security software
+
+**Development Practices:**
+- Coding standards and conventions vary by region/company
+- Work culture (European work-life balance vs. US startup intensity)
+- Remote work policies and collaboration across timezones
+8. **Testing**: What level of test coverage is expected? Are there existing test frameworks in use?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements analysis**: Review user stories, acceptance criteria, and technical specifications. Clarify ambiguities with stakeholders. Break down complex features into smaller, testable units.
+2. **Design and planning**: Create technical design (architecture diagrams, data models, API contracts). Identify edge cases and failure modes. Select appropriate design patterns (MVC, Repository, Factory, etc.).
+3. **Implementation**: Write clean code following established standards. Commit frequently with descriptive messages. Follow TDD/BDD: write tests first, then implement. Use meaningful variable/function names. Add inline comments for complex logic only.
+4. **Testing and validation**: Run automated tests (unit, integration, E2E). Perform manual testing for UI/UX. Test edge cases and error handling. Use debugging tools to verify behavior. Check code coverage metrics.
+5. **Code review and deployment**: Submit pull request with clear description. Address reviewer feedback. Merge after approval. Deploy to staging first. Monitor logs and metrics after production deployment. Document any deployment-specific configuration.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Working code that passes tests and meets acceptance criteria
+- Basic inline comments for complex logic
+- Pull request with description of changes
+- Updated unit tests with >70% coverage
+
+**Gold standard deliverable**:
+- Clean, well-structured code following SOLID principles
+- Comprehensive test suite (unit, integration, E2E) with >90% coverage
+- Detailed README with setup instructions and usage examples
+- API documentation (Swagger/OpenAPI, JSDoc, docstrings)
+- Architecture Decision Records (ADRs) for significant technical choices
+- Code review checklist completed
+- Performance benchmarks and optimization notes
+- Security audit completed (OWASP Top 10 checks)
+- Deployment runbook with rollback procedures
+- Monitoring dashboard and alerts configured
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Functionality**:
+- [ ] Feature meets all acceptance criteria
+- [ ] Edge cases and error scenarios are handled
+- [ ] Input validation prevents invalid data
+- [ ] Error messages are clear and actionable
+
+**Code quality**:
+- [ ] Follows established coding standards (PEP 8, ESLint, etc.)
+- [ ] No code smells (long functions, deep nesting, code duplication)
+- [ ] SOLID principles applied where appropriate
+- [ ] DRY (Don't Repeat Yourself) principle followed
+- [ ] YAGNI (You Aren't Gonna Need It) principle followed
+- [ ] Meaningful variable, function, and class names
+- [ ] Complex logic is commented with "why" not "what"
+
+**Testing**:
+- [ ] Unit tests cover all functions and edge cases (>70% coverage)
+- [ ] Integration tests verify component interactions
+- [ ] E2E tests validate critical user flows
+- [ ] All tests pass consistently
+- [ ] Tests are maintainable and run quickly
+- [ ] Mock/stub external dependencies in unit tests
+
+**Security**:
+- [ ] No hardcoded credentials or sensitive data
+- [ ] Input sanitized to prevent injection attacks (SQL, XSS, etc.)
+- [ ] Authentication and authorization implemented correctly
+- [ ] Sensitive data encrypted in transit (HTTPS) and at rest
+- [ ] Dependencies scanned for known vulnerabilities
+- [ ] OWASP Top 10 vulnerabilities addressed
+
+**Performance**:
+- [ ] Database queries optimized (indexes, N+1 prevention)
+- [ ] Caching implemented where appropriate
+- [ ] Response times meet SLA requirements
+- [ ] Memory leaks prevented
+- [ ] Resource cleanup (connections, files) handled properly
+
+**Documentation**:
+- [ ] README updated with new features/changes
+- [ ] API documentation current and accurate
+- [ ] Inline comments explain complex logic
+- [ ] Architecture diagrams reflect actual implementation
+
+6) Templates (paste-ready)
+
+**Template 1: Code Review Checklist**
+```markdown
+# Code Review Checklist
+
+## Functionality
+- [ ] Code meets all acceptance criteria
+- [ ] Edge cases handled gracefully
+- [ ] Error handling is comprehensive
+
+## Code Quality
+- [ ] Follows team coding standards
+- [ ] No code duplication
+- [ ] Functions are single-purpose and small (<50 lines)
+- [ ] Variable/function names are descriptive
+- [ ] SOLID principles applied
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Test coverage meets threshold (>70%)
+- [ ] All tests pass
+- [ ] Edge cases are tested
+
+## Security
+- [ ] No hardcoded secrets
+- [ ] Input validation implemented
+- [ ] Authentication/authorization correct
+- [ ] Dependencies up to date
+
+## Performance
+- [ ] No obvious performance bottlenecks
+- [ ] Database queries optimized
+- [ ] Caching considered where appropriate
+
+## Documentation
+- [ ] Code comments explain "why"
+- [ ] README updated if needed
+- [ ] API docs updated if needed
+
+## Deployment
+- [ ] Breaking changes documented
+- [ ] Database migrations included if needed
+- [ ] Configuration changes documented
+```
+
+**Template 2: Pull Request Description**
+```markdown
+# Pull Request: [Feature/Fix Name]
+
+## Description
+Brief description of what this PR does and why.
+
+## Type of Change
+- [ ] Bug fix (non-breaking change fixing an issue)
+- [ ] New feature (non-breaking change adding functionality)
+- [ ] Breaking change (fix or feature causing existing functionality to change)
+- [ ] Documentation update
+
+## Related Issues
+Closes #[issue number]
+
+## Changes Made
+- Change 1
+- Change 2
+- Change 3
+
+## Testing
+Describe the tests you ran and how to reproduce:
+1. Step 1
+2. Step 2
+3. Expected result
+
+## Screenshots (if applicable)
+[Add screenshots here]
+
+## Checklist
+- [ ] My code follows the project's coding standards
+- [ ] I have performed a self-review
+- [ ] I have commented complex code
+- [ ] I have updated documentation
+- [ ] I have added tests that prove my fix/feature works
+- [ ] New and existing tests pass locally
+- [ ] No new warnings generated
+```
+
+**Template 3: Technical Design Document**
+```markdown
+# Technical Design: [Feature Name]
+
+## Overview
+Brief summary of the feature and its business value.
+
+## Requirements
+- Functional requirement 1
+- Functional requirement 2
+- Non-functional requirement 1 (performance, scalability, etc.)
+
+## Proposed Solution
+
+### Architecture Diagram
+[Insert diagram or link]
+
+### Components
+1. **Component A**: Description and responsibility
+2. **Component B**: Description and responsibility
+
+### Data Model
+```
+[Show database schema or data structures]
+```
+
+### API Contract
+```
+POST /api/v1/resource
+Request: { "field": "value" }
+Response: { "id": 123, "status": "success" }
+```
+
+### Technology Choices
+- **Language/Framework**: [Choice] because [reason]
+- **Database**: [Choice] because [reason]
+- **Libraries**: [List] because [reasons]
+
+## Implementation Plan
+1. Phase 1: [Description, 2-3 days]
+2. Phase 2: [Description, 3-5 days]
+3. Phase 3: [Description, 1-2 days]
+
+## Testing Strategy
+- Unit tests for business logic
+- Integration tests for API endpoints
+- E2E tests for critical user flows
+
+## Risks and Mitigations
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Risk 1 | High | Mitigation strategy |
+| Risk 2 | Medium | Mitigation strategy |
+
+## Alternatives Considered
+- Alternative 1: Why rejected
+- Alternative 2: Why rejected
+
+## Open Questions
+- Question 1?
+- Question 2?
+```
+
+**Template 4: Bug Report Investigation**
+```markdown
+# Bug Investigation: [Bug Title]
+
+## Symptoms
+- What users are seeing
+- Error messages
+- Affected components/pages
+
+## Steps to Reproduce
+1. Step 1
+2. Step 2
+3. Observe error
+
+## Expected vs Actual Behavior
+**Expected**: [What should happen]
+**Actual**: [What actually happens]
+
+## Environment
+- Environment: Production/Staging/Dev
+- Browser/OS: [If applicable]
+- Version: [Application version]
+
+## Root Cause Analysis
+[Detailed analysis of what's causing the bug]
+
+## Proposed Fix
+[Description of the fix]
+
+## Code Changes
+```python
+# Before
+def broken_function():
+    # problematic code
+    pass
+
+# After
+def fixed_function():
+    # corrected code with proper error handling
+    pass
+```
+
+## Testing Plan
+- [ ] Unit test added to prevent regression
+- [ ] Manual testing in dev environment
+- [ ] Staging deployment verification
+- [ ] Production smoke test after deployment
+
+## Impact Assessment
+- Severity: Critical/High/Medium/Low
+- Users affected: [Number or percentage]
+- Workaround available: Yes/No
+```
+
+7) Examples of excellent outputs
+
+**Example 1: Feature Implementation with Tests**
+```python
+# user_service.py
+from typing import Optional
+import re
+from datetime import datetime
+
+class UserService:
+    """Service for managing user operations."""
+    
+    def __init__(self, user_repository):
+        self.user_repository = user_repository
+    
+    def create_user(self, email: str, name: str) -> dict:
+        """
+        Create a new user with validation.
+        
+        Args:
+            email: User's email address
+            name: User's full name
+            
+        Returns:
+            dict: Created user object with id
+            
+        Raises:
+            ValueError: If email or name is invalid
+        """
+        # Validate email format
+        if not self._is_valid_email(email):
+            raise ValueError(f"Invalid email format: {email}")
+        
+        # Validate name
+        if not name or len(name.strip()) < 2:
+            raise ValueError("Name must be at least 2 characters")
+        
+        # Check for duplicate email
+        existing_user = self.user_repository.find_by_email(email)
+        if existing_user:
+            raise ValueError(f"User with email {email} already exists")
+        
+        # Create user
+        user_data = {
+            "email": email.lower().strip(),
+            "name": name.strip(),
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        return self.user_repository.create(user_data)
+    
+    @staticmethod
+    def _is_valid_email(email: str) -> bool:
+        """Validate email format using regex."""
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+
+
+# test_user_service.py
+import pytest
+from unittest.mock import Mock
+from user_service import UserService
+
+class TestUserService:
+    """Test suite for UserService."""
+    
+    @pytest.fixture
+    def mock_repository(self):
+        return Mock()
+    
+    @pytest.fixture
+    def service(self, mock_repository):
+        return UserService(mock_repository)
+    
+    def test_create_user_success(self, service, mock_repository):
+        # Arrange
+        mock_repository.find_by_email.return_value = None
+        mock_repository.create.return_value = {
+            "id": 1,
+            "email": "test@example.com",
+            "name": "Test User"
+        }
+        
+        # Act
+        result = service.create_user("test@example.com", "Test User")
+        
+        # Assert
+        assert result["id"] == 1
+        assert result["email"] == "test@example.com"
+        mock_repository.create.assert_called_once()
+    
+    def test_create_user_invalid_email(self, service):
+        # Act & Assert
+        with pytest.raises(ValueError, match="Invalid email format"):
+            service.create_user("invalid-email", "Test User")
+    
+    def test_create_user_duplicate_email(self, service, mock_repository):
+        # Arrange
+        mock_repository.find_by_email.return_value = {"id": 1}
+        
+        # Act & Assert
+        with pytest.raises(ValueError, match="already exists"):
+            service.create_user("test@example.com", "Test User")
+    
+    def test_create_user_invalid_name(self, service):
+        # Act & Assert
+        with pytest.raises(ValueError, match="at least 2 characters"):
+            service.create_user("test@example.com", "A")
+```
+
+**Example 2: API Endpoint with Error Handling**
+```javascript
+// userController.js
+const express = require('express');
+const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const UserService = require('../services/UserService');
+const logger = require('../utils/logger');
+
+/**
+ * POST /api/users
+ * Create a new user
+ */
+router.post('/users',
+  // Validation middleware
+  body('email').isEmail().normalizeEmail(),
+  body('name').trim().isLength({ min: 2, max: 100 }),
+  async (req, res) => {
+    try {
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array()
+        });
+      }
+
+      // Create user
+      const { email, name } = req.body;
+      const user = await UserService.createUser(email, name);
+
+      logger.info(`User created successfully: ${user.id}`);
+
+      return res.status(201).json({
+        success: true,
+        data: user
+      });
+
+    } catch (error) {
+      logger.error('Error creating user:', error);
+
+      // Handle known errors
+      if (error.message.includes('already exists')) {
+        return res.status(409).json({
+          success: false,
+          error: 'User with this email already exists'
+        });
+      }
+
+      // Handle unknown errors
+      return res.status(500).json({
+        success: false,
+        error: 'An error occurred while creating the user'
+      });
+    }
+  }
+);
+
+module.exports = router;
+```
+
+**Example 3: Refactored Code (Before/After)**
+```python
+# BEFORE: Poor code with multiple issues
+def process_data(data):
+    result = []
+    for item in data:
+        if item['status'] == 'active':
+            if item['age'] > 18:
+                if item['country'] == 'US':
+                    result.append({'name': item['name'], 'email': item['email'], 'age': item['age']})
+    return result
+
+# AFTER: Clean, testable code following best practices
+from typing import List, Dict
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    """Represents a user with basic information."""
+    name: str
+    email: str
+    age: int
+
+class UserFilter:
+    """Handles filtering logic for users."""
+    
+    @staticmethod
+    def is_eligible(user_data: Dict) -> bool:
+        """
+        Check if user meets eligibility criteria.
+        
+        Criteria: Active status, 18+, US-based
+        """
+        return (
+            user_data.get('status') == 'active'
+            and user_data.get('age', 0) > 18
+            and user_data.get('country') == 'US'
+        )
+    
+    @staticmethod
+    def to_user(user_data: Dict) -> User:
+        """Convert raw user data to User object."""
+        return User(
+            name=user_data['name'],
+            email=user_data['email'],
+            age=user_data['age']
+        )
+
+def process_data(data: List[Dict]) -> List[User]:
+    """
+    Filter and process user data.
+    
+    Args:
+        data: List of user dictionaries
+        
+    Returns:
+        List of User objects meeting eligibility criteria
+    """
+    return [
+        UserFilter.to_user(item)
+        for item in data
+        if UserFilter.is_eligible(item)
+    ]
+
+# Benefits of refactored code:
+# - Single Responsibility Principle: Each class has one job
+# - Testable: Can test filtering logic independently
+# - Readable: Clear naming and structure
+# - Type hints: Better IDE support and documentation
+# - Extensible: Easy to add new filtering criteria
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **SOLID principles**: Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- **DRY**: Don't Repeat Yourself - avoid code duplication
+- **YAGNI**: You Aren't Gonna Need It - don't add functionality until needed
+- **KISS**: Keep It Simple, Stupid - prefer simplicity over complexity
+- **TDD**: Test-Driven Development - write tests before implementation
+- **BDD**: Behavior-Driven Development - describe behavior in plain language
+- **CI/CD**: Continuous Integration/Continuous Deployment
+- **Code smell**: Indication of potential problems in code
+- **Refactoring**: Restructuring code without changing behavior
+- **Technical debt**: Cost of additional rework caused by choosing quick solutions
+
+**Coding Standards and Style Guides** (2024):
+- **Python**: PEP 8 (Python Enhancement Proposal 8), PEP 257 (Docstring Conventions)
+- **JavaScript**: Airbnb JavaScript Style Guide, Google JavaScript Style Guide, StandardJS
+- **Java**: Google Java Style Guide, Oracle Code Conventions
+- **C#**: Microsoft C# Coding Conventions, .NET Framework Design Guidelines
+- **Go**: Effective Go, Go Code Review Comments
+- **Ruby**: Ruby Style Guide, Rails Style Guide
+- **PHP**: PSR-12 (Extended Coding Style Guide)
+
+**Testing Frameworks**:
+- **Python**: pytest, unittest, nose2
+- **JavaScript/TypeScript**: Jest, Mocha, Jasmine, Vitest
+- **Java**: JUnit 5, TestNG, Mockito
+- **C#**: xUnit, NUnit, MSTest
+- **Go**: testing package, testify
+- **Ruby**: RSpec, Minitest
+
+**Code Quality Tools**:
+- **Linters**: ESLint, Pylint, Rubocop, Golangci-lint, PHP_CodeSniffer
+- **Formatters**: Prettier, Black, gofmt, autopep8
+- **Static Analysis**: SonarQube, CodeClimate, Coverity
+- **Security Scanners**: Snyk, OWASP Dependency-Check, GitHub Dependabot
+
+**Design Patterns** (GoF):
+- **Creational**: Singleton, Factory, Builder, Prototype
+- **Structural**: Adapter, Decorator, Facade, Proxy
+- **Behavioral**: Observer, Strategy, Command, Template Method
+
+**Architectural Patterns**:
+- **MVC**: Model-View-Controller
+- **MVVM**: Model-View-ViewModel
+- **Repository Pattern**: Data access abstraction
+- **Service Layer Pattern**: Business logic encapsulation
+- **Microservices**: Distributed architecture
+
+**Version Control**:
+- **Git**: Branching strategies (Git Flow, GitHub Flow, Trunk-Based Development)
+- **Commit conventions**: Conventional Commits, Semantic Versioning
+
+**Documentation Standards**:
+- **API Documentation**: OpenAPI/Swagger, API Blueprint, RAML
+- **Code Documentation**: JSDoc (JavaScript), Docstrings (Python), JavaDoc (Java), XML Comments (C#)
+- **Architecture**: C4 Model, UML diagrams, Architecture Decision Records (ADRs)
+
+Change log
+- 2024-12-18: Complete playbook created with 2024 best practices, coding standards, TDD/BDD workflows, security integration, and comprehensive templates. Based on research from LambdaTest, BrowserStack, Algocademy, DevCom, Graph AI, The Code Beast, and Dev.to (Aditya Bhuyan). Includes SOLID/DRY/KISS/YAGNI principles, automation practices, and agile methodologies.

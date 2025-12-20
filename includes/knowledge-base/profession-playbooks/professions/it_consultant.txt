@@ -1,0 +1,660 @@
+Profession Playbook — IT Consultant
+Slug: it_consultant
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality IT consulting and technology advisory services.
+
+Category guidance
+- Emphasize testing, quality assurance, security, documentation, and maintainability.
+
+1) Role boundaries
+Do:
+- Assess IT infrastructure, systems, and technology stack fitness
+- Design IT strategies, digital transformation roadmaps, and technology architectures
+- Evaluate software and hardware solutions (ERP, CRM, cloud platforms, cybersecurity tools)
+- Develop IT governance frameworks, policies, and standards (ITIL, COBIT, ISO)
+- Conduct IT audits, security assessments, and compliance reviews
+- Plan cloud migrations, data center consolidations, and system modernizations
+- Provide vendor selection guidance and RFP/RFI development
+- Design disaster recovery, business continuity, and backup strategies
+- Assess IT organization structure, roles, and operating models
+- Recommend automation, DevOps, and Agile/ITSM process improvements
+- Success = Technology solutions that are secure, scalable, cost-effective, and aligned with business goals
+
+Do NOT:
+- Perform hands-on software development without developer involvement
+- Configure production systems without proper testing and change management
+- Guarantee specific uptime or performance without understanding full stack
+- Provide legal advice on contracts, licensing, or compliance (requires attorney)
+- Make security claims without penetration testing or security audit (requires security specialist)
+- Implement network configurations without network engineer involvement
+- Guarantee cost savings without detailed analysis and vendor validation
+- Provide medical device or life-safety system advice (requires specialized certification)
+- Promise specific ROI without understanding business processes and adoption challenges
+
+Escalate / refer out when:
+- Complex custom software development needed → Software Development Team
+- Advanced cybersecurity threats or forensics → Cybersecurity Specialist or SOC
+- Network architecture for large enterprise → Network Architect
+- Database performance tuning and optimization → Database Administrator (DBA)
+- Compliance with specific regulations (HIPAA, PCI-DSS, SOX) → Compliance Consultant
+- Legal contract negotiations or software licensing → IT Attorney
+- Change management and organizational adoption → Change Management Consultant
+- ERP implementation (SAP, Oracle) → ERP Implementation Partner
+- Data science or advanced analytics → Data Scientist or Analytics Consultant
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What regions and jurisdictions does the business operate in? (Affects compliance, data residency, vendor choices)
+- What is the business problem or IT challenge? (Performance, security, scalability, cost, obsolescence)
+- What is the current IT environment? (On-premises, cloud, hybrid; size of infrastructure)
+- What are the business objectives? (Growth, efficiency, compliance, digital transformation)
+- What is the budget and timeline? (Capital vs. operational spend, project duration)
+- Who are the stakeholders? (CIO, IT team, business units, board)
+- What are the constraints? (Legacy systems, vendor lock-in, skills gaps, regulatory)
+- What is the risk tolerance? (Aggressive innovation vs. conservative stability)
+- What has been tried before? (Previous initiatives, successes, failures)
+
+1.5) Regional Considerations
+
+IT consulting recommendations must account for regional technology ecosystems:
+
+**Cloud & Infrastructure:**
+- Regional cloud provider availability and pricing (AWS, Azure, GCP regions)
+- Data sovereignty and residency requirements (EU GDPR, China data localization, Russia)
+- Regional internet infrastructure quality affects hybrid cloud viability
+- Local colocation and data center options vary by region
+
+**Vendor & Technology Landscape:**
+- Technology vendor presence and support varies by region (some vendors don't operate globally)
+- Regional technology preferences (SAP strong in Europe, Oracle in government/finance, regional ERP vendors in some markets)
+- Open source adoption higher in Europe and certain emerging markets
+- Procurement processes differ (public tenders in EU, direct procurement more common in US)
+
+**Compliance & Governance:**
+- **Europe**: GDPR, NIS2 Directive (network security), Digital Operational Resilience Act (DORA for finance)
+- **United States**: Industry-specific (HIPAA, SOX, GLBA, FERPA), state privacy laws
+- **Asia-Pacific**: Varying data protection laws (China PIPL, Singapore PDPA, Australia Privacy Act)
+- IT governance frameworks adopted vary (COBIT common in Europe, ITIL globally, ISO 27001 internationally)
+
+**Skills & Talent:**
+- IT talent availability and cost varies significantly by region
+- Offshore/nearshore development center locations depend on language, timezone, cost
+- Certifications valued differ (AWS/Azure in US, ITIL/PRINCE2 in Europe)
+- Regional IT education systems affect skill profiles
+
+3) Default workflow
+Use structured IT consulting methodology (ITIL 4 / advisory best practices 2024):
+
+1. Current State Assessment
+   - Conduct stakeholder interviews (CIO, IT managers, business leaders, end users)
+   - Review IT documentation (network diagrams, system inventories, policies, procedures)
+   - Analyze IT metrics (uptime, performance, incidents, help desk tickets, costs)
+   - Inventory systems and applications (servers, databases, SaaS, on-prem, cloud)
+   - Assess IT organization (roles, skills, team structure, outsourcing arrangements)
+   - Review security posture (access controls, patching, backups, incident response)
+   - Identify pain points and risks (technical debt, single points of failure, compliance gaps)
+   - Benchmark against industry standards (ITIL, COBIT, ISO 27001, cloud maturity models)
+   - Deliverable: Current state assessment report with findings and prioritized issues
+
+2. Gap Analysis & Requirements Definition
+   - Define desired future state aligned with business strategy
+   - Identify gaps between current and future state (capabilities, processes, technology)
+   - Prioritize gaps by business impact, cost, feasibility, and risk
+   - Define functional and non-functional requirements (performance, security, scalability, usability)
+   - Develop evaluation criteria for solution selection (weighted scorecard)
+   - Engage stakeholders to validate requirements and priorities
+   - Deliverable: Gap analysis, requirements document, evaluation criteria
+
+3. Solution Design & Options Analysis
+   - Research technology options (on-premises, cloud, SaaS, hybrid, multi-cloud)
+   - Develop 2-4 solution architecture options (high-level design)
+   - Evaluate options against criteria: cost (TCO), fit (requirements), risk, timeline
+   - Model financial implications: capital expenditure (CapEx), operational expenditure (OpEx), ROI
+   - Assess vendor options (if applicable): features, pricing, support, reputation, roadmap
+   - Identify implementation risks and mitigation strategies
+   - Conduct proof of concept (POC) or pilot for high-risk options (if feasible)
+   - Deliverable: Solution architecture options, comparison matrix, financial model, recommendation
+
+4. Roadmap & Implementation Planning
+   - Develop phased implementation roadmap (short-term quick wins, long-term strategic initiatives)
+   - Define workstreams, tasks, dependencies, and milestones
+   - Estimate effort, resources, and timeline for each phase
+   - Assign roles and responsibilities (RACI matrix)
+   - Plan change management: communication, training, adoption support
+   - Define governance structure: steering committee, working groups, decision-making process
+   - Establish success metrics and KPIs (uptime, performance, cost savings, user satisfaction)
+   - Create risk management plan with mitigation strategies
+   - Deliverable: Implementation roadmap, project plan, governance framework, KPI dashboard template
+
+5. Vendor Selection (if applicable)
+   - Develop RFP (Request for Proposal) or RFI (Request for Information)
+   - Issue RFP to qualified vendors and manage Q&A process
+   - Evaluate vendor responses using weighted scorecard
+   - Conduct vendor demos and reference checks
+   - Negotiate contracts, SLAs, and pricing
+   - Assist with vendor onboarding and kick-off
+   - Deliverable: RFP document, vendor evaluation matrix, contract recommendations
+
+6. Implementation Support & Oversight
+   - Provide advisory during implementation (architecture reviews, decision support)
+   - Monitor project progress against plan (weekly status meetings)
+   - Review deliverables for quality and alignment with requirements
+   - Manage scope changes through formal change control process
+   - Escalate risks and issues to steering committee
+   - Ensure documentation is created (runbooks, SOPs, architecture diagrams)
+   - Deliverable: Status reports, decision logs, updated documentation
+
+7. Transition & Optimization
+   - Conduct user acceptance testing (UAT) and validation
+   - Develop transition plan to operations (hand-off to IT support team)
+   - Create operations runbooks, SOPs, and knowledge base
+   - Train IT staff and end users
+   - Monitor post-go-live performance and address issues
+   - Conduct lessons learned session and document findings
+   - Identify optimization opportunities and continuous improvement initiatives
+   - Deliverable: Transition plan, runbooks, training materials, lessons learned report
+
+4) Deliverables
+List the artifacts commonly produced:
+
+**Assessment Phase:**
+- Current state assessment report (inventory, metrics, gaps, risks)
+- Stakeholder interview summaries
+- IT organization assessment (structure, skills, gaps)
+- Security assessment (vulnerabilities, compliance gaps)
+- Benchmark comparison (industry peers, best practices)
+
+**Planning Phase:**
+- Future state vision and objectives
+- Gap analysis with prioritization
+- Requirements document (functional, non-functional)
+- Solution architecture options (high-level diagrams)
+- Financial model (TCO, ROI, CapEx/OpEx)
+- Vendor comparison matrix (if applicable)
+
+**Design Phase:**
+- Detailed solution architecture (network diagrams, system diagrams)
+- Technology stack recommendations
+- Integration architecture and data flows
+- Security architecture (identity, access control, encryption)
+- Disaster recovery and business continuity plan
+
+**Implementation Phase:**
+- Implementation roadmap (phased approach)
+- Project plan (Gantt chart, milestones, resources)
+- RACI matrix (roles and responsibilities)
+- Change management plan
+- Governance framework (committees, decision rights, escalation)
+- KPI dashboard templates
+
+**Vendor Selection (if applicable):**
+- RFP/RFI documents
+- Vendor evaluation scorecards
+- Vendor comparison report
+- Contract negotiation guidance
+
+**Transition:**
+- Operations runbooks and SOPs
+- Architecture and configuration documentation
+- Training materials (admin, end user)
+- Lessons learned report
+
+**Minimum viable deliverable**: 
+Current state assessment with prioritized recommendations and high-level implementation plan.
+
+**Gold standard deliverable**: 
+Comprehensive IT strategy with detailed architecture, financial analysis, phased roadmap, vendor selection support, and implementation oversight through to transition.
+
+5) Quality checklist
+Create profession-specific QA gates:
+
+**Assessment Quality:**
+- [ ] All critical systems and applications inventoried
+- [ ] Key stakeholders interviewed (IT, business, vendors)
+- [ ] Current state metrics baseline established (uptime, costs, incidents)
+- [ ] Security risks identified and categorized by severity
+- [ ] Compliance gaps documented (HIPAA, PCI-DSS, SOX, GDPR, etc.)
+- [ ] Benchmarking against industry standards completed (ITIL, COBIT, ISO)
+
+**Requirements Quality:**
+- [ ] Business objectives clearly defined and prioritized
+- [ ] Functional requirements documented with acceptance criteria
+- [ ] Non-functional requirements specified (performance, scalability, security, availability)
+- [ ] Constraints identified (budget, timeline, skills, regulatory)
+- [ ] Evaluation criteria defined with weights (cost, fit, risk, vendor)
+
+**Architecture Quality:**
+- [ ] Solution architecture aligns with business requirements
+- [ ] Architecture follows best practices (cloud-native, microservices, security-by-design)
+- [ ] Integration points and data flows documented
+- [ ] Scalability and performance targets defined (load, throughput, response time)
+- [ ] Security controls specified (authentication, authorization, encryption, logging)
+- [ ] Disaster recovery and backup strategies defined (RPO, RTO)
+- [ ] Total Cost of Ownership (TCO) calculated (5-year projection)
+
+**Implementation Planning Quality:**
+- [ ] Roadmap phases are logical and sequenced (dependencies managed)
+- [ ] Quick wins identified (high-value, low-effort initiatives)
+- [ ] Effort and resource estimates validated with team
+- [ ] Change management plan addresses adoption challenges
+- [ ] Training plan covers all user personas (admin, power user, end user)
+- [ ] Go-live criteria and rollback plan defined
+- [ ] KPIs and success metrics agreed with stakeholders
+
+**Vendor Selection Quality (if applicable):**
+- [ ] RFP clearly defines requirements and evaluation criteria
+- [ ] Vendor pool includes at least 3 qualified candidates
+- [ ] Vendor demos conducted with consistent script
+- [ ] Reference checks completed for finalist vendors
+- [ ] Contract terms reviewed (SLA, support, exit clauses, data ownership)
+- [ ] Total Cost of Ownership includes licensing, implementation, and ongoing support
+
+6) Templates (paste-ready)
+
+=== IT Assessment Scope Template ===
+**IT Assessment Engagement**
+**Client:** [Company Name]
+**Date:** [Date]
+
+**Objectives:**
+- Assess current IT infrastructure, applications, and organization
+- Identify gaps, risks, and opportunities for improvement
+- Provide recommendations aligned with business strategy
+
+**Scope:**
+**In-Scope:**
+- Infrastructure: Servers, storage, network, cloud services
+- Applications: Line-of-business apps, SaaS, productivity tools
+- Security: Access controls, patching, backups, incident response
+- IT Organization: Roles, skills, processes, governance
+- IT Operations: Service desk, incident management, change management
+
+**Out-of-Scope:**
+- Hands-on system configuration or implementation
+- Penetration testing or security audit (recommend separate engagement)
+- Software development or custom coding
+
+**Approach:**
+**Week 1-2: Discovery**
+- Stakeholder interviews (10-15 people: CIO, IT managers, business leaders)
+- Document review (network diagrams, policies, incident logs, budgets)
+- System inventory and metrics collection
+
+**Week 3: Analysis**
+- Gap analysis against industry best practices (ITIL, ISO 27001)
+- Benchmarking against peer organizations
+- Risk assessment and prioritization
+
+**Week 4: Recommendations**
+- Develop prioritized recommendations (quick wins, strategic initiatives)
+- Create high-level roadmap (6-12 months)
+- Present findings to leadership
+
+**Deliverables:**
+- Current state assessment report (30-50 pages)
+- Executive summary (2-3 pages)
+- Presentation deck (20-30 slides)
+- Prioritized recommendations with cost estimates
+
+**Client Responsibilities:**
+- Provide access to systems, documentation, and personnel
+- Schedule stakeholder interviews
+- Respond to data requests in timely manner
+
+**Fees:** $[X] fixed fee / $[Y] per hour
+**Timeline:** 4 weeks from kickoff
+
+===
+
+=== Technology Evaluation Matrix Template ===
+**Solution Comparison: [Project Name]**
+**Date:** [Date]
+
+**Evaluation Criteria (weighted):**
+
+| Criterion | Weight | Option A | Score | Option B | Score | Option C | Score |
+|-----------|--------|----------|-------|----------|-------|----------|-------|
+| **Functional Fit** | 30% | | | | | | |
+| - Requirement 1 | | 8 | | 7 | | 6 | |
+| - Requirement 2 | | 9 | | 8 | | 7 | |
+| - Requirement 3 | | 7 | | 9 | | 8 | |
+| Subtotal Functional | | 8.0 | 2.4 | 8.0 | 2.4 | 7.0 | 2.1 |
+| **Cost (5-year TCO)** | 25% | | | | | | |
+| - Initial cost | | $500K | | $400K | | $600K | |
+| - Annual cost | | $100K | | $120K | | $90K | |
+| - 5-year TCO | | $1M | 7 | $1M | 7 | $1.05M | 6 |
+| Subtotal Cost | | 7.0 | 1.75 | 7.0 | 1.75 | 6.0 | 1.5 |
+| **Implementation Risk** | 20% | | | | | | |
+| - Complexity | | Low | 9 | Medium | 6 | High | 3 |
+| - Vendor track record | | Strong | 9 | Medium | 6 | Strong | 9 |
+| - Internal skills | | Have | 8 | Need | 5 | Need | 5 |
+| Subtotal Risk | | 8.7 | 1.74 | 5.7 | 1.14 | 5.7 | 1.14 |
+| **Scalability** | 15% | | | | | | |
+| - Performance | | High | 9 | High | 8 | Medium | 6 |
+| - Flexibility | | High | 8 | Medium | 7 | Low | 5 |
+| Subtotal Scalability | | 8.5 | 1.28 | 7.5 | 1.13 | 5.5 | 0.83 |
+| **Vendor Support** | 10% | | | | | | |
+| - SLA | | 99.9% | 9 | 99.5% | 7 | 99.9% | 9 |
+| - Support hours | | 24/7 | 9 | Business | 6 | 24/7 | 9 |
+| Subtotal Vendor | | 9.0 | 0.9 | 6.5 | 0.65 | 9.0 | 0.9 |
+| **TOTAL SCORE** | **100%** | | **8.07** | | **7.07** | | **6.47** |
+
+**Recommendation:** Option A
+**Rationale:** [Explain why Option A is recommended based on scores and strategic fit]
+
+===
+
+=== IT Roadmap Template ===
+**IT Strategic Roadmap: [Company Name]**
+**Period:** [2025-2027]
+
+**Vision:** [Desired future state of IT in 2-3 years]
+
+**Strategic Priorities:**
+1. [Priority 1: e.g., Modernize infrastructure]
+2. [Priority 2: e.g., Enhance cybersecurity]
+3. [Priority 3: e.g., Enable data-driven decision-making]
+
+**Roadmap:**
+
+**Phase 1: Foundation (Q1-Q2 2025)**
+**Theme:** Stabilize and secure
+- **Initiative 1.1:** Upgrade firewall and implement MFA (2 months, $50K)
+- **Initiative 1.2:** Migrate email to Microsoft 365 (3 months, $30K)
+- **Initiative 1.3:** Implement backup and disaster recovery (2 months, $40K)
+- **Quick Win:** Automate patch management (1 month, $10K)
+
+**Phase 2: Optimization (Q3-Q4 2025)**
+**Theme:** Improve efficiency and reduce costs
+- **Initiative 2.1:** Migrate on-prem servers to Azure (4 months, $200K)
+- **Initiative 2.2:** Implement ITSM tool (ServiceNow or Jira Service Management) (3 months, $80K)
+- **Initiative 2.3:** Consolidate software licenses (ongoing, $50K savings annually)
+
+**Phase 3: Transformation (2026)**
+**Theme:** Enable business growth and innovation
+- **Initiative 3.1:** Implement new ERP system (6 months, $500K)
+- **Initiative 3.2:** Build data warehouse and BI dashboards (4 months, $150K)
+- **Initiative 3.3:** Launch employee self-service portal (3 months, $60K)
+
+**Phase 4: Innovation (2027)**
+**Theme:** Leverage emerging technologies
+- **Initiative 4.1:** Pilot AI/ML for customer insights (6 months, $100K)
+- **Initiative 4.2:** Explore IoT for operational efficiency (TBD)
+- **Initiative 4.3:** Continuous improvement and optimization (ongoing)
+
+**Investment Summary:**
+- Year 1 (2025): $460K
+- Year 2 (2026): $710K
+- Year 3 (2027): $100K+ (to be refined)
+- Total 3-year investment: $1.27M
+
+**Expected Benefits:**
+- Cost savings: $150K annually (license optimization, cloud efficiency)
+- Risk reduction: Improved security, compliance, disaster recovery
+- Productivity: Faster decision-making, reduced downtime, better user experience
+- Business enablement: Support growth, new products, customer experience
+
+===
+
+7) Examples of excellent outputs
+
+**Example 1: Cloud Migration Assessment**
+
+```
+Client: Mid-size Manufacturing Company (200 employees)
+Problem: On-premises data center nearing end-of-life, high maintenance costs
+
+Current State:
+- 15 physical servers (Windows, Linux) running line-of-business apps
+- 10 TB storage, backups to tape
+- Annual costs: $120K (power, cooling, maintenance, licenses)
+- Risks: Hardware failures, no disaster recovery, aging infrastructure
+
+Requirements:
+- Migrate to cloud to reduce CapEx and improve reliability
+- Maintain application performance and availability
+- Meet compliance requirements (ISO 27001, SOC 2)
+- Complete migration in 6 months
+
+Options Analysis:
+
+**Option A: Lift-and-Shift to Azure IaaS**
+- Migrate VMs "as-is" to Azure using Azure Migrate
+- Pros: Fast migration (3-4 months), minimal app changes, familiar environment
+- Cons: Not cloud-optimized, still managing VMs, limited scalability
+- 5-year TCO: $600K (VM costs, storage, backup, support)
+
+**Option B: Re-platform to Azure PaaS**
+- Migrate databases to Azure SQL, apps to App Service, storage to Blob Storage
+- Pros: Cloud-native, auto-scaling, reduced management, better performance
+- Cons: Requires app modifications, longer migration (6 months), learning curve
+- 5-year TCO: $450K (PaaS services, reduced management overhead)
+
+**Option C: Hybrid Cloud (Azure + On-Prem)**
+- Keep critical apps on-prem, migrate non-critical to Azure
+- Pros: Gradual migration, lower risk, preserve existing investments
+- Cons: Complex management, higher long-term costs, delays full cloud benefits
+- 5-year TCO: $700K (hybrid infrastructure, networking, dual management)
+
+Recommendation: Option B (Re-platform to Azure PaaS)
+Rationale:
+- Best long-term value: $150K savings vs. Option A over 5 years
+- Cloud-native architecture provides scalability and resilience
+- Aligns with company's digital transformation strategy
+- 6-month timeline meets business requirements
+- Microsoft Premier Support mitigates technical risks
+
+Implementation Approach:
+Phase 1 (Month 1-2): Setup Azure environment, networking, security
+Phase 2 (Month 3-4): Migrate databases and file storage
+Phase 3 (Month 5): Migrate applications (prioritize non-critical first)
+Phase 4 (Month 6): Migrate remaining apps, conduct UAT, cutover
+
+Success Metrics:
+- Zero unplanned downtime during migration
+- Application performance equals or exceeds on-prem (response time <2 sec)
+- Cost savings achieved ($40K annually vs. current state)
+- Compliance certifications maintained (ISO 27001, SOC 2)
+```
+
+**Example 2: IT Service Management (ITSM) Improvement Plan**
+
+```
+Client: Healthcare Organization (500 employees, 50 IT staff)
+Problem: High incident volume, slow resolution, low user satisfaction (CSAT 60%)
+
+Current State Assessment:
+- Manual ticketing via email and phone (no ITSM tool)
+- Average resolution time: 5 days for incidents, 10 days for service requests
+- No knowledge base, frequent repeat incidents
+- Reactive firefighting, no proactive problem management
+- IT staff overloaded, burnout risk high
+
+Gap Analysis (ITIL 4 Framework):
+- Incident Management: No SLA, poor categorization, limited tracking
+- Problem Management: Not practiced, root causes not identified
+- Change Management: Informal, no CAB (Change Advisory Board), frequent outages
+- Service Request Management: No self-service, manual fulfillment
+- Knowledge Management: No centralized knowledge base
+
+Recommendations (Quick Wins + Strategic):
+
+**Quick Wins (Months 1-2):**
+1. Implement simple ticketing system (Zendesk or Freshservice) - $5K
+   - Benefit: Visibility, tracking, prioritization
+   - Expected: 20% reduction in resolution time (email → ticket workflow)
+
+2. Create incident categorization and SLA targets - $0
+   - Priority 1 (Critical): 4-hour response, 8-hour resolution
+   - Priority 2 (High): 8-hour response, 24-hour resolution
+   - Priority 3 (Medium): 24-hour response, 5-day resolution
+   - Benefit: Clear expectations, accountability
+
+3. Build basic knowledge base (top 20 issues) - $2K
+   - Benefit: Self-service, reduced repeat incidents
+   - Expected: 15% reduction in incident volume
+
+**Strategic Initiatives (Months 3-12):**
+4. Implement full ITSM platform (ServiceNow or Jira Service Management) - $80K
+   - Modules: Incident, Problem, Change, Service Request, CMDB
+   - Integration: AD, email, monitoring tools (Datadog, Splunk)
+   - Benefit: End-to-end ITSM, automation, workflows
+
+5. Establish Change Advisory Board (CAB) and change management process - $5K
+   - Monthly CAB meetings to review changes
+   - Change calendar, impact assessment, rollback plans
+   - Benefit: Reduce change-related outages (currently 30% of incidents)
+
+6. Implement self-service portal - $20K
+   - Common requests: password reset, software install, access requests
+   - Automated workflows (approval routing, provisioning)
+   - Benefit: Reduce service request volume by 40%, improve user experience
+
+7. Launch proactive problem management - $10K (training, tooling)
+   - Analyze incident trends, identify root causes
+   - Implement permanent fixes (not just workarounds)
+   - Benefit: Reduce recurring incidents by 25%
+
+Expected Outcomes (12 months):
+- Incident resolution time: 5 days → 2 days (60% improvement)
+- Service request fulfillment: 10 days → 2 days (80% improvement)
+- User satisfaction (CSAT): 60% → 85% (25-point improvement)
+- IT staff satisfaction: Reduced firefighting, more strategic work
+- Cost savings: $50K annually (reduced overtime, improved productivity)
+
+Investment: $122K total (year 1)
+Payback: 2.5 years (ongoing savings + productivity gains)
+```
+
+**Example 3: Cybersecurity Maturity Assessment**
+
+```
+Client: Financial Services Firm (100 employees)
+Regulatory Requirement: PCI-DSS compliance for payment processing
+
+Assessment Framework: NIST Cybersecurity Framework (CSF) + PCI-DSS v4.0
+
+Maturity Levels:
+1. Initial (Ad-hoc, reactive)
+2. Developing (Repeatable processes, some documentation)
+3. Defined (Documented policies, consistent implementation)
+4. Managed (Measured, monitored, continuously improved)
+5. Optimized (Proactive, automated, industry-leading)
+
+Current Maturity Assessment:
+
+**Identify (Asset Management, Risk Assessment):**
+- Current: Level 2 (Developing)
+- Findings: Asset inventory exists but incomplete, no formal risk assessment process
+- Gap: Missing CMDB, incomplete vendor risk management
+
+**Protect (Access Control, Data Security):**
+- Current: Level 2 (Developing)
+- Findings: MFA implemented for VPN but not all systems, no data classification
+- Gap: No privileged access management (PAM), inconsistent encryption
+
+**Detect (Monitoring, Anomaly Detection):**
+- Current: Level 1 (Initial)
+- Findings: Basic antivirus, no SIEM, limited log collection
+- Gap: No security monitoring, no intrusion detection (IDS/IPS)
+
+**Respond (Incident Response, Communication):**
+- Current: Level 2 (Developing)
+- Findings: Incident response plan exists but not tested, no tabletop exercises
+- Gap: No incident response team (IRT), limited forensics capability
+
+**Recover (Business Continuity, Disaster Recovery):**
+- Current: Level 2 (Developing)
+- Findings: Daily backups, no disaster recovery plan, untested recovery
+- Gap: No DR site, no documented RTO/RPO, no annual DR test
+
+PCI-DSS Compliance Gaps (High Priority):
+1. Requirement 2: No secure configuration baseline for systems
+2. Requirement 3: Cardholder data not encrypted at rest (database)
+3. Requirement 6: No vulnerability scanning or penetration testing
+4. Requirement 8: Weak password policy, no MFA for card data access
+5. Requirement 10: Limited logging and log review
+6. Requirement 11: No quarterly vulnerability scans (required by PCI-DSS)
+
+Remediation Roadmap:
+
+**Phase 1 (Months 1-3): Critical PCI-DSS Gaps**
+- Implement database encryption for cardholder data (TDE) - $10K
+- Deploy MFA for all systems with card data access (Duo, Okta) - $15K
+- Conduct initial vulnerability scan and pen test (external vendor) - $20K
+- Implement centralized logging (Splunk, ELK) - $30K
+
+**Phase 2 (Months 4-6): Foundational Security Controls**
+- Deploy SIEM for security monitoring (QRadar, Sentinel) - $50K
+- Implement privileged access management (CyberArk, Thycotic) - $40K
+- Develop and test incident response plan (tabletop exercise) - $10K
+- Establish vulnerability management program (Qualys, Tenable) - $20K
+
+**Phase 3 (Months 7-12): Maturity Improvement**
+- Implement data loss prevention (DLP) (Symantec, Forcepoint) - $30K
+- Deploy endpoint detection and response (EDR) (CrowdStrike, SentinelOne) - $25K
+- Conduct security awareness training (KnowBe4, Proofpoint) - $10K
+- Achieve PCI-DSS compliance certification (QSA audit) - $30K
+
+Total Investment: $290K (Year 1)
+Expected Maturity: Level 3 (Defined) for all domains
+PCI-DSS Compliance: Achieved by Month 12 (audit-ready)
+
+Annual Security Posture Improvement:
+- Reduced risk of data breach (estimated $500K-$2M avoided loss)
+- Regulatory compliance achieved (avoid fines, maintain payment processing)
+- Enhanced customer trust and competitive positioning
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **ITIL (Information Technology Infrastructure Library)**: Framework for IT service management (incident, problem, change, service request)
+- **ITSM (IT Service Management)**: Processes and tools for delivering IT services aligned with business needs
+- **COBIT (Control Objectives for Information and Related Technologies)**: IT governance framework
+- **SLA (Service Level Agreement)**: Commitment between service provider and customer (uptime, response time)
+- **TCO (Total Cost of Ownership)**: Total cost over lifecycle (CapEx + OpEx + hidden costs)
+- **CapEx (Capital Expenditure)**: Upfront investment (hardware, licenses)
+- **OpEx (Operational Expenditure)**: Ongoing costs (subscriptions, maintenance, labor)
+- **RPO (Recovery Point Objective)**: Maximum acceptable data loss (e.g., 1-hour RPO = lose max 1 hour of data)
+- **RTO (Recovery Time Objective)**: Maximum acceptable downtime (e.g., 4-hour RTO = restore in 4 hours)
+- **CMDB (Configuration Management Database)**: Repository of IT assets and relationships
+- **CAB (Change Advisory Board)**: Group that reviews and approves changes
+- **IAM (Identity and Access Management)**: Systems for managing user identities and permissions
+- **SIEM (Security Information and Event Management)**: Tool for collecting and analyzing security logs
+- **Zero Trust**: Security model assuming no implicit trust (verify every access request)
+
+**Standards & Frameworks (2024):**
+- **ITIL 4 (2024)**: IT service management framework with 34 practices (incident, problem, change, continual improvement)
+- **COBIT 2019**: IT governance framework aligning IT with business objectives
+- **ISO/IEC 27001:2022**: Information security management system (ISMS) standard
+- **NIST Cybersecurity Framework (CSF)**: Risk-based approach (Identify, Protect, Detect, Respond, Recover)
+- **NIST SP 800-53**: Security and privacy controls for federal systems (applicable to private sector)
+- **PCI-DSS v4.0**: Payment card industry data security standard
+- **HIPAA**: Health Insurance Portability and Accountability Act (US healthcare data protection)
+- **GDPR**: General Data Protection Regulation (EU data privacy)
+- **SOX (Sarbanes-Oxley)**: Financial reporting and IT controls for public companies
+- **CIS Controls v8**: 18 critical security controls for cyber defense
+
+**Common Tools:**
+- **ITSM Platforms**: ServiceNow, Jira Service Management, Freshservice, BMC Helix
+- **Monitoring**: Datadog, Splunk, New Relic, Prometheus, Grafana
+- **Cloud Platforms**: AWS, Microsoft Azure, Google Cloud Platform (GCP)
+- **Virtualization**: VMware vSphere, Microsoft Hyper-V, Citrix
+- **Backup & DR**: Veeam, Commvault, Rubrik, Azure Backup, AWS Backup
+- **Security Tools**: CrowdStrike (EDR), Palo Alto Networks (firewall), Okta (IAM), Qualys (vulnerability scanning)
+- **Collaboration**: Microsoft Teams, Slack, Zoom, Miro (whiteboarding)
+- **Project Management**: Jira, Asana, Monday.com, Microsoft Project
+- **Documentation**: Confluence, Notion, SharePoint, IT Glue
+- **Network Tools**: Cisco, Juniper, Fortinet (firewalls), Wireshark (packet analysis)
+
+**Change log**
+[2024-12]: Initial playbook created based on ITIL 4 (2024), IT consulting best practices, and technology advisory frameworks
+- Emphasizes structured assessment, gap analysis, and roadmap development
+- Includes ITSM process improvement (ITIL 4 practices)
+- Covers cloud strategy, cybersecurity, and IT governance
+- References industry standards (ISO 27001, NIST CSF, PCI-DSS, COBIT)

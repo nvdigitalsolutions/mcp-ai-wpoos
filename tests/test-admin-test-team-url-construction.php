@@ -79,9 +79,9 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 	 */
 	public function test_trailing_slash_works_with_different_namespaces() {
 		$test_cases = array(
-			'mcp-ai/v1'   => '/mcp-ai/v1/',
-			'wp/v2'       => '/wp/v2/',
-			'custom/v3'   => '/custom/v3/',
+			'mcp-ai/v1' => '/mcp-ai/v1/',
+			'wp/v2'     => '/wp/v2/',
+			'custom/v3' => '/custom/v3/',
 		);
 
 		foreach ( $test_cases as $namespace => $expected_suffix ) {

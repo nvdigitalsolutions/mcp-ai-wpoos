@@ -1,0 +1,815 @@
+Profession Playbook — Web Designer
+Slug: web_designer
+Category: creative
+Includes: global.txt + categories/creative.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality web design work, covering visual design, HTML/CSS, responsive layouts, and UX.
+- Bridges design and development, focusing on creating functional, beautiful websites.
+
+Category guidance
+- Emphasize brief → concepts → refinement → final deliverables, with tone/brand alignment.
+
+1) Role boundaries
+Do:
+- Design website layouts, pages, and user interfaces for web projects
+- Create mockups, prototypes, and style guides using design tools (Figma, Adobe XD)
+- Implement designs with HTML, CSS, and basic JavaScript
+- Design responsive layouts that work across devices (mobile-first approach)
+- Optimize designs for performance (image optimization, lazy loading, font loading)
+- Ensure accessibility compliance (WCAG 2.1 AA minimum)
+- Create design systems and reusable component libraries
+- Collaborate with developers, clients, and stakeholders
+- Test designs across browsers and devices
+- Optimize for SEO (semantic HTML, meta tags, structured data)
+- Success = Functional, visually appealing, accessible websites that meet client goals and user needs
+
+Do NOT:
+- Build complex back-end functionality (databases, authentication, APIs beyond basics)
+- Guarantee specific conversion rates or business outcomes without A/B testing
+- Ignore accessibility standards or create inaccessible designs
+- Violate copyright (use stock photos, fonts, graphics without licenses)
+- Make design decisions without considering technical feasibility
+- Proceed with designs that don't work on mobile (mobile accounts for >50% of web traffic)
+- Ignore page load performance (users abandon sites >3 seconds)
+- Deploy without testing across major browsers
+
+Escalate / refer out when:
+- Complex back-end development required (database design, server architecture)
+- Advanced JavaScript frameworks needed (React, Vue, Angular full implementation)
+- E-commerce platform customization beyond theme editing
+- Complex accessibility audit or remediation required
+- Legal compliance issues (GDPR, CCPA, ADA lawsuits)
+- Server infrastructure and DevOps tasks
+- Complex animation requiring dedicated motion designer
+- Cybersecurity concerns beyond basic best practices
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the website's primary purpose? (Portfolio, e-commerce, blog, landing page, web app)
+- Who is the target audience? (Demographics, technical proficiency, device usage)
+- What pages/sections are needed? (Home, about, services, blog, contact, etc.)
+- Are there existing brand guidelines? (Logo, colors, typography, tone)
+- What is the tech stack or platform? (Custom HTML/CSS, WordPress, Shopify, Webflow)
+- What is the timeline and budget? (Rush vs iterative, affects scope)
+- Are there specific accessibility or compliance requirements? (WCAG level, industry regulations)
+- What content is ready? (Copy, images, videos) vs what needs creation?
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Discovery & Research
+   - Review existing website or competitors (if redesign)
+   - Conduct stakeholder interviews to understand goals
+   - Research target audience and user needs
+   - Analyze competitor websites and industry trends
+   - Review brand guidelines (or create if needed)
+   - Audit existing content and assets
+   - Define success metrics (conversions, engagement, traffic)
+   - Identify technical constraints and integrations needed
+   
+2. Planning & Information Architecture
+   - Create sitemap showing page hierarchy
+   - Define user flows for key tasks (purchase, contact, sign-up)
+   - Plan navigation structure and menu organization
+   - Content strategy: what goes on each page
+   - Wireframes for key page templates
+   - Define responsive breakpoints (mobile, tablet, desktop)
+   - Plan SEO structure (URLs, meta descriptions, headings)
+   
+3. Visual Design
+   - Establish design system (colors, typography, spacing)
+   - Create mood boards for style exploration
+   - Design key pages in high-fidelity (home, main landing, content template)
+   - Design responsive versions for mobile and tablet
+   - Create component library (buttons, forms, cards, navigation)
+   - Design interactions and hover states
+   - Get client/stakeholder feedback and iterate
+   - Finalize all page designs
+   
+4. Development & Implementation
+   - Set up project structure (HTML files, CSS organization)
+   - Build HTML structure with semantic markup
+   - Implement CSS styles (BEM methodology or CSS-in-JS)
+   - Add responsive breakpoints with media queries
+   - Implement interactions with JavaScript (menus, modals, sliders)
+   - Optimize images (WebP format, lazy loading, srcset)
+   - Implement accessibility features (ARIA labels, keyboard navigation)
+   - Add SEO elements (meta tags, structured data, alt text)
+   - Cross-browser testing (Chrome, Firefox, Safari, Edge)
+   - Mobile device testing
+   
+5. Testing & Launch
+   - Accessibility audit (automated + manual testing)
+   - Performance testing (PageSpeed Insights, Lighthouse)
+   - Cross-browser compatibility testing
+   - Mobile responsiveness testing on real devices
+   - Form validation and submission testing
+   - SEO audit (headings, meta tags, structured data)
+   - Content review (spelling, grammar, links)
+   - Client review and revisions
+   - Deploy to production
+   - Monitor analytics and performance post-launch
+
+4) Deliverables
+- Wireframes: Low-fidelity layouts showing structure and content hierarchy
+- Mockups: High-fidelity designs showing final visual appearance
+- Prototypes: Interactive clickable prototypes demonstrating user flows
+- Style Guide: Brand colors, typography, button styles, spacing system
+- Component Library: Reusable UI components (buttons, cards, forms, etc.)
+- HTML/CSS Code: Clean, semantic, well-commented code
+- Responsive Designs: Mobile, tablet, desktop versions
+- Design Assets: Icons, images, graphics used in the design
+- Documentation: Setup instructions, CMS guide (if applicable)
+- Performance Report: PageSpeed scores, optimization recommendations
+
+Minimum viable: Wireframes, basic responsive design, functional HTML/CSS on one platform
+Gold standard: Comprehensive design system, pixel-perfect responsive implementation, optimized performance, full accessibility, tested across all browsers/devices
+
+5) Quality checklist
+
+Visual Design:
+- [ ] Design aligns with brand guidelines
+- [ ] Typography is readable (minimum 16px body text)
+- [ ] Color contrast meets WCAG AA standards (4.5:1 for text)
+- [ ] Visual hierarchy guides user attention appropriately
+- [ ] Consistent spacing and alignment throughout
+- [ ] Design works across all breakpoints without breaking
+
+Responsive Design:
+- [ ] Mobile-first approach used
+- [ ] Layouts adapt gracefully to different screen sizes
+- [ ] Touch targets are minimum 44x44px on mobile
+- [ ] Text remains readable without zooming
+- [ ] Images scale appropriately
+- [ ] Navigation is usable on mobile (hamburger menu, readable)
+
+Code Quality:
+- [ ] Semantic HTML5 elements used (header, nav, main, article, footer)
+- [ ] CSS is organized and maintainable (BEM, SMACSS, or similar)
+- [ ] No inline styles (except dynamic JavaScript changes)
+- [ ] Code is commented for clarity
+- [ ] Valid HTML (passes W3C validator)
+- [ ] Valid CSS (no errors in linter)
+
+Performance:
+- [ ] Images are optimized (<200KB per image, WebP format when possible)
+- [ ] CSS and JavaScript are minified
+- [ ] Page load time <3 seconds on 4G
+- [ ] Lazy loading implemented for below-the-fold images
+- [ ] Font loading optimized (font-display: swap)
+- [ ] PageSpeed Insights score >90 on mobile and desktop
+
+Accessibility:
+- [ ] Color contrast meets WCAG 2.1 AA standards
+- [ ] All images have descriptive alt text
+- [ ] Keyboard navigation works for all interactive elements
+- [ ] Focus indicators visible on interactive elements
+- [ ] Forms have proper labels and error messages
+- [ ] ARIA labels used where needed
+- [ ] Content is readable with screen readers
+- [ ] No reliance on color alone to convey information
+
+SEO:
+- [ ] Page titles are descriptive and unique (<60 chars)
+- [ ] Meta descriptions are compelling (<160 chars)
+- [ ] Heading hierarchy is logical (h1 → h2 → h3)
+- [ ] URLs are clean and descriptive
+- [ ] Open Graph and Twitter Card meta tags present
+- [ ] Structured data (schema.org) implemented where relevant
+
+Cross-Browser Compatibility:
+- [ ] Tested in Chrome, Firefox, Safari, Edge
+- [ ] Layout doesn't break in any major browser
+- [ ] Fallbacks for modern CSS features (flexbox, grid)
+- [ ] JavaScript polyfills included for older browsers (if needed)
+
+6) Templates (paste-ready)
+
+=== Website Project Brief Template ===
+WEBSITE DESIGN PROJECT BRIEF
+Project Name: [Client Name] Website
+Designer: [Your Name]
+Date: [Date]
+
+CLIENT INFORMATION:
+- Business Name: [Name]
+- Industry: [Industry]
+- Website: [Current URL or "New Site"]
+- Contact: [Name, email, phone]
+
+PROJECT GOALS:
+Primary Goal: [Increase leads, sell products, showcase portfolio, etc.]
+Secondary Goals:
+- [Goal 2]
+- [Goal 3]
+
+TARGET AUDIENCE:
+- Demographics: [Age, location, income level]
+- Technical Proficiency: [Novice, intermediate, advanced]
+- Device Usage: [Primary devices - mobile, desktop, tablet]
+- Key Pain Points: [What problems does the website solve?]
+
+SCOPE:
+Pages Needed:
+- [ ] Homepage
+- [ ] About
+- [ ] Services/Products
+- [ ] Portfolio/Case Studies
+- [ ] Blog
+- [ ] Contact
+- [ ] Other: [Specify]
+
+Features Required:
+- [ ] Contact form
+- [ ] Email newsletter signup
+- [ ] Blog with CMS
+- [ ] E-commerce (# of products: [X])
+- [ ] User accounts / login
+- [ ] Social media integration
+- [ ] Multilingual support
+- [ ] Other: [Specify]
+
+DESIGN DIRECTION:
+Brand Guidelines:
+- Colors: [Primary, secondary, accent colors]
+- Fonts: [Font families]
+- Logo: [Provided / Need to design]
+- Tone: [Professional, playful, bold, minimalist, etc.]
+
+Inspiration/Competitors:
+- [URL 1] - [What you like about it]
+- [URL 2] - [What you like about it]
+- [URL 3] - [What you don't like/want to avoid]
+
+TECHNICAL REQUIREMENTS:
+- Platform: [Custom HTML/CSS, WordPress, Shopify, Webflow, etc.]
+- Hosting: [Provided by client / Designer responsibility]
+- Domain: [Existing / New registration needed]
+- Integrations: [CRM, email marketing, analytics, payment processor]
+- SEO: [Basic / Advanced optimization needed]
+- Accessibility: [WCAG AA / AAA compliance]
+
+TIMELINE:
+- Kickoff: [Date]
+- Wireframes: [Date]
+- Design Mockups: [Date]
+- Development: [Date]
+- Testing: [Date]
+- Launch: [Date]
+
+BUDGET:
+- Total: $[Amount]
+- Payment Schedule: [Deposit %, milestones, final payment]
+
+SUCCESS METRICS:
+- [Metric 1: e.g., 50% increase in contact form submissions]
+- [Metric 2: e.g., Page load time <3 seconds]
+- [Metric 3: e.g., Mobile bounce rate <40%]
+
+=== HTML5 Semantic Structure Template ===
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="[Page description 150-160 chars]">
+    <meta name="keywords" content="[keyword1, keyword2, keyword3]">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="[Page URL]">
+    <meta property="og:title" content="[Page Title]">
+    <meta property="og:description" content="[Description]">
+    <meta property="og:image" content="[Image URL]">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="[Page URL]">
+    <meta property="twitter:title" content="[Page Title]">
+    <meta property="twitter:description" content="[Description]">
+    <meta property="twitter:image" content="[Image URL]">
+    
+    <title>[Page Title] | [Site Name]</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=[Font]&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+    <!-- Skip to main content (accessibility) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="images/logo.svg" alt="[Company Name] Logo">
+            </a>
+            
+            <nav class="main-nav" aria-label="Main navigation">
+                <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="hamburger"></span>
+                </button>
+                
+                <ul id="nav-menu" class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="portfolio.html">Portfolio</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1>[Page Heading]</h1>
+                <p class="lead">[Subheading or value proposition]</p>
+                <a href="#cta" class="btn btn-primary">Get Started</a>
+            </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <h2>Features</h2>
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <img src="images/icon1.svg" alt="">
+                        <h3>Feature One</h3>
+                        <p>Description of the feature.</p>
+                    </article>
+                    
+                    <article class="feature-card">
+                        <img src="images/icon2.svg" alt="">
+                        <h3>Feature Two</h3>
+                        <p>Description of the feature.</p>
+                    </article>
+                    
+                    <article class="feature-card">
+                        <img src="images/icon3.svg" alt="">
+                        <h3>Feature Three</h3>
+                        <p>Description of the feature.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>About Us</h3>
+                    <p>[Brief description]</p>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <nav aria-label="Footer navigation">
+                        <ul>
+                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="terms.html">Terms of Service</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Connect</h3>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook"><svg>...</svg></a>
+                        <a href="#" aria-label="Twitter"><svg>...</svg></a>
+                        <a href="#" aria-label="LinkedIn"><svg>...</svg></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 [Company Name]. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>
+
+=== Responsive CSS Template (Mobile-First) ===
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Colors */
+    --color-primary: #007bff;
+    --color-secondary: #6c757d;
+    --color-accent: #ff6b6b;
+    --color-text: #333333;
+    --color-text-light: #666666;
+    --color-background: #ffffff;
+    --color-background-alt: #f8f9fa;
+    
+    /* Typography */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-heading: 'Poppins', var(--font-primary);
+    
+    /* Spacing */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 1.5rem;
+    --space-lg: 2rem;
+    --space-xl: 3rem;
+    
+    /* Container */
+    --container-width: 1200px;
+    --container-padding: 1rem;
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-primary);
+    color: var(--color-text);
+    line-height: 1.6;
+    background-color: var(--color-background);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: 1.2;
+    margin-bottom: var(--space-sm);
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+
+p {
+    margin-bottom: var(--space-sm);
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--color-accent);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+.section {
+    padding: var(--space-xl) 0;
+}
+
+/* ============================================
+   COMPONENTS
+   ============================================ */
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Cards */
+.card {
+    background: var(--color-background);
+    border-radius: 8px;
+    padding: var(--space-md);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform var(--transition-normal);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* ============================================
+   RESPONSIVE GRID
+   ============================================ */
+.grid {
+    display: grid;
+    gap: var(--space-md);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-primary);
+    color: white;
+    padding: var(--space-sm);
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Focus indicators */
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+/* Mobile: Base styles above */
+
+/* Tablet */
+@media (min-width: 768px) {
+    :root {
+        --container-padding: 2rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    :root {
+        --container-padding: 3rem;
+    }
+}
+
+7) Examples of excellent outputs
+
+Example 1: Portfolio Website Homepage Design
+
+PROJECT: Personal Portfolio for UX Designer
+Goal: Showcase projects, attract potential clients/employers
+
+DESIGN DECISIONS:
+
+Hero Section:
+- Full-viewport height with centered content
+- Large, bold heading: "Hi, I'm Sarah. I design digital experiences that delight users."
+- Subheading: "UX Designer specializing in SaaS products"
+- CTA button: "View My Work" (scrolls to portfolio)
+- Clean, minimalist design with subtle animation on scroll
+
+Featured Projects Section:
+- Grid layout: 2 columns on desktop, 1 column on mobile
+- Each project card includes:
+  * Large thumbnail image (3:2 aspect ratio)
+  * Project title
+  * Short description (1-2 sentences)
+  * Tags (UX Design, Visual Design, Research)
+  * "View Case Study" link
+- Hover effect: Image scales slightly, overlay appears with "View Project" text
+
+About Section:
+- Two-column layout: Photo on left, bio on right
+- Bio highlights: Years of experience, specializations, tools
+- Skills listed with visual proficiency indicators
+- Download Resume button
+
+Contact Section:
+- Simple form: Name, Email, Message
+- Validation on submit
+- Success message replaces form after submission
+- Social links (LinkedIn, Dribbble, Behance)
+
+RESPONSIVE ADAPTATIONS:
+- Mobile: Single column, hero text smaller, hamburger menu
+- Tablet: Two-column grid, adjusted font sizes
+- Desktop: Full layout, larger images, more whitespace
+
+COLOR SCHEME:
+- Primary: #3B4CCA (bold blue)
+- Secondary: #FEE140 (energetic yellow accent)
+- Background: #FFFFFF (clean white)
+- Text: #1A1A1A (near-black for readability)
+
+TYPOGRAPHY:
+- Headings: Poppins Bold
+- Body: Inter Regular
+- Font sizes scale responsively using clamp()
+
+PERFORMANCE:
+- Images: WebP format with JPEG fallback
+- Lazy loading for below-fold images
+- CSS minified (12KB)
+- Total page weight: 380KB
+- PageSpeed score: 96 (mobile), 98 (desktop)
+
+Example 2: Landing Page for SaaS Product
+
+PROJECT: Email Marketing Tool Landing Page
+Goal: Convert visitors to free trial signups
+
+STRUCTURE:
+
+Hero:
+- Split layout: Left = headline + CTA, Right = product screenshot
+- Headline: "Email marketing that doesn't suck"
+- Subheading: "Create beautiful campaigns in minutes, not hours"
+- CTA: "Start Free Trial" (prominent button)
+- Trust indicators: "No credit card required • 14-day free trial • Cancel anytime"
+
+Social Proof:
+- Logo bar of recognizable clients
+- Testimonial section with photos, quotes, name/title
+
+Features:
+- Three-column grid highlighting key features
+- Each feature: Icon, title, short description
+- Visual consistency with brand colors
+
+How It Works:
+- Three steps with numbers and simple illustrations
+- Step 1: Import contacts
+- Step 2: Design email
+- Step 3: Send & analyze
+
+Pricing:
+- Three-tier pricing table
+- Highlighted "Most Popular" tier
+- Clear feature comparison
+- CTA button on each tier
+
+Final CTA:
+- Full-width section with contrasting background color
+- Heading: "Ready to grow your business?"
+- Large CTA button
+- Trust reinforcement: "Join 50,000+ businesses already using [Product]"
+
+CONVERSION OPTIMIZATION:
+- Hero CTA repeated 3 times on page
+- Short form (email only) for low friction
+- Exit-intent popup offering guide/resource
+- Live chat widget in bottom-right
+- A/B testing on CTA button color (blue vs green)
+
+TECHNICAL IMPLEMENTATION:
+- Form connected to email marketing platform API
+- Client-side validation for instant feedback
+- Server-side validation for security
+- Thank you page with next steps after signup
+
+PERFORMANCE METRICS (After Launch):
+- Conversion rate: 4.8% (above industry avg of 2-3%)
+- Bounce rate: 38% (desktop), 47% (mobile)
+- Average time on page: 2:15
+- PageSpeed: 94 (mobile), 97 (desktop)
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Responsive Design**: Design approach where layouts adapt to different screen sizes
+- **Mobile-First**: Design/development starting with mobile, then progressively enhancing for larger screens
+- **Breakpoint**: Screen width where layout changes (e.g., 768px for tablet, 1024px for desktop)
+- **Above the Fold**: Content visible without scrolling
+- **Hero Section**: Large, prominent section at top of page (usually with headline, image, CTA)
+- **CTA (Call To Action)**: Button or link prompting user to take specific action
+- **Wireframe**: Low-fidelity sketch showing structure and layout (no visual design)
+- **Mockup**: High-fidelity design showing final appearance (colors, typography, images)
+- **Prototype**: Interactive mockup simulating user interactions and navigation
+- **Style Guide**: Document defining visual standards (colors, fonts, components)
+- **UI Kit**: Collection of reusable design components
+- **Semantic HTML**: Using HTML elements based on their meaning (header, nav, article) not appearance
+
+Standards & Frameworks (2024-2025):
+- **WCAG 2.1 (Web Content Accessibility Guidelines)**: Level AA minimum for most projects
+- **HTML5**: Current HTML standard with semantic elements
+- **CSS3**: Modern CSS with flexbox, grid, custom properties
+- **Responsive Images**: srcset and picture elements for different screen densities
+- **Core Web Vitals**: Google's metrics for page experience (LCP, FID, CLS)
+- **SEO Best Practices**: Semantic HTML, meta tags, structured data (schema.org)
+- **CSS Methodologies**: BEM (Block Element Modifier), SMACSS, OOCSS
+- **W3C Validation**: HTML and CSS validation standards
+- **ARIA (Accessible Rich Internet Applications)**: Attributes for enhanced accessibility
+
+Design Systems & Patterns:
+- **Material Design** (Google): Comprehensive design system for web and mobile
+- **Bootstrap**: Popular CSS framework with grid system and components
+- **Tailwind CSS**: Utility-first CSS framework
+- **Design Tokens**: Variables for colors, spacing, typography for consistency
+- **Atomic Design**: Methodology for creating design systems (atoms, molecules, organisms)
+
+Common Tools & Platforms:
+- **Design Tools**: Figma, Adobe XD, Sketch, InVision
+- **Code Editors**: VS Code, Sublime Text, Atom
+- **Version Control**: Git, GitHub, GitLab
+- **Build Tools**: Webpack, Vite, Parcel, Gulp
+- **CSS Preprocessors**: Sass, Less, PostCSS
+- **CSS Frameworks**: Bootstrap, Tailwind, Bulma, Foundation
+- **Icon Libraries**: Font Awesome, Heroicons, Material Icons, Feather Icons
+- **Performance Tools**: Lighthouse, PageSpeed Insights, WebPageTest
+- **Accessibility Tools**: axe DevTools, WAVE, Lighthouse accessibility audit
+- **Browser DevTools**: Chrome DevTools, Firefox Developer Tools
+
+Responsive Breakpoints (Industry Standard):
+- Mobile: <768px
+- Tablet: 768px - 1023px
+- Desktop: 1024px - 1439px
+- Large Desktop: ≥1440px
+
+File Formats:
+- **Images**: WebP (preferred), JPEG (photos), PNG (graphics with transparency), SVG (logos, icons)
+- **Fonts**: WOFF2 (modern browsers), WOFF (fallback)
+- **Code**: .html, .css, .js, .scss (Sass)
+- **Design**: .fig (Figma), .xd (Adobe XD), .sketch (Sketch)
+
+Performance Benchmarks:
+- **Page Load Time**: <3 seconds on 4G (Google recommendation)
+- **First Contentful Paint**: <1.8 seconds
+- **Largest Contentful Paint**: <2.5 seconds
+- **Cumulative Layout Shift**: <0.1
+- **Time to Interactive**: <3.8 seconds
+- **Image File Size**: <200KB per image
+- **Total Page Weight**: <1MB for landing pages
+
+Change log
+- 2024-12: Initial playbook created based on W3C standards, WCAG 2.1 guidelines, Google Core Web Vitals, responsive design best practices (2024), and modern web development workflows
+  - Responsive, mobile-first design methodology
+  - HTML5 semantic markup and CSS3 modern features
+  - Accessibility compliance (WCAG 2.1 AA)
+  - Performance optimization techniques
+  - Comprehensive templates for project briefs, HTML structure, responsive CSS

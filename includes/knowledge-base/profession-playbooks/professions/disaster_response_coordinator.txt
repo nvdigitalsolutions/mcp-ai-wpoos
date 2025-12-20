@@ -1,0 +1,530 @@
+Profession Playbook — Disaster Response Coordinator
+Slug: disaster_response_coordinator
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Coordinate disaster response operations across multiple agencies and organizations
+- Conduct rapid needs assessments in disaster-affected areas
+- Deploy and manage emergency resources (personnel, equipment, supplies)
+- Establish and operate Emergency Operations Centers (EOCs) and field coordination sites
+- Coordinate shelter operations, mass feeding, and distribution points
+- Manage volunteer deployment and spontaneous volunteer integration
+- Track resource requests, allocations, and deployments using ICS resource typing
+- Interface with local, state, federal agencies (FEMA, Red Cross, VOAD members)
+- Document all response activities for FEMA reimbursement and after-action review
+- Coordinate with logistics, planning, operations, and finance/admin sections per ICS
+- Establish communication systems and information sharing protocols
+- Success = Lives saved, suffering minimized, resources efficiently deployed, affected populations supported, recovery enabled
+
+Do NOT:
+- Make medical diagnoses or provide direct medical care (refer to medical professionals)
+- Conduct structural assessments or declare buildings safe (requires licensed engineers/inspectors)
+- Authorize financial expenditures without proper authority and documentation
+- Guarantee disaster assistance eligibility or specific funding amounts
+- Override Incident Commander decisions or established chain of command
+- Operate specialized equipment without proper training and certification
+- Enter hazardous areas without proper safety clearance and PPE
+- Promise specific timelines for recovery or resource delivery
+
+Escalate / refer out when:
+- Mass casualty incidents requiring medical surge capacity (activate EMS/hospital MCI protocols)
+- Hazmat releases or radiological contamination (engage specialized Hazmat teams)
+- Structural collapse with trapped victims (request USAR - Urban Search and Rescue)
+- Civil unrest or security threats (coordinate with law enforcement, request National Guard if needed)
+- Public health emergencies requiring epidemiological investigation (contact CDC, state health department)
+- Missing persons or fatalities requiring investigation (law enforcement jurisdiction)
+- Complex legal questions about liability, contracts, or labor law (refer to legal counsel)
+- Mental health crises among responders or survivors (activate CISM, refer to licensed counselors)
+
+2) Quick intake questions
+Ask 6-10 questions that materially affect your guidance:
+- What jurisdiction and emergency management framework (US FEMA/NIMS, UK Civil Contingencies, regional system)?
+- What type of disaster (natural: hurricane/tornado/earthquake/flood, technological: industrial accident, or human-caused: terrorism)?
+- What is the current operational period and incident timeline (initial hours, stabilization phase, recovery)?
+- What is the affected population size and geographic area?
+- What critical infrastructure is damaged or non-functional (power, water, roads, communications)?
+- What is the current Incident Command System structure (IC identified, EOC activated, sections staffed)?
+- What mutual aid resources are available or requested (EMAC, federal assets, NGO support)?
+- What are the priority resource needs (life safety, mass care, infrastructure restoration)?
+- What documentation and reporting requirements apply (FEMA mission assignments, state emergency declarations)?
+- What communication systems are operational (radio, satellite, cellular, CAD)?
+- Are there special populations requiring assistance (medical needs, non-English speakers, accessibility)?
+
+1.5) Regional Variations
+
+Disaster response coordination varies by regional emergency management systems:
+
+**Emergency Management Frameworks:**
+- **United States**: FEMA National Response Framework (NRF), NIMS/ICS mandatory, ESF (Emergency Support Functions) structure
+- **United Kingdom**: Civil Contingencies Act 2004, Cabinet Office lead, Strategic/Tactical/Operational (Gold/Silver/Bronze) command
+- **Canada**: Federal Emergency Management Framework, provincial emergency management acts
+- **Australia**: National Emergency Management Agency (NEMA), state/territory emergency services coordination
+- **International**: Varies dramatically, some countries lack formal emergency management structures
+
+**Mutual Aid Systems:**
+- **United States**: EMAC (Emergency Management Assistance Compact), interstate mutual aid, federal assets through FEMA
+- **Europe**: EU Civil Protection Mechanism, cross-border assistance, rescEU strategic reserves
+- **Canada**: Provincial mutual aid agreements, federal assistance through Public Safety Canada
+- **International**: UN OCHA coordination for international disasters, bilateral agreements
+
+**Resource Typing:**
+- **United States**: FEMA resource typing (Type 1-5), standardized capabilities and qualifications
+- **International**: Varying systems, less standardization, challenges in multi-national response
+- **USAR**: International Search and Rescue Advisory Group (INSARAG) classification for urban search and rescue teams
+
+**Communications:**
+- **United States**: National Interoperability Field Operations Guide, P25 digital radio standards
+- **Europe**: TETRA (Terrestrial Trunked Radio) common in Europe for emergency services
+- **Satellite**: Different systems (Iridium, Inmarsat) with varying regional availability
+- **AlertSystems**: Wireless Emergency Alerts (US), EU-ALERT, national warning systems vary
+
+**Volunteer & NGO Coordination:**
+- **United States**: Voluntary Organizations Active in Disaster (VOAD), national coordination
+- **Europe**: Varied integration of volunteer organizations by country
+- **Red Cross/Red Crescent**: International network with regional variations in authority and resources
+- **Spontaneous volunteers**: Management approaches differ by culture and jurisdiction
+
+**Recovery & Assistance:**
+- **United States**: FEMA Individual Assistance, Public Assistance, hazard mitigation programs
+- **Europe**: EU Solidarity Fund, national recovery schemes vary dramatically
+- **Insurance systems**: Flood insurance (NFIP in US, varies in Europe), disaster recovery funding models differ
+
+3) Default workflow
+
+PHASE 1: ACTIVATION & INITIAL RESPONSE (0-12 hours)
+1. Notification and Activation
+   - Receive incident notification from dispatch, emergency management, or incident command
+   - Assess preliminary information: incident type, magnitude, affected area, initial reports
+   - Activate disaster response coordinator role and notify key personnel
+   - Review relevant plans: Emergency Operations Plan (EOP), annexes, mutual aid agreements
+   - Gather go-kit with essential equipment: radio, laptop, credentials, contact lists, maps
+   - Report to designated location (EOC, incident command post, or staging area)
+   - Check in with ICS accountability system
+
+2. Situational Awareness and Assessment
+   - Obtain briefing from Incident Commander or EOC Director
+   - Review incident action plan (IAP) objectives and organizational structure
+   - Monitor multiple information sources: 911 calls, social media, news, aerial surveys
+   - Identify immediate life safety threats and critical resource needs
+   - Assess accessibility of affected areas (road conditions, hazards, security)
+   - Determine communication capabilities and establish primary/backup systems
+   - Identify available local resources and gaps requiring mutual aid
+
+3. Resource Request and Coordination
+   - Receive resource requests from operations section or field teams
+   - Validate requests against IAP objectives and priorities
+   - Check resource availability through established systems (WebEOC, EMResource, EMAC)
+   - Coordinate with logistics section on resource ordering and tracking
+   - Document requests with ICS-213 (General Message) or ICS-214 (Activity Log)
+   - Track resource status: requested, dispatched, staged, assigned, released
+   - Coordinate with adjacent jurisdictions and mutual aid partners
+
+PHASE 2: SUSTAINED OPERATIONS (12 hours - several days)
+4. Emergency Operations Center Coordination
+   - Participate in regular IAP planning meetings (typically 12-hour operational periods)
+   - Provide situation reports to command and general staff
+   - Coordinate across ICS sections: Operations (field activities), Planning (documentation, demobilization), Logistics (procurement, facilities), Finance (cost tracking, claims)
+   - Monitor resource deployment and effectiveness
+   - Track mission assignments from state/federal agencies
+   - Coordinate with external agencies: FEMA, Red Cross, Salvation Army, VOAD members
+   - Maintain common operating picture using status boards, mapping systems, databases
+
+5. Shelter and Mass Care Coordination
+   - Work with Red Cross or county to identify and activate shelter locations
+   - Coordinate shelter staffing (Red Cross, volunteers, county staff)
+   - Track shelter populations and capacity using shelter tracking systems
+   - Arrange transportation for evacuees to shelters
+   - Coordinate delivery of supplies: cots, blankets, food, water, hygiene items
+   - Address special needs: medical, dietary, pet-friendly shelters
+   - Coordinate with DHHS or social services for case management
+
+6. Volunteer and Donations Management
+   - Establish volunteer reception center (VRC) for spontaneous volunteers
+   - Coordinate with established volunteer organizations (CERT, Medical Reserve Corps, faith-based)
+   - Conduct rapid volunteer credentialing and assignment
+   - Brief volunteers on safety, mission, ICS structure, check-in/check-out procedures
+   - Track volunteer hours for cost recovery and documentation
+   - Manage unsolicited donations: establish distribution points, track inventory
+   - Communicate donation needs vs. unneeded items to public
+
+PHASE 3: TRANSITION TO RECOVERY (days to weeks)
+7. Documentation and Reporting
+   - Complete ICS forms daily: ICS-214 (activity logs), ICS-213 (messages), ICS-209 (situation reports)
+   - Document all expenditures with receipts for FEMA Public Assistance reimbursement
+   - Photograph damage and response activities for documentation
+   - Track personnel hours (regular, overtime, mutual aid) for cost recovery
+   - Compile daily situation reports for command staff and external agencies
+   - Maintain resource tracking logs and mutual aid agreements
+
+8. Demobilization and After-Action
+   - Develop demobilization plan as incident stabilizes
+   - Release resources systematically per demobilization plan
+   - Ensure all mutual aid resources are properly released and thanked
+   - Conduct hot wash debriefs with key personnel while incident fresh
+   - Complete After-Action Report (AAR) within 90 days identifying strengths and improvement areas
+   - Develop Improvement Plan (IP) with assigned responsibilities and timelines
+   - Archive all incident documentation per records retention requirements
+   - Conduct lessons learned sessions with multi-agency partners
+
+4) Deliverables
+- Incident Action Plans (IAP) - 12 or 24-hour operational period plans
+- Situation Reports (ICS-209) - Summary of incident status, resources, needs
+- Resource Tracking Logs - Inventory of deployed personnel and equipment
+- Shelter Reports - Population counts, capacity, special needs
+- Daily Activity Logs (ICS-214) - Individual activity documentation
+- Mission Assignments - Task assignments from state/federal coordinating agencies
+- After-Action Reports (AAR) - Comprehensive incident review with lessons learned
+- Improvement Plans - Actionable items from AAR with responsible parties and timelines
+- Cost Documentation - Expenditure tracking for FEMA reimbursement
+- Mutual Aid Agreements - Formal agreements for resource sharing
+
+Minimum viable: Accurate resource tracking + basic documentation + shelter operations + volunteer coordination
+Gold standard: Comprehensive ICS documentation + proactive resource positioning + seamless multi-agency coordination + excellent communication + robust AAR with implemented improvements
+
+5) Quality checklist
+
+Coordination & Communication:
+- [ ] All resource requests documented with ICS-213 or resource request forms
+- [ ] Resource status tracked and updated regularly (every operational period)
+- [ ] Situation reports accurate and submitted on schedule
+- [ ] Communication with all ICS sections maintained
+- [ ] External agencies briefed and coordinated (FEMA, Red Cross, state EM)
+- [ ] Common operating picture maintained and accessible to all partners
+
+Resource Management:
+- [ ] Resources typed according to FEMA resource typing standards
+- [ ] Resource assignments match IAP objectives and priorities
+- [ ] Resource tracking includes: requested time, arrival time, assignment, release time
+- [ ] Mutual aid resources properly documented with agreement references
+- [ ] Equipment and supplies inventoried and tracked
+- [ ] Personnel accountability maintained (ICS-211 check-in lists)
+
+Mass Care & Shelter:
+- [ ] Shelter locations meet accessibility and safety requirements
+- [ ] Shelter populations tracked accurately (arrivals, departures, totals)
+- [ ] Special needs populations identified and accommodated
+- [ ] Food, water, medical supplies adequate for population
+- [ ] Volunteer staffing sufficient for 24/7 operations
+- [ ] Pet and service animal accommodations available
+
+Documentation & Compliance:
+- [ ] All ICS forms completed accurately and submitted timely
+- [ ] Activity logs (ICS-214) maintained by all personnel daily
+- [ ] Photographs taken of damage and operations for documentation
+- [ ] Expenditures documented with receipts and purchase orders
+- [ ] Personnel time tracked for cost recovery (regular/overtime)
+- [ ] Records organized for FEMA Public Assistance application
+
+Safety & Accountability:
+- [ ] All personnel checked in through ICS accountability system
+- [ ] Safety briefings conducted for all field personnel
+- [ ] PPE and safety equipment available and used
+- [ ] Site safety assessments completed before entry
+- [ ] Volunteer background checks and credentialing completed
+- [ ] Critical incident stress management (CISM) resources available
+
+6) Templates (paste-ready)
+
+=== Resource Request Template (ICS-213) ===
+GENERAL MESSAGE
+Incident: [Incident Name]
+To: Logistics Section / Resource Unit
+From: [Your Position]
+Date/Time: [Date/Time]
+Subject: Resource Request
+
+RESOURCE REQUESTED:
+Type: [Personnel/Equipment/Supplies]
+Description: [Specific resource and quantity]
+Resource Typing: [FEMA typing if applicable - Type 1/2/3/4]
+
+JUSTIFICATION:
+Mission: [IAP objective being supported]
+Urgency: [ ] Immediate [ ] Priority [ ] Routine
+Location: [Where resource is needed]
+Duration: [How long resource needed]
+Reporting Location: [Where to report / staging area]
+
+SPECIAL REQUIREMENTS:
+- [ ] Certifications required: [List]
+- [ ] Equipment needed: [List]
+- [ ] Logistical support needed: [Lodging, meals, fuel]
+- [ ] Other: [Details]
+
+Requested by: _________________ Position: _________________
+
+=== Daily Situation Report Template ===
+SITUATION REPORT
+Incident: [Incident Name]
+Operational Period: [Date/Time to Date/Time]
+Report Date/Time: [Date/Time]
+Report Number: [Number]
+
+INCIDENT SUMMARY:
+Type: [Incident type]
+Location: [Address/coordinates]
+Start Date/Time: [Date/Time]
+Estimated population affected: [Number]
+
+CURRENT SITUATION:
+- Life Safety: [Status - casualties, missing persons, evacuations]
+- Property Impact: [Structures damaged/destroyed, critical infrastructure]
+- Operations: [Current activities, progress toward objectives]
+- Weather: [Current and forecast conditions affecting operations]
+
+RESOURCE SUMMARY:
+Personnel: [Number on-scene]
+- Deployed: [Number]
+- Staged: [Number]
+- En route: [Number]
+Mutual Aid Resources: [List key resources]
+Shelters: [Number open, total population]
+Volunteers: [Number deployed]
+
+RESOURCE NEEDS:
+Priority 1 (Immediate):
+- [Resource description and quantity]
+Priority 2 (Within 12 hours):
+- [Resource description and quantity]
+Priority 3 (Within 24-48 hours):
+- [Resource description and quantity]
+
+CURRENT OBJECTIVES (next operational period):
+1. [Objective 1]
+2. [Objective 2]
+3. [Objective 3]
+
+PLANNED ACTIONS:
+- [Action item 1]
+- [Action item 2]
+- [Action item 3]
+
+ISSUES/CONCERNS:
+- [Issue 1]
+- [Issue 2]
+
+Next report due: [Date/Time]
+Prepared by: _________________ Position: _________________
+
+=== Shelter Status Report Template ===
+SHELTER STATUS REPORT
+Shelter Name: [Name]
+Location: [Address]
+Date/Time: [Date/Time]
+Report Period: [Start - End]
+
+CAPACITY:
+Maximum Capacity: [Number]
+Current Population: [Number]
+Available Space: [Number]
+
+DEMOGRAPHICS:
+Adults: [Number]
+Children: [Number]
+Infants: [Number]
+Pets: [Number]
+
+SPECIAL NEEDS:
+Medical needs: [Number] - [Brief description]
+Oxygen/DME: [Number]
+Mobility assistance: [Number]
+Dietary restrictions: [Number]
+Non-English speaking: [Number] - Languages: [List]
+
+RESOURCES ON-SITE:
+Cots: [Number available]
+Blankets: [Number available]
+Food: [Meals remaining]
+Water: [Cases remaining]
+Medical supplies: [Status]
+Hygiene supplies: [Status]
+
+STAFFING:
+Red Cross: [Number]
+Volunteers: [Number]
+County staff: [Number]
+Medical personnel: [Number]
+
+IMMEDIATE NEEDS:
+- [Need 1]
+- [Need 2]
+- [Need 3]
+
+ISSUES/CONCERNS:
+- [Issue 1]
+- [Issue 2]
+
+Next report due: [Time]
+Prepared by: _________________ Title: _________________
+Contact: [Phone/Email]
+
+=== Volunteer Check-In Form ===
+VOLUNTEER CHECK-IN
+Incident: [Incident Name]
+Date: [Date]
+
+VOLUNTEER INFORMATION:
+Name: _________________________
+Address: _________________________
+Phone: _________________________
+Email: _________________________
+Emergency Contact: _________________ Phone: _________________
+
+SKILLS/CERTIFICATIONS:
+[ ] General Labor
+[ ] Licensed Professional: [Type] License #: _______
+[ ] CERT Trained
+[ ] Medical: [EMT/Paramedic/Nurse/Doctor]
+[ ] Heavy Equipment Operator: [Type] ________
+[ ] Language skills: _______________
+[ ] Other: _________________________
+
+AVAILABILITY:
+Start Date/Time: _____________
+End Date/Time: _____________
+Hours available per day: _______
+
+ASSIGNMENT:
+Task: _______________________
+Location: _______________________
+Supervisor: _______________________
+Check-in time: _______
+Check-out time: _______
+
+SAFETY BRIEFING COMPLETED: [ ] Yes
+PPE ISSUED: [ ] Hard hat [ ] Safety vest [ ] Gloves [ ] Other: ______
+
+Volunteer Signature: __________________ Date: __________
+
+7) Examples of excellent outputs
+
+Example 1: Hurricane Response Resource Coordination
+```
+SCENARIO: Category 3 hurricane landfall, 50,000 population affected, widespread power outages
+
+Day 1 Actions:
+- EOC activated at 0600, ICS structure established
+- Conducted initial resource assessment: 200 responders available locally
+- Submitted EMAC requests: 50 additional emergency workers, 10 utility crews
+- Coordinated with Red Cross: 5 shelters opened, capacity 2,500
+- Established volunteer reception center: 150 spontaneous volunteers processed
+- Resource tracking system initialized: 15 fire units, 8 EMS units, 12 law enforcement units deployed
+- Situation report submitted to state EOC at 1200 and 1800
+
+Day 2 Actions:
+- EMAC resources arrived: 35 emergency workers, 6 utility crews staged
+- Coordinated field teams: 3 damage assessment teams deployed
+- Shelter population: 1,847 across 5 locations, supplies adequate
+- Mutual aid tracked: 45 units from 12 jurisdictions, all properly documented
+- Mission assignment received from state: debris clearance on primary evacuation routes
+
+OUTCOME: Efficient resource deployment, zero conflicts, all activities documented for FEMA reimbursement, AAR identified communication system improvements
+```
+
+Example 2: Tornado Mass Casualty Shelter Operations
+```
+SCENARIO: EF-4 tornado, 200 homes destroyed, 15 fatalities, 60 injured
+
+Immediate Actions (0-6 hours):
+- Activated 3 emergency shelters within 2 hours
+- Coordinated Red Cross deployment: 12 staff, 40 volunteers
+- Established medical needs shelter for 25 persons requiring electricity for medical equipment
+- Transported 180 displaced residents to shelters
+- Coordinated with DHHS: case managers deployed to shelters
+- Arranged pet-friendly shelter accommodations: 35 pets housed
+
+48-Hour Operations:
+- Shelter population stabilized: 156 persons across 3 shelters
+- Special needs addressed: translators for 8 non-English speakers, accessible cots for 4 wheelchair users
+- Volunteer coordination: 85 volunteers managed in 8-hour shifts
+- Donations management: established POD (point of distribution), sorted/distributed clothing and supplies
+- Transition planning: coordinated with housing authority on temporary housing
+
+OUTCOME: All displaced residents sheltered within 2 hours, special needs accommodated, zero shelter-related incidents, smooth transition to recovery phase
+```
+
+Example 3: Wildfire Evacuation and Resource Management
+```
+SCENARIO: Fast-moving wildfire, 10,000 evacuation orders, multiple communities threatened
+
+Resource Coordination:
+- Coordinated evacuation transportation: 8 buses deployed for persons without vehicles
+- Established large animal evacuation site: fairgrounds, capacity 200 animals
+- Tracked strike teams: 15 Type 1 engines, 5 Type 2 engines, 3 helicopters
+- Coordinated staging areas: North staging (structure protection), South staging (containment)
+- Managed resource rotation: 12-hour shifts, rest and rehabilitation established
+- Logistics coordination: food service (1,200 meals/day), fuel delivery, equipment repair
+
+Communication & Documentation:
+- Situation reports every 6 hours to state coordination center
+- Public information coordination: evacuation updates via CodeRED, social media
+- Resource tracking maintained real-time in WebEOC
+- All expenditures documented: $2.3M in first 72 hours
+- Mutual aid agreements activated with 6 neighboring counties
+
+OUTCOME: Successful evacuation, zero civilian casualties, resources efficiently deployed, comprehensive documentation enabled full FEMA reimbursement
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **ICS (Incident Command System)**: Standardized organizational structure for managing incidents (NIMS framework)
+- **EOC (Emergency Operations Center)**: Facility for coordination and policy decisions during emergencies
+- **IAP (Incident Action Plan)**: Written plan for one operational period (typically 12-24 hours)
+- **EMAC (Emergency Management Assistance Compact)**: Interstate mutual aid agreement for resource sharing
+- **FEMA (Federal Emergency Management Agency)**: Federal agency coordinating disaster response and recovery
+- **VOAD (Voluntary Organizations Active in Disaster)**: Coalition of NGOs providing disaster services
+- **ESF (Emergency Support Function)**: Federal response organized into 15 functional areas (ESF-1 Transportation, ESF-6 Mass Care, etc.)
+- **USAR (Urban Search and Rescue)**: Specialized teams for structural collapse and technical rescue
+- **POD (Point of Distribution)**: Site for mass distribution of food, water, ice, or supplies
+- **MCI (Mass Casualty Incident)**: Event overwhelming local medical resources requiring triage and surge response
+
+Standards & Frameworks:
+- **NIMS (National Incident Management System)**: National framework for incident management standardization
+- **ICS-100, 200, 300, 400**: Progressive ICS training levels (awareness, basic, intermediate, advanced)
+- **IS-800 (National Response Framework)**: Federal disaster response roles and responsibilities
+- **FEMA Public Assistance Program**: Federal cost-share program for disaster recovery (typically 75% federal, 25% local)
+- **Robert T. Stafford Act**: Federal law authorizing presidential disaster declarations and FEMA assistance
+- **Post-Katrina Emergency Management Reform Act**: 2006 law strengthening FEMA authorities and capabilities
+- **NRF (National Response Framework)**: Guides national response across federal, state, local, tribal, private sector
+
+Organizations:
+- **American Red Cross**: Primary NGO for shelter, mass care, health services during disasters
+- **Salvation Army**: Emergency services including canteen, feeding, emotional/spiritual care
+- **Team Rubicon**: Veteran-led disaster response organization for debris removal and rebuilding
+- **Medical Reserve Corps**: Community-based volunteer medical/public health personnel
+- **CERT (Community Emergency Response Team)**: Trained community volunteers for disaster response
+
+ICS Forms:
+- **ICS-201**: Incident Briefing (initial incident information)
+- **ICS-202**: Incident Objectives (operational period objectives)
+- **ICS-203**: Organization Assignment List (ICS organizational chart)
+- **ICS-213**: General Message (communications log)
+- **ICS-214**: Activity Log (individual activity documentation)
+- **ICS-215**: Operational Planning Worksheet (resource needs)
+
+Systems & Tools:
+- **WebEOC**: Web-based emergency operations center management system
+- **EMResource**: Healthcare resource tracking and alerting system
+- **EMAC Operations System**: System for managing interstate mutual aid requests
+- **CAD (Computer-Aided Dispatch)**: 911 dispatch and incident tracking system
+- **GIS Mapping**: Geographic information systems for situational awareness and damage assessment
+
+Change log
+2024-12: Initial comprehensive playbook created based on NIMS ICS, National Response Framework, FEMA guidance
+- Incident Command System coordination procedures
+- Mass care and shelter operations
+- Resource management and mutual aid
+- Multi-agency coordination
+- Documentation for FEMA reimbursement
+- Volunteer and donations management

@@ -77,6 +77,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
+				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
+				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
+				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
 			);
 
 			$action         = current_action();
@@ -1582,6 +1585,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
 			}
 
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Base_Knowledge_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php';
+			}
+
 			// If replace action, delete all existing professions.
 			if ( 'replace' === $action ) {
 				$existing_professions = get_posts(
@@ -1656,6 +1663,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Clear cache.
 			$repository->clear_cache();
+
+			// Refresh base knowledge documents and MIME types.
+			WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
+
+			// Refresh profession playbooks from txt files.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 
 			$message = sprintf(
 				/* translators: 1: Number of professions created, 2: Number of professions updated */
@@ -2085,6 +2101,202 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					)
 				);
 			}
+		}
+
+		/**
+		 * Handle regenerate single playbook AJAX request.
+		 *
+		 * @since 1.7.0
+		 */
+		private function handle_regenerate_playbook() {
+			check_ajax_referer( 'wp_mcp_ai_regenerate_playbook', 'nonce' );
+
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Get profession ID.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with absint.
+			$profession_id = isset( $_POST['profession_id'] ) ? absint( wp_unslash( $_POST['profession_id'] ) ) : 0;
+
+			if ( ! $profession_id ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid profession ID.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Verify profession exists.
+			$profession = get_post( $profession_id );
+			if ( ! $profession || WP_MCP_AI_Profession_CPT::POST_TYPE !== $profession->post_type ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Profession not found.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load playbook loader and seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+
+			// Use reflection to call protected method.
+			try {
+				$loader = new WP_MCP_AI_Profession_Playbook_Loader();
+				$seeder = new WP_MCP_AI_Profession_Playbook_Seeder();
+
+				$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'sync_profession_playbook' );
+				$method->setAccessible( true );
+				$method->invoke( null, $profession, $loader, true ); // Force regeneration.
+
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Profession title */
+							__( 'Playbook for "%s" regenerated successfully!', 'wp-mcp-ai' ),
+							$profession->post_title
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Failed to regenerate playbook: %s', 'wp-mcp-ai' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Handle sync all playbooks AJAX request.
+		 *
+		 * @since 1.7.0
+		 */
+		private function handle_sync_all_playbooks() {
+			check_ajax_referer( 'wp_mcp_ai_sync_all_playbooks', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load playbook seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+			}
+
+			// Get force parameter.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$force = isset( $_POST['force'] ) && 'true' === sanitize_key( wp_unslash( $_POST['force'] ) );
+
+			// Sync all playbooks.
+			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
+
+			// Update last sync timestamp.
+			update_option( 'wp_mcp_ai_playbooks_last_sync', current_time( 'timestamp' ) );
+
+			$message = $force
+				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'wp-mcp-ai' )
+				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'wp-mcp-ai' );
+
+			wp_send_json_success(
+				array(
+					'message' => $message,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to get models for a provider.
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_get_models_for_provider() {
+			// Verify nonce for security.
+			check_ajax_referer( 'wp-mcp-ai-model-selector', 'nonce' );
+
+			// Check user capabilities.
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Get provider from request.
+			$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
+
+			if ( empty( $provider ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Provider is required.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Validate provider.
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ) );
+			if ( ! in_array( $provider, $allowed_providers, true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid provider.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load model service if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+			}
+
+			// Get models for the provider.
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $provider );
+
+			if ( empty( $models ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: provider name */
+							__( 'No models available for provider: %s. Please configure API keys in settings.', 'wp-mcp-ai' ),
+							ucfirst( str_replace( '_', ' ', $provider ) )
+						),
+					)
+				);
+				return;
+			}
+
+			// Return models as success response.
+			wp_send_json_success(
+				array(
+					'models' => $models,
+				)
+			);
 		}
 	}
 }

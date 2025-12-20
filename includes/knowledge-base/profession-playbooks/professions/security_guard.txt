@@ -1,0 +1,686 @@
+Profession Playbook — Security Guard
+Slug: security_guard
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This playbook provides actionable guidance for security guards protecting property, personnel, and assets through patrol, access control, surveillance monitoring, incident response, and threat assessment following security industry standards, legal boundaries, and best practices.
+- Focus on prevention, detection, observation and reporting, appropriate response, and professionalism.
+
+Category guidance
+- Use practical, operational security workflows with clear procedures, legal limitations, and professional conduct standards.
+
+1) Role boundaries
+Do:
+- Conduct regular security patrols of assigned property (foot patrol, vehicle patrol) per post orders
+- Control access to facilities by verifying identification, credentials, and authorization of visitors and employees
+- Monitor surveillance camera systems (CCTV) and alarm systems for security threats or unusual activity
+- Observe and report suspicious activity, safety hazards, policy violations, and security breaches
+- Respond to alarms, emergencies, and incidents following established protocols and chain of command
+- Provide customer service and wayfinding assistance to authorized personnel and visitors
+- Document all incidents, observations, and activities in detailed written reports and daily activity logs
+- Enforce facility rules, policies, and procedures (parking, smoking, visitor access, employee conduct)
+- Perform opening and closing duties: lock/unlock doors, arm/disarm alarms, secure facility
+- Conduct safety inspections: check lighting, doors, windows, fencing, fire exits, safety equipment
+- Detain individuals for law enforcement when witnessing felonies or misdemeanors committed on property (where authorized)
+- Provide first aid and CPR in medical emergencies until emergency medical services arrive
+- Escort terminated employees, contractors, or visitors off property per company policy
+- Protect crime scenes and evidence until law enforcement arrives (do not disturb evidence)
+- Success = Property secured, unauthorized access prevented, incidents detected and reported promptly, emergencies responded to appropriately, detailed documentation maintained
+
+Do NOT:
+- Make arrests beyond detention authority granted by state law and employer policy (varies by jurisdiction)
+- Use excessive force or conduct searches beyond legal authority (assault, battery, false imprisonment risks)
+- Carry firearms or weapons unless licensed, trained, and explicitly authorized by employer (armed security requires special licensing)
+- Impersonate law enforcement officers (misrepresentation of authority is criminal offense)
+- Conduct traffic stops, issue citations, or exercise police powers (not a law enforcement officer)
+- Violate individual privacy rights or conduct unreasonable searches (4th Amendment applies to government property, trespass laws apply to private property)
+- Ignore safety hazards, crimes in progress, or medical emergencies (duty to act within scope of authority)
+- Disclose confidential business information, security procedures, or proprietary data observed during duties
+- Sleep on duty, abandon post, or fail to conduct required patrols and rounds
+- Accept bribes, gifts, or favors that could compromise security or create conflicts of interest
+- Use security position for personal gain or to harass, intimidate, or discriminate against individuals
+- Make false reports or falsify documentation (fraudulent reporting, loss of credibility and employment)
+
+Escalate / refer out when:
+- Serious criminal activity in progress (call 911 immediately, notify supervisor, preserve scene)
+- Medical emergencies requiring advanced life support (call 911, provide first aid/CPR until EMS arrives)
+- Fire, explosion, hazardous materials release, or environmental emergency (activate fire alarm, evacuate, call 911, notify command center)
+- Armed individuals, active shooter, or violent crime in progress (lockdown procedures, law enforcement notification, follow active shooter protocols)
+- Situations beyond security guard authority or training (legal detention limits, complex investigations, specialized threats)
+- Threats of violence, bomb threats, or terrorism (law enforcement, emergency protocols, facility evacuation)
+- Workplace violence incidents involving weapons or serious injury (law enforcement, medical response, crisis management team)
+- Significant property damage, vandalism, or sabotage (document, preserve evidence, law enforcement notification)
+- Civil disturbances, protests, or large-scale trespassing exceeding security resources (law enforcement, additional security personnel)
+- Conflicts escalating beyond verbal de-escalation capability (law enforcement assistance, supervisory intervention)
+
+2) Quick intake questions
+Ask 6-10 questions that materially affect your security posture and response:
+- What state/jurisdiction and what licensing requirements apply? (Guard card, training requirements vary dramatically)
+- What is the nature and location of the security concern? (Alarm activation, suspicious person, policy violation, safety hazard, emergency)
+- What type of facility and security level? (Corporate office, residential, retail, industrial, hospital, government)
+- What are the specific post orders and procedures? (Patrol routes, access control procedures, emergency protocols)
+- What is your authority level and equipment authorized? (Unarmed/armed, detention authority, communication equipment, tools)
+- Are there known threats, vulnerabilities, or recent incidents? (Previous crimes, problem individuals, identified risks)
+- What is the access control policy? (Visitor procedures, employee badging, delivery protocols, after-hours access)
+- What emergency resources are available? (Law enforcement response time, fire department, medical, backup security)
+- What documentation and reporting requirements apply? (Incident reports, daily activity logs, visitor logs, system entries)
+- Are there special considerations for the location? (High-value assets, sensitive areas, VIPs, hazardous materials)
+- Who is the chain of command for notifications? (Direct supervisor, operations center, client contact, emergency numbers)
+
+1.5) Regional Variations
+
+Security guard requirements and authority vary dramatically by jurisdiction:
+
+**Licensing & Training:**
+- **United States**: State-specific requirements (most states require guard card/license)
+- **Training hours**: Vary from 0 to 40+ hours initial, continuing education requirements vary
+- **Background checks**: State/federal, fingerprinting requirements differ
+- **Armed guards**: Separate license, additional training (typically 8-40 hours), firearms qualification
+- **Examples**: California 40 hours, Texas 6 hours, some states minimal requirements
+
+**Legal Authority:**
+- **Detention/arrest**: Limited to citizen's arrest in most jurisdictions, duration and force limitations vary
+- **Use of force**: Generally must be reasonable and proportional, state laws vary on duty to retreat
+- **Search authority**: Generally none beyond property owner's rights, cannot conduct Terry stops
+- **Trespass enforcement**: Can ask people to leave private property, trespass laws vary by state
+
+**Employment Structure:**
+- **Contract vs proprietary**: Contract security companies (Allied Universal, G4S, Securitas) vs in-house
+- **Union representation**: More common in certain states and sectors (California, Northeast)
+- **Licensing of companies**: Some states require security company licensing separate from individual guards
+- **Insurance requirements**: General liability and workers' compensation requirements vary
+
+**Industry-Specific Requirements:**
+- **Healthcare**: HIPAA training, de-escalation emphasis
+- **Government facilities**: Federal Protective Service standards, security clearances for federal sites
+- **Nuclear facilities**: NRC requirements, extensive training and background checks
+- **Casinos**: Gaming commission requirements vary by jurisdiction, surveillance operations regulated
+
+**International Variations:**
+- **United Kingdom**: SIA (Security Industry Authority) licensing, national standards
+- **Canada**: Provincial licensing (most provinces), training requirements vary
+- **Australia**: State/territory licensing, nationally recognized training packages
+- **Private security roles**: Vary significantly (UK unlicensed private security illegal, US varies by state)
+
+3) Default workflow
+Use a deterministic, vigilant, and professional security operations process:
+
+SECURITY GUARD DAILY OPERATIONS WORKFLOW:
+
+1. Shift Briefing & Equipment Check (Beginning of shift)
+   - Attend shift briefing with supervisor and outgoing guard (pass-down information)
+   - Review post orders: patrol routes, access control procedures, emergency protocols, special instructions
+   - Get updates on incidents from previous shifts, ongoing situations, and be-on-lookout (BOLO) information
+   - Review keys, access cards, and authorization lists (employees, contractors, visitors expected)
+   - Check out equipment and verify functionality: radio, flashlight, keys, access cards, phone, incident forms
+   - Verify uniform and appearance meet professional standards (clean, pressed, name tag, company logo)
+   - Check emergency equipment: fire extinguisher locations, AED, first aid kit, emergency phones
+   - Review surveillance camera system and alarm panel status (ensure operational)
+   - Conduct initial facility walkthrough to assess current security status and identify any overnight issues
+
+2. Access Control & Visitor Management (Continuous throughout shift)
+   - Greet all persons approaching facility entrance professionally and courteously
+   - Verify identity of all visitors: check photo ID and compare to visitor log or pre-authorization list
+   - Confirm purpose of visit and person/department being visited (phone ahead for confirmation)
+   - Issue visitor badge and log visitor information: name, company, person visiting, time in
+   - Provide visitor with facility rules and escort requirements if applicable
+   - Direct visitors to appropriate location or provide escort per security policy
+   - Control vehicle access: verify vehicle information, issue parking passes, direct to authorized parking
+   - Monitor employee access: verify badges, challenge unknown individuals, report lost or missing badges
+   - Enforce after-hours access policy: verify authorization for entry outside normal business hours
+   - Log all visitor departures with time out and badge return (account for all issued badges)
+   - Secure entrance/exit points during non-business hours per post orders (lock doors, activate alarms)
+
+3. Security Patrols & Facility Inspections (Hourly or per schedule)
+   - Conduct security patrols at irregular intervals (prevent predictability)
+   - Walk assigned patrol route checking all areas: parking lots, building perimeter, interior common areas, restricted areas
+   - Check security of doors, windows, gates, and access points (ensure properly secured)
+   - Test lighting in parking areas, walkways, and building exterior (report outages for safety)
+   - Inspect fencing, barriers, and physical security measures for damage or breaches
+   - Observe for safety hazards: spills, obstructions, damaged equipment, fire hazards
+   - Check fire exits and emergency egress routes (ensure unobstructed and properly marked)
+   - Verify proper function of emergency lighting and exit signs
+   - Observe for suspicious activity: loitering, unauthorized vehicles, unusual behavior, trespassing
+   - Document patrol completion and observations in log book or electronic system (time, location, findings)
+   - Vary patrol routes and timing to maintain unpredictability and maximize coverage
+
+4. Surveillance Monitoring & Alarm Response (Continuous)
+   - Monitor CCTV surveillance cameras for suspicious activity, safety hazards, and security incidents
+   - Periodically review camera feeds from all areas: entrances, parking lots, interior corridors, restricted areas
+   - Respond to alarm activations: intrusion alarms, fire alarms, duress alarms, door ajar alarms
+   - Follow alarm response procedures: verify alarm type and location, notify supervisor, dispatch to investigate
+   - Investigate alarm cause: accidental activation, equipment malfunction, actual security breach
+   - Document all alarm activations and responses in alarm log (time, location, cause, resolution)
+   - Reset alarms after investigation and supervisor authorization (document actions taken)
+   - Monitor access control system for unauthorized access attempts or credential violations (tailgating, forced doors)
+   - Observe employee behavior and activity for policy violations or concerning conduct
+   - Report technical malfunctions of security systems to supervisor and maintenance (cameras down, alarm issues)
+
+5. Incident Response & Emergency Management (As required)
+   - Assess incident quickly: type of emergency, location, number of persons involved, immediate threats
+   - Notify dispatch/supervisor immediately via radio with clear information (what, where, assistance needed)
+   - Call 911 for emergencies requiring law enforcement, fire, or medical response
+   - Implement appropriate emergency response: medical aid, fire suppression, evacuation, lockdown, law enforcement
+   - Secure scene and preserve evidence (do not disturb unless necessary for safety)
+   - Provide first aid or CPR if trained and until emergency medical services arrive
+   - Evacuate facility if fire or hazmat emergency following evacuation plan (assist occupants, check areas, account for personnel)
+   - Initiate lockdown procedures if active threat present (secure doors, notify occupants, await law enforcement)
+   - De-escalate verbal conflicts using calm communication and conflict resolution skills
+   - Detain suspects for law enforcement if crime witnessed and within legal authority (use minimum force necessary)
+   - Interview witnesses and gather information for incident report (names, statements, contact information)
+   - Direct emergency responders to incident location upon arrival and provide situational brief
+   - Document incident thoroughly in written report immediately after resolution
+
+6. Incident Documentation & Reporting (After incidents and daily)
+   - Complete incident report for all security incidents, safety hazards, policy violations, and emergencies
+   - Document who, what, when, where, how, and why with objective observations (not opinions)
+   - Include direct quotes from involved parties where significant
+   - List all witnesses with contact information
+   - Describe actions taken and notifications made
+   - Take photographs of scene, damage, or evidence if appropriate and authorized
+   - Submit incident report to supervisor per established timeline (immediate for serious incidents)
+   - Maintain daily activity log documenting all patrols, access control activities, and routine observations
+   - Log all visitors in/out with complete information and times
+   - Document equipment malfunctions, safety hazards identified, and maintenance requests submitted
+   - Maintain radio log of all communications and dispatches throughout shift
+
+7. End of Shift Procedures & Turnover (Final 30 minutes)
+   - Conduct final patrol of assigned areas ensuring all is secure
+   - Verify all visitor badges returned and logged out properly
+   - Lock and secure facility per post orders (doors, gates, windows)
+   - Arm alarm systems and test activation per procedure
+   - Turn off lights in appropriate areas or verify security lighting functioning
+   - Complete all required logs and reports for the shift
+   - Brief incoming shift guard on current status, ongoing situations, and pending issues
+   - Turnover keys, access cards, and equipment with proper accountability (sign-in/sign-out)
+   - Report any equipment malfunctions or deficiencies to supervisor
+   - Ensure all documentation submitted and filed properly
+
+4) Deliverables
+Common outputs and artifacts for security operations:
+
+- Incident reports: detailed written documentation of all security incidents, emergencies, and policy violations
+- Daily activity logs: chronological record of patrols, access control activities, and routine observations
+- Visitor logs: record of all visitors entering and exiting facility with times, badges issued, persons visited
+- Patrol logs: documentation of security rounds with times, areas checked, observations made
+- Alarm logs: record of all alarm activations with type, location, response, and resolution
+- Equipment inspection logs: documentation of equipment checks and malfunctions identified
+- Safety hazard reports: documentation of unsafe conditions identified requiring attention
+- Witness statements: written accounts from persons involved in or witnessing incidents
+- Evidence documentation: chain of custody for any evidence collected or preserved
+- Pass-down reports: shift turnover information for incoming guards
+
+Minimum viable deliverable: Basic incident report with who, what, when, where information and brief narrative
+Gold standard deliverable: Comprehensive incident report with detailed chronological narrative, direct quotes, witness list, evidence documentation, photographs, actions taken, follow-up recommendations, and supervisory review
+
+5) Quality checklist
+Ensure effective security operations and professional standards:
+
+Vigilance & Awareness:
+- [ ] Security patrols conducted at required intervals and thoroughly documented
+- [ ] Surveillance cameras monitored regularly for suspicious activity
+- [ ] Access control procedures followed consistently for all visitors and employees
+- [ ] All areas of assigned post observed and checked systematically
+- [ ] Suspicious activity and policy violations identified and reported promptly
+
+Emergency Preparedness:
+- [ ] Emergency protocols known and immediately accessible
+- [ ] Emergency contact numbers and chain of command identified
+- [ ] First aid/CPR certification current and skills maintained
+- [ ] Emergency equipment locations known and verified accessible
+- [ ] Evacuation routes and assembly areas identified
+
+Professional Conduct:
+- [ ] Uniform and appearance professional and consistent with standards
+- [ ] Communication professional, courteous, and respectful with all persons
+- [ ] Authority exercised appropriately within legal limits and training
+- [ ] No use of excessive force or actions beyond scope of authority
+- [ ] Confidentiality maintained for sensitive information observed
+
+Documentation & Reporting:
+- [ ] Incident reports completed immediately with objective observations
+- [ ] Reports include all required elements (who, what, when, where, how, witnesses)
+- [ ] Daily activity logs maintained with accurate times and observations
+- [ ] Visitor logs complete with all entries and proper sign-out
+- [ ] Spelling, grammar, and legibility checked before submission
+
+Legal Compliance:
+- [ ] Actions remain within legal authority granted to security personnel
+- [ ] No impersonation of law enforcement or exercise of police powers
+- [ ] Detentions conducted only when legally authorized (varies by state)
+- [ ] Use of force justified, necessary, and proportional to threat
+- [ ] Privacy rights respected and searches conducted only with proper authority
+
+6) Templates (paste-ready)
+
+=== Incident Report Template ===
+SECURITY INCIDENT REPORT
+
+Report #: [Number]  Date: [MM/DD/YYYY]  Time: [HH:MM]
+Location: [Specific area/building/floor]
+Reporting Officer: [Name, Badge/ID #]  Supervisor: [Name]
+
+INCIDENT TYPE:
+[ ] Theft/Burglary  [ ] Trespassing  [ ] Vandalism  [ ] Medical Emergency
+[ ] Fire/Alarm  [ ] Assault  [ ] Vehicle Accident  [ ] Policy Violation
+[ ] Safety Hazard  [ ] Suspicious Activity  [ ] Other: __________
+
+PERSONS INVOLVED:
+Name: [Last, First]  Type: [Employee/Visitor/Suspect/Victim]
+DOB or Age: [XX]  Phone: [Number]  Address: [If available]
+Description: [Height, weight, clothing, distinguishing features]
+
+[Repeat for each person involved]
+
+INCIDENT NARRATIVE (Chronological, objective observations):
+At approximately [HH:MM], I was [location/activity] when [incident occurred/was notified].
+
+[Detailed chronological description using objective observations, direct quotes, specific actions]
+
+Actions Taken:
+[Immediate response, assistance rendered, authorities notified, scene secured]
+
+WITNESSES:
+Name: [Last, First]  Phone: [Number]  Statement: [ ] Attached  [ ] Refused
+[Repeat for each witness]
+
+NOTIFICATIONS MADE:
+[ ] 911 - Time: ____  Incident #: ____
+[ ] Supervisor - Name: ____  Time: ____
+[ ] Client Representative - Name: ____  Time: ____
+[ ] Other: ____________________
+
+EVIDENCE:
+[ ] Photographs taken - Qty: __  [ ] Video footage preserved - Camera #: __
+[ ] Physical evidence secured: [Description]
+[ ] Statements obtained
+
+DISPOSITION:
+[ ] Law enforcement responded - Officer: ____  Badge #: ____  Report #: ____
+[ ] Medical transport - Company: ____  Transported to: ____
+[ ] Individual escorted off property
+[ ] Warning issued
+[ ] Under investigation
+[ ] Other: __________
+
+PROPERTY DAMAGE: [ ] None  [ ] Yes (describe): __________
+
+INJURIES: [ ] None  [ ] Yes (describe): __________
+
+FOLLOW-UP REQUIRED:
+[ ] Maintenance/Repairs needed
+[ ] Additional investigation
+[ ] Review surveillance video
+[ ] Contact witness
+[ ] Other: __________
+
+Reporting Officer Signature: ________________  Date: __________  Time: __________
+Supervisor Review: ________________  Date: __________  Time: __________
+
+=== Daily Activity Log Template ===
+DAILY ACTIVITY LOG
+
+Date: [MM/DD/YYYY]  Post: [Location/Assignment]
+Officer: [Name, Badge/ID #]  Shift: [Hours]
+
+| Time | Activity/Location | Observations | Action Taken | Initials |
+|------|-------------------|--------------|--------------|----------|
+| 0700 | Begin shift | Received briefing, checked equipment | Posted at main entrance | [XX] |
+| 0730 | Patrol Lot A | 15 vehicles present, lighting operational | No issues observed | [XX] |
+| 0800 | Visitor arrival | [Company name] to see [Employee] | Issued badge #45, logged | [XX] |
+| 0900 | Patrol Building 1 | All doors secure, no safety hazards | Completed patrol | [XX] |
+
+VISITORS PROCESSED: [Number]
+INCIDENTS REPORTED: [Number - reference report #s]
+ALARMS RESPONDED TO: [Number - reference alarm log]
+EQUIPMENT ISSUES: [List any malfunctions or concerns]
+
+WEATHER CONDITIONS: [Temperature, precipitation, visibility]
+
+SHIFT SUMMARY:
+[Brief paragraph summarizing significant activities, incidents, or observations from shift]
+
+PASS-DOWN INFORMATION FOR NEXT SHIFT:
+[Information incoming guard needs to know - ongoing situations, expected visitors, maintenance issues]
+
+Officer Signature: ________________  Date: __________
+
+=== Visitor Log Template ===
+VISITOR LOG - [Date: MM/DD/YYYY]
+
+Post/Location: [Main Entrance, Security Desk, etc.]
+
+| # | Time In | Visitor Name | Company | Person Visiting | Badge # | Time Out | Security Officer |
+|---|---------|--------------|---------|-----------------|---------|----------|------------------|
+| 1 | 08:15 | [Name] | [Company] | [Employee/Dept] | V-045 | 10:30 | [Initials] |
+| 2 | 09:00 | [Name] | [Company] | [Employee/Dept] | V-046 | 11:15 | [Initials] |
+| 3 | 10:30 | [Name] | [Company] | [Employee/Dept] | V-047 | 15:00 | [Initials] |
+
+TOTAL VISITORS: [Number]
+BADGES ISSUED: [Number]
+BADGES OUTSTANDING: [Number - list badge #s not returned]
+
+Notes: ________________________________________
+
+Security Officer: ________________  Date: __________
+
+=== Security Patrol Checklist ===
+SECURITY PATROL CHECKLIST
+
+Date: [MM/DD/YYYY]  Time: [HH:MM]  Officer: [Name, Badge #]
+
+EXTERIOR PATROL:
+[ ] Parking Lot A - Vehicles: __ Lighting: OK/Issues  Notes: __________
+[ ] Parking Lot B - Vehicles: __ Lighting: OK/Issues  Notes: __________
+[ ] Building Perimeter - Doors secure, Windows intact, Fencing OK
+[ ] Loading Dock - Secure, No unauthorized vehicles
+[ ] Dumpster Area - No fire hazards, Secure
+[ ] Exterior Lighting - All functioning / Report outages: __________
+
+INTERIOR PATROL:
+[ ] Lobby/Reception - Secure, No safety hazards
+[ ] Stairwells - Doors locked/unlocked per policy, Lighting OK
+[ ] Restrooms - Checked for occupants, No hazards
+[ ] Break Rooms - Appliances off, No hazards
+[ ] Conference Rooms - Secure, Equipment off
+[ ] Server Room - Locked, Access controlled
+[ ] Storage Areas - Secure, No hazards
+
+FIRE SAFETY:
+[ ] Fire Exits - Unobstructed, Signs visible
+[ ] Fire Extinguishers - Present, Inspected, Accessible
+[ ] Emergency Lighting - Tested, Functional
+[ ] Fire Alarm Panel - Normal status, No trouble signals
+
+SECURITY SYSTEMS:
+[ ] Alarm Panel - Status: [Armed/Disarmed/Normal]
+[ ] Access Control - System operational
+[ ] CCTV Cameras - All functional / Note issues: __________
+[ ] Communication - Radio check OK
+
+OBSERVATIONS:
+Suspicious Activity: [ ] None  [ ] Yes (describe): __________
+Safety Hazards: [ ] None  [ ] Yes (describe): __________
+Policy Violations: [ ] None  [ ] Yes (describe): __________
+Maintenance Needed: [ ] None  [ ] Yes (describe): __________
+
+ACTIONS TAKEN:
+[Document any incidents, notifications made, or issues addressed]
+
+Patrol Completed: [HH:MM]
+Officer Signature: ________________  Date: __________
+
+7) Examples of excellent outputs
+
+Example 1: Theft Incident Report
+```
+SECURITY INCIDENT REPORT
+
+Report #: SR-2024-1089
+Date: 11/18/2024  Time: 15:45
+Location: Employee Parking Lot C, Northeast section
+Reporting Officer: Security Officer James Wilson, Badge #207
+Supervisor: Shift Supervisor Karen Martinez
+
+INCIDENT TYPE: [X] Theft/Burglary - Vehicle break-in
+
+PERSONS INVOLVED:
+Victim: Johnson, Sarah - Employee #4521
+Department: Accounting  Phone: (555) 123-4567
+Vehicle: 2022 Honda Accord, Silver, License Plate ABC-1234
+Parking Space: C-47 (Northeast corner under tree)
+
+INCIDENT NARRATIVE:
+At approximately 1545 hours, I was conducting a routine patrol of Parking Lot C when I observed a female employee waving at me near space C-47. I approached and the employee identified herself as Sarah Johnson from Accounting.
+
+Ms. Johnson stated, "Someone broke into my car. My purse is missing." She appeared upset but calm. I asked her when she last saw her vehicle secure. She stated, "I parked here this morning at 8:00 AM when I arrived. I just came out for my afternoon break and found the passenger window smashed."
+
+I observed the vehicle's front passenger window was completely shattered with glass fragments on the ground and inside the vehicle. The door was closed but unlocked. I looked inside the vehicle and observed broken glass on the passenger seat and floor. The center console was open and items appeared disturbed.
+
+I asked Ms. Johnson what was missing. She stated, "My black leather purse was on the floor of the passenger side. It had my wallet with my driver's license, two credit cards, about $60 cash, and my phone charger. The purse itself was worth about $200."
+
+I requested Ms. Johnson not touch anything in the vehicle to preserve potential evidence. I immediately notified Dispatch at 1550 hours and requested law enforcement response. I also notified Shift Supervisor Martinez at 1552 hours.
+
+I secured the scene by using traffic cones to block access around the vehicle (approximately 15-foot perimeter). I looked around the immediate area for witnesses or evidence. I observed broken glass on the ground consistent with forced entry. I did not locate the stolen purse or any tools used for the break-in.
+
+At 1605 hours, [City] Police Officer Thompson, Badge #4892, arrived on scene. I briefed Officer Thompson on the situation and provided him with Ms. Johnson's information. Officer Thompson conducted his investigation and completed Police Report #2024-TR-5671.
+
+I reviewed security camera footage from Camera #C-8 which partially covers this area of Lot C. The footage showed a white male, approximately 6 feet tall, medium build, wearing a dark hoodie and jeans, approach the vehicle at approximately 1320 hours. The subject looked around, used an object to break the passenger window, reached in and removed a black object (consistent with purse description), and walked quickly toward the east exit of the parking lot. The subject's face was not clearly visible due to hoodie. I preserved the video footage and provided copy to Officer Thompson on USB drive.
+
+Officer Thompson interviewed Ms. Johnson and completed his report. He advised Ms. Johnson to contact her credit card companies and monitor for fraudulent charges. He provided her with case number 2024-TR-5671 for insurance purposes.
+
+Ms. Johnson arranged for a mobile glass repair service to secure her vehicle. The repair technician arrived at 1700 hours and temporarily covered the broken window with plastic sheeting. Ms. Johnson stated she would have the window replaced tomorrow.
+
+ACTIONS TAKEN:
+- Secured scene with traffic cones
+- Notified Dispatch and Shift Supervisor
+- Called 911 and requested law enforcement (1555 hours)
+- Preserved evidence and prevented contamination of scene
+- Reviewed security camera footage and identified suspect
+- Provided video footage to law enforcement on USB drive
+- Remained on scene until police completed investigation
+
+WITNESSES:
+No witnesses to the actual break-in have been identified. Security footage shows suspect's actions.
+
+Camera Coverage:
+- Camera #C-8 captured incident (video preserved)
+- File name: LOT-C-8_20241118_1315-1330.mp4
+- USB drive provided to Officer Thompson
+
+NOTIFICATIONS MADE:
+[X] 911 - Time: 1555  [City] Police Department
+[X] Dispatch - Time: 1550
+[X] Shift Supervisor Karen Martinez - Time: 1552
+[X] Client Security Manager Tom Stevens - Time: 1610 (per Martinez)
+
+EVIDENCE:
+[X] Photographs taken - 8 photos showing vehicle, broken window, glass, parking location
+[X] Video footage preserved - Camera #C-8, provided to police on USB drive
+[ ] Physical evidence secured - Glass fragments left in place for police
+
+LAW ENFORCEMENT RESPONSE:
+Officer: Thompson  Badge #: 4892  Department: [City] Police
+Police Report #: 2024-TR-5671
+Time Arrived: 1605  Time Cleared: 1645
+
+PROPERTY DAMAGE:
+[X] Yes - Vehicle passenger window broken (estimated $300-400 repair cost)
+
+INJURIES:
+[ ] None
+
+ITEMS STOLEN:
+- Black leather purse (value: $200)
+- Wallet containing driver's license, 2 credit cards, $60 cash
+- Phone charger (value: $20)
+Total estimated loss: $280 + purse
+
+DISPOSITION:
+[X] Law enforcement responded and completed investigation
+[X] Victim provided case number for insurance
+[X] Video evidence provided to police
+[X] Vehicle temporarily secured by mobile glass service
+
+FOLLOW-UP REQUIRED:
+[X] Increase patrols of Lot C for next several days
+[X] Review security camera coverage and consider additional camera in this area
+[ ] Update employee security awareness bulletin about vehicle break-in prevention
+
+RECOMMENDATIONS:
+This incident occurred in a less-visible corner of Lot C partially blocked by trees. Recommend trimming vegetation to improve visibility and considering additional lighting or camera coverage in this area. Suggest employee awareness communication about not leaving valuables visible in vehicles.
+
+Reporting Officer Signature: James Wilson #207  Date: 11/18/2024  Time: 1730
+Supervisor Review: Karen Martinez  Date: 11/18/2024  Time: 1800
+```
+
+Example 2: Medical Emergency Response
+```
+SECURITY INCIDENT REPORT
+
+Report #: SR-2024-1145
+Date: 12/02/2024  Time: 10:22
+Location: Building 3, Second Floor, Break Room
+Reporting Officer: Security Officer Maria Garcia, Badge #183
+Supervisor: Shift Supervisor Robert Chen
+
+INCIDENT TYPE: [X] Medical Emergency - Employee unconscious/unresponsive
+
+PERSONS INVOLVED:
+Patient: Williams, David - Employee #3892
+DOB: 03/15/1968 (age 56)  Department: IT
+Phone: (555) 987-6543  Emergency Contact: Williams, Jennifer (wife) (555) 234-5678
+
+INCIDENT NARRATIVE:
+At approximately 1022 hours, I received a radio call from dispatch stating "Medical emergency, Building 3, second floor break room. Employee unconscious. Respond immediately."
+
+I immediately responded to the location arriving at 1024 hours (approximately 2 minutes). Upon entering the break room, I observed a male employee lying on the floor on his back, apparently unconscious. Two employees were kneeling next to him looking concerned.
+
+I identified myself and asked what happened. Employee Jones (witness) stated, "He was getting coffee and suddenly grabbed his chest and collapsed. I think it's his heart."
+
+I immediately assessed the patient:
+- Patient was unresponsive to verbal commands
+- Patient was breathing (shallow, rapid breaths observed)
+- Pulse was present but rapid and weak
+- Patient was pale and sweating profusely
+- No obvious trauma or bleeding
+
+I directed Employee Jones to call 911 immediately (1025 hours) while I attended to the patient. I retrieved the AED (Automated External Defibrillator) from the wall mount in the corridor and placed it next to the patient. I turned on the AED and attached pads to patient's chest as instructed by device.
+
+The AED analyzed rhythm and stated "No shock advised. Continue monitoring patient." I maintained patient position on floor and monitored breathing and pulse. Patient remained unconscious but breathing.
+
+I notified Dispatch at 1026 hours with patient status update and confirmed EMS was en route. I kept AED attached and ready in case patient's condition changed.
+
+At approximately 1030 hours, patient began to regain consciousness. He opened his eyes and appeared confused. I spoke to him calmly: "Sir, you collapsed. Paramedics are on the way. Try to remain still. Can you tell me your name?" Patient responded weakly, "David... my chest hurts."
+
+I reassured patient and kept him calm and still on the floor. I asked, "Do you have any medical conditions or take any medications?" Patient stated, "High blood pressure... I take medication... forgot to take it today." I asked about chest pain. Patient stated, "Tight pressure in my chest... left arm tingles."
+
+Based on symptoms (chest pain, arm tingling, sweating, brief loss of consciousness), I suspected possible cardiac event and maintained close monitoring.
+
+At 1035 hours, [City] Fire Department paramedics arrived with ambulance. I briefed Paramedic Johnson on patient status:
+- Male, age 56, employee of company
+- Collapsed approximately 1022, unconscious for approximately 8 minutes
+- AED applied, no shock advised
+- Patient regained consciousness at 1030
+- Complains of chest pressure, left arm tingling
+- History of high blood pressure, did not take medication today
+- Patient currently conscious, breathing, pulse rapid and weak
+
+Paramedics took over patient care. They assessed vital signs, performed EKG, administered oxygen, and established IV access. Patient remained conscious and responsive during paramedic assessment.
+
+At 1050 hours, paramedics transported patient to [Hospital Name] Emergency Department via ambulance. I provided paramedics with patient's emergency contact information for notification.
+
+I notified Shift Supervisor Chen at 1027 hours (during incident) and provided final update at 1052 hours. Supervisor Chen notified patient's department manager and HR. Patient's wife (emergency contact) was notified by HR at 1105 hours.
+
+I secured the scene after paramedics departed, ensuring no patient belongings left behind. Patient's wallet, keys, and phone were collected and secured in security office for return to family.
+
+ACTIONS TAKEN:
+- Responded within 2 minutes of notification
+- Assessed patient and determined medical emergency
+- Directed 911 call
+- Retrieved and applied AED per protocol
+- Monitored patient continuously until EMS arrival
+- Provided detailed briefing to paramedics
+- Secured patient belongings
+- Notified chain of command
+- Documented incident thoroughly
+
+WITNESSES:
+Jones, Michael - Employee #4501, IT Department
+Phone: (555) 432-1098
+Statement: "David was at the coffee machine. He suddenly grabbed his chest and said 'something's wrong' and then collapsed to the floor. I called for help right away."
+
+Smith, Patricia - Employee #5234, HR Department
+Phone: (555) 876-5432
+Statement: "I was in the break room and saw David fall. It happened so fast. The security officer arrived very quickly and knew exactly what to do. I'm grateful she was there."
+
+NOTIFICATIONS MADE:
+[X] 911 - Time: 1025  [City] Fire Department/EMS
+[X] Dispatch - Time: 1026 (patient status update)
+[X] Shift Supervisor Chen - Time: 1027 (during incident) and 1052 (final update)
+[X] HR Department - Notified by Supervisor Chen
+[X] Patient's emergency contact - Notified by HR at 1105
+
+EMS RESPONSE:
+Department: [City] Fire Department/EMS
+Paramedic: Johnson, EMT-P  Unit #: Ambulance 7
+Time Arrived: 1035  Time Departed: 1050
+Transport Destination: [Hospital Name] Emergency Department
+Condition at Transport: Conscious, stable, chest pain ongoing
+
+PROPERTY/PERSONAL ITEMS:
+Patient's wallet, keys, and cell phone secured in Security Office Safe #2 for return to family.
+
+INJURIES:
+[X] Yes - Patient experienced chest pain and brief loss of consciousness. Transported to hospital for cardiac evaluation.
+
+EQUIPMENT USED:
+[X] AED (Automated External Defibrillator) - Unit #3, Building 3, Second Floor
+     Pads used - replaced with new pads after incident
+     AED functioned properly throughout incident
+
+DISPOSITION:
+[X] Patient transported to hospital by EMS
+[X] Scene secured
+[X] Personal belongings secured
+[X] AED restocked with new pads
+
+FOLLOW-UP:
+- Supervisor Chen contacted patient's family at hospital (1400 hours) - Patient is stable and undergoing cardiac tests. Family expressed appreciation for quick response.
+- AED unit restocked with new electrode pads (completed 1300 hours)
+- Incident reviewed with security team during next shift briefing as training example
+
+NOTES:
+This incident demonstrated the importance of quick response, knowledge of medical emergency protocols, and proper AED use. Patient's outcome was positive due to rapid recognition of cardiac symptoms and immediate emergency response activation. No complications during security officer's intervention.
+
+Reporting Officer Signature: Maria Garcia #183  Date: 12/02/2024  Time: 1130
+Supervisor Review: Robert Chen  Date: 12/02/2024  Time: 1230
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Post Orders**: Written instructions specific to security assignment detailing duties, procedures, patrol routes, emergency protocols, and chain of command
+- **Access Control**: Management of who can enter facility or restricted areas through badge systems, visitor screening, and authorization verification
+- **Patrol**: Systematic inspection of assigned areas to detect security threats, safety hazards, and policy violations
+- **Incident Report**: Written documentation of security incidents, emergencies, or unusual occurrences with detailed facts and actions taken
+- **Detention Authority**: Legal authority granted to security personnel to detain individuals suspected of crimes until law enforcement arrives (varies by state - some states allow citizen's arrest, others more limited)
+- **Use of Force Continuum**: Progressive levels of authorized force from verbal commands through physical control, used only when necessary and proportional
+- **Trespassing**: Unauthorized presence on private property after being told to leave or without permission (criminal offense, security can request departure)
+- **Chain of Command**: Hierarchical notification and reporting structure from guard to supervisor to operations center to client
+- **Situational Awareness**: Conscious observation and assessment of environment to identify threats, hazards, and unusual conditions
+- **Perimeter Security**: Protection of facility boundaries through fencing, lighting, surveillance, and patrols
+
+Standards & Frameworks (2024):
+- **ASIS International Security Standards**: Professional organization providing best practices for security operations, training, and professional development
+- **Security Officer Training Requirements**: Most states require minimum training hours (8-40 hours) covering legal authority, use of force, emergency response, report writing
+- **Armed Security Licensing**: Separate licensing required for armed guards including firearms training, qualification, psychological evaluation, background check
+- **OSHA Workplace Safety Standards**: Safety requirements for security personnel including bloodborne pathogens, hazard communication, personal protective equipment
+- **State Security Guard Licensing**: Most states require licensure with requirements varying by state (background check, training, exam, bonding)
+- **Legal Authority Standards**:
+  * State laws on detention/citizen's arrest (varies significantly - some allow detention for any crime witnessed, others only for felonies)
+  * Trespass laws and authority to remove trespassers
+  * Use of force laws (generally allows reasonable force to protect self or others, prevent crime, or effect lawful detention)
+  * Liability considerations (false imprisonment, assault, battery if exceeded authority)
+- **Professional Conduct Standards**: ASIS International Code of Ethics, company policies on professionalism, appearance, conduct
+
+Common Tools & Equipment:
+- **Communication**: Two-way radios, cell phones, emergency phones, panic buttons
+- **Reporting**: Incident report forms, daily activity logs, visitor logs, patrol tracking systems
+- **Surveillance**: CCTV monitoring systems, pan-tilt-zoom cameras, video management systems
+- **Access Control**: Badge readers, key card systems, visitor management systems, vehicle access gates
+- **Safety Equipment**: First aid kit, AED (automated external defibrillator), fire extinguisher, flashlight
+- **Patrol Equipment**: Flashlight, keys, access cards, GPS tracker for guard tours
+- **Personal Protection**: Uniform, reflective vest, duty belt, handcuffs (if authorized), pepper spray (if authorized), baton (if authorized)
+- **Documentation**: Notebook, pen, camera/phone for photographs, body-worn camera (increasingly common)
+- **Alarm Systems**: Intrusion detection, fire alarm panels, duress alarms, door contact alarms
+
+Change log:
+- 2024-12: Initial playbook created based on ASIS International standards, state security guard licensing requirements, legal authority limitations, and security industry best practices
+  * Emphasis on observe and report mission (not law enforcement)
+  * Legal boundaries and detention authority (varies by state)
+  * Professional conduct and customer service orientation
+  * Emergency response procedures (medical, fire, active threats)
+  * Documentation and reporting standards
+  * Access control and patrol best practices

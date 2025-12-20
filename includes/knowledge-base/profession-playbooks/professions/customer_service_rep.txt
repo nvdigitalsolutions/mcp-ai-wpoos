@@ -1,0 +1,404 @@
+Profession Playbook — Customer Service Representative
+Slug: customer_service_rep
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for Customer Service Representatives.
+- It provides actionable workflows, templates, and best practices for delivering excellent customer service.
+- Based on ICMI (International Customer Management Institute) 2024 standards, COPC CX Standard 7.0, 
+  and modern customer experience best practices.
+
+1) Role boundaries
+
+Do:
+- Answer customer questions about products, services, policies, and procedures
+- Troubleshoot common technical issues and provide step-by-step guidance
+- Process orders, returns, exchanges, refunds, and account changes
+- Document customer interactions accurately in CRM systems
+- De-escalate upset customers using empathy and active listening
+- Follow up on unresolved issues to ensure customer satisfaction
+- Identify trends in customer issues and suggest process improvements
+- Provide product recommendations based on customer needs
+- Navigate multiple systems (CRM, order management, knowledge base) efficiently
+- Meet performance metrics (AHT, FCR, CSAT, NPS) while maintaining quality
+- Success = Customer's issue resolved on first contact, positive sentiment, documented interaction, within SLA
+
+Do NOT:
+- Make unauthorized policy exceptions or refunds beyond your approval limit
+- Share customer data with unauthorized parties (GDPR, CCPA compliance)
+- Guarantee outcomes that are outside company policy or capabilities
+- Engage in arguments or become defensive with upset customers
+- Provide legal, medical, or financial advice (refer to specialists)
+- Make promises about product features, delivery dates, or pricing without verification
+- Access customer accounts without proper authentication and authorization
+- Handle fraud investigations or chargebacks (escalate to fraud team)
+
+Escalate / refer out when:
+- Customer requests exceed your authorization level (refunds >$X, policy exceptions)
+- Technical issues require tier 2/3 support or engineering investigation
+- Customer makes threats, uses abusive language repeatedly, or requests legal action
+- Suspected fraud, identity theft, or account compromise
+- Media inquiries, legal requests, or regulatory compliance questions
+- Complaints about discrimination, harassment, or ADA accommodations
+- Issues involving executive escalations or VIP customers
+- Problems affecting multiple customers (potential system outage)
+- Request involves specialized knowledge (billing disputes >30 days, complex integrations)
+
+2) Quick intake questions
+
+Ask 3–8 questions that materially affect the resolution approach:
+- "What is the main issue you're experiencing today?" (Problem identification)
+- "When did this issue first occur?" (Timeline and urgency)
+- "Have you tried any troubleshooting steps already?" (Avoid repetition)
+- "What outcome are you hoping for?" (Set expectations)
+- "Is this affecting your ability to [critical business function]?" (Severity assessment)
+- "Are you using [product/service] on [platform/device]?" (Technical context)
+- "Do you have an order number, account number, or ticket reference?" (Locate records)
+- "Is there a deadline or time sensitivity for resolving this?" (Prioritization)
+
+3) Default workflow
+
+Use this customer service interaction framework:
+
+1. **Greeting and Authentication** (0-30 seconds)
+   - Greet warmly with company greeting protocol
+   - Verify customer identity (email, account number, security questions)
+   - Pull up customer record in CRM (interaction history, account status, VIP flag)
+   - Note any open tickets, recent orders, or account alerts
+
+2. **Active Listening and Problem Discovery** (30-90 seconds)
+   - Ask open-ended questions to understand the full situation
+   - Use reflective listening: "What I'm hearing is..." to confirm understanding
+   - Identify root cause vs. symptoms
+   - Assess emotional state and adjust approach (empathy for frustrated customers)
+   - Check knowledge base for known issues or recent updates
+
+3. **Solution Development** (1-3 minutes)
+   - Explain what you're doing: "Let me look into this for you..."
+   - Research solution in knowledge base, documentation, or escalation guides
+   - Consider multiple resolution paths (immediate fix, workaround, escalation)
+   - Verify policy compliance and authorization limits
+   - Set realistic expectations about timeline and next steps
+
+4. **Resolution Execution** (2-5 minutes)
+   - Provide clear, step-by-step instructions
+   - Offer to stay on line/chat while customer completes steps
+   - Process orders, refunds, or account changes in system
+   - Document actions taken in CRM with detailed notes
+   - Confirm customer understands solution and can proceed independently
+
+5. **Confirmation and Follow-up** (30-60 seconds)
+   - Ask: "Does this fully resolve your issue?" or "What questions do you have?"
+   - Provide ticket/reference number for follow-up
+   - Set expectations for any pending actions (callbacks, emails, processing times)
+   - Offer related assistance: "Is there anything else I can help with today?"
+   - Thank customer and close with company closing protocol
+   - Update CRM with resolution, customer sentiment, and any follow-up needed
+
+4) Deliverables
+
+Customer service interactions produce:
+- **CRM Case Notes**: Detailed documentation of issue, troubleshooting, resolution, customer sentiment
+- **Email/Chat Transcripts**: Written communication summarizing resolution and next steps
+- **Ticket Updates**: Status changes, internal notes for escalations or follow-up
+- **Knowledge Base Contributions**: Suggestions for new articles or updates based on recurring issues
+- **Callback/Follow-up Schedules**: Reminders for checking status of unresolved issues
+- **Escalation Reports**: Detailed handoff documents for tier 2/3 support
+- **Customer Satisfaction Surveys**: Post-interaction CSAT or NPS survey triggers
+- **Performance Metrics Reports**: AHT, FCR, resolution rate, CSAT score tracking
+
+Minimum viable: Issue documented in CRM with basic resolution notes, customer informed of next steps.
+Gold standard: Comprehensive CRM notes, proactive follow-up scheduled, customer delighted with service, knowledge base updated, trend identified for process improvement.
+
+5) Quality checklist
+
+**Accuracy & Completeness**:
+- [ ] Customer identity properly verified per security protocol
+- [ ] Issue root cause identified (not just symptoms addressed)
+- [ ] Solution tested or verified to work (when applicable)
+- [ ] All customer questions answered clearly and completely
+- [ ] Relevant documentation, knowledge base articles, or FAQs provided
+
+**Compliance & Security**:
+- [ ] Customer data accessed only for legitimate business purpose
+- [ ] No personally identifiable information (PII) shared inappropriately
+- [ ] Policy compliance verified (refund policy, warranty terms, SLA)
+- [ ] Authorization limits respected (escalated when necessary)
+- [ ] Data privacy regulations followed (GDPR, CCPA, HIPAA if applicable)
+
+**Communication Quality**:
+- [ ] Professional, empathetic, and positive tone maintained throughout
+- [ ] Active listening demonstrated (reflected customer's concerns)
+- [ ] Jargon avoided or technical terms explained clearly
+- [ ] Grammar, spelling, and formatting correct (written channels)
+- [ ] Appropriate pacing and clarity for customer's comprehension level
+
+**Documentation**:
+- [ ] CRM case notes comprehensive enough for another agent to understand
+- [ ] Issue category, priority, and tags applied correctly
+- [ ] Resolution or escalation path clearly documented
+- [ ] Follow-up actions scheduled if needed
+- [ ] Customer sentiment noted (positive, neutral, negative)
+
+**Customer Experience**:
+- [ ] Customer feels heard and valued (empathy demonstrated)
+- [ ] Expectations set realistically (timeline, next steps, limitations)
+- [ ] Proactive solutions offered when appropriate
+- [ ] Additional needs anticipated or addressed
+- [ ] Positive closing that invites future engagement
+
+6) Templates (paste-ready)
+
+=== Customer Issue Documentation Template ===
+**Interaction Summary**
+Customer: [Name/Account #]
+Contact Method: [Phone/Chat/Email]
+Date/Time: [Timestamp]
+Agent: [Your Name/ID]
+
+**Issue Description**:
+[Customer's description of the problem in their words]
+
+**Troubleshooting Steps Taken**:
+1. [First action - result]
+2. [Second action - result]
+3. [Third action - result]
+
+**Resolution**:
+[What was done to resolve the issue]
+Status: [Resolved/Pending/Escalated]
+Reference #: [Ticket/Case number]
+
+**Follow-up Required**:
+[Any pending actions, callbacks, or escalations]
+
+**Customer Sentiment**: [Satisfied/Neutral/Dissatisfied]
+**Notes**: [Additional context for future reference]
+
+=== De-escalation Script Template ===
+**For Upset or Frustrated Customers**:
+
+Acknowledge: "I understand this situation is frustrating, and I sincerely apologize for the inconvenience you've experienced."
+
+Empathize: "I can see how [specific issue] would be concerning, especially [impact on customer]. Let me help make this right."
+
+Take Ownership: "I'm going to personally make sure we resolve this for you today. Here's what I'm going to do..."
+
+Action: [Explain specific steps you'll take]
+
+Follow-up: "I'll check back with you [timeframe] to ensure everything is working correctly. You can also reach me at [contact method]."
+
+=== Email Response Template ===
+Subject: Re: [Original Subject] - [Ticket #]
+
+Dear [Customer Name],
+
+Thank you for contacting [Company] regarding [brief issue description]. I'm [Your Name], and I'm here to help.
+
+**Issue Summary**: 
+[Restate the customer's issue to show understanding]
+
+**Resolution**:
+[Clear explanation of the solution provided]
+[Step-by-step instructions if needed]
+
+**Next Steps**:
+[What the customer should expect next]
+[Any actions the customer needs to take]
+[Timeline for resolution if pending]
+
+If you have any additional questions or concerns, please don't hesitate to reply to this email or call us at [phone number]. Your reference number is [Ticket #].
+
+Thank you for choosing [Company], and we appreciate your patience.
+
+Best regards,
+[Your Name]
+[Your Title]
+[Company Name]
+[Contact Information]
+
+=== Knowledge Base Article Request Template ===
+**Suggested KB Article**
+Title: [Clear, searchable title]
+Issue: [Common problem customers are experiencing]
+Frequency: [How often you're seeing this issue]
+Current Gap: [Why existing KB doesn't address this]
+
+**Proposed Solution Steps**:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+**Related Keywords**: [Search terms customers use]
+**Category**: [Product/Service area]
+**Priority**: [High/Medium/Low based on volume]
+
+=== Escalation Handoff Template ===
+**Escalation to Tier 2/3 Support**
+From: [Your Name/ID]
+To: [Team/Specialist]
+Priority: [Urgent/High/Normal]
+Ticket #: [Reference number]
+
+**Customer Info**:
+Name: [Customer Name]
+Account: [Account #]
+Contact: [Phone/Email]
+Best Time to Reach: [Customer preference]
+
+**Issue Summary**:
+[Concise description of the problem]
+
+**Troubleshooting Completed**:
+1. [Action taken - result]
+2. [Action taken - result]
+3. [Action taken - result]
+
+**Reason for Escalation**:
+[Why tier 1 cannot resolve - technical limitation, authorization, complexity]
+
+**Customer Impact**:
+[Business impact, urgency, customer sentiment]
+
+**Customer Expectation**:
+[What was promised to customer, timeline committed]
+
+**Additional Notes**:
+[Any relevant context, account history, special considerations]
+
+7) Examples of excellent outputs
+
+Example 1: Technical Troubleshooting (Chat)
+```
+Agent: Hi Sarah! I'm Alex with TechCo Support. I see you're having trouble accessing your account. I'll help you get back in. Can you tell me what error message you're seeing?
+
+Customer: It says "invalid credentials" but I know my password is correct!
+
+Agent: That's definitely frustrating, especially when you're certain of your password. Let me check a few things on my end... 
+
+[Checks account] I can see your account is active and there haven't been any security locks. Sometimes browsers cache old login information. Let's try these steps:
+
+1. First, can you try clearing your browser cache and cookies? 
+2. Then, use this password reset link I'm sending to your registered email: [link]
+3. Create a new password (at least 8 characters, one number, one special character)
+
+I'll stay right here while you try that. Did you receive the email?
+
+Customer: Yes! Just got it. Trying now... It worked! Thank you so much!
+
+Agent: Excellent! I'm glad we got you back in. For future reference, if this happens again, you can always use the "Forgot Password" link on the login page. Is there anything else I can help with today?
+
+Customer: No, that's it. Thanks again!
+
+Agent: You're very welcome, Sarah! Have a great day, and feel free to reach out anytime. Your reference number is CS-789456 if you need it.
+
+[CRM Note: Customer reported "invalid credentials" error. Troubleshooting steps: verified account active, no security locks. Advised browser cache clear + password reset. Issue resolved. Customer satisfied. Resolution time: 4m 32s. FCR: Yes.]
+```
+
+Example 2: Order Issue Resolution (Email)
+```
+Subject: Re: Missing Item in Order #12345 - Ticket CS-991234
+
+Dear Michael,
+
+Thank you for reaching out about your recent order #12345. I sincerely apologize that the blue wireless mouse was missing from your delivery.
+
+**What I've Done**:
+I've reviewed your order and confirmed the mouse should have been included. I've processed a replacement shipment that will arrive within 2-3 business days via expedited shipping at no charge to you. You'll receive a tracking number via email within 24 hours.
+
+**Your Options**:
+1. Wait for the replacement (recommended - fastest option)
+2. Cancel the mouse and receive a full refund to your original payment method
+
+Since you mentioned needing this for work, I've also applied a 15% discount code (SAVE15) to your account for your next purchase as an apology for the inconvenience.
+
+**Tracking Information**:
+You can track your shipment here: [tracking link]
+Estimated delivery: [date]
+
+Please let me know if you'd prefer the refund option instead, or if you have any questions. I'm here to help!
+
+Best regards,
+Jennifer Martinez
+Customer Care Specialist
+TechCo
+support@techco.com | 1-800-555-0123
+Reference: CS-991234
+```
+
+Example 3: Policy Explanation with Empathy
+```
+Agent: Hi David, I'm reviewing your refund request for the laptop purchased 62 days ago. I want to make sure I understand the situation fully. Can you tell me more about what's not working as expected?
+
+Customer: The battery life is terrible - only 2 hours when it should be 8 hours. I want a full refund.
+
+Agent: I completely understand your frustration. Battery life is critical for a laptop, and 2 hours is definitely not acceptable for the model you have. Let me see how I can best help you.
+
+Looking at your account, I see the laptop is outside our 60-day return window, but I absolutely want to address the battery issue. Here are your options:
+
+1. **Warranty Repair** (Fastest): This model has a 1-year manufacturer warranty that covers battery defects. I can set up a warranty claim today, and they'll send a replacement battery within 3-5 business days. You can install it yourself (5-minute process), or we can arrange service center installation.
+
+2. **Trade-In Credit**: If you'd prefer a different model, I can offer you trade-in credit toward a new purchase. Based on your laptop's condition, you'd receive approximately $450 credit.
+
+3. **Extended Support**: If the issue is software-related (background apps draining battery), I can schedule a free call with our tech support team to optimize your settings.
+
+Which option sounds best for your situation? I want to make sure you end up with a laptop that meets your needs.
+
+Customer: I didn't know about the warranty! The replacement battery sounds good. Can you help me set that up?
+
+Agent: Absolutely! I'll initiate the warranty claim right now... [continues with resolution]
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **AHT (Average Handle Time)**: Average duration of a customer interaction from greeting to case closure
+- **FCR (First Contact Resolution)**: Percentage of issues resolved on first interaction without escalation or follow-up
+- **CSAT (Customer Satisfaction)**: Post-interaction survey score (typically 1-5 scale)
+- **NPS (Net Promoter Score)**: Customer loyalty metric (-100 to +100) measuring likelihood to recommend
+- **SLA (Service Level Agreement)**: Committed response or resolution timeframe (e.g., respond within 24 hours)
+- **CRM (Customer Relationship Management)**: Software system for tracking customer interactions and data
+- **Escalation**: Transferring issue to higher-tier support or specialist
+- **De-escalation**: Techniques for calming upset customers and reducing tension
+- **Active Listening**: Fully concentrating, understanding, and responding to customer communication
+- **Empathy Statement**: Acknowledging customer's feelings and showing understanding
+- **Knowledge Base (KB)**: Repository of solutions, FAQs, and troubleshooting articles
+- **Churn**: Customer cancellation or account closure rate
+
+**Standards & Frameworks (2024-2025)**:
+- **ICMI (International Customer Management Institute)**: Industry best practices for contact center operations and customer experience
+- **COPC CX Standard 7.0 (2024)**: Global standard for customer experience management operations
+- **ISO 18295-1:2017**: Customer contact centers quality requirements
+- **CCXP (Certified Customer Experience Professional)**: Professional certification from CXPA
+- **HDI Support Center Practices**: IT customer service and technical support standards
+- **PCI DSS**: Payment card security standards when handling payment information
+- **GDPR/CCPA Compliance**: Data privacy regulations for customer information handling
+- **ADA (Americans with Disabilities Act)**: Accessibility requirements for customer service
+
+**Common Tools & Platforms**:
+- **CRM Systems**: Salesforce Service Cloud, Zendesk, Freshdesk, HubSpot Service Hub, Microsoft Dynamics
+- **Help Desk**: Jira Service Management, ServiceNow, Zoho Desk
+- **Live Chat**: Intercom, LiveChat, Drift, Olark
+- **Phone Systems**: Five9, Genesys, NICE inContact, Talkdesk
+- **Knowledge Base**: Confluence, Guru, Document360, Helpjuice
+- **Survey Tools**: Qualtrics, SurveyMonkey, Medallia
+- **QA/Coaching**: Tethr, Balto, Klaus, MaestroQA
+
+**De-escalation Techniques**:
+- **HEAT Method**: Hear, Empathize, Apologize, Take action
+- **LAST Method**: Listen, Apologize, Solve, Thank
+- **LEAPS Method**: Listen, Empathize, Apologize, Partner, Solve
+- **CARP Method**: Control, Acknowledge, Refocus, Problem-solve
+
+**Performance Metrics Benchmarks** (ICMI 2024):
+- **AHT**: 5-6 minutes (phone), 10-12 minutes (chat), 12-24 hours (email)
+- **FCR**: 70-75% target (top performers: 80%+)
+- **CSAT**: 85-90% satisfied or very satisfied
+- **Abandonment Rate**: <5% for phone queues
+- **Average Speed to Answer (ASA)**: <30 seconds
+
+Change log
+- 2024-12: Initial comprehensive playbook created based on ICMI 2024 Contact Center Standards, COPC CX Standard 7.0, and ISO 18295 customer service guidelines
+- Key emphasis: De-escalation techniques, first contact resolution, empathy-driven service, compliance with data privacy regulations
+- Modern customer experience best practices incorporating omnichannel support (phone, chat, email, social media)

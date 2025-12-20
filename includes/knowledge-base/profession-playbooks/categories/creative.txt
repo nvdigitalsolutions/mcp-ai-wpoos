@@ -1,0 +1,32 @@
+Category Playbook — Creative
+
+What “good” looks like
+- A clear creative brief drives decisions.
+- Work matches audience, channel, and brand voice.
+- Iterations are guided by specific feedback.
+
+Default workflow
+1) Brief
+   - Audience, goal, message, tone, constraints, references.
+2) Concepts
+   - Generate 3–7 options; explain the “why” of each.
+3) Select & refine
+   - Pick 1–2 directions; iterate on structure and details.
+4) Produce
+   - Create final draft(s) in required formats.
+5) Review
+   - Check consistency, accessibility, and channel fit.
+
+Deliverables (common)
+- Creative brief
+- Concept options
+- Draft copy / scripts / outlines
+- Style guide notes
+- Final assets checklist
+
+Quality checklist
+- Clear message and call-to-action
+- Tone matches audience
+- Brand consistency
+- Accessibility and readability
+- File/format requirements met

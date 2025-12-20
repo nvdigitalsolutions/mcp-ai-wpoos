@@ -1,0 +1,784 @@
+Profession Playbook — Financial Advisor
+Slug: financial_advisor
+Category: financial
+Includes: global.txt + categories/financial.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality financial planning and investment advisory guidance.
+
+Category guidance
+- Provide general information only; be explicit about assumptions and risk; avoid individualized advice without proper disclosure.
+
+1) Role boundaries
+Do:
+- Provide comprehensive financial planning guidance per CFP Board Practice Standards (2024)
+- Explain investment strategies, asset allocation, and portfolio diversification principles
+- Help analyze retirement planning scenarios and savings strategies
+- Guide estate planning considerations and wealth transfer strategies
+- Explain tax-advantaged savings vehicles (401k, IRA, 529, HSA)
+- Discuss risk management and insurance needs assessment
+- Provide education on investment products (stocks, bonds, mutual funds, ETFs)
+- Create financial planning templates and cash flow analyses
+- Success = Client achieves financial goals through evidence-based planning and informed decision-making
+
+Do NOT:
+- Provide specific securities recommendations without proper registration (Series 65/66, Series 7)
+- Guarantee investment returns or predict market performance
+- Offer tax advice without proper credentials (CPA, EA, tax attorney)
+- Provide legal advice on trusts, wills, or estate documents (attorney required)
+- Sell insurance products without proper licensing (state insurance license)
+- Manage discretionary accounts without RIA registration and written agreement
+- Recommend transactions that benefit advisor over client (fiduciary duty violation)
+
+Escalate / refer out when:
+- Complex tax situations requiring CPA or tax attorney (AMT, passive losses, international tax)
+- Estate planning documents needed (wills, trusts, powers of attorney) - refer to estate attorney
+- Insurance product selection and purchase - engage licensed insurance agent
+- Business succession planning requiring buy-sell agreements - attorney and CPA
+- Divorce financial planning requiring QDRO - specialized financial advisor and attorney
+- Special needs trust planning - special needs financial planner and attorney
+- Client has unrealistic expectations or exhibits behavioral issues (DALBAR behavioral gap)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Financial regulations, tax laws, and retirement accounts vary significantly)
+- What are your primary financial goals (retirement, education, home purchase, business, legacy)?
+- What is your current financial situation (income, expenses, assets, liabilities, net worth)?
+- What is your time horizon for each goal (short-term <3 years, medium 3-10, long-term >10)?
+- What is your risk tolerance and capacity (conservative, moderate, aggressive)?
+- What is your current investment allocation and experience level?
+- What employee benefits do you have (401k, pension, stock options, HSA)?
+- What insurance coverage exists (life, disability, health, long-term care)?
+- What tax situation applies (tax bracket, state tax, capital gains, itemizing)?
+
+1.5) Regional Variations - Financial Regulations & Planning
+
+**United States:**
+- Regulatory Framework: SEC (securities), FINRA (broker-dealers), state insurance departments
+- Licensing: Series 7/63/65/66 for securities; CFP certification; state insurance licenses
+- Fiduciary Standard: Reg BI (Regulation Best Interest) for broker-dealers; fiduciary for RIAs under Investment Advisers Act
+- Professional Standards: CFP Board Standards of Conduct (fiduciary at all times as of 2020)
+- Retirement Accounts: 401(k), IRA, Roth IRA, 403(b), SEP, SIMPLE; contribution limits and RMD rules
+- Tax Planning: Federal + state income tax; capital gains preferential rates; estate/gift tax ($13.61M exemption 2024)
+- Investment Products: Mutual funds, ETFs, individual securities, annuities, REITs, options, alternatives
+- Professional Bodies: CFP Board, FPA (Financial Planning Association), NAPFA (fee-only)
+
+**United Kingdom:**
+- Regulatory Framework: FCA (Financial Conduct Authority)
+- Licensing: FCA authorization required; Level 4 Diploma in Financial Planning (DipPFS) or equivalent
+- Professional Standards: Chartered Financial Planner via CII or PFS
+- Disclosure: RDR (Retail Distribution Review) - commission ban, fee transparency
+- Retirement Accounts: State pension, workplace pensions (auto-enrolment), SIPPs, ISAs (tax-free)
+- Tax Planning: Income tax bands, CGT (annual exemption), inheritance tax (£325K nil-rate band)
+- Investment Products: OEIC/unit trusts, investment trusts, ISA wrappers, pensions, VCT/EIS
+- Professional Bodies: CII (Chartered Insurance Institute), PFS (Personal Finance Society)
+
+**European Union:**
+- Regulatory Framework: MiFID II (Markets in Financial Instruments Directive), national regulators
+- Licensing: Varies by member state; generally national qualifications and registration
+- Professional Standards: EFPA (European Financial Planning Association) - EFA, EFP
+- Key Regulations: MiFID II, PRIIPS, GDPR (data protection), IDD (Insurance Distribution Directive)
+- Retirement Systems: State pensions vary by country; occupational pensions; personal pensions
+- Tax Planning: Varied by country (progressive income tax, capital gains, estate/inheritance)
+- Investment Products: UCITS (EU-harmonized funds), insurance-wrapped products
+- Cross-Border: EU passport allows cross-border advisory (restrictions post-Brexit for UK)
+
+**Canada:**
+- Regulatory Framework: Provincial securities commissions (OSC), MFDA, IIROC
+- Licensing: Provincial registration; MFDA mutual fund dealer, IIROC investment dealer, insurance licenses
+- Professional Standards: QAFP, CFP, CIM, PFP designations
+- Disclosure: CRM2 (Client Relationship Model Phase 2) - fee and performance reporting
+- Retirement Accounts: RRSP, TFSA, RESP, LIRA, pension plans; contribution limits
+- Tax Planning: Federal + provincial income tax; capital gains (50% taxable); lifetime capital gains exemption
+- Investment Products: Mutual funds (prevalent), ETFs, segregated funds (insurance), GICs
+- Professional Bodies: FP Canada (CFP), CSI, Advocis
+
+**Australia:**
+- Regulatory Framework: ASIC (Australian Securities and Investments Commission)
+- Licensing: Australian Financial Services (AFS) license required; RG 146 compliance
+- Professional Standards: FASEA education/ethics standards; CFP Australia
+- Key Regulations: Corporations Act 2001, FOFA reforms, Royal Commission reforms
+- Retirement: Superannuation system (compulsory 11.5% 2024); SMSFs; age pension
+- Tax Planning: Income tax, CGT (50% discount >12 months), franking credits (dividend imputation)
+- Investment Products: Managed funds, listed securities, SMSFs, insurance bonds
+- Professional Bodies: FPA Australia, AFA
+
+**Key Regional Differences:**
+- **Fiduciary Standards**: US moving toward (Reg BI); UK/Australia have stronger requirements
+- **Compensation Models**: US allows commissions; UK banned commission (RDR)
+- **Tax-Advantaged Accounts**: Each region has unique retirement/savings vehicles
+- **Investment Product Preferences**: US (mutual funds, ETFs), Europe (insurance products), Canada (mutual funds)
+- **Regulatory Intensity**: Post-financial crisis, regulation increased (Dodd-Frank US, RDR UK, FOFA Australia, MiFID II EU)
+
+3) Default workflow
+Use the CFP Board Financial Planning Process (6 Steps):
+
+1. Understanding the Client's Personal and Financial Circumstances
+   - Obtain quantitative information (balance sheet, cash flow, tax returns)
+   - Obtain qualitative information (values, attitudes, expectations, risk tolerance)
+   - Analyze client information to assess financial situation
+   - Document financial data in financial planning software (eMoney, MoneyGuidePro, RightCapital)
+   - Identify any red flags (excessive debt, insufficient emergency fund, coverage gaps)
+   - Assess current strategy adequacy across all planning areas
+   - Determine client financial planning profile and complexity level
+   
+2. Identifying and Selecting Goals
+   - Discuss client goals, needs, and priorities
+   - Quantify goals (dollar amounts, time horizons, priorities)
+   - Assess reasonableness of goals relative to resources
+   - Assist client in prioritizing conflicting goals
+   - Select mutually agreed-upon goals for planning
+   - Document goals with specific, measurable, achievable, relevant, time-bound (SMART) criteria
+   - Address financial planning areas: retirement, investment, tax, risk management, estate
+   
+3. Analyzing the Client's Current Course of Action and Potential Alternative Courses
+   - Analyze current strategies and products
+   - Conduct gap analysis (shortfall/surplus analysis)
+   - Model scenarios using Monte Carlo simulation (probability of success)
+   - Evaluate alternative strategies (traditional vs Roth, stocks vs bonds, term vs permanent insurance)
+   - Consider tax implications of alternatives
+   - Assess risk-adjusted returns and volatility
+   - Benchmark against appropriate indices and peer groups
+   
+4. Developing the Financial Planning Recommendations
+   - Formulate recommendations based on analysis
+   - Consider client preferences, constraints, and circumstances
+   - Ensure recommendations meet fiduciary standard (best interest, not just suitable)
+   - Develop strategies across planning areas (holistic approach)
+   - Quantify expected impact on goals (e.g., retirement income projection)
+   - Prioritize recommendations (critical, important, nice-to-have)
+   - Document assumptions, methodologies, and rationale
+   
+5. Presenting the Financial Planning Recommendations
+   - Present recommendations in clear, client-appropriate language
+   - Explain basis for recommendations and alternatives considered
+   - Disclose conflicts of interest and compensation (Form ADV Part 2A)
+   - Review implementation responsibilities (who does what, when)
+   - Provide written financial plan document
+   - Obtain client questions and feedback
+   - Receive client authorization to implement or modify recommendations
+   
+6. Implementing and Monitoring the Financial Planning Recommendations
+   - Implement recommendations per agreed timeline
+   - Coordinate with other professionals (attorney, CPA, insurance agent)
+   - Execute transactions and paperwork (account openings, beneficiary updates)
+   - Monitor progress toward goals (quarterly or annual reviews)
+   - Review changes in client circumstances, goals, or priorities
+   - Rebalance portfolio per investment policy statement (IPS)
+   - Update plan for legislative changes, market changes, life events
+
+4) Deliverables
+- Comprehensive financial plan document (60-100 pages typical)
+- Net worth statement (balance sheet)
+- Cash flow analysis (income and expense summary)
+- Retirement income projection and Monte Carlo analysis
+- Investment policy statement (IPS) and asset allocation recommendation
+- Risk management analysis (life, disability, LTC insurance needs)
+- Education funding analysis (529 plan recommendations)
+- Estate planning overview and wealth transfer strategies
+- Tax optimization strategies (Roth conversions, tax-loss harvesting)
+- Action item list with priorities and timelines
+- Performance reports and portfolio reviews (quarterly/annual)
+- Social Security claiming strategy analysis
+
+Minimum viable: Goal identification + net worth/cash flow + retirement projection + basic recommendations
+Gold standard: Comprehensive plan + Monte Carlo analysis + tax optimization + estate coordination + ongoing monitoring
+
+5) Quality checklist
+
+Regulatory Compliance (SEC, FINRA, CFP Board):
+- [ ] Form ADV Part 2A (brochure) provided to client before engagement
+- [ ] Fee disclosure clear and comprehensive (AUM, hourly, flat fee, commission)
+- [ ] Conflicts of interest disclosed (third-party compensation, proprietary products)
+- [ ] Fiduciary acknowledgment documented (acting in client's best interest)
+- [ ] Privacy notice (Reg S-P) provided
+- [ ] Client data secured per Regulation S-P and S-ID (identity theft red flags)
+- [ ] Anti-money laundering (AML) procedures followed if applicable
+
+Financial Analysis Accuracy:
+- [ ] All calculations verified (retirement needs, insurance needs, education funding)
+- [ ] Monte Carlo simulation uses appropriate assumptions (returns, volatility, correlation)
+- [ ] Inflation assumptions documented (typically 2.5-3.0% for planning)
+- [ ] Tax assumptions appropriate to client situation (federal and state brackets)
+- [ ] Social Security benefits calculated correctly (PIA, COLA adjustments)
+- [ ] Required minimum distribution (RMD) calculations accurate (IRS Uniform Lifetime Table)
+- [ ] Present value and future value calculations correct
+
+Investment Recommendations:
+- [ ] Asset allocation appropriate to risk tolerance and time horizon
+- [ ] Diversification across asset classes (domestic equity, international, fixed income, alternatives)
+- [ ] Investment expenses considered (expense ratios, trading costs, tax drag)
+- [ ] Tax efficiency considered (tax-deferred, tax-exempt, taxable account placement)
+- [ ] Rebalancing strategy defined in Investment Policy Statement
+- [ ] Performance benchmarks identified for each asset class
+- [ ] Dollar-cost averaging vs lump sum considered for large cash positions
+
+Risk Management and Insurance:
+- [ ] Life insurance needs calculated using income replacement or needs-based approach
+- [ ] Disability income insurance coverage adequate (60-70% income replacement)
+- [ ] Emergency fund recommended (3-6 months expenses in liquid account)
+- [ ] Property and casualty coverage reviewed (adequate liability limits, umbrella policy)
+- [ ] Long-term care insurance considered for appropriate age and wealth level
+- [ ] Health insurance adequacy assessed (deductibles, out-of-pocket max, HSA eligibility)
+
+6) Templates (paste-ready)
+
+=== Financial Planning Engagement Letter ===
+FINANCIAL PLANNING ENGAGEMENT LETTER
+
+Date: [DATE]
+
+Dear [CLIENT NAME],
+
+Thank you for selecting [FIRM NAME] as your financial advisor. This letter confirms our understanding of the services we will provide and the terms of our engagement.
+
+SCOPE OF ENGAGEMENT:
+We will provide comprehensive financial planning services in the following areas:
+☑ Cash flow and budgeting
+☑ Retirement planning
+☑ Investment planning and asset allocation
+☑ Tax planning strategies
+☑ Risk management and insurance analysis
+☑ Estate planning overview
+☑ Education funding (if applicable)
+
+ADVISOR RESPONSIBILITIES:
+- Gather and analyze your financial information
+- Identify financial goals and prioritize objectives
+- Develop recommendations based on your unique circumstances
+- Present a written financial plan document
+- Assist with implementation of recommendations
+- Provide ongoing monitoring and reviews [FREQUENCY]
+
+CLIENT RESPONSIBILITIES:
+- Provide complete and accurate financial information
+- Disclose all assets, liabilities, income, and expenses
+- Inform advisor of changes in circumstances or goals
+- Make final decisions on recommended strategies
+- Implement recommendations in agreed timeframe
+- Maintain timely communication with advisor
+
+COMPENSATION:
+Our fee for comprehensive financial planning services is:
+☐ [FLAT FEE: $X,XXX] payable [PAYMENT TERMS]
+☐ [HOURLY FEE: $XXX/hour] estimated total [RANGE]
+☐ [ASSETS UNDER MANAGEMENT: X.XX%] annual fee, quarterly billing
+☐ [COMBINATION: Base fee $X,XXX + AUM fee X.XX%]
+
+Fee Schedule:
+[DETAIL FEE STRUCTURE AND BILLING]
+
+This fee covers the development and presentation of your financial plan. Implementation services (investment management, ongoing advice) are subject to separate agreement and fees.
+
+FIDUCIARY ACKNOWLEDGMENT:
+[FIRM NAME] acknowledges that we are acting as a fiduciary in providing financial planning services. We will act in your best interest, provide full disclosure of conflicts of interest, and avoid misleading statements.
+
+CONFLICTS OF INTEREST:
+[DISCLOSE ANY THIRD-PARTY COMPENSATION, REFERRAL ARRANGEMENTS, PROPRIETARY PRODUCTS]
+
+TERMINATION:
+Either party may terminate this engagement with written notice. Fees will be prorated based on work completed.
+
+ACKNOWLEDGMENT:
+Please sign below to acknowledge your understanding and acceptance of these terms.
+
+[ADVISOR SIGNATURE]                    Date: __________
+[ADVISOR NAME], [CREDENTIALS]
+
+[CLIENT SIGNATURE]                     Date: __________
+[CLIENT NAME]
+
+=== Net Worth Statement Template ===
+NET WORTH STATEMENT
+As of: [DATE]
+
+CLIENT(S): [NAME(S)]
+
+ASSETS                                              Balance
+───────────────────────────────────────────────────────────
+Cash and Cash Equivalents:
+  Checking Account ([BANK NAME])                    $X,XXX
+  Savings Account ([BANK NAME])                     $X,XXX
+  Money Market ([INSTITUTION])                      $X,XXX
+  Emergency Fund                                    $X,XXX
+                                           Subtotal: $XX,XXX
+
+Investment Accounts:
+  401(k) - [SPOUSE 1] ([EMPLOYER])                  $XXX,XXX
+  401(k) - [SPOUSE 2] ([EMPLOYER])                  $XXX,XXX
+  Traditional IRA - [SPOUSE 1]                      $XXX,XXX
+  Roth IRA - [SPOUSE 2]                             $XXX,XXX
+  Taxable Brokerage ([INSTITUTION])                 $XXX,XXX
+  529 College Savings ([BENEFICIARY])               $XX,XXX
+  HSA ([INSTITUTION])                               $XX,XXX
+                                           Subtotal: $X,XXX,XXX
+
+Real Estate:
+  Primary Residence ([ADDRESS])                     $XXX,XXX
+  Rental Property ([ADDRESS])                       $XXX,XXX
+                                           Subtotal: $XXX,XXX
+
+Personal Property:
+  Vehicles                                          $XX,XXX
+  Personal Property                                 $XX,XXX
+                                           Subtotal: $XX,XXX
+
+Business Interests:
+  [BUSINESS NAME] Ownership                         $XXX,XXX
+                                           Subtotal: $XXX,XXX
+
+Other Assets:
+  Cash Value Life Insurance                         $XX,XXX
+                                           Subtotal: $XX,XXX
+
+TOTAL ASSETS                                        $X,XXX,XXX
+
+
+LIABILITIES                                         Balance
+───────────────────────────────────────────────────────────
+Mortgage Debt:
+  Primary Residence Mortgage                        $XXX,XXX
+  Rental Property Mortgage                          $XXX,XXX
+                                           Subtotal: $XXX,XXX
+
+Consumer Debt:
+  Credit Cards                                      $X,XXX
+  Auto Loans                                        $XX,XXX
+  Student Loans                                     $XX,XXX
+                                           Subtotal: $XX,XXX
+
+Other Liabilities:
+  Home Equity Line of Credit (HELOC)                $XX,XXX
+  Personal Loans                                    $XX,XXX
+                                           Subtotal: $XX,XXX
+
+TOTAL LIABILITIES                                   $XXX,XXX
+
+
+NET WORTH (Assets - Liabilities)                    $X,XXX,XXX
+───────────────────────────────────────────────────────────
+
+NOTES:
+- Investment account balances as of [DATE]
+- Real estate values based on [VALUATION METHOD]
+- Business valuation based on [METHOD/MULTIPLE]
+
+=== Investment Policy Statement (IPS) Template ===
+INVESTMENT POLICY STATEMENT
+
+Client Name: [NAME]
+Date Prepared: [DATE]
+Review Date: [ANNUAL]
+
+1. PURPOSE AND SCOPE
+This Investment Policy Statement (IPS) provides guidelines for the management of investment assets for [CLIENT NAME]. The IPS is designed to:
+- Establish investment objectives and risk tolerance
+- Define appropriate asset allocation
+- Provide criteria for manager/fund selection
+- Establish rebalancing procedures
+- Define monitoring and review procedures
+
+2. INVESTMENT OBJECTIVES
+
+Primary Objective: [Growth / Growth and Income / Income / Capital Preservation]
+
+Financial Goals:
+- [Goal 1]: [Amount needed] by [Date] for [Purpose]
+- [Goal 2]: [Amount needed] by [Date] for [Purpose]
+
+Time Horizon: [SHORT-TERM: <3 years / MEDIUM-TERM: 3-10 years / LONG-TERM: >10 years]
+
+Return Objective:
+- Target nominal return: [X.X]% per year
+- Target real return (after inflation): [X.X]% per year
+- Required rate of return for goals: [X.X]% per year
+
+Risk Tolerance:
+Risk Tolerance Questionnaire Score: [XX/100]
+Classification: ☐ Conservative  ☐ Moderately Conservative  ☐ Moderate  ☐ Moderately Aggressive  ☐ Aggressive
+
+Risk Capacity:
+- Time horizon: [YEARS]
+- Liquidity needs: [DESCRIPTION]
+- Income stability: [HIGH/MODERATE/LOW]
+
+3. ASSET ALLOCATION
+
+Strategic Asset Allocation (Long-term targets):
+
+Asset Class                          Target      Range       Benchmark
+─────────────────────────────────────────────────────────────────────
+U.S. Large Cap Equity                XX%        XX-XX%      S&P 500
+U.S. Mid Cap Equity                  XX%        XX-XX%      S&P MidCap 400
+U.S. Small Cap Equity                XX%        XX-XX%      Russell 2000
+International Developed Equity       XX%        XX-XX%      MSCI EAFE
+Emerging Markets Equity              XX%        XX-XX%      MSCI EM
+U.S. Investment Grade Bonds          XX%        XX-XX%      Bloomberg Aggregate
+U.S. High Yield Bonds                XX%        XX-XX%      Bloomberg HY
+International Bonds                  XX%        XX-XX%      Bloomberg Global Agg ex-US
+Real Estate (REITs)                  XX%        XX-XX%      MSCI US REIT Index
+Cash and Equivalents                 XX%        XX-XX%      90-day T-Bill
+─────────────────────────────────────────────────────────────────────
+TOTAL                               100%
+
+Rationale for Asset Allocation:
+[Explanation of how allocation aligns with goals, risk tolerance, and time horizon]
+
+4. REBALANCING PROCEDURES
+
+Rebalancing Trigger:
+☑ Calendar-based: Review [QUARTERLY/SEMI-ANNUALLY/ANNUALLY]
+☑ Threshold-based: Rebalance when asset class deviates [±5%] from target
+
+Rebalancing Process:
+1. Review current allocation against target ranges
+2. Identify asset classes outside threshold ranges
+3. Calculate trades needed to return to targets
+4. Consider tax implications of rebalancing (capital gains in taxable accounts)
+5. Execute trades in most tax-efficient manner
+6. Document rebalancing decision and actions taken
+
+Tax-Loss Harvesting:
+☑ Opportunistically harvest losses in taxable accounts throughout year
+☑ Adhere to wash sale rules (30-day rule)
+☑ Replace with similar but not substantially identical securities
+
+5. INVESTMENT SELECTION CRITERIA
+
+The following criteria will be used to select investment vehicles:
+
+Mutual Funds / ETFs:
+- Low expense ratios (target <0.50% for equity, <0.25% for bonds)
+- Tax efficiency in taxable accounts (favor index funds, ETFs)
+- Adequate liquidity (AUM >$100 million, average trading volume)
+- Consistent performance vs benchmark and peer group (3, 5, 10 year periods)
+- Low tracking error for passive funds (<0.50%)
+- Alignment with asset class target (R-squared >0.90 to benchmark)
+
+Individual Securities (if applicable):
+- Investment grade credit quality for bonds (BBB/Baa or higher)
+- Adequate diversification across sectors and issuers
+- Appropriate maturity profile for bonds (duration target)
+
+6. MONITORING AND REVIEW
+
+Quarterly Review:
+- Performance reporting vs benchmarks
+- Rebalancing needs assessment
+- Significant market or economic developments
+
+Annual Review:
+- Comprehensive review of IPS
+- Update goals, risk tolerance, time horizon
+- Assess continued appropriateness of asset allocation
+- Review investment manager/fund performance
+- Make changes to IPS as needed
+
+Circumstances Requiring IPS Review:
+- Significant life event (marriage, divorce, birth, death, inheritance)
+- Change in employment or income
+- Change in goals or time horizon
+- Change in risk tolerance
+- Material change in tax situation
+- Significant market event (>20% decline or advance)
+
+7. ACKNOWLEDGMENT
+
+Client Acknowledgment:
+I/We have reviewed and understand this Investment Policy Statement. I/We acknowledge that this document reflects my/our investment objectives, risk tolerance, and financial circumstances as of [DATE].
+
+[CLIENT SIGNATURE]                     Date: __________
+[CLIENT NAME]
+
+[ADVISOR SIGNATURE]                    Date: __________
+[ADVISOR NAME], [CREDENTIALS]
+
+=== Retirement Income Projection Template ===
+RETIREMENT INCOME PROJECTION
+
+Client(s): [NAME(S)]
+Current Age: [XX] / [XX]
+Retirement Age: [XX] / [XX]
+Life Expectancy: [XX] / [XX]
+
+RETIREMENT INCOME SOURCES:
+
+Social Security Benefits (Inflation-Adjusted):
+[SPOUSE 1] claiming at age [XX]               $X,XXX/month → $XX,XXX/year
+[SPOUSE 2] claiming at age [XX]               $X,XXX/month → $XX,XXX/year
+                                      Total:                  $XXX,XXX/year
+
+Pension Benefits:
+[EMPLOYER 1] - Single Life / Joint & Survivor  $X,XXX/month → $XX,XXX/year
+[EMPLOYER 2] - Single Life / Joint & Survivor  $X,XXX/month → $XX,XXX/year
+                                      Total:                  $XXX,XXX/year
+
+Retirement Account Withdrawals:
+Target sustainable withdrawal rate: [4.0]%
+401(k) / IRA Balances at Retirement: $X,XXX,XXX
+Projected annual withdrawal (Year 1):           $XXX,XXX/year
+
+Other Income Sources:
+Rental property income (net):                   $XX,XXX/year
+Part-time work income:                          $XX,XXX/year
+                                      Total:    $XX,XXX/year
+
+TOTAL ESTIMATED RETIREMENT INCOME (Year 1):     $XXX,XXX/year
+
+
+RETIREMENT EXPENSE ESTIMATE:
+
+Current Annual Expenses:                        $XXX,XXX
+Adjustments in Retirement:
+  - Mortgage paid off by retirement              -$XX,XXX
+  - No longer saving for retirement              -$XX,XXX
+  - Reduced commuting/work expenses              -$X,XXX
+  + Travel and leisure increase                  +$XX,XXX
+  + Healthcare costs (pre-Medicare)              +$XX,XXX
+
+PROJECTED RETIREMENT EXPENSES (Year 1):         $XXX,XXX/year
+
+
+RETIREMENT READINESS ANALYSIS:
+
+Annual Income:                                  $XXX,XXX
+Annual Expenses:                                $XXX,XXX
+Annual Surplus/(Shortfall):                     $XX,XXX
+
+Income Replacement Ratio:                       XX% (Target: 70-80%)
+Savings Rate (Current):                         XX% (Target: 15-20%)
+
+MONTE CARLO SIMULATION RESULTS:
+(10,000 scenarios, 30-year retirement horizon)
+
+Probability of Success (not running out of money):   XX%
+
+Interpretation:
+- 90%+ : Excellent - High confidence in plan success
+- 75-89% : Good - Reasonable confidence, monitor closely
+- 60-74% : Fair - Some risk, consider adjustments
+- <60% : Poor - Significant risk, adjustments needed
+
+SENSITIVITY ANALYSIS:
+
+Scenario                                    Probability of Success
+───────────────────────────────────────────────────────────────────
+Base Case (assumptions above)                      XX%
+Retire 2 years later (age XX)                      XX%  [+/- XX%]
+Reduce expenses 10%                                XX%  [+/- XX%]
+Increase savings rate 5%                           XX%  [+/- XX%]
+Lower investment returns (-1%)                     XX%  [+/- XX%]
+Higher inflation (+1%)                             XX%  [+/- XX%]
+
+RECOMMENDATIONS:
+1. [Recommendation based on analysis]
+2. [Recommendation based on analysis]
+3. [Recommendation based on analysis]
+
+Prepared by: [ADVISOR NAME], [CREDENTIALS]
+Date: [DATE]
+
+7) Examples of excellent outputs
+
+Example 1: Emergency Fund Recommendation
+```
+EMERGENCY FUND ANALYSIS
+
+Current Situation:
+- Monthly Expenses: $6,500
+- Current Emergency Fund: $8,000 (1.2 months expenses)
+- Account Type: Checking account (earning 0.05% interest)
+
+Recommendation:
+Increase emergency fund to $26,000 (4 months expenses) based on:
+- Dual-income household (moderate income stability)
+- No pension or guaranteed income
+- Homeownership (potential unexpected repairs)
+- One income earner in volatile industry (technology)
+
+Target: $26,000 (4 months expenses)
+Shortfall: $18,000
+
+Implementation Plan:
+1. Immediate: Open high-yield savings account (currently 4.50% APY)
+   Recommended: Marcus by Goldman Sachs, Ally Bank, or American Express Personal Savings
+2. Redirect: Allocate next 3 paychecks' direct deposit ($6,000/month) to emergency fund
+3. Timeline: Reach target emergency fund in 3 months
+4. Ongoing: Once funded, maintain 4-6 months expenses, replenish if used
+
+Tax Impact: None (interest on savings is taxable but minimal given balance)
+
+Priority: HIGH - Complete before increasing retirement savings beyond employer match
+```
+
+Example 2: Asset Allocation Recommendation
+```
+INVESTMENT PORTFOLIO REVIEW AND RECOMMENDATION
+
+Current Portfolio (Total: $450,000):
+
+Current Allocation:          Target Allocation (Age 45, Moderate Risk):
+U.S. Large Cap: 45%          U.S. Equity: 40%
+U.S. Mid/Small: 10%            - Large Cap: 24%
+International: 5%              - Mid Cap: 8%
+Bonds: 20%                     - Small Cap: 8%
+Cash: 20%                    International Equity: 20%
+                               - Developed: 15%
+                               - Emerging: 5%
+                             Fixed Income: 30%
+                               - Investment Grade: 25%
+                               - High Yield: 0%
+                               - International: 5%
+                             Alternatives: 8%
+                               - REITs: 8%
+                             Cash: 2%
+
+Issues Identified:
+1. Over-concentrated in U.S. Large Cap (home country bias)
+2. Under-diversified internationally (only 5% vs 20% target)
+3. Excessive cash drag (20% vs 2% target for long-term portfolio)
+4. No exposure to REITs for inflation protection
+5. Suboptimal tax location (bonds in taxable account, stocks in IRA)
+
+Recommendations:
+
+1. Reduce cash allocation from 20% to 2% ($81,000 to deploy)
+2. Increase international exposure to 20% ($54,000 additional)
+   Recommended: Vanguard Total International Stock ETF (VXUS) or iShares MSCI ACWI ex-US (ACWX)
+3. Add REIT exposure at 8% ($36,000 allocation)
+   Recommended: Vanguard Real Estate ETF (VNQ) or Schwab U.S. REIT ETF (SCHH)
+4. Rebalance existing equity positions to targets (shift $9,000 from large cap to mid/small)
+5. Move tax-inefficient bonds from taxable to IRA, stocks from IRA to taxable (tax-location optimization)
+
+Expected Impact:
+- Improved diversification (correlation matrix shows lower portfolio volatility)
+- Higher expected return: 6.8% vs current 5.9% (based on Vanguard Capital Markets Model)
+- Better risk-adjusted returns: Sharpe ratio improvement from 0.42 to 0.51
+- Reduced home country bias and concentration risk
+
+Implementation:
+Phase 1 (Immediate): Deploy $81,000 cash into target allocations
+Phase 2 (Next 30 days): Rebalance existing positions
+Phase 3 (Next 60 days): Tax-location swap (consider capital gains impact)
+
+Cost-Benefit:
+- Transaction costs: $0 (commission-free ETFs at Schwab/Fidelity/Vanguard)
+- Tax impact: Minimal (most rebalancing in tax-deferred accounts)
+- Expense ratio reduction: 0.45% → 0.12% (saving $1,485/year on $450K)
+- Estimated value-add over 20 years: $127,000 (NPV of improved returns and lower costs)
+```
+
+Example 3: Roth Conversion Analysis
+```
+ROTH IRA CONVERSION ANALYSIS
+
+Current Situation:
+- Age: 52 (13 years until age 65 retirement)
+- Current Tax Bracket: 24% Federal + 5% State = 29% total
+- Traditional IRA Balance: $250,000
+- Income: $150,000/year
+- Itemize deductions (mortgage interest, state tax)
+
+Projected Retirement Situation:
+- Estimated Tax Bracket in Retirement: 22% Federal + 5% State = 27% (slightly lower)
+- Social Security: $30,000/year
+- Pension: $20,000/year
+- Required Minimum Distributions (RMDs) will push into 24% bracket at age 73
+
+Roth Conversion Scenarios:
+
+Scenario 1: No Conversion (Status Quo)
+- Traditional IRA grows to $590,000 at age 65 (assuming 7% returns)
+- RMDs starting at age 73: ~$25,000/year (increases annually)
+- Lifetime tax on withdrawals (ages 73-95): ~$350,000 (present value $160,000)
+- Taxable estate: Traditional IRA subject to income tax + estate tax (if applicable)
+
+Scenario 2: Partial Conversion ($50,000/year for 5 years)
+- Convert $50,000/year for next 5 years (ages 52-56)
+- Stay within 24% tax bracket (no bracket creep)
+- Conversion tax: $50,000 × 29% = $14,500/year × 5 = $72,500 total
+- Roth IRA balance at age 65: $440,000 (converted amounts + growth)
+- Remaining Traditional IRA: $150,000
+- RMDs starting at age 73: ~$6,500/year (significantly lower)
+- Lifetime tax savings: ~$88,000 (present value)
+
+Scenario 3: Aggressive Conversion ($100,000 in year 1)
+- Convert $100,000 in single year
+- Pushes into 32% bracket for conversion amount >$89,075
+- Conversion tax: $29,000 (24% bracket) + $3,000 (32% bracket) = $32,000
+- More tax paid upfront, but accelerates tax-free growth
+- Suitable if you have cash to pay taxes (avoid withholding from conversion)
+
+RECOMMENDATION: Scenario 2 - Partial Conversion Strategy
+
+Rationale:
+1. Tax Arbitrage: Pay 24% now, avoid 27-32% in retirement (with RMDs + SS + pension)
+2. RMD Reduction: Lower future RMDs reduces Medicare IRMAA surcharges
+3. Estate Planning: Roth IRA passes income-tax-free to heirs (vs Traditional IRA)
+4. Tax Diversification: Mix of Roth and Traditional allows tax bracket management in retirement
+5. Sequence of Returns Risk: Roth withdrawals not subject to market timing (tax-free in down markets)
+
+Implementation:
+- Convert $50,000 from Traditional IRA to Roth IRA in December each year (allows tax planning)
+- Pay taxes from cash savings (do NOT withhold from conversion - reduces tax-free growth)
+- Invest Roth conversion proceeds in growth-oriented assets (maximize 13-year tax-free growth period)
+- Recharacterize if market drops significantly post-conversion (undo conversion if needed)
+
+Break-Even Analysis:
+- Break-even period: 8 years (age 60)
+- If you retire before age 60 and need IRA withdrawals, conversion may not be optimal
+- If you have >15 year time horizon, conversion is beneficial in most scenarios
+
+Tax Planning Considerations:
+- Itemize deductions: Higher AGI from conversion may phase out some deductions
+- Medicare IRMAA: Higher AGI may increase Medicare premiums 2 years later (if approaching age 63)
+- Affordable Care Act: Higher AGI may reduce premium subsidies (if retiring before 65)
+- Consider converting in low-income year (job loss, sabbatical, early retirement)
+
+Next Steps:
+1. Meet with CPA to confirm 2025 tax projection
+2. Verify 24% bracket capacity (top of bracket is $201,050 MFJ)
+3. Execute first $50,000 conversion in December 2025
+4. Review and repeat annually for 5 years
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **AUM**: Assets Under Management - total market value of investments managed by financial advisor
+- **Fiduciary**: Legal obligation to act in client's best interest, putting client interests above advisor's own
+- **RIA**: Registered Investment Adviser - firm registered with SEC or state, subject to fiduciary duty
+- **IAR**: Investment Adviser Representative - individual working for RIA, advising clients
+- **Form ADV**: SEC-required disclosure document describing advisor's business, conflicts of interest, and fees
+- **Suitable vs Best Interest**: Suitability is lower standard (broker-dealer); best interest is fiduciary standard (RIA)
+- **Monte Carlo Simulation**: Statistical method testing thousands of scenarios to calculate probability of plan success
+- **Safe Withdrawal Rate (SWR)**: Percentage of portfolio withdrawn annually to avoid running out of money (typically 4%)
+- **Asset Location**: Tax-efficient placement of assets across taxable, tax-deferred, and tax-exempt accounts
+- **Tax-Loss Harvesting**: Selling investments at loss to offset capital gains and reduce taxes
+- **IRMAA**: Income-Related Monthly Adjustment Amount - Medicare surcharge for higher-income retirees
+
+Standards & Frameworks (2024-2025):
+- **CFP Board Standards of Conduct**: Duty of Loyalty, Duty of Care, Duty to Follow Client Instructions (2020, current)
+- **CFP Board Code of Ethics and Standards of Conduct**: Ethics principles for CFP® professionals (2020)
+- **CFP Board Practice Standards for the Financial Planning Process**: 6-step financial planning process (2024 update)
+- **SEC Regulation Best Interest (Reg BI)**: Best interest standard for broker-dealers (2020, current)
+- **Form CRS (Customer Relationship Summary)**: Plain-English disclosure of services and fees (2020, current)
+- **Department of Labor Fiduciary Rule**: ERISA fiduciary standard for retirement advice (2024 proposed updates)
+- **FINRA Rules 2111 (Suitability) and 3220 (Conflicts of Interest)**: Broker-dealer standards (current)
+- **CFA Institute Code of Ethics and Standards**: Professional conduct for CFA charterholders (2024 edition)
+
+Common Tools:
+- **Financial Planning Software**: eMoney Advisor, MoneyGuidePro, RightCapital, NaviPlan, Holistiplan
+- **Portfolio Analysis**: Morningstar Office, Orion Advisor Solutions, Black Diamond
+- **Risk Tolerance Assessment**: Riskalyze, FinaMetrica, Nitrogen (formerly Riskalyze)
+- **Tax Planning**: Holistiplan, BNA Income Tax Planner, TurboTax/TaxAct integration
+- **CRM Systems**: Salesforce Financial Services Cloud, Wealthbox, Redtail CRM
+- **Compliance**: RIA in a Box, SmartRIA, AdviserCompliance
+
+Change log
+2025-01: Initial playbook created based on CFP Board 2024 Practice Standards and SEC Reg BI
+- Emphasis on fiduciary duty and best interest standard per CFP Board Code of Ethics
+- 6-step financial planning process per CFP Board Practice Standards
+- Tax-efficient strategies (Roth conversions, tax-loss harvesting, asset location)
+- Monte Carlo simulation and probability-based planning for retirement projections

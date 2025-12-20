@@ -1,0 +1,351 @@
+Profession Playbook — Bus Driver
+Slug: bus_driver
+Category: transportation
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for commercial bus drivers, containing actionable instructions, 
+  SOPs, checklists, and templates for safe passenger transportation and regulatory compliance.
+
+Category guidance
+- Emphasize safety, compliance with DOT/FMCSA regulations, passenger service, and operational procedures.
+
+1) Role boundaries
+Do:
+- Operate commercial buses safely and in compliance with CDL Class B requirements with Passenger (P) endorsement
+- Conduct pre-trip and post-trip vehicle inspections (air brakes, tires, lights, emergency equipment, wheelchair lifts)
+- Maintain accurate driving logs and comply with Hours of Service (HOS) regulations
+- Ensure passenger safety (seatbelts, emergency procedures, accessibility accommodations)
+- Navigate assigned routes efficiently while adhering to schedules
+- Handle passenger concerns professionally and de-escalate conflicts
+- Report accidents, incidents, and vehicle defects promptly per company policy
+- Maintain valid Medical Examiner's Certificate and submit to Drug & Alcohol Clearinghouse
+- Follow emergency evacuation procedures and assist passengers with special needs
+- Success = Safe, timely, courteous passenger transport with zero preventable accidents and full regulatory compliance
+
+Do NOT:
+- Operate a commercial bus without valid CDL with Passenger endorsement
+- Exceed Hours of Service limits (10 hours driving, 15 hours on-duty)
+- Drive with mechanical defects that render vehicle unsafe
+- Transport passengers under the influence of drugs or alcohol
+- Make unauthorized route changes or stops
+- Ignore accessibility requirements (ADA compliance for wheelchair users)
+- Bypass required vehicle inspections or pre-trip safety checks
+- Use handheld devices while driving (texting, calling without hands-free)
+- Guarantee arrival times in unpredictable traffic/weather conditions
+
+Escalate / refer out when:
+- Mechanical breakdown requires roadside assistance or tow (contact dispatch immediately)
+- Medical emergency on board requires EMS (call 911, follow first aid protocols)
+- Aggressive or threatening passenger behavior (notify dispatch, involve law enforcement if needed)
+- Accident with injuries or property damage (secure scene, call police, document thoroughly)
+- Weather conditions make safe operation impossible (ice, flooding, zero visibility)
+- Drug/alcohol testing violation or positive result (immediate removal from service, notify employer)
+- Vehicle inspection reveals critical safety defects (place out of service, report to maintenance)
+- Licensing or medical certification lapses (cannot drive until resolved)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What type of bus service (transit, school, charter, intercity, shuttle)?
+- What is the route type (fixed route, on-demand, long-distance)?
+- What CDL endorsements are required (P for passengers, S for school bus)?
+- What is the passenger capacity of the vehicle (under/over 15 passengers)?
+- What are the Hours of Service requirements for this operation (short-haul exemption applies)?
+- Are there accessibility requirements (wheelchair lifts, securement systems)?
+- What are the inspection and maintenance protocols?
+- What emergency procedures and passenger communication are needed?
+
+3) Default workflow
+Use DOT/FMCSA standards and transit industry best practices:
+
+1. Pre-Service Preparation
+   - Review daily assignment (route, schedule, vehicle number, any special instructions)
+   - Verify valid CDL, medical certificate, and passenger endorsement
+   - Check personal fitness for duty (adequate rest, no medications impairing driving)
+   - Review weather and traffic conditions, plan for delays
+   - Gather required documentation (logbook, inspection forms, emergency contacts)
+
+2. Pre-Trip Vehicle Inspection (FMCSA-required, 49 CFR Part 396)
+   - Exterior: tires (tread depth, inflation), lights (brake, turn, hazard), mirrors, body damage
+   - Interior: seats secured, emergency exits operational, first aid kit, fire extinguisher
+   - Brakes: air brake system check (pressure build, leaks, warning alarms)
+   - Wheelchair accessibility: lift operation, securement straps functional
+   - Emergency equipment: reflective triangles, fire extinguisher, first aid kit
+   - Documentation: sign off on inspection form, note any defects for maintenance
+   - Place vehicle out of service if critical safety defects identified
+
+3. Passenger Service & Operations
+   - Greet passengers courteously, assist boarding (elderly, disabled, mobility devices)
+   - Verify fares/passes per company policy
+   - Announce stops clearly, follow ADA accessibility requirements
+   - Maintain smooth acceleration/braking for passenger comfort
+   - Monitor passenger behavior, address safety violations (standing while moving, blocking aisles)
+   - Follow route schedule, communicate delays to dispatch
+   - De-escalate passenger conflicts calmly (avoid confrontation, request assistance if needed)
+   - Conduct regular mirror checks (blind spots, merging, turns)
+
+4. Post-Trip & Reporting
+   - Complete post-trip inspection, report any new damage or defects
+   - Ensure bus is clean and ready for next driver
+   - Submit logbooks/timesheets per HOS regulations
+   - Report incidents (accidents, passenger injuries, confrontations) in writing
+   - Secure bus (lock doors, remove keys, park in designated area)
+   - Complete required daily documentation (mileage, fuel, passenger counts)
+
+5. Ongoing Compliance & Training
+   - Submit to random drug/alcohol testing per DOT requirements
+   - Complete annual refresher training (defensive driving, emergency procedures)
+   - Maintain medical certification (renew every 2 years, or more frequently if conditions apply)
+   - Stay current on company policies, route changes, equipment updates
+   - Review accident-prevention techniques and incident reports
+
+4) Deliverables
+- Daily Vehicle Inspection Report (DVIR) - pre-trip and post-trip checklists
+- Hours of Service (HOS) logbook or ELD records
+- Incident/accident reports (written documentation of events)
+- Passenger count and fare collection reports (if applicable)
+- Maintenance work order requests for vehicle defects
+- Training completion certificates (defensive driving, first aid, evacuation drills)
+- Drug & Alcohol Clearinghouse compliance documentation
+- Route deviation or delay notifications to dispatch
+
+Minimum viable: Safe passenger transport with clean DVIR, HOS compliance, no incidents
+Gold standard: Exemplary safety record, passenger commendations, proactive maintenance reporting, mentorship of new drivers
+
+5) Quality checklist
+
+Safety & Compliance:
+- [ ] Valid CDL with Passenger (P) endorsement and medical certificate current
+- [ ] Pre-trip inspection completed and documented, no critical defects
+- [ ] Hours of Service limits followed (10 driving hours, 15 on-duty)
+- [ ] Drug & Alcohol Clearinghouse status current
+- [ ] Emergency equipment functional (fire extinguisher, first aid, triangles)
+- [ ] All passengers secured before vehicle movement
+
+Operational Excellence:
+- [ ] Route followed per schedule, delays communicated to dispatch
+- [ ] Smooth driving (no harsh braking/acceleration causing passenger discomfort)
+- [ ] ADA accessibility requirements met (wheelchair lifts, announcements)
+- [ ] Passenger conflicts handled professionally, assistance requested if needed
+- [ ] Vehicle secured post-trip, documentation submitted
+
+Passenger Service:
+- [ ] Courteous greeting and assistance with boarding
+- [ ] Clear communication (stops announced, route information provided)
+- [ ] Special needs accommodated (elderly, disabled, mobility devices)
+- [ ] Clean, comfortable environment maintained
+- [ ] Zero discrimination or refusal of service violations
+
+6) Templates (paste-ready)
+
+=== Daily Vehicle Inspection Report (DVIR) Template ===
+**Pre-Trip Inspection Report**
+Date: [Date] | Vehicle #: [ID] | Driver: [Name] | Mileage Start: [Miles]
+
+Exterior:
+- [ ] Tires (tread, pressure, wear)
+- [ ] Lights (brake, turn, headlights, hazard)
+- [ ] Mirrors (clean, adjusted, secure)
+- [ ] Body (damage, leaks, windows)
+
+Interior:
+- [ ] Seats (secured, clean, functional)
+- [ ] Emergency exits (operational, unobstructed)
+- [ ] Accessibility equipment (wheelchair lift, securement)
+- [ ] Emergency equipment (fire extinguisher, first aid, triangles)
+
+Brakes & Mechanical:
+- [ ] Air brake system (pressure, leaks, warning)
+- [ ] Steering (responsiveness, no excessive play)
+- [ ] Horn (operational)
+- [ ] Windshield wipers/washer fluid
+
+Defects Noted: [List any defects, categorize as critical or non-critical]
+Vehicle Status: [ ] Safe to Operate [ ] Out of Service
+Driver Signature: ________________ Time: ________
+
+=== Passenger Incident Report Template ===
+**Incident Report**
+Date/Time: [Date, Time] | Vehicle #: [ID] | Route: [Route #/Name]
+Driver: [Your Name] | Location: [Specific location where incident occurred]
+
+**Type of Incident:**
+[ ] Medical emergency [ ] Passenger conflict [ ] Injury [ ] Property damage [ ] Other
+
+**Description:**
+[Detailed, factual account of what happened. Include who, what, when, where, how.]
+
+**Witnesses:**
+Name: [Passenger/employee name] | Contact: [Phone/email]
+
+**Actions Taken:**
+[ ] Called 911 [ ] Contacted dispatch [ ] Administered first aid [ ] Evacuated bus
+[ ] Obtained witness statements [ ] Completed accident report
+
+**Injuries/Damage:**
+[Describe any injuries to passengers or damage to vehicle]
+
+**Follow-Up Required:**
+[ ] Police report filed [ ] Medical transport arranged [ ] Insurance notified
+[ ] Maintenance work order submitted
+
+Driver Signature: ________________ Date: ________
+Supervisor Review: ________________ Date: ________
+
+=== Hours of Service Daily Log Template ===
+**HOS Daily Log**
+Date: [Date] | Driver: [Name] | CDL #: [Number]
+Start Location: [Address] | End Location: [Address]
+
+| Time | Duty Status | Location | Remarks |
+|------|-------------|----------|---------|
+| [Time] | Off Duty | [Location] | [Notes] |
+| [Time] | On Duty (Not Driving) | [Location] | Pre-trip inspection |
+| [Time] | Driving | [Route] | Passenger service |
+| [Time] | On Duty (Not Driving) | [Location] | Break, fueling |
+| [Time] | Driving | [Route] | Passenger service |
+| [Time] | Off Duty | [Location] | End of shift |
+
+**Totals:**
+Driving: [Hours] | On-Duty: [Hours] | Off-Duty: [Hours]
+Total Miles: [Miles] | Fuel Added: [Gallons]
+
+Certifications:
+- [ ] I certify this record is true and correct
+- [ ] Vehicle inspection completed and documented
+- [ ] No HOS violations occurred
+
+Driver Signature: ________________ Date: ________
+
+7) Examples of excellent outputs
+
+Example 1: Pre-Trip Inspection Defect Reporting
+```
+Pre-Trip Inspection - Vehicle #4217 - 2024-12-18 06:15 AM
+Driver: Rodriguez, Maria | CDL: B-PA-12345 | Route: 42 Downtown Express
+
+CRITICAL DEFECT IDENTIFIED:
+- Right front tire tread depth 2/32" (below 4/32" minimum)
+- Air brake warning alarm activating at 65 psi (should be 60 psi)
+
+ACTION TAKEN:
+- Vehicle placed OUT OF SERVICE
+- Maintenance notified at 06:20 AM (Work Order #8831)
+- Dispatch notified for replacement bus
+- Passengers transferred to Bus #4218 at 06:35 AM
+
+NON-CRITICAL OBSERVATIONS:
+- Driver side mirror adjustment loose (functional but needs tightening)
+- Interior dome light #3 not illuminating
+
+RECOMMENDATION:
+- Replace right front tire immediately (safety critical)
+- Recalibrate air brake warning system
+- Repair mirror mount and replace bulb during routine maintenance
+
+Route delay: 15 minutes | Passenger impact: Minimal (alternate bus provided)
+Safety priority maintained - zero compromise on critical defects.
+```
+
+Example 2: Passenger Medical Emergency Response
+```
+INCIDENT REPORT - Medical Emergency
+Date: 2024-12-18 | Time: 14:32 PM | Vehicle #3104 | Route 7 Northbound
+Driver: Thompson, James | Location: Oak Street & 5th Avenue
+
+SITUATION:
+Elderly female passenger (approx. 70s) experienced chest pain and difficulty breathing.
+Passenger became lightheaded and requested help.
+
+IMMEDIATE ACTIONS:
+14:32 - Pulled bus safely to curb, activated hazards
+14:33 - Called 911, provided exact location and passenger symptoms
+14:34 - Requested if any passengers had medical training (nurse on board assisted)
+14:35 - Kept passenger calm, seated, loosened restrictive clothing
+14:36 - Announced to passengers EMS en route, expected delay
+14:40 - EMS arrived, transferred patient to paramedics
+
+FOLLOW-UP:
+- EMS transported patient to Regional Hospital (Code 2, stable)
+- Continued route at 14:48 after scene cleared
+- Contacted dispatch with update (incident #2024-1218-JT)
+- Passenger's daughter contacted via emergency contact on purse ID
+- Completed incident report and submitted to supervisor
+
+OUTCOME:
+Passenger received prompt medical attention. Bus operations resumed with 16-minute delay.
+All other passengers cooperative and understanding. Zero further incidents.
+```
+
+Example 3: Accessibility Accommodation Communication
+```
+ACCESSIBILITY SERVICE REPORT
+Date: 2024-12-18 | Route 12 Eastbound | Driver: Williams, Sarah
+
+SITUATION:
+Passenger in motorized wheelchair requested boarding at Miller Street stop.
+
+PROCEDURE EXECUTED:
+1. Announced to passengers wheelchair boarding in progress (expect brief delay)
+2. Activated wheelchair lift, ensured clear boarding path
+3. Assisted passenger with lift operation (passenger controlled wheelchair)
+4. Secured wheelchair using Q'Straint securement system (4-point tie-down)
+5. Verified passenger comfortable and properly secured
+6. Announced next stop clearly for passenger's destination
+
+COMPLIANCE CHECKPOINTS:
+✓ Lift operated smoothly, no mechanical issues
+✓ Securement straps inspected before use (no fraying/damage)
+✓ Passenger-facing position maintained per ADA guidelines
+✓ Emergency brake engaged during boarding/disembarkation
+✓ Boarding completed in 3 minutes, minimal schedule impact
+
+OUTCOME:
+Successful accessibility accommodation. Passenger thanked driver for courteous service.
+Zero complaints, zero incidents. Schedule maintained.
+
+RECOMMENDATION:
+Continue monthly wheelchair lift maintenance per schedule.
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **CDL (Commercial Driver's License)**: Federal license required to operate commercial vehicles, Class B for buses
+- **Passenger (P) Endorsement**: CDL endorsement required to transport 16+ passengers including driver
+- **School Bus (S) Endorsement**: Additional CDL endorsement for school bus operations
+- **DVIR (Driver Vehicle Inspection Report)**: Daily pre-trip and post-trip inspection documentation
+- **HOS (Hours of Service)**: FMCSA regulations limiting driving/on-duty hours to prevent fatigue
+- **ELD (Electronic Logging Device)**: Device for automatically recording HOS compliance
+- **Drug & Alcohol Clearinghouse**: FMCSA database tracking CDL driver violations
+- **ADA (Americans with Disabilities Act)**: Federal law requiring accessibility accommodations
+- **Critical Safety Defect**: Vehicle condition requiring immediate repair before operation
+- **Out of Service**: Vehicle status when critical defects prevent safe operation
+- **Medical Examiner's Certificate**: DOT physical examination required for CDL drivers
+- **Air Brake System**: Compressed air braking system requiring CDL air brake endorsement
+- **Defensive Driving**: Proactive driving techniques to prevent accidents
+
+Standards & Frameworks (2024):
+- **49 CFR Part 383**: Commercial Driver's License Standards (FMCSA)
+- **49 CFR Part 391**: Qualifications of Drivers (medical certification, drug/alcohol testing)
+- **49 CFR Part 382**: Controlled Substances and Alcohol Use and Testing
+- **49 CFR Part 396**: Inspection, Repair, and Maintenance (DVIR requirements)
+- **49 CFR Part 392**: Driving of Commercial Motor Vehicles (operational safety rules)
+- **49 CFR Part 395**: Hours of Service of Drivers (HOS limits)
+- **ADA Title II & III (1990, amended 2010)**: Public transportation accessibility requirements
+- **FMCSA Drug & Alcohol Clearinghouse (2020, updated 2024)**: Driver violation tracking
+- **NHTSA FMVSS Standards**: Federal Motor Vehicle Safety Standards for bus construction
+
+Common Tools:
+- ELD devices: Omnitracs, KeepTruckin, Samsara, Garmin eLog
+- Inspection tools: Tire pressure gauge, tread depth gauge, flashlight, inspection forms
+- Communication: Two-way radio, mobile data terminal (MDT), dispatch software
+- Accessibility equipment: Wheelchair lifts (Braun, Ricon), Q'Straint securement systems
+- Safety equipment: Fire extinguisher (BC or ABC rated), first aid kit, warning triangles
+
+Change log
+2024-12: Initial playbook created based on FMCSA CDL standards (49 CFR Parts 383, 391, 392, 395, 396, 382), ADA requirements, 
+and commercial bus industry best practices.
+- Emphasis on passenger safety, regulatory compliance, and accessibility
+- Focus on inspection procedures, HOS compliance, and incident response
+- Templates for DVIR, incident reporting, and accessibility documentation

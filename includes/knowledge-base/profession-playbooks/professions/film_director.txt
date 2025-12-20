@@ -1,0 +1,338 @@
+Profession Playbook — Film Director
+Slug: film_director
+Category: creative
+Includes: global.txt + categories/creative.txt + this file
+
+Intent
+- Provide actionable guidance for film direction following DGA/industry standards.
+- Focus on visual storytelling, crew leadership, creative vision, and production collaboration.
+
+Category guidance
+- Creative vision leadership, collaboration, technical execution, practical production constraints.
+
+1) Role boundaries
+Do:
+- Develop creative vision and visual storytelling approach for film/TV projects
+- Collaborate with screenwriter to refine script and story structure
+- Lead casting process and direct actor performances
+- Design shot lists, storyboards, and blocking for scenes
+- Work with cinematographer to establish visual style and camera work
+- Guide editing process and post-production creative decisions
+- Collaborate with producers on budget and schedule constraints
+- Lead creative team (cinematographer, production designer, costume, sound)
+- Success = Compelling visual narrative that serves the story and engages audience
+
+Do NOT:
+- Make financial decisions without producer approval (budget authority)
+- Guarantee box office success or audience reception
+- Violate union rules or safety protocols on set
+- Ignore script supervisor continuity notes (creates editing problems)
+- Promise actors specific edit outcomes (final cut usually producer/studio decision)
+- Exceed schedule without producer agreement (financial liability)
+- Direct without proper insurance and permits
+
+Escalate / refer out when:
+- Safety concerns on set requiring stunt coordinator or safety officer
+- Legal issues with locations, permits, or intellectual property
+- Budget overruns requiring studio/producer executive decision
+- Cast or crew conflicts requiring mediation or HR intervention
+- Technical challenges beyond crew capabilities (VFX supervisor, specialty equipment)
+- Distribution or marketing decisions (studio/producer domain)
+
+2) Quick intake questions
+- What is the genre and format (feature, short, episodic TV, documentary, commercial)?
+- What is the budget tier and schedule (micro-budget indie vs studio production)?
+- Who is the target audience and distribution platform?
+- What is the script status (locked, in development, shooting draft)?
+- Who are the key creative collaborators (cinematographer, production designer)?
+- What is the visual style or reference films inspiring the approach?
+- What are the production constraints (locations, cast availability, weather)?
+- What is the post-production timeline and workflow?
+
+3) Default workflow
+
+1. Pre-Production Development
+   - Script analysis: Break down story structure, character arcs, themes
+   - Create director's treatment: Visual approach and creative vision document
+   - Develop shot list and storyboards for key sequences
+   - Collaborate with department heads: Cinematographer, production designer, costume
+   - Scout locations and plan camera placement
+   - Conduct casting: Auditions, callbacks, chemistry reads
+   - Rehearse with actors: Table reads, blocking rehearsals
+   - Create shooting schedule with 1st AD (prioritize scenes by location/cast)
+   - Technical prep: Camera tests, lens choices, lighting plans
+
+2. Production (Principal Photography)
+   - Morning preparation: Review shot list, discuss day's scenes with key crew
+   - Blocking: Work with actors and cinematographer to stage scenes
+   - Rehearsal: Run through blocking, refine performance choices
+   - Lighting setup: Collaborate with cinematographer while actors prepare
+   - Multiple takes: Coverage (master, mediums, close-ups, inserts)
+   - Performance direction: Adjust actor choices, try variations
+   - Monitor continuity: Work with script supervisor on matching
+   - Review footage: Check playback for technical and performance quality
+   - Adjust schedule: Adapt to weather, actor availability, time constraints
+   - Daily communication: Update producers on progress and issues
+
+3. Post-Production
+   - Editor's assembly: Review first cut of sequences
+   - Director's cut: Refine pacing, performance takes, story clarity
+   - Collaborate on sound design: Music, dialogue, effects
+   - VFX supervision: Review shots, approve final composites
+   - Color correction: Work with colorist to establish visual tone
+   - Test screenings: Gather audience feedback, consider adjustments
+   - Final cut: Deliver approved version to producers/studio
+   - Deliverables: DCP, ProRes files, various formats for distribution
+
+4. Collaboration & Communication
+   - Daily collaboration with cinematographer on visual approach
+   - Regular producer check-ins on schedule and budget
+   - Actor notes: Private, constructive feedback on performance
+   - Crew leadership: Clear communication, respect for expertise
+   - Problem-solving: Creative solutions within budget/schedule
+   - Maintain creative vision while adapting to production realities
+
+5. Professional Development
+   - Watch diverse films: Study craft, analyze techniques
+   - Study acting: Understand performance process
+   - Technical knowledge: Camera, lighting, editing workflows
+   - Networking: Build relationships with crew and industry professionals
+   - Reel maintenance: Curate best work for future opportunities
+
+4) Deliverables
+- Director's treatment (visual approach document)
+- Shot lists and storyboards
+- Casting notes and actor direction
+- Daily progress reports (to producers)
+- Director's cut (post-production)
+- Completed film/episode ready for distribution
+
+Minimum viable: Clear shot list, effective actor direction, completed edit meeting story goals
+Gold standard: Comprehensive storyboards, nuanced performances, cohesive visual style, efficient production
+
+5) Quality checklist
+
+Pre-Production:
+- [ ] Script thoroughly analyzed (story, character, theme)
+- [ ] Visual approach clearly defined
+- [ ] Key creative collaborators aligned on vision
+- [ ] Casting complete and actors rehearsed
+- [ ] Locations scouted and shot list prepared
+- [ ] Schedule realistic and approved by producers
+
+Production:
+- [ ] Coverage adequate for editing (master, mediums, close-ups)
+- [ ] Performances meet creative vision
+- [ ] Continuity maintained across takes and setups
+- [ ] Safety protocols followed on all set activities
+- [ ] Schedule maintained or variances communicated
+- [ ] Collaboration effective with all department heads
+
+Post-Production:
+- [ ] Edit serves story and maintains pacing
+- [ ] Sound design enhances emotional impact
+- [ ] Visual effects integrated seamlessly
+- [ ] Color grade supports visual tone
+- [ ] Final cut approved by stakeholders
+- [ ] Deliverables meet technical specifications
+
+6) Templates (paste-ready)
+
+=== Director's Treatment Template ===
+DIRECTOR'S TREATMENT
+Project: [Title]
+Director: [Name]
+Date: [Date]
+
+CREATIVE VISION:
+[2-3 paragraphs describing the visual and emotional approach to the story]
+
+VISUAL STYLE:
+Color palette: [Describe dominant colors and mood]
+Camera approach: [Handheld/steadicam/locked-off, motivated vs unmotivated movement]
+Lighting: [Naturalistic vs stylized, high-key vs low-key]
+Reference films: [3-5 films that inspire visual approach]
+
+CHARACTER APPROACH:
+[For each main character, describe performance style and arc]
+
+KEY SEQUENCES:
+[Break down 2-3 critical sequences with specific visual approach]
+Sequence 1: [Scene description and directorial intent]
+Sequence 2: [Scene description and directorial intent]
+
+TONE & PACING:
+[How the film should feel, rhythm of storytelling]
+
+COLLABORATION:
+Cinematographer: [What you need from this collaboration]
+Production Design: [Key design elements and visual world]
+Sound/Music: [Sonic landscape and emotional use of sound]
+
+=== Shot List Template ===
+SHOT LIST - Scene [#]
+Location: [Location Name]
+Description: [Brief scene description]
+
+Shot 1: [Shot size] - [Camera movement]
+Frame: [Composition description]
+Lens: [Focal length preference]
+Action: [What happens in frame]
+Notes: [Performance or technical notes]
+
+Shot 2: [Shot size] - [Camera movement]
+Frame: [Composition description]
+Lens: [Focal length preference]
+Action: [What happens in frame]
+Notes: [Performance or technical notes]
+
+[Continue for all planned shots in scene]
+
+Coverage Checklist:
+☐ Master (wide establishing shot)
+☐ Medium shots (2-shot, over-the-shoulder)
+☐ Close-ups (emotional beats)
+☐ Inserts (hands, objects, details)
+☐ B-roll (cutaways for editing options)
+
+=== Actor Direction Notes ===
+CHARACTER: [Character Name]
+ACTOR: [Actor Name]
+SCENE: [Scene Number]
+
+CONTEXT:
+What just happened: [Prior scene context]
+Character's goal in scene: [What they want]
+Obstacle: [What's in their way]
+Emotional state: [Where they're starting]
+
+DIRECTION NOTES:
+Take 1: [What to try in first take]
+Take 2: [Adjustment based on first take]
+Take 3: [Alternative approach or variation]
+
+KEY MOMENTS:
+[Specific line or action]: [Note on how to play it]
+[Another moment]: [Direction]
+
+RELATIONSHIPS:
+[Other character]: [Dynamic to emphasize]
+
+7) Examples of excellent outputs
+
+Example: Director's Shot List for Tense Confrontation Scene
+
+SHOT LIST - Scene 42: Kitchen Confrontation
+Location: Sarah's Apartment Kitchen
+Description: Sarah confronts Tom about the lie. Tension builds to emotional breaking point.
+
+Shot 1: WIDE MASTER - LOCKED OFF
+Frame: Both characters in frame, kitchen island between them creating visual barrier
+Lens: 35mm (wider to emphasize physical distance)
+Action: Full scene play-through, Sarah enters frame left, Tom already at island
+Notes: Let actors play full emotional arc, capture geography for editing
+
+Shot 2: MEDIUM - SARAH - HANDHELD
+Frame: Waist up, slightly off-center (rule of thirds)
+Lens: 50mm
+Action: Sarah's entrance and first accusations
+Notes: Slight handheld movement reflects emotional instability, follow as she moves
+
+Shot 3: MEDIUM - TOM - LOCKED OFF
+Frame: Waist up, centered, constrained by frame
+Lens: 50mm
+Action: Tom's defensive reactions
+Notes: Static frame emphasizes his trapped feeling vs Sarah's movement
+
+Shot 4: CLOSE-UP - SARAH - SLOW PUSH IN
+Frame: Start at eyes, end tight on full face
+Lens: 85mm
+Action: "I trusted you" monologue
+Notes: Slow dolly push increases emotional intensity, actor should build to tears
+
+Shot 5: CLOSE-UP - TOM - LOCKED OFF
+Frame: Tight on face, uncomfortable proximity
+Lens: 85mm
+Action: Tom's realization and attempt to explain
+Notes: No camera movement—let performance carry the moment
+
+Shot 6: INSERT - HANDS
+Frame: Close on Sarah's hands gripping counter edge, knuckles white
+Lens: 85mm macro
+Action: Physical manifestation of tension
+Notes: B-roll for editing, captures subtext
+
+Shot 7: OTS (OVER TOM'S SHOULDER) - SARAH
+Frame: Shallow focus, Tom's shoulder/back of head in foreground, Sarah in focus background
+Lens: 85mm (1.4 for shallow DOF)
+Action: Sarah's final decision to leave
+Notes: Emphasizes emotional disconnection through focus
+
+Coverage Checklist:
+☑ Master (Shot 1)
+☑ Medium shots (Shots 2-3)
+☑ Close-ups (Shots 4-5)
+☑ Insert (Shot 6)
+☑ OTS (Shot 7)
+☐ Reverse OTS (if time permits)
+
+DIRECTOR NOTES:
+- Scene is about trust broken and emotional walls going up
+- Use camera distance to mirror emotional distance
+- Sarah has movement (agency), Tom is trapped (static frames)
+- Build from wide to tight as emotion intensifies
+- Leave space for silence—don't rush coverage
+- Watch for continuity on coffee mug and phone placement
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Coverage**: Multiple camera angles/shot sizes of same scene for editing options
+- **Master Shot**: Wide shot establishing geography and action of entire scene
+- **Blocking**: Choreography of actor and camera movement within a scene
+- **Beat**: Smallest unit of action/emotion; pause in dialogue or shift in objective
+- **Subtext**: Unspoken meaning beneath dialogue and action
+- **Continuity**: Consistency of details across shots and takes for seamless editing
+- **DCP**: Digital Cinema Package - standard format for theatrical distribution
+- **Dailies**: Raw footage viewed shortly after shooting to check quality
+- **Lock**: Finalizing script, edit, or other element (no more changes)
+
+Standards & Frameworks:
+- **DGA**: Directors Guild of America - professional union standards and protections
+- **180-Degree Rule**: Imaginary line actors establish; camera stays on one side for spatial continuity
+- **30-Degree Rule**: Camera should move at least 30 degrees between cuts to same subject
+- **Three-Act Structure**: Setup, Confrontation, Resolution (classic screenplay structure)
+- **Hero's Journey**: Joseph Campbell mythological story structure (departure, initiation, return)
+- **Mise-en-scène**: Everything visible in frame (production design, lighting, blocking, costume)
+- **Auteur Theory**: Director as author with consistent visual and thematic style
+
+Common Formats:
+- Feature Film: 90-180 minutes, theatrical or streaming release
+- Episodic TV: 22min (network sitcom), 43min (network drama), 60min (prestige streaming)
+- Short Film: Under 40 minutes (typically 10-15 for festival circuits)
+- Web Series: 3-10 minutes per episode
+- Commercial: 15, 30, or 60 seconds
+
+Production Roles:
+- **1st AD**: First Assistant Director (schedule, logistics, set management)
+- **Script Supervisor**: Continuity, notes, timing
+- **Cinematographer/DP**: Director of Photography, camera and lighting
+- **Gaffer**: Chief lighting technician
+- **Key Grip**: Rigging and camera support equipment
+- **Production Designer**: Visual design of sets and locations
+- **Sound Mixer**: Production sound recording
+
+Post-Production Roles:
+- **Editor**: Assembly and pacing of footage
+- **Sound Designer**: Creating sonic landscape
+- **Composer**: Original music score
+- **Colorist**: Color grading and visual tone
+- **VFX Supervisor**: Visual effects oversight and compositing
+
+Change log
+- 2024-12: Initial playbook created based on DGA standards, industry best practices, film school curricula
+  - Visual storytelling principles and shot design
+  - Actor direction and performance collaboration
+  - Production leadership within budget/schedule constraints
+  - Post-production creative collaboration
+  - Professional standards and safety protocols

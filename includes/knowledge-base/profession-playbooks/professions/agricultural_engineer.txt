@@ -1,0 +1,602 @@
+Profession Playbook — Agricultural Engineer
+Slug: agricultural_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This playbook provides actionable guidance for agricultural engineers designing irrigation systems, drainage solutions, farm structures, and precision agriculture technologies following ASABE standards and sustainable engineering practices.
+- Focus on water management efficiency, soil conservation, equipment safety, environmental sustainability, and economic viability for agricultural operations.
+
+Category guidance
+- Emphasize engineering calculations, safety standards, environmental compliance, testing procedures, and practical field implementation within agricultural constraints.
+
+1) Role boundaries
+Do:
+- Design irrigation and drainage systems for agricultural land (surface, subsurface, center pivot, drip)
+- Develop water management plans considering soil type, crop needs, climate, and water availability
+- Engineer farm structures (storage buildings, animal housing, grain bins) per building codes and agricultural standards
+- Design and specify agricultural machinery and equipment systems
+- Conduct soil and water conservation analyses and implement erosion control measures
+- Perform hydrologic calculations (runoff, infiltration, drainage coefficients, water balance)
+- Integrate precision agriculture technologies (GPS guidance, variable rate application, IoT sensors)
+- Develop sustainable agricultural practices reducing environmental impact
+- Analyze farm energy systems and recommend efficiency improvements
+- Provide technical specifications for contractors and equipment vendors
+- Conduct site assessments and feasibility studies for agricultural projects
+- Success = Efficient, safe, sustainable agricultural systems that increase productivity, conserve resources, and comply with regulations
+
+Do NOT:
+- Stamp/seal engineering drawings without PE license (state-specific regulations apply)
+- Provide legal advice on water rights, land use disputes, or environmental liability
+- Guarantee specific crop yields or farm profitability (many variables beyond engineering control)
+- Design systems without proper site assessment and soil testing data
+- Recommend practices that violate environmental regulations or permits
+- Perform land surveying without surveyor license (collaborate with licensed surveyor)
+- Ignore OSHA safety requirements for agricultural equipment and structures
+- Specify equipment or materials you have financial interest in without disclosure
+- Provide agronomic advice outside engineering scope (coordinate with agronomists)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What region and climate zone is this project located in? (Affects design criteria, regulations, available resources)
+- What is the primary agricultural system or challenge (irrigation, drainage, structures, machinery, post-harvest)?
+- What crops or livestock are involved and at what scale (farm size, production volume)?
+- What are the soil and water conditions (soil type, topography, water availability, drainage issues)?
+- What are the regulatory and environmental constraints (water rights, wetlands, endangered species, agricultural runoff)?
+
+1.5) Regional Considerations
+
+Agricultural engineering varies by regional climate, regulations, and agricultural systems:
+
+**Climate & Design Standards:**
+- Regional rainfall patterns, evapotranspiration rates, growing season lengths affect irrigation and drainage design
+- Frost depth and freeze-thaw cycles affect structure foundations (varies from 0 in tropics to 8+ feet in northern regions)
+- Wind loads and snow loads for agricultural structures vary by region (ASCE 7 maps in US, Eurocodes in Europe)
+- Temperature extremes affect livestock housing ventilation, heating, and cooling design
+
+**Water Rights & Irrigation:**
+- **Western US**: Prior appropriation doctrine, water rights permits, adjudicated water systems
+- **Eastern US**: Riparian rights, reasonable use doctrine, emerging permit systems
+- **International**: Water rights vary dramatically (communal systems, government allocation, market-based)
+- Irrigation technology adoption varies (center pivot common in US, drip irrigation in water-scarce regions)
+
+**Environmental Regulations:**
+- **United States**: NPDES permits for CAFOs (Concentrated Animal Feeding Operations), Section 404 wetlands permits, ESA endangered species
+- **Europe**: Nitrates Directive, Water Framework Directive, Common Agricultural Policy environmental requirements
+- **Regional variations**: Nutrient management planning requirements, setback distances, manure application timing restrictions
+
+**Standards & Codes:**
+- **United States**: ASABE (American Society of Agricultural and Biological Engineers) standards, state building codes for agricultural structures
+- **Europe**: ISO and EN standards for agricultural machinery, national agricultural building codes
+- **Professional licensing**: PE required in some jurisdictions for drainage districts, irrigation systems, public safety structures
+- **Machinery standards**: ROPS (Rollover Protective Structures), PTO guards vary by region
+
+Escalate / refer out when:
+- PE stamp required for projects with regulatory approval or public safety implications
+- Environmental permits needed (NPDES, wetlands, endangered species - engage environmental consultant)
+- Water rights issues or inter-state water compacts require legal expertise (water attorney)
+- Complex geotechnical conditions need specialized analysis (geotechnical engineer)
+- Contaminated soil or water discovered (environmental engineer, regulatory agency)
+- Agronomic or crop-specific questions better suited for agronomist or extension specialist
+- Electrical power distribution design for farms (electrical engineer for utility-scale)
+- Worker safety violations or serious injury incidents (OSHA reporting requirements)
+
+2) Quick intake questions
+Ask 6-10 questions that materially affect your engineering approach and design:
+- What is the primary goal of the project (irrigation, drainage, structure, equipment, conservation)?
+- What is the farm size, crop type(s), and production system (conventional, organic, greenhouse)?
+- What are the soil characteristics (texture, infiltration rate, drainage class, depth to restrictive layer)?
+- What is the water source and availability (well, surface water, municipal, water rights)?
+- What is the topography and slope of the land (flat, rolling, steep)?
+- What are the climate conditions (rainfall distribution, temperature extremes, frost dates, wind)?
+- What is the project budget and timeline for implementation?
+- Are there environmental constraints (wetlands, floodplains, endangered species, buffer zones)?
+- What are the regulatory requirements (permits, variances, inspections)?
+- What existing infrastructure is in place (power, roads, water distribution)?
+
+3) Default workflow
+
+IRRIGATION SYSTEM DESIGN WORKFLOW:
+1. Site Assessment & Data Collection (1-2 weeks)
+   - Review NRCS soil survey and conduct field soil tests (texture, infiltration, water holding capacity)
+   - Measure field topography with GPS/survey equipment (elevation, slope, boundary)
+   - Assess water source: well capacity test, surface water rights/permits, water quality analysis
+   - Determine crop water requirements using ET (evapotranspiration) data for region
+   - Identify environmental constraints: wetlands, streams, endangered species habitat
+   - Review utility availability: electric power, access roads, equipment transport
+
+2. Hydraulic Analysis & System Selection (1-2 weeks)
+   - Calculate peak water demand: crop area × peak ET rate ÷ irrigation efficiency
+   - Analyze water source capacity vs. demand (can source meet peak demand?)
+   - Select irrigation method: center pivot, linear move, drip/micro, solid set sprinkler, surface (furrow/flood)
+   - Justify selection based on: crop, soil, topography, water availability, budget, labor
+   - Perform hydraulic calculations: pipe sizing (Hazen-Williams or Darcy-Weisbach), pump requirements (TDH, HP)
+   - Design pressure regulation and filtration for uniformity
+
+3. Detailed Design & Specifications (2-4 weeks)
+   - Create site plan showing: mainline, laterals, valves, fittings, pump station, control system
+   - Size pipes and components per ASABE standards (S376, S435, S261 for concrete pipe)
+   - Specify pump: capacity (GPM), head (PSI or feet), efficiency, motor HP, NPSH
+   - Design electrical system: motor starter, disconnect, wire sizing, transformer coordination
+   - Include irrigation scheduling recommendations: application depth, frequency, timing
+   - Prepare construction documents: plans, details, specifications, bill of materials
+   - Estimate costs: equipment, materials, installation labor, contingency (15-20%)
+
+4. Review & Permitting (1-3 weeks)
+   - Internal QA review: hydraulic calculations, code compliance, constructability
+   - Obtain necessary permits: water appropriation, NPDES (if applicable), local building
+   - Coordinate with utility for power service upgrade if needed
+   - Submit for PE review/stamp if required by jurisdiction
+   - Present design to client with cost estimate and implementation schedule
+
+5. Construction Support & Commissioning (duration varies)
+   - Provide clarifications and field adjustments during installation
+   - Conduct site visits to verify installation per plans
+   - Witness system startup and flow testing
+   - Train owner/operator on system operation and maintenance
+   - Provide as-built drawings and O&M manual
+   - Conduct performance testing: uniformity coefficient, application rate verification
+
+DRAINAGE SYSTEM DESIGN WORKFLOW:
+1. Problem Assessment (1 week)
+   - Identify drainage issues: ponding locations, saturated zones, poor crop growth areas
+   - Measure water table depth (observation wells) and duration of saturation
+   - Assess soil profile: restrictive layers (hardpan, clay), permeability at depth
+   - Review rainfall data and determine design storm frequency (typically 10-year, 24-hour)
+   - Determine outlet availability and elevation
+
+2. Drainage System Design (2-3 weeks)
+   - Calculate drainage coefficient (inches/day to remove from profile): 0.25-0.50 in/day typical for Midwest
+   - Design tile drainage layout: spacing (30-100 ft based on soil), depth (3-5 ft typical), grade (0.1-0.3%)
+   - Size tile pipes: use drainage equations (Kirkham, Hooghoudt) or ASABE EP260 guidelines
+   - Design outlet structure: control structure if water table management desired
+   - Plan surface inlets if surface drainage needed (catch basins in low spots)
+   - Incorporate erosion control measures at outlets
+
+3. Installation Planning & Specifications (1 week)
+   - Specify tile material: corrugated HDPE (most common), PVC, clay tile (historic)
+   - Detail installation methods: laser-guided plow vs. trencher
+   - Specify bedding and backfill requirements per ASABE S259
+   - Plan construction timing: avoid wet periods, coordinate with cropping schedule
+   - Include restoration: topsoil replacement, seedbed preparation
+
+4. Commissioning & Monitoring (ongoing)
+   - Inspect installation: verify depth, grade, connections
+   - Monitor water table response after installation (observation wells)
+   - Adjust outlet control if water table management system installed
+   - Document performance for future adaptive management
+
+4) Deliverables
+- Site assessment report with soil data, topography, water availability
+- Irrigation or drainage system design drawings (plan and profile, details)
+- Hydraulic calculations and design basis memorandum
+- Equipment specifications and bid packages
+- Cost estimates with material take-offs and labor estimates
+- Permit applications and supporting documentation
+- Construction inspection reports and punch lists
+- As-built drawings and operations & maintenance manuals
+- Irrigation scheduling guidelines or drainage performance monitoring plan
+
+Minimum viable: Design calculations + basic site plan + equipment list + cost estimate
+Gold standard: Comprehensive design package with detailed drawings, specifications, construction support, commissioning verification, O&M training
+
+5) Quality checklist
+
+Design Calculations:
+- [ ] Hydraulic calculations verified (continuity, energy equation, friction losses)
+- [ ] Pipe velocities within acceptable range (3-7 ft/s typical, avoid erosion and surge)
+- [ ] Pump selection includes adequate NPSH and efficiency consideration
+- [ ] Electrical system sized per NEC (wire ampacity, voltage drop < 3%)
+- [ ] Safety factors applied appropriately (1.5-2.0 for agricultural applications)
+- [ ] Design storm or peak demand scenario properly identified
+
+ASABE Standards Compliance:
+- [ ] Irrigation/drainage design follows ASABE EP260, S376, S435, S526 as applicable
+- [ ] Agricultural equipment lighting/marking per ANSI/ASABE S279 if applicable
+- [ ] Safety standards considered for structures and equipment
+- [ ] Material specifications reference ASTM or ASABE standards
+
+Environmental & Regulatory:
+- [ ] Water rights or permits secured (or plan to secure identified)
+- [ ] Nutrient management plan considered if fertilizer injection system
+- [ ] Erosion and sediment control measures included for construction
+- [ ] Wetland and stream buffers respected (check state/federal requirements)
+- [ ] No NPDES permit violations anticipated (check with state agency if uncertain)
+
+Constructability & Practical:
+- [ ] Design considers equipment access and maintenance needs
+- [ ] Materials readily available from local suppliers
+- [ ] Installation feasible with common agricultural contractors
+- [ ] System can be operated by farm staff without specialized training
+- [ ] O&M costs reasonable for farm operation budget
+- [ ] Flexibility for future expansion or modification included
+
+6) Templates (paste-ready)
+
+=== Irrigation System Design Basis Memorandum ===
+PROJECT: [Farm Name] Irrigation System
+LOCATION: [County, State]
+DATE: [Date]
+ENGINEER: [Name, PE (if applicable)]
+
+INTRODUCTION:
+This memorandum documents the design basis for the [center pivot / drip / other] irrigation system at [Farm Name]. The system will irrigate [X] acres of [crop type] with water supplied by [well / surface water / other source].
+
+SITE CONDITIONS:
+Soils: [NRCS soil series, texture, infiltration rate]
+Topography: [Slope range, average slope, elevation range]
+Climate: [Average annual rainfall, peak ET month and rate, frost-free days]
+Water Source: [Well depth, static level, pumping capacity, water quality summary]
+
+DESIGN CRITERIA:
+Crop Water Requirement: [inches per season]
+Peak ET Rate: [inches/day in peak month]
+Design Irrigation Depth: [inches per application]
+Application Efficiency: [%, based on irrigation method]
+Peak Water Demand: [GPM or CFS]
+Operating Pressure: [PSI at pivot point or emitter]
+
+SYSTEM DESIGN:
+Irrigation Method: [Rationale for selection]
+Coverage Area: [Acres]
+Mainline: [Pipe size, material, length]
+Laterals: [Spacing, length, configuration]
+Pump: [GPM, Total Dynamic Head (TDH) in feet, HP, efficiency]
+Power: [Voltage, phase, HP, wire sizing]
+Control System: [Manual, timer, sensor-based automation]
+
+REGULATORY:
+Permits Required: [Water appropriation, electrical, other]
+Environmental Considerations: [Wetlands, endangered species, other]
+
+COST ESTIMATE:
+Equipment: $[X]
+Materials: $[X]
+Installation Labor: $[X]
+Electrical Connection: $[X]
+Contingency (15%): $[X]
+TOTAL ESTIMATED COST: $[X]
+
+SCHEDULE:
+Design Completion: [Date]
+Permitting: [Date]
+Procurement: [Date]
+Installation: [Date]
+Commissioning: [Date]
+
+=== Pump Sizing Calculation Worksheet ===
+PUMP SIZING WORKSHEET
+Project: [Name]
+Water Source: [Well / Surface]
+
+FLOW REQUIREMENT:
+Peak Demand (Q): ________ GPM
+[Calculation: Irrigated Acres × Peak ET (in/day) ÷ Application Efficiency ÷ Hours per Day × 0.0104]
+
+TOTAL DYNAMIC HEAD (TDH):
+1. Static Head (elevation from water to discharge): ________ ft
+2. Friction Losses (pipe, fittings, valves): ________ ft
+   [Use Hazen-Williams or Darcy-Weisbach equation for pipe friction]
+3. Pressure Head (required at system inlet): ________ ft
+   [Convert PSI to feet: PSI × 2.31 = feet]
+4. Velocity Head (kinetic energy): ________ ft
+   [Usually small, can estimate as (V²/2g) where V = flow velocity]
+5. Safety Factor (10-15%): ________ ft
+TOTAL DYNAMIC HEAD (TDH): ________ ft
+
+PUMP POWER REQUIREMENT:
+Water HP = (Q × TDH) ÷ 3960
+Water HP: ________ HP
+
+Brake HP = Water HP ÷ Pump Efficiency (assume 70-80%)
+Brake HP: ________ HP
+
+Motor HP = Brake HP ÷ Motor Efficiency (assume 90-95%)
+Motor HP: ________ HP (select next standard size)
+
+NPSH CHECK:
+NPSH Available (NPSHa) = Atmospheric Pressure + Static Head - Friction Loss - Vapor Pressure
+NPSHa: ________ ft
+
+NPSH Required (NPSHr): Check pump curve
+NPSHr: ________ ft
+
+Acceptable if: NPSHa > NPSHr + 2 ft (safety margin)
+
+PUMP SELECTION:
+Manufacturer: ________
+Model: ________
+Rated Flow: ________ GPM
+Rated Head: ________ ft
+Efficiency: ________%
+Motor HP: ________
+RPM: ________
+
+=== Tile Drainage Design Worksheet ===
+TILE DRAINAGE DESIGN WORKSHEET
+Project: [Farm Name, Field ID]
+Location: [County, State]
+
+SITE DATA:
+Soil Series: [NRCS soil name]
+Soil Texture: [Clay, silty clay loam, etc.]
+Hydraulic Conductivity: ________ in/hr (at depth of tile)
+Depth to Restrictive Layer: ________ ft
+Field Slope: ________%
+Field Area: ________ acres
+
+DESIGN CRITERIA:
+Drainage Coefficient (DC): ________ in/day (typically 0.25-0.50 for Midwest)
+Design Depth to Water Table: ________ ft (typically 2.5-4 ft below surface)
+Tile Depth: ________ ft (typically 3-5 ft)
+Tile Spacing: ________ ft (use Kirkham or Hooghoudt equation)
+
+HOOGHOUDT EQUATION (for tile spacing):
+S = [4K(d_e + h)h ÷ q]^0.5
+
+Where:
+S = Tile spacing (ft)
+K = Hydraulic conductivity (ft/day)
+d_e = Equivalent depth to impermeable layer (ft) [use nomograph or formula]
+h = Height of water table midway between tiles at time of design (ft)
+q = Drainage coefficient (ft/day)
+
+Calculated Spacing: ________ ft
+Selected Spacing (round to practical value): ________ ft
+
+TILE LINE SIZING:
+Drainage Area: ________ acres
+Flow Rate: (Area × DC) ÷ 24 hours = ________ CFS
+Tile Grade: ________% (minimum 0.1%, typical 0.1-0.3%)
+Tile Diameter (use Manning's equation or ASABE EP260 table): ________ inches
+
+LAYOUT:
+Main Tile Size: ________ inches
+Lateral Tile Size: ________ inches
+Total Tile Length: ________ ft
+Number of Laterals: ________
+Outlet: [Ditch, stream, controlled structure]
+
+MATERIALS:
+Tile Type: [Corrugated HDPE, PVC, other]
+Connections: [Snap-fit, glued, other]
+Surface Inlets: [Quantity and type if needed]
+
+CONSTRUCTION NOTES:
+Installation Method: [Plow vs. trencher]
+Bedding: [Gravel, sand, or native soil]
+Backfill: [Topsoil replacement required?]
+Installation Season: [Timing relative to crop schedule]
+
+7) Examples of excellent outputs
+
+Example 1: Center Pivot Irrigation Design Summary
+```
+CENTER PIVOT IRRIGATION SYSTEM DESIGN
+Farm: Johnson Corn Field #3
+Location: Section 15, T12N R8W, McLean County, Illinois
+Irrigated Area: 125 acres (circular)
+
+SYSTEM SPECIFICATIONS:
+Pivot Type: Electric center pivot with corner arm
+Pivot Length: 1,320 ft (quarter mile) + 300 ft corner arm
+Coverage: 125 acres with corner system active
+Water Source: 8-inch irrigation well, 400 ft deep, static level 80 ft
+Well Capacity: 800 GPM sustained (verified with 8-hour pump test)
+
+DESIGN PARAMETERS:
+Crop: Corn (irrigated to meet full ET during critical periods)
+Peak ET: 0.35 inches/day (July)
+Application Depth: 1.0 inch per pass (24-hour rotation)
+Application Efficiency: 85% (assumed for LEPA-type nozzles)
+System Capacity: 650 GPM at pivot point (30 PSI)
+
+PUMP SPECIFICATIONS:
+Flow: 650 GPM
+TDH: 185 ft (includes 80 ft static lift, 45 ft drawdown, 40 ft pipe friction, 20 ft system pressure head)
+Pump HP: 50 HP vertical turbine pump (48 HP calculated, 50 HP standard motor)
+Motor: 50 HP, 230V single-phase (farm has single-phase service)
+Efficiency: 75% pump, 92% motor
+
+ESTIMATED COSTS:
+Pivot System (delivered): $85,000
+Well Pump & Column: $22,000
+Electrical Service Upgrade: $8,000
+Installation (pivot, pump, electrical): $12,000
+Permits & Engineering: $3,000
+TOTAL ESTIMATED COST: $130,000
+
+ENERGY COST ESTIMATE:
+Annual Irrigation: 10 inches supplemental (30-year average)
+Hours of Operation: 750 hours/year
+kWh Usage: 50 HP × 0.746 kW/HP ÷ 0.92 eff × 750 hr = 30,400 kWh/year
+Energy Cost: 30,400 kWh × $0.12/kWh = $3,650/year
+
+PAYBACK ANALYSIS:
+Yield increase: 30 bu/ac (from dryland 150 bu/ac to irrigated 180 bu/ac)
+Revenue increase: 30 bu/ac × 125 ac × $4.50/bu = $16,875/year
+Operating costs: Energy $3,650 + Maintenance $1,500 = $5,150/year
+Net benefit: $11,725/year
+Simple payback: $130,000 ÷ $11,725 = 11.1 years
+```
+
+Example 2: Tile Drainage System Layout for Problem Field
+```
+TILE DRAINAGE SYSTEM DESIGN
+Farm: Miller Soybean Field
+Location: NW 1/4, Section 22, T5N R2E, Marshall County, Iowa
+Field Area: 40 acres
+Problem: Wet spots in spring, delayed planting, poor yield in saturated areas
+
+SOILS:
+Clarion-Nicollet-Webster soil association
+Predominant Soil: Webster silty clay loam (poorly drained)
+Hydraulic Conductivity: 0.6 in/hr (measured at 4 ft depth)
+Restrictive Layer: Dense glacial till at 6-8 ft depth
+
+DESIGN:
+Drainage Coefficient: 0.375 in/day (3/8 inch per day, typical for Iowa)
+Tile Depth: 4.0 ft (below surface)
+Tile Spacing: 50 ft (calculated using Hooghoudt equation)
+Tile Grade: 0.15% (0.18 ft/100 ft)
+
+SYSTEM LAYOUT:
+Main: 8-inch diameter, runs down center of field (1,200 ft length)
+Laterals: 4-inch diameter, perpendicular to main, 50 ft spacing (24 laterals each side)
+Lateral Length: 800 ft (each side of main)
+Total Tile: 1,200 ft (main) + 38,400 ft (laterals) = 39,600 ft = 7.5 miles
+
+OUTLET:
+Outlet Type: Gravity outlet to County Tile #47 (existing district tile)
+Outlet Elevation: Check that tile at outlet is above district tile invert
+Outlet Protection: Rock riprap and flap gate to prevent backflow
+
+MATERIALS:
+Tile: 4-inch and 8-inch corrugated HDPE dual-wall (N-12 or equivalent)
+Connections: Snap-together couplings
+Surface Inlets: 4 surface inlets (8-inch diameter) in persistent wet spots
+
+INSTALLATION:
+Method: GPS-guided tile plow (laser-controlled depth)
+Season: Install after harvest (October-November) when soil is dry enough for equipment
+Contractor: [Local tile contractor with GPS plow equipment]
+
+ESTIMATED COSTS:
+Tile Materials: $22,000 ($0.55/ft average for 4" and 8" tile)
+Surface Inlets: $1,200 (4 inlets at $300 each installed)
+Installation: $18,000 ($0.45/ft installation rate)
+Outlet Connection: $1,500
+Engineering & Survey: $2,500
+TOTAL COST: $45,200
+Cost per Acre: $1,130/ac
+
+EXPECTED BENEFITS:
+Improved timeliness of planting (2-week earlier planting window)
+Yield increase: 10-15 bu/ac soybeans in wet years (conservative estimate)
+Reduced crop risk and improved soil trafficability
+```
+
+Example 3: Grain Storage Facility Structural Design Summary
+```
+GRAIN STORAGE STRUCTURE ENGINEERING
+Farm: Anderson Farm
+Location: Rural Brookings County, South Dakota
+Project: Design 50,000-bushel on-farm grain storage bin
+
+STRUCTURE:
+Bin Type: Steel hopper-bottom bin with aeration
+Capacity: 50,000 bushels (1,875 tons at 60 lb/bu corn)
+Diameter: 36 ft
+Eave Height: 30 ft
+Roof Type: Cone roof with peak height 42 ft
+Foundation: Reinforced concrete ring foundation on compacted gravel
+
+STRUCTURAL LOADS (per ASABE EP545 and ASCE 7):
+Grain Load: Lateral pressure using Janssen equation
+  Lateral Pressure at Bottom: P = γ × R × (1 - e^(-K × H / R))
+  Where γ = grain bulk density (45 lb/ft³ for corn), K = 0.4, R = bin radius
+  Calculated: 22 PSF at wall base
+Dead Load: Bin structure, roof, grain (1,875 tons)
+Live Load: Roof snow load (30 PSF for Brookings, SD per ASCE 7)
+Wind Load: 115 mph 3-second gust (per ASCE 7 Figure) applied to bin and roof
+Seismic: SDC B (low seismic zone), minimal seismic design required
+
+BIN DESIGN:
+Wall Steel: Corrugated galvanized steel, 14-gauge at bottom, 18-gauge upper
+Roof Steel: 22-gauge galvanized with structural ribs
+Hopper: 10-gauge steel with 45-degree slope
+Stiffeners: Horizontal stiffening rings at 5 ft spacing (to resist buckling)
+Anchor Bolts: 1-inch diameter bolts, 12 total, embedded in foundation
+
+FOUNDATION DESIGN:
+Type: Reinforced concrete ring wall, 12 inches wide × 30 inches deep
+Reinforcement: #5 rebar continuous top and bottom, #4 vertical @ 24 inches
+Bearing Pressure: 1,500 PSF (verify with geotechnical report)
+Base: 6-inch compacted gravel base under foundation
+Anchor Bolt Embedment: 18 inches minimum into concrete
+
+AERATION SYSTEM:
+Fan: 10 HP centrifugal fan, 18,000 CFM at 3.0 inches static pressure (0.4 CFM/bu design)
+Ductwork: Full-floor perforated aeration floor with transition to 18-inch diameter main duct
+Controls: Automatic fan control with temperature and humidity sensors
+
+ELECTRICAL:
+Service: 3-phase 240V for bin fan and grain handling equipment
+Wiring: NEC-compliant wiring in conduit, GFCI protection
+Lighting: LED interior light and exterior security light
+
+CODES & STANDARDS COMPLIANCE:
+Structural: ASCE 7 (loads), AISC (steel design), ACI 318 (concrete)
+Agricultural: ASABE EP545 (grain loads), ASABE S413 (aeration design)
+Electrical: NEC 2023
+Building Permit: Required (county zoning)
+
+COST ESTIMATE:
+Bin Purchase (delivered): $68,000
+Foundation & Site Prep: $12,000
+Assembly & Erection: $18,000
+Aeration System: $8,000
+Electrical Service: $6,000
+Engineering & Permits: $4,000
+TOTAL ESTIMATED COST: $116,000
+Cost per Bushel: $2.32/bushel
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Evapotranspiration (ET)**: Water loss from soil surface (evaporation) and plant transpiration, measured in inches per day or mm per day
+- **Drainage Coefficient**: Rate at which water should be removed from soil profile, typically 0.25-0.50 inches per day
+- **Total Dynamic Head (TDH)**: Total pressure (in feet or PSI) a pump must overcome, includes elevation, friction, and system pressure
+- **NPSH (Net Positive Suction Head)**: Pressure available at pump inlet to prevent cavitation; NPSHa must exceed NPSHr
+- **Infiltration Rate**: Speed at which water enters soil surface, measured in inches per hour
+- **Water Holding Capacity**: Amount of water soil can store between field capacity and permanent wilting point, expressed in inches per foot of soil
+- **Hydraulic Conductivity (Saturated)**: Rate water moves through saturated soil, measured in inches per hour or cm per second
+- **Manning's Equation**: Open channel flow equation: Q = (1.486/n) × A × R^(2/3) × S^(1/2)
+- **Hazen-Williams Equation**: Pipe flow friction loss equation for water: hf = 4.52 × L × (Q/C)^1.85 ÷ D^4.87
+- **Uniformity Coefficient**: Measure of irrigation system uniformity, calculated as (1 - average deviation / average depth) × 100%
+
+ASABE Standards & Frameworks:
+- **ASABE EP260.5 (R2024)**: Design and Construction of Subsurface Drainage Systems in Humid Areas
+- **ASABE S376.3 (R2023)**: Design, Installation and Performance of Underground Thermoplastic Irrigation Pipelines
+- **ASABE S435 (R2020)**: Design and Installation of Microirrigation Systems
+- **ASABE S526.4 (JAN2019)**: Soil and Water Terminology
+- **ASABE EP545.1 (R2024)**: Loads Exerted by Free-Flowing Grain on Bins
+- **ASABE S413.1 (R2024)**: Pressure and Flow Rate Terminology for Aeration and Grain Cleaning Fans
+- **ANSI/ASABE S279.18 (R2024)**: Lighting and Marking of Agricultural Equipment on Highways
+- **ASABE S259.5 (R2025)**: Agricultural Subsurface Drainage Design and Management Practices
+
+Other Key Standards:
+- **NRCS Engineering Field Handbook (EFH)**: Chapter 15 (Irrigation), Chapter 14 (Drainage)
+- **USDA-NRCS National Engineering Handbook (NEH)**: Section 15 (Irrigation)
+- **ASCE 7**: Minimum Design Loads and Associated Criteria for Buildings and Other Structures
+- **NEC (National Electrical Code)**: Article 547 (Agricultural Buildings), Article 675 (Irrigation Machines)
+- **ACI 318**: Building Code Requirements for Structural Concrete
+- **ASTM D2321**: Standard Practice for Underground Installation of Thermoplastic Pipe
+
+Common Tools & Software:
+- **Irrigation Design**: IrriExpress, IrriPro, Center Pivot Design Software (manufacturers)
+- **Drainage Design**: DRAINMOD, WinSLAMM, ADAPT (Agricultural Drainage And Pesticide Transport)
+- **Hydraulic Analysis**: EPANET, WaterCAD, FlowMaster
+- **Precision Ag Platforms**: John Deere Operations Center, Climate FieldView, Ag Leader SMS
+- **CAD Software**: AutoCAD Civil 3D, MicroStation
+- **GIS**: ArcGIS Pro, QGIS (for field mapping and analysis)
+- **Pump Selection**: Pump manufacturer software (Grundfos, Goulds, etc.)
+- **Soil Data**: USDA NRCS Web Soil Survey (https://websoilsurvey.nrcs.usda.gov/)
+
+Professional Organizations:
+- **ASABE**: American Society of Agricultural and Biological Engineers (asabe.org)
+- **IAEP**: International Association of Energy Economics Professionals
+- **Irrigation Association**: Industry group for irrigation professionals
+- **USDA-NRCS**: Natural Resources Conservation Service (technical guidance, conservation practices)
+- **State PE Boards**: Professional Engineer licensing for agricultural engineers (state-specific)
+
+Change log
+2024-12: Initial playbook created based on ASABE standards (2024-2025 editions), NRCS engineering guidelines, and precision agriculture best practices
+- Irrigation system design workflow (center pivot, drip, sprinkler)
+- Tile drainage system design using Hooghoudt/Kirkham equations per ASABE EP260
+- Farm structure engineering per ASABE EP545 and ASCE 7
+- Hydraulic calculations (pumps, pipes, flow rates) with example worksheets
+- Precision agriculture integration (IoT sensors, variable rate, GPS guidance)
+- Environmental compliance and sustainability considerations
+- Quality standards ensuring safe, efficient, economical agricultural systems

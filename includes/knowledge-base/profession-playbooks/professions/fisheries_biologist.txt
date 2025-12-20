@@ -1,0 +1,556 @@
+Profession Playbook — Fisheries Biologist
+Slug: fisheries_biologist
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for fisheries biology, fish population assessment, and sustainable fisheries management.
+- Contains actionable instructions, SOPs, checklists, and templates for high-quality fisheries science and conservation.
+
+Category guidance
+- Emphasize population dynamics, stock assessment, sustainable harvest, and ecosystem-based management.
+
+1) Role boundaries
+Do:
+- Conduct fish population surveys and stock assessments
+- Design fisheries monitoring programs and sampling protocols
+- Analyze catch data and develop harvest recommendations
+- Advise on habitat restoration and fish passage design
+- Guide fish stocking and hatchery supplementation programs
+- Develop fisheries management plans and regulations
+- Assess environmental impacts on fish populations
+- Provide guidance on angler surveys and creel census methods
+- Recommend conservation measures for threatened and endangered fish species
+- Success = Sustainable fisheries with healthy fish populations, accurate stock assessments, science-based management, stakeholder engagement
+
+Do NOT:
+- Set fishing regulations without stakeholder input and commission approval
+- Guarantee fish population recovery timelines without long-term data
+- Conduct electrofishing or other sampling without proper certification
+- Handle endangered species without Section 10 or Section 7 permits
+- Operate research vessels or boats without proper licensing
+- Make land use decisions affecting riparian habitat (coordinate with land managers)
+- Provide final water quality standards (coordinate with EPA, state agencies)
+- Conduct genetic modification of fish without proper authorization
+
+Escalate / refer out when:
+- Fish kills require emergency investigation and water quality testing
+- Endangered species listing decisions require NMFS/USFWS coordination
+- Dam relicensing proceedings require FERC coordination and expert testimony
+- Major habitat restoration requires engineering design and permitting
+- Hatchery disease outbreaks require fish health specialists
+- Climate change adaptation strategies require interdisciplinary planning
+- Invasive species eradication requires specialized control methods
+- Tribal fishing rights negotiations require legal and policy expertise
+
+2) Quick intake questions
+Ask 5-8 questions that materially affect the answer:
+- What fish species or community are you assessing? (gamefish, commercial, threatened, native vs. non-native)
+- What water body type? (stream, river, reservoir, lake, estuary)
+- What is the management objective? (harvest optimization, conservation, restoration, monitoring)
+- What data are available? (creel surveys, stocking records, age/growth, habitat assessments)
+- What sampling methods are feasible? (electrofishing, netting, angling, hydroacoustics, eDNA)
+- What regulatory framework applies? (state management, federal ESA, tribal co-management)
+- What is the timeline and budget for the work?
+- What stakeholder concerns exist? (anglers, commercial fishers, conservation groups, tribes)
+
+3) Default workflow
+
+Step 1: Literature Review and Background Research (1-2 weeks)
+- Review existing data: creel surveys, stocking records, historical surveys, water quality
+- Consult fisheries databases: FishBase, state agency databases, peer-reviewed literature
+- Identify key life history parameters: spawning season, age at maturity, longevity, fecundity
+- Review habitat requirements: temperature, flow, substrate, cover, food availability
+- Assess threats: overfishing, habitat loss, pollution, invasive species, climate change
+- Review management history: past regulations, stocking programs, habitat projects
+- Identify knowledge gaps requiring new data collection
+- Engage stakeholders: anglers, commercial fishers, tribes, conservation organizations
+
+Step 2: Survey Design and Sampling Protocol (2-3 weeks)
+- Define survey objectives: population size, age structure, growth rate, mortality, recruitment
+- Select sampling methods based on species, habitat, and resources:
+  * Electrofishing: wadeable streams, boat electrofishing for rivers/reservoirs
+  * Gill netting: standard mesh sizes (e.g., 1-4 inch stretched mesh), multi-panel nets
+  * Trap netting: fyke nets, hoop nets, minnow traps for lentic systems
+  * Angling surveys: standardized CPUE, tournament data, volunteer angler diaries
+  * Hydroacoustics: mobile or fixed-station echosounders for pelagic species
+  * eDNA sampling: water samples for species detection and relative abundance
+- Calculate sample size: statistical power analysis for detecting population changes
+- Stratify sampling: spatial (reaches, zones) and temporal (seasons, years) strata
+- Obtain permits: state scientific collection permits, federal permits if ESA species
+- Arrange equipment: sampling gear, preservation supplies, GPS, data loggers
+
+Step 3: Field Sampling and Data Collection (variable duration)
+- Conduct pre-sampling safety briefing: electrofishing safety, boat safety, wildlife hazards
+- Deploy sampling gear following standard protocols (e.g., AFS Standard Methods)
+- Record environmental data: water temperature, conductivity, DO, turbidity, flow
+- Measure fish: total length, weight, sex, maturity stage, external marks/tags
+- Collect biological samples: scales, otoliths, fin clips (genetics), stomach contents
+- Mark or tag fish if mark-recapture study: PIT tags, floy tags, fin clips
+- Release fish promptly with minimal handling stress
+- Document sampling effort: time, distance electrofished, net soak time, area surveyed
+- Maintain chain of custody for samples and label specimens properly
+- Enter field data into electronic data sheets or tablets with GPS coordinates
+
+Step 4: Laboratory Analysis and Age/Growth Assessment (2-4 weeks)
+- Process otoliths or scales for age determination:
+  * Otoliths: section, mount, polish, read annuli under microscope
+  * Scales: mount on slides, count circuli and annuli, measure radii
+- Assign ages to fish and construct age-length keys
+- Calculate growth parameters using von Bertalanffy growth equation: Lt = L∞(1 - e^(-K(t - t₀)))
+- Analyze stomach contents for diet composition (percent by weight, frequency of occurrence)
+- Extract DNA from fin clips for genetic analysis (population structure, hybridization)
+- Measure reproductive parameters: gonadosomatic index (GSI), fecundity, egg size
+- Assess condition: relative weight (Wr) or Fulton's condition factor (K)
+- Quality control: double-read 10-20% of age structures, verify species identifications
+
+Step 5: Population Analysis and Stock Assessment (2-4 weeks)
+- Calculate abundance estimates:
+  * Mark-recapture: Petersen, Schnabel, or Jolly-Seber models
+  * Depletion methods: removal or catch-effort models
+  * Density estimates: number per unit area or linear distance
+- Estimate mortality rates:
+  * Total annual mortality (A) from catch curve analysis
+  * Natural mortality (M) from life history correlates
+  * Fishing mortality (F) = A - M
+- Assess recruitment: young-of-year abundance, stock-recruitment relationships
+- Calculate population growth rate (λ) and predict future abundance
+- Develop yield-per-recruit models to evaluate harvest strategies
+- Assess population health: age structure, growth rates, condition, genetic diversity
+- Compare to reference points: overfished threshold, optimal harvest rate
+
+Step 6: Habitat Assessment and Limiting Factors Analysis (1-2 weeks)
+- Survey physical habitat: stream width, depth, velocity, substrate composition
+- Assess habitat quality: large woody debris, pool:riffle ratio, riparian cover
+- Evaluate spawning habitat: gravel size, dissolved oxygen, flow conditions
+- Measure water quality: temperature regime, dissolved oxygen, pH, nutrients, toxins
+- Identify barriers to fish passage: dams, culverts, waterfalls, low flows
+- Assess food availability: macroinvertebrate surveys, plankton sampling
+- Document human impacts: land use, point/nonpoint pollution, flow alterations
+- Identify limiting factors: spawning habitat, summer low flows, winter anchor ice, competition, predation
+
+Step 7: Management Recommendations and Reporting (2-4 weeks)
+- Synthesize findings: population status, trends, threats, limiting factors
+- Develop management recommendations:
+  * Harvest regulations: size limits, bag limits, seasons, gear restrictions
+  * Stocking strategies: species, size, number, timing, genetics
+  * Habitat improvements: riparian restoration, fish passage, flow management
+  * Monitoring programs: sampling frequency, index sites, trend detection
+- Evaluate alternative management scenarios: biological impacts, stakeholder preferences
+- Prepare technical report: executive summary, methods, results, discussion, recommendations
+- Create figures and maps: population trends, size distributions, habitat maps
+- Peer review by colleagues or external experts
+- Present findings to fisheries commission, stakeholder groups, public meetings
+- Submit to scientific journals if novel findings or management lessons
+
+Step 8: Adaptive Management and Long-term Monitoring (ongoing)
+- Implement management actions based on recommendations
+- Monitor population response to management: abundance, size structure, catch rates
+- Adjust regulations if population exceeds or falls below target levels
+- Maintain long-term datasets: standardized sampling at index sites over decades
+- Document successes and failures: adaptive management learning
+- Communicate results to stakeholders: angler newsletters, social media, public presentations
+- Collaborate with partners: other agencies, universities, conservation groups, tribes
+- Secure funding for continued monitoring: grants, license fees, partnerships
+
+4) Deliverables
+
+Common outputs for fisheries biologists:
+- Fisheries survey reports (catch data, abundance estimates, demographic structure)
+- Stock assessment reports (population models, reference points, harvest recommendations)
+- Age and growth studies (von Bertalanffy parameters, age-length keys)
+- Habitat assessment reports (stream surveys, spawning habitat availability, limiting factors)
+- Fisheries management plans (goals, objectives, strategies, monitoring, evaluation)
+- Creel survey reports (angler effort, harvest, CPUE, economic value)
+- Stocking plans (species, life stage, number, timing, genetic considerations)
+- Environmental impact assessments (effects of projects on fish and habitat)
+- Peer-reviewed scientific publications (methods, results, management implications)
+- GIS maps (fish distributions, habitat maps, stream networks, survey sites)
+- Data packages for regional databases (FishBase, state databases, USGS)
+- Public outreach materials (fact sheets, web content, social media, presentations)
+
+Minimum viable: Basic catch data, CPUE, size distribution, species composition
+Gold standard: Comprehensive stock assessment, age-based population model, harvest recommendations, habitat assessment, long-term trend analysis, peer-reviewed publication, stakeholder engagement plan
+
+5) Quality checklist
+
+Sampling Quality:
+- [ ] Sampling methods appropriate for species, habitat, and objectives
+- [ ] Sample size adequate for desired precision (power analysis conducted)
+- [ ] Sampling stratified spatially and temporally to capture variability
+- [ ] Environmental conditions documented (temperature, flow, weather)
+- [ ] Sampling effort standardized and recorded accurately (time, distance, area)
+- [ ] GPS coordinates recorded for all sampling sites (WGS84 datum)
+- [ ] Fish handled humanely with minimal stress and rapid release
+
+Regulatory Compliance:
+- [ ] Scientific collection permits obtained (state, federal if ESA species)
+- [ ] Electrofishing conducted by certified operators per USFWS/NIOSH guidelines
+- [ ] Boat operations follow USCG and state boating laws
+- [ ] Endangered species take avoided or authorized under Section 10/7 permits
+- [ ] Genetic samples collected under appropriate permits
+- [ ] Data sharing agreements honored (tribal data, private lands)
+
+Data Quality and Analysis:
+- [ ] Species identifications verified (taxonomic keys, genetic confirmation if hybrids)
+- [ ] Age determinations validated (double-reading, edge analysis)
+- [ ] Data entry error-checked (range checks, consistency checks)
+- [ ] Statistical assumptions verified (independence, normality, equal variance)
+- [ ] Confidence intervals or standard errors reported for estimates
+- [ ] Methods follow standard protocols (AFS, NMFS, state agency SOPs)
+- [ ] Results compared to historical data or reference populations
+
+Communication and Stakeholder Engagement:
+- [ ] Technical reports peer-reviewed before publication
+- [ ] Management recommendations based on best available science
+- [ ] Uncertainty and data limitations clearly communicated
+- [ ] Stakeholder input incorporated (public meetings, advisory committees)
+- [ ] Results presented in accessible language for non-technical audiences
+- [ ] Data archived in accessible format for future analyses
+
+6) Templates (paste-ready)
+
+=== Electrofishing Survey Data Sheet ===
+Date: [MM/DD/YYYY]
+Water Body: [Name]
+Site Code: [ID]
+GPS Coordinates: [Lat, Long in WGS84]
+
+Crew: [Names and roles]
+Weather: [Sunny/Cloudy/Rain, Wind]
+Start Time: [HH:MM]  End Time: [HH:MM]
+
+Water Quality:
+- Temperature: [°C]
+- Conductivity: [µS/cm]
+- Dissolved Oxygen: [mg/L]
+- Turbidity: [NTU or subjective]
+- Water Level: [Normal/High/Low]
+
+Sampling Effort:
+- Distance Shocked: [meters]
+- Pedal Time: [seconds] (if timed sample)
+- Crew: [# netters, boat operator, data recorder]
+- Equipment: [Backpack/Boat, Model, Settings: Volts, Amps, Frequency, Duty Cycle]
+
+Fish Captured:
+Species | Count | Lengths (mm TL) | Weights (g) | Samples
+--------|-------|-----------------|-------------|--------
+[Species]| [ ]   | [list or range] | [if taken]  | [scales, otoliths, fin clips, tags]
+
+Observations:
+- Habitat: [% riffle/pool/run, substrate, LWD, riparian cover]
+- Other Species: [amphibians, crayfish, mussels]
+- Human Impacts: [bank erosion, trash, structures, flow alterations]
+- Notes: [unusual observations, equipment issues]
+
+Data Recorder: [Name]  
+QA/QC by: [Name, Date]
+
+=== Age-Length Key ===
+Species: [Species]
+Water Body: [Name]
+Sampling Period: [Dates]
+
+Age Class | N Aged | Length Range (mm) | Mean Length | SD
+----------|--------|-------------------|-------------|----
+0         | [ ]    | [ - ]             | [   ]       | [  ]
+1         | [ ]    | [ - ]             | [   ]       | [  ]
+2         | [ ]    | [ - ]             | [   ]       | [  ]
+3         | [ ]    | [ - ]             | [   ]       | [  ]
+4         | [ ]    | [ - ]             | [   ]       | [  ]
+5+        | [ ]    | [ - ]             | [   ]       | [  ]
+
+von Bertalanffy Growth Parameters:
+- L∞ (asymptotic length): [mm]
+- K (growth coefficient): [per year]
+- t₀ (theoretical age at length zero): [years]
+
+Growth Equation: Lt = L∞(1 - e^(-K(t - t₀)))
+
+Fit Statistics:
+- R²: [value]
+- RMSE: [mm]
+- Sample Size: [N fish aged]
+
+=== Fisheries Management Plan Template ===
+Water Body: [Name]
+Management Authority: [Agency/Commission]
+Plan Period: [Start Year - End Year]
+
+I. Executive Summary
+- Water body description and fish community
+- Current fisheries status and key issues
+- Management goals and recommended actions
+- Projected outcomes and timelines
+
+II. Introduction and Background
+- Geographic setting and physical characteristics
+- Land use and water quality
+- Historical fisheries and management actions
+- Stakeholder interests and concerns
+
+III. Current Status Assessment
+- Fish community composition (species, relative abundance)
+- Population demographics (age structure, growth, condition)
+- Habitat condition and limiting factors
+- Angler use and harvest (creel survey results)
+
+IV. Management Goals and Objectives
+Goal 1: [e.g., Maintain sustainable trophy walleye fishery]
+- Objective 1.1: Maintain adult walleye density >3 fish/acre
+- Objective 1.2: Maintain 20% of catch >20 inches
+- Objective 1.3: Achieve angler satisfaction rating >80%
+
+Goal 2: [e.g., Restore native brook trout population]
+- Objective 2.1: Achieve 100 fish/mile in restored reaches
+- Objective 2.2: Document natural reproduction (YOY present)
+- Objective 2.3: Remove brook trout from stocking list by Year 5
+
+[Continue for additional goals]
+
+V. Management Strategies and Actions
+Strategy 1: Harvest Regulation
+- Action: Implement 18-inch minimum length limit for walleye
+- Rationale: Protect fish <age-4, increase trophy abundance
+- Timeline: Year 1
+- Responsibility: [Agency]
+- Cost: [Enforcement, signage]
+
+Strategy 2: Habitat Restoration
+- Action: Restore 2 miles of spawning tributary
+- Rationale: Increase spawning habitat by 30%
+- Timeline: Years 2-3
+- Partners: [NGOs, landowners]
+- Cost: $150,000 (grant-funded)
+
+[Continue for additional strategies]
+
+VI. Monitoring and Evaluation
+- Annual electrofishing surveys at 5 index sites
+- Creel survey every 3 years
+- Habitat assessments every 5 years
+- Track performance metrics against objectives
+- Adaptive management: adjust strategies if targets not met
+
+VII. Budget and Funding Sources
+- Personnel: [FTE, salaries]
+- Sampling: [equipment, supplies, travel]
+- Habitat projects: [engineering, construction, monitoring]
+- Funding: [license revenue, grants, partners]
+
+VIII. Public Engagement
+- Advisory committee meetings (2/year)
+- Public hearings before regulation changes
+- Annual reports to stakeholders
+- Outreach: newsletter, social media, fishing clinics
+
+7) Examples of excellent outputs
+
+Example 1: Brook Trout Population Assessment - Mountain Stream
+```
+Objective: Assess brook trout population status in headwater stream for conservation planning
+
+Methods:
+- Electrofishing: Single-pass backpack unit, 150m reach, depletion method
+- Habitat: Rosgen classification, substrate, LWD, pool frequency
+- Water quality: Continuous temperature loggers (HOBO), grab samples for chemistry
+
+Results:
+- Brook Trout Abundance: 287 fish/km (95% CI: 215-360)
+- Size Structure: YOY 45%, Age-1 32%, Age-2+ 23%
+- Mean Length by Age: YOY 62mm, Age-1 102mm, Age-2 145mm, Age-3 185mm
+- Growth: L∞=220mm, K=0.35/yr (good growth for high-elevation stream)
+- Condition: Mean Wr = 98 (optimal range 95-105)
+- Genetic Analysis: Pure brook trout, no hybridization with stocked fish
+- Temperature: Summer max 17.2°C (suitable), no days >20°C (lethal threshold)
+
+Habitat Assessment:
+- Rosgen Type: A3 (steep, cascading, boulder/cobble)
+- Pool Frequency: 18 pools/km (good)
+- LWD: 35 pieces/km (excellent cover)
+- Riparian: 90% canopy cover (excellent shading)
+- Barriers: One natural waterfall (3m) isolates headwater population
+
+Limiting Factors:
+- Small watershed limits maximum population size
+- Downstream habitat degraded (logging, agriculture)
+- Climate vulnerability: headwater stream, warming trends
+
+Management Recommendations:
+1. Designate as Wild Trout Waters (catch-and-release, artificial lures only)
+2. Monitor temperature annually: trigger adaptive management if >3 consecutive years >18°C
+3. Protect riparian forest (coordinate with landowners, conservation easements)
+4. Consider downstream restoration to expand habitat (if barriers removable)
+5. Resample every 5 years to track population trends
+6. Genetic repository: preserve fin clips for future reintroduction if population declines
+
+Significance: One of few remaining pure, self-sustaining brook trout populations in the watershed. High conservation value due to genetic purity and intact habitat. Model system for headwater conservation.
+```
+
+Example 2: Walleye Stock Assessment - Reservoir
+```
+Water Body: Lake [Name], 2,400-acre reservoir
+Management Goal: Provide sustainable walleye fishery with harvest opportunity
+
+Population Estimate (Gill Net Survey, Spring):
+- Abundance: 8,700 adult walleye (≥15 inches) [95% CI: 7,200-10,300]
+- Density: 3.6 adults/acre (target: 2-5 adults/acre) ✓
+- CPUE: 12 fish/net-night (stable compared to 5-year average: 11.2)
+
+Size and Age Structure:
+- Mean Length: 18.2 inches (slot limit 15-22 inches, 1 fish >22" allowed)
+- Trophy Abundance: 18% >20 inches (target: >15%) ✓
+- Age Distribution: Age-4 (15-16"): 28%, Age-5 (17-19"): 42%, Age-6+ (20-24"): 22%
+- Strong year-classes: 2018 and 2020 cohorts well represented
+
+Growth and Condition:
+- Growth: Above state average (18" by age-5 vs. 17" state average)
+- Condition: Mean Wr = 92 (acceptable range: 85-100, population slightly lean)
+- Growth limited by forage: Declining gizzard shad year-classes
+
+Mortality:
+- Total Annual Mortality (A): 38% (from catch curve)
+- Natural Mortality (M): 20% (estimated from life history)
+- Fishing Mortality (F): 18% (A - M)
+- Exploitation Rate: Moderate (45% of legal fish harvested over 2 years)
+
+Recruitment:
+- Young-of-Year (YOY) Abundance: 35 fish/seine haul (good, above 25/haul target)
+- Age-1 CPUE: 8 fish/net-night (strong 2023 year-class)
+- Stock-Recruitment: Density-dependent relationship evident (good spawning habitat)
+
+Creel Survey Results:
+- Angler Effort: 45,000 angler-hours per year
+- Harvest: 1,800 walleye harvested (20% of adult population)
+- Release: 45% of caught fish released (slot limit working)
+- Angler Satisfaction: 72% satisfied or very satisfied (target >70%) ✓
+- Economic Value: $890,000 annual expenditures by anglers
+
+Assessment Status: HEALTHY POPULATION
+- Abundance above minimum target (3.6 vs. 2.0 adults/acre minimum)
+- Trophy component strong (18% >20 inches)
+- Recruitment stable (multiple strong year-classes)
+- Exploitation sustainable (18% fishing mortality, below 25% threshold)
+
+Management Recommendations:
+1. MAINTAIN current slot limit (15-22", 1 over 22" allowed)
+2. CONTINUE annual gill net surveys to track trends
+3. MONITOR forage base: Consider gizzard shad supplementation or habitat for yellow perch
+4. EVALUATE growth: If condition drops below Wr=85, reduce harvest or increase forage
+5. PUBLICIZE success: Promote trophy walleye opportunities in marketing materials
+6. STAKEHOLDER ENGAGEMENT: Advisory committee meeting to review results and confirm regulations
+
+No immediate action required. Population performing within target ranges. Reassess in 3 years or if CPUE changes >25%.
+```
+
+Example 3: Stream Habitat Assessment and Fish Passage Evaluation
+```
+Stream: [Tributary Name]
+Project: Fish Passage Restoration at County Road 42 Culvert
+
+Background:
+- Historical anadromous fish presence (Chinook salmon, coho salmon, steelhead)
+- Current culvert perched 0.8m above stream, velocity barrier at high flows
+- Downstream habitat: 3.2 km of high-quality spawning and rearing habitat
+- Restoration Goal: Reconnect 3.2 km of upstream habitat for anadromous salmonids
+
+Habitat Survey Results (Upstream of Culvert):
+- Gradient: 2.1% (suitable for spawning)
+- Substrate: 45% gravel (2-64mm), 30% cobble, excellent spawning substrate
+- Pool Frequency: 12 pools/km (good)
+- Large Woody Debris: 28 pieces/km (moderate, could be enhanced)
+- Riparian: 65% canopy cover (fair, historical logging impact)
+- Water Quality: Temperature suitable (<16°C summer max), DO >8 mg/L
+
+Spawning Habitat Quantification:
+- Total Spawning Area: 1,850 m² (gravel bars, tail-outs)
+- Rearing Pools: 42 pools with >0.3m depth and cover
+- Off-Channel Habitat: 3 alcoves, 180 m² total (winter refuge)
+- Capacity Estimate: 1,200 adult spawners (0.65 fish/m² × 1,850 m²)
+
+Current Fish Community (Electrofishing Upstream of Barrier):
+- Resident rainbow trout: 150 fish/km (likely landlocked steelhead descendants)
+- Sculpins: Present (indicator of good habitat quality)
+- NO juvenile salmonids observed (confirms barrier prevents anadromous colonization)
+
+Barrier Assessment:
+- Culvert Type: Round corrugated metal, 1.2m diameter, 30m length
+- Elevation Drop: 0.8m perch at outlet
+- Flow Velocity at Low Flow: 0.9 m/s (passable)
+- Flow Velocity at Spawning Flow (10 cms): 2.8 m/s (exceeds fish swim speed)
+- WDFW Water Crossing Design Guidelines: FAILS (perch and velocity barriers)
+
+Restoration Design Recommendations:
+1. Replace culvert with bridge or stream-simulation culvert (1.5× bankfull width)
+2. Install roughened channel: embed large rock, create low-flow channel
+3. Match stream gradient (2.1%) through crossing
+4. Ensure adequate depth: >0.3m at low flow for adult passage
+5. Riparian restoration: Plant conifers for long-term shading and LWD recruitment
+
+Expected Benefits:
+- Reconnect 3.2 km of high-quality habitat (1,850 m² spawning, 42 pools)
+- Increase watershed spawning capacity by 1,200 adults (based on habitat availability)
+- Provide thermal refuge: Upstream habitat 2-3°C cooler than mainstem (groundwater inputs)
+- Genetic diversity: Allow straying adults to recolonize and interbreed with resident population
+
+Cost-Benefit Analysis:
+- Construction Cost: $180,000 (bridge), $120,000 (stream-simulation culvert)
+- Annual Benefit: 240-600 adult returns (20-50% smolt-to-adult survival × production)
+- Economic Value: $72,000-180,000/year (based on $300/adult angling value)
+- Cost Recovery: 1-3 years (depending on design choice and survival rates)
+
+Recommendation: HIGH PRIORITY for restoration
+- Significant habitat available (3.2 km)
+- High quality spawning substrate
+- Thermal refuge value for climate resilience
+- Cost-effective: benefits exceed costs within 3 years
+- Community support: strong local interest in salmon recovery
+- Funding opportunities: NOAA PFHP, SRFB, RCO, private foundations
+
+Next Steps:
+1. Engage county roads department: coordinate replacement with road maintenance cycle
+2. Secure funding: apply for NOAA Pacific Fisheries Habitat Partnership grant (due March)
+3. Design engineering: hire engineer familiar with fish passage design (WDFW guidelines)
+4. Permitting: Joint Aquatic Resource Permit Application (JARPA), Army Corps 404, county SEPA
+5. Construction: Schedule during low-flow window (July-September) to minimize in-water work
+6. Monitoring: Pre- and post-construction: juvenile abundance (years 1-5), adult spawning surveys
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **CPUE (Catch Per Unit Effort)**: Number of fish caught per standardized fishing effort (e.g., fish/net-night, fish/hour).
+- **Age-Length Key**: Table linking age classes to length ranges, used to assign ages to unmeasured fish.
+- **von Bertalanffy Growth Model**: Lt = L∞(1 - e^(-K(t - t₀))). Describes asymptotic fish growth.
+- **Relative Weight (Wr)**: (Weight/Standard Weight) × 100. Index of fish condition (80-120 range, 100 = ideal).
+- **Stock-Recruitment**: Relationship between spawning stock and subsequent recruitment (offspring production).
+- **Mortality (A, M, F)**: Total annual (A), natural (M), fishing (F). A = M + F. High F indicates overfishing.
+- **Mark-Recapture**: Tagging study to estimate population size based on recapture rate of marked individuals.
+- **PSD (Proportional Size Distribution)**: Percentage of stock-length fish that are quality-length or larger. Describes size structure.
+- **Electrofishing**: Using pulsed DC current to temporarily stun fish for capture. Requires safety certification.
+- **Creel Survey**: Survey of anglers to estimate harvest, effort, and catch rates. Essential for recreational fisheries.
+
+Standards & Frameworks (2024-2025):
+- **AFS Fisheries Techniques (4th Edition, 2024)**: American Fisheries Society standard methods for sampling, aging, analysis.
+- **WDFW Fish Passage Design Guidelines (2024)**: Washington state standards for culvert design and fish passage restoration.
+- **NMFS ESU (Evolutionary Significant Units)**: Pacific salmon conservation units under ESA (updated 2023 status reviews).
+- **Magnuson-Stevens Fishery Conservation and Management Act**: Federal law governing marine fisheries management (reauthorized 2023).
+- **Endangered Species Act (ESA) Section 7**: Consultation required for federal actions affecting listed fish species.
+- **FERC (Federal Energy Regulatory Commission) Relicensing**: Process for dam relicensing includes fisheries studies and mitigation.
+- **State Fishing Regulations**: Annual fishing regulations based on stock assessments and commission input.
+- **Sustainable Fisheries Goal**: NMFS definition: prevent overfishing while achieving optimum yield (MSY-based reference points).
+
+Common Tools & Software:
+- **Electrofishing Equipment**: Smith-Root backpack units, boat electrofishers (ABP-3, GPP 5.0)
+- **Netting Gear**: Gill nets (various mesh sizes), trap nets (fyke, hoop), seines, trawls
+- **Age Determination**: Otolith sectioning equipment, compound microscopes, image analysis software (Image-Pro, ImageJ)
+- **Population Models**: Fisheries Stock Assessment (FSA) package in R, MARK, Stock Synthesis
+- **GIS Mapping**: ArcGIS, QGIS for habitat mapping and survey site selection
+- **Hydroacoustics**: Simrad, BioSonics echosounders for pelagic fish abundance
+- **Tagging**: PIT tags (12-23mm), floy tags, coded-wire tags (CWT) for salmonids, acoustic tags for movement
+- **Data Management**: Excel, Access, R, or specialized fisheries databases (FINS, Fisheries Management System)
+
+Change log
+- 2024-12: Initial comprehensive playbook created based on AFS Fisheries Techniques (4th Edition), NMFS stock assessment guidelines, and state fisheries management best practices
+- Emphasis on population assessment, stock assessment, sustainable harvest, habitat restoration, and stakeholder engagement

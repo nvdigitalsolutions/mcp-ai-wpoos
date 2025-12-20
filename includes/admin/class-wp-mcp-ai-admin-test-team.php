@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 		 * @return string
 		 */
 		protected function get_post_type() {
-			if ( ! defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
 				return 'mcp_ai_team';
 			}
 			return WP_MCP_AI_Team_CPT::POST_TYPE;
@@ -71,11 +71,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 			$strings = parent::get_chat_strings();
 
 			// Customize specific strings for team context.
-			$strings['waiting']                  = __( 'Waiting for team member…', 'wp-mcp-ai' );
-			$strings['missingAssistant']         = __( 'Team configuration was not found.', 'wp-mcp-ai' );
-			$strings['notAuthorized']            = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
-			$strings['teamMemberLoadError']      = __( 'Failed to load team members. Please try again.', 'wp-mcp-ai' );
-			$strings['roleLabels']['assistant']  = __( 'Team Member', 'wp-mcp-ai' );
+			$strings['waiting']                 = __( 'Waiting for team member…', 'wp-mcp-ai' );
+			$strings['missingAssistant']        = __( 'Team configuration was not found.', 'wp-mcp-ai' );
+			$strings['notAuthorized']           = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
+			$strings['teamMemberLoadError']     = __( 'Failed to load team members. Please try again.', 'wp-mcp-ai' );
+			$strings['roleLabels']['assistant'] = __( 'Team Member', 'wp-mcp-ai' );
 
 			return $strings;
 		}
@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 				return;
 			}
 
-			$post_type = defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
+			$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
 
 			// Get all published teams.
 			$teams = get_posts(

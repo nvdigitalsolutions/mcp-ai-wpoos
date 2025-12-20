@@ -1,0 +1,442 @@
+Profession Playbook — Truck Driver
+Slug: truck_driver
+Category: transportation
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook for commercial truck drivers (CDL Class A/B), containing actionable  
+  instructions, SOPs, checklists, and templates for safe freight transportation, HOS compliance, and ELD usage.
+
+Category guidance
+- Emphasize safety, FMCSA compliance, load securement, Hours of Service management, and professional conduct.
+
+1) Role boundaries
+Do:
+- Operate commercial trucks safely with valid CDL (Class A for tractor-trailers, Class B for straight trucks)
+- Conduct mandatory pre-trip and post-trip vehicle inspections per FMCSA 49 CFR Part 396
+- Manage Hours of Service (HOS) compliance using Electronic Logging Devices (ELDs) per 49 CFR Part 395
+- Secure cargo properly using appropriate load securement techniques (FMCSA 49 CFR Part 393)
+- Navigate efficiently using trip planning, GPS, and routing tools while monitoring weather/road conditions
+- Maintain accurate records (logbook, fuel receipts, bills of lading, inspection reports)
+- Report mechanical defects, accidents, and incidents promptly to dispatch/carrier
+- Submit to DOT drug and alcohol testing per FMCSA Drug & Alcohol Clearinghouse requirements
+- Practice defensive driving and follow all traffic laws
+- Success = Safe, on-time delivery with zero accidents, HOS compliance, and professional conduct
+
+Do NOT:
+- Operate without valid CDL or proper endorsements (H for hazmat, T for tankers, X for both)
+- Exceed Hours of Service limits (11-hour drive limit, 14-hour work window, 60/70-hour weekly limit)
+- Drive with critical safety defects (brakes, steering, lights, tires below legal minimums)
+- Falsify logbooks or ELD records (federal offense with severe penalties)
+- Transport hazardous materials without proper placarding and hazmat endorsement
+- Ignore load securement requirements (risk of cargo shift, rollovers, falling cargo)
+- Drive under influence of alcohol or drugs (zero tolerance, immediate disqualification)
+- Use handheld electronic devices while operating (texting/calling without hands-free)
+- Bypass weigh stations or DOT inspection stations
+
+Escalate / refer out when:
+- Mechanical breakdown requires roadside service or tow (contact dispatch, arrange repair)
+- Accident occurs with injuries, fatalities, or significant property damage (call 911, secure scene, document)
+- HOS violation unavoidable due to adverse driving conditions (document thoroughly, report to carrier)
+- Cargo damage discovered during delivery (document with photos, notify shipper/receiver, file claim)
+- Hazmat incident or spill occurs (call CHEMTREC 1-800-424-9300, evacuate area, follow emergency response)
+- DOT inspection results in out-of-service order (cannot drive until violations corrected)
+- Drug/alcohol test positive or refusal (immediate removal from service, follow return-to-duty protocol)
+- Medical certification expires or health condition disqualifies driving (obtain new medical exam)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What type of trucking operation (OTR long-haul, regional, local delivery, dedicated route)?
+- What CDL class and endorsements required (Class A/B, hazmat, tanker, doubles/triples)?
+- What cargo types are transported (dry van, refrigerated, flatbed, tanker, oversized)?
+- What are the Hours of Service requirements (interstate vs. intrastate, short-haul exemption)?
+- What load securement methods are needed (straps, chains, tarps, dunnage, edge protection)?
+- What ELD system is in use (what brand, how to log in/out, transfer data)?
+- What are the route requirements (states crossed, permits needed, restricted routes)?
+- What documentation is required (bills of lading, delivery receipts, inspection reports)?
+
+3) Default workflow
+Use FMCSA regulations and trucking industry best practices:
+
+1. Trip Planning & Preparation
+   - Review load assignment (pickup/delivery locations, cargo details, appointment times)
+   - Verify CDL, medical certificate, and endorsements valid and current
+   - Check ELD functionality (proper login, vehicle connection, data synchronized)
+   - Plan route considering HOS availability, truck restrictions, weigh station locations
+   - Review weather forecast and road conditions (winter weather, construction zones)
+   - Ensure adequate rest before starting shift (10 consecutive hours off-duty required)
+   - Gather documentation (bills of lading, permits, emergency contact numbers)
+
+2. Pre-Trip Vehicle Inspection (FMCSA 49 CFR Part 396.13)
+   - Conduct systematic walk-around inspection (follow CDL test procedure)
+   - Engine compartment: fluid levels, belts, hoses, leaks
+   - Air brake system: pressure build (95-125 psi), leak test, warning devices functional
+   - Wheels/tires: tread depth (4/32" minimum steer, 2/32" other), inflation, damage, lug nuts secure
+   - Lights/reflectors: brake lights, turn signals, markers, reflective tape
+   - Coupling: fifth wheel securely locked, kingpin undamaged, air/electrical lines connected
+   - Cargo securement: load properly distributed, secured per 49 CFR Part 393, not overweight
+   - Emergency equipment: fire extinguisher, warning triangles, spare fuses
+   - Documentation: complete written inspection report, note defects, place out of service if critical
+
+3. Driving Operations & HOS Management
+   - Log status changes accurately in ELD (driving, on-duty not driving, sleeper berth, off-duty)
+   - Monitor HOS clock continuously (drive time remaining, 14-hour window, 70-hour weekly limit)
+   - Take required 30-minute break after 8 hours of driving (short-haul exempt)
+   - Practice defensive driving (maintain following distance, scan mirrors, anticipate hazards)
+   - Adjust speed for conditions (weather, traffic, road surface, visibility)
+   - Weigh vehicle at scales, obtain permits as required by states
+   - Manage fuel efficiently (plan fuel stops, monitor fuel economy, idle reduction)
+   - Communicate with dispatch (on-time delivery updates, delays, issues)
+
+4. Loading, Securement & Delivery
+   - Inspect cargo before loading (damage, quantity correct, proper handling required)
+   - Verify weight distribution (avoid overloading axles, maintain proper balance)
+   - Apply load securement per FMCSA standards (number of tie-downs by weight, working load limits)
+   - Re-check securement after first 50 miles and periodically during trip
+   - Use tarps/protection for weather-sensitive or uncovered loads
+   - Document delivery (obtain signatures, note exceptions/damages, take photos if needed)
+   - Obtain bills of lading or delivery receipts as proof of delivery
+
+5. Post-Trip & Record Keeping
+   - Complete post-trip inspection, report any new defects or damage
+   - Submit all required documentation (BOLs, fuel receipts, weigh tickets, inspection reports)
+   - Review ELD logs for accuracy, make annotations as needed
+   - Clean cab and trailer (remove trash, organize paperwork)
+   - Park securely (well-lit area, trailer doors locked, air line disconnected)
+   - Plan next day's rest and trip requirements
+
+4) Deliverables
+- Daily Vehicle Inspection Reports (DVIR) - pre-trip and post-trip documentation
+- Hours of Service (HOS) logs via ELD - complete driving records with duty status changes
+- Bills of Lading (BOL) - cargo documentation with pickup/delivery signatures
+- Load securement documentation - photos of properly secured cargo
+- Fuel receipts and expense reports - IFTA fuel tax documentation
+- Accident/incident reports - detailed documentation of any safety events
+- Weigh station tickets and permit documentation
+- Drug & Alcohol Clearinghouse compliance records
+- Delivery appointment confirmations and proof of delivery
+
+Minimum viable: Safe, on-time delivery with clean DVIR, HOS compliance, accurate documentation
+Gold standard: Exemplary safety record (no accidents/violations), fuel efficiency leadership, customer commendations, mentor to new drivers
+
+5) Quality checklist
+
+Safety & Compliance:
+- [ ] Valid CDL with appropriate class and endorsements, medical certificate current
+- [ ] Pre-trip inspection completed and documented, no critical defects
+- [ ] HOS limits followed (11 driving, 14 on-duty, 60/70 weekly, 30-min break)
+- [ ] ELD functioning properly, all duty status changes logged accurately
+- [ ] Cargo properly secured per FMCSA Part 393, weight limits not exceeded
+- [ ] Drug & Alcohol Clearinghouse status current
+
+Operational Excellence:
+- [ ] Route planned efficiently, appointments met or delays communicated proactively
+- [ ] Defensive driving practiced (safe following distance, speed for conditions)
+- [ ] Fuel management optimized (efficient routing, idle reduction)
+- [ ] Vehicle maintenance concerns reported promptly
+- [ ] DOT inspections passed without violations
+
+Documentation & Communication:
+- [ ] BOLs accurate and signed, delivery exceptions documented
+- [ ] Inspection reports complete and submitted
+- [ ] Expense documentation (fuel receipts, weigh tickets) maintained
+- [ ] Dispatch communications timely and professional
+- [ ] Customer interactions courteous and professional
+
+6) Templates (paste-ready)
+
+=== Pre-Trip Inspection Report (DVIR) Template ===
+**Daily Vehicle Inspection Report**
+Date: [Date] | Vehicle #: [Tractor #] | Trailer #: [Trailer #] | Driver: [Name] | CDL #: [Number]
+Odometer Start: [Miles] | Location: [City, State]
+
+**Tractor Inspection:**
+Engine Compartment:
+- [ ] Engine oil level (full, no leaks)
+- [ ] Coolant level (full, no leaks)
+- [ ] Power steering fluid (adequate)
+- [ ] Belts/hoses (no cracks, proper tension)
+
+Air Brake System:
+- [ ] Pressure builds 85-100 psi within 2 minutes
+- [ ] Air leak test (less than 3 psi/min with brakes applied)
+- [ ] Low air warning activates below 60 psi
+- [ ] Brake chambers (no air leaks, pushrod travel within limits)
+
+Wheels & Tires:
+- [ ] Tread depth: Steer ≥4/32", Drive/Trailer ≥2/32"
+- [ ] Tire inflation proper, no cuts/damage
+- [ ] Lug nuts secure, no missing/loose
+
+Lights & Electrical:
+- [ ] Headlights, taillights, brake lights functional
+- [ ] Turn signals, hazard lights, clearance lights operational
+- [ ] All reflective tape/markings present
+
+**Trailer Inspection:**
+- [ ] Coupling secure (fifth wheel locked, no gaps)
+- [ ] Air/electrical lines connected, no leaks
+- [ ] Landing gear fully raised, crank handle secured
+- [ ] Doors close/lock properly, seals intact
+- [ ] Cargo secured per FMCSA Part 393
+
+**Emergency Equipment:**
+- [ ] Fire extinguisher (rated 5BC+, charged, accessible)
+- [ ] Warning triangles (3 reflective)
+- [ ] Spare fuses
+
+**Defects Noted:** [List any defects, categorize severity]
+Vehicle Status: [ ] Safe to Operate [ ] Repairs Needed [ ] Out of Service
+
+Driver Signature: ________________ Date: ________ Time: ________
+Mechanic Review (if defects): ________________ Date: ________
+
+=== Hours of Service (HOS) Violation Avoidance Checklist ===
+**HOS Compliance Pre-Drive Checklist**
+
+Before Starting Shift:
+- [ ] Minimum 10 consecutive hours off-duty completed
+- [ ] ELD logged in with correct driver profile
+- [ ] ELD connected to vehicle (engine synchronized)
+- [ ] Previous day's logs reviewed and certified
+- [ ] No unresolved HOS violations or errors
+
+Drive Time Available:
+- Driving: [X] hours remaining (max 11 hours)
+- On-duty: [X] hours remaining in 14-hour window
+- Weekly: [X] hours remaining (60/70-hour limit)
+- 30-minute break status: [ ] Not required yet [ ] Taken [ ] Due after [time]
+
+Trip Planning:
+- Estimated driving time to destination: [X] hours
+- HOS sufficient for trip: [ ] Yes [ ] No - plan rest break at [location]
+- Backup parking locations identified if HOS expires en route
+- Adverse driving conditions exception available if needed
+
+During Trip Monitoring:
+- [ ] Check HOS clock every hour
+- [ ] Take 30-minute break before 8-hour driving limit
+- [ ] Plan to stop driving with 30+ minutes remaining (buffer for traffic/delays)
+- [ ] Document any adverse driving conditions (weather delays)
+- [ ] Notify dispatch if HOS will impact delivery schedule
+
+=== Load Securement Documentation Template ===
+**Cargo Securement Verification**
+Date: [Date] | BOL #: [Number] | Trailer #: [ID]
+Load Type: [ ] Dry Van [ ] Flatbed [ ] Reefer [ ] Tanker [ ] Other
+
+**Load Details:**
+Commodity: [Description]
+Weight: [Total lbs] | Pieces: [Count]
+Dimensions: [L x W x H]
+
+**Securement Method (49 CFR Part 393):**
+[ ] Straps (count: [X], rating: [lbs WLL each])
+[ ] Chains (count: [X], rating: [lbs WLL each])
+[ ] Binders/tighteners
+[ ] Edge protection (corners, straps)
+[ ] Dunnage/blocking
+[ ] Tarps (secured, no flapping)
+
+**Weight Distribution:**
+- Steer axle: [lbs] (legal limit: 12,000 lbs)
+- Drive axle(s): [lbs] (legal limit: 34,000 lbs)
+- Trailer axle(s): [lbs] (legal limit: 34,000 lbs)
+- Gross vehicle weight: [lbs] (legal limit: 80,000 lbs)
+
+**Securement Verification:**
+- [ ] Minimum tie-downs met (1 per 10 ft, 2 minimum for any load)
+- [ ] Working load limit (WLL) adequate for cargo weight
+- [ ] Straps/chains positioned to prevent shifting
+- [ ] No cargo overhanging beyond legal limits
+- [ ] Front/rear stops or headache rack in place
+- [ ] All tie-downs tensioned properly
+
+**Re-check Schedule:**
+- [ ] Initial securement at loading
+- [ ] After first 50 miles (FMCSA requirement)
+- [ ] After any driving event (hard brake, pothole, sharp turn)
+- [ ] Before delivery
+
+Driver Signature: ________________ Date/Time: ________
+
+7) Examples of excellent outputs
+
+Example 1: Pre-Trip Inspection Critical Defect Report
+```
+DVIR - Critical Defect Identified - Vehicle OUT OF SERVICE
+Date: 2024-12-18 | Time: 05:45 AM | Tractor #7412 | Trailer #8293
+Driver: Johnson, Robert | CDL: A-12345-TX
+
+CRITICAL DEFECTS:
+1. Left front steer tire: Tread depth 3/32" (below 4/32" legal minimum)
+   - Tire shows uneven wear on outer edge
+   - Recommendation: Replace immediately before operation
+
+2. Air brake system: Low air warning activates at 50 psi (should be 55-60 psi)
+   - Pressure switch may be out of calibration
+   - Safety-critical system requiring immediate repair
+
+NON-CRITICAL OBSERVATIONS:
+- Right side marker light on trailer not illuminating (bulb replacement needed)
+- Driver's seat adjustment lever loose (maintenance can tighten)
+
+ACTIONS TAKEN:
+- Vehicle placed OUT OF SERVICE per FMCSA regulations
+- Maintenance notified at 05:50 AM (Work Order #TR-2024-1218-002)
+- Dispatch notified, load reassigned to Tractor #7419
+- Estimated repair time: 2-3 hours (tire replacement, brake system calibration)
+
+COMPLIANCE NOTE:
+Tractor #7412 cannot be operated until repairs completed and re-inspection passed.
+Driver will not accept vehicle back into service until defects corrected and documented.
+
+Driver Signature: Robert Johnson | Time: 05:55 AM
+Mechanic Certification (upon completion): _______________ | Time: ________
+```
+
+Example 2: HOS Management - Adverse Driving Conditions Exception
+```
+HOURS OF SERVICE - Adverse Driving Conditions Exception Invoked
+Date: 2024-12-18 | Driver: Martinez, Ana | CDL: A-67890-CA | Truck #5521
+
+SITUATION:
+Encountered unexpected severe weather conditions that were not apparent at trip start.
+Original ETA to delivery: 22:00 (with 11 hours drive time available)
+Adverse conditions extended drive time, requiring HOS extension.
+
+ADVERSE CONDITIONS DOCUMENTED:
+- Heavy snowfall began at 14:30 MT (Highway 70 through Colorado Rockies)
+- Visibility reduced to less than 200 feet
+- Road conditions: snow-covered, multiple vehicles in ditches
+- Speed reduced from 65 mph to 25-30 mph for safety
+- Colorado DOT issued travel advisory (no travel recommended for light vehicles)
+
+HOS TIMELINE:
+- Started shift: 08:00 (after 10 hours off-duty)
+- Reached adverse conditions: 14:30 (6.5 hours driving)
+- 14-hour window expires: 22:00
+- Delivery location: 2 hours driving remaining at normal speed
+- With adverse conditions: 4+ hours driving needed
+
+DECISION:
+Invoked adverse driving conditions exception (FMCSA 49 CFR 395.1(b)(1))
+- Extended drive time by 2 additional hours (13 hours total driving)
+- Extended on-duty time to 16-hour window
+- Delivered safely at 23:45 (within extended limits)
+
+ELD ANNOTATION:
+"Adverse driving conditions - heavy snow, reduced visibility, CO Hwy 70.
+Extended drive time to 13 hrs and duty day to 16 hrs per 395.1(b)(1).
+Conditions not foreseeable at trip start. Safe delivery prioritized."
+
+DOCUMENTATION:
+- ELD logs with annotation
+- Weather.gov screenshots showing snowfall advisory
+- Colorado DOT travel advisory notification
+- Photo of road conditions (timestamp 15:20)
+- Dispatch communication log confirming conditions
+
+COMPLIANCE:
+Exception properly invoked per FMCSA guidelines. Cannot use exception again until after next 10-hour rest period.
+```
+
+Example 3: Load Securement Verification and Documentation
+```
+LOAD SECUREMENT INSPECTION REPORT
+Date: 2024-12-18 | BOL #: SHP-2024-091847 | Driver: Thompson, Marcus
+Trailer #: 4927 | Shipper: ABC Steel Distributors | Receiver: XYZ Construction
+
+CARGO DETAILS:
+Type: Steel I-beams
+Quantity: 24 beams
+Unit Weight: 850 lbs each | Total Weight: 20,400 lbs
+Dimensions: Each beam 20 ft length x 12 in height x 8 in wide
+
+WEIGHT DISTRIBUTION (Verified at CAT Scale):
+- Steer axle: 11,800 lbs ✓ (under 12,000 lb limit)
+- Drive axles: 32,100 lbs ✓ (under 34,000 lb limit)
+- Trailer axles: 22,500 lbs ✓ (under 34,000 lb limit)
+- Gross weight: 66,400 lbs ✓ (under 80,000 lb limit)
+
+SECUREMENT METHOD (FMCSA 49 CFR Part 393):
+Method: Direct tie-down with chains and binders
+- 6x Grade 70 chains (10,600 lbs WLL each = 63,600 lbs total capacity)
+- Working load limit exceeds cargo weight (20,400 lbs requires 10,200 lbs WLL minimum)
+- Edge protection installed at all chain contact points
+- Dunnage (4x4 timbers) placed between beam layers
+- Chains positioned to prevent longitudinal and lateral shifting
+- All binders properly tensioned (no loose slack)
+
+SECUREMENT COMPLIANCE VERIFICATION:
+✓ Minimum 2 tie-downs required (6 installed - exceeds requirement)
+✓ WLL capacity adequate (63,600 lbs vs 20,400 lbs cargo = 3.1x safety factor)
+✓ Edge protection prevents chain/cargo damage
+✓ Front/rear stops in place (headache rack + rear bulkhead)
+✓ No overhang beyond legal limits (beams fully within trailer)
+✓ Load balanced and centered on trailer deck
+
+PHOTO DOCUMENTATION:
+- Photo 1: Overall load view showing beam placement
+- Photo 2: Chain attachment points with edge protection
+- Photo 3: Binder tension verification
+- Photo 4: CAT scale ticket showing axle weights
+
+RE-CHECK SCHEDULE:
+Mile 0: Initial securement verified at shipper (current)
+Mile 50: Re-check scheduled (will stop at Rest Area MM 127)
+Mile 200: Mid-trip re-check planned
+Pre-delivery: Final verification before unloading
+
+DRIVER CERTIFICATION:
+I certify this cargo is properly secured per FMCSA regulations and will perform
+required re-checks during transit.
+
+Driver: Marcus Thompson | Signature: _____________ | Date/Time: 2024-12-18 09:30
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **CDL (Commercial Driver's License)**: Federal license for commercial vehicles - Class A (tractor-trailers), Class B (straight trucks)
+- **HOS (Hours of Service)**: FMCSA regulations limiting driving/on-duty time (11-hour drive, 14-hour window, 60/70-hour weekly)
+- **ELD (Electronic Logging Device)**: Mandated device for automatic HOS recording (FMCSA compliant)
+- **DVIR (Driver Vehicle Inspection Report)**: Daily pre-trip and post-trip written inspection documentation
+- **FMCSA (Federal Motor Carrier Safety Administration)**: DOT agency regulating commercial motor vehicle safety
+- **BOL (Bill of Lading)**: Cargo documentation showing shipper, receiver, commodity, weight
+- **GVW (Gross Vehicle Weight)**: Total weight of vehicle + cargo (80,000 lbs interstate limit)
+- **WLL (Working Load Limit)**: Minimum strength rating for load securement equipment (chains, straps)
+- **CSA (Compliance, Safety, Accountability)**: FMCSA system tracking carrier/driver safety performance
+- **Drug & Alcohol Clearinghouse**: FMCSA database tracking driver testing violations
+- **Out of Service**: Vehicle or driver status prohibiting operation until violation corrected
+- **Adverse Driving Conditions Exception**: HOS extension allowed for unforeseen weather/emergency (2-hour extension)
+- **Medical Examiner's Certificate**: DOT physical required for CDL drivers (2-year validity typical)
+
+Standards & Frameworks (2024):
+- **49 CFR Part 383**: Commercial Driver's License Standards
+- **49 CFR Part 391**: Qualifications of Drivers (medical, employment verification)
+- **49 CFR Part 392**: Driving of Commercial Motor Vehicles (operational rules)
+- **49 CFR Part 393**: Parts and Accessories Necessary for Safe Operation (cargo securement)
+- **49 CFR Part 395**: Hours of Service of Drivers (11-hour drive limit, ELD mandate)
+- **49 CFR Part 396**: Inspection, Repair, and Maintenance (DVIR requirements)
+- **49 CFR Part 382**: Controlled Substances and Alcohol Use and Testing
+- **49 CFR Part 397**: Transportation of Hazardous Materials (routing, placarding)
+- **FMCSA Drug & Alcohol Clearinghouse (2020, updated 2024)**: Mandatory reporting database
+- **CSA Safety Measurement System (SMS)**: BASIC categories for carrier safety scoring
+
+Common Tools:
+- ELD providers: Omnitracs, KeepTruckin, Samsara, PeopleNet, Garmin eLog
+- GPS/routing: Rand McNally TND, Garmin Dezl, Trimble CoPilot, Google Maps (truck mode)
+- Load boards: DAT, Truckstop.com, 123Loadboard (owner-operators)
+- Weigh station apps: Drivewyze PreClear, Bestpass, NORPASS
+- Inspection tools: Tire pressure gauge, tread depth gauge, flashlight, binder wrenches
+- Load securement: Chains (Grade 70/80), ratchet straps, binders, edge protection, tarps
+- Communication: CB radio (channel 19), Qualcomm/mobile data terminal, smartphone
+
+Change log
+2024-12: Initial playbook created based on FMCSA regulations (49 CFR Parts 383, 391, 392, 393, 395, 396, 382), HOS/ELD requirements, 
+and professional trucking industry standards.
+- Emphasis on Hours of Service compliance, ELD usage, and load securement
+- Focus on pre-trip inspections, defensive driving, and record-keeping
+- Templates for DVIR, HOS management, and cargo securement documentation
+- Real-world examples of inspection defects, adverse driving conditions, and load securement

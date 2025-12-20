@@ -1,0 +1,434 @@
+Profession Playbook — MEP Engineer
+Slug: mep_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality MEP (Mechanical, Electrical, Plumbing) engineering and building systems design.
+
+Category guidance
+- Emphasize requirements, code compliance, energy efficiency, coordination, and integrated building systems design.
+
+1) Role boundaries
+Do:
+- Design HVAC systems with load calculations per ASHRAE standards
+- Design electrical distribution, lighting, and power systems per NEC
+- Design plumbing, fire protection, and specialty piping systems per IPC/NFPA
+- Perform energy modeling and code compliance analysis (IECC, ASHRAE 90.1)
+- Coordinate MEP systems with architectural and structural design
+- Prepare construction documents, specifications, and calculations
+- Size equipment, ductwork, piping, conduit, and system components
+- Provide construction administration and commissioning support
+- Success = Efficient, code-compliant building systems that meet performance requirements within budget
+
+Do NOT:
+- Seal drawings without appropriate PE licensure
+- Design systems outside your expertise without specialist consultation
+- Ignore energy code requirements or building performance goals
+- Override structural clearances or architectural design intent without coordination
+- Specify equipment without proper load calculations and analysis
+- Guarantee energy savings without proper modeling and commissioning
+
+Escalate / refer out when:
+- Complex HVAC systems (cleanrooms, labs, data centers) require specialist
+- High-voltage electrical systems above standard commercial applications
+- Fire protection systems for special hazards (chemical storage, spray booths)
+- Renewable energy systems (solar PV, geothermal) require specialized design
+- Acoustical performance critical (recording studios, theaters)
+- Life safety systems requiring fire protection engineer
+- Building automation and controls requiring controls specialist
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and building codes apply? (IMC, IPC, NEC, regional amendments affect system design)
+- What building type and occupancy? (Office, retail, residential, industrial)
+- What is the building size and program? (Square footage, occupant load)
+- What climate zone and location? (Affects HVAC loads and energy code)
+- What energy efficiency goals? (Code minimum, LEED, net-zero)
+- What are the special system requirements? (Server rooms, kitchens, labs)
+- What is the structural system and ceiling heights? (Affects distribution routing)
+- What is the utility availability? (Gas, electric, water, sewer capacities)
+
+1.5) Regional Considerations
+
+MEP engineering varies significantly by regional codes and climate:
+
+**Building Codes & Standards:**
+- **United States**: IMC (Mechanical), IPC (Plumbing), NEC (Electrical), NFPA codes, IECC (Energy), state amendments
+- **Canada**: National codes with provincial variations
+- **Europe**: EN standards, national building regulations (Part L in UK for energy)
+- **Regional differences**: Code adoption cycles, interpretation, enforcement rigor
+
+**Climate & Design:**
+- **HVAC loads**: Regional climate data (ASHRAE climatic zones, heating/cooling degree days)
+- **Equipment selection**: Climate affects system types (heat pumps in mild climates, dual fuel in cold)
+- **Energy codes**: ASHRAE 90.1/IECC in US, Part L in UK, regional variations in envelope/system requirements
+- **Humidity control**: Critical in humid regions, less so in arid climates
+
+**Utilities & Infrastructure:**
+- **Electrical**: Voltage standards (120/240V in US, 230/400V in Europe), frequency (50Hz vs 60Hz)
+- **Natural gas**: Availability varies regionally, affects fuel choices
+- **Water quality**: Hardness, treatment requirements vary regionally
+- **District systems**: Steam, chilled water more common in urban areas
+
+**Professional Licensing:**
+- **United States**: PE (Professional Engineer) required for public buildings, varies by state
+- **Europe**: Chartered Engineer (CEng) or equivalent, requirements vary by country
+- **Sealing requirements**: Who can stamp drawings varies by jurisdiction
+
+3) Default workflow
+Use integrated MEP design process:
+
+1. Project Requirements and Load Analysis
+   - Review architectural plans and building program
+   - Determine occupancy types and densities
+   - Calculate heating and cooling loads (ASHRAE Handbook - Fundamentals)
+   - Estimate electrical loads (lighting, receptacles, equipment)
+   - Estimate plumbing fixture counts per IPC/IBC
+   - Assess site utilities (electric service, gas, water, sewer)
+   - Review energy code requirements (IECC or ASHRAE 90.1)
+   - Identify special systems needs (kitchen, data room, etc.)
+
+2. System Selection and Conceptual Design
+   - Select HVAC system type (VAV, heat pump, split system, etc.)
+   - Determine electrical service size and distribution approach
+   - Plan plumbing and fire protection distribution strategies
+   - Coordinate equipment locations with architect
+   - Identify major vertical and horizontal distribution paths
+   - Evaluate renewable energy opportunities (solar, geothermal)
+   - Prepare preliminary equipment schedules and one-line diagrams
+   - Estimate system costs for budget
+
+3. Schematic Design (SD)
+   - Develop HVAC system layout and zoning
+   - Size main equipment (chillers, boilers, air handlers, pumps)
+   - Create preliminary duct and piping layouts
+   - Prepare electrical riser diagrams and panel schedules
+   - Coordinate with structural for equipment loads and penetrations
+   - Coordinate with architectural for ceiling heights and space allocation
+   - Prepare energy model (if required for code or LEED)
+   - Document design basis and assumptions
+
+4. Design Development (DD)
+   - Refine HVAC zones and equipment sizing
+   - Size ductwork, piping, and distribution systems
+   - Detail equipment connections and control sequences
+   - Develop lighting design with fixture layout and calculations
+   - Size electrical panels, feeders, and branch circuits
+   - Detail plumbing fixture layouts and piping systems
+   - Design fire sprinkler system layout per NFPA 13
+   - Coordinate ceiling space with architect and structural
+   - Update energy model and confirm code compliance
+   - Prepare outline specifications
+
+5. Construction Documents (CD)
+   - Complete mechanical, electrical, and plumbing drawings
+   - Prepare equipment schedules with detailed specifications
+   - Create duct, pipe, and conduit routing plans
+   - Develop sections and details for complex conditions
+   - Prepare lighting fixture schedule and controls
+   - Complete panel schedules and load calculations
+   - Create fire alarm and life safety system plans
+   - Prepare full specifications (Division 21-28 CSI MasterFormat)
+   - Coordinate final drawings with all disciplines
+   - Perform constructability review
+
+6. Permitting and Bidding Support
+   - Prepare energy code compliance documentation
+   - Submit calculations for code review (if required)
+   - Respond to jurisdiction review comments
+   - Answer bidder questions during bidding phase
+   - Review contractor bids for system completeness
+   - Participate in pre-construction meetings
+
+7. Construction Administration (CA)
+   - Review submittals (equipment, materials, shop drawings)
+   - Respond to RFIs from contractor
+   - Conduct site visits to observe installation
+   - Review change order requests for impact
+   - Review test and balance reports
+   - Participate in system commissioning
+   - Conduct final inspection and punch list
+   - Review O&M manuals and as-builts
+
+4) Deliverables
+List the artifacts commonly produced:
+
+**Mechanical Drawings (M-series):**
+- HVAC Plans: Equipment locations, duct/pipe routing, diffuser/grille layouts
+- Mechanical Schedules: Equipment, diffuser/grille, pump, fan schedules
+- Mechanical Details: Equipment connections, duct/pipe details, control diagrams
+- Mechanical Riser Diagrams: Vertical distribution of systems
+
+**Electrical Drawings (E-series):**
+- Lighting Plans: Fixture layout with switching and circuiting
+- Power Plans: Receptacles, equipment connections, panels
+- Electrical Riser Diagrams: Service entrance, panel locations, feeders
+- Panel Schedules: Circuit-by-circuit load breakdown
+- One-Line Diagrams: Power distribution from utility to panels
+- Lighting Control Diagrams: Controls sequences and zones
+
+**Plumbing Drawings (P-series):**
+- Plumbing Plans: Fixture locations, pipe routing, equipment
+- Plumbing Riser Diagrams: Vertical water and drain distribution
+- Fire Protection Plans: Sprinkler layout per NFPA 13
+- Plumbing Schedules: Fixture, equipment, valve schedules
+
+**Specifications:**
+- Division 21: Fire Suppression
+- Division 22: Plumbing
+- Division 23: HVAC
+- Division 26: Electrical
+- Division 27: Communications
+- Division 28: Electronic Safety and Security
+
+**Calculations and Analysis:**
+- HVAC load calculations (cooling, heating, ventilation)
+- Electrical load calculations
+- Plumbing fixture unit calculations
+- Energy modeling report (if required)
+- Lighting calculations (foot-candles, power density)
+
+**Minimum viable deliverable**: 
+Schematic MEP plans with equipment sizing, basic layouts, and outline specifications for design review and preliminary costing.
+
+**Gold standard deliverable**: 
+Complete coordinated MEP construction documents with detailed plans, schedules, specifications, calculations, energy compliance, fully coordinated in 3D BIM model, ready for permitting and construction.
+
+5) Quality checklist
+Create MEP-specific QA gates:
+
+**HVAC System Check:**
+- [ ] Heating and cooling loads calculated per ASHRAE
+- [ ] Equipment sized correctly for peak loads
+- [ ] Ductwork sized for proper airflow and static pressure
+- [ ] Zoning appropriate for building use and orientation
+- [ ] Outdoor air ventilation meets ASHRAE 62.1
+- [ ] Equipment locations coordinated with structure and ceiling space
+- [ ] Duct routing avoids structural beams and conflicts
+- [ ] Air distribution balanced (supply/return)
+
+**Electrical System Check:**
+- [ ] Service size adequate for total building load
+- [ ] Panel locations accessible and code-compliant
+- [ ] Lighting power density meets energy code (ASHRAE 90.1 or IECC)
+- [ ] Emergency lighting and exit signs per IBC/NFPA 101
+- [ ] Receptacle spacing meets NEC requirements
+- [ ] Equipment electrical requirements coordinated
+- [ ] Voltage drop calculations performed for feeders
+- [ ] Panel schedules complete with circuit loads
+
+**Plumbing System Check:**
+- [ ] Fixture count meets IPC minimum requirements
+- [ ] Water distribution sized for fixture units and pressure
+- [ ] Drainage system sized per IPC fixture unit method
+- [ ] Vent system complies with IPC requirements
+- [ ] Hot water system sized for peak demand
+- [ ] Backflow prevention specified where required
+- [ ] Plumbing fixtures meet accessibility standards
+
+**Fire Protection Check:**
+- [ ] Sprinkler system designed per NFPA 13
+- [ ] Coverage provided for all required areas
+- [ ] Sprinkler spacing and head types appropriate
+- [ ] Hydraulic calculations performed (if required)
+- [ ] Fire alarm system meets NFPA 72
+- [ ] Fire department connection located and accessible
+
+**Energy Code Compliance:**
+- [ ] HVAC system efficiency meets minimum requirements
+- [ ] Lighting power density within limits (ASHRAE 90.1 or IECC)
+- [ ] Lighting controls specified (occupancy, daylight, etc.)
+- [ ] Building envelope coordinated for insulation/air sealing
+- [ ] Energy model completed (if required)
+- [ ] Commissioning plan outlined (if required)
+
+**Coordination Check:**
+- [ ] Equipment locations do not conflict with structure/architecture
+- [ ] Ceiling heights accommodate duct/pipe routing
+- [ ] Penetrations coordinated with structural and fire-rated assemblies
+- [ ] Access provided for maintenance and code-required clearances
+- [ ] BIM coordination completed (clash detection run)
+
+6) Templates (paste-ready)
+
+=== MEP General Notes Template ===
+MECHANICAL GENERAL NOTES:
+1. ALL WORK SHALL COMPLY WITH IMC [YEAR] AND REFERENCED STANDARDS
+2. HVAC DESIGN CONDITIONS: COOLING [X°F / XX% RH], HEATING [X°F]
+3. OUTDOOR AIR VENTILATION PER ASHRAE 62.1
+4. EQUIPMENT TO BE INSTALLED PER MANUFACTURER'S INSTRUCTIONS
+5. PROVIDE VIBRATION ISOLATION FOR ALL ROTATING EQUIPMENT
+6. DUCTWORK PER SMACNA HVAC DUCT CONSTRUCTION STANDARDS
+7. PIPING SYSTEMS PER ASME B31.9 (BUILDING SERVICES PIPING)
+8. PROVIDE BALANCING FOR ALL AIR AND WATER SYSTEMS
+9. TEST AND COMMISSION ALL SYSTEMS BEFORE OCCUPANCY
+
+ELECTRICAL GENERAL NOTES:
+1. ALL WORK SHALL COMPLY WITH NEC [YEAR] AND LOCAL AMENDMENTS
+2. ELECTRICAL SERVICE: [XXX]A, [120/208V or 277/480V], 3Ø, 4W
+3. MINIMUM LIGHTING LEVELS PER IES RECOMMENDATIONS
+4. LIGHTING POWER DENSITY MEETS [ASHRAE 90.1 or IECC]
+5. PROVIDE GFCI PROTECTION WHERE REQUIRED BY NEC
+6. PROVIDE AFCI PROTECTION IN DWELLING UNITS PER NEC
+7. EMERGENCY LIGHTING PER NFPA 101 (90 MIN BATTERY BACKUP)
+8. WIRE AND CABLE: [THW/THHN] IN CONDUIT UNLESS NOTED
+
+PLUMBING GENERAL NOTES:
+1. ALL WORK SHALL COMPLY WITH IPC [YEAR]
+2. WATER SERVICE: [CITY WATER / WELL], PRESSURE: [XX PSI]
+3. WATER DISTRIBUTION: TYPE L COPPER OR PEX-A
+4. DRAINAGE: CAST IRON (ABOVE GRADE), PVC SCHEDULE 40 (UNDERGROUND)
+5. VENT SYSTEM: DWV COPPER OR PVC SCHEDULE 40
+6. FIXTURE COUNTS MEET IPC TABLE 403.1 MINIMUM REQUIREMENTS
+7. PROVIDE BACKFLOW PREVENTION WHERE REQUIRED
+8. HOT WATER: [TANK / TANKLESS / HEAT PUMP] [XX GALLON]
+
+===
+
+=== Equipment Schedule Template ===
+HVAC EQUIPMENT SCHEDULE
+MARK | EQUIPMENT | CAPACITY | ELECTRICAL | NOTES
+-----|-----------|----------|------------|------
+AHU-1 | AIR HANDLING UNIT | 5,000 CFM | 208V, 3Ø, 20A | ROOF MOUNTED
+RTU-1 | ROOFTOP UNIT | 10 TON COOLING, 250 MBH HEATING | 208V, 3Ø, 60A | GAS HEAT
+EF-1 | EXHAUST FAN | 1,500 CFM | 120V, 1Ø, 5A | TOILET EXHAUST
+
+===
+
+=== Lighting Fixture Schedule Template ===
+LIGHTING FIXTURE SCHEDULE
+TYPE | DESCRIPTION | LAMP | WATTS | MOUNTING | NOTES
+-----|-------------|------|-------|----------|------
+A | LED RECESSED DOWNLIGHT | INTEGRAL LED | 15W | RECESSED IN CEILING | DIMMABLE
+B | LED TROFFER | INTEGRAL LED | 40W | RECESSED IN ACT | 2X4 SIZE
+C | LED WALL PACK | INTEGRAL LED | 30W | WALL MOUNTED | PHOTOCELL
+
+===
+
+=== Panel Schedule Template ===
+ELECTRICAL PANEL SCHEDULE - PANEL LP-1
+Location: [ELECTRICAL ROOM]
+Main: 225A, 120/208V, 3Ø, 4W
+Total Connected Load: [XX]kVA
+Demand Load: [XX]kVA
+
+CIRCUIT | DESCRIPTION | LOAD (A) | BREAKER (A) | PHASE
+--------|-------------|----------|-------------|------
+1 | LIGHTING - OFFICE AREA | 8 | 20 | A
+3 | RECEPTACLES - OFFICE | 12 | 20 | B
+5 | HVAC UNIT AHU-1 | 18 | 30 | C
+[Continue for all circuits...]
+
+===
+
+7) Examples of excellent outputs
+
+**Example: HVAC Second Floor Plan with Equipment Callouts and Duct Routing**
+
+```
+SECOND FLOOR HVAC PLAN
+SCALE: 1/8" = 1'-0"
+SHEET M2.1
+
+Drawing shows:
+- Air handler location (AHU-2) in mechanical room with dimensions
+- Supply duct mains (shown as double lines) with sizes (24"x12", 18"x10", etc.)
+- Supply diffusers (squares) in each space with airflow (CFM) and sizes
+- Return air grilles (rectangles) with sizes and CFM
+- Ductwork routing coordinated with structure (avoids beams)
+- Fire/smoke dampers at rated wall penetrations (FSD symbol)
+- Thermostat locations (T-1, T-2, etc.)
+- Ceiling height references (9'-0" AFF typical)
+
+Key Notes:
+- ALL DUCTWORK PER SMACNA STANDARDS
+- INSULATE SUPPLY DUCTWORK WITH R-6 DUCT LINER
+- BALANCE SYSTEM TO [XX] CFM TOTAL
+- SEAL ALL DUCT JOINTS PER IECC REQUIREMENTS
+
+Equipment Callout:
+AHU-2: AIR HANDLING UNIT
+- CAPACITY: 8,000 CFM
+- COOLING: 20 TONS (DX COIL)
+- HEATING: ELECTRIC (60 KW)
+- FILTERS: MERV 13
+- STATIC PRESSURE: 2.5" W.G.
+- SEE SCHEDULE ON SHEET M0.1
+```
+
+**Example: Electrical Lighting and Power Plan**
+
+```
+FIRST FLOOR ELECTRICAL PLAN
+SCALE: 1/8" = 1'-0"
+SHEET E2.1
+
+Drawing shows:
+- Lighting fixtures with type symbols (A, B, C per schedule)
+- Switching indicated with line from switch (S) to fixtures
+- Occupancy sensors (OS) for automatic lighting control
+- Exit signs at egress doors (EXIT with arrow)
+- Emergency lights (EM) per NFPA 101
+- Receptacles (duplex, quad, dedicated) with circuit numbers
+- Equipment connections (HVAC, appliances) with disconnect switches
+- Electrical panels (LP-1, PP-1) in electrical room/closet
+- Home runs to panels shown with arrow and circuit numbers
+
+Lighting Control Notes:
+- ZONE 1: OCCUPANCY SENSOR CONTROL (LIGHTS OFF 15 MIN AFTER VACANCY)
+- ZONE 2: DAYLIGHT HARVESTING (DIM WITH AVAILABLE DAYLIGHT)
+- EMERGENCY LIGHTING: 1.0 FC AVERAGE PER NFPA 101
+
+Power Notes:
+- RECEPTACLES: 120V, 20A, GFCI WHERE REQUIRED BY NEC
+- DEDICATED CIRCUITS FOR APPLIANCES AND EQUIPMENT
+- CONVENIENCE RECEPTACLES SPACED PER NEC 210.52
+```
+
+8) Vocabulary and standards
+
+**Key Terms:**
+- **HVAC**: Heating, Ventilation, and Air Conditioning
+- **CFM**: Cubic Feet per Minute (airflow measurement)
+- **MBH**: Thousand BTU per Hour (heating capacity)
+- **TON**: 12,000 BTU/hr (cooling capacity)
+- **GPM**: Gallons Per Minute (water flow)
+- **kW/kVA**: Kilowatt / Kilovolt-Ampere (electrical power)
+- **VAV**: Variable Air Volume (HVAC system type)
+- **AHU**: Air Handling Unit
+- **RTU**: Rooftop Unit (packaged HVAC)
+- **DX**: Direct Expansion (refrigerant cooling)
+- **EER/SEER**: Energy Efficiency Ratio / Seasonal EER
+- **LPD**: Lighting Power Density (watts per square foot)
+- **AFCI**: Arc-Fault Circuit Interrupter
+- **GFCI**: Ground-Fault Circuit Interrupter
+
+**Standards & Codes (2024):**
+- **IMC 2024**: International Mechanical Code
+- **IPC 2024**: International Plumbing Code
+- **NEC 2023**: National Electrical Code (NFPA 70)
+- **IECC 2024**: International Energy Conservation Code
+- **ASHRAE 62.1-2022**: Ventilation for Acceptable Indoor Air Quality
+- **ASHRAE 90.1-2022**: Energy Standard for Buildings
+- **NFPA 13-2022**: Installation of Sprinkler Systems
+- **NFPA 72-2022**: National Fire Alarm and Signaling Code
+- **NFPA 101-2021**: Life Safety Code
+- **SMACNA**: Sheet Metal and Air Conditioning Contractors' National Association (duct standards)
+- **ASPE**: American Society of Plumbing Engineers (plumbing design standards)
+
+**Common Software:**
+- **Revit MEP**: BIM modeling for MEP systems
+- **AutoCAD MEP**: 2D MEP drafting with content libraries
+- **Navisworks**: Clash detection and coordination
+- **Trane TRACE / Carrier HAP**: HVAC load calculation and energy modeling
+- **AGi32 / Dialux**: Lighting design and photometric analysis
+- **EnergyPlus / eQUEST**: Whole-building energy simulation
+
+**Change log**
+[2024-12]: Initial playbook created based on current MEP engineering standards and 2024 codes
+- Emphasizes integrated building systems design and energy efficiency
+- Includes coordination workflows and BIM processes
+- References current mechanical, electrical, plumbing, and fire protection codes
+- Covers all phases from load calculations through commissioning

@@ -1,0 +1,30 @@
+Category Playbook — Healthcare
+
+Important constraints
+- Provide general educational information, not diagnosis or personal medical advice.
+- Encourage users to consult a qualified clinician for personal decisions.
+- Be cautious with medications, dosages, and urgent symptoms.
+
+Default workflow
+1) Context
+   - Symptoms, timing, severity, relevant history (only what’s needed).
+2) Safety screen
+   - Identify red flags that warrant urgent care.
+3) Education
+   - Explain likely categories, typical evaluation, and common next steps.
+4) Supportive guidance
+   - Self-care basics, questions to ask a clinician, how to prepare for visits.
+5) Documentation
+   - Provide a concise summary the user can share with a clinician.
+
+Deliverables (common)
+- Symptom summary template
+- Questions for clinician
+- Self-care checklist (non-prescriptive)
+- Red-flag list (seek urgent care)
+
+Quality checklist
+- Clear disclaimers
+- Safety-first triage
+- Avoid overconfidence
+- Encourage professional follow-up

@@ -280,8 +280,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'vendor/*/*/phpspec.ci.yml' \
         --exclude 'vendor/*/.pullapprove.yml' \
         --exclude 'vendor/*/*/.pullapprove.yml' \
-        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
-        --exclude 'assets/css/admin-test-*.css' \
         --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
@@ -289,24 +287,11 @@ if [ "$BUILD_BASE" = true ]; then
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
     
-    # Remove unminified source files (keep only .min.js and .min.css for production)
-    # Keep essential unminified files needed for functionality
-    echo "✓ Removing unminified JS source files (keeping .min.js only)..."
-    find "build/${BASE_SLUG}/assets/js" -type f -name "*.js" ! -name "*.min.js" \
-        ! -name "chat-service-worker.js" \
-        ! -path "*/vendor/*" \
-        -delete 2>/dev/null || true
-    
-    echo "✓ Removing unminified CSS source files (keeping .min.css only)..."
-    # Remove unminified CSS files that have corresponding .min.css versions
-    for css_file in "build/${BASE_SLUG}/assets/css"/*.css; do
-        if [ -f "$css_file" ]; then
-            filename=$(basename "$css_file" .css)
-            if [ -f "build/${BASE_SLUG}/assets/css/${filename}.min.css" ]; then
-                rm -f "$css_file"
-            fi
-        fi
-    done
+    # Keep both minified and unminified assets for flexibility
+    # PHP code will automatically use minified versions in production (via get_asset_file() method)
+    # and unminified versions when SCRIPT_DEBUG is enabled.
+    # This provides better debugging experience while maintaining optimal production performance.
+    echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
     
     # Remove README.md (readme.txt is the WordPress.org standard)
     if [ -f "build/${BASE_SLUG}/README.md" ]; then
@@ -596,29 +581,15 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'vendor/*/*/phpspec.ci.yml' \
         --exclude 'vendor/*/.pullapprove.yml' \
         --exclude 'vendor/*/*/.pullapprove.yml' \
-        --exclude 'includes/admin/class-wp-mcp-ai-admin-test-*.php' \
-        --exclude 'assets/css/admin-test-*.css' \
         --exclude 'includes/class-wp-mcp-ai-remote-tester.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
     
-    # Remove unminified source files (keep only .min.js and .min.css for production)
-    echo "✓ Removing unminified JS source files (keeping .min.js only)..."
-    find "build/${COMBINED_SLUG}/assets/js" -type f -name "*.js" ! -name "*.min.js" \
-        ! -name "chat-service-worker.js" \
-        ! -path "*/vendor/*" \
-        -delete 2>/dev/null || true
-    
-    echo "✓ Removing unminified CSS source files (keeping .min.css only)..."
-    # Remove unminified CSS files that have corresponding .min.css versions
-    for css_file in "build/${COMBINED_SLUG}/assets/css"/*.css; do
-        if [ -f "$css_file" ]; then
-            filename=$(basename "$css_file" .css)
-            if [ -f "build/${COMBINED_SLUG}/assets/css/${filename}.min.css" ]; then
-                rm -f "$css_file"
-            fi
-        fi
-    done
+    # Keep both minified and unminified assets for flexibility
+    # PHP code will automatically use minified versions in production (via get_asset_file() method)
+    # and unminified versions when SCRIPT_DEBUG is enabled.
+    # This provides better debugging experience while maintaining optimal production performance.
+    echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
     
     # Remove README.md (readme.txt is the WordPress.org standard)
     if [ -f "build/${COMBINED_SLUG}/README.md" ]; then

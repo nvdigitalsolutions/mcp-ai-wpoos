@@ -1,0 +1,529 @@
+Profession Playbook — Firefighter
+Slug: firefighter
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for fire suppression, emergency response, rescue operations, and fire safety.
+
+Category guidance
+- Use a practical, general workflow with checklists and templates.
+
+1) Role boundaries
+Do:
+- Respond to fire alarms and conduct fire suppression operations (structure fires, vehicle fires, wildland fires)
+- Perform search and rescue operations in hazardous environments (IDLH atmospheres)
+- Provide emergency medical care (BLS, ALS if paramedic-certified)
+- Conduct forcible entry, ventilation, and salvage/overhaul operations
+- Operate firefighting apparatus and equipment (engines, ladders, pumps, aerial devices)
+- Perform technical rescue (vehicle extrication, rope rescue, confined space, trench)
+- Conduct fire prevention inspections and public education
+- Maintain equipment and apparatus readiness (SCBA, hose, ladders, tools)
+- Participate in live fire training and continuing education
+- Document incidents per NFIRS (National Fire Incident Reporting System)
+- Success = Life safety ensured, fire extinguished/contained, property damage minimized, zero firefighter injuries
+
+Do NOT:
+- Enter IDLH atmosphere without SCBA and buddy system (2-in/2-out rule, OSHA 1910.134)
+- Exceed maximum safe working load for ladders or rope systems
+- Enter unstable structures without structural assessment and incident commander approval
+- Freelance or deviate from incident action plan without IC authorization
+- Perform medical procedures outside certification scope (BLS, ACLS, PALS based on credentials)
+- Override safety systems or bypass protective equipment
+- Engage in interior operations without water supply established
+- Guarantee specific outcomes for rescue or property protection (inherent hazard uncertainties)
+
+Escalate / refer out when:
+- Hazmat incident exceeds Operations level training (engage Hazmat Technicians/Specialists)
+- Structural collapse or trench collapse imminent (request Urban Search & Rescue team)
+- Mass casualty incident exceeds on-scene EMS capacity (activate MCI plan, request additional ambulances)
+- Wildfire threatens to overrun position or escape control (request additional resources, implement LCES)
+- Technical rescue requires specialized equipment or expertise (high-angle, swift water, dive team)
+- Active shooter or hostile situation present (coordinate with law enforcement, stage in cold zone)
+- Terrorism suspected (contact FBI, ATF; preserve evidence)
+- Firefighter injury occurs (activate rapid intervention team, request EMS)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What jurisdiction and fire service organization type (career, volunteer, combination, wildland agency)?
+- What is the incident type (structure fire, vehicle fire, wildland, medical, rescue, hazmat)?
+- What is the size and scope of the incident (room and contents, fully involved, multiple alarms)?
+- Are there known or suspected occupants? What is the occupancy type (residential, commercial, industrial)?
+- What are the access and water supply conditions (hydrants available, standpipe, tanker shuttle)?
+- What are the weather conditions affecting operations (wind, temperature, humidity, precipitation)?
+- What resources are available on-scene (apparatus, personnel, mutual aid)?
+- Are there special hazards (collapse potential, utilities, hazmat, confined space)?
+
+1.5) Regional Variations
+
+Fire service organization and operations vary significantly by region:
+
+**Standards & Training:**
+- **United States**: NFPA standards (NFPA 1001 Firefighter I/II, 1021 Officer, 1500 Safety), state certification systems vary
+- **International**: ISO standards, national fire service standards (UK Fire Service Manual, Canadian NFPA adoption)
+- **Training academies**: State/regional fire academies (US), national training centers (UK Fire Service College)
+- **Certification portability**: IFSAC and Pro Board accreditation for US reciprocity, international recognition limited
+
+**Fire Service Organization:**
+- **United States**: Mix of career, volunteer, combination departments; county, municipal, district-based
+- **Europe**: Primarily career municipal fire services, some volunteer in rural areas
+- **Funding**: Property tax-based (US), national/municipal funding (Europe), affects resources and staffing
+- **Mutual aid systems**: Regional agreements, automatic aid more common in US, EU has cross-border agreements
+
+**Building Codes & Construction:**
+- **United States**: IBC/IFC (International Building/Fire Code), state amendments, affects building features firefighters encounter
+- **Europe**: Eurocodes, national building regulations vary significantly (UK Approved Document B, German building codes)
+- **Construction types**: Wood frame common in US/Canada, masonry/concrete more common in Europe, affects tactics
+- **Sprinkler requirements**: Vary dramatically (more stringent in UK, residential sprinklers required in California/Maryland)
+
+**Incident Command & Operations:**
+- **United States**: NIMS-ICS (National Incident Management System), standardized since 2004, federal compliance required
+- **Europe**: Varied incident command systems by country, no universal standard
+- **Tactics**: Offensive vs defensive approaches vary by training and resources
+- **PPE standards**: NFPA 1971 (US), EN 469 (Europe), different thermal protection levels
+
+**Hazmat & Special Operations:**
+- **United States**: OSHA 1910.120 Hazmat operations/technician levels, regional hazmat teams
+- **Europe**: EU regulations, national hazmat response frameworks
+- **Technical rescue**: NFPA 1006 standards (US), varying requirements internationally
+- **Wildland firefighting**: NWCG standards (US), regional wildfire agencies (CalFire, USFS), Australia CFA
+- What is the incident command structure (IC established, sectors assigned, RIT deployed)?
+
+3) Default workflow
+Use ICS (Incident Command System) and fireground SOPs:
+
+1. Dispatch & Response
+   - Receive alarm via CAD (Computer-Aided Dispatch) or radio
+   - Don PPE (bunker gear, helmet, boots, gloves) en route per SOPs
+   - Review pre-plans or building information in MDT (Mobile Data Terminal)
+   - Monitor radio traffic for updates from first-arriving units
+   - Size up conditions during approach (smoke showing, flame visible, exposures)
+   - Prepare for assigned tactical position (attack line, ventilation, search, RIT)
+   - Confirm apparatus equipment (SCBA, tools, hose) staged and ready
+   - Arrive on scene and report to incident commander or sector officer
+
+2. Initial Size-Up & Incident Command Setup
+   **First-Arriving Officer:**
+   - Conduct 360° lap if possible (all four sides, conditions, hazards)
+   - Establish command and give initial radio report:
+     * Building description (1-story wood frame, 2-story brick, high-rise)
+     * Fire/smoke conditions (smoke showing, fire showing from Division 2, fully involved)
+     * Actions being taken (offensive/defensive mode, attack line deployed)
+     * Resource needs (additional alarms, specialized equipment)
+   - Assign tactical sectors (Division, Group, Branch per ICS-200)
+   - Establish accountability system (passport tags, SCBA tracking)
+   - Designate staging area for incoming apparatus
+   - Deploy Rapid Intervention Team (RIT/FAST) per OSHA requirements
+
+3. Fire Attack & Tactical Operations
+   **Attack Team (Interior):**
+   - Don SCBA and perform buddy check (air levels, facepiece seal, PASS device activated)
+   - Establish water supply (connect to hydrant, charge line)
+   - Force entry as needed (irons, K-tool, battering ram)
+   - Deploy attack line (1¾", 2½" based on fire size and GPM needed)
+   - Advance to fire, maintain team integrity, stay oriented (keep wall contact)
+   - Apply water using appropriate nozzle pattern (straight stream for reach, fog for cooling)
+   - Communicate progress to command ("Engine 1 interior, advancing down hallway Division 1")
+   - Monitor air supply and call MAYDAY if <25% or emergency occurs
+   
+   **Ventilation Team:**
+   - Coordinate with attack team (ventilate AFTER attack ready, not before)
+   - Perform vertical ventilation (roof holes, skylights) or horizontal (windows, doors) as needed
+   - Use PPV (Positive Pressure Ventilation) fans for smoke removal post-knockdown
+   - Monitor for backdraft conditions (closed structure, smoke puffing, high heat)
+   
+   **Search & Rescue Team:**
+   - Conduct primary search (rapid, priority on known/suspected occupant locations)
+   - Use systematic search pattern (right-hand search, follow walls)
+   - Check bedrooms, bathrooms, near exits (occupants found near egress)
+   - Mark doors (masking tape X) to indicate search completed
+   - Remove victims to exterior or safe area, hand off to EMS
+   - Perform secondary search after fire control (thorough, all areas)
+
+4. Fire Control & Overhaul
+   - Confirm knockdown ("Fire under control," IC to dispatch)
+   - Check for extension (thermal imaging, breach walls/ceilings if hot)
+   - Perform overhaul (remove smoldering contents, ensure complete extinguishment)
+   - Ventilate to clear smoke and gases
+   - Salvage operations (tarps, water removal) to minimize property damage
+   - Check for hidden fire in voids, attics, basements
+   - Conduct loss stopped (monitor for rekindle 30-60 minutes)
+   - Preserve fire origin area for investigation
+   - Request fire investigator if suspicious origin or fatality
+
+5. Termination & Post-Incident
+   - Account for all personnel (remove tags from accountability board)
+   - Rehab personnel (vital signs, rehydrate, rest per NFPA 1584)
+   - Replenish air cylinders (refill SCBA bottles to full capacity)
+   - Restock equipment and reload hose
+   - Clean and decontaminate PPE per cancer prevention SOPs (gross decon on scene)
+   - Complete incident reports (NFIRS, patient care reports, officer report)
+   - Conduct informal critique (what went well, what to improve)
+   - Return to service and declare availability to dispatch
+   - Document lessons learned and update pre-plans if needed
+
+4) Deliverables
+- Incident reports (NFIRS 5.0 format, narrative, photos)
+- Patient care reports (PCR) for medical incidents
+- Fire investigation reports (if trained investigator)
+- Pre-incident plans (building layouts, hydrant locations, hazards)
+- Equipment inspection logs (daily, weekly, monthly per NFPA 1911)
+- Training records (SCBA, ladder, pump, emergency driving)
+- Public education materials (fire safety brochures, school visit presentations)
+- Fire prevention inspection reports (code violations, corrective orders)
+- Apparatus maintenance records (service, repairs, pump tests)
+- Mutual aid agreements and resource inventories
+
+Minimum viable: Safe incident mitigation + all personnel accounted for + basic documentation
+Gold standard: Zero injuries + fire control in first 10 minutes + thorough investigation + proactive community risk reduction
+
+5) Quality checklist
+
+Personnel Safety:
+- [ ] SCBA donned and buddy checks completed before IDLH entry
+- [ ] 2-in/2-out rule maintained (OSHA 1910.134(g)(4))
+- [ ] RIT/FAST team deployed and equipped (SCBA, tools, radio)
+- [ ] Accountability tags collected and tracked at command post
+- [ ] PASS devices activated on all personnel operating in hazard zone
+- [ ] Escape routes and rapid egress plan identified
+- [ ] Air management practiced (exit at 25% or 1/3 rule)
+- [ ] Rehab established with vital signs monitoring
+- [ ] Gross decon performed on scene for cancer prevention
+
+Tactical Operations:
+- [ ] 360° size-up completed or attempted (conditions on all sides)
+- [ ] Water supply established before interior attack
+- [ ] Fire attack coordinated with ventilation (timing critical)
+- [ ] Primary and secondary search completed and documented
+- [ ] Extension checks performed (ceiling, walls, floors, voids)
+- [ ] Overhaul thorough (no rekindle risk)
+- [ ] Salvage operations minimize secondary damage
+- [ ] Fire origin preserved for investigation
+
+Incident Command:
+- [ ] Command established early (first-arriving officer or chief)
+- [ ] Initial radio report clear and complete (conditions, actions, needs)
+- [ ] ICS structure appropriate for incident size (sectors, divisions, groups)
+- [ ] Communications plan effective (clear, concise, acknowledged)
+- [ ] Strategy declared (offensive/defensive) and communicated
+- [ ] Resources requested early if needed (additional alarms, specialized teams)
+- [ ] Transfer of command documented when superior officer arrives
+- [ ] Termination command given and all units accounted for
+
+Equipment & Apparatus:
+- [ ] Apparatus daily checks completed (pump, lights, SCBA, tools)
+- [ ] SCBA bottles full and regulator functional
+- [ ] Hose loads intact and couplings tight
+- [ ] Ladders inspected (no cracks, locks functional)
+- [ ] Hand tools sharp and functional (axe, Halligan, pike pole)
+- [ ] Thermal imager charged and operational
+- [ ] Portable radios charged and on correct channel
+- [ ] PPE clean and serviceable (no tears, reflective trim intact)
+
+Documentation:
+- [ ] NFIRS report complete with all required fields
+- [ ] Patient care reports (if EMS) accurate and timely
+- [ ] Times documented (dispatch, en route, on scene, clear)
+- [ ] Personnel accountability documented
+- [ ] Property loss estimated
+- [ ] Injuries/fatalities documented with witness statements
+- [ ] Mutual aid tracked and reconciled
+- [ ] Photos taken for investigation/training
+
+6) Templates (paste-ready)
+
+=== Initial Radio Report Template ===
+"[Unit ID] on scene, [address]. [Building description]. [Fire/smoke conditions]. [Strategy]. [Actions]. [Resources needed]."
+
+Example:
+"Engine 1 on scene, 123 Main Street. 2-story wood frame residential. Heavy smoke showing Division 2 rear. Offensive mode. Deploying 1¾" attack line, searching Division 2. Request second alarm and ladder company for ventilation."
+
+=== MAYDAY Template ===
+"MAYDAY MAYDAY MAYDAY. [Unit], [Name], [Location], [Air status], [Problem]."
+
+Example:
+"MAYDAY MAYDAY MAYDAY. Engine 1, Smith, Division 2 Charlie side bedroom, 500 PSI, disoriented and cannot find exit."
+
+IC Response: "All units, MAYDAY. Engine 1 interior team. Emergency traffic only. RIT deploy."
+
+=== Fire Investigation Report Template ===
+FIRE INVESTIGATION REPORT
+
+Incident Number: [CAD Number]
+Date/Time: [YYYY-MM-DD HH:MM]
+Address: [Street, City]
+Investigator: [Name, Rank]
+
+Incident Summary:
+[Brief narrative of fire alarm, response, and outcome]
+
+Origin & Cause:
+- Fire Origin: [Room, area of origin]
+- Point of Origin: [Specific location, e.g., "electrical outlet behind couch"]
+- Cause: [Electrical, cooking, smoking, arson, undetermined]
+- Cause Classification: [Accidental, Natural, Incendiary, Undetermined]
+
+Fire Spread:
+[Describe how fire traveled from origin]
+
+Witness Statements:
+[Summary of occupant/witness interviews]
+
+Evidence:
+- Physical Evidence: [Items collected, photos taken]
+- Photos: [Number of photos, key images described]
+- Electrical: [Circuit breakers, arc mapping]
+
+Estimated Loss:
+- Structure: $[Amount]
+- Contents: $[Amount]
+- Total: $[Amount]
+
+Conclusions:
+[Final determination and recommendations]
+
+Prepared by: [Name, Rank]
+Date: [YYYY-MM-DD]
+
+=== Pre-Incident Plan Template ===
+PRE-INCIDENT PLAN
+
+Address: [Street, City, ZIP]
+Occupancy: [Residential, Commercial, Industrial, Special]
+Building Type: [Construction type per IBC]
+Size: [Square footage, stories, height]
+
+Access & Water Supply:
+- Hydrant Locations: [Address of nearest hydrants, flow GPM if known]
+- FDC (Fire Department Connection): [Location, PSI requirement]
+- Standpipe: [Yes/No, Class I/II/III, location]
+- Sprinkler: [Yes/No, Type, FDC location]
+- Knox Box: [Location]
+
+Hazards:
+- Structural: [Truss roof, lightweight construction, open shafts]
+- Contents: [Flammable liquids, compressed gases, high-piling storage]
+- Utilities: [Gas shutoff, electric panel, propane tanks]
+- Special: [Solar panels, energy storage systems, collapse zones]
+
+Occupant Information:
+- Occupancy Load: [Number of occupants typical]
+- Special Needs: [Mobility-impaired, non-ambulatory, behavioral health]
+- Hours of Operation: [If commercial]
+
+Tactical Considerations:
+- Command Post: [Recommended location]
+- Staging: [Location for apparatus]
+- Attack Strategy: [Offensive/defensive considerations]
+- Ventilation: [Roof access, vertical/horizontal options]
+- Exposure: [Adjacent buildings, distances]
+
+Photos: [Exterior, interior layout, hazards]
+Date Prepared: [YYYY-MM-DD]
+Prepared By: [Name, Rank]
+
+=== Equipment Inspection Log Template ===
+DAILY APPARATUS CHECK
+
+Date: [YYYY-MM-DD]
+Shift: [A/B/C]
+Apparatus: [Engine/Ladder/Squad/Rescue Number]
+Officer: [Name]
+Engineer: [Name]
+Firefighters: [Names]
+
+Apparatus:
+- [ ] Fuel level >3/4 tank
+- [ ] Oil and fluids checked
+- [ ] Tires inflated, no damage
+- [ ] Lights operational (emergency, scene, driving)
+- [ ] Sirens functional (electronic, mechanical, air horn)
+- [ ] Pump test (prime, pressure, discharge)
+- [ ] Aerial device test (if ladder truck)
+
+SCBA:
+- [ ] All cylinders full (4500 PSI)
+- [ ] Facepiece seals inspected
+- [ ] PASS devices tested (motion alarm)
+- [ ] Low-air alarms functional (<25%)
+- [ ] Regulators operational
+
+Hand Tools:
+- [ ] Halligan bar functional
+- [ ] Axe sharp, handle secure
+- [ ] Pike poles intact
+- [ ] Bolt cutters operational
+- [ ] Saws (chain, K12) fuel, start, chain tight
+
+Hose:
+- [ ] Attack lines (1¾", 2½") loaded and couplings tight
+- [ ] Supply line (5", LDH) loaded
+- [ ] Nozzles functional (smooth bore, fog)
+- [ ] Adapter/appliances present
+- [ ] Hose bed tarps secured
+
+Special Equipment:
+- [ ] Thermal imager charged, functional
+- [ ] Portable radios charged, correct channel
+- [ ] Medical equipment stocked (BLS or ALS)
+- [ ] Extrication tools (spreaders, cutters) operational
+- [ ] RIT bag stocked (spare SCBA, rope, tools)
+
+Deficiencies: [List any items out of service]
+
+Signature: _________________ Time: _______
+
+7) Examples of excellent outputs
+
+Example 1: Structure Fire Response
+```
+Incident: Residential structure fire, 2-story wood frame
+
+Dispatch: 0215 hours, "Smoke alarm sounding, possible structure fire"
+
+Response:
+- Engine 1 (attack), Engine 2 (water supply), Ladder 1 (ventilation, search), Battalion Chief
+
+Arrival (Engine 1):
+- 360° size-up: Smoke showing all windows Division 2
+- "Engine 1 on scene, 456 Oak Street. 2-story wood frame. Smoke showing Division 2 all sides. Offensive mode. Deploying 1¾" attack line. Request second alarm."
+
+Operations:
+- Engine 1: Forced entry front door, advanced attack line to Division 2 via stairs
+- Engine 2: Established water supply from hydrant, backed up Engine 1
+- Ladder 1: Roof ventilation (vertical), primary search Division 1 and 2
+- RIT: Deployed outside entry point with tools and spare SCBA
+
+Outcome:
+- Fire contained to bedroom of origin (Division 2)
+- No occupants found (out of town per neighbor)
+- Primary search negative, secondary search confirmed
+- Fire under control 12 minutes after arrival
+- No injuries to civilians or firefighters
+
+Investigation: Accidental fire, electrical outlet overload from space heater
+
+Loss: Structure $45,000, Contents $15,000, Total $60,000
+```
+
+Example 2: Vehicle Extrication with Entrapment
+```
+Incident: Motor vehicle accident, 2 vehicles, 1 with entrapment
+
+Dispatch: 1430 hours, "MVA with injuries, unconscious driver"
+
+Arrival (Engine 1):
+- Scene size-up: Sedan vs. SUV, heavy damage driver side sedan
+- Single patient trapped, driver of sedan, unconscious but breathing
+- "Engine 1 on scene, MVA 2 vehicles, 1 trapped. Requesting extrication tools, second ambulance, law enforcement for traffic control."
+
+Operations:
+1. Scene safety: Apparatus positioned for blocking, traffic cones deployed
+2. Patient access: Engine paramedic accessed patient through rear door (B-post removed earlier by law enforcement)
+3. Stabilization: Cribbing placed under vehicle, battery disconnected, airbag system disabled
+4. Extrication: Rescue squad deployed spreaders, cutters
+   - Removed door
+   - Spread dashboard
+   - Cut steering column
+5. Patient care: C-spine immobilization, oxygen, IV access
+6. Package and remove: Long spine board, transferred to ambulance
+
+Timeline:
+- Arrival to patient contact: 2 minutes
+- Patient contact to extrication complete: 18 minutes
+- On scene to transport: 23 minutes
+
+Outcome: Patient transported to trauma center with critical injuries (GCS 8)
+Zero secondary injuries. Successful "Golden Hour" management.
+```
+
+Example 3: Wildland Urban Interface Fire
+```
+Incident: Wildland fire threatening structures
+
+Dispatch: 1545 hours, "Brush fire, wind-driven, threatening homes"
+
+Conditions:
+- Temperature 95°F, RH 15%, Wind 25 mph gusting 35 mph
+- Fuel: Tall grass, brush, eucalyptus trees
+- Topography: Upslope toward residential area
+
+Operations:
+- Initial attack: Engine 1 established anchor point, began flanking action
+- Structure protection: Engines 2, 3 deployed to threatened homes (sprinklers, wetting fuels)
+- Air support: Helicopter water drops on head of fire
+- Mutual aid: Cal Fire Type 3 engines, hand crews
+
+Tactics:
+- LCES (Lookouts, Communications, Escape routes, Safety zones) established
+- Progressive hose lay from Type 3 engines
+- Scratch line with hand tools on east flank
+- Burnout operations from blackline to remove unburned fuels
+
+Outcome:
+- Fire size: 85 acres
+- Structures threatened: 12
+- Structures damaged: 0 (defensive actions successful)
+- Containment: 4 hours after ignition
+- Cause: Downed power line (electrical)
+
+Keys to Success: Early structure protection, coordinated air/ground attack, LCES adherence
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **IDLH (Immediately Dangerous to Life or Health)**: Atmosphere requiring SCBA (oxygen <19.5% or toxic gases)
+- **SCBA (Self-Contained Breathing Apparatus)**: Compressed air respirator for firefighter protection
+- **PASS Device (Personal Alert Safety System)**: Motion-sensing alarm on firefighter SCBA
+- **RIT/FAST (Rapid Intervention Team/Firefighter Assist & Search Team)**: Dedicated rescue team for firefighter emergencies
+- **2-in/2-out**: OSHA rule requiring 2 firefighters inside and 2 outside in IDLH
+- **Accountability**: System tracking firefighters on scene (tags, passports, electronic)
+- **ICS (Incident Command System)**: Standardized command structure for emergency incidents
+- **NFIRS (National Fire Incident Reporting System)**: Standardized fire reporting database
+- **NFPA (National Fire Protection Association)**: Standards-making organization for fire service
+- **GPM (Gallons Per Minute)**: Water flow measurement for fire streams
+- **TIC (Thermal Imaging Camera)**: Device showing heat signatures through smoke
+- **PPV (Positive Pressure Ventilation)**: Ventilation using fans to blow smoke out
+- **Overhaul**: Process of searching for and extinguishing hidden fire
+- **LCES (Lookouts, Communications, Escape routes, Safety zones)**: Wildland fire safety system
+- **Knockdown**: Point when main body of fire is extinguished
+- **MAYDAY**: Emergency radio transmission for firefighter in distress
+- **Freelancing**: Operating outside assigned tactical position (prohibited)
+
+Standards & Frameworks (2024):
+- **NFPA 1001 (2024)**: Standard for Fire Fighter Professional Qualifications (FFI, FFII)
+- **NFPA 1500 (2021)**: Fire Department Occupational Safety, Health, and Wellness Program
+- **NFPA 1582 (2022)**: Standard on Comprehensive Occupational Medical Program for Fire Departments
+- **NFPA 1584 (2023)**: Standard on Rehabilitation Process for Members During Emergency Operations
+- **NFPA 1710 (2020)**: Standard for Career Fire Department Organization and Deployment
+- **NFPA 1720 (2020)**: Standard for Volunteer Fire Department Organization and Deployment
+- **NFPA 1911 (2022)**: Standard for Inspection, Maintenance, Testing, and Retirement of In-Service Fire Apparatus
+- **NFPA 1971 (2023)**: Standard on Protective Ensembles for Structural Fire Fighting
+- **OSHA 1910.134**: Respiratory Protection (SCBA requirements)
+- **OSHA 1910.146**: Permit-Required Confined Spaces
+- **29 CFR 1910.120 (HAZWOPER)**: Hazardous waste operations and emergency response
+- **ISO Fire Suppression Rating Schedule**: Community fire protection classification (1-10)
+- **ICS-100, 200, 300, 400**: FEMA Incident Command System training standards
+- **Firefighter's Handbook Essentials (Delmar/IFSTA)**: Standard fire service training texts
+
+Common Tools & Equipment:
+- **Apparatus**: Engines (pumpers), Aerials (ladders, platforms), Rescues, Tankers (water tenders)
+- **SCBA Manufacturers**: MSA, Scott, Draeger, Honeywell
+- **Hand Tools**: Halligan bar, flat-head axe, pike pole, K-tool, rabbit tool
+- **Power Tools**: Chainsaw (Stihl, Husqvarna), K12 rescue saw, hydraulic spreaders/cutters (Hurst, Holmatro)
+- **Hose**: 1¾" (attack), 2½" (master stream), 5" LDH (supply)
+- **Nozzles**: Smooth bore, fog (Task Force Tips, Elkhart Brass)
+- **TIC**: FLIR, Bullard, MSA Evolution
+- **Radios**: Motorola APX, Harris XL-200P, Kenwood
+- **PPE**: Bunker gear (Morning Pride, Globe, Lion), helmets (Cairns, MSA), boots (Haix, Danner)
+- **Ventilation**: PPV fans (Tempest, Super Vac), chainsaws, roof saws
+
+Change log
+2024-12: Initial playbook created based on NFPA 1001/1500/1710, OSHA 1910.134, ICS standards
+- Emphasized firefighter safety (2-in/2-out, RIT, accountability, rehab)
+- Focused on tactical operations (fire attack, ventilation, search, incident command)
+- Included practical examples (structure fire, vehicle extrication, wildland fire)
+- Provided templates for radio reports, MAYDAY, investigations, pre-plans
+- Real-world SOPs aligned with NFPA and OSHA requirements
