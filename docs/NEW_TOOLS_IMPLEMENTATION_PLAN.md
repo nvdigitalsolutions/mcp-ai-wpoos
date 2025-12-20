@@ -633,12 +633,12 @@ array(
 
 ## Implementation Priority
 
-### Phase 1: Core Tools (Week 1)
-1. ✅ List OpenAI Files
-2. ✅ Get OpenAI File Details
-3. ✅ List Available Models
-4. ✅ Get Model Information
-5. ✅ Create Text Embeddings
+### Phase 1: Core Tools (Week 1) - ✅ COMPLETED
+1. ✅ List OpenAI Files - `list_openai_files`
+2. ✅ Get OpenAI File Details - `get_openai_file_details`
+3. ✅ List Available Models - `list_available_models`
+4. ✅ Get Model Information - `get_model_information`
+5. ✅ Create Text Embeddings - `create_text_embeddings`
 
 ### Phase 2: Search & Discovery (Week 2)
 6. Semantic Content Search

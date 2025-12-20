@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-settings-for-image-tool',
-        'version' => 'dev-copilot/update-settings-for-image-tool',
-        'reference' => '532a51a7265b829f7cf5198ab45a2d5aecea2cae',
+        'pretty_version' => 'dev-copilot/complete-openai-api-integration',
+        'version' => 'dev-copilot/complete-openai-api-integration',
+        'reference' => '0fd54784ee5fe722b196a6acc7199c888c673d85',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-settings-for-image-tool',
-            'version' => 'dev-copilot/update-settings-for-image-tool',
-            'reference' => '532a51a7265b829f7cf5198ab45a2d5aecea2cae',
+            'pretty_version' => 'dev-copilot/complete-openai-api-integration',
+            'version' => 'dev-copilot/complete-openai-api-integration',
+            'reference' => '0fd54784ee5fe722b196a6acc7199c888c673d85',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
