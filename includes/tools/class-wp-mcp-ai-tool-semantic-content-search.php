@@ -14,6 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * Maximum posts to query for semantic search.
+	 *
+	 * @var int
+	 */
+	const MAX_POSTS_TO_QUERY = 1000;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -144,7 +151,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		$args = array(
 			'post_type'      => $post_types,
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => self::MAX_POSTS_TO_QUERY,
 			'meta_key'       => '_wp_mcp_ai_embeddings', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(

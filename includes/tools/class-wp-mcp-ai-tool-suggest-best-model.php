@@ -14,6 +14,27 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * Cost calculation factor for low cost requirement.
+	 *
+	 * @var float
+	 */
+	const COST_FACTOR_BASE = 0.001;
+
+	/**
+	 * Cost calculation multiplier for low cost requirement.
+	 *
+	 * @var float
+	 */
+	const COST_FACTOR_MULTIPLIER = 0.1;
+
+	/**
+	 * Cost calculation multiplier for budget adjustment.
+	 *
+	 * @var float
+	 */
+	const COST_FACTOR_BUDGET = 0.5;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -246,7 +267,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 				$score += 15;
 			}
 			if ( 'cost' === $requirement ) {
-				$score += ( 1.0 / max( 0.001, $model_info['cost_per_1k_tokens'] ) ) * 0.1;
+				$score += ( 1.0 / max( self::COST_FACTOR_BASE, $model_info['cost_per_1k_tokens'] ) ) * self::COST_FACTOR_MULTIPLIER;
 			}
 			if ( 'vision' === $requirement && in_array( 'vision', $model_info['capabilities'], true ) ) {
 				$score += 20;
@@ -258,7 +279,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Adjust for budget preference.
 		if ( 'low' === $budget_preference ) {
-			$score += ( 1.0 / max( 0.001, $model_info['cost_per_1k_tokens'] ) ) * 0.5;
+			$score += ( 1.0 / max( self::COST_FACTOR_BASE, $model_info['cost_per_1k_tokens'] ) ) * self::COST_FACTOR_BUDGET;
 		} elseif ( 'high' === $budget_preference ) {
 			$score += $model_info['quality'] * 2;
 		}

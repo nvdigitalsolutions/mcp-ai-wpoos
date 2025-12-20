@@ -14,6 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * Maximum text length in characters for embedding.
+	 * Approximate limit to stay within token constraints.
+	 *
+	 * @var int
+	 */
+	const MAX_TEXT_LENGTH = 32000;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -184,7 +192,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				$text_to_embed = $title . "\n\n" . wp_strip_all_tags( $content );
 
 				// Limit text length (approximate token limit).
-				$text_to_embed = mb_substr( $text_to_embed, 0, 32000 );
+				$text_to_embed = mb_substr( $text_to_embed, 0, self::MAX_TEXT_LENGTH );
 
 				if ( empty( $text_to_embed ) ) {
 					$skipped++;
