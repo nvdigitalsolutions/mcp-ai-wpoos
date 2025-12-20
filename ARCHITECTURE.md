@@ -60,9 +60,8 @@ WP oOS is a WordPress plugin that provides an AI Assistant framework integrating
 ┌─────────────────────────────────────────────────────────────┐
 │                     Tool Layer                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ WordPress    │  │  Third-Party │  │    Custom    │      │
-│  │    Tools     │  │     Tools    │  │    Tools     │      │
-│  │   (35+)      │  │   (30+)      │  │  (Extensible)│      │
+│  │ Base Tools   │  │  Pro Tools   │  │    Custom    │      │
+│  │    (95)      │  │    (38)      │  │  (Extensible)│      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -89,14 +88,17 @@ WP oOS is a WordPress plugin that provides an AI Assistant framework integrating
 **Key Classes:**
 - `WP_MCP_AI_Tool_Registry` - Singleton registry for all tools
 - `WP_MCP_AI_Tool_Interface` - Interface all tools must implement
-- 104+ tool implementations in `includes/tools/class-wp-mcp-ai-tool-*.php`
+- 133+ tool implementations (95 base + 38 pro, with 24 validated variants)
 
 **Tool Categories:**
-1. **WordPress Core** (35 tools) - Posts, pages, media, users, taxonomy
-2. **Third-Party Plugins** (30 tools) - JetEngine, WooCommerce, Elementor, etc.
-3. **External Services** (10 tools) - Email, SMS, webhooks, AI services
-4. **Research & Content** (15 tools) - Web scraping, summarization, analysis
-5. **Advanced** (14 tools) - Cron jobs, database queries, code execution
+1. **WordPress Core** (45 tools) - Posts, pages, media, users, taxonomy, settings
+2. **Third-Party Plugins** (20 tools) - JetEngine, WooCommerce, Elementor, Rank Math, WPCode
+3. **External Services** (15 tools) - Email, SMS, webhooks, AI services, social media
+4. **Research & Content** (20 tools) - Web scraping, summarization, analysis, search
+5. **Advanced** (15 tools) - Cron jobs, cache management, diagnostics
+6. **Pro Addon** (38 tools) - Social media APIs, Google services, GitHub, exec-based tools
+
+**Tool Counting Note:** Some tools have "-validated" variants using Symfony Validator for enhanced input validation. These variants are counted as the same tool (e.g., `create-post` and `create-post-validated` = 1 tool).
 
 ### 3. Process Service (`includes/services/class-wp-mcp-ai-process-service.php`)
 
