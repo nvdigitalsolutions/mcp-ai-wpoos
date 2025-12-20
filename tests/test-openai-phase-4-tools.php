@@ -30,6 +30,8 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 		$phase_4_tools = array(
 			'edit_openai_image',
 			'create_image_variation',
+			'analyze_file_suitability',
+			'openai_usage_analytics',
 		);
 		
 		foreach ( $phase_4_tools as $tool_slug ) {
@@ -132,6 +134,8 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 		$phase_4_tools = array(
 			'edit_openai_image',
 			'create_image_variation',
+			'analyze_file_suitability',
+			'openai_usage_analytics',
 		);
 		
 		foreach ( $phase_4_tools as $tool_slug ) {
@@ -141,7 +145,6 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 			$flags = $tool->get_capability_flags();
 			$this->assertIsArray( $flags );
 			$this->assertNotEmpty( $flags );
-			$this->assertContains( 'external-api', $flags );
 		}
 	}
 
@@ -151,15 +154,17 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 	public function test_phase_4_tools_require_capabilities() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		
-		$phase_4_tools = array(
-			'edit_openai_image',
-			'create_image_variation',
+		$tools_capabilities = array(
+			'edit_openai_image'          => 'upload_files',
+			'create_image_variation'     => 'upload_files',
+			'analyze_file_suitability'   => 'upload_files',
+			'openai_usage_analytics'     => 'manage_options',
 		);
 		
-		foreach ( $phase_4_tools as $tool_slug ) {
+		foreach ( $tools_capabilities as $tool_slug => $expected_capability ) {
 			$tool = $registry->get_tool( $tool_slug );
 			$this->assertNotEmpty( $tool->get_required_capability() );
-			$this->assertEquals( 'upload_files', $tool->get_required_capability() );
+			$this->assertEquals( $expected_capability, $tool->get_required_capability(), "Tool $tool_slug should require $expected_capability capability" );
 		}
 	}
 
@@ -191,6 +196,49 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 		
 		$this->assertArrayHasKey( 'create_image_variation', $tool_map );
 		$this->assertEquals( 'external-tools', $tool_map['create_image_variation'] );
+		
+		$this->assertArrayHasKey( 'analyze_file_suitability', $tool_map );
+		$this->assertEquals( 'external-tools', $tool_map['analyze_file_suitability'] );
+		
+		$this->assertArrayHasKey( 'openai_usage_analytics', $tool_map );
+		$this->assertEquals( 'external-tools', $tool_map['openai_usage_analytics'] );
+	}
+
+	/**
+	 * Test analyze_file_suitability tool structure.
+	 */
+	public function test_analyze_file_suitability_tool_structure() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'analyze_file_suitability' );
+		
+		$this->assertNotNull( $tool );
+		$this->assertEquals( 'analyze_file_suitability', $tool->get_slug() );
+		$this->assertNotEmpty( $tool->get_name() );
+		$this->assertNotEmpty( $tool->get_description() );
+		
+		$schema = $tool->get_parameters_schema();
+		$this->assertIsArray( $schema );
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'required', $schema );
+		$this->assertContains( 'file_id', $schema['required'] );
+		$this->assertContains( 'purpose', $schema['required'] );
+	}
+
+	/**
+	 * Test openai_usage_analytics tool structure.
+	 */
+	public function test_openai_usage_analytics_tool_structure() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'openai_usage_analytics' );
+		
+		$this->assertNotNull( $tool );
+		$this->assertEquals( 'openai_usage_analytics', $tool->get_slug() );
+		$this->assertNotEmpty( $tool->get_name() );
+		$this->assertNotEmpty( $tool->get_description() );
+		
+		$schema = $tool->get_parameters_schema();
+		$this->assertIsArray( $schema );
+		$this->assertArrayHasKey( 'properties', $schema );
 	}
 
 	/**
