@@ -475,6 +475,579 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'file_id'      => $file_id,
 			);
 		}
+/**
+ * List files from the OpenAI Files API.
+ *
+ * @param array $args Optional arguments (purpose, limit, order, after, timeout).
+ * @return array|WP_Error Array containing files list or WP_Error on failure.
+ */
+public function list_files( array $args = array() ) {
+$api_key = $this->get_api_key();
+
+if ( empty( $api_key ) ) {
+return new WP_Error(
+'wp_mcp_ai_missing_api_key',
+__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+array(
+'status'  => 400,
+'actions' => array(
+'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+),
+)
+);
+}
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+$timeout  = max( 5, $timeout );
+
+// Build query parameters.
+$query_params = array();
+
+if ( isset( $args['purpose'] ) && '' !== $args['purpose'] ) {
+$query_params['purpose'] = sanitize_key( $args['purpose'] );
+}
+
+if ( isset( $args['limit'] ) && '' !== $args['limit'] ) {
+$query_params['limit'] = absint( $args['limit'] );
+}
+
+if ( isset( $args['order'] ) && '' !== $args['order'] ) {
+$query_params['order'] = in_array( $args['order'], array( 'asc', 'desc' ), true ) ? $args['order'] : 'desc';
+}
+
+if ( isset( $args['after'] ) && '' !== $args['after'] ) {
+$query_params['after'] = sanitize_text_field( $args['after'] );
+}
+
+$endpoint = self::FILES_ENDPOINT;
+if ( ! empty( $query_params ) ) {
+$endpoint = add_query_arg( $query_params, $endpoint );
+}
+
+$request_args = array(
+'method'  => 'GET',
+'headers' => array(
+'Authorization' => 'Bearer ' . $api_key,
+),
+'timeout' => $timeout,
+);
+
+WP_MCP_AI_Logger::log_event(
+'openai_list_files',
+'Listing files from OpenAI.',
+$query_params
+);
+
+$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+if ( is_wp_error( $response ) ) {
+WP_MCP_AI_Logger::log_error( 'OpenAI list files request failed.', array( 'error' => $response->get_error_message() ) );
+
+return WP_MCP_AI_HTTP::prepare_transport_error(
+$response,
+'wp_mcp_ai_list_files_http_error',
+__( 'The OpenAI files list request failed.', 'wp-mcp-ai' ),
+__( 'OpenAI', 'wp-mcp-ai' )
+);
+}
+
+$code     = wp_remote_retrieve_response_code( $response );
+$body     = wp_remote_retrieve_body( $response );
+$decoded  = json_decode( $body, true );
+$json_err = json_last_error();
+
+if ( JSON_ERROR_NONE !== $json_err ) {
+WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list files response.', array( 'body' => $body ) );
+
+return new WP_Error( 'wp_mcp_ai_list_files_invalid_response', __( 'OpenAI returned malformed JSON for the files list.', 'wp-mcp-ai' ) );
+}
+
+if ( $code < 200 || $code >= 300 ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI list files returned an error.',
+array(
+'code' => $code,
+'body' => $decoded,
+)
+);
+
+$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI files list request failed.', 'wp-mcp-ai' );
+
+return new WP_Error(
+'wp_mcp_ai_list_files_error',
+$message,
+array(
+'status'   => $code,
+'response' => $decoded,
+)
+);
+}
+
+WP_MCP_AI_Logger::log_event(
+'openai_files_listed',
+'OpenAI files list retrieved successfully.',
+array(
+'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+)
+);
+
+return is_array( $decoded ) ? $decoded : array();
+}
+
+/**
+ * Retrieve metadata for a file from the OpenAI Files API.
+ *
+ * @param string $file_id OpenAI file identifier.
+ * @param array  $args    Optional arguments (timeout).
+ * @return array|WP_Error Array containing file metadata or WP_Error on failure.
+ */
+public function retrieve_file( $file_id, array $args = array() ) {
+$api_key = $this->get_api_key();
+
+if ( empty( $api_key ) ) {
+return new WP_Error(
+'wp_mcp_ai_missing_api_key',
+__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+array(
+'status'  => 400,
+'actions' => array(
+'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+),
+)
+);
+}
+
+$file_id = sanitize_text_field( (string) $file_id );
+
+if ( '' === $file_id ) {
+return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+}
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+$timeout  = max( 5, $timeout );
+
+$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
+
+$request_args = array(
+'method'  => 'GET',
+'headers' => array(
+'Authorization' => 'Bearer ' . $api_key,
+),
+'timeout' => $timeout,
+);
+
+WP_MCP_AI_Logger::log_event(
+'openai_retrieve_file',
+'Retrieving file metadata from OpenAI.',
+array( 'file_id' => $file_id )
+);
+
+$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+if ( is_wp_error( $response ) ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI retrieve file request failed.',
+array(
+'file_id' => $file_id,
+'error'   => $response->get_error_message(),
+)
+);
+
+return WP_MCP_AI_HTTP::prepare_transport_error(
+$response,
+'wp_mcp_ai_retrieve_file_http_error',
+__( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' ),
+__( 'OpenAI', 'wp-mcp-ai' )
+);
+}
+
+$code    = wp_remote_retrieve_response_code( $response );
+$body    = wp_remote_retrieve_body( $response );
+$decoded = json_decode( $body, true );
+
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+WP_MCP_AI_Logger::log_error(
+'Failed to decode OpenAI retrieve file response.',
+array(
+'file_id' => $file_id,
+'body'    => $body,
+)
+);
+
+return new WP_Error( 'wp_mcp_ai_retrieve_file_invalid_response', __( 'OpenAI returned malformed JSON for the file metadata.', 'wp-mcp-ai' ) );
+}
+
+if ( $code < 200 || $code >= 300 ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI retrieve file returned an error.',
+array(
+'file_id' => $file_id,
+'code'    => $code,
+'body'    => $decoded,
+)
+);
+
+$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' );
+
+return new WP_Error(
+'wp_mcp_ai_retrieve_file_error',
+$message,
+array(
+'status'   => $code,
+'response' => $decoded,
+)
+);
+}
+
+WP_MCP_AI_Logger::log_event(
+'openai_file_retrieved',
+'OpenAI file metadata retrieved successfully.',
+array( 'file_id' => $file_id )
+);
+
+return is_array( $decoded ) ? $decoded : array();
+}
+
+/**
+ * List available models from OpenAI.
+ *
+ * @param array $args Optional arguments (timeout).
+ * @return array|WP_Error Array containing models list or WP_Error on failure.
+ */
+public function list_models( array $args = array() ) {
+$api_key = $this->get_api_key();
+
+if ( empty( $api_key ) ) {
+return new WP_Error(
+'wp_mcp_ai_missing_api_key',
+__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+array(
+'status'  => 400,
+'actions' => array(
+'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+),
+)
+);
+}
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+$timeout  = max( 5, $timeout );
+
+$endpoint = 'https://api.openai.com/v1/models';
+
+$request_args = array(
+'method'  => 'GET',
+'headers' => array(
+'Authorization' => 'Bearer ' . $api_key,
+),
+'timeout' => $timeout,
+);
+
+WP_MCP_AI_Logger::log_event( 'openai_list_models', 'Listing models from OpenAI.' );
+
+$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+if ( is_wp_error( $response ) ) {
+WP_MCP_AI_Logger::log_error( 'OpenAI list models request failed.', array( 'error' => $response->get_error_message() ) );
+
+return WP_MCP_AI_HTTP::prepare_transport_error(
+$response,
+'wp_mcp_ai_list_models_http_error',
+__( 'The OpenAI models list request failed.', 'wp-mcp-ai' ),
+__( 'OpenAI', 'wp-mcp-ai' )
+);
+}
+
+$code    = wp_remote_retrieve_response_code( $response );
+$body    = wp_remote_retrieve_body( $response );
+$decoded = json_decode( $body, true );
+
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list models response.', array( 'body' => $body ) );
+
+return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'wp-mcp-ai' ) );
+}
+
+if ( $code < 200 || $code >= 300 ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI list models returned an error.',
+array(
+'code' => $code,
+'body' => $decoded,
+)
+);
+
+$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'wp-mcp-ai' );
+
+return new WP_Error(
+'wp_mcp_ai_list_models_error',
+$message,
+array(
+'status'   => $code,
+'response' => $decoded,
+)
+);
+}
+
+WP_MCP_AI_Logger::log_event(
+'openai_models_listed',
+'OpenAI models list retrieved successfully.',
+array(
+'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+)
+);
+
+return is_array( $decoded ) ? $decoded : array();
+}
+
+/**
+ * Retrieve information about a specific model.
+ *
+ * @param string $model_id Model identifier (e.g., 'gpt-4').
+ * @param array  $args     Optional arguments (timeout).
+ * @return array|WP_Error Array containing model information or WP_Error on failure.
+ */
+public function get_model( $model_id, array $args = array() ) {
+$api_key = $this->get_api_key();
+
+if ( empty( $api_key ) ) {
+return new WP_Error(
+'wp_mcp_ai_missing_api_key',
+__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+array(
+'status'  => 400,
+'actions' => array(
+'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+),
+)
+);
+}
+
+$model_id = sanitize_text_field( (string) $model_id );
+
+if ( '' === $model_id ) {
+return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'wp-mcp-ai' ) );
+}
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+$timeout  = max( 5, $timeout );
+
+$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
+
+$request_args = array(
+'method'  => 'GET',
+'headers' => array(
+'Authorization' => 'Bearer ' . $api_key,
+),
+'timeout' => $timeout,
+);
+
+WP_MCP_AI_Logger::log_event(
+'openai_get_model',
+'Retrieving model information from OpenAI.',
+array( 'model_id' => $model_id )
+);
+
+$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+if ( is_wp_error( $response ) ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI get model request failed.',
+array(
+'model_id' => $model_id,
+'error'    => $response->get_error_message(),
+)
+);
+
+return WP_MCP_AI_HTTP::prepare_transport_error(
+$response,
+'wp_mcp_ai_get_model_http_error',
+__( 'The OpenAI model information request failed.', 'wp-mcp-ai' ),
+__( 'OpenAI', 'wp-mcp-ai' )
+);
+}
+
+$code    = wp_remote_retrieve_response_code( $response );
+$body    = wp_remote_retrieve_body( $response );
+$decoded = json_decode( $body, true );
+
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+WP_MCP_AI_Logger::log_error(
+'Failed to decode OpenAI get model response.',
+array(
+'model_id' => $model_id,
+'body'     => $body,
+)
+);
+
+return new WP_Error( 'wp_mcp_ai_get_model_invalid_response', __( 'OpenAI returned malformed JSON for the model information.', 'wp-mcp-ai' ) );
+}
+
+if ( $code < 200 || $code >= 300 ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI get model returned an error.',
+array(
+'model_id' => $model_id,
+'code'     => $code,
+'body'     => $decoded,
+)
+);
+
+$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI model information request failed.', 'wp-mcp-ai' );
+
+return new WP_Error(
+'wp_mcp_ai_get_model_error',
+$message,
+array(
+'status'   => $code,
+'response' => $decoded,
+)
+);
+}
+
+WP_MCP_AI_Logger::log_event(
+'openai_model_retrieved',
+'OpenAI model information retrieved successfully.',
+array( 'model_id' => $model_id )
+);
+
+return is_array( $decoded ) ? $decoded : array();
+}
+
+/**
+ * Create embeddings using OpenAI's Embeddings API.
+ *
+ * @param string|array $input  Input text or array of texts to create embeddings for.
+ * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout).
+ * @return array|WP_Error Array containing embeddings or WP_Error on failure.
+ */
+public function create_embeddings( $input, array $options = array() ) {
+$api_key = $this->get_api_key();
+
+if ( empty( $api_key ) ) {
+return new WP_Error(
+'wp_mcp_ai_missing_api_key',
+__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+array(
+'status'  => 400,
+'actions' => array(
+'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+),
+)
+);
+}
+
+if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
+return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'wp-mcp-ai' ) );
+}
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+$timeout  = max( 5, $timeout );
+
+// Default model.
+$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+
+$payload = array(
+'model' => $model,
+'input' => $input,
+);
+
+// Optional parameters.
+if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
+$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
+}
+
+if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
+$payload['dimensions'] = absint( $options['dimensions'] );
+}
+
+if ( isset( $options['user'] ) && '' !== $options['user'] ) {
+$payload['user'] = sanitize_text_field( $options['user'] );
+}
+
+$endpoint = 'https://api.openai.com/v1/embeddings';
+
+$request_args = array(
+'method'  => 'POST',
+'headers' => array(
+'Authorization' => 'Bearer ' . $api_key,
+'Content-Type'  => 'application/json',
+),
+'body'    => wp_json_encode( $payload ),
+'timeout' => $timeout,
+);
+
+WP_MCP_AI_Logger::log_event(
+'openai_create_embeddings',
+'Creating embeddings with OpenAI.',
+array(
+'model'        => $model,
+'input_type'   => is_array( $input ) ? 'array' : 'string',
+'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+)
+);
+
+$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+if ( is_wp_error( $response ) ) {
+WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
+
+return WP_MCP_AI_HTTP::prepare_transport_error(
+$response,
+'wp_mcp_ai_embeddings_http_error',
+__( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' ),
+__( 'OpenAI', 'wp-mcp-ai' )
+);
+}
+
+$code    = wp_remote_retrieve_response_code( $response );
+$body    = wp_remote_retrieve_body( $response );
+$decoded = json_decode( $body, true );
+
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
+
+return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'wp-mcp-ai' ) );
+}
+
+if ( $code < 200 || $code >= 300 ) {
+WP_MCP_AI_Logger::log_error(
+'OpenAI embeddings returned an error.',
+array(
+'code' => $code,
+'body' => $decoded,
+)
+);
+
+$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' );
+
+return new WP_Error(
+'wp_mcp_ai_embeddings_error',
+$message,
+array(
+'status'   => $code,
+'response' => $decoded,
+)
+);
+}
+
+WP_MCP_AI_Logger::log_event(
+'openai_embeddings_created',
+'OpenAI embeddings created successfully.',
+array(
+'model'           => $model,
+'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+)
+);
+
+return is_array( $decoded ) ? $decoded : array();
+}
+
 
 		/**
 		 * Dispatch an HTTP request while honouring preemptive short-circuit filters.
