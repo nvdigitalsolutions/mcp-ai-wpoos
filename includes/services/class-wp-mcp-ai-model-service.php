@@ -122,14 +122,6 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-		$models['gpt-5.2']                = 'GPT-5.2 (Flagship)';
-		$models['gpt-5.2-2025-12-11']     = 'GPT-5.2 (Dec 2025)';
-		$models['gpt-5.2-pro']            = 'GPT-5.2 Pro (Advanced Reasoning)';
-		$models['gpt-5.2-pro-2025-12-11'] = 'GPT-5.2 Pro (Dec 2025)';
-		$models['gpt-5.2-instant']        = 'GPT-5.2 Instant (High Throughput)';
-		$models['gpt-5.2-thinking']       = 'GPT-5.2 Thinking (Deeper Analysis)';
-
 		// GPT-5.1 series (Nov 2025).
 		$models['gpt-5.1']            = 'GPT-5.1';
 		$models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';

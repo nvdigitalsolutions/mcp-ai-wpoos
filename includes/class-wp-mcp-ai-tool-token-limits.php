@@ -526,14 +526,6 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['openai_api_key'] ) ) {
 			$openai_models = array();
 
-			// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-			$openai_models['gpt-5.2']                = 'GPT-5.2 (Flagship)';
-			$openai_models['gpt-5.2-2025-12-11']     = 'GPT-5.2 (Dec 2025)';
-			$openai_models['gpt-5.2-pro']            = 'GPT-5.2 Pro (Advanced Reasoning)';
-			$openai_models['gpt-5.2-pro-2025-12-11'] = 'GPT-5.2 Pro (Dec 2025)';
-			$openai_models['gpt-5.2-instant']        = 'GPT-5.2 Instant (High Throughput)';
-			$openai_models['gpt-5.2-thinking']       = 'GPT-5.2 Thinking (Deeper Analysis)';
-
 			// GPT-5.1 series (Nov 2025).
 			$openai_models['gpt-5.1']            = 'GPT-5.1';
 			$openai_models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';
