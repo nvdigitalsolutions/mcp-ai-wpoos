@@ -121,9 +121,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			}
 
 			// Check if we're actually processing a form submission for this subtab.
-			// The 'subtab' hidden field is submitted with the form (see render_wrapper).
+			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
-			$submitted_subtab = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
+			$subtab_field_name = 'subtab_' . $this->get_id();
+			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab
 			// AND the submitted subtab actually exists in this section's subtab groups.
