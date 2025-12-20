@@ -4,6 +4,20 @@
 
 ### Added
 
+#### OpenAI GPT-Image-1.5 Model Support (December 20, 2024)
+- **OpenAI GPT-Image-1.5 Image Generation**: Added support for the latest GPT-Image-1.5 model
+  - **4× Faster**: Generation speed significantly improved compared to GPT-Image-1
+  - **20% Cost Reduction**: New pricing structure with lower costs across all quality tiers
+    - Low quality (1024×1024): $0.009 (was $0.011)
+    - Medium quality (1024×1024): $0.034 (was $0.042)
+    - High quality (1024×1024): $0.133 (was $0.167)
+  - **Quality Parameters**: Supports low, medium, high, and auto quality settings
+  - **Supported Sizes**: 1024×1024, 1024×1536, 1536×1024, and auto
+  - **Default Model**: GPT-Image-1.5 is now the default image generation model
+  - **Backward Compatible**: GPT-Image-1, DALL-E 3, and DALL-E 2 remain available
+  - Updated cost estimation for accurate usage tracking
+  - See [OpenAI Image Generation Documentation](https://platform.openai.com/docs/guides/image-generation)
+
 #### GPT-5.2 Model Support (December 16, 2025)
 - **OpenAI GPT-5.2 Model Family**: Added support for the latest GPT-5.2 models with 400K context window
   - **Base Model**: `gpt-5.2` - Standard flagship model ($0.00175 per 1K tokens)

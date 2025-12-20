@@ -334,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'github_username'                      => '',
 				'group_email_capability'               => 'publish_posts',
 				'group_email_max_recipients'           => 100,
-				'openai_image_model'                   => 'gpt-image-1',
+				'openai_image_model'                   => 'gpt-image-1.5',
 				'openai_image_size'                    => '1024x1024',
 				'openai_image_quality'                 => 'medium',
 				'openai_image_response_format'         => 'b64_json',

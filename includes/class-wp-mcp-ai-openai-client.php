@@ -32,13 +32,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// The gpt-image-1 model does NOT support the response_format parameter.
+			// The gpt-image-1 and gpt-image-1.5 models do NOT support the response_format parameter.
 			// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
-			// Default to true for backward compatibility, but explicitly block gpt-image-1.
+			// Default to true for backward compatibility, but explicitly block gpt-image-1/1.5.
 			$supported = true;
 
-			// Check if this is the gpt-image-1 model (case-insensitive).
-			if ( 'gpt-image-1' === strtolower( $model ) ) {
+			// Check if this is the gpt-image-1 or gpt-image-1.5 model (case-insensitive).
+			$model_lower = strtolower( $model );
+			if ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower ) {
 				$supported = false;
 			}
 			/**
@@ -623,7 +624,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
 			$default_quality         = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
