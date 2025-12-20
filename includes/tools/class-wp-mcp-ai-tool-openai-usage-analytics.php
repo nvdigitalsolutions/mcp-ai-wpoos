@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$period       = isset( $arguments['period'] ) ? sanitize_key( $arguments['period'] ) : 'month';
 		$group_by     = isset( $arguments['group_by'] ) ? sanitize_key( $arguments['group_by'] ) : 'model';
 		$include_cost = isset( $arguments['include_cost'] ) ? (bool) $arguments['include_cost'] : true;

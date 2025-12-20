@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate vector_store_id.
 		if ( empty( $arguments['vector_store_id'] ) ) {
 			return array(

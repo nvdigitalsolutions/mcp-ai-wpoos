@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['vector_store_id'] ) ) {
 			return array(
 				'success' => false,
