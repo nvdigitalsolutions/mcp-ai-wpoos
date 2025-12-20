@@ -23,6 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		const IMAGES_ENDPOINT               = 'https://api.openai.com/v1/images/generations';
 		const IMAGES_EDITS_ENDPOINT         = 'https://api.openai.com/v1/images/edits';
 		const IMAGES_VARIATIONS_ENDPOINT    = 'https://api.openai.com/v1/images/variations';
+		const VECTOR_STORES_ENDPOINT        = 'https://api.openai.com/v1/vector_stores';
 		const CHAT_APPROX_CHARS_PER_TOKEN   = 4; // Heuristic for estimating tokens from character count.
 
 		/**
@@ -4169,6 +4170,576 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			return $estimated_tokens;
+		}
+
+		/**
+		 * Create a new vector store.
+		 *
+		 * @param string $name Vector store name.
+		 * @param array  $options Optional parameters (file_ids, expires_after, metadata).
+		 * @return array|WP_Error Vector store data or error.
+		 */
+		public function create_vector_store( $name, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$name = sanitize_text_field( $name );
+			if ( empty( $name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_name',
+					__( 'A name is required to create a vector store.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$payload = array(
+				'name' => $name,
+			);
+
+			if ( ! empty( $options['file_ids'] ) && is_array( $options['file_ids'] ) ) {
+				$payload['file_ids'] = array_map( 'sanitize_text_field', $options['file_ids'] );
+			}
+
+			if ( ! empty( $options['expires_after'] ) && is_array( $options['expires_after'] ) ) {
+				$payload['expires_after'] = $options['expires_after'];
+			}
+
+			if ( ! empty( $options['metadata'] ) && is_array( $options['metadata'] ) ) {
+				$payload['metadata'] = $options['metadata'];
+			}
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_vector_store_create',
+				'Creating vector store.',
+				array( 'name' => $name )
+			);
+
+			$response = wp_remote_post( self::VECTOR_STORES_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_vector_store_create_error', 'Vector store creation failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI vector store creation failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_vector_store_create_error',
+					'Vector store creation failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_vector_store_create_success', 'Vector store created successfully.' );
+
+			return $decoded;
+		}
+
+		/**
+		 * List vector stores.
+		 *
+		 * @param array $options Optional parameters (limit, order, after, before).
+		 * @return array|WP_Error Vector stores list or error.
+		 */
+		public function list_vector_stores( array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$query_params = array();
+
+			if ( isset( $options['limit'] ) ) {
+				$query_params['limit'] = absint( $options['limit'] );
+			}
+
+			if ( isset( $options['order'] ) ) {
+				$query_params['order'] = sanitize_key( $options['order'] );
+			}
+
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['before'] ) ) {
+				$query_params['before'] = sanitize_text_field( $options['before'] );
+			}
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT;
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI list vector stores request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Retrieve a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @return array|WP_Error Vector store data or error.
+		 */
+		public function retrieve_vector_store( $vector_store_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI retrieve vector store request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Delete a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @return array|WP_Error Deletion confirmation or error.
+		 */
+		public function delete_vector_store( $vector_store_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'method'  => 'DELETE',
+			);
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI delete vector store request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Add files to a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $file_ids Array of file IDs to add.
+		 * @return array|WP_Error Operation result or error.
+		 */
+		public function add_vector_store_files( $vector_store_id, array $file_ids ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $file_ids ) || ! is_array( $file_ids ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_file_ids',
+					__( 'File IDs are required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+
+			$payload = array(
+				'file_id' => sanitize_text_field( $file_ids[0] ), // OpenAI API accepts one file at a time.
+			);
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			$response = wp_remote_post( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI add vector store files request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * List files in a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $options Optional parameters (limit, order, after, before).
+		 * @return array|WP_Error Files list or error.
+		 */
+		public function list_vector_store_files( $vector_store_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$query_params = array();
+
+			if ( isset( $options['limit'] ) ) {
+				$query_params['limit'] = absint( $options['limit'] );
+			}
+
+			if ( isset( $options['order'] ) ) {
+				$query_params['order'] = sanitize_key( $options['order'] );
+			}
+
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['before'] ) ) {
+				$query_params['before'] = sanitize_text_field( $options['before'] );
+			}
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI list vector store files request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Remove a file from a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $file_id File ID to remove.
+		 * @return array|WP_Error Operation result or error.
+		 */
+		public function remove_vector_store_file( $vector_store_id, $file_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			$file_id         = sanitize_text_field( $file_id );
+
+			if ( empty( $vector_store_id ) || empty( $file_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'Vector store ID and file ID are required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'method'  => 'DELETE',
+			);
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI remove vector store file request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
 		}
 	}
 }
