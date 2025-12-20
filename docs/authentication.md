@@ -1,5 +1,9 @@
 # Authentication with Simple JWT Login
 
+**Status:** ✅ VERIFIED - December 20, 2025  
+**Authentication Methods Documented:** 5 (WordPress Nonce, Assistant Credentials, Auth0, Simple JWT, WordPress.com/Gravatar)  
+**Last Updated:** December 20, 2025
+
 WP oOS ships with multiple credential flows. Auth0 remains the default for remote assistants, while WordPress cookies and REST nonces power the dashboard experience. The plugin can also trust bearer tokens minted by the [Simple JWT Login](https://wordpress.org/plugins/simple-jwt-login/) plugin. This guide explains how to enable the integration, configure Simple JWT Login, mint JSON Web Tokens (JWTs), and present them to MCP endpoints.
 
 ## Enable the integration

@@ -1,11 +1,13 @@
 # MCP Endpoint Documentation
 
+**Status:** ✅ VERIFIED - December 20, 2025  
+**MCP Specification Version:** 2024-11-05  
+**Implementation Status:** Standards-compliant with MCP core features  
+**Last Updated:** December 20, 2025
+
 ## Overview
 
 The `/mcp` endpoint implements the Model Context Protocol (MCP) specification version **2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.
-
-**MCP Specification Version:** 2024-11-05  
-**Implementation Status:** Standards-compliant with MCP core features
 
 ## Endpoint Methods
 
