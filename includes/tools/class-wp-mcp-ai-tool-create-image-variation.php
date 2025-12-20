@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate image_id.
 		if ( empty( $arguments['image_id'] ) ) {
 			return array(

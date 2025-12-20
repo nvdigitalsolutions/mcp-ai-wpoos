@@ -75,7 +75,7 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$options = array();
 
 		if ( ! empty( $arguments['limit'] ) ) {
