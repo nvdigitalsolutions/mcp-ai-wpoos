@@ -2338,20 +2338,24 @@ Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards (96/100 score)
-- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs, fixes, and improvements
-- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md) - Complete development history
+- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
+- [CONSOLIDATION_MAP.md](docs/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
+- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
 - [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
 
 ### Documentation
 
 Comprehensive documentation is available:
 
-- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md)** - Master bugs and fixes report
-- **[CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md)** - Master session summaries
-- **[CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md)** - Master code review (96/100)
+- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
+- **[CONSOLIDATION_MAP.md](docs/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
+- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
+- **[CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
 - **[TESTING_AND_QUALITY_REPORT.md](docs/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
+
+**For Historical Reference:**
+- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
 
 ### Security Vulnerabilities
 
