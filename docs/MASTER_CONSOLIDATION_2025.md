@@ -93,26 +93,33 @@
 
 ---
 
-#### Review #2: December 16, 2025
+#### ~~Review #2: December 16, 2025~~ (UPDATED: Models Removed December 20, 2025)
 **Source:** `docs/CODE_REVIEW_2025-12-16.md` (574 lines)  
-**Grade:** A+ (Exceptional)  
-**Scope:** GPT-5.2 Model Family Support (PR #2144)
+**Grade:** ~~A+ (Exceptional)~~ N/A (Models do not exist in OpenAI API)  
+**Scope:** ~~GPT-5.2 Model Family Support (PR #2144)~~ **REMOVED**
 
-**Models Added (6 variants):**
-- `gpt-5.2` - Base flagship (400K context, $0.00175/1K)
-- `gpt-5.2-pro` - Advanced reasoning ($0.021/1K)
-- `gpt-5.2-instant` - High throughput variant
-- `gpt-5.2-thinking` - Deeper analysis variant
-- `gpt-5.2-2025-12-11` - Dated base version
-- `gpt-5.2-pro-2025-12-11` - Dated pro version
+**Models ~~Added~~ Removed (6 variants):**
+- ~~`gpt-5.2` - Base flagship (400K context, $0.00175/1K)~~ REMOVED
+- ~~`gpt-5.2-pro` - Advanced reasoning ($0.021/1K)~~ REMOVED
+- ~~`gpt-5.2-instant` - High throughput variant~~ REMOVED
+- ~~`gpt-5.2-thinking` - Deeper analysis variant~~ REMOVED
+- ~~`gpt-5.2-2025-12-11` - Dated base version~~ REMOVED
+- ~~`gpt-5.2-pro-2025-12-11` - Dated pro version~~ REMOVED
 
-**Assessment:**
-- ✅ 100% test coverage for all new models
-- ✅ Proper rate limit and pricing configuration
-- ✅ Fallback chain correctly configured
-- ✅ Documentation thoroughly updated
-- ✅ Zero security vulnerabilities
-- ✅ Backward compatible
+**Update (December 20, 2025):**
+- ❌ These models do not exist in OpenAI's API
+- ✅ All references removed from codebase
+- ✅ Documentation updated
+- ✅ Tests updated to reflect removal
+- ✅ No breaking changes to existing functionality
+
+~~**Assessment:**~~
+- ~~✅ 100% test coverage for all new models~~
+- ~~✅ Proper rate limit and pricing configuration~~
+- ~~✅ Fallback chain correctly configured~~
+- ~~✅ Documentation thoroughly updated~~
+- ~~✅ Zero security vulnerabilities~~
+- ~~✅ Backward compatible~~
 
 **Source Document:** `docs/DOCUMENTATION_CONSOLIDATION_SUMMARY_2025-12-16.md`
 
