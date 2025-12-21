@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -68,6 +68,13 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			'read-only',            // Only reads data, doesn't modify.
 			'requires-credentials', // Requires OpenAI API key.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_model_requirements() {
+		return array(); // Batch status retrieval doesn't require specific model capabilities.
 	}
 
 	/**

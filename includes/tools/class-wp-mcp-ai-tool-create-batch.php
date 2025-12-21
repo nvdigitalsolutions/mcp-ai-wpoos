@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -87,6 +87,13 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'long-running',         // May take up to 24 hours.
 			'requires-credentials', // Requires OpenAI API key.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_model_requirements() {
+		return array(); // Batch management doesn't require specific model capabilities.
 	}
 
 	/**
