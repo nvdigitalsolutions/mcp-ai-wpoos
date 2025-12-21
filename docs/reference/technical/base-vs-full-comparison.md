@@ -303,7 +303,7 @@ This document provides a detailed comparison between the Base Version and Full V
 
 - Base Version Guide: [BASE-VERSION.md](../BASE-VERSION.md)
 - Full Documentation: [README.md](../README.md)
-- Tool Reference: [docs/tool-reference.md](tool-reference.md)
+- Tool Reference: [docs/tool-reference.md](reference/tools/tool-reference.md)
 - Pro Tool Setup: See individual tool documentation
 - GitHub Issues: Report problems or request features
 

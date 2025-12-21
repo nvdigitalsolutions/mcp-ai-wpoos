@@ -793,23 +793,23 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### For Developers
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
 - [Code Review Master](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
-- [Action Items](docs/guides/developer/planning/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
+- [Action Items](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/reference/api/mcp-server-authentication.md) - Authentication methods and security
 - [MCP JSON-RPC 2.0 Endpoint](docs/reference/api/mcp-endpoint.md) - Model Context Protocol implementation
 
 ### For Administrators
-- [Deployment Troubleshooting](docs/troubleshooting/deployment/deployment-troubleshooting.md) - Common issues and solutions
-- [Multisite Support](docs/troubleshooting/deployment/multisite-support.md) - WordPress multisite configuration
-- [Rate Limit Protection](docs/troubleshooting/deployment/rate-limit-protection.md) - API rate limiting setup
-- [Mesh Routing Guide](docs/features/mesh/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
-- [Federation & Discovery](docs/features/mesh/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
+- [Deployment Troubleshooting](docs/getting-started/installation-setup/deployment-troubleshooting.md) - Common issues and solutions
+- [Multisite Support](docs/getting-started/installation-setup/multisite-support.md) - WordPress multisite configuration
+- [Rate Limit Protection](docs/features/performance/rate-limit-protection.md) - API rate limiting setup
+- [Mesh Routing Guide](docs/features/federation/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+- [Federation & Discovery](docs/features/federation/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
-- [Message Bundling](docs/features/performance/message-bundling-feature.md) - Client-side message optimization
+- [Message Bundling](docs/guides/user/chat/message-bundling-feature.md) - Client-side message optimization
 - [High Token Tool Handling](docs/features/tools/presets/high-token-tool-handling.md) - Agentic loop token management
-- [Job Notification System](docs/features/async/job-notification-system.md) - Real-time async job updates
-- [Chat Performance Optimizations](docs/features/performance/chat-performance-optimizations.md) - Complete performance guide
-- [Mesh Routing Guide](docs/features/mesh/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+- [Job Notification System](docs/features/async-jobs/job-notification-system.md) - Real-time async job updates
+- [Chat Performance Optimizations](docs/features/chat/chat-performance-optimizations.md) - Complete performance guide
+- [Mesh Routing Guide](docs/features/federation/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
 ### Historical Documentation
 - **[Archive Directory](docs/archive/)** - 95+ historical documents organized by category:
@@ -922,7 +922,7 @@ The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships wi
 
 From the ChatKit dashboard configure the **WP oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
 
-Consult [`docs/chatkit-integration.md`](docs/features/integrations/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
+Consult [`docs/chatkit-integration.md`](docs/guides/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
 ## 🌐 Crawl4AI Integration
 
@@ -983,7 +983,7 @@ WP_MCP_AI_Job_Notifier::register_webhook(
 );
 ```
 
-➡️ See [docs/job-notification-system.md](docs/features/async/job-notification-system.md) for complete implementation details.
+➡️ See [docs/job-notification-system.md](docs/features/async-jobs/job-notification-system.md) for complete implementation details.
 
 ## 🧊 Elementor Widgets
 
@@ -1072,7 +1072,7 @@ Message bundling is enabled by default and requires no configuration. To disable
 window.wpMcpAiChatDebugMode = true;
 ```
 
-➡️ See [docs/message-bundling-feature.md](docs/features/performance/message-bundling-feature.md) for configuration options and implementation details.
+➡️ See [docs/message-bundling-feature.md](docs/guides/user/chat/message-bundling-feature.md) for configuration options and implementation details.
 
 ## 🎯 Agentic Loop Token Management
 
@@ -1122,7 +1122,7 @@ WP oOS includes several performance optimizations to enhance the chat experience
 - **Automatic model switching** - Seamlessly handles token overflow scenarios
 - **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
 
-➡️ See [docs/chat-performance-optimizations.md](docs/features/performance/chat-performance-optimizations.md) for detailed performance tuning guide.
+➡️ See [docs/chat-performance-optimizations.md](docs/features/chat/chat-performance-optimizations.md) for detailed performance tuning guide.
 
 ## 🌐 Mesh Compute Routing
 
@@ -1155,8 +1155,8 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 - Automatic load balancing across peer sites
 - Cross-server compute pooling for Cloudways, SiteGround, etc.
 
-➡️ See [docs/mesh-routing-guide.md](docs/features/mesh/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
-➡️ See [docs/mesh-compute-pooling.md](docs/features/mesh/mesh-compute-pooling.md) for architecture and authentication details.
+➡️ See [docs/mesh-routing-guide.md](docs/features/federation/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
+➡️ See [docs/mesh-compute-pooling.md](docs/features/federation/mesh-compute-pooling.md) for architecture and authentication details.
 
 ## 🔗 Federation & Discovery System
 
@@ -1233,7 +1233,7 @@ The Federation & Discovery system provides three deployment modes:
 - **QPS Limit**: Queries per second (default: 5)
 - **Burst Capacity**: Simultaneous requests (default: 10)
 
-➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/features/mesh/federation-discovery.md)
+➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/features/federation/federation-discovery.md)
 ➡️ **Implementation Summary:** FEDERATION-IMPLEMENTATION-SUMMARY.md
 
 ## 🕵️ Code Review
@@ -1244,7 +1244,7 @@ The 2025-10-31 internal review confirms the hardening of the group email automat
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/troubleshooting/deployment/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
 
 ### Using WP oOS as an MCP server
 
@@ -1292,7 +1292,7 @@ Claude Desktop supports MCP servers through a JSON configuration file. Add your 
 }
 ```
 
-See the complete [Claude Desktop setup guide](docs/getting-started/quick-starts/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
+See the complete [Claude Desktop setup guide](docs/getting-started/installation-setup/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
 
 ### LM Studio Setup
 
@@ -1336,7 +1336,7 @@ If you want to use SSE for real-time updates:
 - **Enable SSE:** ✓ (checked)
 - **SSE Endpoint:** `/sse`
 
-See the complete [LM Studio setup guide](docs/getting-started/quick-starts/remote-client-setup.md#lm-studio-setup) and example configurations:
+See the complete [LM Studio setup guide](docs/getting-started/installation-setup/remote-client-setup.md#lm-studio-setup) and example configurations:
 - [lmstudio-mcp-without-sse.json](assets/examples/lmstudio-mcp-without-sse.json) - Recommended
 - [lmstudio-config.json](assets/examples/lmstudio-config.json) - With SSE
 
@@ -1349,7 +1349,7 @@ To connect via ChatGPT:
 2. Generate an Auth0 access token with the configured audience
 3. Add the MCP server in ChatGPT's connector settings
 
-See the [ChatGPT connector guide](docs/getting-started/quick-starts/remote-client-setup.md#chatgpt-connector-setup) for detailed Auth0 setup steps.
+See the [ChatGPT connector guide](docs/getting-started/installation-setup/remote-client-setup.md#chatgpt-connector-setup) for detailed Auth0 setup steps.
 
 ### Testing your connection
 
@@ -1373,8 +1373,8 @@ Expected output confirms the server is reachable and lists available assistants.
 ### Complete documentation
 
 For comprehensive setup guides, troubleshooting, and advanced configurations, see:
-- **[MCP Client Configurations](docs/mcp-client-configurations.md)** – **⭐ NEW:** Complete guide for all MCP clients (LM Studio, Claude Desktop, Cursor, Continue.dev, Cline, OpenAI)
-- **[Remote Client Setup Guide](docs/getting-started/quick-starts/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
+- **[MCP Client Configurations](docs/reference/api/mcp-client-configurations.md)** – **⭐ NEW:** Complete guide for all MCP clients (LM Studio, Claude Desktop, Cursor, Continue.dev, Cline, OpenAI)
+- **[Remote Client Setup Guide](docs/getting-started/installation-setup/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
 - **[MCP Server Authentication](docs/reference/api/mcp-server-authentication.md)** – Authentication methods and credential management
 - **[REST API Reference](docs/reference/api/rest-api.md)** – Endpoint documentation and payload examples
 - **[Example Configurations](assets/examples/)** – Ready-to-use config files for all major MCP clients
@@ -1435,7 +1435,7 @@ codex chat --assistant 123 "Hello world"
 - **Menu Location:** WP oOS → Token Manager
 - **REST API:** `/wp-json/mcp-ai/v1/token-manager/*`
 
-For complete documentation, see [Token Management Guide](docs/token-management.md).
+For complete documentation, see [Token Management Guide](docs/features/performance/token-management.md).
 
 ---
 
@@ -1578,9 +1578,9 @@ while (true) {
 ### Documentation
 
 For complete SSE implementation details, configuration options, and troubleshooting:
-- **[SSE Streaming Guide](docs/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
+- **[SSE Streaming Guide](docs/features/streaming/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
 - **[MCP and SSE](docs/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
-- **[Job Notification System](docs/features/async/job-notification-system.md)** - Real-time job status via SSE
+- **[Job Notification System](docs/features/async-jobs/job-notification-system.md)** - Real-time job status via SSE
 - **[REST API Reference](docs/reference/api/rest-api.md)** - SSE endpoint specifications
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
@@ -1670,7 +1670,7 @@ See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
 - [MCP Endpoint Reference](docs/reference/api/mcp-endpoint.md) - Complete method documentation and 2024-11-05 features
 - [MCP and SSE Explained](docs/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
 - [MCP Server Authentication](docs/reference/api/mcp-server-authentication.md) - OAuth 2.1 and security enhancements
-- [MCP Client Configurations](docs/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
+- [MCP Client Configurations](docs/reference/api/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
 - [Official MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 
 ---
@@ -2238,14 +2238,14 @@ Start with the comprehensive documentation before seeking additional support:
 
 1. **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast answers to common questions and tasks
 2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 32 documentation files
-3. **[Troubleshooting Guide](docs/troubleshooting/deployment/deployment-troubleshooting.md)** - Solutions to common issues
+3. **[Troubleshooting Guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)** - Solutions to common issues
 4. **[REST API Reference](docs/reference/api/rest-api.md)** - Complete API documentation
 
 ### Before Reporting Issues
 
 When encountering problems, please:
 
-- [ ] Check the [troubleshooting guide](docs/troubleshooting/deployment/deployment-troubleshooting.md)
+- [ ] Check the [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)
 - [ ] Enable logging in Settings → WP oOS to capture detailed errors
 - [ ] Review the [common issues section](#-common-issues) below
 - [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
@@ -2343,7 +2343,7 @@ We welcome contributions! Please see:
 - **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
 - [CONSOLIDATION_MAP.md](docs/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
 - [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
-- [ACTION_ITEMS.md](docs/guides/developer/planning/ACTION_ITEMS.md) - Current development priorities
+- [ACTION_ITEMS.md](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
 
 ### Documentation
 

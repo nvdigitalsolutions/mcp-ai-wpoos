@@ -412,6 +412,6 @@ The grouping and capability flags system is extensible. Potential future additio
 
 ## Related Documentation
 
-- [Tool Reference](tool-reference.md) - Complete list of all tools with descriptions
+- [Tool Reference](reference/tools/tool-reference.md) - Complete list of all tools with descriptions
 - [Base vs Full Version](base-vs-full-comparison.md) - Comparison of tool availability
 - [Assistant Configuration](assistant-storage-cpt-vs-cct.md) - How to configure assistants with tools

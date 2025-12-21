@@ -12,9 +12,9 @@
 
 - **[Full Gap Analysis](PLUGIN_GAP_ANALYSIS.md)** - Comprehensive 23KB analysis document
 - **[Quick Wins Guide](QUICK_WINS_GAP_FIXES.md)** - Step-by-step fixes with code examples
-- **[Action Items](ACTION_ITEMS.md)** - Current priority task list
-- **[Code Review Master](CODE-REVIEW-MASTER.md)** - Overall code quality assessment
-- **[Testing Report](TESTING_AND_QUALITY_REPORT.md)** - Test suite analysis
+- **[Action Items](guides/developer/planning/ACTION_ITEMS.md)** - Current priority task list
+- **[Code Review Master](guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Overall code quality assessment
+- **[Testing Report](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite analysis
 
 ---
 
@@ -182,22 +182,22 @@ See [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md) for step-by-step implemen
 1. **Start here** - This executive summary
 2. **Read:** [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md) - Full findings
 3. **Plan sprints** using priority matrix and effort estimates
-4. **Track progress** in [ACTION_ITEMS.md](ACTION_ITEMS.md)
+4. **Track progress** in [ACTION_ITEMS.md](guides/developer/planning/ACTION_ITEMS.md)
 
 ### For Developers
 1. **Start with:** [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md)
 2. **Implementation details** - Step-by-step guides with code
 3. **Reference:** [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md) for context
-4. **Update:** [ACTION_ITEMS.md](ACTION_ITEMS.md) as you complete items
+4. **Update:** [ACTION_ITEMS.md](guides/developer/planning/ACTION_ITEMS.md) as you complete items
 
 ### For QA/Testing
 1. **Read:** Testing section in [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)
-2. **Review:** [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)
+2. **Review:** [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)
 3. **Fix:** Test environment using [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md) Section 3
 
 ### For Security Auditors
 1. **Read:** Security section in [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)
-2. **Review:** [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) Security Implementation
+2. **Review:** [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) Security Implementation
 3. **Check:** [SECURITY.md](../SECURITY.md) for security policies
 4. **Focus areas:** Output escaping (identified), rate limiting audit
 
@@ -291,7 +291,7 @@ See [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md) for step-by-step implemen
 4. Are we blocking on quality in CI?
 
 ### Monthly Review
-1. Review [ACTION_ITEMS.md](ACTION_ITEMS.md) progress
+1. Review [ACTION_ITEMS.md](guides/developer/planning/ACTION_ITEMS.md) progress
 2. Update gap analysis if needed
 3. Prioritize next month's work
 4. Check success metrics
@@ -312,15 +312,15 @@ See [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md) for step-by-step implemen
 - **This document** - Executive summary
 
 ### Existing Quality Documents
-- [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Overall assessment
-- [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md) - Test details
-- [ACTION_ITEMS.md](ACTION_ITEMS.md) - Current task list
+- [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Overall assessment
+- [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) - Test details
+- [ACTION_ITEMS.md](guides/developer/planning/ACTION_ITEMS.md) - Current task list
 - [REMAINING_ISSUES.md](REMAINING_ISSUES.md) - Known issues
 
 ### Reference
 - [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - All docs
 - [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Fast lookup
-- [BEST_PRACTICES.md](BEST_PRACTICES.md) - Usage guidelines
+- [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Usage guidelines
 
 ---
 

@@ -423,8 +423,8 @@ For JSON fields (`google_analytics_credentials_json`, `mesh_peer_sites`, etc.):
 
 ## Further Reading
 
-- [Federation & Discovery System](federation-discovery.md)
-- [Mesh Compute Pooling](mesh-compute-pooling.md)
-- [Rate Limit Protection](rate-limit-protection.md)
+- [Federation & Discovery System](features/mesh/federation-discovery.md)
+- [Mesh Compute Pooling](features/mesh/mesh-compute-pooling.md)
+- [Rate Limit Protection](troubleshooting/deployment/rate-limit-protection.md)
 - [OpenAI TTS Documentation](https://platform.openai.com/docs/guides/text-to-speech)
 - [Google Analytics 4 API Setup](https://developers.google.com/analytics/devguides/reporting/data/v1)

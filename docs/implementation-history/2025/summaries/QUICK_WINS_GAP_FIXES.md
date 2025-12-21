@@ -530,10 +530,10 @@ All errors follow this JSON structure:
 
 ## See Also
 
-- [REST API Documentation](rest-api.md)
-- [MCP Protocol Documentation](mcp-endpoint.md)
-- [Troubleshooting Guide](deployment-troubleshooting.md)
-- [Tool Reference](tool-reference.md)
+- [REST API Documentation](reference/api/rest-api.md)
+- [MCP Protocol Documentation](reference/api/mcp-endpoint.md)
+- [Troubleshooting Guide](troubleshooting/deployment/deployment-troubleshooting.md)
+- [Tool Reference](reference/tools/tool-reference.md)
 ```
 
 2. **Update `docs/rest-api.md` to reference error codes:**
@@ -836,5 +836,5 @@ See: docs/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md for detailed status
 **Last Updated:** December 20, 2025  
 **Related Documents:**
 - [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)
-- [ACTION_ITEMS.md](ACTION_ITEMS.md)
-- [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)
+- [ACTION_ITEMS.md](guides/developer/planning/ACTION_ITEMS.md)
+- [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)

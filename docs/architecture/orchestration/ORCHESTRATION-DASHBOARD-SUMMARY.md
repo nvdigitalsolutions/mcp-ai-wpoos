@@ -398,7 +398,7 @@ Number of background AI tasks currently scheduled.
 ### Learn More
 
 - **Implementation Details**: See [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md)
-- **Architecture**: See [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md)
+- **Architecture**: See [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
 - **Findings Report**: See [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md)
 
 ### Get Help

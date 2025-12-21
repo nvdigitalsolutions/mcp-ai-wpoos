@@ -927,8 +927,8 @@ class Test_WP_MCP_AI_Embeddings_Manager extends WP_UnitTestCase {
 
 ### WP oOS Documentation
 - [Current Architecture](../ARCHITECTURE.md)
-- [Tool Reference](tool-reference.md)
-- [MCP Endpoint](mcp-endpoint.md)
+- [Tool Reference](reference/tools/tool-reference.md)
+- [MCP Endpoint](reference/api/mcp-endpoint.md)
 - [Quick Reference](QUICK_REFERENCE.md)
 
 ---

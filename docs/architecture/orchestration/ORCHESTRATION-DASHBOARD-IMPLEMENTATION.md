@@ -2,7 +2,7 @@
 
 **Last Updated:** November 10, 2024  
 **Plugin Version:** 1.0.0  
-**Related:** [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md), [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md)
+**Related:** [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md), [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md)
 
 ---
 
@@ -739,7 +739,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 
 ## Related Documentation
 
-- [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) - Architecture overview
+- [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) - Architecture overview
 - [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md) - Search findings and PR #852 details
 - [orchestration-budget-enforcement.md](orchestration-budget-enforcement.md) - Budget enforcement details
 - [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Resource management system

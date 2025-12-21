@@ -116,5 +116,5 @@ WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( 'get_site_url', 0.5 );
 ## See Also
 
 - [Token Management](token-management.md)
-- [Tool Reference](tool-reference.md)
+- [Tool Reference](reference/tools/tool-reference.md)
 - [Token Usage Manager Enhancement Plan](TOKEN-MANAGER-ENHANCEMENT-PLAN.md)

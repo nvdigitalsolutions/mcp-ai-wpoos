@@ -180,8 +180,8 @@ Both methods provide filters for customization:
 
 ## Related Documentation
 
-- [Tool Reference](tool-reference.md) - Complete tool documentation
-- [REST API Reference](rest-api.md) - API endpoint details
+- [Tool Reference](reference/tools/tool-reference.md) - Complete tool documentation
+- [REST API Reference](reference/api/rest-api.md) - API endpoint details
 - [Gemini Client](../includes/class-wp-mcp-ai-gemini-client.php) - Implementation source
 - [Generate Tool](../includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php)
 - [Edit Tool](../includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php)

@@ -328,13 +328,13 @@ The plugin now supports three distinct build variants:
 
 ## Related Documentation
 
-- [Tool Reference](tool-reference.md) - Complete tool listing
+- [Tool Reference](reference/tools/tool-reference.md) - Complete tool listing
 - [Product Price Lookup Guide](PRODUCT-PRICE-LOOKUP-GUIDE.md) - Detailed guide
 - [Token Management](token-management.md) - Token Manager documentation
 - [CodeSniffer Cleanup Summary](CODESNIFFER_CLEANUP_SUMMARY.md) - Cleanup details
 - [Architecture: Core/Pro](ARCHITECTURE-CORE-PRO.md) - Architecture overview
-- [Feature Matrix](FEATURE-MATRIX-CORE-PRO.md) - Core vs Pro features
-- [Action Items](ACTION_ITEMS.md) - Pending tasks
+- [Feature Matrix](reference/models/FEATURE-MATRIX-CORE-PRO.md) - Core vs Pro features
+- [Action Items](guides/developer/planning/ACTION_ITEMS.md) - Pending tasks
 - [Remaining Issues](REMAINING_ISSUES.md) - Known issues
 
 ---

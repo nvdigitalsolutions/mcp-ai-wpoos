@@ -637,10 +637,10 @@ add_filter( 'wp_mcp_ai_mesh_router_cost_factor', function( $score, $provider ) {
 
 ## Related Documentation
 
-- [Mesh Compute Pooling](mesh-compute-pooling.md) - Authentication and architecture
-- [Tool Reference](tool-reference.md) - All 65+ tools including mesh tools
-- [REST API](rest-api.md) - Mesh API endpoints
-- [Best Practices](BEST_PRACTICES.md) - Usage recommendations
+- [Mesh Compute Pooling](features/mesh/mesh-compute-pooling.md) - Authentication and architecture
+- [Tool Reference](reference/tools/tool-reference.md) - All 65+ tools including mesh tools
+- [REST API](reference/api/rest-api.md) - Mesh API endpoints
+- [Best Practices](guides/developer/best-practices/BEST_PRACTICES.md) - Usage recommendations
 
 ---
 

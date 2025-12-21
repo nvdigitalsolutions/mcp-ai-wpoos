@@ -24,7 +24,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 
 ## 📊 Executive Summary
 
-**File:** [`GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md`](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
+**File:** [`GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md`](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 
 **Best for:** Product managers, business stakeholders, decision-makers
 
@@ -133,24 +133,24 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 ### By Role
 
 **I'm a Product Manager:**
-1. Start with [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
+1. Start with [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 2. Review [Capabilities Matrix](GEMINI_CAPABILITIES_MATRIX.md) for feature list
 3. Use [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) Section 5 for priorities
 
 **I'm a Developer:**
 1. Start with [Capabilities Matrix](GEMINI_CAPABILITIES_MATRIX.md) for current state
 2. Read [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) for implementation specs
-3. Reference [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) for context
+3. Reference [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) for context
 
 **I'm a Business Stakeholder:**
-1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) only
+1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) only
 2. Focus on ROI Analysis and Decision Matrix sections
 3. Review Recommendation section for next steps
 
 ### By Need
 
 **"Should we invest in enhancements?"**
-→ [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Decision Matrix section
+→ [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Decision Matrix section
 
 **"What's currently implemented?"**
 → [Capabilities Matrix](GEMINI_CAPABILITIES_MATRIX.md) - API Endpoints table
@@ -162,7 +162,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 → [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Find the specific gap section
 
 **"What's the ROI?"**
-→ [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Cost Savings section
+→ [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Cost Savings section
 
 **"How long will it take?"**
 → [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Section 5: Priority Matrix
@@ -213,15 +213,15 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 - [`ARCHITECTURE.md`](../ARCHITECTURE.md) - System architecture
 
 ### API Reference
-- [`rest-api.md`](rest-api.md) - REST API documentation
-- [`tool-reference.md`](tool-reference.md) - Tool catalog
+- [`rest-api.md`](reference/api/rest-api.md) - REST API documentation
+- [`tool-reference.md`](reference/tools/tool-reference.md) - Tool catalog
 
 ---
 
 ## 🚀 Quick Start
 
 ### For Decision Makers (5 minutes)
-1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Sections 1-3
+1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Sections 1-3
 2. Review ROI Analysis section
 3. Check Recommendation section
 4. Make decision on Phase 1
@@ -233,7 +233,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 4. Identify first implementation task
 
 ### For Product Managers (30 minutes)
-1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) fully
+1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) fully
 2. Review [Capabilities Matrix](GEMINI_CAPABILITIES_MATRIX.md) - Tables 1-3
 3. Scan [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - High priority items
 4. Prioritize based on user feedback

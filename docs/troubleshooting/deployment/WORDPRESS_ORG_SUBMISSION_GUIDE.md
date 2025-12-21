@@ -200,7 +200,7 @@ unzip -p build/mcp-ai-wpoos-base-1.0.0.zip mcp-ai-wpoos-base/readme.txt | head -
 
 ## 📖 Related Documentation
 
-- [Build Artifacts Clarification](docs/BUILD-ARTIFACTS-CLARIFICATION.md)
+- [Build Artifacts Clarification](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md)
 - [Release Checklist](RELEASE_CHECKLIST.md)
 - [Architecture Quick Reference](docs/ARCHITECTURE_QUICK_REFERENCE.md)
 

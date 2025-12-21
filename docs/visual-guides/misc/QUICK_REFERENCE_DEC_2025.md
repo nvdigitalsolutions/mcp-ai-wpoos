@@ -259,7 +259,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 
 ### For Developers
 - [CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md) - Latest code review
-- [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Historical reviews
+- [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Historical reviews
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - System architecture
 - [BUILD.md](../BUILD.md) - Build instructions
 
@@ -267,12 +267,12 @@ OpenAI's latest model family is now fully supported with 6 variants:
 - [README.md](../README.md) - Main documentation (157KB)
 - [CHANGELOG.md](../CHANGELOG.md) - Version history
 - [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - Complete doc map
-- [BEST_PRACTICES.md](BEST_PRACTICES.md) - Usage recommendations
+- [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Usage recommendations
 
 ### For Administrators
-- [mcp-ai-plugin-setup-checklist.md](mcp-ai-plugin-setup-checklist.md) - Setup guide
-- [remote-client-quickstart.md](remote-client-quickstart.md) - Remote clients
-- [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting
+- [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Setup guide
+- [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Remote clients
+- [deployment-troubleshooting.md](troubleshooting/deployment/deployment-troubleshooting.md) - Troubleshooting
 - [SECURITY.md](../SECURITY.md) - Security policies
 
 ---

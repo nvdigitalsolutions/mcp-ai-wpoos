@@ -144,4 +144,4 @@ Every authentication failure is returned as a structured JSON error so MCP clien
 
 Each error also contains an `actions` array that mirrors these remediation steps so MCP clients can surface actionable guidance to end users.
 
-Refer to [docs/rest-api.md](rest-api.md) for endpoint-specific payload shapes and integration guidance.
+Refer to [docs/rest-api.md](reference/api/rest-api.md) for endpoint-specific payload shapes and integration guidance.

@@ -152,5 +152,5 @@ Message bundling is fully backward compatible:
 ## Related Documentation
 
 - [Quick Reference Guide](QUICK_REFERENCE.md)
-- [Troubleshooting Guide](deployment-troubleshooting.md)
-- [REST API Reference](rest-api.md)
+- [Troubleshooting Guide](troubleshooting/deployment/deployment-troubleshooting.md)
+- [REST API Reference](reference/api/rest-api.md)

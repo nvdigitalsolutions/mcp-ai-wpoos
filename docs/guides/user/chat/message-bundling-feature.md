@@ -150,10 +150,10 @@ See [TESTING-CHAT-OPTIMIZATIONS.md](TESTING-CHAT-OPTIMIZATIONS.md) for comprehen
 
 ## Related Documentation
 
-- [Chat Performance Optimizations](chat-performance-optimizations.md) - Complete optimization guide
+- [Chat Performance Optimizations](features/performance/chat-performance-optimizations.md) - Complete optimization guide
 - [Testing Guide](TESTING-CHAT-OPTIMIZATIONS.md) - Comprehensive testing procedures
 - [Quick Reference](QUICK_REFERENCE.md) - Fast access to common tasks
-- [Troubleshooting](deployment-troubleshooting.md) - Common issues and solutions
+- [Troubleshooting](troubleshooting/deployment/deployment-troubleshooting.md) - Common issues and solutions
 
 ## Future Enhancements
 

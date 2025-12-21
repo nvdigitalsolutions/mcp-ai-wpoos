@@ -568,8 +568,8 @@ cloudflared tunnel route list
 - [LM Studio Setup Guide](lm-studio-setup.md) - Local LM Studio configuration
 - [Network Interface Binding](NETWORK_INTERFACE_BINDING.md) - Direct network access setup
 - [Security Hardening](SECURITY_HARDENING.md) - Security best practices
-- [Remote Client Setup](remote-client-setup.md) - Remote client configuration
-- [Deployment Troubleshooting](deployment-troubleshooting.md) - General troubleshooting
+- [Remote Client Setup](getting-started/quick-starts/remote-client-setup.md) - Remote client configuration
+- [Deployment Troubleshooting](troubleshooting/deployment/deployment-troubleshooting.md) - General troubleshooting
 
 ## External Resources
 

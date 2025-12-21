@@ -348,7 +348,7 @@ The implementation provides a solid foundation for scalability and sets the stag
 ## References
 
 - [Main Documentation](../README.md)
-- [Performance Optimization Guide](PERFORMANCE-OPTIMIZATION.md)
+- [Performance Optimization Guide](features/performance/PERFORMANCE-OPTIMIZATION.md)
 - [WordPress Transients API](https://developer.wordpress.org/apis/handbook/transients/)
 - [WP_Query Performance](https://10up.github.io/Engineering-Best-Practices/php/#performance)
 

@@ -496,7 +496,7 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 1. Verify using `/mcp` endpoint for JSON-RPC
 2. Check method name matches MCP spec
 3. Update to latest WP oOS version
-4. Review [MCP Endpoint Documentation](mcp-endpoint.md)
+4. Review [MCP Endpoint Documentation](reference/api/mcp-endpoint.md)
 
 ### Issue: CORS Errors
 
@@ -553,10 +553,10 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 
 ## Additional Resources
 
-- [MCP Endpoint Documentation](mcp-endpoint.md)
-- [MCP Server Authentication](mcp-server-authentication.md)
-- [REST API Reference](rest-api.md)
-- [Remote Client Setup Guide](remote-client-setup.md)
+- [MCP Endpoint Documentation](reference/api/mcp-endpoint.md)
+- [MCP Server Authentication](reference/api/mcp-server-authentication.md)
+- [REST API Reference](reference/api/rest-api.md)
+- [Remote Client Setup Guide](getting-started/quick-starts/remote-client-setup.md)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 
 ---

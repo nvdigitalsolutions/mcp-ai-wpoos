@@ -20,7 +20,7 @@ The REST API is organized into specialized controllers:
 
 ## Authentication recap
 
-All endpoints honour the authentication modes described in [docs/mcp-server-authentication.md](mcp-server-authentication.md):
+All endpoints honour the authentication modes described in [docs/mcp-server-authentication.md](reference/api/mcp-server-authentication.md):
 
 - **Auth0 bearer tokens** – Supply `Authorization: Bearer <token>` with an access token whose issuer, audience, and scopes match the plugin settings.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L520-L823】
 - **Assistant-issued credentials** – Pass the one-time token generated in the assistant editor (`cred_xxxxx.SECRET`). The REST controller hashes and validates the credential, scopes the request to the issuing assistant, and records an audit log entry for successful usage.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L426-L520】

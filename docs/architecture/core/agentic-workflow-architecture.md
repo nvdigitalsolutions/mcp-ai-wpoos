@@ -548,8 +548,8 @@ add_action( 'wp_mcp_ai_agentic_metrics', function( $metrics ) {
 
 ## Additional Resources
 
-- [Tool Reference](tool-reference.md) - Complete list of 65+ tools
-- [REST API Documentation](rest-api.md) - API endpoints and authentication
+- [Tool Reference](reference/tools/tool-reference.md) - Complete list of 65+ tools
+- [REST API Documentation](reference/api/rest-api.md) - API endpoints and authentication
 - [Testing Guide](TESTING-CHAT-OPTIMIZATIONS.md) - Performance testing
 - [Quick Reference](QUICK_REFERENCE.md) - Common tasks
 
