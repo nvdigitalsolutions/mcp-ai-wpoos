@@ -76,6 +76,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 					'enum'        => array_values( self::get_allowed_qualities() ),
 					'default'     => $defaults['quality'],
 				),
+				'style'           => array(
+					'type'        => 'string',
+					'description' => __( 'Style preset for DALL-E 3 models. "vivid" produces hyper-real and dramatic images. "natural" produces more natural, less hyper-real looking images.', 'wp-mcp-ai' ),
+					'enum'        => array( 'natural', 'vivid' ),
+				),
 				'response_format' => array(
 					'type'        => 'string',
 					'description' => __( 'Whether OpenAI should return base64 data or a hosted image URL.', 'wp-mcp-ai' ),
@@ -257,6 +262,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'size'    => $size,
 			'quality' => $quality,
 		);
+
+		// Add style parameter if provided.
+		if ( isset( $arguments['style'] ) && '' !== $arguments['style'] ) {
+			$style = sanitize_key( $arguments['style'] );
+			if ( in_array( $style, array( 'natural', 'vivid' ), true ) ) {
+				$options['style'] = $style;
+			}
+		}
 
 		if ( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
 			$options['response_format'] = $response_format;
