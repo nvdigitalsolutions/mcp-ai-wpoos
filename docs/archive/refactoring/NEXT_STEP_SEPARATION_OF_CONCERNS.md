@@ -250,7 +250,7 @@ Once this small refactoring is successful:
 - [Separation of Concerns Index](SEPARATION_OF_CONCERNS_INDEX.md)
 - [Separation of Concerns Violations](SEPARATION_OF_CONCERNS_VIOLATIONS.md)
 - [Separation of Concerns Summary](../SEPARATION_OF_CONCERNS_SUMMARY.md)
-- [Settings Repository](includes/repositories/class-wp-mcp-ai-settings-repository.php)
+- [Settings Repository](../../../includes/repositories/class-wp-mcp-ai-settings-repository.php)
 
 ---
 

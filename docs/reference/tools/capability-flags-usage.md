@@ -246,4 +246,4 @@ php verify-capability-flags.php
 
 - [Tool Grouping Documentation](tool-grouping.md)
 - [Orchestration Layer Architecture](../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
-- [Tool Interface Documentation](includes/tools/class-wp-mcp-ai-tool-interface.php)
+- [Tool Interface Documentation](../../../includes/tools/class-wp-mcp-ai-tool-interface.php)
