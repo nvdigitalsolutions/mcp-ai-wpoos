@@ -4,6 +4,29 @@
 
 ### Added
 
+#### OpenAI Batch API Integration (December 21, 2025)
+- **Batch Processing for Cost Savings**: Integrated OpenAI Batch API for asynchronous bulk operations with 50% cost reduction
+  - **New Client Methods**: Added 4 Batch API methods to `WP_MCP_AI_OpenAI_Client`
+    - `create_batch()` - Create asynchronous batch processing jobs
+    - `retrieve_batch()` - Get batch job status and results
+    - `cancel_batch()` - Cancel running batch jobs
+    - `list_batches()` - List and filter batch jobs with pagination
+  - **New Tools**: 3 batch management tools for WordPress integration
+    - `create_batch` - Create batch jobs via WordPress
+    - `get_batch_status` - Monitor batch progress and completion
+    - `list_batches` - List and manage batch jobs
+  - **Supported Endpoints**: `/v1/chat/completions`, `/v1/embeddings`, `/v1/moderations`
+  - **Cost Savings**: 50% reduced cost compared to synchronous API calls
+  - **Higher Rate Limits**: Dedicated quota and much higher throughput
+  - **24-Hour SLA**: Guaranteed completion within 24 hours
+  - **Use Cases**: Bulk content generation, mass embeddings creation, large-scale moderation, dataset processing
+  - **WordPress Integration**: Proper capability checks (requires `manage_options`)
+  - **Comprehensive Results**: Status tracking, progress monitoring, output file IDs
+  - **Test Coverage**: 15 comprehensive test cases covering all functionality
+  - **Documentation**: Complete usage guide with examples
+  - See [OpenAI Batch API Usage](docs/examples/openai-batch-api-usage.md)
+  - See [OpenAI Batch API Documentation](https://platform.openai.com/docs/guides/batch)
+
 #### OpenAI Moderation API Integration (December 21, 2025)
 - **Content Safety & Compliance**: Integrated OpenAI Moderation API for automated content moderation
   - **New Tool**: `moderate_content` - Analyzes text and images for policy violations
