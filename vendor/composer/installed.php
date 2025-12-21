@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/complete-openai-api-integration-again',
-        'version' => 'dev-copilot/complete-openai-api-integration-again',
-        'reference' => '7286cfbbf86eeab0f9cd2dd425e7000b7dccf214',
+        'pretty_version' => 'dev-copilot/enhance-openai-api-next-phase',
+        'version' => 'dev-copilot/enhance-openai-api-next-phase',
+        'reference' => '568c9f2b8bb8918f5fa24c30de7dadc89e0645d2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/complete-openai-api-integration-again',
-            'version' => 'dev-copilot/complete-openai-api-integration-again',
-            'reference' => '7286cfbbf86eeab0f9cd2dd425e7000b7dccf214',
+            'pretty_version' => 'dev-copilot/enhance-openai-api-next-phase',
+            'version' => 'dev-copilot/enhance-openai-api-next-phase',
+            'reference' => '568c9f2b8bb8918f5fa24c30de7dadc89e0645d2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
