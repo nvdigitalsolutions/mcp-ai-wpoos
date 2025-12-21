@@ -396,7 +396,7 @@ chmod +x bin/*.sh
 
 - [BUILD.md](BUILD.md) - Asset build process
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [docs/CODE_REVIEW.md](docs/CODE_REVIEW.md) - Code quality standards
+- [docs/CODE_REVIEW.md](../code-reviews/CODE_REVIEW.md) - Code quality standards
 - [docs/BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Development best practices
 
 ## Support

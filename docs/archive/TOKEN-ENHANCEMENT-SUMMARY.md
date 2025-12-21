@@ -14,21 +14,21 @@ The current token management system uses a fixed 100,000 token limit per user pe
 
 ### 📄 Documentation Created
 
-1. **[TOKEN-MANAGER-ENHANCEMENT-PLAN.md](docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)** (36KB)
+1. **[TOKEN-MANAGER-ENHANCEMENT-PLAN.md](../features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)** (36KB)
    - Comprehensive enhancement specification
    - 7 detailed enhancement areas
    - Implementation roadmap
    - Testing strategy
    - Code examples for all features
 
-2. **[QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](docs/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)** (8KB)
+2. **[QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](../features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)** (8KB)
    - Quick start guide
    - Code snippets
    - API examples
    - Troubleshooting tips
    - Tier comparison table
 
-3. **Updated [DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)**
+3. **Updated [DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)**
    - Added references to new documents
    - Organized in Performance & Optimization section
 
@@ -236,8 +236,8 @@ All code examples in the enhancement plan are ready for implementation but not y
 
 ## Resources
 
-- **Full Documentation:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
-- **Quick Reference:** [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](docs/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)
+- **Full Documentation:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](../features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
+- **Quick Reference:** [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](../features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)
 - **Code Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Issue Tracker:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 
@@ -253,12 +253,12 @@ All code examples in the enhancement plan are ready for implementation but not y
 
 ## Quick Links
 
-- 📖 [Full Enhancement Plan](docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
-- ⚡ [Quick Reference](docs/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)
-- 📚 [Documentation Index](docs/DOCUMENTATION_INDEX.md)
-- 🔧 [Token Management Docs](docs/token-management.md)
-- 📊 [Token Counting Docs](docs/token-counting.md)
-- 🏗️ [Architecture Guide](docs/ARCHITECTURE_QUICK_REFERENCE.md)
+- 📖 [Full Enhancement Plan](../features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
+- ⚡ [Quick Reference](../features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md)
+- 📚 [Documentation Index](../DOCUMENTATION_INDEX.md)
+- 🔧 [Token Management Docs](../features/performance/token-management.md)
+- 📊 [Token Counting Docs](../reference/technical/token-counting.md)
+- 🏗️ [Architecture Guide](../architecture/core/ARCHITECTURE_QUICK_REFERENCE.md)
 
 ---
 

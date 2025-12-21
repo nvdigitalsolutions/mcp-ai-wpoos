@@ -340,7 +340,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [CROSS-WIDGET-COMMUNICATION.md](archive/features/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
+| [CROSS-WIDGET-COMMUNICATION.md](guides/user/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
 | [chat-history-persistence.md](guides/user/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
 
@@ -355,9 +355,9 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [token-counting.md](reference/technical/token-counting.md) | Token counting tool for budget management | Users/Devs |
 | [analytics-engine.md](features/analytics/analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
 | [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
-| [PHASE-7-ANALYTICS-PLAN.md](archive/planning/PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
+| [PHASE-7-ANALYTICS-PLAN.md](features/analytics/PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
 | [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
-| [QUICK-REFERENCE-PHASE-7.md](archive/planning/QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
+| [QUICK-REFERENCE-PHASE-7.md](features/analytics/QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
 | [job-notification-system.md](features/async-jobs/job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](features/chat/chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](features/performance/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
@@ -380,7 +380,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) | Common deployment issues | Admins |
 | [voice-chat-troubleshooting.md](troubleshooting/chat/voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
 | [console-testing.md](getting-started/first-steps/console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
-| [CRON_TESTING_GUIDE.md](archive/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](reference/technical/php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](getting-started/installation-setup/multisite-support.md) | Multisite configuration | Admins |
 | [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Known minor issues | Developers |
@@ -398,14 +398,14 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | **NEW (Dec 6, 2025):** Step-by-step quick fixes with code examples | Developers |
 | [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | **Master Code Review** - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
 | [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
-| [SETTINGS_PAGE_CODE_REVIEW.md](archive/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
+| [SETTINGS_PAGE_CODE_REVIEW.md](implementation-history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
 | [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
 
 ### Technical Documentation
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [OPENAI-STABILIZATION.md](archive/fixes/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
+| [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
 
 ---

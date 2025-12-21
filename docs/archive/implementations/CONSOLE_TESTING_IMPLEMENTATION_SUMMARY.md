@@ -182,7 +182,7 @@ Possible future additions:
 
 - Main Guide: [docs/console-testing.md](../../getting-started/first-steps/console-testing.md)
 - Quick Ref: [docs/CONSOLE_TESTING_QUICK_REF.md](../../visual-guides/testing/CONSOLE_TESTING_QUICK_REF.md)
-- Visual Guide: [docs/CONSOLE_TESTING_VISUAL.md](docs/CONSOLE_TESTING_VISUAL.md)
+- Visual Guide: [docs/CONSOLE_TESTING_VISUAL.md](../../visual-guides/testing/CONSOLE_TESTING_VISUAL.md)
 - HTML Demo: [docs/examples/console-testing-example.html](docs/examples/console-testing-example.html)
 
 ## Commit History

@@ -31,7 +31,7 @@
 This review consists of multiple complementary documents, each serving a different purpose:
 
 ### 1. Executive Summary (Start Here)
-**File**: [`SEPARATION_OF_CONCERNS_SUMMARY.md`](SEPARATION_OF_CONCERNS_SUMMARY.md)  
+**File**: [`SEPARATION_OF_CONCERNS_SUMMARY.md`](../SEPARATION_OF_CONCERNS_SUMMARY.md)  
 **Size**: 7KB  
 **Audience**: Managers, Tech Leads, Stakeholders  
 **Time to Read**: 5-10 minutes
@@ -195,7 +195,7 @@ This review consists of multiple complementary documents, each serving a differe
 ## 🎓 Learning Resources
 
 ### Internal Documentation
-- [`docs/COPILOT_ARCHITECTURE_GUIDE.md`](docs/COPILOT_ARCHITECTURE_GUIDE.md) - Current architecture
+- [`docs/COPILOT_ARCHITECTURE_GUIDE.md`](../../architecture/core/COPILOT_ARCHITECTURE_GUIDE.md) - Current architecture
 - [`docs/BEST_PRACTICES.md`](../../guides/developer/best-practices/BEST_PRACTICES.md) - Coding standards
 - [`docs/CODE-REVIEW-MASTER.md`](../../guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality review
 
@@ -302,8 +302,8 @@ SEPARATION_OF_CONCERNS_VIOLATIONS.md
 
 ## 📚 Quick Links
 
-- [Executive Summary](SEPARATION_OF_CONCERNS_SUMMARY.md) - Start here
+- [Executive Summary](../SEPARATION_OF_CONCERNS_SUMMARY.md) - Start here
 - [Visual Guide](SEPARATION_OF_CONCERNS_VISUAL.md) - Code examples
 - [Technical Analysis](SEPARATION_OF_CONCERNS_VIOLATIONS.md) - Deep dive
-- [Architecture Guide](docs/COPILOT_ARCHITECTURE_GUIDE.md) - Current state
+- [Architecture Guide](../../architecture/core/COPILOT_ARCHITECTURE_GUIDE.md) - Current state
 - [Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md) - Coding standards

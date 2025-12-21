@@ -331,10 +331,10 @@ All historical documentation preserved in organized structure:
 
 ## Quick Links
 
-- **Master Bugs:** [docs/CONSOLIDATED_BUGS_AND_FIXES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)
-- **Master Sessions:** [docs/CONSOLIDATED_SESSION_SUMMARIES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)
+- **Master Bugs:** [docs/CONSOLIDATED_BUGS_AND_FIXES.md](../../implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)
+- **Master Sessions:** [docs/CONSOLIDATED_SESSION_SUMMARIES.md](../../implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)
 - **Master Reviews:** [docs/CODE-REVIEW-MASTER.md](../../guides/developer/best-practices/CODE-REVIEW-MASTER.md)
-- **Documentation Index:** [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)
+- **Documentation Index:** [docs/DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md)
 - **Archive Note:** [SESSION_SUMMARIES_ARCHIVE_NOTE.md](SESSION_SUMMARIES_ARCHIVE_NOTE.md)
 
 ---

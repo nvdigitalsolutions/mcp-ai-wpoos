@@ -12,7 +12,7 @@ This PR completes a comprehensive code review of the Open Operator System (WP oO
 
 ### 1. Comprehensive Code Review Performed
 
-**Review Document:** [docs/CODE_REVIEW_2025-12-06.md](docs/CODE_REVIEW_2025-12-06.md) (21KB)
+**Review Document:** [docs/CODE_REVIEW_2025-12-06.md](../../implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) (21KB)
 
 A thorough assessment covering:
 - Security audit
@@ -278,8 +278,8 @@ The Open Operator System (WP oOS) plugin demonstrates **excellent overall qualit
 
 ## Quick Links
 
-- [Comprehensive Code Review](docs/CODE_REVIEW_2025-12-06.md)
+- [Comprehensive Code Review](../../implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md)
 - [Code Review Master](../../guides/developer/best-practices/CODE-REVIEW-MASTER.md)
-- [Documentation Index](docs/DOCUMENTATION_INDEX.md)
-- [Recent Changes](docs/RECENT_CHANGES_DEC_2025.md)
+- [Documentation Index](../../DOCUMENTATION_INDEX.md)
+- [Recent Changes](../../implementation-history/2025/summaries/RECENT_CHANGES_DEC_2025.md)
 - [README](README.md)

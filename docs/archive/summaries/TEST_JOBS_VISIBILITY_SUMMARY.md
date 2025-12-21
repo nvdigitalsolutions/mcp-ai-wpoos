@@ -209,7 +209,7 @@ The feature was already implemented and working correctly. This PR enhances the 
 
 ## Related Documentation
 
-- [CRON_TESTING_GUIDE.md](docs/CRON_TESTING_GUIDE.md) - Complete testing guide
+- [CRON_TESTING_GUIDE.md](../../guides/developer/testing/CRON_TESTING_GUIDE.md) - Complete testing guide
 - [tool-reference.md](../../reference/tools/tool-reference.md) - Cron job tool reference
 - Admin UI: `/wp-admin/admin.php?page=wp-mcp-ai-cron-manager`
 - Settings: `/wp-admin/admin.php?page=wp-mcp-ai-settings&tab=orchestration`
