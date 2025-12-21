@@ -226,7 +226,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ### For System Administrators
 1. [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) - Troubleshooting guide
 2. [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication setup
-3. [tools-manager.md](guides/developer/tools/tools-manager.md) - Tools Manager admin interface guide
+3. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
 4. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
 5. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
 6. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
@@ -287,16 +287,16 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
 | [BUILD-ARTIFACTS-CLARIFICATION.md](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
-| [memory-limits.md](features/performance/memory-limits.md) | Memory management and limits | Developers |
+| [memory-limits.md](features/memory/memory-limits.md) | Memory management and limits | Developers |
 
 ### Integration Guides
 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
-| [elementor-widgets.md](features/elementor/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
+| [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
-| [jetengine-api-compatibility.md](features/jetengine/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
+| [jetengine-api-compatibility.md](architecture/integrations/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
 | [jukebox-integration.md](guides/developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
 
 ### Remote Client Setup
@@ -331,10 +331,10 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [rest-api.md](reference/api/rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](reference/tools/tool-reference.md) | All 105 built-in tools catalog (24KB) | Users/Devs |
 | [tool-grouping.md](reference/tools/tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
-| [tools-manager.md](guides/developer/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
+| [tools-manager.md](guides/admin/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
-| [tool-image-download.md](features/tools/image/tool-image-download.md) | Image download tool specifics | Developers |
+| [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
 
 ### Chat Features
 
@@ -354,14 +354,14 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [high-token-tool-handling.md](features/tools/presets/high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](reference/technical/token-counting.md) | Token counting tool for budget management | Users/Devs |
 | [analytics-engine.md](features/analytics/analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
-| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](archive/token-manager/TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
+| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
 | [PHASE-7-ANALYTICS-PLAN.md](archive/planning/PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
 | [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
 | [QUICK-REFERENCE-PHASE-7.md](archive/planning/QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
 | [job-notification-system.md](features/async-jobs/job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](features/chat/chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
-| [tpm-limit-validation.md](features/tools/validation/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
-| [tool-llm-sanitization.md](features/tools/validation/tool-llm-sanitization.md) | Tool output sanitization | Developers |
+| [tpm-limit-validation.md](features/performance/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
+| [tool-llm-sanitization.md](guides/developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
 
 ### MCP Protocol
 

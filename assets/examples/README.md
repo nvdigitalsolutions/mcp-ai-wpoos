@@ -163,9 +163,9 @@ Before using these configurations, you need to generate assistant credentials:
 
 For detailed setup instructions, troubleshooting, and advanced configurations:
 
-- [Remote Client Setup Guide](../../getting-started/installation-setup/remote-client-setup.md)
-- [MCP Server Authentication](../../reference/api/mcp-server-authentication.md)
-- [REST API Reference](../../reference/api/rest-api.md)
+- [Remote Client Setup Guide](../../docs/getting-started/installation-setup/remote-client-setup.md)
+- [MCP Server Authentication](../../docs/reference/api/mcp-server-authentication.md)
+- [REST API Reference](../../docs/reference/api/rest-api.md)
 
 ## Testing Your Configuration
 
@@ -352,7 +352,7 @@ This error was caused by critical bugs that have been fixed in the latest versio
 1. Verify you're using the correct endpoint (`/mcp` for JSON-RPC)
 2. Check the method name matches MCP specification
 3. Update to latest version of WP oOS plugin
-4. Review [MCP Endpoint Documentation](../../reference/api/mcp-endpoint.md)
+4. Review [MCP Endpoint Documentation](../../docs/reference/api/mcp-endpoint.md)
 
 ## Security Notes
 
