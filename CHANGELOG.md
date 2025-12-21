@@ -4,6 +4,22 @@
 
 ### Added
 
+#### OpenAI Moderation API Integration (December 21, 2025)
+- **Content Safety & Compliance**: Integrated OpenAI Moderation API for automated content moderation
+  - **New Tool**: `moderate_content` - Analyzes text and images for policy violations
+  - **14 Violation Categories**: Checks for sexual content, hate speech, harassment, self-harm, violence, and illicit content
+  - **Multimodal Support**: Works with both text and images via `omni-moderation-latest` model
+  - **Batch Processing**: Can moderate multiple items in a single API call for efficiency
+  - **Confidence Scores**: Returns probability scores (0-1) for each category
+  - **Free API**: Moderation API is free to use with no token costs
+  - **WordPress Integration**: Proper capability checks and error handling
+  - **Comprehensive Results**: Includes formatted results, safety summaries, and actionable recommendations
+  - **Client Method**: Added `moderate_content()` method to `WP_MCP_AI_OpenAI_Client`
+  - **Test Coverage**: 9 comprehensive test cases covering all functionality
+  - **Documentation**: Complete usage guide with WordPress integration examples
+  - See [OpenAI Moderation API Usage](docs/examples/openai-moderation-api-usage.md)
+  - See [OpenAI Moderation Documentation](https://platform.openai.com/docs/guides/moderation)
+
 #### Gemini API Integration Gap Analysis (December 20, 2025, PR #2267)
 - **Comprehensive Gemini Integration Review**: Complete gap analysis and documentation of Gemini API capabilities
   - **Analysis Documents**: 6 comprehensive documentation files created

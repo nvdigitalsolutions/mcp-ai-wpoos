@@ -95,6 +95,10 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
 - **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
 
+## Content Safety & Moderation
+
+- **Moderate Content** (`moderate_content`) analyzes text or images for potentially harmful content using OpenAI's Moderation API. Checks for violations across 14 categories including sexual content, hate speech, harassment, self-harm, violence, and illicit content. Returns detailed results with confidence scores (0-1) for each category and supports batch processing of multiple inputs. The moderation API is free to use and supports both `omni-moderation-latest` (multimodal: text + images) and `text-moderation-latest` models. Results include a safety summary with flagged categories and actionable recommendations for content review.【F:includes/tools/class-wp-mcp-ai-tool-moderate-content.php†L17-L350】【F:includes/class-wp-mcp-ai-openai-client.php†L1056-L1230】
+
 ## Pro Addon Tools (Exec-Based)
 
 The following tools require the **Pro addon** and external executables to be installed on the server. These tools are not available in the base version.
