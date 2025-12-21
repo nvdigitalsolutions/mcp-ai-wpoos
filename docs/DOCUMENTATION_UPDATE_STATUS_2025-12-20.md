@@ -11186,12 +11186,96 @@ To reach 82% completion target (452 documents total), next session should focus 
     - Comprehensive implementation documentation
     - Current and accurate
 
+469. **docs/FIX-EDIT-GEMINI-IMAGE-ATTACHMENTS.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix implemented)
+    - Problem: Users unable to attach image and request edits using edit_gemini_image tool
+    - Root cause: Trait not included, parameters not exposed, LLM couldn't discover capabilities
+    - Solution 1: Added WP_MCP_AI_Attachment_File_Resolver trait
+    - Solution 2: Exposed file_id and url parameters in schema
+    - Solution 3: Enhanced descriptions (tool, parameters, shortcuts)
+    - User workflow: 5 steps (attach, request edit, LLM extracts URL, tool processes, user receives)
+    - Technical flow: 7 steps from user message to edited result
+    - Files changed: class-wp-mcp-ai-tool-edit-gemini-image.php (trait + parameters + descriptions)
+    - Comprehensive implementation fix
+    - Current and accurate
+
+470. **docs/FIX-EDIT-GEMINI-IMAGE-URL-EXTRACTION.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (LLM guidance enhanced)
+    - Issue: Tool fails with "You must provide attachment_id, file_id, url, image_url, or image_data"
+    - Root cause: LLM not receiving clear instructions on URL extraction from structured messages
+    - Message structure: User content array with text and input_image segments
+    - What was missing: Tool rules didn't list url/file_id, extraction instructions not explicit, repetition insufficient
+    - Solution 1: Added URL_EXTRACTION_INSTRUCTION constant for consistency
+    - Solution 2: Enhanced tool description with IMPORTANT prefix and step-by-step instructions
+    - Solution 3: Enhanced url parameter description with REQUIRED marker and extraction steps
+    - Solution 4: Refactored shortcuts to use constant (reduces duplication)
+    - Instruction content: "look for url field in message content array (within segments of type input_image)"
+    - Files changed: class-wp-mcp-ai-tool-edit-gemini-image.php (constant, descriptions, shortcuts)
+    - Comprehensive LLM guidance enhancement
+    - Current and accurate
+
+471. **docs/FIX_TOOL_SETTINGS_SAVE.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix implemented)
+    - Issue: Users receiving "Failed to save tool settings" error even when operation should succeed
+    - Root cause: WordPress update_option() returns false when value unchanged (documented behavior)
+    - Bug example: Save unchanged settings → update_option() returns false → AJAX reports failure
+    - Solution: Modified WP_MCP_AI_Tool_Settings_Manager to detect unchanged values and return true
+    - Changes: update_capability_flags() and set_force_sync() methods
+    - Pattern: Store old value, compare to new value, return true if identical (no change needed = success)
+    - Testing: Comprehensive test suite (test-tool-settings-save-unchanged.php)
+    - Impact: Before (saving unchanged fails) → After (saving unchanged succeeds)
+    - Behavior change: None (only fixes false-negative error case)
+    - Files changed: includes/services/class-wp-mcp-ai-tool-settings-manager.php (2 methods)
+    - Comprehensive implementation fix
+    - Current and accurate
+
+472. **docs/GEMINI_CAPABILITIES_MATRIX.md** ✅ (Reference Documentation)
+    - Status: ✅ COMPLETE (Capabilities matrix reference)
+    - Last updated: December 20, 2024, Version 1.0
+    - Overview: Quick reference of Gemini API capabilities vs WP oOS implementation status
+    - API endpoints: 30+ endpoints across 6 categories
+    - Chat & Generation: 2/2 implemented (generateContent, streamGenerateContent)
+    - Models: 1/2 implemented (list models, get model gap)
+    - Tokens: 1/1 implemented (countTokens)
+    - Embeddings: 1/2 implemented (embedContent, batchEmbedContent gap)
+    - Files: 4/4 implemented (upload, list, get, delete)
+    - Context caching: 0/5 implemented (create, list, get, update, delete gaps)
+    - Model tuning: 0/5 implemented (advanced features, not prioritized)
+    - Generation features: 40+ features documented with implementation status
+    - Content types: Text, image generation, image editing, video, music (5/7 implemented)
+    - Multimodal input: Text, images (inline/URL), video, audio (partial), PDF (5/6 implemented)
+    - Response formats: Text, JSON, JSON Schema (3/3 implemented)
+    - Generation control: temperature, maxOutputTokens (2/7 implemented, 5 gaps)
+    - Advanced features: Function calling, thinking mode (partial), code execution (gap), grounding (gap), context caching (gap)
+    - Safety & moderation: Prompt feedback (1/3 implemented)
+    - Tools & services: 15+ components documented with status
+    - Comprehensive capabilities reference
+    - Current and accurate
+
+473. **docs/GEMINI_TOOL_SANITIZATION_FIX.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix implemented)
+    - Issue: Gemini client failing with "Invalid JSON payload" errors for gemini-3-pro-preview
+    - Error 1: "Unknown name additionalProperties at tools[0].function_declarations[0].parameters"
+    - Error 2: "Unknown name type at tools[0].function_declarations[13].parameters.properties[0].value"
+    - Root cause: Gemini API doesn't support additionalProperties and type arrays
+    - Solution: Added schema sanitization to Gemini client
+    - Code changes: New method sanitize_parameters_for_gemini() in class-wp-mcp-ai-gemini-client.php
+    - Sanitization: Removes additionalProperties at all levels, converts type arrays to single type (first element)
+    - Updated translate_tools() method with one-line sanitization call
+    - SoC compliance: ✅ Correctly placed in Client layer (provider-specific, no WordPress dependencies, reusable)
+    - Example transformation: Union type ['string', 'array'] → 'string', additionalProperties removed
+    - Testing: Comprehensive test suite (test-gemini-tool-sanitization.php) with 4 test cases
+    - Impact: Gemini chat client now works with current models, all tool calls with complex schemas fixed
+    - Files changed: includes/class-wp-mcp-ai-gemini-client.php (new method + translate_tools update)
+    - Comprehensive implementation fix
+    - Current and accurate
+
 ### Cumulative Progress
 
-**Total Sessions:** 42
-**Session 1-41:** 451 documents
-**Session 42:** +6 documents (**82.9% cumulative**)
-**Total Reviewed:** 457 documents
+**Total Sessions:** 43
+**Session 1-42:** 457 documents
+**Session 43:** +6 documents (**84.0% cumulative**)
+**Total Reviewed:** 463 documents
 
 ### Key Findings This Session
 
