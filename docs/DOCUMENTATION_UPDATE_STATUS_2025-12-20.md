@@ -10892,6 +10892,207 @@ To reach 80% completion target (440 documents total), next session should focus 
 
 ---
 
+## Session 41 Summary (December 21, 2025)
+
+### Documents Reviewed This Session: 6 Additional
+
+**CCT and Chat Documentation (3 documents):**
+457. **docs/CCT_SYNC_FIX.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Auto-draft prevention fix)
+    - Issue: Auto-drafts, drafts, and non-published assistants being synced to JetEngine CCT
+    - Root Cause: sync_to_cct() called on every post save without checking post status
+    - Solution: Three-pronged approach
+      1. Post status check: Only sync published assistants (if not published, delete CCT item)
+      2. Status transition hook: handle_post_status_transition() removes CCT when unpublished
+      3. Cleanup utility: cleanup_orphaned_cct_items() static method (WP-CLI: wp mcp-ai cleanup-cct)
+    - What Gets Synced: Published assistants ONLY
+    - What's NOT Synced: Auto-drafts, drafts, pending, trash, private, future
+    - Cleanup After Deployment: Run wp mcp-ai cleanup-cct once to remove existing orphaned items
+    - Testing: Comprehensive tests in tests/test-assistant-cct-sync-autodraft.php (7 tests)
+    - Files Modified: includes/assistants/class-wp-mcp-ai-assistant-cpt.php (2 new methods), tests/test-assistant-cct-sync-autodraft.php (new file)
+    - Comprehensive implementation fix documentation
+    - Current and accurate
+
+458. **docs/CCT_SYNC_FLOW_DIAGRAM.md** ✅ (Visual Diagram)
+    - Status: ✅ COMPLETE (Before/after comparison)
+    - Before Fix: Auto-drafts, drafts, and published items all synced to CCT (unwanted)
+    - After Fix: Only published items synced to CCT (correct)
+    - Visual Flow Diagrams: ASCII art showing complete flow for both before and after
+    - Status Handling Matrix: 7 post statuses documented with sync/delete behavior
+      - auto-draft: ❌ No sync, ✅ Delete CCT (temporary WordPress post)
+      - draft: ❌ No sync, ✅ Delete CCT (work in progress)
+      - pending: ❌ No sync, ✅ Delete CCT (awaiting review)
+      - private: ❌ No sync, ✅ Delete CCT (private content)
+      - publish: ✅ Sync, ❌ No delete (ONLY published items sync)
+      - trash: ❌ No sync, ✅ Delete CCT (deleted content)
+      - future: ❌ No sync, ✅ Delete CCT (scheduled posts)
+    - Transition Scenarios: Publishing draft, unpublishing, trashing, restoring from trash
+    - Comprehensive visual documentation
+    - Current and accurate
+
+459. **docs/CHAT_BUTTON_IMPLEMENTATION_SUMMARY.md** ✅ (Implementation Summary)
+    - Status: ✅ COMPLETE (Helper functions and permission fix)
+    - Problems: Missing helper functions, voice chat disabled for guests, transcribe button not working, tool-to-tool execution questions
+    - Solution 1: Helper Functions (assets/js/chat-ui-utilities-service.js)
+      1. toggleButtonClass(button, className, force) - Toggle CSS classes
+      2. setButtonState(button, options) - Set disabled/hidden state with class toggling
+      3. setButtonIcon(button, iconHTML, selector) - Update button icon with XSS protection
+      4. updateButtonLabel(button, label) - Update accessibility labels (aria-label, title)
+    - Security Features: Validates against javascript:, data:text/html, vbscript:, <script>, event handlers
+    - Solution 2: CRITICAL Permission Fix (includes/class-wp-mcp-ai-shortcode.php)
+      - Before: $can_upload_attachments = current_user_can('upload_files')
+      - After: $can_upload_attachments = current_user_can('upload_files') || $allow_guests
+      - Impact: Guests can now use voice chat and transcription when allow_guests=true
+    - Solution 3: Tool-to-Tool Execution Documentation
+      - Context inherited through entire tool chain
+      - Upload/transcription tools NOT restricted for tool-to-tool calls
+      - Sensitive tools check allow_sensitive_tools flag
+      - endpoint parameter preserved through chain
+    - Comprehensive implementation summary
+    - Current and accurate
+
+**Compatibility and Cleanup Documentation (3 documents):**
+460. **docs/CLOUDWAYS_JUKEBOX_COMPATIBILITY.md** ✅ (Compatibility Documentation)
+    - Status: ✅ COMPLETE (Cloudways compatible)
+    - Question: Will Jukebox work on Cloudways?
+    - Answer: YES ✅ - Fully compatible with Cloudways and managed WordPress hosting
+    - Python Path Validation Logic: Flexible approach accepts whitelisted names OR absolute paths
+    - Validation: Any absolute path is accepted (Cloudways /usr/bin/python3, /opt/alt/python39/bin/python3, etc.)
+    - Cloudways-Specific Setup: 5 steps (SSH access, find Python, install Jukebox, configure WordPress, verify)
+    - GPU Requirements: ⚠️ Important - Jukebox requires 16GB+ VRAM GPU (standard Cloudways servers don't have GPUs)
+    - Alternative for Cloudways Users: Use Gemini Lyria (no GPU, cloud API, fast) or hybrid approach (separate GPU server)
+    - Comprehensive compatibility documentation
+    - Current and accurate
+
+461. **docs/CODESNIFFER_CLEANUP_SUMMARY.md** ✅ (Cleanup Summary)
+    - Status: ✅ COMPLETE (64.4% issue reduction)
+    - Overall Progress:
+      - Baseline: 4,410 total issues (1,933 errors, 2,477 warnings) in 204 files
+      - Current: 1,572 total issues (541 errors, 1,031 warnings) in 115 files
+      - Total Fixed: 2,838 issues (1,392 errors + 1,446 warnings) = 64.4% reduction
+    - Work Completed:
+      - Phase 1: Auto-fixable with PHPCBF ✅ - Fixed 2,516 issues (ran phpcbf for formatting)
+      - Phase 2: Critical fixes & exclusions ✅ - Fixed 250 issues (duplicate keys, excluded bin/, tests)
+      - Phase 3: Test helpers & inline comments ✅ - Fixed 72 issues (excluded tests/helpers/, fixed punctuation in 15 files)
+    - Remaining Work:
+      - Files with most errors: test-chat-image-only-messages.php (42), test-generate-simple-jwt-token-tool.php (39), test-agentic-chat-workflow-comprehensive.php (27)
+      - Top error types: Unused parameters (365), direct database calls (181), missing escaping
+      - Top warning types: File operations (65), file_get_contents() discouraged (56), base64 (63), cURL (34)
+    - Recommendations: Document acceptable exceptions, separate test file standards, inline suppressions, continue incrementally
+    - Files Changed: 186 files modified by PHPCBF, 16 files with inline comment fixes, 2 config files updated
+    - Comprehensive cleanup summary
+    - Current and accurate
+
+462. **docs/CONSOLE_TESTING_QUICK_REF.md** ✅ (Quick Reference)
+    - Status: ✅ COMPLETE (Console testing utility)
+    - Function: wpMcpAiTestGetTranscript(sessionKey, userId, assistantId)
+    - Parameters:
+      - sessionKey (string, required) - Session key/UUID
+      - userId (number, optional) - User ID (defaults to current user)
+      - assistantId (number, optional) - Assistant ID to filter by
+    - Quick Examples: Basic usage, with all parameters, async/await, promises
+    - Console Output: Request log, success response, error response
+    - Common Errors: Missing sessionKey, transcriptsEndpoint not configured, 404 Not Found, 401 Unauthorized
+    - Where to Use: Open Developer Console (F12), navigate to page with chat widget, run function
+    - Full Documentation: console-testing.md, examples/console-testing-example.html, rest-api.md
+    - Tip: Type wpMcpAiTestGetTranscript in console to see function definition
+    - Comprehensive quick reference
+    - Current and accurate
+
+### Cumulative Progress
+
+**Total Sessions:** 41
+**Session 1-40:** 445 documents
+**Session 41:** +6 documents (**81.9% cumulative**)
+**Total Reviewed:** 451 documents
+
+### Key Findings This Session
+
+**CCT and Chat Documentation (3 documents):**
+- ✅ CCT_SYNC_FIX.md: Auto-draft prevention fix with three-pronged approach
+- ✅ CCT_SYNC_FLOW_DIAGRAM.md: Visual before/after comparison with ASCII art
+- ✅ CHAT_BUTTON_IMPLEMENTATION_SUMMARY.md: Helper functions and CRITICAL permission fix
+- Only published assistants synced to CCT (auto-drafts, drafts excluded)
+- Status transition hook removes CCT items when unpublished
+- Cleanup utility available via WP-CLI (wp mcp-ai cleanup-cct)
+- Helper functions with comprehensive XSS protection
+- Permission fix enables guests to use voice chat and transcription
+
+**Compatibility and Cleanup Documentation (3 documents):**
+- ✅ CLOUDWAYS_JUKEBOX_COMPATIBILITY.md: Cloudways fully compatible
+- ✅ CODESNIFFER_CLEANUP_SUMMARY.md: 64.4% issue reduction (2,838 issues fixed)
+- ✅ CONSOLE_TESTING_QUICK_REF.md: Console testing utility reference
+- Python path validation accepts absolute paths (Cloudways compatible)
+- GPU requirement: 16GB+ VRAM (standard Cloudways lacks GPU)
+- Alternative: Gemini Lyria (no GPU required, cloud API, fast)
+- PHPCBF fixed 2,516 issues automatically
+- Remaining issues mostly in test files (different standards)
+
+### Documentation Accuracy Assessment
+
+**CCT and Chat Documentation:**
+- ✅ CCT sync fix verified with comprehensive test suite (7 tests)
+- ✅ Post status handling matrix complete (7 statuses documented)
+- ✅ Visual flow diagrams clear (ASCII art before/after)
+- ✅ Helper functions with security features (XSS protection)
+- ✅ CRITICAL permission fix impact documented (guests, non-privileged users)
+- ✅ Tool-to-tool execution clearly explained
+
+**Compatibility and Cleanup Documentation:**
+- ✅ Cloudways compatibility confirmed (flexible Python path validation)
+- ✅ GPU requirements explicitly stated (16GB+ VRAM)
+- ✅ Alternative solutions provided (Gemini Lyria, hybrid approach)
+- ✅ CodeSniffer cleanup quantified (64.4% reduction, 2,838 issues)
+- ✅ Remaining work categorized by type and impact
+- ✅ Console testing function complete (parameters, examples, errors)
+
+**Quality Indicators:**
+- All documents dated 2024-2025 (recent)
+- Implementation status accurately marked (✅ COMPLETE)
+- Quantified improvements (64.4% reduction, 2,838 issues fixed)
+- Visual aids provided (ASCII art diagrams, status matrices)
+- Security considerations documented (XSS protection, permission checks)
+- Alternative solutions offered (when primary not available)
+- Cross-references verified
+- Zero critical documentation gaps identified
+- Documentation quality maintains 9.0/10 average
+
+### Milestone: 81.9% Complete - Approaching 82%! 🎉
+
+**Achievement Highlights:**
+- 451 of 551 documents reviewed (81.9%)
+- **Approaching 82% completion milestone!**
+- All Session 41 target documents reviewed (6 complete)
+- CCT sync fix prevents unwanted auto-draft/draft entries
+- Visual flow diagrams show clear before/after comparison
+- CRITICAL permission fix enables guests to use voice features
+- Cloudways compatibility confirmed (flexible Python path validation)
+- CodeSniffer cleanup achieved 64.4% issue reduction (2,838 issues)
+- Console testing utility fully documented
+- Zero critical documentation gaps identified
+
+**Key Patterns Identified:**
+- CCT sync follows post status rules (only published assistants synced)
+- Status transition hook ensures CCT cleanup (automatic removal when unpublished)
+- Helper functions provide comprehensive XSS protection (6 validation checks)
+- Permission fix uses logical OR (upload capability OR allow_guests)
+- Python path validation accepts absolute paths OR whitelisted names
+- CodeSniffer cleanup prioritizes auto-fixable issues (PHPCBF)
+- Test files have different coding standards (many remaining issues acceptable)
+- Console testing utility provides clear examples (basic, async/await, promises)
+- Documentation quality consistently high (9.0/10 average)
+
+### Next Session Targets
+
+To reach 82% completion target (452 documents total), next session should focus on:
+
+1. **Additional Visual Documentation** (~1 doc)
+   - CONSOLIDATION_VISUAL_SUMMARY.md
+
+**Estimated Time to 82%:** Current session (1 document)
+
+---
+
 ## Session 40 Summary (December 21, 2025)
 
 ### Documents Reviewed This Session: 11 Additional
@@ -11399,8 +11600,8 @@ To reach 80% completion milestone (440 documents total), next session should foc
 
 ---
 
-**Last Updated:** December 21, 2025 - **Session 40**
-**Session Status:** ✅ IN PROGRESS (445 docs reviewed - 80.8% of total)
+**Last Updated:** December 21, 2025 - **Session 41**
+**Session Status:** ✅ COMPLETE (451 docs reviewed - 81.9% of total)
 
 **Session 34 Status:** ✅ COMPLETE
 **Session 35 Status:** ✅ COMPLETE
@@ -11408,4 +11609,5 @@ To reach 80% completion milestone (440 documents total), next session should foc
 **Session 37 Status:** ✅ COMPLETE
 **Session 38 Status:** ✅ COMPLETE
 **Session 39 Status:** ✅ COMPLETE
-**Session 40 Status:** 🔄 IN PROGRESS
+**Session 40 Status:** ✅ COMPLETE
+**Session 41 Status:** ✅ COMPLETE
