@@ -100,7 +100,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( array $arguments, array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 
 		// Verify user capabilities - only logged-in users with read capability can moderate.
