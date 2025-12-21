@@ -263,10 +263,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'quality' => $quality,
 		);
 
-		// Add style parameter if provided.
+		// Add style parameter if provided and model supports it (DALL-E 3 only).
 		if ( isset( $arguments['style'] ) && '' !== $arguments['style'] ) {
 			$style = sanitize_key( $arguments['style'] );
-			if ( in_array( $style, array( 'natural', 'vivid' ), true ) ) {
+			if ( in_array( $style, array( 'natural', 'vivid' ), true ) && WP_MCP_AI_OpenAI_Client::image_model_supports_style( $model ) ) {
 				$options['style'] = $style;
 			}
 		}
@@ -917,8 +917,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			),
 			'parameter_constraints' => array(
 				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'size', 'quality', 'response_format', 'file_name', 'timeout' ),
+				'optional_fields'   => array( 'model', 'size', 'quality', 'style', 'response_format', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
+				'style_support'     => array(
+					'supported_models' => array( 'dall-e-3' ),
+					'note'             => 'The style parameter (natural or vivid) is only supported by DALL-E 3. Other models (gpt-image-1, gpt-image-1.5, dall-e-2) will silently ignore this parameter.',
+				),
 			),
 			'rate_limits'           => array(
 				'requests_per_minute' => 5,

@@ -70,6 +70,22 @@ class GenerateOpenAIImageArguments {
 	public $quality = null;
 
 	/**
+	 * Style preset for DALL-E 3 models.
+	 *
+	 * "vivid" produces hyper-real and dramatic images.
+	 * "natural" produces more natural, less hyper-real looking images.
+	 * Only supported by DALL-E 3 model.
+	 *
+	 * @var string|null
+	 */
+	#[Assert\Type( type: 'string', message: 'Style must be a string.' )]
+	#[Assert\Choice(
+		choices: array( 'natural', 'vivid' ),
+		message: 'Style must be one of: {{ choices }}.'
+	)]
+	public $style = null;
+
+	/**
 	 * Whether OpenAI should return base64 data or a hosted image URL.
 	 *
 	 * @var string|null

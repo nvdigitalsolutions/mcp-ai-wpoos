@@ -57,6 +57,31 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Determine whether a given image model accepts the style parameter.
+		 *
+		 * The style parameter (natural or vivid) is only supported by DALL-E 3.
+		 * Other models (gpt-image-1, gpt-image-1.5, dall-e-2) do not support this parameter.
+		 *
+		 * @param string $model Image model identifier.
+		 * @return bool
+		 */
+		public static function image_model_supports_style( $model ) {
+			$model = sanitize_text_field( $model );
+
+			// Only DALL-E 3 supports the style parameter.
+			$model_lower = strtolower( $model );
+			$supported   = ( 'dall-e-3' === $model_lower );
+
+			/**
+			 * Filter whether the supplied image model supports the style parameter.
+			 *
+			 * @param bool   $supported Whether the style parameter is supported.
+			 * @param string $model     Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_image_model_supports_style', $supported, $model );
+		}
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -1422,10 +1447,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'n'       => 1,
 			);
 
-			// Add style parameter for DALL-E 3 models (natural or vivid).
+			// Add style parameter only for models that support it (DALL-E 3).
 			if ( isset( $options['style'] ) && '' !== $options['style'] ) {
 				$style = sanitize_key( $options['style'] );
-				if ( in_array( $style, array( 'natural', 'vivid' ), true ) ) {
+				if ( in_array( $style, array( 'natural', 'vivid' ), true ) && self::image_model_supports_style( $model ) ) {
 					$payload['style'] = $style;
 				}
 			}
