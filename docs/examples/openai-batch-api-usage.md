@@ -593,7 +593,7 @@ Lists batch jobs with optional filtering.
 - [OpenAI Batch API Official Docs](https://platform.openai.com/docs/guides/batch)
 - [OpenAI API Reference - Batches](https://platform.openai.com/docs/api-reference/batch)
 - [OpenAI File API](https://platform.openai.com/docs/api-reference/files)
-- [WP oOS Tool Reference](../tool-reference.md)
+- [WP oOS Tool Reference](../reference/tools/tool-reference.md)
 
 ---
 

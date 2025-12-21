@@ -119,7 +119,7 @@ The implementation is complete and ready for:
 - [docs/tools-manager.md](docs/tools-manager.md) - Complete user guide
 - [docs/tools-manager-ui-mockup.md](docs/tools-manager-ui-mockup.md) - Visual mockups
 - [TOOLS_MANAGER_IMPLEMENTATION_SUMMARY.md](TOOLS_MANAGER_IMPLEMENTATION_SUMMARY.md) - Technical details
-- [docs/tool-reference.md](docs/tool-reference.md) - All 65+ tools documented
+- [docs/tool-reference.md](../../reference/tools/tool-reference.md) - All 65+ tools documented
 - [docs/tool-grouping.md](docs/tool-grouping.md) - Tool categorization system
 
 ## Conclusion

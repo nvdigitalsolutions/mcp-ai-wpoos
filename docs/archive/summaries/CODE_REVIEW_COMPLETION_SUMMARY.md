@@ -279,7 +279,7 @@ The Open Operator System (WP oOS) plugin demonstrates **excellent overall qualit
 ## Quick Links
 
 - [Comprehensive Code Review](docs/CODE_REVIEW_2025-12-06.md)
-- [Code Review Master](docs/CODE-REVIEW-MASTER.md)
+- [Code Review Master](../../guides/developer/best-practices/CODE-REVIEW-MASTER.md)
 - [Documentation Index](docs/DOCUMENTATION_INDEX.md)
 - [Recent Changes](docs/RECENT_CHANGES_DEC_2025.md)
 - [README](README.md)

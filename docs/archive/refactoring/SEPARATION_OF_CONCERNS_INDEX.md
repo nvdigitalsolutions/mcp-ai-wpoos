@@ -196,8 +196,8 @@ This review consists of multiple complementary documents, each serving a differe
 
 ### Internal Documentation
 - [`docs/COPILOT_ARCHITECTURE_GUIDE.md`](docs/COPILOT_ARCHITECTURE_GUIDE.md) - Current architecture
-- [`docs/BEST_PRACTICES.md`](docs/BEST_PRACTICES.md) - Coding standards
-- [`docs/CODE-REVIEW-MASTER.md`](docs/CODE-REVIEW-MASTER.md) - Code quality review
+- [`docs/BEST_PRACTICES.md`](../../guides/developer/best-practices/BEST_PRACTICES.md) - Coding standards
+- [`docs/CODE-REVIEW-MASTER.md`](../../guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality review
 
 ### External Resources
 - **SOLID Principles**: [Wikipedia](https://en.wikipedia.org/wiki/SOLID)
@@ -306,4 +306,4 @@ SEPARATION_OF_CONCERNS_VIOLATIONS.md
 - [Visual Guide](SEPARATION_OF_CONCERNS_VISUAL.md) - Code examples
 - [Technical Analysis](SEPARATION_OF_CONCERNS_VIOLATIONS.md) - Deep dive
 - [Architecture Guide](docs/COPILOT_ARCHITECTURE_GUIDE.md) - Current state
-- [Best Practices](docs/BEST_PRACTICES.md) - Coding standards
+- [Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md) - Coding standards

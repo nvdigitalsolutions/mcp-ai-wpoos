@@ -501,7 +501,7 @@ The Open Operator System demonstrates **exceptional quality** in both code and d
 ### For Contributors
 
 1. **Review** [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines
-2. **Check** [ACTION_ITEMS.md](ACTION_ITEMS.md) for tasks (180+ hours available)
+2. **Check** [ACTION_ITEMS.md](../../guides/developer/planning/ACTION_ITEMS.md) for tasks (180+ hours available)
 3. **Read** [CODE_REVIEW.md](CODE_REVIEW.md) for quality standards
 4. **Use** [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for fast lookups
 
