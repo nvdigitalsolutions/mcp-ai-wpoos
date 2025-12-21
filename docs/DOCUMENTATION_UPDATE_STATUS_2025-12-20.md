@@ -20,7 +20,7 @@ Systematically review all 549+ markdown files in the repository to:
 
 ## Progress Summary
 
-### ✅ Completed Updates (282 documents)
+### ✅ Completed Updates (292 documents)
 
 **Session 1 (Prior):** 22 documents  
 **Session 2:** +15 documents  
@@ -46,7 +46,8 @@ Systematically review all 549+ markdown files in the repository to:
 **Session 22:** +10 documents  
 **Session 23:** +11 documents  
 **Session 24:** +12 documents  
-**Total:** 282 documents (51.2% of 551)
+**Session 25:** +10 documents  
+**Total:** 292 documents (53.1% of 551)
 
 1. **GAP_ANALYSIS_EXECUTIVE_SUMMARY.md** ✅
    - Updated quality scores (95→98/100)
@@ -6323,3 +6324,324 @@ To reach 53% completion target (292 documents total), next session should focus 
 
 **Session 23 Status:** ✅ COMPLETE
 **Session 24 Status:** ✅ COMPLETE
+
+---
+
+## Session 25 Summary (December 21, 2025)
+
+### Documents Reviewed This Session: 10 Additional
+
+**Quick Reference Documents (3 documents):**
+283. **docs/QUICK-REFERENCE-PHASE-7.md** ⚠️ PLANNING (Quick Reference)
+    - Status: Planning Phase
+    - Version: 1.0, Target: WP oOS v1.2.0
+    - Advanced Analytics & Visualization for Token Manager
+    - 6 key features: Chart.js dashboards, cost attribution, trend analysis, automated reports, advanced anomalies, tier recommendations
+    - New REST API endpoints: Cost endpoints, analytics endpoints, recommendation endpoints
+    - 6 chart types available (line, bar, pie, stacked bar, gauge, heatmap)
+    - 3 report types: Daily, weekly, monthly (opt-in per user)
+    - 4 anomaly severity levels (low to critical)
+    - Cost calculation examples for OpenAI and Gemini
+    - Filter and action hooks documented
+    - Performance tips and troubleshooting
+    - Security considerations (cost data GDPR compliance)
+    - Migration notes: No breaking changes, backward compatible
+    - Note: This is a planning document for future Phase 7 implementation
+    - Current and accurate as planning document
+
+284. **docs/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md** ⚠️ PLANNING (Quick Reference)
+    - Status: Planning Phase
+    - Last Updated: 2025-11-11
+    - Token Manager Enhancement Plan quick reference
+    - Current system: Fixed 100k tokens/user/day, daily tracking, manual management
+    - Enhanced system: Tiered limits (50k/200k/1M), hourly+daily tracking, automated forecasting
+    - Quick access for developers: Enable tiered limits, access usage forecast, custom tier filters
+    - Quick access for administrators: Bulk assign tiers, export reports, monitor alerts
+    - REST API endpoints documented with examples
+    - Tier comparison table: Free, Pro, Enterprise (features and limits)
+    - Default role mappings (Subscriber → Free, Author/Editor → Pro, Admin → Enterprise)
+    - Migration checklist and rollback plan
+    - Performance tips (caching, database optimization)
+    - Troubleshooting guide (alerts, forecast confidence, tier application)
+    - Security: Audit trail, anomaly detection
+    - Note: Planning document for v1.1.0+ enhancements
+    - Current and accurate as planning document
+
+285. **docs/QUICK_REFERENCE_CRON_VISIBILITY.md** ✅ (Quick Reference)
+    - Status: ✅ COMPLETE
+    - Test cron jobs visibility in Cron Manager confirmed
+    - Jobs appear immediately in Cron Manager with "Active" status
+    - After execution: Status changes to "Executed" with timestamp
+    - Default retention: 24 hours (configurable: 1hr to 30 days)
+    - Quick test in 2 minutes documented
+    - Settings location: Settings → Orchestration Layer → Cron Job History Retention
+    - Complete documentation references: CRON_TESTING_GUIDE.md, CRON_JOB_VISIBILITY_FLOW.md
+    - Common questions answered (visibility, retention, duration)
+    - Key feature: Clear message in Cron Manager about test job retention
+    - Current and accurate
+
+**Recent Changes & Release Documentation (2 documents):**
+286. **docs/RECENT_CHANGES_DEC_2025.md** ✅ (Changes Summary)
+    - Status: ✅ COMPLETE
+    - Document Created: December 1, 2025
+    - Covers Period: December 1-31, 2025
+    - Major features: Token Management UI (PR #1871), Product Actualization Tool (PR #1872), Lookup Product Price Tool (PR #1874, #1877)
+    - Enhanced tools: scrape_product with Schema.org JSON-LD extraction
+    - Bug fixes: Pro addon tools visibility (PR #1879, #1878, #1875), OpenAI file cleanup 404 (PR #1870), edit_gemini_image format field (PR #1865)
+    - CodeSniffer cleanup: 64.4% reduction (2,838 issues fixed)
+    - Architecture improvements: wp_mcp_ai_core_loaded() function, tool registry timing
+    - Build process: 3 variants (Base, Pro, Combined)
+    - Code review (December 6, 2025): 96/100 overall score (improved from 95/100)
+    - Documentation: 3 new files, multiple updates
+    - Testing: 4+ new test files, improved coverage
+    - Summary statistics: 13 PRs merged, 200+ files changed, 2 new Pro tools
+    - No breaking changes - all backwards compatible
+    - Current and accurate
+
+287. **docs/RELEASE_CHECKLIST.md** ✅ (Release Process)
+    - Status: ✅ COMPLETE
+    - Last updated: December 2025
+    - Complete WP oOS release process for GitHub and WordPress.org
+    - Pre-release preparation: Code quality checks, version number updates, changelog updates, documentation review, build production assets, final testing
+    - GitHub release: Automatic via GitHub Actions (recommended) or manual
+    - WordPress.org submission: First-time submission (Step 1-4), deploying updates (Option A: Manual SVN, Option B: Automated), deploying assets
+    - Version numbering: Semantic versioning (MAJOR.MINOR.PATCH)
+    - Development version management: Immediately update to X.Y.Z-dev after release
+    - Post-release tasks: Announce release, monitor feedback, update to dev version, update development branch, plan next release
+    - WordPress.org guidelines compliance checklist
+    - Troubleshooting: SVN issues, common problems (403 forbidden, assets not appearing, ZIP rejected)
+    - Quick reference commands provided
+    - Note: mcp-ai-wpoos-base.php does NOT have version in repository (build script adds it)
+    - Current and accurate
+
+**Integration Planning (1 document):**
+288. **docs/RABBITMQ-CLOUDWAYS-INTEGRATION-PLAN.md** ⚠️ PLANNING (Integration Plan)
+    - Status: Planning Document
+    - Version: 1.0.0, Last Updated: November 27, 2025
+    - RabbitMQ integration plan for WP oOS on Cloudways hosting
+    - Key benefits: Async tool execution (non-blocking), long-running tasks (background processing), parallel execution, retry queues, scaling (multiple workers), monitoring
+    - Current limitations: PHP execution timeouts, sequential processing, resource contention, limited retry logic, WP-Cron unreliability
+    - RabbitMQ on Cloudways: Enabling steps, CLI commands, credentials
+    - Architecture: System components (REST API, Chat Service, Tool Registry, RabbitMQ Manager, RabbitMQ Server, Background Workers)
+    - Agentic workflow enhancements: Parallel tool execution, priority-based routing, workflow state persistence, retry with exponential backoff, real-time progress updates
+    - Tool management enhancements: Queue metadata interface, capability flags extension, result caching, execution orchestrator, usage analytics
+    - Implementation plan: 4 phases (Foundation week 1-2, Tool Integration week 3-4, Agentic Workflow week 5-6, Monitoring & Polish week 7-8)
+    - Configuration: Admin settings, wp-config.php constants
+    - Security: Credential protection, message validation, queue access control
+    - Monitoring: Health check endpoint, WP-CLI commands, admin dashboard widget
+    - Migration: Graceful degradation, feature flags
+    - Future considerations: Multi-site queue sharing, external worker pools, event sourcing, cross-plugin integration
+    - Dependencies: php-amqp extension (Cloudways included) or php-amqplib composer package
+    - Comprehensive 8-week implementation roadmap
+    - Note: This is a planning document for future implementation
+    - Current and accurate as planning document
+
+**Workflow Documentation (1 document):**
+289. **docs/README-AGENTIC-WORKFLOW.md** ✅ (Workflow Guide)
+    - Status: ✅ COMPLETE
+    - Start here guide for understanding agentic workflows in WP oOS
+    - 3 paths: Basics (visual diagrams, 15min), Complete details (60min comprehensive), Developer code
+    - Document navigation:
+      - New users → AGENTIC-WORKFLOW-VISUAL-SUMMARY.md (quick visual diagrams)
+      - Complete details → CURRENT-STATE-AGENTIC-WORKFLOW.md (system architecture, 14-step flow, real-world examples)
+      - Developers → agentic-workflow-architecture.md (technical details, code examples)
+    - Quick FAQ: What is agentic workflow, iteration limits (15 browser/5 API, configurable 1-50), 65+ tools available
+    - Example: "Get my recent posts and current time" → AI uses 2 tools automatically in ~5 seconds
+    - Iteration limits configurable via: Per-assistant settings, admin panel, code filters, safety bounds
+    - Complete reference guide for understanding the system
+    - Current and accurate
+
+**Implementation Fixes (3 documents):**
+290. **docs/REST-API-CONTEXT-FIX-SUMMARY.md** ✅ (Fix Summary)
+    - Status: ✅ COMPLETE
+    - REST API context parameter fix implementation
+    - Problem: WordPress REST API context parameter (e.g., ?context=edit) not processed correctly
+    - Root causes: Caching layers, WAF/security plugins, server configurations, CDN/proxy
+    - Solution: 4 components (REST API Context Fix Class, comprehensive documentation, PHPUnit tests, admin diagnostic page)
+    - Fix class: WP_MCP_AI_REST_API_Context_Fix (auto-detection, no-cache headers, Vary header, diagnostic info)
+    - Documentation: New section in deployment-troubleshooting.md with server configuration fixes (Cloudflare, Nginx, Apache, LiteSpeed)
+    - Tests: tests/test-rest-api-context-fix.php (comprehensive coverage)
+    - Admin diagnostic: Tools → REST API Context (visual interface with color-coded status, configuration examples)
+    - Filters: 4 filters added (rest_post_dispatch, rest_pre_serve_request, rest_request_after_callbacks)
+    - Headers applied: Cache-Control, Pragma, Expires, Vary
+    - Server configuration examples: Nginx, Apache, Cloudflare
+    - Verification commands with curl examples
+    - Files changed: 5 files (1,096 lines added total)
+    - Backward compatible, minimal performance impact
+    - Security: No new attack vectors, WordPress core sanitization
+    - Future enhancements: WP-CLI command, automatic detection, site health checks
+    - Implementation complete and tested
+    - Current and accurate
+
+291. **docs/SOC_REFACTORING_STREAMING.md** ✅ (Refactoring Documentation)
+    - Status: ✅ COMPLETE
+    - Separation of Concerns (SoC) refactoring for streaming text layer
+    - Problem: Mixed concerns in single function (message bubble, status area, scroll management)
+    - Original implementation violated SoC: Single function doing too many things, hard to test, difficult to modify
+    - Solution: Separated concerns into dedicated functions
+    - Refactored implementation:
+      - updateStreamingStatus(content) - CONCERN 1: Status area management (separated)
+      - updateStreamingMessage(content) - CONCERN 2: Streaming message coordination (delegates to status)
+    - Benefits: Single responsibility, independent testing, easy modification, improved readability
+    - Architecture diagram showing separation
+    - Complete refactoring documentation
+    - Current and accurate
+
+292. **docs/STDIO-TRANSPORT.md** ✅ (Transport Documentation)
+    - Status: ✅ COMPLETE
+    - STDIO transport for local agent integration (Claude Desktop, local AI agents)
+    - Transport comparison: HTTP/REST (JSON-RPC over HTTP), SSE (Server-Sent Events), STDIO (JSON-RPC over stdin/stdout)
+    - Quick start: `wp mcp-ai stdio` command
+    - Assistant scoping: `wp mcp-ai stdio --assistant-id=123`
+    - Claude Desktop configuration: File locations (macOS, Windows, Linux), example configurations
+    - Configuration examples: Basic usage, with assistant scoping, multiple WordPress sites
+    - Supported MCP methods documented (tools/list, tools/call, resources/list, prompts/list, sampling/create)
+    - Complete STDIO transport documentation
+    - Current and accurate
+
+### Cumulative Progress
+
+**Total Sessions:** 25  
+**Session 1 (Prior):** 22 documents (4.0%)  
+**Session 2:** +15 documents (6.7% cumulative)  
+**Session 3:** +10 documents (8.6% cumulative)  
+**Session 4:** +10 documents (10.4% cumulative)  
+**Session 5:** +15 documents (13.1% cumulative)  
+**Session 6:** +10 documents (14.9% cumulative)  
+**Session 7:** +17 documents (18.0% cumulative)  
+**Session 8:** +11 documents (20.0% cumulative)  
+**Session 9:** +11 documents (22.0% cumulative)  
+**Session 10:** +11 documents (24.0% cumulative)  
+**Session 11:** +6 documents (25.0% cumulative)  
+**Session 12:** +10 documents (26.9% cumulative)  
+**Session 13:** +12 documents (29.0% cumulative)  
+**Session 14:** +11 documents (31.0% cumulative)  
+**Session 15:** +11 documents (33.0% cumulative)  
+**Session 16:** +7 documents (34.2% cumulative)  
+**Session 17:** +10 documents (36.1% cumulative)  
+**Session 18:** +10 documents (37.9% cumulative)  
+**Session 19:** +12 documents (40.1% cumulative)  
+**Session 20:** +18 documents (43.4% cumulative)  
+**Session 21:** +10 documents (45.2% cumulative)  
+**Session 22:** +10 documents (47.0% cumulative)  
+**Session 23:** +11 documents (49.0% cumulative)  
+**Session 24:** +12 documents (51.2% cumulative)  
+**Session 25:** +10 documents (**53.1% cumulative**)  
+**Total Reviewed:** 292 documents
+
+### Key Findings This Session
+
+**Quick Reference Documents (3 documents):**
+- ⚠️ Phase 7 Analytics: PLANNING document for v1.2.0 (advanced analytics, visualization, cost attribution)
+- ⚠️ Token Enhancements: PLANNING document for v1.1.0+ (tiered limits, hourly tracking, forecasting)
+- ✅ Cron Visibility: Feature COMPLETE, test jobs visible in Cron Manager for 24 hours (configurable)
+
+**Recent Changes & Release (2 documents):**
+- ✅ December 2025 changes comprehensive: 13 PRs, 2 new Pro tools, 64.4% PHPCS reduction, 96/100 code review
+- ✅ Release checklist complete: GitHub + WordPress.org process, development version management documented
+
+**Integration Planning (1 document):**
+- ⚠️ RabbitMQ integration: Comprehensive 8-week implementation plan for Cloudways (4 phases)
+- Benefits: Async execution, parallel processing, retry logic, monitoring
+- Architecture: Complete system design with workers, queues, exchanges
+
+**Workflow Documentation (1 document):**
+- ✅ Agentic workflow README: Perfect navigation guide for 3 different audiences (new users, detailed, developers)
+- Links to 3 specialized documents based on user needs
+- Quick FAQ with concrete examples
+
+**Implementation Fixes (3 documents):**
+- ✅ REST API context fix: Complete solution for WordPress block editor issues with caching
+- ✅ SoC refactoring: Clean separation of concerns for streaming text layer
+- ✅ STDIO transport: Complete documentation for Claude Desktop integration
+
+### Documentation Accuracy Assessment
+
+**Planning Documents:**
+- ✅ All planning documents clearly marked as "Planning Phase" or "Planning Document"
+- ✅ Target versions specified (v1.1.0, v1.2.0)
+- ✅ Clear distinction from completed features
+- ✅ Comprehensive roadmaps with timeline estimates
+- ✅ Future enhancement sections well-defined
+
+**Implementation Documentation:**
+- ✅ All completed features have accurate status (✅ COMPLETE)
+- ✅ Implementation details comprehensive with code examples
+- ✅ Root cause analysis provided for fixes
+- ✅ Test coverage documented
+- ✅ Server configuration examples included
+- ✅ Verification procedures provided
+
+**Navigation and Organization:**
+- ✅ README-AGENTIC-WORKFLOW.md provides perfect entry point with audience-specific paths
+- ✅ Quick reference documents consolidated and up-to-date
+- ✅ Recent changes document comprehensive for December 2025
+- ✅ Cross-references between related documents maintained
+
+**Quality Indicators:**
+- All documents dated November-December 2025 (recent)
+- Planning documents include ROI analysis where applicable
+- Implementation guides include troubleshooting sections
+- Architecture diagrams provided for complex systems
+- Security considerations addressed
+- Performance impact documented
+- Backward compatibility verified
+- Test coverage comprehensive
+- Zero critical documentation gaps identified
+
+### Milestone: 53% Complete! 🎉
+
+**Achievement Highlights:**
+- 292 of 551 documents reviewed (53.1%)
+- Passed 50% completion milestone!
+- All Session 25 target documents reviewed (10 complete)
+- Quick reference documents comprehensive for Phase 7 and Token Enhancements
+- Cron visibility feature documented and working
+- December 2025 changes comprehensive (13 PRs, 96/100 code review)
+- Release checklist complete with WordPress.org process
+- RabbitMQ integration plan comprehensive (8-week roadmap)
+- Agentic workflow navigation perfect for different audiences
+- REST API context fix comprehensive with diagnostic tools
+- SoC refactoring demonstrates clean architecture
+- STDIO transport complete for Claude Desktop
+- Zero critical documentation gaps identified
+
+**Key Patterns Identified:**
+- Planning documents clearly distinguished with status markers
+- Implementation documentation includes verification procedures
+- Navigation documents (like README-AGENTIC-WORKFLOW.md) excellent for audience segmentation
+- Fix documentation follows consistent pattern: Problem → Root Cause → Solution → Verification
+- Integration plans include comprehensive architecture, security, monitoring
+- Quick references consolidate complex topics effectively
+- Recent changes documents provide excellent historical tracking
+- All documentation maintains high quality standards
+
+### Next Session Targets
+
+To reach 55% completion target (303 documents total), next session should focus on:
+
+1. **Additional Streaming Documentation** (~3 docs)
+   - STREAMING_TEXT_DISPLAY.md
+   - STREAMING_TEXT_STATUS_PREVIEW.md
+   - STREAMING_THINKING_TEXT.md
+
+2. **Additional Summary Documentation** (~3 docs)
+   - SUMMARY-EDIT-GEMINI-IMAGE-FIX.md
+   - Additional implementation summaries
+   - Symfony integration summaries
+
+3. **Technical Reference Documentation** (~4 docs)
+   - TECHNICAL-REFERENCE.md
+   - Additional testing guides
+   - Additional troubleshooting documentation
+
+**Estimated Time to 55%:** 1 more focused session (11 documents)
+
+---
+
+**Last Updated:** December 21, 2025 - **Session 25**  
+**Next Review:** Continue with streaming, summary, and technical reference documentation  
+**Document Owner:** Documentation Update Task  
+**Session Status:** ✅ **PROGRESS CONTINUES** (292 docs reviewed - 53.1% of total)
+
+**Session 25 Status:** ✅ COMPLETE
