@@ -4,12 +4,14 @@ This document describes the enhanced Gemini API integration features available i
 
 ## Overview
 
-The Gemini client wrapper (`WP_MCP_AI_Gemini_Client`) provides four additional capabilities beyond basic chat completion:
+The Gemini client wrapper (`WP_MCP_AI_Gemini_Client`) provides six additional capabilities beyond basic chat completion:
 
 1. **List Models** - Dynamically fetch available Gemini models
 2. **Count Tokens** - Get token counts for budget management
 3. **Create Embeddings** - Generate text embeddings for RAG/semantic search
-4. **Streaming Support** - Real-time streaming responses via Server-Sent Events (SSE)
+4. **Batch Embeddings** - ⭐ NEW - Process multiple embeddings in a single API call
+5. **Streaming Support** - Real-time streaming responses via Server-Sent Events (SSE)
+6. **Safety Settings** - ⭐ NEW - Configure content safety thresholds
 
 ## List Models
 
@@ -214,6 +216,93 @@ add_filter( 'wp_mcp_ai_gemini_embedding_payload', function( $payload, $options, 
 }, 10, 3 );
 ```
 
+## Batch Embeddings ⭐ NEW
+
+Generate embeddings for multiple text inputs in a single API request. This is significantly more efficient than calling `create_embedding()` repeatedly.
+
+### Method Signature
+
+```php
+public function batch_embed_content( array $texts, array $options = array() )
+```
+
+### Parameters
+
+- `$texts` (array) - Array of text strings to embed
+- `$options` (array) - Optional parameters:
+  - `model` (string) - Embedding model (default: `text-embedding-004`)
+  - `task_type` (string) - Task optimization type (see Task Types above)
+  - `timeout` (int) - Request timeout in seconds
+
+### Returns
+
+- `array` - Batch embedding data with `embeddings` array
+- `WP_Error` - On failure
+
+### Example Usage
+
+```php
+$client = new WP_MCP_AI_Gemini_Client();
+
+// Prepare multiple texts for embedding.
+$posts = get_posts( array( 'posts_per_page' => 10 ) );
+$texts = array_map( function( $post ) {
+	return $post->post_title . ' ' . $post->post_content;
+}, $posts );
+
+// Generate embeddings in batch.
+$result = $client->batch_embed_content(
+	$texts,
+	array(
+		'model'     => 'text-embedding-004',
+		'task_type' => 'RETRIEVAL_DOCUMENT',
+	)
+);
+
+if ( ! is_wp_error( $result ) ) {
+	foreach ( $result['embeddings'] as $index => $embedding ) {
+		$vector = $embedding['values'];
+		// Store embedding vector for the corresponding post.
+		update_post_meta( $posts[ $index ]->ID, '_embedding_vector', $vector );
+	}
+}
+```
+
+### Response Structure
+
+```json
+{
+  "embeddings": [
+    {
+      "values": [0.1234, -0.5678, 0.9012, ...]
+    },
+    {
+      "values": [0.2345, -0.6789, 0.0123, ...]
+    },
+    ...
+  ]
+}
+```
+
+### Performance Benefits
+
+- **Reduced API Calls** - Process N texts in 1 request instead of N requests
+- **Lower Latency** - Single round-trip to API instead of multiple
+- **Cost Efficiency** - Reduced overhead per embedding
+- **Rate Limit Friendly** - Less likely to hit rate limits
+
+### Filter Hook
+
+Modify the batch embedding payload before sending:
+
+```php
+add_filter( 'wp_mcp_ai_gemini_batch_embedding_payload', function( $payload, $options, $texts ) {
+	// Customize payload.
+	// Example: Add custom metadata.
+	return $payload;
+}, 10, 3 );
+```
+
 ## Streaming Support
 
 Get real-time streaming responses for improved user experience with long-form content generation.
@@ -328,6 +417,157 @@ data: [DONE]
 - **Real-Time Transcription** - Stream audio transcription results
 - **Progress Indicators** - Provide user feedback during processing
 
+## Safety Settings ⭐ NEW
+
+Configure content safety thresholds for different harm categories to control the type of content Gemini will generate or block.
+
+### Overview
+
+Gemini allows configuring safety settings for four harm categories:
+- `HARM_CATEGORY_HARASSMENT`
+- `HARM_CATEGORY_HATE_SPEECH`
+- `HARM_CATEGORY_SEXUALLY_EXPLICIT`
+- `HARM_CATEGORY_DANGEROUS_CONTENT`
+
+Each category can be set to one of five threshold levels:
+- `BLOCK_NONE` - Do not block any content
+- `BLOCK_ONLY_HIGH` - Block only high-probability harmful content
+- `BLOCK_MEDIUM_AND_ABOVE` - Block medium and high-probability harmful content (Default)
+- `BLOCK_LOW_AND_ABOVE` - Block low, medium, and high-probability harmful content
+- `HARM_BLOCK_THRESHOLD_UNSPECIFIED` - Use API default threshold
+
+### Usage with Chat Completion
+
+Safety settings can be passed as an option to both `create_chat_completion()` and `stream_chat_completion()` methods:
+
+```php
+$client = new WP_MCP_AI_Gemini_Client();
+
+$messages = array(
+	array(
+		'role'    => 'user',
+		'content' => 'Write a story about...',
+	),
+);
+
+$result = $client->create_chat_completion(
+	$messages,
+	array(
+		'model'           => 'gemini-1.5-flash',
+		'safety_settings' => array(
+			'HARM_CATEGORY_HARASSMENT'        => 'BLOCK_MEDIUM_AND_ABOVE',
+			'HARM_CATEGORY_HATE_SPEECH'       => 'BLOCK_MEDIUM_AND_ABOVE',
+			'HARM_CATEGORY_SEXUALLY_EXPLICIT' => 'BLOCK_LOW_AND_ABOVE',
+			'HARM_CATEGORY_DANGEROUS_CONTENT' => 'BLOCK_ONLY_HIGH',
+		),
+	)
+);
+```
+
+### Array Format
+
+Safety settings can also be provided in array format for more explicit configuration:
+
+```php
+$result = $client->create_chat_completion(
+	$messages,
+	array(
+		'safety_settings' => array(
+			array(
+				'category'  => 'HARM_CATEGORY_HARASSMENT',
+				'threshold' => 'BLOCK_MEDIUM_AND_ABOVE',
+			),
+			array(
+				'category'  => 'HARM_CATEGORY_HATE_SPEECH',
+				'threshold' => 'BLOCK_ONLY_HIGH',
+			),
+		),
+	)
+);
+```
+
+### Use Cases
+
+- **Strict Moderation** - Use `BLOCK_LOW_AND_ABOVE` for public-facing applications
+- **Balanced Approach** - Use `BLOCK_MEDIUM_AND_ABOVE` (default) for general use
+- **Permissive Content** - Use `BLOCK_ONLY_HIGH` or `BLOCK_NONE` for creative writing tools
+- **Custom Per-Assistant** - Configure different settings per assistant type
+
+### Example: Strict Safety Preset
+
+```php
+/**
+ * Get strict safety settings for public chat.
+ */
+function wp_mcp_ai_get_strict_safety_settings() {
+	return array(
+		'HARM_CATEGORY_HARASSMENT'        => 'BLOCK_LOW_AND_ABOVE',
+		'HARM_CATEGORY_HATE_SPEECH'       => 'BLOCK_LOW_AND_ABOVE',
+		'HARM_CATEGORY_SEXUALLY_EXPLICIT' => 'BLOCK_LOW_AND_ABOVE',
+		'HARM_CATEGORY_DANGEROUS_CONTENT' => 'BLOCK_MEDIUM_AND_ABOVE',
+	);
+}
+
+$result = $client->create_chat_completion(
+	$messages,
+	array(
+		'safety_settings' => wp_mcp_ai_get_strict_safety_settings(),
+	)
+);
+```
+
+### Example: Permissive Safety Preset
+
+```php
+/**
+ * Get permissive safety settings for creative writing.
+ */
+function wp_mcp_ai_get_permissive_safety_settings() {
+	return array(
+		'HARM_CATEGORY_HARASSMENT'        => 'BLOCK_ONLY_HIGH',
+		'HARM_CATEGORY_HATE_SPEECH'       => 'BLOCK_ONLY_HIGH',
+		'HARM_CATEGORY_SEXUALLY_EXPLICIT' => 'BLOCK_ONLY_HIGH',
+		'HARM_CATEGORY_DANGEROUS_CONTENT' => 'BLOCK_ONLY_HIGH',
+	);
+}
+
+$result = $client->create_chat_completion(
+	$messages,
+	array(
+		'safety_settings' => wp_mcp_ai_get_permissive_safety_settings(),
+	)
+);
+```
+
+### Handling Safety Blocks
+
+When content is blocked by safety settings, Gemini returns a response with safety ratings:
+
+```php
+$result = $client->create_chat_completion( $messages, $options );
+
+if ( ! is_wp_error( $result ) ) {
+	// Check if response was blocked for safety reasons.
+	if ( isset( $result['blocked'] ) && $result['blocked'] ) {
+		$safety_ratings = isset( $result['safety_ratings'] ) ? $result['safety_ratings'] : array();
+		// Handle safety block - show user-friendly message.
+		$message = __( 'The response was blocked due to content safety policies.', 'wp-mcp-ai' );
+	} else {
+		// Process normal response.
+		$text = $result['choices'][0]['message']['content'][0]['text'];
+	}
+}
+```
+
+### Validation
+
+The implementation automatically validates:
+- Invalid categories are filtered out
+- Invalid thresholds are filtered out
+- Only valid combinations are sent to the API
+
+This prevents API errors from malformed safety settings.
+
 ## Error Handling
 
 All methods return `WP_Error` objects on failure. Check for errors using:
@@ -361,6 +601,8 @@ if ( is_wp_error( $result ) ) {
 - `wp_mcp_ai_missing_gemini_api_key` - API key not configured
 - `wp_mcp_ai_missing_gemini_model` - Model not specified
 - `wp_mcp_ai_missing_text` - Text content required (embeddings)
+- `wp_mcp_ai_missing_texts` - ⭐ NEW - Text array required (batch embeddings)
+- `wp_mcp_ai_empty_batch` - ⭐ NEW - No valid texts after sanitization (batch embeddings)
 - `wp_mcp_ai_api_error` - API returned an error response
 - `wp_mcp_ai_http_error` - Network/transport failure
 - `wp_mcp_ai_invalid_response` - Malformed JSON response
@@ -391,7 +633,7 @@ $activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 1. **Token Counting** - Use `count_tokens()` before large requests to validate
 2. **Caching** - Cache embedding vectors to avoid redundant API calls
 3. **Timeouts** - Set appropriate timeouts for different operations
-4. **Batch Processing** - Group multiple operations when possible
+4. **Batch Processing** - Group multiple operations when possible (use `batch_embed_content()` for embeddings)
 5. **Streaming** - Use streaming for long-running operations to improve UX
 
 ## Related Documentation
@@ -399,14 +641,21 @@ $activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 - [ENABLE-SSE-STREAMING.md](ENABLE-SSE-STREAMING.md) - SSE streaming implementation
 - [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Token and budget management
 - [rest-api.md](rest-api.md) - REST API endpoints
+- [GEMINI_INTEGRATION_GAP_ANALYSIS.md](../../features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Future enhancements
 
 ## Testing
 
-Comprehensive test coverage is available in `tests/test-gemini-client.php`:
+Comprehensive test coverage is available:
 
 ```bash
-# Run Gemini client tests.
+# Run all Gemini client tests.
 vendor/bin/phpunit tests/test-gemini-client.php
+
+# Run batch embedding tests.
+vendor/bin/phpunit tests/test-gemini-batch-embed.php
+
+# Run safety settings tests.
+vendor/bin/phpunit tests/test-gemini-safety-settings.php
 ```
 
 ## API References

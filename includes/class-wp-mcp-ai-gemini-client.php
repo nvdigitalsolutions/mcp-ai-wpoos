@@ -14,11 +14,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 	 * Provides a wrapper around Gemini's generateContent endpoint.
 	 */
 	class WP_MCP_AI_Gemini_Client {
-		const API_ENDPOINT        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
-		const API_STREAM_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent';
-		const API_LIST_MODELS     = 'https://generativelanguage.googleapis.com/v1beta/models';
-		const API_COUNT_TOKENS    = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
-		const API_EMBED_CONTENT   = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
+		const API_ENDPOINT             = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+		const API_STREAM_ENDPOINT      = 'https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent';
+		const API_LIST_MODELS          = 'https://generativelanguage.googleapis.com/v1beta/models';
+		const API_COUNT_TOKENS         = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
+		const API_EMBED_CONTENT        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
+		const API_BATCH_EMBED_CONTENT  = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
 
 		/**
 		 * Retrieve the configured API key.
@@ -967,6 +968,178 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		}
 
 		/**
+		 * Create embeddings for multiple text inputs in batch.
+		 *
+		 * This method is more efficient than calling create_embedding() multiple times
+		 * as it processes all texts in a single API request.
+		 *
+		 * @param array $texts   Array of text strings to embed.
+		 * @param array $options Optional parameters:
+		 *                       - model (string): Embedding model (default: 'text-embedding-004').
+		 *                       - task_type (string): Task optimization type.
+		 *                       - timeout (int): Request timeout in seconds.
+		 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
+		 */
+		public function batch_embed_content( array $texts, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $texts ) || ! is_array( $texts ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_texts',
+					__( 'No text content was provided for batch embedding.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Default to text-embedding-004 model for embeddings.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+
+			// Build requests array.
+			$requests = array();
+			foreach ( $texts as $text ) {
+				$sanitized_text = sanitize_textarea_field( $text );
+				if ( '' === $sanitized_text ) {
+					continue;
+				}
+
+				$request = array(
+					'content' => array(
+						'parts' => array(
+							array( 'text' => $sanitized_text ),
+						),
+					),
+				);
+
+				// Optional task type for optimized embeddings.
+				if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
+					$task_type = sanitize_text_field( $options['task_type'] );
+					// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
+					$allowed_task_types = array(
+						'RETRIEVAL_QUERY',
+						'RETRIEVAL_DOCUMENT',
+						'SEMANTIC_SIMILARITY',
+						'CLASSIFICATION',
+						'CLUSTERING',
+					);
+
+					if ( in_array( $task_type, $allowed_task_types, true ) ) {
+						$request['taskType'] = $task_type;
+					}
+				}
+
+				$requests[] = $request;
+			}
+
+			if ( empty( $requests ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_batch',
+					__( 'No valid text content was provided for batch embedding after sanitization.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$payload = array( 'requests' => $requests );
+
+			/**
+			 * Allow third parties to filter the Gemini batch embedding payload prior to dispatch.
+			 *
+			 * @param array $payload Prepared request payload.
+			 * @param array $options Original method options.
+			 * @param array $texts   Text content supplied by the caller.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_payload', $payload, $options, $texts );
+
+			$endpoint = sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) );
+			$url      = $endpoint;
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_batch_embed',
+				'Sending batch embedding request to Gemini.',
+				array(
+					'model' => $model,
+					'count' => count( $requests ),
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini batch embedding request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini batch embedding response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for batch embedding.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_batch_embedding_response',
+				'Gemini batch embedding completed.',
+				array(
+					'model' => $model,
+					'count' => count( $requests ),
+				)
+			);
+
+			return $decoded;
+		}
+
+		/**
 		 * Perform a streaming chat completion request against Gemini.
 		 *
 		 * @param array    $messages Message payload to send to Gemini.
@@ -1427,6 +1600,48 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			if ( empty( $payload['generationConfig'] ) ) {
 				unset( $payload['generationConfig'] );
+			}
+
+			// Add support for safety settings configuration.
+			if ( isset( $options['safety_settings'] ) && is_array( $options['safety_settings'] ) ) {
+				$safety_settings = array();
+
+				$allowed_categories = array(
+					'HARM_CATEGORY_HARASSMENT',
+					'HARM_CATEGORY_HATE_SPEECH',
+					'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+					'HARM_CATEGORY_DANGEROUS_CONTENT',
+				);
+
+				$allowed_thresholds = array(
+					'BLOCK_NONE',
+					'BLOCK_ONLY_HIGH',
+					'BLOCK_MEDIUM_AND_ABOVE',
+					'BLOCK_LOW_AND_ABOVE',
+					'HARM_BLOCK_THRESHOLD_UNSPECIFIED',
+				);
+
+				foreach ( $options['safety_settings'] as $category => $threshold ) {
+					// Support both array format and direct category => threshold mapping.
+					if ( is_array( $threshold ) ) {
+						$cat_value       = isset( $threshold['category'] ) ? sanitize_text_field( $threshold['category'] ) : $category;
+						$threshold_value = isset( $threshold['threshold'] ) ? sanitize_text_field( $threshold['threshold'] ) : 'BLOCK_MEDIUM_AND_ABOVE';
+					} else {
+						$cat_value       = sanitize_text_field( $category );
+						$threshold_value = sanitize_text_field( $threshold );
+					}
+
+					if ( in_array( $cat_value, $allowed_categories, true ) && in_array( $threshold_value, $allowed_thresholds, true ) ) {
+						$safety_settings[] = array(
+							'category'  => $cat_value,
+							'threshold' => $threshold_value,
+						);
+					}
+				}
+
+				if ( ! empty( $safety_settings ) ) {
+					$payload['safetySettings'] = $safety_settings;
+				}
 			}
 
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {

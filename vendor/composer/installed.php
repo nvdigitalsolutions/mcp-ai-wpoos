@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-openai-api-next-phase',
-        'version' => 'dev-copilot/enhance-openai-api-next-phase',
-        'reference' => '568c9f2b8bb8918f5fa24c30de7dadc89e0645d2',
+        'pretty_version' => 'dev-copilot/update-gemini-api-enhancements',
+        'version' => 'dev-copilot/update-gemini-api-enhancements',
+        'reference' => '54687d95e66db30720280c0981f759e225a8921b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-openai-api-next-phase',
-            'version' => 'dev-copilot/enhance-openai-api-next-phase',
-            'reference' => '568c9f2b8bb8918f5fa24c30de7dadc89e0645d2',
+            'pretty_version' => 'dev-copilot/update-gemini-api-enhancements',
+            'version' => 'dev-copilot/update-gemini-api-enhancements',
+            'reference' => '54687d95e66db30720280c0981f759e225a8921b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
