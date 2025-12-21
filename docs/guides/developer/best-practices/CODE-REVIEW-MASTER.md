@@ -51,13 +51,13 @@ This master document consolidates findings from:
 
 **Latest Comprehensive Reviews:**
 - [CODE_REVIEW_2025-12-19.md](CODE_REVIEW_2025-12-19.md) - Complete repository review (A grade, 98/100) ⭐ **LATEST**
-- [CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md) - GPT-5.2 model support (A+ grade)
+- [CODE_REVIEW_2025-12-16.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-16.md) - GPT-5.2 model support (A+ grade)
 - [CODE_REVIEW_2025-12-08.md](CODE_REVIEW_2025-12-08.md) - Tool reorganization and settings
-- [CODE_REVIEW_2025-12-06.md](CODE_REVIEW_2025-12-06.md) - Full security audit
+- [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) - Full security audit
 
 **Master Consolidation (December 20, 2025):**
 - [MASTER_CONSOLIDATION_2025.md](MASTER_CONSOLIDATION_2025.md) - Complete consolidation of ALL fixes, summaries, code reviews with ZERO information loss ⭐ **NEW**
-- [CONSOLIDATION_MAP.md](CONSOLIDATION_MAP.md) - Detailed map showing exactly what was consolidated from where
+- [CONSOLIDATION_MAP.md](implementation-history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing exactly what was consolidated from where
 
 ---
 
@@ -681,7 +681,7 @@ All historical review documents have been archived and this master document serv
 - Zero security concerns
 - Backward compatible
 
-**See:** [CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md) for complete analysis
+**See:** [CODE_REVIEW_2025-12-16.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-16.md) for complete analysis
 
 ### December 8, 2025 - Tool Reorganization & Settings UI
 

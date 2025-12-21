@@ -1579,7 +1579,7 @@ while (true) {
 
 For complete SSE implementation details, configuration options, and troubleshooting:
 - **[SSE Streaming Guide](docs/features/streaming/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
-- **[MCP and SSE](docs/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
+- **[MCP and SSE](docs/reference/api/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
 - **[Job Notification System](docs/features/async-jobs/job-notification-system.md)** - Real-time job status via SSE
 - **[REST API Reference](docs/reference/api/rest-api.md)** - SSE endpoint specifications
 
@@ -1646,7 +1646,7 @@ The MCP endpoint uses enhanced authentication aligned with MCP 2024-11-05 securi
 - **Comprehensive Logging**: Track errors, tool executions, and chat interactions
 - **Sensitive Data Protection**: Automatic redaction of API keys and tokens in logs
 
-See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
+See [Error Handling Documentation](docs/guides/developer/best-practices/ERROR_HANDLING.md) for detailed usage.
 
 **MCP Standard Error Codes**:
 - **-32700**: Parse error (invalid JSON)
@@ -1668,7 +1668,7 @@ See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
 
 ➡️ **Complete MCP Documentation:**
 - [MCP Endpoint Reference](docs/reference/api/mcp-endpoint.md) - Complete method documentation and 2024-11-05 features
-- [MCP and SSE Explained](docs/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
+- [MCP and SSE Explained](docs/reference/api/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
 - [MCP Server Authentication](docs/reference/api/mcp-server-authentication.md) - OAuth 2.1 and security enhancements
 - [MCP Client Configurations](docs/reference/api/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
 - [Official MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
@@ -1730,7 +1730,7 @@ When you save an assistant through the WordPress admin:
 - Integrating with JetEngine dashboards
 - Querying basic assistant metadata
 
-➡️ **[Read the complete CPT vs CCT guide](docs/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
+➡️ **[Read the complete CPT vs CCT guide](docs/architecture/integrations/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
 
 ## ⚡ Assistant Tool Shortcuts
 
@@ -1738,7 +1738,7 @@ Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate pr
 
 Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
 
-➡️ [Read the full guide to assistant prompt shortcuts.](docs/assistant-tool-shortcuts.md)
+➡️ [Read the full guide to assistant prompt shortcuts.](docs/getting-started/first-steps/assistant-tool-shortcuts.md)
 
 ## 👔 Professional & Team Layers
 
@@ -1845,7 +1845,7 @@ Test assistants, professions, and teams directly from the WordPress admin **befo
 **Security Note:** All test pages require `manage_options` capability and are restricted to WordPress administrators. Sensitive tools are enabled in test environments because administrators already have full site access.
 
 **Documentation:**
-- [Test Assistant Feature Enhancements](docs/test-assistant-enhancements.md) - Complete testing capabilities guide
+- [Test Assistant Feature Enhancements](docs/guides/user/assistants/test-assistant-enhancements.md) - Complete testing capabilities guide
 - [Dynamic Assistant Creation System](docs/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
 
 ### Custom Professions & Teams
@@ -2088,7 +2088,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 🛰 JetEngine REST API Reference
 
-- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
+- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/reference/api/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
 - 🤖 When JetEngine is active, assistants can invoke the **List JetEngine REST Routes** tool to retrieve the same metadata directly inside a conversation (requires a user with the `manage_options` capability).
 
 ---
@@ -2341,7 +2341,7 @@ We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
-- [CONSOLIDATION_MAP.md](docs/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
+- [CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
 - [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
 - [ACTION_ITEMS.md](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
 
@@ -2350,14 +2350,14 @@ We welcome contributions! Please see:
 Comprehensive documentation is available:
 
 - **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
-- **[CONSOLIDATION_MAP.md](docs/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
+- **[CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
 - **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
 - **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
 - **[TESTING_AND_QUALITY_REPORT.md](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
 
 **For Historical Reference:**
-- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
-- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
 
 ### Security Vulnerabilities
 

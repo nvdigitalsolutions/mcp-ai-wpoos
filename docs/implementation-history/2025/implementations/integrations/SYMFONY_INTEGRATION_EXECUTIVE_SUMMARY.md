@@ -440,8 +440,8 @@ WordPress is evolving. AI capabilities are no longer optional—they're expected
 
 ### Appendix A: Full Documentation Links
 
-1. [Symfony AI Integration Analysis](SYMFONY_AI_INTEGRATION_ANALYSIS.md) - 26KB, comprehensive
-2. [Symfony Utilities Recommendations](SYMFONY_UTILITIES_RECOMMENDATIONS.md) - 30KB, detailed
+1. [Symfony AI Integration Analysis](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md) - 26KB, comprehensive
+2. [Symfony Utilities Recommendations](implementation-history/2025/implementations/integrations/SYMFONY_UTILITIES_RECOMMENDATIONS.md) - 30KB, detailed
 
 ### Appendix B: Quick Reference
 

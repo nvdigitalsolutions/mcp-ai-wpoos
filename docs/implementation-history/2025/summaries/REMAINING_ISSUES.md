@@ -5,7 +5,7 @@ This document tracks code quality issues that need manual review or cannot be au
 **Last Updated:** December 20, 2025 (Status review and updates)  
 **Previous Update:** December 4, 2025 (External API property phpcs:ignore comments added)
 
-> **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
+> **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md).
 
 ## Recent Progress (December 2025)
 

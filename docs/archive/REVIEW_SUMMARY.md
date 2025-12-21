@@ -344,4 +344,4 @@ This comprehensive code review demonstrates the high quality of the original cod
 - [Full Code Review](CODE_REVIEW.md) - Detailed 20KB analysis
 - [Action Items](../guides/developer/planning/ACTION_ITEMS.md) - Prioritized task list
 - [Security Policy](../SECURITY.md) - Security guidelines
-- [Remaining Issues](REMAINING_ISSUES.md) - Minor issue tracking
+- [Remaining Issues](implementation-history/2025/summaries/REMAINING_ISSUES.md) - Minor issue tracking

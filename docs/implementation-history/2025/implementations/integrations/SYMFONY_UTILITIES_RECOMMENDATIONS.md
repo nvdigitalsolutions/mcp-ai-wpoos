@@ -1040,7 +1040,7 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 - [WP-CLI Commands](https://wp-cli.org/)
 
 ### Related WP oOS Documents
-- [Symfony AI Integration Analysis](SYMFONY_AI_INTEGRATION_ANALYSIS.md)
+- [Symfony AI Integration Analysis](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)
 - [Architecture Guide](ARCHITECTURE.md)
 - [Tool Reference](reference/tools/tool-reference.md)
 

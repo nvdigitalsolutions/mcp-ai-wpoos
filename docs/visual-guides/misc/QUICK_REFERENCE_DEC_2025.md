@@ -258,7 +258,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 ## 📖 Key Reference Documents
 
 ### For Developers
-- [CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md) - Latest code review
+- [CODE_REVIEW_2025-12-16.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-16.md) - Latest code review
 - [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Historical reviews
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - System architecture
 - [BUILD.md](../BUILD.md) - Build instructions
