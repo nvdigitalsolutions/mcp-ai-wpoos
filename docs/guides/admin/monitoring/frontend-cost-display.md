@@ -344,10 +344,10 @@ attachUsageBadges(messageElement, usage, costData)
 
 ## Related Documentation
 
-- [Token Management](./token-management.md)
-- [Enhanced Token Tracking](./archive/token-manager/TOKEN-ENHANCEMENT-NEXT-STEP.md)
+- [Token Management](../../../features/performance/token-management.md)
+- [Enhanced Token Tracking](../../../archive/token-manager/TOKEN-ENHANCEMENT-NEXT-STEP.md)
 - [Cost Calculator](./cost-calculator.md)
-- [Analytics Engine](./analytics-engine.md)
+- [Analytics Engine](../../../features/analytics/analytics-engine.md)
 
 ## Support
 

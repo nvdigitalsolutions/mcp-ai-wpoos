@@ -24,7 +24,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 
 ## 📊 Executive Summary
 
-**File:** [`GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md`](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
+**File:** [`GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md`](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 
 **Best for:** Product managers, business stakeholders, decision-makers
 
@@ -55,7 +55,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 
 ## 🗂️ Capabilities Matrix
 
-**File:** [`GEMINI_CAPABILITIES_MATRIX.md`](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md)
+**File:** [`GEMINI_CAPABILITIES_MATRIX.md`](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md)
 
 **Best for:** Developers, technical leads, product managers
 
@@ -83,7 +83,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 
 ## 🔬 Gap Analysis
 
-**File:** [`GEMINI_INTEGRATION_GAP_ANALYSIS.md`](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md)
+**File:** [`GEMINI_INTEGRATION_GAP_ANALYSIS.md`](GEMINI_INTEGRATION_GAP_ANALYSIS.md)
 
 **Best for:** Developers implementing enhancements
 
@@ -133,39 +133,39 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 ### By Role
 
 **I'm a Product Manager:**
-1. Start with [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
-2. Review [Capabilities Matrix](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) for feature list
-3. Use [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) Section 5 for priorities
+1. Start with [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
+2. Review [Capabilities Matrix](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) for feature list
+3. Use [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) Section 5 for priorities
 
 **I'm a Developer:**
-1. Start with [Capabilities Matrix](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) for current state
-2. Read [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) for implementation specs
-3. Reference [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) for context
+1. Start with [Capabilities Matrix](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) for current state
+2. Read [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) for implementation specs
+3. Reference [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) for context
 
 **I'm a Business Stakeholder:**
-1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) only
+1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) only
 2. Focus on ROI Analysis and Decision Matrix sections
 3. Review Recommendation section for next steps
 
 ### By Need
 
 **"Should we invest in enhancements?"**
-→ [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Decision Matrix section
+→ [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Decision Matrix section
 
 **"What's currently implemented?"**
-→ [Capabilities Matrix](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - API Endpoints table
+→ [Capabilities Matrix](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - API Endpoints table
 
 **"What are the gaps?"**
-→ [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Sections 1-4
+→ [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Sections 1-4
 
 **"How do I implement X?"**
-→ [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Find the specific gap section
+→ [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Find the specific gap section
 
 **"What's the ROI?"**
-→ [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Cost Savings section
+→ [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Cost Savings section
 
 **"How long will it take?"**
-→ [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Section 5: Priority Matrix
+→ [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Section 5: Priority Matrix
 
 ---
 
@@ -201,41 +201,41 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 ## 🔄 Related Documentation
 
 ### Existing Gemini Docs
-- [`gemini-api-enhancements.md`](gemini-api-enhancements.md) - Current capabilities guide
-- [`gemini-schema-compatibility.md`](gemini-schema-compatibility.md) - Schema handling
-- [`veo-2-fallback-guide.md`](veo-2-fallback-guide.md) - Video generation
+- [`gemini-api-enhancements.md`](../../../reference/api/gemini/gemini-api-enhancements.md) - Current capabilities guide
+- [`gemini-schema-compatibility.md`](../../../reference/api/gemini/gemini-schema-compatibility.md) - Schema handling
+- [`veo-2-fallback-guide.md`](../../tools/video/veo-2-fallback-guide.md) - Video generation
 - [`gemini-image-implementation-notes.md`](gemini-image-implementation-notes.md) - Image features
-- [`gemini-header-auth-update.md`](gemini-header-auth-update.md) - Authentication
+- [`gemini-header-auth-update.md`](../../../reference/api/gemini/gemini-header-auth-update.md) - Authentication
 
 ### Architecture Docs
-- [`GEMINI_OPENAI_TOOLS_ARCHITECTURE.md`](features/ai-providers/gemini/GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Tool architecture
-- [`RESOURCE-MANAGEMENT.md`](RESOURCE-MANAGEMENT.md) - Resource limits
-- [`ARCHITECTURE.md`](../ARCHITECTURE.md) - System architecture
+- [`GEMINI_OPENAI_TOOLS_ARCHITECTURE.md`](GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Tool architecture
+- [`RESOURCE-MANAGEMENT.md`](../../performance/RESOURCE-MANAGEMENT.md) - Resource limits
+- [`ARCHITECTURE.md`](../../../../ARCHITECTURE.md) - System architecture
 
 ### API Reference
-- [`rest-api.md`](reference/api/rest-api.md) - REST API documentation
-- [`tool-reference.md`](reference/tools/tool-reference.md) - Tool catalog
+- [`rest-api.md`](../../../reference/api/rest-api.md) - REST API documentation
+- [`tool-reference.md`](../../../reference/tools/tool-reference.md) - Tool catalog
 
 ---
 
 ## 🚀 Quick Start
 
 ### For Decision Makers (5 minutes)
-1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Sections 1-3
+1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) - Sections 1-3
 2. Review ROI Analysis section
 3. Check Recommendation section
 4. Make decision on Phase 1
 
 ### For Developers (15 minutes)
-1. Skim [Capabilities Matrix](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md)
-2. Read [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Sections 1-2
+1. Skim [Capabilities Matrix](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md)
+2. Read [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Sections 1-2
 3. Review Priority Matrix (Section 5)
 4. Identify first implementation task
 
 ### For Product Managers (30 minutes)
-1. Read [Executive Summary](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) fully
-2. Review [Capabilities Matrix](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - Tables 1-3
-3. Scan [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - High priority items
+1. Read [Executive Summary](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md) fully
+2. Review [Capabilities Matrix](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - Tables 1-3
+3. Scan [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - High priority items
 4. Prioritize based on user feedback
 
 ---
@@ -272,7 +272,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
    - Effort estimate (if known)
 
 ### Want to Implement an Enhancement?
-1. Read the specific gap section in [Gap Analysis](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md)
+1. Read the specific gap section in [Gap Analysis](GEMINI_INTEGRATION_GAP_ANALYSIS.md)
 2. Review code examples provided
 3. Follow testing strategy outlined
 4. Update documentation when complete

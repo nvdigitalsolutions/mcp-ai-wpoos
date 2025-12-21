@@ -275,6 +275,6 @@ For installations with thousands of encrypted secrets:
 
 ## Related Documentation
 
-- [Security Best Practices](./BEST_PRACTICES.md)
-- [Credential Management](./mcp-server-authentication.md)
+- [Security Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)
+- [Credential Management](../../reference/api/mcp-server-authentication.md)
 - [Root Security Key](./root-security-key.md)

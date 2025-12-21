@@ -808,9 +808,9 @@ add_filter( 'wp_mcp_ai_max_agentic_iterations', function( $iterations, $config )
 
 ## Related Documentation
 
-- [Best Practices](guides/developer/best-practices/BEST_PRACTICES.md)
-- [Advanced SSE Budget Management](ADVANCED-SSE-BUDGET-MANAGEMENT.md)
-- [Model Rate Limits CCT](MODEL-RATE-LIMITS-CCT.md)
+- [Best Practices](../best-practices/BEST_PRACTICES.md)
+- [Advanced SSE Budget Management](../../../features/streaming/ADVANCED-SSE-BUDGET-MANAGEMENT.md)
+- [Model Rate Limits CCT](../../../reference/models/MODEL-RATE-LIMITS-CCT.md)
 
 ---
 

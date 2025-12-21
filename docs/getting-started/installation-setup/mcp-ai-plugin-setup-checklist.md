@@ -30,7 +30,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 - For each AI Assistant post, curate the allowed tools (core, WooCommerce, JetEngine, or custom), set the assistant defaults (model, temperature, system prompt), and attach any media knowledge or vector store IDs needed for retrieval workflows.
 - Remember that REST or shortcode requests without an explicit `assistant` parameter fall back to the default assistant configured earlier.
 - Decide whether public visitors should chat with the assistant by enabling `allow_guests="true"` on the shortcode or the Elementor widget when appropriate.
-- Confirm any headless integrations can call both `POST /wp-json/mcp-ai/v1/chat` and `POST /wp-json/mcp-ai/v1/tools`, handle structured errors, and supply the authentication scheme outlined in [docs/rest-api.md](reference/api/rest-api.md).【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1321】
+- Confirm any headless integrations can call both `POST /wp-json/mcp-ai/v1/chat` and `POST /wp-json/mcp-ai/v1/tools`, handle structured errors, and supply the authentication scheme outlined in [docs/rest-api.md](../../reference/api/rest-api.md).【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1321】
 
 ## Optional Local Development Setup
 - Run `docker compose up -d` to start the local environment, then complete the standard WordPress installation at `http://localhost:8000`.

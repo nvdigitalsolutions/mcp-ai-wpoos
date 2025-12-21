@@ -529,10 +529,10 @@ For each new feature:
 ## Related Documentation
 
 - [localStorage Quota and Export](./localStorage-quota-and-export.md)
-- [REST API Documentation](./rest-api.md)
+- [REST API Documentation](../../../reference/api/rest-api.md)
 - [Frontend Architecture](./frontend-architecture.md)
-- [Security Best Practices](../SECURITY.md)
-- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Security Best Practices](../../../../SECURITY.md)
+- [Contributing Guidelines](../../../../CONTRIBUTING.md)
 
 ## Changelog
 

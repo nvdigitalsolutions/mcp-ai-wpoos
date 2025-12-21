@@ -5,7 +5,7 @@ This document tracks code quality issues that need manual review or cannot be au
 **Last Updated:** December 20, 2025 (Status review and updates)  
 **Previous Update:** December 4, 2025 (External API property phpcs:ignore comments added)
 
-> **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md).
+> **Note**: For a comprehensive view of all bugs, fixes, and quality issues including recent fixes, see [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md).
 
 ## Recent Progress (December 2025)
 
@@ -20,7 +20,7 @@ This document tracks code quality issues that need manual review or cannot be au
 - ✅ JavaScript documentation: JSDoc added, ESLint passing
 - ✅ CI/CD quality gates: GitHub Actions with PHPCS, ESLint, PHPUnit, CodeQL
 
-See [CODE_REVIEW_2025-12-19.md](CODE_REVIEW_2025-12-19.md) for latest quality assessment (98/100 score).
+See [CODE_REVIEW_2025-12-19.md](../code-reviews/CODE_REVIEW_2025-12-19.md) for latest quality assessment (98/100 score).
 
 ## Variable Naming Convention Issues
 
@@ -130,7 +130,7 @@ Some violations are intentional or required by external APIs:
 
 **Production Status:** ✅ APPROVED FOR PRODUCTION
 
-See [CODE_REVIEW_2025-12-19.md](CODE_REVIEW_2025-12-19.md) for complete assessment.
+See [CODE_REVIEW_2025-12-19.md](../code-reviews/CODE_REVIEW_2025-12-19.md) for complete assessment.
 
 ---
 

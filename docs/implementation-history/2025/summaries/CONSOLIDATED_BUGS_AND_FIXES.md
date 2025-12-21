@@ -28,7 +28,7 @@ This document consolidates all known bugs, fixes, and code quality issues for th
 - December 6, 2025: 95/100
 - December 20, 2025: 98/100 ⬆️ (+3 improvement)
 
-See [CODE_REVIEW_2025-12-19.md](CODE_REVIEW_2025-12-19.md) for latest comprehensive review.
+See [CODE_REVIEW_2025-12-19.md](../code-reviews/CODE_REVIEW_2025-12-19.md) for latest comprehensive review.
 
 ---
 

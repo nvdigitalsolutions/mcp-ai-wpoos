@@ -6,7 +6,7 @@ Solutions to common problems and debugging guides.
 
 ### [Deployment Issues](deployment/)
 Deployment and installation problems:
-- [Deployment Troubleshooting](deployment/deployment-troubleshooting.md)
+- [Deployment Troubleshooting](../getting-started/installation-setup/deployment-troubleshooting.md)
 - [Deployment Checklist](deployment/DEPLOYMENT_CHECKLIST.md)
 - [WordPress.org Submission Guide](deployment/WORDPRESS_ORG_SUBMISSION_GUIDE.md)
 - [Release Checklist](deployment/RELEASE_CHECKLIST.md)

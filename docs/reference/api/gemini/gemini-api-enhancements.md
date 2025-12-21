@@ -638,10 +638,10 @@ $activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 
 ## Related Documentation
 
-- [ENABLE-SSE-STREAMING.md](ENABLE-SSE-STREAMING.md) - SSE streaming implementation
-- [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Token and budget management
-- [rest-api.md](reference/api/rest-api.md) - REST API endpoints
-- [GEMINI_INTEGRATION_GAP_ANALYSIS.md](../../features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Future enhancements
+- [ENABLE-SSE-STREAMING.md](../../../features/streaming/ENABLE-SSE-STREAMING.md) - SSE streaming implementation
+- [RESOURCE-MANAGEMENT.md](../../../features/performance/RESOURCE-MANAGEMENT.md) - Token and budget management
+- [rest-api.md](../rest-api.md) - REST API endpoints
+- [GEMINI_INTEGRATION_GAP_ANALYSIS.md](../../../features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Future enhancements
 
 ## Testing
 

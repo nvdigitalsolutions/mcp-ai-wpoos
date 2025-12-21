@@ -254,11 +254,11 @@ function_exists( 'rank_math' )
 
 ## Related Documentation
 
-- [Tool Reference](./tool-reference.md) - Complete list of all 65+ tools with examples
-- [Tool Grouping](./tool-grouping.md) - Detailed categorization system
-- [Tool Selection Presets](./tool-selection-presets.md) - Pre-configured tool sets for assistants
-- [High Token Tool Handling](./high-token-tool-handling.md) - Managing resource-intensive tools
-- [TOOL-TOKEN-LIMITS.md](./TOOL-TOKEN-LIMITS.md) - Token usage limits per tool
+- [Tool Reference](../../../reference/tools/tool-reference.md) - Complete list of all 65+ tools with examples
+- [Tool Grouping](../../../reference/tools/tool-grouping.md) - Detailed categorization system
+- [Tool Selection Presets](../../user/assistants/tool-selection-presets.md) - Pre-configured tool sets for assistants
+- [High Token Tool Handling](../../../features/tools/presets/high-token-tool-handling.md) - Managing resource-intensive tools
+- [TOOL-TOKEN-LIMITS.md](../../../reference/tools/TOOL-TOKEN-LIMITS.md) - Token usage limits per tool
 
 ## Future Enhancements
 
@@ -277,8 +277,8 @@ Planned features for Tools Manager:
 For questions or issues with the Tools Manager:
 
 1. Check this documentation first
-2. Review [tool-reference.md](./tool-reference.md) for tool details
-3. Check [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) for common tasks
+2. Review [tool-reference.md](../../../reference/tools/tool-reference.md) for tool details
+3. Check [QUICK_REFERENCE.md](../../../QUICK_REFERENCE.md) for common tasks
 4. Open an issue on GitHub
 5. Contact support team
 

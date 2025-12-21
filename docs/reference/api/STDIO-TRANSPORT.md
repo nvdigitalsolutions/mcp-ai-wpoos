@@ -260,8 +260,8 @@ This enables complex WordPress operations like:
 ## Related Documentation
 
 - [MCP Client Configurations](mcp-client-configurations.md) - HTTP/SSE transport setup
-- [MCP Server Authentication](reference/api/mcp-server-authentication.md) - Token-based authentication
-- [Tool Reference](reference/tools/tool-reference.md) - Available tools and parameters
+- [MCP Server Authentication](mcp-server-authentication.md) - Token-based authentication
+- [Tool Reference](../tools/tool-reference.md) - Available tools and parameters
 
 ---
 

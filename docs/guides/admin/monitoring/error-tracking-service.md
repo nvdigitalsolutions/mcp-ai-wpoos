@@ -386,6 +386,6 @@ Track error and optionally store in Performance Monitor CCT.
 ## See Also
 
 - [Performance Monitoring Guide](performance-monitoring.md)
-- [Performance Testing Guide](performance-testing-guide.md)
-- [Performance Monitor CCT Documentation](jetengine-api-compatibility.md)
-- [WP oOS Documentation Index](DOCUMENTATION_INDEX.md)
+- [Performance Testing Guide](../../developer/testing/performance-testing-guide.md)
+- [Performance Monitor CCT Documentation](../../../architecture/integrations/jetengine-api-compatibility.md)
+- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)

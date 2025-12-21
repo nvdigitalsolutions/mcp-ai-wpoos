@@ -330,7 +330,7 @@ Potential improvements for future phases:
 
 ## Related Documentation
 
-- [WordPress Coding Standards](guides/developer/best-practices/CODE-REVIEW-MASTER.md)
-- [Best Practices](guides/developer/best-practices/BEST_PRACTICES.md)
-- [API Documentation](reference/api/rest-api.md)
-- [Tool Reference](reference/tools/tool-reference.md)
+- [WordPress Coding Standards](CODE-REVIEW-MASTER.md)
+- [Best Practices](BEST_PRACTICES.md)
+- [API Documentation](../../../reference/api/rest-api.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)

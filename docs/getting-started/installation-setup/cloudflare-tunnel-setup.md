@@ -282,7 +282,7 @@ When using Cloudflare Tunnel, you **do NOT need** network interface binding beca
 - Both services are on the same network
 - No tunnel or proxy is used
 
-See [NETWORK_INTERFACE_BINDING.md](NETWORK_INTERFACE_BINDING.md) for direct network access scenarios.
+See [NETWORK_INTERFACE_BINDING.md](../../features/federation/NETWORK_INTERFACE_BINDING.md) for direct network access scenarios.
 
 ## Security Considerations
 
@@ -437,7 +437,7 @@ See [NETWORK_INTERFACE_BINDING.md](NETWORK_INTERFACE_BINDING.md) for direct netw
 1. **Use nearest Cloudflare data center** (automatic, but verify location)
 2. **Enable HTTP/2** in WordPress (some hosts disable it)
 3. **Monitor Cloudflare Analytics** for routing issues
-4. **Consider local network binding** if both services are on same network (see [NETWORK_INTERFACE_BINDING.md](NETWORK_INTERFACE_BINDING.md))
+4. **Consider local network binding** if both services are on same network (see [NETWORK_INTERFACE_BINDING.md](../../features/federation/NETWORK_INTERFACE_BINDING.md))
 
 ## Advanced Configuration
 
@@ -565,11 +565,11 @@ cloudflared tunnel route list
 
 ## Related Documentation
 
-- [LM Studio Setup Guide](lm-studio-setup.md) - Local LM Studio configuration
-- [Network Interface Binding](NETWORK_INTERFACE_BINDING.md) - Direct network access setup
-- [Security Hardening](SECURITY_HARDENING.md) - Security best practices
-- [Remote Client Setup](getting-started/quick-starts/remote-client-setup.md) - Remote client configuration
-- [Deployment Troubleshooting](troubleshooting/deployment/deployment-troubleshooting.md) - General troubleshooting
+- [LM Studio Setup Guide](../quick-starts/lm-studio-setup.md) - Local LM Studio configuration
+- [Network Interface Binding](../../features/federation/NETWORK_INTERFACE_BINDING.md) - Direct network access setup
+- [Security Hardening](../../features/security/SECURITY_HARDENING.md) - Security best practices
+- [Remote Client Setup](remote-client-setup.md) - Remote client configuration
+- [Deployment Troubleshooting](deployment-troubleshooting.md) - General troubleshooting
 
 ## External Resources
 

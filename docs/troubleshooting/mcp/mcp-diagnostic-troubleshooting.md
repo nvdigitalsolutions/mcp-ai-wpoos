@@ -319,10 +319,10 @@ If tests still don't work after trying these solutions:
 
 ## Related Documentation
 
-- [MCP Endpoint Documentation](reference/api/mcp-endpoint.md)
-- [MCP Server Authentication](reference/api/mcp-server-authentication.md)
-- [REST API Reference](reference/api/rest-api.md)
-- [Tool Reference](reference/tools/tool-reference.md)
+- [MCP Endpoint Documentation](../../reference/api/mcp-endpoint.md)
+- [MCP Server Authentication](../../reference/api/mcp-server-authentication.md)
+- [REST API Reference](../../reference/api/rest-api.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
 
 ## Quick Reference
 

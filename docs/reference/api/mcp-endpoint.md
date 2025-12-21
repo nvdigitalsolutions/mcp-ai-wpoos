@@ -76,7 +76,7 @@ The implementation follows MCP's enhanced security requirements:
 - **PKCE Support**: For public clients (mobile, desktop apps)
 - **Encrypted Storage**: Credentials are hashed in the database
 
-See [MCP Server Authentication](reference/api/mcp-server-authentication.md) for detailed authentication options.
+See [MCP Server Authentication](mcp-server-authentication.md) for detailed authentication options.
 
 ## JSON-RPC 2.0 Format
 
@@ -653,9 +653,9 @@ The MCP specification now recommends **JSON-RPC over HTTP** as the primary trans
 
 ## See Also
 
-- [MCP Server Authentication](reference/api/mcp-server-authentication.md)
+- [MCP Server Authentication](mcp-server-authentication.md)
 - [MCP Client Configurations](mcp-client-configurations.md)
-- [REST API Endpoints](reference/api/rest-api.md)
+- [REST API Endpoints](rest-api.md)
 - [Model Context Protocol Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 - [MCP Changelog](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
 

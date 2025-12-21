@@ -246,7 +246,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 - [LM Studio MCP Documentation](https://lmstudio.ai/docs/app/mcp)
 - [MCP 2024-11-05 Specification](https://spec.modelcontextprotocol.io/)
 - [Streamable HTTP Transport](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
-- [WP oOS MCP Endpoint Documentation](reference/api/mcp-endpoint.md)
+- [WP oOS MCP Endpoint Documentation](../../../reference/api/mcp-endpoint.md)
 
 ## Related Issues
 

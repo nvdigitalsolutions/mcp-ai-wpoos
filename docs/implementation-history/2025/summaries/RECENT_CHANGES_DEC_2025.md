@@ -328,14 +328,14 @@ The plugin now supports three distinct build variants:
 
 ## Related Documentation
 
-- [Tool Reference](reference/tools/tool-reference.md) - Complete tool listing
-- [Product Price Lookup Guide](PRODUCT-PRICE-LOOKUP-GUIDE.md) - Detailed guide
-- [Token Management](token-management.md) - Token Manager documentation
+- [Tool Reference](../../../reference/tools/tool-reference.md) - Complete tool listing
+- [Product Price Lookup Guide](../../../guides/user/assistants/PRODUCT-PRICE-LOOKUP-GUIDE.md) - Detailed guide
+- [Token Management](../../../features/performance/token-management.md) - Token Manager documentation
 - [CodeSniffer Cleanup Summary](CODESNIFFER_CLEANUP_SUMMARY.md) - Cleanup details
-- [Architecture: Core/Pro](ARCHITECTURE-CORE-PRO.md) - Architecture overview
-- [Feature Matrix](reference/models/FEATURE-MATRIX-CORE-PRO.md) - Core vs Pro features
-- [Action Items](guides/developer/planning/ACTION_ITEMS.md) - Pending tasks
-- [Remaining Issues](implementation-history/2025/summaries/REMAINING_ISSUES.md) - Known issues
+- [Architecture: Core/Pro](../../../architecture/core/ARCHITECTURE-CORE-PRO.md) - Architecture overview
+- [Feature Matrix](../../../reference/models/FEATURE-MATRIX-CORE-PRO.md) - Core vs Pro features
+- [Action Items](ACTION_ITEMS.md) - Pending tasks
+- [Remaining Issues](REMAINING_ISSUES.md) - Known issues
 
 ---
 
@@ -375,7 +375,7 @@ No action required. Update through WordPress admin as normal.
 
 A thorough code review was performed covering all aspects of the codebase:
 
-**Review Document:** [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md)
+**Review Document:** [CODE_REVIEW_2025-12-06.md](../code-reviews/CODE_REVIEW_2025-12-06.md)
 
 **Overall Score:** 96/100 (Excellent) - Improved from 95/100
 

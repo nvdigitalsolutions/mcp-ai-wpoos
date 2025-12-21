@@ -1804,11 +1804,11 @@ Iteration 3:
 ## Related Documentation
 
 - **[agentic-workflow-architecture.md](agentic-workflow-architecture.md)** - Detailed architecture
-- **[tool-reference.md](reference/tools/tool-reference.md)** - All 65+ tools documented
-- **[rest-api.md](reference/api/rest-api.md)** - REST API reference
-- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Orchestration details
-- **[BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md)** - Usage best practices
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference guide
+- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All 65+ tools documented
+- **[rest-api.md](../../reference/api/rest-api.md)** - REST API reference
+- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](../orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Orchestration details
+- **[BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage best practices
+- **[QUICK_REFERENCE.md](../../QUICK_REFERENCE.md)** - Quick reference guide
 
 ---
 

@@ -173,7 +173,7 @@ add_filter( 'wp_mcp_ai_resource_max_tokens', function( $max_tokens, $tier ) {
 
 ## See Also
 
-- [Orchestration Layer Architecture](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
-- [Token Management](token-management.md)
+- [Orchestration Layer Architecture](../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+- [Token Management](../../features/performance/token-management.md)
 - [Token Counting](token-counting.md)
-- [High Token Tool Handling](features/tools/presets/high-token-tool-handling.md)
+- [High Token Tool Handling](../../features/tools/presets/high-token-tool-handling.md)

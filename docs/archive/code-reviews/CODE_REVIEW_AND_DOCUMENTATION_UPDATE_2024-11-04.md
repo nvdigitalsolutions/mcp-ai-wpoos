@@ -500,7 +500,7 @@ The Open Operator System demonstrates **exceptional quality** in both code and d
 
 ### For Contributors
 
-1. **Review** [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines
+1. **Review** [CONTRIBUTING.md](../../../CONTRIBUTING.md) for guidelines
 2. **Check** [ACTION_ITEMS.md](../../implementation-history/2025/summaries/ACTION_ITEMS.md) for tasks (180+ hours available)
 3. **Read** [CODE_REVIEW.md](CODE_REVIEW.md) for quality standards
 4. **Use** [QUICK_REFERENCE.md](../../QUICK_REFERENCE.md) for fast lookups
@@ -539,8 +539,8 @@ The NV Digital Solutions team has built a robust, secure, and well-documented Wo
 **License:** GPLv3 or later
 
 **Documentation Issues:** Create GitHub issue with `documentation` label  
-**Security Issues:** Follow [SECURITY.md](../SECURITY.md) guidelines  
-**Contributions:** See [CONTRIBUTING.md](../CONTRIBUTING.md)
+**Security Issues:** Follow [SECURITY.md](../../../SECURITY.md) guidelines  
+**Contributions:** See [CONTRIBUTING.md](../../../CONTRIBUTING.md)
 
 ---
 

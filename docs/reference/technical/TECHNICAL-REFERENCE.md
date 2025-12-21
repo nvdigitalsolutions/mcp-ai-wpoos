@@ -31,7 +31,7 @@ This document provides technical reference material for developers working with 
 - Performance optimization techniques
 - Security implementation details
 
-**For chronological development history, see:** [`DEVELOPMENT-HISTORY.md`](visual-guides/misc/DEVELOPMENT-HISTORY.md)
+**For chronological development history, see:** [`DEVELOPMENT-HISTORY.md`](../../visual-guides/misc/DEVELOPMENT-HISTORY.md)
 
 ---
 
@@ -1748,4 +1748,4 @@ This technical reference consolidates information from the following source docu
 
 ---
 
-**For chronological development history, see:** [`DEVELOPMENT-HISTORY.md`](visual-guides/misc/DEVELOPMENT-HISTORY.md)
+**For chronological development history, see:** [`DEVELOPMENT-HISTORY.md`](../../visual-guides/misc/DEVELOPMENT-HISTORY.md)

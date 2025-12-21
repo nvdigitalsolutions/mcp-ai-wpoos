@@ -470,7 +470,7 @@ Both benefit from the automatic model switching and message truncation!
 **Official Resources:**
 - [MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 - [MCP Changelog](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
-- [WP oOS MCP Endpoint Documentation](reference/api/mcp-endpoint.md)
+- [WP oOS MCP Endpoint Documentation](mcp-endpoint.md)
 
 ---
 

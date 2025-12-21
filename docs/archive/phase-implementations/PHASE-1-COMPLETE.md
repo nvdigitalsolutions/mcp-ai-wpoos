@@ -320,7 +320,7 @@ The implementation provides a solid foundation for scalability and sets the stag
 
 - [Main Documentation](../README.md)
 - [Performance Optimization Guide](../../features/performance/PERFORMANCE-OPTIMIZATION.md)
-- [Build Process Guide](BUILD.md)
+- [Build Process Guide](../../../BUILD.md)
 - [WordPress Transients API](https://developer.wordpress.org/apis/handbook/transients/)
 - [WP_Query Performance](https://10up.github.io/Engineering-Best-Practices/php/#performance)
 

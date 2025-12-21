@@ -908,12 +908,12 @@ The orchestration layer architecture enables future innovations:
 
 ## 🔹 Related Documentation
 
-- [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Computer-implemented resource management details
-- [tool-reference.md](reference/tools/tool-reference.md) - Complete catalog of orchestrated tools
-- [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication implementation
-- [rest-api.md](reference/api/rest-api.md) - REST API and SSE endpoint documentation
-- [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using WP oOS
-- [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - Complete documentation index
+- [RESOURCE-MANAGEMENT.md](../../features/performance/RESOURCE-MANAGEMENT.md) - Computer-implemented resource management details
+- [tool-reference.md](../../reference/tools/tool-reference.md) - Complete catalog of orchestrated tools
+- [mcp-server-authentication.md](../../reference/api/mcp-server-authentication.md) - Authentication implementation
+- [rest-api.md](../../reference/api/rest-api.md) - REST API and SSE endpoint documentation
+- [BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using WP oOS
+- [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md) - Complete documentation index
 
 ---
 

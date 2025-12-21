@@ -525,9 +525,9 @@ chmod +x .git/hooks/pre-commit
 - [PHPUnit](https://phpunit.de/)
 
 ### This Project
-- [Code Review](guides/developer/best-practices/CODE-REVIEW-MASTER.md)
-- [Security Policy](../SECURITY.md)
-- [Action Items](guides/developer/planning/ACTION_ITEMS.md)
+- [Code Review](CODE-REVIEW-MASTER.md)
+- [Security Policy](../../../../SECURITY.md)
+- [Action Items](../../../implementation-history/2025/summaries/ACTION_ITEMS.md)
 
 ---
 

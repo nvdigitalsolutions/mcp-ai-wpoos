@@ -309,10 +309,10 @@ If you didn't specify `enable_streaming`, it now defaults to `true` (previously 
 
 ## Related Documentation
 
-- [REST API Documentation](./rest-api.md)
+- [REST API Documentation](../../reference/api/rest-api.md)
 - [Chat UI Documentation](./chat-ui.md)
 - [SSE Handler Tests](../tests/test-sse-handler.php)
-- [Tool Reference](./tool-reference.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
 
 ## Changelog
 

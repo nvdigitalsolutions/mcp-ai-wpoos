@@ -1,6 +1,6 @@
 # Quick Reference: Token Manager Enhancements
 
-**Related Document:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md)  
+**Related Document:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](../analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)  
 **Status:** Planning Phase  
 **Last Updated:** 2025-11-11
 
@@ -298,10 +298,10 @@ if ( WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, 'tool_slug', $
 
 ## Support & Resources
 
-- **Full Documentation:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
-- **API Reference:** [rest-api.md](reference/api/rest-api.md)
-- **Token Counting:** [token-counting.md](token-counting.md)
-- **Token Management:** [token-management.md](token-management.md)
+- **Full Documentation:** [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](../analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md)
+- **API Reference:** [rest-api.md](../../reference/api/rest-api.md)
+- **Token Counting:** [token-counting.md](../../reference/technical/token-counting.md)
+- **Token Management:** [token-management.md](../performance/token-management.md)
 - **GitHub Issues:** [Report a Bug](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 
 ---

@@ -359,10 +359,10 @@ Planned improvements:
 
 ## Related Documentation
 
-- [Resource Management](./RESOURCE-MANAGEMENT.md) - Workload tiers and resource detection
-- [High Token Tool Handling](./high-token-tool-handling.md) - Model switching for large responses
-- [Token Budget Manager](./token-management.md) - Global token budgeting
-- [Tool Reference](./tool-reference.md) - All available tools
+- [Resource Management](../../features/performance/RESOURCE-MANAGEMENT.md) - Workload tiers and resource detection
+- [High Token Tool Handling](../../features/tools/presets/high-token-tool-handling.md) - Model switching for large responses
+- [Token Budget Manager](../../features/performance/token-management.md) - Global token budgeting
+- [Tool Reference](../../reference/tools/tool-reference.md) - All available tools
 
 ## Changelog
 

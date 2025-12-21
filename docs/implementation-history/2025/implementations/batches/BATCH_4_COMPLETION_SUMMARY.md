@@ -355,10 +355,10 @@ Based on previous benchmarks (SYMFONY_VALIDATOR_PERFORMANCE_BENCHMARK.md):
 ## Resources
 
 ### Documentation
-- [Symfony Validator Migration Plan](./SYMFONY_VALIDATOR_MIGRATION_PLAN.md)
+- [Symfony Validator Migration Plan](../integrations/SYMFONY_VALIDATOR_MIGRATION_PLAN.md)
 - [Batch 4 Implementation Guide](./BATCH_4_IMPLEMENTATION_GUIDE.md)
-- [Symfony Integration Guide](./SYMFONY_INTEGRATION_GUIDE.md)
-- [Performance Benchmark](./SYMFONY_VALIDATOR_PERFORMANCE_BENCHMARK.md)
+- [Symfony Integration Guide](../integrations/SYMFONY_INTEGRATION_GUIDE.md)
+- [Performance Benchmark](../integrations/SYMFONY_VALIDATOR_PERFORMANCE_BENCHMARK.md)
 
 ### Code Examples
 - All validated tools: `includes/tools/class-wp-mcp-ai-tool-*-validated.php`

@@ -150,9 +150,9 @@ A: Planned for version 2.0.0 (timeline TBD, likely 6-12 months).
 
 ## Related Documentation
 
-- [Full compatibility analysis](PHP_VERSION_COMPATIBILITY_ISSUE.md)
-- [Symfony Integration Guide](SYMFONY_INTEGRATION_GUIDE.md)
-- [Phase 2 Implementation Plan](SYMFONY_PHASE2_IMPLEMENTATION_PLAN.md)
+- [Full compatibility analysis](../../troubleshooting/common/PHP_VERSION_COMPATIBILITY_ISSUE.md)
+- [Symfony Integration Guide](../../implementation-history/2025/implementations/integrations/SYMFONY_INTEGRATION_GUIDE.md)
+- [Phase 2 Implementation Plan](../../implementation-history/2025/implementations/symfony-phases/SYMFONY_PHASE2_IMPLEMENTATION_PLAN.md)
 
 ---
 

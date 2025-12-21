@@ -295,5 +295,5 @@ This page provides:
 
 - [MCP Specification](https://spec.modelcontextprotocol.io/)
 - [WP oOS Documentation](../README.md)
-- [Tool Reference](./tool-reference.md)
+- [Tool Reference](../tools/tool-reference.md)
 - [REST API Reference](./rest-api.md)

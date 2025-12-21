@@ -315,5 +315,5 @@ if ( is_wp_error( $result ) ) {
 ## See Also
 
 - [Nefarious Usage Monitor Documentation](./nefarious-usage-monitor.md)
-- [Security Best Practices](./BEST_PRACTICES.md)
+- [Security Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)
 - [Emergency Shutdown Procedures](./emergency-shutdown.md)

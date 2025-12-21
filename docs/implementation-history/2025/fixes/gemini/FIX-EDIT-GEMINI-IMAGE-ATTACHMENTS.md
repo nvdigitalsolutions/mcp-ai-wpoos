@@ -192,7 +192,7 @@ Potential improvements:
 
 ## See Also
 
-- [Tool Reference](reference/tools/tool-reference.md) - Complete list of all tools
+- [Tool Reference](../../../../reference/tools/tool-reference.md) - Complete list of all tools
 - [Attachment Resolution](../includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php) - Trait documentation
-- [REST API](reference/api/rest-api.md) - API endpoint documentation
+- [REST API](../../../../reference/api/rest-api.md) - API endpoint documentation
 - [Chat Client](../assets/js/chat.js) - Frontend implementation

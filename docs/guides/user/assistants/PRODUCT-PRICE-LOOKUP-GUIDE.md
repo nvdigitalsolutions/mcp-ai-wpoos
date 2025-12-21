@@ -530,8 +530,8 @@ Planned features:
 
 ## Related Documentation
 
-- [Tool Reference](reference/tools/tool-reference.md)
-- [Crawl4AI Integration](async-tool-execution-guide.md)
-- [Vision API Setup](gemini-api-enhancements.md)
-- [Rate Limiting](troubleshooting/deployment/rate-limit-protection.md)
-- [Pro Tools Overview](reference/models/FEATURE-MATRIX-CORE-PRO.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
+- [Crawl4AI Integration](../../developer/tool-development/async-tool-execution-guide.md)
+- [Vision API Setup](../../../reference/api/gemini/gemini-api-enhancements.md)
+- [Rate Limiting](../../../features/performance/rate-limit-protection.md)
+- [Pro Tools Overview](../../../reference/models/FEATURE-MATRIX-CORE-PRO.md)

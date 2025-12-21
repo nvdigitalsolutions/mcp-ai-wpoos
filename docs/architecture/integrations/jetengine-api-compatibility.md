@@ -177,6 +177,6 @@ If you're upgrading from an older version of WP oOS:
 
 ## Related Documentation
 
-- [Performance Monitoring](./performance-monitoring.md)
-- [Base vs Full Version Comparison](./base-vs-full-comparison.md)
+- [Performance Monitoring](../../guides/admin/monitoring/performance-monitoring.md)
+- [Base vs Full Version Comparison](../../reference/technical/base-vs-full-comparison.md)
 - [Assistant Storage: CPT vs CCT](./assistant-storage-cpt-vs-cct.md)
