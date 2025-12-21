@@ -1,7 +1,8 @@
 # Gemini Integration Capabilities Matrix
 
-**Last Updated:** December 20, 2024  
-**Version:** 1.0
+**Last Updated:** December 21, 2024  
+**Version:** 1.1  
+**Status:** Updated with December 2024 implementations
 
 ## Quick Reference: What's Implemented vs. Available
 
@@ -23,7 +24,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | countTokens | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Client::count_tokens()` | Budget management |
 | **Embeddings** |
 | embedContent | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Client::create_embedding()` | Single text embedding |
-| batchEmbedContent | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
+| batchEmbedContent | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Client::batch_embed_content()` | **NEW Dec 2024** - Batch processing |
 | **Files** |
 | files (upload) | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_File_Service::upload_file()` | Video, images, docs |
 | files (list) | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_File_Service::list_files()` | Cache management |
@@ -76,13 +77,13 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | frequencyPenalty | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | **Advanced Features** |
 | Function calling (tools) | ✅ Available | ✅ Implemented | `translate_tools()` | OpenAI-compatible |
-| Thinking mode (2.0 Flash) | ✅ Available | ⚠️ Partial | Streaming only | **Non-streaming gap** |
+| Thinking mode (2.0 Flash) | ✅ Available | ✅ Implemented | Both streaming and non-streaming | **FIXED Dec 2024** |
 | Code execution | ✅ Available | ❌ Not Implemented | - | Low priority |
 | Grounding (Google Search) | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | Context caching | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | **Safety & Moderation** |
-| Safety settings | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
-| Harm category filtering | ✅ Available | ❌ Not Implemented | - | Uses API defaults |
+| Safety settings | ✅ Available | ✅ Implemented | `build_payload()` lines 1605-1645 | **NEW Dec 2024** |
+| Harm category filtering | ✅ Available | ✅ Implemented | All 4 categories, 5 thresholds | **NEW Dec 2024** |
 | Prompt feedback | ✅ Available | ✅ Implemented | `extract_revised_prompt_from_candidate()` | Safety metadata |
 
 ---
@@ -107,7 +108,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | **Text Tools** |
 | Count Tokens | Tool | ✅ Implemented | `class-wp-mcp-ai-tool-count-tokens.php` | Token counting |
 | Create Text Embeddings | Tool | ✅ Implemented | `class-wp-mcp-ai-tool-create-text-embeddings.php` | Single embedding |
-| Batch Embed Content | Tool | ⚠️ Partial | `class-wp-mcp-ai-tool-batch-embed-content.php` | **OpenAI only** |
+| Batch Embed Content | Tool | ⚠️ Partial | `class-wp-mcp-ai-tool-batch-embed-content.php` | **OpenAI only - needs Gemini integration** |
 | **Caption Tools** |
 | Generate Image Alt Text | Tool | ✅ Implemented | `class-wp-mcp-ai-tool-generate-image-alt-text.php` | Multimodal vision |
 | Generate Image Caption | Tool | ✅ Implemented | `class-wp-mcp-ai-tool-generate-image-caption.php` | Multimodal vision |
@@ -150,10 +151,21 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 ## Key Statistics
 
 - **Total Gemini API Endpoints:** ~30
-- **Implemented Endpoints:** 15 (50%)
-- **Major Gaps:** 5 (Context Caching, Batch Embeddings, Model Tuning, Grounding, Safety Settings)
+- **Implemented Endpoints:** 16 (53%) - **Up from 15 (50%)**
+- **Major Gaps Remaining:** 4 (Context Caching, Model Tuning, Grounding, Controlled Generation)
+- **Recently Resolved:** 3 (Batch Embeddings, Safety Settings, Thinking Mode)
 - **Tools Using Gemini:** 14
-- **Services:** 3 (Client, File, Video, Music)
+- **Services:** 4 (Client, File, Video, Music)
+
+## Recent Changes (December 2024)
+
+### ✅ Newly Implemented
+1. **Batch Embeddings API** - `batch_embed_content()` method added to client
+2. **Safety Settings** - Complete harm category and threshold configuration
+3. **Thinking Mode (Non-Streaming)** - Full feature parity with streaming mode
+
+### ⚠️ Integration Gaps Identified
+1. **Batch Embed Content Tool** - Client method exists but tool doesn't use it yet
 
 ---
 
@@ -177,4 +189,13 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 ---
 
 **Maintained by:** WP oOS Development Team  
+**Version:** 1.1  
+**Last Updated:** December 21, 2024  
+**Changes in v1.1:**
+- ✅ Updated batch embeddings status (now implemented)
+- ✅ Updated thinking mode status (fully implemented)
+- ✅ Updated safety settings status (now implemented)
+- ✅ Added integration gap note for batch embed tool
+- ✅ Updated statistics (16/30 endpoints, 53%)
+
 **Contact:** For questions or suggestions, open an issue on GitHub
