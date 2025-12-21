@@ -434,10 +434,10 @@ Performed a comprehensive code review of the last week's changes (primarily PR #
 ## Contact & References
 
 ### Key Documents
-- [CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md) - Latest comprehensive review
-- [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Historical master review
-- [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - Complete documentation map
-- [CONSOLIDATED_SESSION_SUMMARIES.md](CONSOLIDATED_SESSION_SUMMARIES.md) - Development history
+- [CODE_REVIEW_2025-12-16.md](../code-reviews/CODE_REVIEW_2025-12-16.md) - Latest comprehensive review
+- [CODE-REVIEW-MASTER.md](../../../guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Historical master review
+- [DOCUMENTATION_INDEX.md](../../../DOCUMENTATION_INDEX.md) - Complete documentation map
+- [CONSOLIDATED_SESSION_SUMMARIES.md](../summaries/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history
 
 ### Related PRs
 - PR #2144: GPT-5.2 model support (Dec 16, 2025)

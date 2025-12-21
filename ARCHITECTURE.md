@@ -182,7 +182,7 @@ if ( is_wp_error( $result ) ) {
 - Registry-state-based tool scheduling
 - Capability-based access control enforcement
 
-See [docs/ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md) for detailed analysis.
+See [docs/ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for detailed analysis.
 
 ### 6. Admin Interface (`includes/admin/`)
 
@@ -371,7 +371,7 @@ add_filter( 'wp_mcp_ai_authenticate_request', function( $user_id, $request ) {
 - `wp_mcp_ai_model_config` - Filter model configuration
 - `wp_mcp_ai_tool_list` - Filter available tools
 
-See [docs/DYNAMIC-CONFIGURATION-FILTERS.md](docs/DYNAMIC-CONFIGURATION-FILTERS.md) for complete list.
+See [docs/DYNAMIC-CONFIGURATION-FILTERS.md](docs/guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) for complete list.
 
 ## Security Architecture
 
@@ -446,7 +446,7 @@ wp_cache_set( $key, $value, 'wp_mcp_ai' );
 - Lazy loading (load tools on demand)
 - SSE streaming (reduce perceived latency)
 
-See [docs/PERFORMANCE-OPTIMIZATION.md](docs/PERFORMANCE-OPTIMIZATION.md) for details.
+See [docs/PERFORMANCE-OPTIMIZATION.md](docs/features/performance/PERFORMANCE-OPTIMIZATION.md) for details.
 
 ## Testing Architecture
 
@@ -501,10 +501,10 @@ mcp-ai-wpoos/
 
 - **[QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - Fast reference guide
 - **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation map
-- **[CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md)** - Code quality assessment
-- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Detailed orchestration layer analysis
-- **[tool-reference.md](docs/tool-reference.md)** - Complete tool catalog
-- **[rest-api.md](docs/rest-api.md)** - REST API reference
+- **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Code quality assessment
+- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Detailed orchestration layer analysis
+- **[tool-reference.md](docs/reference/tools/tool-reference.md)** - Complete tool catalog
+- **[rest-api.md](docs/reference/api/rest-api.md)** - REST API reference
 
 ## Version History
 

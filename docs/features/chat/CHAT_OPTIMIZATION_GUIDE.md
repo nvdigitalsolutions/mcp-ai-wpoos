@@ -477,10 +477,10 @@ marked library:   ~2ms per message  (2.5x faster) 🔄
 - [fetch-event-source](https://github.com/Azure/fetch-event-source)
 
 ### Internal Docs
-- [Quick Reference](./QUICK_REFERENCE.md)
-- [REST API](./rest-api.md)
-- [Best Practices](./BEST_PRACTICES.md)
-- [Tool Reference](./tool-reference.md)
+- [Quick Reference](../../QUICK_REFERENCE.md)
+- [REST API](../../reference/api/rest-api.md)
+- [Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
 
 ## Questions & Support
 

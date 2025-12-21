@@ -135,9 +135,9 @@ Initial code review identified minor improvement opportunities:
 
 ## Documentation
 
-- **[Chat Performance Optimizations](chat-performance-optimizations.md)** - Detailed technical documentation
-- **[Testing Guide](TESTING-CHAT-OPTIMIZATIONS.md)** - Manual testing procedures for shortcode and widget
-- **[Quick Reference](QUICK_REFERENCE.md)** - Fast access to common tasks
+- **[Chat Performance Optimizations](../chat/chat-performance-optimizations.md)** - Detailed technical documentation
+- **[Testing Guide](../../guides/developer/testing/TESTING-CHAT-OPTIMIZATIONS.md)** - Manual testing procedures for shortcode and widget
+- **[Quick Reference](../../QUICK_REFERENCE.md)** - Fast access to common tasks
 
 ## Testing
 

@@ -17,7 +17,7 @@ This document provides the final comprehensive code review summary for the Open 
 
 ### 1. Bug Report Consolidation ✅
 
-**Created:** [`docs/TESTING_AND_QUALITY_REPORT.md`](TESTING_AND_QUALITY_REPORT.md) (753 lines)
+**Created:** [`docs/TESTING_AND_QUALITY_REPORT.md`](../../../guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) (753 lines)
 
 **Consolidates:**
 - BUG_REPORT.md (537 lines) - moved to `docs/archive/testing/`

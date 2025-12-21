@@ -238,10 +238,10 @@ Does wpMcpAiTestGetTranscript exist?
 
 ## 📚 Related Documentation
 
-- [console-testing.md](console-testing.md) - Complete documentation
+- [console-testing.md](../../getting-started/first-steps/console-testing.md) - Complete documentation
 - [CONSOLE_TESTING_QUICK_REF.md](CONSOLE_TESTING_QUICK_REF.md) - Quick reference
-- [examples/console-testing-example.html](examples/console-testing-example.html) - HTML demo
-- [rest-api.md](rest-api.md) - REST API reference
+- [examples/console-testing-example.html](../../examples/console-testing-example.html) - HTML demo
+- [rest-api.md](../../reference/api/rest-api.md) - REST API reference
 
 ---
 

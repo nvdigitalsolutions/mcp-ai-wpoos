@@ -232,10 +232,10 @@ Some features require tools to be enabled:
 
 ## Related Documentation
 
-- [General Settings](./QUICK_REFERENCE.md#general-settings)
-- [Tool Reference](./tool-reference.md)
-- [REST API](./rest-api.md)
-- [Security Best Practices](./BEST_PRACTICES.md)
+- [General Settings](../../../QUICK_REFERENCE.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
+- [REST API](../../../reference/api/rest-api.md)
+- [Security Best Practices](../../developer/best-practices/BEST_PRACTICES.md)
 
 ## Support
 

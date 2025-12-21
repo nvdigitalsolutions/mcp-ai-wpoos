@@ -295,7 +295,7 @@ Potential improvements for future versions:
 
 ## Related Documentation
 
-- [Storage Management](./storage-management.md)
-- [Session Management](./session-management.md)
-- [REST API Documentation](./rest-api.md)
-- [Frontend Architecture](./frontend-architecture.md)
+- *(Storage Management documentation pending)*
+- *(Session Management documentation pending)*
+- [REST API Documentation](../../../reference/api/rest-api.md)
+- *(Frontend Architecture documentation pending)*

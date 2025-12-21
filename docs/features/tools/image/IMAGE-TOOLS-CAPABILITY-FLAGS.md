@@ -188,9 +188,9 @@ Potential future improvements:
 
 ## Related Documentation
 
-- [Tool Reference Guide](tool-reference.md) - Complete tool documentation
-- [Capability Flags Usage](capability-flags-usage.md) - Using capability flags in workflows
-- [Tool Grouping](tool-grouping.md) - Organizing tools by capabilities
+- [Tool Reference Guide](../../../reference/tools/tool-reference.md) - Complete tool documentation
+- [Capability Flags Usage](../../../reference/tools/capability-flags-usage.md) - Using capability flags in workflows
+- [Tool Grouping](../../../reference/tools/tool-grouping.md) - Organizing tools by capabilities
 - [Image Manipulation Tools](IMAGE-MANIPULATION-TOOLS.md) - Graphic Editor Suite overview
 
 ## Changelog

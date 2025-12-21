@@ -446,9 +446,9 @@ Planned improvements:
 
 ## Related Documentation
 
-- [Orchestration Layer Architecture](./ORCHESTRATION-LAYER-ARCHITECTURE.md)
-- [Tool Token Limits](./TOOL-TOKEN-LIMITS.md)
-- [Budget Enforcement](./orchestration-budget-enforcement.md)
+- [Orchestration Layer Architecture](../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+- [Tool Token Limits](../../reference/tools/TOOL-TOKEN-LIMITS.md)
+- [Budget Enforcement](../../architecture/orchestration/orchestration-budget-enforcement.md)
 - [Resource Management](./RESOURCE-MANAGEMENT.md)
 
 ## Changelog

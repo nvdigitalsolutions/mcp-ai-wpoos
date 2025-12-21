@@ -814,8 +814,8 @@ vendor/bin/phpunit tests/test-send-group-email-tool.php
 
 For issues or questions:
 
-1. Check [plugin documentation](../README.md)
-2. Review [troubleshooting guide](../docs/deployment-troubleshooting.md)
+1. Check [plugin documentation](../../../../README.md)
+2. Review [troubleshooting guide](../../../getting-started/installation-setup/deployment-troubleshooting.md)
 3. Submit [GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 
 ## License

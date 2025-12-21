@@ -219,8 +219,8 @@ vendor/bin/phpunit tests/test-custom-filters-applicator.php
 ## Related Documentation
 
 - [Dynamic Configuration Filters](DYNAMIC-CONFIGURATION-FILTERS.md) - Complete filter reference
-- [Best Practices](BEST_PRACTICES.md) - Usage recommendations
-- [Quick Reference](QUICK_REFERENCE.md) - Fast lookup guide
+- [Best Practices](../best-practices/BEST_PRACTICES.md) - Usage recommendations
+- [Quick Reference](../../../QUICK_REFERENCE.md) - Fast lookup guide
 
 ## Security Considerations
 

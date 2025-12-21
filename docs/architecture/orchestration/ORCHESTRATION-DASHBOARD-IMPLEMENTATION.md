@@ -742,7 +742,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 - [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) - Architecture overview
 - [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md) - Search findings and PR #852 details
 - [orchestration-budget-enforcement.md](orchestration-budget-enforcement.md) - Budget enforcement details
-- [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Resource management system
+- [RESOURCE-MANAGEMENT.md](../../features/performance/RESOURCE-MANAGEMENT.md) - Resource management system
 
 ---
 

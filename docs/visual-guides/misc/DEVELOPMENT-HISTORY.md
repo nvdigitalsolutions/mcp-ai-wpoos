@@ -663,4 +663,4 @@ This document should be updated when:
 
 ---
 
-**For detailed technical reference on specific fixes and implementations, see:** [`TECHNICAL-REFERENCE.md`](TECHNICAL-REFERENCE.md)
+**For detailed technical reference on specific fixes and implementations, see:** [`TECHNICAL-REFERENCE.md`](../../reference/technical/TECHNICAL-REFERENCE.md)

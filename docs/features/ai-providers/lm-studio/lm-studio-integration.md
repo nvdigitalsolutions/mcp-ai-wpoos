@@ -406,4 +406,4 @@ if (is_wp_error($result)) {
 - [LM Studio Official Website](https://lmstudio.ai/)
 - [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
 - [WP oOS Documentation](/docs/)
-- [WP oOS Provider Documentation](/docs/provider-configuration.md)
+- *(Provider configuration documentation pending)*

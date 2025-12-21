@@ -25,7 +25,7 @@ Comprehensive consolidation of ALL fixes, summaries, code reviews, and improveme
   - 1,000+ lines, comprehensive reference
   - Cross-references to all original documents
 
-- **[CONSOLIDATION_MAP.md](CONSOLIDATION_MAP.md)** ⭐ **NAVIGATION GUIDE**
+- **[CONSOLIDATION_MAP.md](implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** ⭐ **NAVIGATION GUIDE**
   - Detailed map showing what was consolidated from where
   - Section-by-section source document mapping
   - Verification checklist ensuring zero information loss
@@ -57,7 +57,7 @@ Comprehensive consolidation of ALL fixes, summaries, code reviews, and improveme
 ### Documentation Status Updates (CURRENT) ⭐ **NEW**
 Comprehensive review and update of documentation completion status across repository:
 
-- **[DOCUMENTATION_UPDATE_STATUS_2025-12-20.md](DOCUMENTATION_UPDATE_STATUS_2025-12-20.md)** ⭐ **NEW**
+- **[DOCUMENTATION_UPDATE_STATUS_2025-12-20.md](implementation-history/2025/documentation/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md)** ⭐ **NEW**
   - Systematic tracking document for reviewing all 549 documentation files
   - Progress tracker: 10 of 549 documents updated (1.8%)
   - Prioritized 5-tier review structure
@@ -65,12 +65,12 @@ Comprehensive review and update of documentation completion status across reposi
   - Quality score improvements tracked (95→98/100)
   
 - **Updated Documentation Files (December 20, 2025):**
-  - [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Marked 4 of 5 high-priority gaps complete
-  - [ACTION_ITEMS.md](ACTION_ITEMS.md) - Output escaping, input sanitization, JSDoc marked complete
-  - [QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md) - CI/CD gates, error documentation complete
-  - [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md) - PHP and JavaScript sections marked resolved
-  - [REMAINING_ISSUES.md](REMAINING_ISSUES.md) - 97.5% PHPCS reduction documented
-  - [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md) - Status updated to 98/100
+  - [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Marked 4 of 5 high-priority gaps complete
+  - [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - Output escaping, input sanitization, JSDoc marked complete
+  - [QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md) - CI/CD gates, error documentation complete
+  - [PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md) - PHP and JavaScript sections marked resolved
+  - [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) - 97.5% PHPCS reduction documented
+  - [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Status updated to 98/100
   - README.md - Tool count corrected (71→95 core, 109→133 total)
   - CHANGELOG.md - Gemini integration and documentation updates added
 
@@ -86,29 +86,29 @@ Comprehensive review and update of documentation completion status across reposi
 ### Gemini API Integration Gap Analysis (December 20, 2025)
 Comprehensive analysis and documentation of Gemini integration capabilities:
 
-- **[GEMINI_INTEGRATION_GAP_ANALYSIS.md](GEMINI_INTEGRATION_GAP_ANALYSIS.md)** ⭐ **NEW**
+- **[GEMINI_INTEGRATION_GAP_ANALYSIS.md](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md)** ⭐ **NEW**
   - 14 enhancement opportunities identified across 5 categories
   - Missing API endpoints: Batch embeddings, context caching, thinking mode
   - Incomplete features: Enhanced image editing with masks, video analysis
   - Tool enhancements and developer experience improvements
   - Cost savings potential: 68% with context caching
 
-- **[GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **NEW**
+- **[GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **NEW**
   - Current state: 15 of 30 major endpoints implemented (50%)
   - Top 5 enhancement opportunities with ROI analysis
   - Implementation roadmap with 4 phases (78-108 hours)
   - Cost savings analysis and production recommendations
 
 - **Related Gemini Documentation:**
-  - [GEMINI_CAPABILITIES_MATRIX.md](GEMINI_CAPABILITIES_MATRIX.md) - Feature comparison matrix
-  - [GEMINI_INTEGRATION_ANALYSIS_INDEX.md](GEMINI_INTEGRATION_ANALYSIS_INDEX.md) - Navigation guide
-  - [GEMINI_OPENAI_TOOLS_ARCHITECTURE.md](GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Architecture docs
-  - [GEMINI_TOOL_SANITIZATION_FIX.md](GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
+  - [GEMINI_CAPABILITIES_MATRIX.md](reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) - Feature comparison matrix
+  - [GEMINI_INTEGRATION_ANALYSIS_INDEX.md](features/ai-providers/gemini/GEMINI_INTEGRATION_ANALYSIS_INDEX.md) - Navigation guide
+  - [GEMINI_OPENAI_TOOLS_ARCHITECTURE.md](features/ai-providers/gemini/GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Architecture docs
+  - [GEMINI_TOOL_SANITIZATION_FIX.md](implementation-history/2025/fixes/gemini/GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
 
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 
-- **[CODE_REVIEW_2025-12-16.md](CODE_REVIEW_2025-12-16.md)** ⭐ **NEW**
+- **[CODE_REVIEW_2025-12-16.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-16.md)** ⭐ **NEW**
   - Complete code review of PR #2144 (GPT-5.2 model support)
   - 6 model variants documented: base, pro, instant, thinking, and dated versions
   - 400K token context window analysis (2x GPT-5.1)
@@ -132,14 +132,14 @@ Complete OpenAI GPT-5.2 model family integration with comprehensive testing and 
 ### Symfony Phase 2B: Process Integration (COMPLETE)
 Symfony Process component integration for Pro addon tools completed:
 
-- **[SYMFONY_PHASE2B_PROCESS_INTEGRATION.md](SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)** ⭐ **NEW**
+- **[SYMFONY_PHASE2B_PROCESS_INTEGRATION.md](implementation-history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)** ⭐ **NEW**
   - Complete migration guide for Symfony Process integration
   - 6 Pro tools migrated from direct exec() calls
   - 2 services migrated (Jukebox, Video Frame Extractor)
   - Process Service wrapper implementation details
   - Enhanced security, timeout management, error handling
 
-- **[SYMFONY_SESSION_2025-12-09.md](SYMFONY_SESSION_2025-12-09.md)**
+- **[SYMFONY_SESSION_2025-12-09.md](implementation-history/2025/implementations/symfony-phases/SYMFONY_SESSION_2025-12-09.md)**
   - December 9 session summary
   - Symfony Phase 2A completion (tool validation)
   - 10 tools migrated to Symfony Validator pattern
@@ -156,19 +156,19 @@ Symfony Process component integration for Pro addon tools completed:
 ### Symfony Integration Analysis
 Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
-- **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
+- **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](implementation-history/2025/implementations/integrations/SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
   - Decision-maker focused overview
   - Financial analysis: $63-84K investment, 275% ROI over 5 years
   - Clear recommendations and next steps
   - 14KB, quick read (~15 minutes)
 
-- **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
+- **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
   - Deep-dive on Symfony AI capabilities vs WP oOS features
   - Semantic search/RAG implementation proposal
   - Phase-based rollout plan (Q1-Q3 2026)
   - 26KB, technical analysis
 
-- **[SYMFONY_UTILITIES_RECOMMENDATIONS.md](SYMFONY_UTILITIES_RECOMMENDATIONS.md)**
+- **[SYMFONY_UTILITIES_RECOMMENDATIONS.md](implementation-history/2025/implementations/integrations/SYMFONY_UTILITIES_RECOMMENDATIONS.md)**
   - Component-by-component evaluation (8 Symfony components)
   - Validator, Cache, Filesystem integration strategies
   - Detailed migration plans with code examples
@@ -183,9 +183,9 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ## Previous Updates (December 6-7, 2025)
 
 ### Comprehensive Gap Analysis Suite
-- **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** - Executive overview of comprehensive gap analysis
-- **[PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)** - Full gap analysis across 9 categories (23KB, 35 gaps identified)
-- **[QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md)** - Step-by-step quick fix implementations with code examples (22KB)
+- **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** - Executive overview of comprehensive gap analysis
+- **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** - Full gap analysis across 9 categories (23KB, 35 gaps identified)
+- **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** - Step-by-step quick fix implementations with code examples (22KB)
 
 **📋 Documentation Reorganization (November 18, 2025):**
 - 95+ historical documents moved to organized archive structure
@@ -197,10 +197,10 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
   - [features/](archive/#features) - Feature specifications
   - [code-reviews/](archive/#code-reviews) - Historical code reviews
   - [testing/](archive/#testing) - Test infrastructure documentation
-- **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
-- **NEW (December 4, 2025):** [CODE_REVIEW_2025-12-04.md](CODE_REVIEW_2025-12-04.md) - Complete code review and enhancement update
-- **NEW (December 6, 2025):** [CODE_REVIEW_2025-12-06.md](CODE_REVIEW_2025-12-06.md) - Comprehensive code review with 96/100 score - security audit, quality analysis, documentation assessment
-- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
+- **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
+- **NEW (December 4, 2025):** [CODE_REVIEW_2025-12-04.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) - Complete code review and enhancement update
+- **NEW (December 6, 2025):** [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) - Comprehensive code review with 96/100 score - security audit, quality analysis, documentation assessment
+- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
 
 ---
 
@@ -208,28 +208,28 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
-2. [mcp-ai-plugin-setup-checklist.md](mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [remote-client-quickstart.md](remote-client-quickstart.md) - Quick start for remote clients
-4. [BEST_PRACTICES.md](BEST_PRACTICES.md) - Best practices and recommendations
+2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
+3. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+4. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
-1. **[CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
-2. **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
-3. [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
-4. [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
-5. [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
-6. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
-7. [tool-reference.md](tool-reference.md) - Complete tool catalog
-8. [tool-grouping.md](tool-grouping.md) - Tool categorization system
-9. [rest-api.md](rest-api.md) - REST API reference
+1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
+2. **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
+3. [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
+4. [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
+5. [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
+6. [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks
+7. [tool-reference.md](reference/tools/tool-reference.md) - Complete tool catalog
+8. [tool-grouping.md](reference/tools/tool-grouping.md) - Tool categorization system
+9. [rest-api.md](reference/api/rest-api.md) - REST API reference
 
 ### For System Administrators
-1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
-2. [mcp-server-authentication.md](mcp-server-authentication.md) - Authentication setup
-3. [tools-manager.md](tools-manager.md) - Tools Manager admin interface guide
-4. [rate-limit-protection.md](rate-limit-protection.md) - Rate limiting configuration
-5. [multisite-support.md](multisite-support.md) - Multisite considerations
-6. [mesh-compute-pooling.md](mesh-compute-pooling.md) - Distributed compute pooling across sites
+1. [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) - Troubleshooting guide
+2. [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication setup
+3. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
+4. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
+5. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
+6. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ### Historical Documentation
 - **[Archive Directory](archive/README.md)** - 95+ historical documents organized by category
@@ -245,145 +245,145 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[CONSOLIDATED_BUGS_AND_FIXES.md](CONSOLIDATED_BUGS_AND_FIXES.md)** | **⭐ MASTER:** ALL bugs, fixes, improvements (Dec 7, 2025) - Pro tools, async execution, output escaping, site creator, SSE streaming, CodeSniffer cleanup | Developers/QA |
-| **[CONSOLIDATED_SESSION_SUMMARIES.md](CONSOLIDATED_SESSION_SUMMARIES.md)** | **⭐ MASTER:** ALL development sessions consolidated - December 2025, November 2025, archived sessions with complete work history | Developers/PM |
-| **[CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
-| **[TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** | **⭐ MASTER:** ALL bugs, fixes, improvements (Dec 7, 2025) - Pro tools, async execution, output escaping, site creator, SSE streaming, CodeSniffer cleanup | Developers/QA |
+| **[CONSOLIDATED_SESSION_SUMMARIES.md](implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)** | **⭐ MASTER:** ALL development sessions consolidated - December 2025, November 2025, archived sessions with complete work history | Developers/PM |
+| **[CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
+| **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
 
 **Individual Code Reviews (For Reference):**
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [CODE_REVIEW_2025-12-06.md](CODE_REVIEW_2025-12-06.md) | Latest comprehensive review (Dec 6, 2025) - 96/100 score, 21KB analysis | Developers/QA |
-| [CODE_REVIEW_2025-12-04.md](CODE_REVIEW_2025-12-04.md) | Previous review - enhancements and improvements | Developers/QA |
-| [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Active code quality issues tracking | Developers |
-| [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) | Chronological development history | Developers |
-| [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) | Consolidated technical documentation | Developers |
-| [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
+| [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) | Latest comprehensive review (Dec 6, 2025) - 96/100 score, 21KB analysis | Developers/QA |
+| [CODE_REVIEW_2025-12-04.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) | Previous review - enhancements and improvements | Developers/QA |
+| [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Active code quality issues tracking | Developers |
+| [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) | Chronological development history | Developers |
+| [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) | Consolidated technical documentation | Developers |
+| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
 
 ### Getting Started
 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [README.md](../README.md) | Main plugin documentation with features, installation, and usage | Everyone |
-| [mcp-ai-plugin-setup-checklist.md](mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
-| [BEST_PRACTICES.md](BEST_PRACTICES.md) | Recommended practices for using WP oOS | All Users |
+| [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
+| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using WP oOS | All Users |
 
 ### Architecture & Design
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
-| [CURRENT-STATE-AGENTIC-WORKFLOW.md](CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
-| [agentic-workflow-architecture.md](agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
-| [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
-| [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
-| [ORCHESTRATION-DASHBOARD-SUMMARY.md](ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
-| [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
-| [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
-| [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
-| [orchestration-budget-enforcement.md](orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
-| [assistant-storage-cpt-vs-cct.md](assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
-| [assistant-tool-shortcuts.md](assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
-| [base-vs-full-comparison.md](base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
-| [BUILD-ARTIFACTS-CLARIFICATION.md](BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
-| [memory-limits.md](memory-limits.md) | Memory management and limits | Developers |
+| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
+| [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
+| [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
+| [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
+| [ORCHESTRATION-DASHBOARD-SUMMARY.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
+| [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
+| [ORCHESTRATION-DASHBOARD-FINDINGS.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
+| [RESOURCE-MANAGEMENT.md](features/performance/RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
+| [orchestration-budget-enforcement.md](architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
+| [assistant-storage-cpt-vs-cct.md](architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
+| [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
+| [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
+| [BUILD-ARTIFACTS-CLARIFICATION.md](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
+| [memory-limits.md](features/memory/memory-limits.md) | Memory management and limits | Developers |
 
 ### Integration Guides
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [chatkit-integration.md](chatkit-integration.md) | ChatKit module integration | Developers |
-| [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
-| [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
-| [jetengine-api-compatibility.md](jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
-| [jukebox-integration.md](jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
+| [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
+| [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
+| [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
+| [jetengine-api-compatibility.md](architecture/integrations/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
+| [jukebox-integration.md](guides/developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
 
 ### Remote Client Setup
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [remote-client-quickstart.md](remote-client-quickstart.md) | Quick start guide for remote clients | Admins |
-| [remote-client-setup.md](remote-client-setup.md) | Detailed remote client configuration (14KB) | Admins |
-| [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) | Cloudflare Tunnel setup for exposing local AI services securely (16KB) | Admins |
-| [REMOTE_CLIENT_TESTING_SUMMARY.md](REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
-| [lm-studio-testing.md](lm-studio-testing.md) | LM Studio specific testing | Developers |
+| [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) | Quick start guide for remote clients | Admins |
+| [remote-client-setup.md](getting-started/installation-setup/remote-client-setup.md) | Detailed remote client configuration (14KB) | Admins |
+| [cloudflare-tunnel-setup.md](getting-started/installation-setup/cloudflare-tunnel-setup.md) | Cloudflare Tunnel setup for exposing local AI services securely (16KB) | Admins |
+| [REMOTE_CLIENT_TESTING_SUMMARY.md](implementation-history/2025/summaries/REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
+| [lm-studio-testing.md](getting-started/quick-starts/lm-studio-testing.md) | LM Studio specific testing | Developers |
 
 ### Security & Authentication
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [mcp-server-authentication.md](mcp-server-authentication.md) | Authentication methods and setup (13KB) | Admins/Devs |
-| [authentication.md](authentication.md) | Authentication overview | Admins |
-| [rate-limit-protection.md](rate-limit-protection.md) | Rate limiting configuration | Admins |
+| [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) | Authentication methods and setup (13KB) | Admins/Devs |
+| [authentication.md](reference/api/authentication.md) | Authentication overview | Admins |
+| [rate-limit-protection.md](features/performance/rate-limit-protection.md) | Rate limiting configuration | Admins |
 | [../SECURITY.md](../SECURITY.md) | Security policies and vulnerability reporting | Everyone |
 
 ### Mesh Networking
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [mesh-compute-pooling.md](mesh-compute-pooling.md) | Mesh compute pooling for anonymous and authenticated users (22KB) | All Users |
+| [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) | Mesh compute pooling for anonymous and authenticated users (22KB) | All Users |
 
 ### API & Tools Reference
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
-| [tool-reference.md](tool-reference.md) | All 105 built-in tools catalog (24KB) | Users/Devs |
-| [tool-grouping.md](tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
-| [tools-manager.md](tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
-| [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
-| [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
-| [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |
+| [rest-api.md](reference/api/rest-api.md) | Complete REST API documentation (15KB) | Developers |
+| [tool-reference.md](reference/tools/tool-reference.md) | All 105 built-in tools catalog (24KB) | Users/Devs |
+| [tool-grouping.md](reference/tools/tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
+| [tools-manager.md](guides/admin/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
+| [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
+| [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
+| [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
 
 ### Chat Features
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [CROSS-WIDGET-COMMUNICATION.md](CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
-| [chat-history-persistence.md](chat-history-persistence.md) | Chat history persistence system | Users/Devs |
-| [chat-history-persistence-quickstart.md](chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
+| [CROSS-WIDGET-COMMUNICATION.md](guides/user/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
+| [chat-history-persistence.md](guides/user/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
+| [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
 
 ### Performance & Optimization
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [PERFORMANCE-OPTIMIZATION.md](PERFORMANCE-OPTIMIZATION.md) | **NEW:** Comprehensive guide to caching system and database optimizations (Phase 1) | Developers/Admins |
-| [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
-| [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
-| [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
-| [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |
-| [analytics-engine.md](analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
-| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
-| [PHASE-7-ANALYTICS-PLAN.md](PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
-| [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
-| [QUICK-REFERENCE-PHASE-7.md](QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
-| [job-notification-system.md](job-notification-system.md) | Real-time async job notifications | Developers |
-| [chat-performance-optimizations.md](chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
-| [tpm-limit-validation.md](tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
-| [tool-llm-sanitization.md](tool-llm-sanitization.md) | Tool output sanitization | Developers |
+| [PERFORMANCE-OPTIMIZATION.md](features/performance/PERFORMANCE-OPTIMIZATION.md) | **NEW:** Comprehensive guide to caching system and database optimizations (Phase 1) | Developers/Admins |
+| [DYNAMIC-CONFIGURATION-FILTERS.md](guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
+| [message-bundling-feature.md](guides/user/chat/message-bundling-feature.md) | Client-side message bundling optimization | Developers |
+| [high-token-tool-handling.md](features/tools/presets/high-token-tool-handling.md) | Agentic loop token management | Developers |
+| [token-counting.md](reference/technical/token-counting.md) | Token counting tool for budget management | Users/Devs |
+| [analytics-engine.md](features/analytics/analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
+| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](features/analytics/TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
+| [PHASE-7-ANALYTICS-PLAN.md](features/analytics/PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
+| [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](features/memory/QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
+| [QUICK-REFERENCE-PHASE-7.md](features/analytics/QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
+| [job-notification-system.md](features/async-jobs/job-notification-system.md) | Real-time async job notifications | Developers |
+| [chat-performance-optimizations.md](features/chat/chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
+| [tpm-limit-validation.md](features/performance/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
+| [tool-llm-sanitization.md](guides/developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
 
 ### MCP Protocol
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [mcp-endpoint.md](mcp-endpoint.md) | MCP JSON-RPC 2.0 endpoint documentation (2024-11-05 spec) | Developers |
-| [MCP-AND-SSE.md](MCP-AND-SSE.md) | MCP and SSE protocol details (updated for 2024-11-05) | Developers |
-| [mcp-server-authentication.md](mcp-server-authentication.md) | Authentication methods with OAuth 2.1 enhancements (13KB) | Admins/Devs |
-| [mcp-client-configurations.md](mcp-client-configurations.md) | Client configuration guide for MCP 2024-11-05 | Admins |
-| [ENABLE-SSE-STREAMING.md](ENABLE-SSE-STREAMING.md) | SSE streaming setup guide | Admins |
+| [mcp-endpoint.md](reference/api/mcp-endpoint.md) | MCP JSON-RPC 2.0 endpoint documentation (2024-11-05 spec) | Developers |
+| [MCP-AND-SSE.md](reference/api/MCP-AND-SSE.md) | MCP and SSE protocol details (updated for 2024-11-05) | Developers |
+| [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) | Authentication methods with OAuth 2.1 enhancements (13KB) | Admins/Devs |
+| [mcp-client-configurations.md](reference/api/mcp-client-configurations.md) | Client configuration guide for MCP 2024-11-05 | Admins |
+| [ENABLE-SSE-STREAMING.md](features/streaming/ENABLE-SSE-STREAMING.md) | SSE streaming setup guide | Admins |
 
 ### Troubleshooting & Support
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
-| [voice-chat-troubleshooting.md](voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
-| [console-testing.md](console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
-| [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
-| [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
-| [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
-| [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Known minor issues | Developers |
+| [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) | Common deployment issues | Admins |
+| [voice-chat-troubleshooting.md](troubleshooting/chat/voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
+| [console-testing.md](getting-started/first-steps/console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
+| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| [php-version-compatibility.md](reference/technical/php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
+| [multisite-support.md](getting-started/installation-setup/multisite-support.md) | Multisite configuration | Admins |
+| [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Known minor issues | Developers |
 
 ---
 
@@ -393,20 +393,20 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | **NEW (Dec 6, 2025):** Executive summary of comprehensive gap analysis | Everyone |
-| **[PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)** | **NEW (Dec 6, 2025):** Full gap analysis - 365 files, 9 categories, 35 gaps identified | Developers/QA |
-| **[QUICK_WINS_GAP_FIXES.md](QUICK_WINS_GAP_FIXES.md)** | **NEW (Dec 6, 2025):** Step-by-step quick fixes with code examples | Developers |
-| [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) | **Master Code Review** - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
+| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | **NEW (Dec 6, 2025):** Executive summary of comprehensive gap analysis | Everyone |
+| **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | **NEW (Dec 6, 2025):** Full gap analysis - 365 files, 9 categories, 35 gaps identified | Developers/QA |
+| **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | **NEW (Dec 6, 2025):** Step-by-step quick fixes with code examples | Developers |
+| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | **Master Code Review** - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
 | [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
-| [SETTINGS_PAGE_CODE_REVIEW.md](SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
-| [ACTION_ITEMS.md](ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
+| [SETTINGS_PAGE_CODE_REVIEW.md](implementation-history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
+| [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
 
 ### Technical Documentation
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [OPENAI-STABILIZATION.md](OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
-| [TRANSCRIPT_RECONSTRUCTION_FIX.md](TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
+| [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
+| [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
 
 ---
 
@@ -509,13 +509,13 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 ### Getting Help
 1. Review relevant documentation above
-2. Check [deployment-troubleshooting.md](deployment-troubleshooting.md)
+2. Check [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md)
 3. Search existing GitHub issues
 4. Create new GitHub issue with details
 
 ### Contributing
 1. Read [../CONTRIBUTING.md](../CONTRIBUTING.md)
-2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md)
+2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)
 3. Follow security practices in [../SECURITY.md](../SECURITY.md)
 4. Submit pull requests with documentation updates
 

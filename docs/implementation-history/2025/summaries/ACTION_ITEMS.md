@@ -343,14 +343,14 @@ Based on the comprehensive code review, here are actionable improvements organiz
 
 ## 🔮 Future Enhancements (Tracked TODOs)
 
-Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), the following items have been tracked:
+Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), the following items have been tracked:
 
 ### ✅ Predictive Analytics for Orchestration Health - COMPLETE
 - **File:** `includes/services/class-wp-mcp-ai-orchestration-health-service.php:321`
 - **Description:** Implement actual predictive analytics for orchestration health monitoring
 - **Status:** ✅ COMPLETE - Implemented 4 specialized analysis methods (305 lines)
 - **Date Completed:** December 8, 2025
-- **Details:** See [INCOMPLETE-FEATURES-REVIEW.md](archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), Phase 1.1
+- **Details:** See [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), Phase 1.1
 
 ### RabbitMQ Message Consumption Loop
 - **File:** `includes/class-wp-mcp-ai-cli-command.php`
@@ -366,7 +366,7 @@ Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](arch
 - **Status:** ✅ COMPLETE - All 28 settings exposed (PR #2072, December 8, 2025)
 - **Date Completed:** December 8, 2025
 - **Settings Added:** Federation (7), Mesh (2), Media (2), Chat (1), Cloudways (2), Analytics (1), TTS (3), High Token Fallback (2), Tools (5), Authentication (2), Orchestration (1)
-- **Details:** See [INCOMPLETE-FEATURES-REVIEW.md](archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), Phase 3
+- **Details:** See [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), Phase 3
 - **Pending:** Comprehensive functional testing
 
 ### Gemini Video File Naming Pattern
@@ -381,5 +381,5 @@ Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](arch
 ---
 
 **Document Created:** November 2, 2024  
-**Last Updated:** December 12, 2025 (Updated completion status for Predictive Analytics and Settings UI from [INCOMPLETE-FEATURES-REVIEW.md](archive/summaries/INCOMPLETE-FEATURES-REVIEW.md))  
+**Last Updated:** December 12, 2025 (Updated completion status for Predictive Analytics and Settings UI from [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md))  
 **Next Review:** Weekly until all immediate items complete, then monthly

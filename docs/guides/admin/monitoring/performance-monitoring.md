@@ -669,8 +669,8 @@ foreach ( $stats as $component => $data ) {
 ## Resources
 
 - [Error Tracking Service Guide](error-tracking-service.md)
-- [Performance Testing Guide](performance-testing-guide.md)
-- [WP oOS Documentation Index](DOCUMENTATION_INDEX.md)
+- [Performance Testing Guide](../../developer/testing/performance-testing-guide.md)
+- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)
 - [Elementor Developer Docs](https://developers.elementor.com/)
 

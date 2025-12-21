@@ -81,9 +81,9 @@ wpMcpAiTestGetTranscript('session-key-here')
 
 ## Full Documentation
 
-- [docs/console-testing.md](console-testing.md) - Complete guide
-- [docs/examples/console-testing-example.html](examples/console-testing-example.html) - HTML example
-- [docs/rest-api.md](rest-api.md) - REST API reference
+- [docs/console-testing.md](../../getting-started/first-steps/console-testing.md) - Complete guide
+- [docs/examples/console-testing-example.html](../../examples/console-testing-example.html) - HTML example
+- [docs/rest-api.md](../../reference/api/rest-api.md) - REST API reference
 
 ---
 

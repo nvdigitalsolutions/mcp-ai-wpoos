@@ -116,7 +116,7 @@ You can then use this token:
 - Generated tokens are returned directly to the requesting user and not cached
 - Token expiration times are included in the response for proper lifecycle management
 
-Refer to the Auth0 1-click setup documentation and [includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php](../includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php) for implementation details.【F:includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php†L15-L248】
+Refer to the Auth0 1-click setup documentation and [includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php](../../../includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php) for implementation details.【F:includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php†L15-L248】
 
 ## Server-side validation
 

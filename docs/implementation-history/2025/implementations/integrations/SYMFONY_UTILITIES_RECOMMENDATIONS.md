@@ -1041,8 +1041,8 @@ class Test_WP_MCP_AI_Validator_Service extends WP_UnitTestCase {
 
 ### Related WP oOS Documents
 - [Symfony AI Integration Analysis](SYMFONY_AI_INTEGRATION_ANALYSIS.md)
-- [Architecture Guide](ARCHITECTURE.md)
-- [Tool Reference](tool-reference.md)
+- [Architecture Guide](../../../../../ARCHITECTURE.md)
+- [Tool Reference](../../../../reference/tools/tool-reference.md)
 
 ---
 

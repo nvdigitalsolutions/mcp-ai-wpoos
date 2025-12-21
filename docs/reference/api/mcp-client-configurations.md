@@ -6,7 +6,7 @@ This guide provides comprehensive configuration examples for connecting various 
 
 ## ⚠️ Getting 404 Errors?
 
-If you're seeing `SSE error: Non-200 status code (404)` or similar errors, see the comprehensive **[404 Troubleshooting Guide](lmstudio-404-troubleshooting.md)** which covers:
+If you're seeing `SSE error: Non-200 status code (404)` or similar errors, see the comprehensive **[404 Troubleshooting Guide](../../troubleshooting/chat/lmstudio-404-troubleshooting.md)** which covers:
 - REST API activation
 - Permalink configuration
 - Security plugin issues
@@ -115,7 +115,7 @@ Previous issue where LM Studio showed `SSE error: undefined` has been resolved!
 - POST requests use JSON-RPC 2.0 protocol
 - SSE is only used when explicitly requested via `?stream=true` parameter
 
-See [LM Studio SSE Fix Documentation](LM_STUDIO_SSE_FIX.md) for complete details.
+See [LM Studio SSE Fix Documentation](../../features/ai-providers/lm-studio/LM_STUDIO_SSE_FIX.md) for complete details.
 
 ---
 
@@ -556,7 +556,7 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 - [MCP Endpoint Documentation](mcp-endpoint.md)
 - [MCP Server Authentication](mcp-server-authentication.md)
 - [REST API Reference](rest-api.md)
-- [Remote Client Setup Guide](remote-client-setup.md)
+- [Remote Client Setup Guide](../../getting-started/installation-setup/remote-client-setup.md)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 
 ---

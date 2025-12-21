@@ -200,7 +200,7 @@ data.conversation.forEach((msg, i) => {
 ## Support
 
 For detailed technical documentation, see:
-- [docs/chat-history-persistence.md](chat-history-persistence.md)
+- [docs/chat-history-persistence.md](../../guides/user/chat/chat-history-persistence.md)
 
 For issues or questions:
 - Check browser console for errors

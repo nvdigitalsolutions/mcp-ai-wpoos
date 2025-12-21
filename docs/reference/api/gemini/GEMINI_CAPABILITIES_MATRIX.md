@@ -171,7 +171,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 
 ## Next Steps
 
-1. Review [GEMINI_INTEGRATION_GAP_ANALYSIS.md](GEMINI_INTEGRATION_GAP_ANALYSIS.md) for detailed enhancement proposals
+1. Review [GEMINI_INTEGRATION_GAP_ANALYSIS.md](../../../features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) for detailed enhancement proposals
 2. Prioritize gaps based on user feedback and use cases
 3. Implement Phase 1 enhancements (Quick Wins)
 4. Expand test coverage for new features
@@ -181,10 +181,10 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 
 ## Related Documentation
 
-- [GEMINI_INTEGRATION_GAP_ANALYSIS.md](GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Comprehensive gap analysis and recommendations
+- [GEMINI_INTEGRATION_GAP_ANALYSIS.md](../../../features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Comprehensive gap analysis and recommendations
 - [gemini-api-enhancements.md](gemini-api-enhancements.md) - Current Gemini capabilities guide
 - [gemini-schema-compatibility.md](gemini-schema-compatibility.md) - Schema handling notes
-- [veo-2-fallback-guide.md](veo-2-fallback-guide.md) - Video generation fallback strategy
+- [veo-2-fallback-guide.md](../../../features/tools/video/veo-2-fallback-guide.md) - Video generation fallback strategy
 
 ---
 

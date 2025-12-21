@@ -63,7 +63,7 @@
   - **Key Features Documented**: Chat, streaming, image generation/editing, video (Veo 3.1), music (Lyria), file API
   - **Enhancement Opportunities Identified**: Batch embeddings, context caching, thinking mode, masks, video analysis
   - **Cost Savings Potential**: Context caching can reduce costs by 68% for cached tokens
-  - See [GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](docs/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
+  - See [GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](docs/features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 
 #### OpenAI GPT-Image-1.5 Model Support (December 20, 2024)
 - **OpenAI GPT-Image-1.5 Image Generation**: Added support for the latest GPT-Image-1.5 model

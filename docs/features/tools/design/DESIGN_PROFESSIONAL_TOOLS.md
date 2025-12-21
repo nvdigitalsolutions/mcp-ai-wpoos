@@ -303,7 +303,7 @@ Planned additions to the design professional toolkit:
 
 ## Related Documentation
 
-- [Tool Reference](./tool-reference.md)
-- [Token Manager](./TOOL-MULTIPLIERS.md)
-- [Orchestration Configuration](./archive/features/TOOL_EXECUTION_ORCHESTRATION.md)
-- [Assistant Tool Shortcuts](./assistant-tool-shortcuts.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
+- [Token Manager](../../../reference/tools/TOOL-MULTIPLIERS.md)
+- [Orchestration Configuration](../../../archive/features/TOOL_EXECUTION_ORCHESTRATION.md)
+- [Assistant Tool Shortcuts](../../../getting-started/first-steps/assistant-tool-shortcuts.md)

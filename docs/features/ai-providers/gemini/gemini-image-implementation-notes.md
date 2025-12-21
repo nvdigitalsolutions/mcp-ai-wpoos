@@ -180,11 +180,11 @@ Both methods provide filters for customization:
 
 ## Related Documentation
 
-- [Tool Reference](tool-reference.md) - Complete tool documentation
-- [REST API Reference](rest-api.md) - API endpoint details
-- [Gemini Client](../includes/class-wp-mcp-ai-gemini-client.php) - Implementation source
-- [Generate Tool](../includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php)
-- [Edit Tool](../includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php)
+- [Tool Reference](../../../reference/tools/tool-reference.md) - Complete tool documentation
+- [REST API Reference](../../../reference/api/rest-api.md) - API endpoint details
+- [Gemini Client](../../../../includes/class-wp-mcp-ai-gemini-client.php) - Implementation source
+- [Generate Tool](../../../../includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php)
+- [Edit Tool](../../../../includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php)
 
 ## Troubleshooting
 
@@ -212,4 +212,4 @@ Both methods provide filters for customization:
 
 - [Gemini API Documentation](https://ai.google.dev/docs)
 - [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/)
-- [WP oOS Architecture](ARCHITECTURE_DIAGRAM.txt)
+- *(Architecture diagram pending)*

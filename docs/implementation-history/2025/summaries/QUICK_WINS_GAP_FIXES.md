@@ -530,17 +530,17 @@ All errors follow this JSON structure:
 
 ## See Also
 
-- [REST API Documentation](rest-api.md)
-- [MCP Protocol Documentation](mcp-endpoint.md)
-- [Troubleshooting Guide](deployment-troubleshooting.md)
-- [Tool Reference](tool-reference.md)
+- [REST API Documentation](../../../reference/api/rest-api.md)
+- [MCP Protocol Documentation](../../../reference/api/mcp-endpoint.md)
+- [Troubleshooting Guide](../../../getting-started/installation-setup/deployment-troubleshooting.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
 ```
 
 2. **Update `docs/rest-api.md` to reference error codes:**
 ```markdown
 ## Error Handling
 
-All errors follow the standard WordPress REST API format. For complete error code reference, see [ERROR_CODES.md](ERROR_CODES.md).
+All errors follow the standard WordPress REST API format. For complete error code reference, see *(ERROR_CODES.md pending)*.
 
 Example error response:
 \`\`\`json
@@ -553,7 +553,7 @@ Example error response:
 }
 \`\`\`
 
-See [Error Codes Reference](ERROR_CODES.md) for all possible error codes.
+See *(Error Codes Reference pending)* for all possible error codes.
 ```
 
 ---
@@ -837,4 +837,4 @@ See: docs/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md for detailed status
 **Related Documents:**
 - [PLUGIN_GAP_ANALYSIS.md](PLUGIN_GAP_ANALYSIS.md)
 - [ACTION_ITEMS.md](ACTION_ITEMS.md)
-- [TESTING_AND_QUALITY_REPORT.md](TESTING_AND_QUALITY_REPORT.md)
+- [TESTING_AND_QUALITY_REPORT.md](../../../guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)

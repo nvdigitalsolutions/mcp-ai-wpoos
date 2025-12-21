@@ -18,9 +18,9 @@ These HTML files can be:
 
 ## Related Documentation
 
-- [../console-testing.md](../console-testing.md) - Full console testing guide
-- [../CONSOLE_TESTING_QUICK_REF.md](../CONSOLE_TESTING_QUICK_REF.md) - Quick reference card
-- [../rest-api.md](../rest-api.md) - REST API documentation
+- [../console-testing.md](../getting-started/first-steps/console-testing.md) - Full console testing guide
+- [../CONSOLE_TESTING_QUICK_REF.md](../visual-guides/testing/CONSOLE_TESTING_QUICK_REF.md) - Quick reference card
+- [../rest-api.md](../reference/api/rest-api.md) - REST API documentation
 
 ## Adding New Examples
 

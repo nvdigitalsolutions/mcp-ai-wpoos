@@ -360,6 +360,6 @@ If any test fails, report with:
 
 ## Additional Resources
 
-- [Chat Performance Optimizations Documentation](chat-performance-optimizations.md)
-- [Quick Reference Guide](QUICK_REFERENCE.md)
-- [Troubleshooting Guide](deployment-troubleshooting.md)
+- [Chat Performance Optimizations Documentation](../../../features/chat/chat-performance-optimizations.md)
+- [Quick Reference Guide](../../../QUICK_REFERENCE.md)
+- [Troubleshooting Guide](../../../getting-started/installation-setup/deployment-troubleshooting.md)

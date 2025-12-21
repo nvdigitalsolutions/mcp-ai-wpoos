@@ -464,15 +464,15 @@ Example error:
 Once connected successfully:
 
 1. **Explore available tools** – Each assistant exposes different tool sets
-2. **Review tool documentation** – See [`docs/tool-reference.md`](tool-reference.md)
+2. **Review tool documentation** – See [`docs/tool-reference.md`](../../reference/tools/tool-reference.md)
 3. **Test common workflows** – Try content search, post creation, etc.
 4. **Monitor usage** – Track consumption in **Settings → WP oOS**
 5. **Secure your deployment** – Review [deployment troubleshooting](deployment-troubleshooting.md)
 
 ## Additional Resources
 
-- [MCP Server Authentication Guide](mcp-server-authentication.md)
-- [REST API Reference](rest-api.md)
-- [Tool Reference](tool-reference.md)
+- [MCP Server Authentication Guide](../../reference/api/mcp-server-authentication.md)
+- [REST API Reference](../../reference/api/rest-api.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
 - [Deployment Troubleshooting](deployment-troubleshooting.md)
-- [Assistant Tool Shortcuts](assistant-tool-shortcuts.md)
+- [Assistant Tool Shortcuts](../first-steps/assistant-tool-shortcuts.md)

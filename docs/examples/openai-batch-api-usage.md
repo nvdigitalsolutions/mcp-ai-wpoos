@@ -593,7 +593,7 @@ Lists batch jobs with optional filtering.
 - [OpenAI Batch API Official Docs](https://platform.openai.com/docs/guides/batch)
 - [OpenAI API Reference - Batches](https://platform.openai.com/docs/api-reference/batch)
 - [OpenAI File API](https://platform.openai.com/docs/api-reference/files)
-- [WP oOS Tool Reference](../tool-reference.md)
+- [WP oOS Tool Reference](../reference/tools/tool-reference.md)
 
 ---
 
@@ -606,4 +606,4 @@ Lists batch jobs with optional filtering.
 
 ---
 
-**Need Help?** See the [Troubleshooting Guide](../troubleshooting/batch-api.md) or open an issue on [GitHub](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues).
+**Need Help?** See the *(Troubleshooting guide pending)* or open an issue on [GitHub](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues).

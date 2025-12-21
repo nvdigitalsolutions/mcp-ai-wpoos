@@ -245,7 +245,7 @@ tests/js/
 └── README.md              # JavaScript testing guide
 ```
 
-See [tests/js/README.md](tests/js/README.md) for detailed JavaScript testing documentation.
+See [tests/js/README.md](../../../tests/js/README.md) for detailed JavaScript testing documentation.
 
 ## Writing Tests
 
@@ -288,7 +288,7 @@ class Test_Feature extends WP_UnitTestCase {
 
 ### Writing JavaScript Tests
 
-See [tests/js/README.md](tests/js/README.md) for comprehensive JavaScript testing guide, including:
+See [tests/js/README.md](../../../tests/js/README.md) for comprehensive JavaScript testing guide, including:
 - Test structure and patterns
 - Available mocks (WordPress, jQuery, browser APIs)
 - Testing async code, DOM, events, and timers
@@ -394,10 +394,10 @@ chmod +x bin/*.sh
 
 ## Related Documentation
 
-- [BUILD.md](BUILD.md) - Asset build process
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [docs/CODE_REVIEW.md](docs/CODE_REVIEW.md) - Code quality standards
-- [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) - Development best practices
+- [BUILD.md](../../../BUILD.md) - Asset build process
+- [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution guidelines
+- [docs/CODE_REVIEW.md](../code-reviews/CODE_REVIEW.md) - Code quality standards
+- [docs/BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Development best practices
 
 ## Support
 

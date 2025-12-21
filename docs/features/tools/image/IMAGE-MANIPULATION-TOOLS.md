@@ -294,6 +294,6 @@ When adding new image manipulation tools:
 
 ## See Also
 
-- [Tool Reference](tool-reference.md)
-- [REST API Documentation](rest-api.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
+- [REST API Documentation](../../../reference/api/rest-api.md)
 - [WordPress Image Editor](https://developer.wordpress.org/reference/classes/wp_image_editor/)

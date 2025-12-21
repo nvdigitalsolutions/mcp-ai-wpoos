@@ -117,7 +117,7 @@ The bundling is transparent to the server:
 
 ## Testing
 
-See [TESTING-CHAT-OPTIMIZATIONS.md](TESTING-CHAT-OPTIMIZATIONS.md) for comprehensive testing procedures.
+See [TESTING-CHAT-OPTIMIZATIONS.md](../../developer/testing/TESTING-CHAT-OPTIMIZATIONS.md) for comprehensive testing procedures.
 
 ### Quick Test
 
@@ -150,10 +150,10 @@ See [TESTING-CHAT-OPTIMIZATIONS.md](TESTING-CHAT-OPTIMIZATIONS.md) for comprehen
 
 ## Related Documentation
 
-- [Chat Performance Optimizations](chat-performance-optimizations.md) - Complete optimization guide
-- [Testing Guide](TESTING-CHAT-OPTIMIZATIONS.md) - Comprehensive testing procedures
-- [Quick Reference](QUICK_REFERENCE.md) - Fast access to common tasks
-- [Troubleshooting](deployment-troubleshooting.md) - Common issues and solutions
+- [Chat Performance Optimizations](../../../features/chat/chat-performance-optimizations.md) - Complete optimization guide
+- [Testing Guide](../../developer/testing/TESTING-CHAT-OPTIMIZATIONS.md) - Comprehensive testing procedures
+- [Quick Reference](../../../QUICK_REFERENCE.md) - Fast access to common tasks
+- [Troubleshooting](../../../getting-started/installation-setup/deployment-troubleshooting.md) - Common issues and solutions
 
 ## Future Enhancements
 

@@ -9,8 +9,8 @@
 ## 🚀 Quick Navigation
 
 - **Full Guide**: [COPILOT_ARCHITECTURE_GUIDE.md](./COPILOT_ARCHITECTURE_GUIDE.md) (3,652 lines)
-- **Verification Report**: [ARCHITECTURE_VERIFICATION_REPORT.md](./ARCHITECTURE_VERIFICATION_REPORT.md)
-- **Main Documentation**: [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
+- **Verification Report**: [ARCHITECTURE_VERIFICATION_REPORT.md](../../implementation-history/2025/summaries/ARCHITECTURE_VERIFICATION_REPORT.md)
+- **Main Documentation**: [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md)
 
 ---
 

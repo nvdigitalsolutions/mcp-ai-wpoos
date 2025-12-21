@@ -224,6 +224,6 @@ If none of the above solutions work:
 
 ### Related Documentation
 
-- [REST API Documentation](rest-api.md)
-- [Tool Reference](tool-reference.md)
-- [Deployment Troubleshooting](deployment-troubleshooting.md)
+- [REST API Documentation](../../reference/api/rest-api.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
+- [Deployment Troubleshooting](../../getting-started/installation-setup/deployment-troubleshooting.md)

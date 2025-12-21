@@ -20,20 +20,20 @@
 - Phase 3.2 overview
 
 #### ...See What Was Just Completed
-→ **[PHASE_3_1_COMPLETE.md](PHASE_3_1_COMPLETE.md)** (5 min read) - **LATEST**
+→ **[PHASE_3_1_COMPLETE.md](../phase-implementations/PHASE_3_1_COMPLETE.md)** (5 min read) - **LATEST**
 - Base controller creation (Phase 3.1)
 - Multi-client authentication support
 - Template Method pattern implementation
 - 11 unit tests passing
 - Foundation ready for extraction
 
-→ **[PHASE_2_2_COMPLETE.md](PHASE_2_2_COMPLETE.md)** (5 min read)
+→ **[PHASE_2_2_COMPLETE.md](../phase-implementations/PHASE_2_2_COMPLETE.md)** (5 min read)
 - Service layer refactoring complete
 - All services use Settings Repository
 - Zero direct option calls
 
 #### ...Understand the Architecture
-→ **[PHASE_3_VISUAL_GUIDE.md](PHASE_3_VISUAL_GUIDE.md)** (3 min read) - **RECOMMENDED**
+→ **[PHASE_3_VISUAL_GUIDE.md](../phases/PHASE_3_VISUAL_GUIDE.md)** (3 min read) - **RECOMMENDED**
 - Visual architecture diagrams
 - Before/after comparison
 - Client type matrix
@@ -41,7 +41,7 @@
 - File structure after Phase 3
 
 #### ...Implement Phase 3.2
-→ **[PHASE_3_2_IMPLEMENTATION_GUIDE.md](PHASE_3_2_IMPLEMENTATION_GUIDE.md)** (15 min read) - **DETAILED**
+→ **[PHASE_3_2_IMPLEMENTATION_GUIDE.md](../phase-implementations/PHASE_3_2_IMPLEMENTATION_GUIDE.md)** (15 min read) - **DETAILED**
 - Step-by-step implementation guide
 - Code examples and patterns
 - Testing checklist (15+ tests)
@@ -49,14 +49,14 @@
 - Timeline breakdown (7 days)
 
 #### ...See the Big Picture
-→ **[SEPARATION_OF_CONCERNS_ROADMAP.md](SEPARATION_OF_CONCERNS_ROADMAP.md)** (3 min read)
+→ **[SEPARATION_OF_CONCERNS_ROADMAP.md](../SEPARATION_OF_CONCERNS_ROADMAP.md)** (3 min read)
 - Visual week-by-week roadmap
 - Progress tracker (Weeks 1-10)
 - Phase 3 breakdown
 - Key principles
 
 #### ...Navigate All Resources
-→ **[WHAT_IS_NEXT.md](WHAT_IS_NEXT.md)** (8 min read)
+→ **[WHAT_IS_NEXT.md](../WHAT_IS_NEXT.md)** (8 min read)
 - Comprehensive guide to Phase 3.2
 - Implementation checklist
 - Success metrics

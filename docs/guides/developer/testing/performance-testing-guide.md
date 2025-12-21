@@ -555,8 +555,8 @@ wrk -t4 -c100 -d30s http://example.com/wp-json/mcp-ai/v1/assistants
 
 - [WordPress Performance Best Practices](https://developer.wordpress.org/advanced-administration/performance/)
 - [PHPUnit Documentation](https://phpunit.de/documentation.html)
-- [Performance Monitoring Guide](performance-monitoring.md)
-- [WP oOS Documentation Index](DOCUMENTATION_INDEX.md)
+- [Performance Monitoring Guide](../../admin/monitoring/performance-monitoring.md)
+- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
 
 ## Support
 

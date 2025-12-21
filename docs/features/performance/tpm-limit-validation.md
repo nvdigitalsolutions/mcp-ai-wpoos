@@ -343,10 +343,10 @@ Selects the appropriate model with TPM-aware fallback.
 
 ## Related Documentation
 
-- [Token Budget Management](./token-budget-management.md)
-- [Model Selection](./model-selection.md)
-- [Rate Limiting](./rate-limiting.md)
-- [Cost Optimization](./cost-optimization.md)
+- *(Token Budget Management documentation pending)*
+- *(Model Selection documentation pending)*
+- *(Rate Limiting documentation pending)*
+- *(Cost Optimization documentation pending)*
 
 ## Support
 

@@ -266,11 +266,11 @@ Both work identically for local connections:
 ## Related Documentation
 
 - [LM Studio Testing Guide](lm-studio-testing.md) - Detailed testing procedures
-- [Cloudflare Tunnel Setup](cloudflare-tunnel-setup.md) - Securely expose local LM Studio to remote WordPress
-- [Network Interface Binding](NETWORK_INTERFACE_BINDING.md) - Direct network access configuration
-- [LM Studio Endpoints Analysis](../LM-STUDIO-ENDPOINTS-ANALYSIS.md) - Technical endpoint details
-- [REST API Documentation](rest-api.md) - Complete REST API reference
-- [Tool Reference](tool-reference.md) - Available tools and capabilities
+- [Cloudflare Tunnel Setup](../installation-setup/cloudflare-tunnel-setup.md) - Securely expose local LM Studio to remote WordPress
+- [Network Interface Binding](../../features/federation/NETWORK_INTERFACE_BINDING.md) - Direct network access configuration
+- *(LM Studio Endpoints Analysis pending)* - Technical endpoint details
+- [REST API Documentation](../../reference/api/rest-api.md) - Complete REST API reference
+- [Tool Reference](../../reference/tools/tool-reference.md) - Available tools and capabilities
 
 ## Support
 

@@ -284,7 +284,7 @@ The WP oOS Gemini integration is **production-ready and comprehensive**, with 16
 
 ### For Product Managers
 1. Read this executive summary (you're here! ✅)
-2. Review [GEMINI_CAPABILITIES_MATRIX.md](GEMINI_CAPABILITIES_MATRIX.md) for current features
+2. Review [GEMINI_CAPABILITIES_MATRIX.md](../../../reference/api/gemini/GEMINI_CAPABILITIES_MATRIX.md) for current features
 3. Prioritize gaps based on user feedback
 4. Approve Phase 1 implementation (8-12 hours)
 

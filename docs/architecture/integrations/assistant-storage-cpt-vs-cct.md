@@ -530,7 +530,7 @@ When in doubt, **use the CPT**. It provides all features, works everywhere, and 
 
 ## See Also
 
-- [Assistant Tool Shortcuts](./assistant-tool-shortcuts.md)
-- [REST API Reference](./rest-api.md)
-- [JetEngine REST API Reference](./jet-engine-rest-routes.md)
-- [Base vs Full Version Comparison](./base-vs-full-comparison.md)
+- [Assistant Tool Shortcuts](../../getting-started/first-steps/assistant-tool-shortcuts.md)
+- [REST API Reference](../../reference/api/rest-api.md)
+- [JetEngine REST API Reference](../../reference/api/jet-engine-rest-routes.md)
+- [Base vs Full Version Comparison](../../reference/technical/base-vs-full-comparison.md)

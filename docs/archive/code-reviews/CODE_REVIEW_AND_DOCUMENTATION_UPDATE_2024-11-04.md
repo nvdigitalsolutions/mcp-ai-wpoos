@@ -73,20 +73,20 @@ The plugin demonstrates mature development practices with comprehensive testing,
 
 ### New Documentation Created
 
-1. **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** (9KB)
+1. **[DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md)** (9KB)
    - Complete map of all 39 documentation files
    - Organized by audience and purpose
    - Includes descriptions and quick links
    - Statistics and recommendations
 
-2. **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** (10KB)
+2. **[QUICK_REFERENCE.md](../../QUICK_REFERENCE.md)** (10KB)
    - Fast access to common tasks
    - CLI commands and usage
    - Configuration snippets
    - Troubleshooting quick fixes
    - API endpoint reference
 
-3. **[DOCUMENTATION_QUALITY_ASSESSMENT.md](DOCUMENTATION_QUALITY_ASSESSMENT.md)** (17KB)
+3. **[DOCUMENTATION_QUALITY_ASSESSMENT.md](../../implementation-history/2025/documentation/DOCUMENTATION_QUALITY_ASSESSMENT.md)** (17KB)
    - Comprehensive documentation analysis
    - Score: 9.0/10 (Excellent)
    - Strengths and improvement areas
@@ -500,17 +500,17 @@ The Open Operator System demonstrates **exceptional quality** in both code and d
 
 ### For Contributors
 
-1. **Review** [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines
-2. **Check** [ACTION_ITEMS.md](ACTION_ITEMS.md) for tasks (180+ hours available)
+1. **Review** [CONTRIBUTING.md](../../../CONTRIBUTING.md) for guidelines
+2. **Check** [ACTION_ITEMS.md](../../implementation-history/2025/summaries/ACTION_ITEMS.md) for tasks (180+ hours available)
 3. **Read** [CODE_REVIEW.md](CODE_REVIEW.md) for quality standards
-4. **Use** [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for fast lookups
+4. **Use** [QUICK_REFERENCE.md](../../QUICK_REFERENCE.md) for fast lookups
 
 ### For Users
 
 1. **Start** with [README.md](../README.md) for overview
 2. **Follow** setup checklist for installation
-3. **Use** [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for common tasks
-4. **Check** [Documentation Index](DOCUMENTATION_INDEX.md) for specific topics
+3. **Use** [QUICK_REFERENCE.md](../../QUICK_REFERENCE.md) for common tasks
+4. **Check** [Documentation Index](../../DOCUMENTATION_INDEX.md) for specific topics
 
 ---
 
@@ -539,8 +539,8 @@ The NV Digital Solutions team has built a robust, secure, and well-documented Wo
 **License:** GPLv3 or later
 
 **Documentation Issues:** Create GitHub issue with `documentation` label  
-**Security Issues:** Follow [SECURITY.md](../SECURITY.md) guidelines  
-**Contributions:** See [CONTRIBUTING.md](../CONTRIBUTING.md)
+**Security Issues:** Follow [SECURITY.md](../../../SECURITY.md) guidelines  
+**Contributions:** See [CONTRIBUTING.md](../../../CONTRIBUTING.md)
 
 ---
 

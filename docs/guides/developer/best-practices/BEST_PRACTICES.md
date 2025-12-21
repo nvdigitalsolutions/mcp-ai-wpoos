@@ -526,8 +526,8 @@ chmod +x .git/hooks/pre-commit
 
 ### This Project
 - [Code Review](CODE-REVIEW-MASTER.md)
-- [Security Policy](../SECURITY.md)
-- [Action Items](ACTION_ITEMS.md)
+- [Security Policy](../../../../SECURITY.md)
+- [Action Items](../../../implementation-history/2025/summaries/ACTION_ITEMS.md)
 
 ---
 

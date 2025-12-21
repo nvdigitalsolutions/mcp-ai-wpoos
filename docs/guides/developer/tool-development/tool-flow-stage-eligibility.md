@@ -272,7 +272,7 @@ Potential future additions:
 
 ## See Also
 
-- [Tool Interface Documentation](./tool-reference.md)
-- [Agentic Workflow Architecture](./agentic-workflow-architecture.md)
-- [Tool Registry API](./TECHNICAL-REFERENCE.md)
-- [Orchestration Layer](./ORCHESTRATION-LAYER-ARCHITECTURE.md)
+- [Tool Interface Documentation](../../../reference/tools/tool-reference.md)
+- [Agentic Workflow Architecture](../../../architecture/core/agentic-workflow-architecture.md)
+- [Tool Registry API](../../../reference/technical/TECHNICAL-REFERENCE.md)
+- [Orchestration Layer](../../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)

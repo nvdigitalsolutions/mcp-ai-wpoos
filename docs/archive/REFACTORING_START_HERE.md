@@ -14,19 +14,19 @@ This repository contains comprehensive separation of concerns analysis and imple
 ### 🚀 Quick Start (Choose Your Path)
 
 #### For Implementers: "Just tell me what to do"
-1. **Read**: [`QUICK_START_PHASE_1_1.md`](QUICK_START_PHASE_1_1.md) (2 minutes)
+1. **Read**: [`QUICK_START_PHASE_1_1.md`](phases/QUICK_START_PHASE_1_1.md) (2 minutes)
 2. **Implement**: Follow the 3 changes listed
 3. **Verify**: Run the verification commands
 4. **Done!**
 
 #### For Developers: "I want step-by-step details"
-1. **Read**: [`IMPLEMENTATION_GUIDE_PHASE_1_1.md`](IMPLEMENTATION_GUIDE_PHASE_1_1.md) (10 minutes)
+1. **Read**: [`IMPLEMENTATION_GUIDE_PHASE_1_1.md`](phase-implementations/IMPLEMENTATION_GUIDE_PHASE_1_1.md) (10 minutes)
 2. **Follow**: Detailed step-by-step instructions with exact code
 3. **Test**: Use provided test examples
 4. **Verify**: Complete the checklist
 
 #### For Planners: "I need to understand the big picture"
-1. **Read**: [`NEXT_STEP_SEPARATION_OF_CONCERNS.md`](NEXT_STEP_SEPARATION_OF_CONCERNS.md) (5 minutes)
+1. **Read**: [`NEXT_STEP_SEPARATION_OF_CONCERNS.md`](refactoring/NEXT_STEP_SEPARATION_OF_CONCERNS.md) (5 minutes)
 2. **Review**: [`SEPARATION_OF_CONCERNS_ROADMAP.md`](SEPARATION_OF_CONCERNS_ROADMAP.md) (3 minutes)
 3. **Plan**: Understand the incremental approach
 
@@ -36,7 +36,7 @@ This repository contains comprehensive separation of concerns analysis and imple
 3. **Decide**: Approve Phase 1.1 (minimal risk, high value)
 
 #### For Architects: "I need deep technical analysis"
-1. **Read**: [`SEPARATION_OF_CONCERNS_VIOLATIONS.md`](SEPARATION_OF_CONCERNS_VIOLATIONS.md) (30 minutes)
+1. **Read**: [`SEPARATION_OF_CONCERNS_VIOLATIONS.md`](refactoring/SEPARATION_OF_CONCERNS_VIOLATIONS.md) (30 minutes)
 2. **Study**: 15 violation categories with code examples
 3. **Reference**: Use for technical discussions
 
@@ -74,18 +74,18 @@ This repository contains comprehensive separation of concerns analysis and imple
 ## 🗂️ Complete Documentation Index
 
 ### Implementation Guides
-- [`QUICK_START_PHASE_1_1.md`](QUICK_START_PHASE_1_1.md) - 30-second overview
-- [`IMPLEMENTATION_GUIDE_PHASE_1_1.md`](IMPLEMENTATION_GUIDE_PHASE_1_1.md) - Detailed step-by-step guide
-- [`NEXT_STEP_SEPARATION_OF_CONCERNS.md`](NEXT_STEP_SEPARATION_OF_CONCERNS.md) - Next step rationale
+- [`QUICK_START_PHASE_1_1.md`](phases/QUICK_START_PHASE_1_1.md) - 30-second overview
+- [`IMPLEMENTATION_GUIDE_PHASE_1_1.md`](phase-implementations/IMPLEMENTATION_GUIDE_PHASE_1_1.md) - Detailed step-by-step guide
+- [`NEXT_STEP_SEPARATION_OF_CONCERNS.md`](refactoring/NEXT_STEP_SEPARATION_OF_CONCERNS.md) - Next step rationale
 
 ### Planning Documents
 - [`SEPARATION_OF_CONCERNS_ROADMAP.md`](SEPARATION_OF_CONCERNS_ROADMAP.md) - Incremental roadmap (this file)
-- [`SEPARATION_OF_CONCERNS_INDEX.md`](SEPARATION_OF_CONCERNS_INDEX.md) - Documentation navigation
+- [`SEPARATION_OF_CONCERNS_INDEX.md`](refactoring/SEPARATION_OF_CONCERNS_INDEX.md) - Documentation navigation
 
 ### Analysis Documents
 - [`SEPARATION_OF_CONCERNS_SUMMARY.md`](SEPARATION_OF_CONCERNS_SUMMARY.md) - Executive summary
-- [`SEPARATION_OF_CONCERNS_VIOLATIONS.md`](SEPARATION_OF_CONCERNS_VIOLATIONS.md) - Detailed technical analysis
-- [`SEPARATION_OF_CONCERNS_VISUAL.md`](SEPARATION_OF_CONCERNS_VISUAL.md) - Visual diagrams and examples
+- [`SEPARATION_OF_CONCERNS_VIOLATIONS.md`](refactoring/SEPARATION_OF_CONCERNS_VIOLATIONS.md) - Detailed technical analysis
+- [`SEPARATION_OF_CONCERNS_VISUAL.md`](refactoring/SEPARATION_OF_CONCERNS_VISUAL.md) - Visual diagrams and examples
 
 ---
 
@@ -206,7 +206,7 @@ Phase 1.1 makes future changes easier by:
 
 ## 🏁 Ready to Start?
 
-**Recommended Action**: Read [`QUICK_START_PHASE_1_1.md`](QUICK_START_PHASE_1_1.md) and implement the 3 changes.
+**Recommended Action**: Read [`QUICK_START_PHASE_1_1.md`](phases/QUICK_START_PHASE_1_1.md) and implement the 3 changes.
 
 **Time Investment**: 2-3 hours  
 **Risk Level**: 🟢 VERY LOW  

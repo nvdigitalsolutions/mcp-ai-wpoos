@@ -575,7 +575,7 @@ curl -I -L "https://yoursite.com/wp-json/wp/v2/types?context=edit" \
    `Call to undefined method Jet_Engine\...\Item_Handler::query_items()`,
    ensure you're using WP oOS version 1.0.0+ which includes the compatibility
    layer for JetEngine 3.3+. The plugin automatically detects and uses the
-   correct API. See [jetengine-api-compatibility.md](jetengine-api-compatibility.md)
+   correct API. See [jetengine-api-compatibility.md](../../architecture/integrations/jetengine-api-compatibility.md)
    for details.
 
 ## Security recommendations

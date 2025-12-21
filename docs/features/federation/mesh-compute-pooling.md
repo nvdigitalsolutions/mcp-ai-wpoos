@@ -598,13 +598,13 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 
 ## Related Documentation
 
-- [MCP Server Authentication](mcp-server-authentication.md) - Authentication reference including Auth0, bearer tokens, and nonces
-- [Simple JWT Login Integration](authentication.md) - Optional JWT authentication integration
-- [Tool Reference](tool-reference.md) - All 65+ built-in tools including `query_remote_site`
-- [REST API Documentation](rest-api.md) - REST endpoint specifications
-- [Orchestration Layer Architecture](ORCHESTRATION-LAYER-ARCHITECTURE.md) - Distributed orchestration design
-- [Remote Client Setup](remote-client-setup.md) - Connecting external MCP clients
-- [Best Practices](BEST_PRACTICES.md) - Usage recommendations
+- [MCP Server Authentication](../../reference/api/mcp-server-authentication.md) - Authentication reference including Auth0, bearer tokens, and nonces
+- [Simple JWT Login Integration](../../reference/api/authentication.md) - Optional JWT authentication integration
+- [Tool Reference](../../reference/tools/tool-reference.md) - All 65+ built-in tools including `query_remote_site`
+- [REST API Documentation](../../reference/api/rest-api.md) - REST endpoint specifications
+- [Orchestration Layer Architecture](../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) - Distributed orchestration design
+- [Remote Client Setup](../../getting-started/installation-setup/remote-client-setup.md) - Connecting external MCP clients
+- [Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md) - Usage recommendations
 
 ---
 

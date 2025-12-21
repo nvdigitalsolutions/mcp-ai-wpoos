@@ -103,7 +103,7 @@ If you don't have internet access or want to distribute the test framework separ
    
    This extracts the development dependencies without requiring composer or internet access.
 
-See [TESTING.md](TESTING.md) for complete testing setup instructions.
+See [TESTING.md](docs/archive/testing/TESTING.md) for complete testing setup instructions.
 
 ## Build Commands
 
@@ -167,7 +167,7 @@ Run tests in watch mode (for development):
 npm run test:watch
 ```
 
-See [TESTING.md](TESTING.md) for comprehensive testing documentation.
+See [TESTING.md](docs/archive/testing/TESTING.md) for comprehensive testing documentation.
 
 ### Documentation Validation
 
@@ -215,7 +215,7 @@ Run PHPUnit test suite (requires dev dependencies):
 composer run test
 ```
 
-See [TESTING.md](TESTING.md) for detailed testing instructions.
+See [TESTING.md](docs/archive/testing/TESTING.md) for detailed testing instructions.
 
 ## Build Output
 
@@ -376,9 +376,9 @@ WP oOS is available in three distribution formats:
 2. Install **Base** + **Pro** for all features
 3. Install **Combined** for convenience (includes everything)
 
-See [FEATURE-MATRIX-CORE-PRO.md](docs/FEATURE-MATRIX-CORE-PRO.md) for feature comparison.
+See [FEATURE-MATRIX-CORE-PRO.md](docs/reference/models/FEATURE-MATRIX-CORE-PRO.md) for feature comparison.
 
-**Note:** The terms "base" and "core" are used interchangeably throughout the documentation and refer to the same plugin. See [BUILD-ARTIFACTS-CLARIFICATION.md](docs/BUILD-ARTIFACTS-CLARIFICATION.md) for detailed explanation.
+**Note:** The terms "base" and "core" are used interchangeably throughout the documentation and refer to the same plugin. See [BUILD-ARTIFACTS-CLARIFICATION.md](docs/troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) for detailed explanation.
 
 ### Build Optimizations
 
@@ -409,7 +409,7 @@ The build process automatically optimizes plugin ZIP files for distribution:
 - ✅ License files and WordPress.org readme
 - ✅ Language files and translation support
 
-See [WORDPRESS_ORG_SUBMISSION_GUIDE.md](WORDPRESS_ORG_SUBMISSION_GUIDE.md) for WordPress.org submission details.
+See [WORDPRESS_ORG_SUBMISSION_GUIDE.md](docs/troubleshooting/deployment/WORDPRESS_ORG_SUBMISSION_GUIDE.md) for WordPress.org submission details.
 
 ### Where to Find ZIP Files
 
@@ -514,7 +514,7 @@ git push origin v1.0.0
 
 The GitHub Actions workflow will automatically build and publish the ZIP files to the release.
 
-See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for complete release instructions.
+See [RELEASE_CHECKLIST.md](docs/troubleshooting/deployment/RELEASE_CHECKLIST.md) for complete release instructions.
 
 ## Troubleshooting
 

@@ -8,7 +8,7 @@
 
 ### 📱 I'm New - Show Me the Basics
 
-**Start with:** [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md)
+**Start with:** [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](../../visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md)
 
 **What you'll get:**
 - Quick visual diagrams showing the complete flow
@@ -99,7 +99,7 @@ All automatically in ~5 seconds!
 - Elementor (templates, widgets)
 - Utilities (email, cron, time)
 
-**Full catalog:** [tool-reference.md](tool-reference.md)
+**Full catalog:** [tool-reference.md](../../reference/tools/tool-reference.md)
 
 ---
 
@@ -149,10 +149,10 @@ All automatically in ~5 seconds!
 
 | Document | Size | Read Time | Audience |
 |----------|------|-----------|----------|
-| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | 18KB | 15 min | Everyone |
+| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](../../visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | 18KB | 15 min | Everyone |
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](CURRENT-STATE-AGENTIC-WORKFLOW.md) | 63KB | 60 min | Detailed learners |
 | [agentic-workflow-architecture.md](agentic-workflow-architecture.md) | 30KB | 45 min | Developers |
-| [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | 60KB | 90 min | Technical deep-dive |
+| [ORCHESTRATION-LAYER-ARCHITECTURE.md](../orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | 60KB | 90 min | Technical deep-dive |
 
 ---
 
@@ -271,25 +271,25 @@ Result: Automated site audit
 
 ## 🔗 Related Documentation
 
-- **[Tool Reference](tool-reference.md)** - All 65+ tools catalog
-- **[REST API](rest-api.md)** - API documentation
-- **[Best Practices](BEST_PRACTICES.md)** - Usage recommendations
-- **[Authentication](mcp-server-authentication.md)** - Security setup
-- **[Performance](chat-performance-optimizations.md)** - Speed optimization
+- **[Tool Reference](../../reference/tools/tool-reference.md)** - All 65+ tools catalog
+- **[REST API](../../reference/api/rest-api.md)** - API documentation
+- **[Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage recommendations
+- **[Authentication](../../reference/api/mcp-server-authentication.md)** - Security setup
+- **[Performance](../../features/chat/chat-performance-optimizations.md)** - Speed optimization
 
 ---
 
 ## 📞 Need Help?
 
 - **Issues**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
-- **Documentation Index**: [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
+- **Documentation Index**: [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md)
 - **Community**: WordPress.org support forums
 
 ---
 
 **Happy Learning!** 🎉
 
-Start with [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) for the quickest introduction!
+Start with [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](../../visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) for the quickest introduction!
 
 ---
 

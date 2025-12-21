@@ -414,5 +414,5 @@ $result = $service->process_chat( $messages, 123 );
 ---
 
 For complete technical details, see:
-- **Full Guide**: [COPILOT_ARCHITECTURE_GUIDE.md](./COPILOT_ARCHITECTURE_GUIDE.md) - Section 9
-- **Quick Reference**: [ARCHITECTURE_QUICK_REFERENCE.md](./ARCHITECTURE_QUICK_REFERENCE.md)
+- **Full Guide**: [COPILOT_ARCHITECTURE_GUIDE.md](../../../architecture/core/COPILOT_ARCHITECTURE_GUIDE.md) - Section 9
+- **Quick Reference**: [ARCHITECTURE_QUICK_REFERENCE.md](../../../architecture/core/ARCHITECTURE_QUICK_REFERENCE.md)

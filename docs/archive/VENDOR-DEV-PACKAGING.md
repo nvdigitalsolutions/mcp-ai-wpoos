@@ -124,8 +124,8 @@ The scripts are designed to work seamlessly in managed hosting environments like
 
 ## Documentation
 
-- **[TESTING.md](TESTING.md)** - Complete testing guide
-- **[BUILD.md](BUILD.md)** - Build and dependency management
+- **[TESTING.md](testing/TESTING.md)** - Complete testing guide
+- **[BUILD.md](../../BUILD.md)** - Build and dependency management
 - **[README.md](README.md)** - Main plugin documentation
 
 ## Troubleshooting

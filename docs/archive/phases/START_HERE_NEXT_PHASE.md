@@ -10,7 +10,7 @@
 
 - **2-Minute Answer**: See [`QUICK_ANSWER_NEXT_PHASE.md`](QUICK_ANSWER_NEXT_PHASE.md)
 - **Complete Plan**: See [`NEXT_ENHANCEMENT_PHASE.md`](NEXT_ENHANCEMENT_PHASE.md)
-- **Visual Roadmap**: See [`ENHANCEMENT_ROADMAP_VISUAL.md`](ENHANCEMENT_ROADMAP_VISUAL.md)
+- **Visual Roadmap**: See [`ENHANCEMENT_ROADMAP_VISUAL.md`](../ENHANCEMENT_ROADMAP_VISUAL.md)
 
 ---
 
@@ -219,7 +219,7 @@ DONE           START           Readiness      🎉
 **See**:
 - 📄 [`QUICK_ANSWER_NEXT_PHASE.md`](QUICK_ANSWER_NEXT_PHASE.md) - 2-minute answer
 - 📘 [`NEXT_ENHANCEMENT_PHASE.md`](NEXT_ENHANCEMENT_PHASE.md) - Complete plan
-- 📊 [`ENHANCEMENT_ROADMAP_VISUAL.md`](ENHANCEMENT_ROADMAP_VISUAL.md) - Visual guide
+- 📊 [`ENHANCEMENT_ROADMAP_VISUAL.md`](../ENHANCEMENT_ROADMAP_VISUAL.md) - Visual guide
 
 ---
 
