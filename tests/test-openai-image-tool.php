@@ -879,4 +879,98 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 			wp_delete_attachment( $result['attachment_id'], true );
 		}
 	}
+
+	/**
+	 * Test that style parameter is only sent for DALL-E 3 model.
+	 * gpt-image-1, gpt-image-1.5, and dall-e-2 should NOT send style parameter.
+	 */
+	public function test_style_parameter_only_sent_for_dalle_3() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$models_to_test = array(
+			'gpt-image-1'   => false, // Should NOT include style.
+			'gpt-image-1.5' => false, // Should NOT include style.
+			'dall-e-2'      => false, // Should NOT include style.
+			'dall-e-3'      => true,  // Should include style.
+		);
+
+		foreach ( $models_to_test as $model => $should_include_style ) {
+			$captured_request = null;
+
+			$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64, $model ) {
+				$captured_request = array(
+					'args' => $args,
+					'url'  => $url,
+				);
+
+				$payload = array(
+					'created' => time(),
+					'model'   => $model,
+					'data'    => array(
+						array(
+							'b64_json' => $png_base64,
+						),
+					),
+				);
+
+				return array(
+					'body'     => wp_json_encode( $payload ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array( 'content-type' => 'application/json' ),
+				);
+			};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$result = $tool->execute(
+				array(
+					'prompt' => 'Test image with style parameter',
+					'model'  => $model,
+					'style'  => 'vivid', // Always provide style parameter.
+				),
+				array( 'user_id' => $user_id )
+			);
+
+			remove_filter( 'pre_http_request', $http_stub, 10 );
+
+			$this->assertNotNull( $captured_request, "Request not captured for model: {$model}" );
+			$payload = json_decode( $captured_request['args']['body'], true );
+			$this->assertIsArray( $payload );
+
+			if ( $should_include_style ) {
+				$this->assertArrayHasKey( 'style', $payload, "Style parameter should be included for {$model}" );
+				$this->assertSame( 'vivid', $payload['style'], "Style should be 'vivid' for {$model}" );
+			} else {
+				$this->assertArrayNotHasKey( 'style', $payload, "Style parameter should NOT be included for {$model}" );
+			}
+
+			if ( ! empty( $result['attachment_id'] ) ) {
+				wp_delete_attachment( $result['attachment_id'], true );
+			}
+		}
+	}
+
+	/**
+	 * Test that image_model_supports_style() returns correct values for different models.
+	 */
+	public function test_image_model_supports_style() {
+		// DALL-E 3 should support style.
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'dall-e-3' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'DALL-E-3' ) ); // Case insensitive.
+
+		// Other models should NOT support style.
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'gpt-image-1' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'gpt-image-1.5' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'GPT-IMAGE-1.5' ) ); // Case insensitive.
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'dall-e-2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'DALL-E-2' ) );
+	}
 }
