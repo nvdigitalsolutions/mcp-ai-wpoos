@@ -1422,6 +1422,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'n'       => 1,
 			);
 
+			// Add style parameter for DALL-E 3 models (natural or vivid).
+			if ( isset( $options['style'] ) && '' !== $options['style'] ) {
+				$style = sanitize_key( $options['style'] );
+				if ( in_array( $style, array( 'natural', 'vivid' ), true ) ) {
+					$payload['style'] = $style;
+				}
+			}
+
 			if ( $model_supports_response_format && '' !== $response_format ) {
 				$payload['response_format'] = $response_format;
 			}
@@ -2430,7 +2438,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = max( 5, $timeout );
 
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? strtolower( sanitize_key( $options['response_format'] ) ) : 'verbose_json';
-			$allowed_formats = array( 'json', 'verbose_json' );
+			$allowed_formats = array( 'json', 'verbose_json', 'text', 'srt', 'vtt' );
 
 			if ( ! in_array( $response_format, $allowed_formats, true ) ) {
 				$response_format = 'verbose_json';
@@ -2453,6 +2461,26 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! $translate && isset( $options['language'] ) && '' !== $options['language'] ) {
 				$fields['language'] = sanitize_text_field( $options['language'] );
+			}
+
+			// Add timestamp_granularities parameter for word or segment level timestamps.
+			if ( isset( $options['timestamp_granularities'] ) ) {
+				$granularities = $options['timestamp_granularities'];
+				if ( is_string( $granularities ) ) {
+					$granularities = array( $granularities );
+				}
+				if ( is_array( $granularities ) && ! empty( $granularities ) ) {
+					$valid_granularities = array();
+					foreach ( $granularities as $granularity ) {
+						$granularity = strtolower( sanitize_key( $granularity ) );
+						if ( in_array( $granularity, array( 'word', 'segment' ), true ) ) {
+							$valid_granularities[] = $granularity;
+						}
+					}
+					if ( ! empty( $valid_granularities ) ) {
+						$fields['timestamp_granularities'] = array_values( array_unique( $valid_granularities ) );
+					}
+				}
 			}
 
 			$filename = isset( $options['filename'] ) && '' !== $options['filename'] ? sanitize_file_name( $options['filename'] ) : wp_basename( $file_path );
