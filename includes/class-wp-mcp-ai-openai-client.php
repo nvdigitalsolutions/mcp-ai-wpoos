@@ -25,6 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		const IMAGES_VARIATIONS_ENDPOINT    = 'https://api.openai.com/v1/images/variations';
 		const MODERATIONS_ENDPOINT          = 'https://api.openai.com/v1/moderations';
 		const VECTOR_STORES_ENDPOINT        = 'https://api.openai.com/v1/vector_stores';
+		const BATCHES_ENDPOINT              = 'https://api.openai.com/v1/batches';
 		const CHAT_APPROX_CHARS_PER_TOKEN   = 4; // Heuristic for estimating tokens from character count.
 
 		/**
@@ -4917,6 +4918,539 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			return $decoded;
+		}
+
+		/**
+		 * Create a batch processing job for asynchronous operations.
+		 *
+		 * The Batch API allows you to process large jobs asynchronously with 50% cost reduction
+		 * compared to synchronous calls. Supported endpoints: /v1/chat/completions, /v1/embeddings,
+		 * /v1/moderations.
+		 *
+		 * @param string $input_file_id  The ID of the uploaded input file containing batch requests (JSONL format).
+		 * @param string $endpoint       The OpenAI endpoint to use for the batch (e.g., '/v1/chat/completions').
+		 * @param array  $options        Optional parameters:
+		 *                               - completion_window: Time frame within which the batch should be processed.
+		 *                                 Default: "24h" (currently only "24h" is supported by OpenAI).
+		 *                               - metadata: Custom metadata as key-value pairs (up to 16 pairs).
+		 *                               - timeout: Request timeout in seconds.
+		 * @return array|WP_Error Array containing batch job details or WP_Error on failure.
+		 *                        Success structure:
+		 *                        - id: Unique batch job ID
+		 *                        - object: "batch"
+		 *                        - endpoint: The endpoint used
+		 *                        - input_file_id: Input file ID
+		 *                        - completion_window: Completion window
+		 *                        - status: Current status (validating, in_progress, completed, failed, etc.)
+		 *                        - output_file_id: Output file ID (available when completed)
+		 *                        - error_file_id: Error file ID (available if errors occurred)
+		 *                        - created_at: Creation timestamp
+		 *                        - metadata: Custom metadata
+		 */
+		public function create_batch( $input_file_id, $endpoint, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Validate input_file_id.
+			$input_file_id = sanitize_text_field( (string) $input_file_id );
+			if ( '' === $input_file_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_input_file_id',
+					__( 'Input file ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate endpoint.
+			$endpoint = sanitize_text_field( (string) $endpoint );
+			$allowed_endpoints = array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' );
+			if ( ! in_array( $endpoint, $allowed_endpoints, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_batch_endpoint',
+					sprintf(
+						/* translators: %s: comma-separated list of allowed endpoints */
+						__( 'Invalid batch endpoint. Allowed endpoints: %s', 'wp-mcp-ai' ),
+						implode( ', ', $allowed_endpoints )
+					),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Build payload.
+			$payload = array(
+				'input_file_id'      => $input_file_id,
+				'endpoint'           => $endpoint,
+				'completion_window'  => isset( $options['completion_window'] ) && '' !== $options['completion_window'] ? sanitize_text_field( $options['completion_window'] ) : '24h',
+			);
+
+			// Add optional metadata.
+			if ( isset( $options['metadata'] ) && is_array( $options['metadata'] ) && ! empty( $options['metadata'] ) ) {
+				$metadata = array();
+				foreach ( $options['metadata'] as $key => $value ) {
+					$sanitized_key   = sanitize_text_field( $key );
+					$sanitized_value = sanitize_text_field( $value );
+					if ( '' !== $sanitized_key && '' !== $sanitized_value ) {
+						$metadata[ $sanitized_key ] = $sanitized_value;
+					}
+				}
+				if ( ! empty( $metadata ) ) {
+					$payload['metadata'] = $metadata;
+				}
+			}
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_create_batch',
+				'Creating batch job with OpenAI.',
+				array(
+					'endpoint'       => $endpoint,
+					'input_file_id'  => $input_file_id,
+				)
+			);
+
+			$response = $this->dispatch_http_request( self::BATCHES_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI create batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_create_batch_http_error',
+					__( 'The OpenAI create batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI create batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_create_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch creation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI create batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI create batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_create_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_created',
+				'Batch job created successfully.',
+				array(
+					'batch_id' => isset( $decoded['id'] ) ? $decoded['id'] : '',
+					'status'   => isset( $decoded['status'] ) ? $decoded['status'] : '',
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Retrieve information about a specific batch job.
+		 *
+		 * @param string $batch_id The ID of the batch to retrieve.
+		 * @param array  $options  Optional parameters (timeout).
+		 * @return array|WP_Error Array containing batch job details or WP_Error on failure.
+		 */
+		public function retrieve_batch( $batch_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$batch_id = sanitize_text_field( (string) $batch_id );
+			if ( '' === $batch_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_batch_id',
+					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id );
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_retrieve_batch',
+				'Retrieving batch job from OpenAI.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_retrieve_batch_http_error',
+					__( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI retrieve batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_retrieve_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch retrieval.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_retrieve_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Cancel a batch processing job.
+		 *
+		 * @param string $batch_id The ID of the batch to cancel.
+		 * @param array  $options  Optional parameters (timeout).
+		 * @return array|WP_Error Array containing updated batch details or WP_Error on failure.
+		 */
+		public function cancel_batch( $batch_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$batch_id = sanitize_text_field( (string) $batch_id );
+			if ( '' === $batch_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_batch_id',
+					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel';
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_cancel_batch',
+				'Cancelling batch job with OpenAI.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI cancel batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_cancel_batch_http_error',
+					__( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI cancel batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_cancel_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch cancellation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI cancel batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_cancel_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_cancelled',
+				'Batch job cancelled successfully.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * List batch processing jobs with optional filtering.
+		 *
+		 * @param array $options Optional parameters:
+		 *                       - after: Batch ID cursor for pagination (retrieve batches after this ID).
+		 *                       - limit: Maximum number of batches to return (1-100, default 20).
+		 *                       - timeout: Request timeout in seconds.
+		 * @return array|WP_Error Array containing list of batch jobs or WP_Error on failure.
+		 *                        Success structure:
+		 *                        - object: "list"
+		 *                        - data: Array of batch job objects
+		 *                        - first_id: ID of the first batch in the list
+		 *                        - last_id: ID of the last batch in the list
+		 *                        - has_more: Whether there are more batches available
+		 */
+		public function list_batches( array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Build query parameters.
+			$query_params = array();
+
+			if ( isset( $options['after'] ) && '' !== $options['after'] ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['limit'] ) && '' !== $options['limit'] ) {
+				$limit = absint( $options['limit'] );
+				$limit = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
+				$query_params['limit'] = $limit;
+			}
+
+			$endpoint = self::BATCHES_ENDPOINT;
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_list_batches',
+				'Listing batch jobs from OpenAI.',
+				array( 'params' => $query_params )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list batches request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_list_batches_http_error',
+					__( 'The OpenAI list batches request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI list batches response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_list_batches_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batches list.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list batches returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI list batches request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_list_batches_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batches_listed',
+				'Batch jobs list retrieved successfully.',
+				array( 'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0 )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
 		}
 	}
 }
