@@ -301,7 +301,7 @@ This document provides a detailed comparison between the Base Version and Full V
 
 ## Support and Documentation
 
-- Base Version Guide: [BASE-VERSION.md](../BASE-VERSION.md)
+- Base Version Guide: *(BASE-VERSION.md documentation pending)*
 - Full Documentation: [README.md](../README.md)
 - Tool Reference: [docs/tool-reference.md](../tools/tool-reference.md)
 - Pro Tool Setup: See individual tool documentation

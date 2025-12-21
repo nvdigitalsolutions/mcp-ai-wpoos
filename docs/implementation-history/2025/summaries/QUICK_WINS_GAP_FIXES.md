@@ -540,7 +540,7 @@ All errors follow this JSON structure:
 ```markdown
 ## Error Handling
 
-All errors follow the standard WordPress REST API format. For complete error code reference, see [ERROR_CODES.md](ERROR_CODES.md).
+All errors follow the standard WordPress REST API format. For complete error code reference, see *(ERROR_CODES.md pending)*.
 
 Example error response:
 \`\`\`json
@@ -553,7 +553,7 @@ Example error response:
 }
 \`\`\`
 
-See [Error Codes Reference](ERROR_CODES.md) for all possible error codes.
+See *(Error Codes Reference pending)* for all possible error codes.
 ```
 
 ---

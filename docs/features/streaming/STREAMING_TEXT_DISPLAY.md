@@ -310,8 +310,8 @@ If you didn't specify `enable_streaming`, it now defaults to `true` (previously 
 ## Related Documentation
 
 - [REST API Documentation](../../reference/api/rest-api.md)
-- [Chat UI Documentation](./chat-ui.md)
-- [SSE Handler Tests](../tests/test-sse-handler.php)
+- *(Chat UI Documentation pending)*
+- [SSE Handler Tests](../../../tests/test-sse-handler.php)
 - [Tool Reference](../../reference/tools/tool-reference.md)
 
 ## Changelog

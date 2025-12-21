@@ -310,7 +310,7 @@ The system is designed for easy extension:
 ## Related Documentation
 
 - [Tool Reference](../../../reference/tools/tool-reference.md) - Complete tool catalog
-- [Profession Playbooks README](../includes/knowledge-base/profession-playbooks/README.md) - Playbook system overview
+- [Profession Playbooks README](../../../../includes/knowledge-base/profession-playbooks/README.md) - Playbook system overview
 - [Tool Selection Presets](../../../guides/user/assistants/tool-selection-presets.md) - UI for tool management
 
 ## Changelog

@@ -271,8 +271,8 @@ $payload = [
 
 - [OpenAI Function Calling Documentation](https://platform.openai.com/docs/guides/function-calling)
 - [LM Studio Documentation](https://lmstudio.ai/)
-- [WP oOS Provider Documentation](docs/providers.md)
-- [Tool Development Guide](docs/tools.md)
+- *(Provider documentation pending)*
+- *(Tool development guide pending)*
 
 ## Future Enhancements
 

@@ -606,4 +606,4 @@ Lists batch jobs with optional filtering.
 
 ---
 
-**Need Help?** See the [Troubleshooting Guide](../troubleshooting/batch-api.md) or open an issue on [GitHub](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues).
+**Need Help?** See the *(Troubleshooting guide pending)* or open an issue on [GitHub](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues).

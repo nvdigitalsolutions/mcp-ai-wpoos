@@ -346,7 +346,7 @@ attachUsageBadges(messageElement, usage, costData)
 
 - [Token Management](../../../features/performance/token-management.md)
 - [Enhanced Token Tracking](../../../archive/token-manager/TOKEN-ENHANCEMENT-NEXT-STEP.md)
-- [Cost Calculator](./cost-calculator.md)
+- *(Cost Calculator documentation pending)*
 - [Analytics Engine](../../../features/analytics/analytics-engine.md)
 
 ## Support

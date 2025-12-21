@@ -251,7 +251,7 @@ Tab 2: History [User Chat History → Target: "#active-chat"]
 
 - [Elementor Widgets Guide](../../../architecture/integrations/elementor-widgets.md)
 - [REST API Reference](../../../reference/api/rest-api.md)
-- [Chat Widget Configuration](./chat-widget-configuration.md)
+- *(Chat Widget Configuration documentation pending)*
 
 ## Support
 

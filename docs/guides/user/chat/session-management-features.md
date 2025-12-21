@@ -530,7 +530,7 @@ For each new feature:
 
 - [localStorage Quota and Export](./localStorage-quota-and-export.md)
 - [REST API Documentation](../../../reference/api/rest-api.md)
-- [Frontend Architecture](./frontend-architecture.md)
+- *(Frontend Architecture documentation pending)*
 - [Security Best Practices](../../../../SECURITY.md)
 - [Contributing Guidelines](../../../../CONTRIBUTING.md)
 

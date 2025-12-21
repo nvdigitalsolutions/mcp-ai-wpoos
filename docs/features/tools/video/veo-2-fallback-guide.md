@@ -324,6 +324,6 @@ Planned improvements:
 For issues or questions:
 
 1. Check system logs for detailed error messages
-2. Review the [main documentation](../docs/)
+2. Review the [main documentation](../../../)
 3. Open an issue on GitHub
 4. Contact support with log details

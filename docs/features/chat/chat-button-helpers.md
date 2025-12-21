@@ -405,6 +405,6 @@ All helper functions:
 
 ## See Also
 
-- [Chat UI Utilities Service](../assets/js/chat-ui-utilities-service.js)
-- [Chat Audio Service](../assets/js/chat-audio-service.js)
-- [Chat Client Main](../assets/js/chat.js)
+- [Chat UI Utilities Service](../../../assets/js/chat-ui-utilities-service.js)
+- [Chat Audio Service](../../../assets/js/chat-audio-service.js)
+- [Chat Client Main](../../../assets/js/chat.js)
