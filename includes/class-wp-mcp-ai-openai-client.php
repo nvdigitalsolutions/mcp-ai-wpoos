@@ -23,6 +23,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		const IMAGES_ENDPOINT               = 'https://api.openai.com/v1/images/generations';
 		const IMAGES_EDITS_ENDPOINT         = 'https://api.openai.com/v1/images/edits';
 		const IMAGES_VARIATIONS_ENDPOINT    = 'https://api.openai.com/v1/images/variations';
+		const MODERATIONS_ENDPOINT          = 'https://api.openai.com/v1/moderations';
 		const VECTOR_STORES_ENDPOINT        = 'https://api.openai.com/v1/vector_stores';
 		const CHAT_APPROX_CHARS_PER_TOKEN   = 4; // Heuristic for estimating tokens from character count.
 
@@ -1046,6 +1047,182 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				array(
 					'model'            => $model,
 					'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Moderate content using OpenAI's Moderation API.
+		 *
+		 * Analyzes text and/or image inputs for potentially harmful content across multiple
+		 * violation categories including sexual, hate, harassment, self-harm, and violence.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string|array $input   Content to moderate. Can be a string, array of strings,
+		 *                               or for multimodal: array of input objects with text/image.
+		 * @param array        $options Optional configuration:
+		 *                               - model: 'omni-moderation-latest' (default) or 'text-moderation-latest'
+		 *                               - timeout: Request timeout in seconds (default: from settings)
+		 * @return array|WP_Error Array containing moderation results or WP_Error on failure.
+		 *                        Result structure:
+		 *                        - id: Unique moderation request ID
+		 *                        - model: Model used
+		 *                        - results: Array of result objects, each containing:
+		 *                          - flagged: Boolean indicating if content was flagged
+		 *                          - categories: Object mapping category names to booleans
+		 *                          - category_scores: Object mapping category names to confidence scores (0-1)
+		 *                          - category_applied_input_types: Which input types triggered each category
+		 */
+		public function moderate_content( $input, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Validate input.
+			if ( empty( $input ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_input',
+					__( 'Input content must be provided for moderation.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate string input is not empty.
+			if ( is_string( $input ) && '' === trim( $input ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_input',
+					__( 'Input text cannot be empty.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Default to latest omni-moderation model (supports text + images).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'omni-moderation-latest';
+
+			$payload = array(
+				'model' => $model,
+				'input' => $input,
+			);
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_moderate_content',
+				'Moderating content with OpenAI.',
+				array(
+					'model'        => $model,
+					'input_type'   => is_array( $input ) ? 'array' : 'string',
+					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+				)
+			);
+
+			$response = $this->dispatch_http_request( self::MODERATIONS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI moderation request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_moderation_http_error',
+					__( 'The OpenAI moderation request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI moderation response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_moderation_invalid_response',
+					__( 'OpenAI returned malformed JSON for the moderation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI moderation returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI moderation request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_moderation_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			// Extract violation summary for logging.
+			$flagged_count  = 0;
+			$flagged_cats   = array();
+			$results        = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
+
+			foreach ( $results as $result ) {
+				if ( isset( $result['flagged'] ) && $result['flagged'] ) {
+					++$flagged_count;
+
+					if ( isset( $result['categories'] ) && is_array( $result['categories'] ) ) {
+						foreach ( $result['categories'] as $category => $is_flagged ) {
+							if ( $is_flagged && ! in_array( $category, $flagged_cats, true ) ) {
+								$flagged_cats[] = $category;
+							}
+						}
+					}
+				}
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_moderation_completed',
+				'OpenAI moderation completed successfully.',
+				array(
+					'model'          => $model,
+					'results_count'  => count( $results ),
+					'flagged_count'  => $flagged_count,
+					'flagged_categories' => $flagged_cats,
 				)
 			);
 
