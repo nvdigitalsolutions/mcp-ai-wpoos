@@ -9452,3 +9452,240 @@ To reach 70% completion target (386 documents total), next session should focus 
 **Session 33 Status:** 🔄 IN PROGRESS
 
 ---
+
+## Session 34 Summary (December 21, 2025)
+
+### Documents Reviewed This Session: 9 Additional
+
+**Tool Documentation (3 documents):**
+391. **docs/TOOL_UPDATE_GUIDE.md** ✅ (Developer Guide)
+    - Status: ✅ COMPLETE
+    - Tool update pattern for adding file_id and URL support
+    - Core infrastructure: `WP_MCP_AI_Attachment_File_Resolver` trait, `WP_MCP_AI_Tool_Image_Base` class
+    - Three input formats: attachment_id (integer), file_id (OpenAI/Gemini string), url (direct file URL)
+    - Update pattern: 4-step process (Add trait, Update schema, Update execute, Update errors)
+    - Tools completed: 10 of 22 (transcribe-openai-audio, generate-image-alt-text, generate-image-caption, etc.)
+    - Tools remaining: 12 (analyze-video, extract-video-frames, generate-gemini-image, etc.)
+    - Special cases: Tools extending Image_Base, custom URL parameters, non-file tools
+    - Testing checklist provided with 7 verification points
+    - Example implementation in `class-wp-mcp-ai-tool-generate-image-alt-text.php`
+    - Comprehensive developer guide
+    - Current and accurate
+
+392. **docs/TOOL_RESULTS_INTEGRATION_REVIEW.md** ✅ (Integration Summary)
+    - Status: ✅ COMPLETE (December 7, 2024)
+    - Date: December 7, 2024
+    - Branch: copilot/review-tools-results-integration
+    - Purpose: Review all 80 core tools for proper results integration (chat client + LLM)
+    - Initial audit: 56 of 80 tools (71%) had displayable fields, 24 (29%) missing
+    - Dual-path architecture validated working:
+      - tool_result_messages[] → Frontend display (full results with base64, images)
+      - messages[] → LLM (sanitized, token-optimized)
+      - agentic_tool_messages[] → Conversation state preservation
+    - Core tools fixed: 20 tools updated with summary fields
+    - Pattern used: Add summary field as first field with translatable strings
+    - Frontend integration: extractGenericToolResponse() checks 6 displayable fields (summary, message, text, title, notices, messages)
+    - LLM integration: Full structured data in content field with optional sanitization (6 tools use WP_MCP_AI_Tool_LLM_Sanitizer_Interface)
+    - Pro addon tools: 38 tools in addons/pro/includes/tools/ and addons/pro/includes/src/Tools/ need review
+    - Documentation: TOOL_RESPONSE_FORMAT_GUIDE.md exists, needs update with fixed tools
+    - Testing: Integration tests pending for tool result extraction
+    - Best practices: Include displayable field (preferably summary), use translatable strings, include dynamic context, keep concise
+    - Files modified: 20 tool files
+    - All 80 core tools now properly integrate with both chat client and LLM workflows
+    - Comprehensive review summary
+    - Current and accurate
+
+393. **docs/PROFESSION_TOOL_RECOMMENDATIONS.md** ✅ (System Documentation)
+    - Status: ✅ COMPLETE (Initial Implementation: 2025-12-19)
+    - Comprehensive tool-to-profession mapping system
+    - Architecture: WP_MCP_AI_Profession_Tool_Recommender service, WP_MCP_AI_Profession_Playbook_Loader integration
+    - Three-tier recommendation strategy:
+      1. Core Tools (5 tools for all professions): web_search, search_content, get_recent_posts, save_post, count_tokens
+      2. Category Tools (by profession category): Technical, Creative, Financial, Legal, Healthcare, Advisory
+      3. Profession-Specific Tools (40+ professions with custom tool sets)
+    - Tool availability filtering: Checks registry, respects base vs full version, excludes unavailable tools
+    - Usage guidance: Default guidance + profession-specific guidance + functional grouping
+    - Example professions:
+      - Software Engineer (Technical): 15 tools (Core + System Admin + Automation + Analytics)
+      - Graphic Designer (Creative): 13 tools (Core + Media Generation + Media Manipulation)
+      - E-commerce Manager (Business): 12 tools (Core + E-commerce + Analytics + Automation)
+    - Playbook integration: "Recommended Tools & How to Use Them" section automatically included
+    - 11 tool categories: Core, Content Management, Media Generation, Media Manipulation, Data & Analytics, E-commerce, SEO, System Admin, External APIs, Communication, Automation
+    - Usage examples: get_recommended_tools(), get_tool_usage_guidance(), build_playbook()
+    - Adding new mappings: Profession-specific tools, category tools, custom tool guidance
+    - Best practices: Conservative selection, consider capabilities, think workflows, avoid overlap, update regularly
+    - Guidance writing: Be specific, provide context, include examples, keep brief, stay current
+    - Testing: tests/test-profession-tool-recommender.php (Core inclusion, category-specific, profession-specific, deduplication, availability filtering, guidance generation, playbook integration)
+    - Performance: Computed on-demand, cached in playbook attachment, no extra database queries, O(n) tool registry check
+    - Extensibility: Custom tool registries, filter hooks, guidance override, category addition
+    - Comprehensive system documentation
+    - Current and accurate
+
+**Streaming Documentation (3 documents):**
+394. **docs/SOC_REFACTORING_STREAMING.md** ✅ (Architecture Documentation)
+    - Status: ✅ COMPLETE (Refactoring Date: 2025-11-21)
+    - Separation of Concerns (SoC) refactoring for streaming text layer
+    - Problem: Original implementation mixed 3 concerns (message bubble, status area, scroll management) in single function
+    - Solution: Separated into dedicated functions:
+      - updateStreamingStatus() → Manage status area display (13 lines)
+      - updateStreamingMessage() → Coordinate streaming updates (23 lines)
+      - createStreamingMessage() → Create message bubble element
+      - setStatus() → Display status messages
+      - scrollBatcher.scrollToBottom() → Manage scroll position
+    - Architecture diagram: Clear separation of concerns with delegation pattern
+    - Benefits:
+      - ✅ Single Responsibility Principle (SRP)
+      - ✅ Easy to test (status logic independent)
+      - ✅ Improved maintainability (status changes don't affect message bubble)
+      - ✅ Better readability and documentation
+    - Cyclomatic complexity: Reduced from 6 to 3 (updateStreamingMessage) + 2 (updateStreamingStatus)
+    - Lines of code: 36 lines (too long) → 13 + 23 lines (better distributed)
+    - Testing benefits: Direct, focused tests without mocking entire infrastructure
+    - Maintenance scenarios: Change preview length, add animation, disable preview (all easy with SoC)
+    - SOLID principles applied: SRP, OCP, ISP, DIP all verified
+    - Future enhancements easy: Multi-line preview, different truncation strategies, theming
+    - Best practices: Single responsibility, clear naming, minimal parameters, no side effects, composition over inheritance
+    - Tests: 112/112 passing, zero regressions
+    - Comprehensive architecture documentation
+    - Current and accurate
+
+395. **docs/STREAMING_TEXT_DISPLAY.md** ✅ (Feature Documentation)
+    - Status: ✅ COMPLETE (Version 1.1.0 - Enabled by default)
+    - Progressive text display as it streams from AI providers (OpenAI, Gemini, LM Studio, Ollama)
+    - Features:
+      1. Progressive text display: Real-time chunks via SSE
+      2. Dual streaming display: Message bubble (full content + cursor) + Status preview (100 chars + cursor)
+      3. Visual streaming indicator: Blinking cursor (▋) with CSS animation
+      4. Auto-scrolling: Optimized scroll batching for performance
+      5. Markdown rendering: Plain text during streaming, full markdown after complete
+    - Configuration: Enabled by default in shortcode ([mcp_ai_chat]) and Elementor widget
+    - How it works:
+      - Frontend: Request with stream: true, Accept: text/event-stream, processSSEStream(), updateStreamingMessage(), finalization
+      - Backend: SSE endpoint /wp-json/mcp-ai/v1/sse, event streaming (status, tool_execution, message, error)
+      - CSS: Blinking cursor animation with wp-mcp-ai-cursor-blink keyframes
+    - Browser compatibility: Fetch API, SSE (all browsers except IE11), TextDecoder
+    - Fallback: Automatic non-streaming mode if streaming fails
+    - Performance: Scroll batching, textContent (not innerHTML), debounced storage, single message element
+    - Security: textContent during streaming (XSS prevention), markdown after complete, sanitized input
+    - Testing: Unit tests (npm test), manual testing (LM Studio, OpenAI, disable streaming)
+    - Troubleshooting: Text not streaming, cursor not appearing, performance problems
+    - API reference: JavaScript config, SSE event types
+    - Migration: No breaking changes, defaults changed (false → true)
+    - Version 1.1.0: Enabled by default, visual cursor, auto-scrolling, configuration tests
+    - Comprehensive feature documentation
+    - Current and accurate
+
+396. **docs/STREAMING_TEXT_STATUS_PREVIEW.md** ✅ (Enhancement Documentation)
+    - Status: ✅ COMPLETE (Feature ready for production)
+    - Enhancement: Streaming text preview in status area (dual streaming display)
+    - Problem: Users saw "Processing your request…" in status area but not streaming text (confusing UX)
+    - Solution: Dual streaming display (messages area + status area)
+    - Implementation: Function updateStreamingMessage() in assets/js/chat.js
+    - Preview truncation: ≤100 chars (full), >100 chars (first 100 + ellipsis)
+    - User experience flow: Before (confusion) → After (immediate feedback in status area)
+    - Visual styling: Warm yellow background (#fef3c7), amber border (#f59e0b), brown text (#78350f), monospace font, blinking cursor
+    - Performance: <5ms overhead per chunk (negligible), string truncation <1ms, status update ~2-3ms
+    - Memory impact: Zero (no new elements), temporary substring (auto GC'd)
+    - Browser compatibility: All browsers (String.prototype.substring, length, text-overflow: ellipsis, CSS animations)
+    - Testing: 6 new automated tests (112 total passing), manual testing checklist (OpenAI, Gemini, Ollama, LM Studio)
+    - Configuration: Enabled automatically when streaming enabled, customizable preview length (default 100 chars)
+    - Edge cases: Empty content, very short content, missing status element, streaming element not created (all handled)
+    - Backward compatibility: No breaking changes, works with shortcode and Elementor, compatible with all AI providers
+    - Troubleshooting: Preview not appearing, truncated too short/long, cursor not blinking
+    - Future enhancements: Configurable preview length, word boundary truncation, multi-line preview, preview toggle, adaptive truncation
+    - References: PR copilot/add-streaming-text-layer-ui, STREAMING_TEXT_DISPLAY.md, tests/js/streaming-config.test.js
+    - Summary: User-friendly (immediate feedback), performant (<5ms), compatible (all browsers), well-tested (112 passing), backward-compatible, maintainable
+    - Comprehensive enhancement documentation
+    - Current and accurate
+
+**Fix Documentation (3 documents):**
+397. **docs/FIX_ASYNC_TOOL_CALL_ID.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix deployed)
+    - Problem: Async veo video results not received by chat client properly (tool_call_id mismatch)
+    - Root cause: Frontend displayAsyncToolResult() generated NEW tool_call_id instead of using backend's original tool_call_id
+    - Data flow:
+      - Before: LLM tool_call_id → Backend preserved → Frontend IGNORED (generated new) ❌
+      - After: LLM tool_call_id → Backend preserved → Frontend EXTRACTED ✅
+    - Solution: Extract tool_call_id from backend response (tool_results[0].tool_call_id) before generating fallback
+    - Changes: assets/js/chat.js displayAsyncToolResult() function (~lines 7738-7744)
+    - Priority order: tool_results[0].tool_call_id (backend) → result.tool_call_id (direct) → Generated fallback
+    - Testing: JavaScript linting (npm run lint:js ✅), PHP tests (tests/test-async-veo-tool-call-id-display.php)
+    - Impact: Async veo video, all async tools, SSE/polling notifications, conversation history
+    - User experience: Before (results disappeared) → After (results appear with video player)
+    - Compatibility: Fully backward compatible (old jobs work with fallback), browser support (ES5 compatible, no optional chaining)
+    - Related files: Backend (no changes), Frontend (chat.js changed), Tests (new test-async-veo-tool-call-id-display.php)
+    - Deployment: No database/settings changes, JavaScript cache (hard refresh), works immediately for new jobs
+    - Future improvements: Explicit tool_call_id in top-level response, client-side logging, edge case monitoring
+    - Comprehensive fix documentation
+    - Current and accurate
+
+398. **docs/FIX_TOOL_SETTINGS_SAVE.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix deployed)
+    - Issue: "Failed to save tool settings" error when saving unchanged tool compatibility flags
+    - Root cause: WordPress update_option() returns false when new value = existing value (no change made)
+    - AJAX handler requires BOTH flags_saved AND sync_saved to be true for success
+    - Example bug: User saves flags → Clicks save again (no changes) → update_option() returns false → Error shown
+    - Solution: Detect unchanged values and return true (no change needed = success)
+    - Changes: includes/services/class-wp-mcp-ai-tool-settings-manager.php (2 methods)
+    - Method 1: update_capability_flags() - Store old value, compare, return true if unchanged, else update_option()
+    - Method 2: set_force_sync() - Same pattern (store old, compare, return true if unchanged)
+    - Testing: tests/test-tool-settings-save-unchanged.php (saving identical/changing/clearing values, multiple tools)
+    - Standalone verification: bin/verify-tool-settings-fix.php, bin/verify-ajax-scenario.php (gitignored)
+    - Impact: Before (false-negative errors) → After (unchanged saves succeed)
+    - Behavior: No changes, only fixes false-negative case
+    - Compatibility: Fully compatible, internal return value logic only
+    - Files modified: class-wp-mcp-ai-tool-settings-manager.php (12 lines), test-tool-settings-save-unchanged.php (234 lines)
+    - Related code: AJAX handler (handle_save_tool_settings()), JavaScript (admin-tool-orchestration.js), UI renderer (editable-capability-flags-renderer.php)
+    - Comprehensive fix documentation
+    - Current and accurate
+
+399. **docs/PRO_TOOLS_LOADING_FIX.md** ✅ (Implementation Fix)
+    - Status: ✅ COMPLETE (Fix deployed)
+    - Problem: Pro tools not appearing in settings when combined plugin used without wp-config.php flags
+    - Root cause: Action hook timing issue (Tool Registry init before Pro addon hooks registered)
+    - Execution flow:
+      - Before: plugins_loaded:20 → Tool Registry init → wp_mcp_ai_register_tools fires → Pro addon loads ❌ TOO LATE
+      - After: Pro addon loads → add_action('wp_mcp_ai_register_tools') → Tool Registry init → Action fires → Pro hooks run ✅
+    - Solution: Load Pro addon BEFORE tools-init.php (lines 451-459 in mcp-ai-wpoos.php)
+    - Changes:
+      1. mcp-ai-wpoos.php: Added Pro addon loading between Tool Registry and tools-init.php
+      2. addons/pro/wp-mcp-ai-pro.php: Smart initialization (immediate or scheduled based on plugins_loaded status)
+      3. Updated comments documenting new loading order
+    - Verification:
+      - Automated: bin/verify-pro-tools-fix.sh (5 checks: Pro addon exists, correct order, smart init, 6 Pro tools, filter registration)
+      - Manual: Check settings UI for Pro tools without wp-config.php flags
+      - PHPUnit: vendor/bin/phpunit tests/test-pro-tools-loading.php
+    - Pro tools: 6 tools (product_actualization, lookup_product_price, woo_products, woo_orders, jetengine, elementor)
+    - Tool dependencies respected (only register if requirements met)
+    - Impact: Pro tools show in settings, appear in registry, usable by assistants, full version works, backward compatible with separate Pro plugin
+    - Testing checklist: 7 items (all passing)
+    - Related files: mcp-ai-wpoos.php, wp-mcp-ai-pro.php, tools-init.php, class-wp-mcp-ai-tool-registry.php, tests, verification script
+    - Comprehensive fix documentation
+    - Current and accurate
+
+### Cumulative Progress
+
+**Total Sessions:** 34
+**Session 1-33:** (See previous summaries)
+**Session 34:** +9 documents (**70.2% cumulative**)
+**Total Reviewed:** 386 documents
+
+### Milestone: 70.2% Complete! 🎉
+
+**Achievement Highlights:**
+- 386 of 551 documents reviewed (70.2%)
+- **Passed 70% completion milestone!**
+- All Session 34 target documents reviewed (9 complete)
+- Tool documentation comprehensive (update patterns, results integration, profession recommendations)
+- Streaming architecture thoroughly documented (SoC refactoring, feature implementation, status preview)
+- Three critical fixes documented (async tool_call_id, settings save, Pro tools loading)
+- Zero critical documentation gaps identified
+
+---
+
+**Last Updated:** December 21, 2025 - **Session 34**
+**Session Status:** ✅ COMPLETE (386 docs reviewed - 70.2% of total)
+
+**Session 32 Status:** ✅ COMPLETE
+**Session 33 Status:** ✅ COMPLETE
+**Session 34 Status:** ✅ COMPLETE
