@@ -207,6 +207,57 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test Hugging Face provider test without API key.
+	 */
+	public function test_huggingface_test_without_api_key() {
+		// Ensure Hugging Face API key is not set.
+		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+		unset( $settings['huggingface_api_key'] );
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Simulate AJAX request.
+		$_POST['action']   = 'wp_mcp_ai_test_provider';
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+		$_POST['provider'] = 'huggingface';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected exception.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Hugging Face test without API key should fail' );
+		$this->assertStringContainsString( 'not configured', $response['data']['message'], 'Error message should mention configuration' );
+	}
+
+	/**
+	 * Test Hugging Face provider test without endpoint URL.
+	 */
+	public function test_huggingface_test_without_endpoint() {
+		// Ensure Hugging Face endpoint is not set but API key is.
+		$settings                             = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['huggingface_api_key']      = 'hf_test_key';
+		$settings['huggingface_endpoint_url'] = '';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Simulate AJAX request.
+		$_POST['action']   = 'wp_mcp_ai_test_provider';
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+		$_POST['provider'] = 'huggingface';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected exception.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Hugging Face test without endpoint should fail' );
+		$this->assertStringContainsString( 'not configured', $response['data']['message'], 'Error message should mention configuration' );
+	}
+
+	/**
 	 * Test that non-admin users cannot access the diagnostic test.
 	 */
 	public function test_non_admin_cannot_access_test() {
