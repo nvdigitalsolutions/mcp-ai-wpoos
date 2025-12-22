@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/setup-igcse-teams-professionals',
-        'version' => 'dev-copilot/setup-igcse-teams-professionals',
-        'reference' => '7706669a80d5c268b65652e1d8181165b18edb1b',
+        'pretty_version' => 'dev-copilot/update-default-tools-selection',
+        'version' => 'dev-copilot/update-default-tools-selection',
+        'reference' => 'f88f2121f03690c613419fb53db79b17261edc4c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/setup-igcse-teams-professionals',
-            'version' => 'dev-copilot/setup-igcse-teams-professionals',
-            'reference' => '7706669a80d5c268b65652e1d8181165b18edb1b',
+            'pretty_version' => 'dev-copilot/update-default-tools-selection',
+            'version' => 'dev-copilot/update-default-tools-selection',
+            'reference' => 'f88f2121f03690c613419fb53db79b17261edc4c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
