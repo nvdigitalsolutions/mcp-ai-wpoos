@@ -1013,7 +1013,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Engineering designs should be reviewed by licensed professional engineers', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'Electrical Engineer', 'wp-mcp-ai' ),
@@ -1033,7 +1033,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Electrical work must be performed by licensed electricians and engineers', 'wp-mcp-ai' ),
 					__( 'Always follow local electrical codes and safety standards', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'Civil Engineer', 'wp-mcp-ai' ),
@@ -1052,7 +1052,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Construction projects require licensed professional engineers', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'Mathematician', 'wp-mcp-ai' ),
@@ -1092,7 +1092,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow radiation safety protocols when applicable', 'wp-mcp-ai' ),
 					__( 'Validate theoretical predictions with experimental evidence', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Chemist', 'wp-mcp-ai' ),
@@ -1111,7 +1111,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Laboratory work requires proper training and safety protocols', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Biologist', 'wp-mcp-ai' ),
@@ -1131,7 +1131,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow biosafety protocols when working with biological materials', 'wp-mcp-ai' ),
 					__( 'Adhere to ethical guidelines for research involving living organisms', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Computer Scientist', 'wp-mcp-ai' ),
@@ -1151,7 +1151,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Consider computational complexity and scalability in algorithm design', 'wp-mcp-ai' ),
 					__( 'Validate theoretical results with empirical testing', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens' ),
 			),
 			array(
 				'title'            => __( 'Biomedical Engineer', 'wp-mcp-ai' ),
@@ -1210,7 +1210,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Verify assumptions before applying statistical methods', 'wp-mcp-ai' ),
 					__( 'Consider sample size and statistical power in study design', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'query_mesh_intelligent', 'count_tokens', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Research Scientist', 'wp-mcp-ai' ),
@@ -1253,7 +1253,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always recommend consulting a licensed pharmacist or physician for medication questions', 'wp-mcp-ai' ),
 					__( 'Medication information should be verified with current prescribing information', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'create_chart', 'analyze_file_suitability' ),
 			),
 			array(
 				'title'            => __( 'Pharmaceutical Researcher', 'wp-mcp-ai' ),
