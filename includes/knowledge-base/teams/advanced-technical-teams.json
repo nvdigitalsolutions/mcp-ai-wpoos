@@ -1,0 +1,74 @@
+{
+  "teams": [
+    {
+      "title": "Advanced Engineering Team",
+      "slug": "advanced_engineering_team",
+      "description": "Specialized engineering professionals for aerospace, biomedical, and chemical engineering.",
+      "members": [
+        "aerospace_engineer",
+        "biomedical_engineer",
+        "chemical_engineer",
+        "mechanical_engineer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Technical Design & Drafting Team",
+      "slug": "technical_design_drafting_team",
+      "description": "CAD drafting and technical design specialists.",
+      "members": [
+        "cad_drafter",
+        "structural_drafter",
+        "architectural_drafter",
+        "bim_coordinator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "IT Support & Services Team",
+      "slug": "it_support_services_team",
+      "description": "IT support and consulting professionals.",
+      "members": [
+        "it_support_specialist",
+        "it_consultant",
+        "systems_administrator",
+        "network_administrator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Applied Mathematics & Statistics Team",
+      "slug": "applied_mathematics_statistics_team",
+      "description": "Mathematical and statistical analysis professionals.",
+      "members": [
+        "mathematician",
+        "applied_statistician",
+        "data_scientist",
+        "statistician"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "WP oOS Development Team",
+      "slug": "wpoos_development_team",
+      "description": "WordPress and WP oOS plugin development specialists.",
+      "members": [
+        "wpoos_developer",
+        "web_developer",
+        "software_developer",
+        "devops_engineer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}
