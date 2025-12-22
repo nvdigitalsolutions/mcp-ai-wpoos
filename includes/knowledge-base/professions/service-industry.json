@@ -23,7 +23,17 @@
         "Document employee training"
       ],
       "knowledge_base": "### Restaurant Management\n- Control food costs through inventory management\n- Train staff on food safety and customer service\n- Create efficient workflows in kitchen and front of house\n- Monitor customer feedback and satisfaction\n- Manage labor costs effectively\n- Maintain cleanliness and sanitation standards",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "send_group_email",
+        "get_woo_products",
+        "get_woo_recent_orders",
+        "create_chart",
+        "moderate_content",
+        "get_jetformbuilder_forms"
+      ]
     },
     {
       "title": "Chef",
@@ -46,7 +56,15 @@
         "Use proper knife safety techniques"
       ],
       "knowledge_base": "### Culinary Arts\n- Master fundamental cooking techniques\n- Understand flavor profiles and seasoning\n- Maintain cleanliness and organization (mise en place)\n- Source quality ingredients\n- Balance creativity with consistency\n- Train and mentor kitchen staff",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "generate_openai_image",
+        "generate_image_caption",
+        "create_chart",
+        "send_group_email"
+      ]
     },
     {
       "title": "Hotel Manager",
@@ -69,7 +87,17 @@
         "Protect guest privacy and data"
       ],
       "knowledge_base": "### Hotel Management\n- Prioritize guest satisfaction and experience\n- Optimize room rates and occupancy\n- Maintain property to high standards\n- Train staff in hospitality best practices\n- Handle complaints professionally and promptly\n- Monitor online reviews and reputation",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "send_group_email",
+        "get_woo_products",
+        "get_woo_recent_orders",
+        "create_chart",
+        "moderate_content",
+        "get_jetformbuilder_forms"
+      ]
     },
     {
       "title": "Hairstylist",
@@ -92,7 +120,14 @@
         "Be aware of chemical safety"
       ],
       "knowledge_base": "### Hair Styling\n- Consult with clients to understand desired results\n- Assess hair condition before treatments\n- Use quality products appropriate for hair type\n- Maintain sharp, sanitized tools\n- Stay current with trends and techniques\n- Build long-term client relationships",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "moderate_content",
+        "create_chart"
+      ]
     },
     {
       "title": "Personal Trainer",
@@ -115,7 +150,14 @@
         "Maintain liability insurance"
       ],
       "knowledge_base": "### Personal Training\n- Assess clients' fitness levels and goals\n- Design progressive, individualized programs\n- Teach proper exercise form and technique\n- Monitor progress and adjust programs\n- Motivate and encourage clients\n- Stay current with fitness research and certifications",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "moderate_content",
+        "create_chart"
+      ]
     },
     {
       "title": "Event Planner",
@@ -138,7 +180,16 @@
         "Document all agreements in writing"
       ],
       "knowledge_base": "### Event Planning\n- Understand client vision and budget\n- Create detailed timelines and checklists\n- Build relationships with reliable vendors\n- Anticipate potential issues and plan solutions\n- Coordinate all logistics seamlessly\n- Follow up after events for feedback",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "send_group_email",
+        "create_cron_job",
+        "list_cron_jobs",
+        "create_chart",
+        "get_jetformbuilder_forms"
+      ]
     },
     {
       "title": "Customer Service Representative",
@@ -161,7 +212,15 @@
         "Document interactions accurately"
       ],
       "knowledge_base": "### Customer Service\n- Listen actively to customer concerns\n- Remain calm and professional\n- Take ownership of issues\n- Provide clear, accurate information\n- Follow through on commitments\n- Turn negative experiences into positive ones",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "send_group_email",
+        "get_woo_products",
+        "get_woo_recent_orders"
+      ]
     },
     {
       "title": "Retail Manager",
@@ -184,7 +243,13 @@
         "Follow pricing and promotion policies"
       ],
       "knowledge_base": "### Retail Management\n- Optimize product placement and displays\n- Monitor sales metrics and adjust strategies\n- Train staff on product knowledge and sales\n- Control shrinkage and losses\n- Create positive shopping experience\n- Balance customer service with efficiency",
-      "default_tools": ["web_search", "search_content", "save_post", "get_woo_products", "get_woo_recent_orders"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_woo_products",
+        "get_woo_recent_orders"
+      ]
     },
     {
       "title": "Bartender",
@@ -207,7 +272,13 @@
         "Maintain sanitation standards"
       ],
       "knowledge_base": "### Bartending\n- Learn classic cocktail recipes and techniques\n- Practice speed and efficiency\n- Engage with customers professionally\n- Monitor alcohol consumption responsibly\n- Maintain clean, organized bar\n- Upsell appropriately",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "moderate_content",
+        "create_chart",
+        "get_recent_posts"
+      ]
     },
     {
       "title": "Flight Attendant",
@@ -230,7 +301,14 @@
         "Handle emergencies calmly and efficiently"
       ],
       "knowledge_base": "### Flight Attendant Services\n- Conduct pre-flight safety checks\n- Demonstrate safety equipment properly\n- Provide excellent customer service at altitude\n- Handle medical emergencies professionally\n- De-escalate conflicts calmly\n- Work effectively with cabin crew team",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "moderate_content",
+        "get_open_meteo_forecast",
+        "search_places"
+      ]
     },
     {
       "title": "Tour Guide",
@@ -253,7 +331,14 @@
         "Follow site rules and regulations"
       ],
       "knowledge_base": "### Tour Guiding\n- Research and know your subject thoroughly\n- Engage audience with storytelling\n- Adapt tour to audience interests and needs\n- Manage group dynamics effectively\n- Ensure everyone can hear and see\n- Handle questions professionally",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "moderate_content",
+        "get_open_meteo_forecast",
+        "search_places"
+      ]
     },
     {
       "title": "Massage Therapist",
@@ -276,7 +361,14 @@
         "Recognize contraindications for massage"
       ],
       "knowledge_base": "### Massage Therapy\n- Assess client needs and goals\n- Use appropriate pressure and techniques\n- Maintain professional boundaries\n- Follow sanitation and hygiene protocols\n- Communicate clearly during sessions\n- Practice self-care to prevent injury",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "moderate_content",
+        "create_chart"
+      ]
     }
   ]
 }

@@ -21,7 +21,16 @@
         "Consult with school administrators and parents for student-specific concerns"
       ],
       "knowledge_base": "### Elementary Education\n- Create engaging, age-appropriate lessons\n- Foster a positive learning environment\n- Use multiple teaching modalities (visual, auditory, kinesthetic)\n- Build foundational skills in reading, writing, and math\n- Encourage curiosity and love of learning\n- Communicate regularly with parents and guardians",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "High School Teacher",
@@ -42,7 +51,16 @@
         "Sensitive topics require appropriate handling and parental awareness"
       ],
       "knowledge_base": "### High School Education\n- Prepare students for college and careers\n- Develop critical thinking and analytical skills\n- Use project-based and inquiry-based learning\n- Incorporate technology effectively\n- Provide constructive feedback and assessment\n- Support students' social-emotional development",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Special Education Teacher",
@@ -64,7 +82,15 @@
         "Collaborate with specialists and related service providers"
       ],
       "knowledge_base": "### Special Education\n- Develop and implement individualized goals\n- Use evidence-based interventions\n- Create accessible learning materials\n- Foster independence and self-advocacy\n- Collaborate with families and specialists\n- Monitor progress and adjust instruction accordingly",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms"
+      ]
     },
     {
       "title": "College Professor",
@@ -85,7 +111,16 @@
         "Research practices must follow institutional review board guidelines"
       ],
       "knowledge_base": "### Higher Education\n- Balance teaching, research, and service responsibilities\n- Encourage independent thinking and scholarship\n- Mentor students in academic and career development\n- Contribute to the field through research and publication\n- Stay current with developments in your discipline\n- Foster intellectual discourse and debate",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_openai_image",
+        "count_tokens"
+      ]
     },
     {
       "title": "Corporate Trainer",
@@ -106,7 +141,16 @@
         "Consider diverse learning styles and backgrounds"
       ],
       "knowledge_base": "### Corporate Training\n- Identify skill gaps and training needs\n- Design engaging, interactive training sessions\n- Use real-world examples and scenarios\n- Incorporate technology and multimedia\n- Measure training effectiveness and outcomes\n- Provide ongoing support and reinforcement",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_openai_image",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Instructional Designer",
@@ -127,7 +171,16 @@
         "Align design with learning objectives and outcomes"
       ],
       "knowledge_base": "### Instructional Design\n- Apply learning theories to design\n- Create clear learning objectives and outcomes\n- Use appropriate media and technology\n- Design for accessibility and inclusion\n- Conduct formative and summative evaluation\n- Iterate based on user feedback and data",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "generate_video_caption",
+        "create_chart",
+        "get_jetformbuilder_forms"
+      ]
     },
     {
       "title": "School Counselor",
@@ -149,7 +202,16 @@
         "Mandatory reporting of abuse or safety concerns"
       ],
       "knowledge_base": "### School Counseling\n- Support students' academic success\n- Promote career exploration and planning\n- Address social-emotional needs\n- Collaborate with teachers, parents, and community resources\n- Advocate for equity and access\n- Respond to crises and emergencies appropriately",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job",
+        "list_cron_jobs",
+        "get_site_summary"
+      ]
     },
     {
       "title": "Educational Administrator",
@@ -170,7 +232,15 @@
         "Maintain legal and ethical standards in all decisions"
       ],
       "knowledge_base": "### Educational Administration\n- Set clear vision and goals for the institution\n- Foster positive school culture and climate\n- Support teacher effectiveness and professional growth\n- Manage resources efficiently and equitably\n- Engage families and community stakeholders\n- Use data to inform decision-making",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_openai_speech"
+      ]
     },
     {
       "title": "ESL Teacher",
@@ -191,7 +261,15 @@
         "Assess language proficiency before instruction"
       ],
       "knowledge_base": "### ESL Teaching\n- Use comprehensible input and scaffolding\n- Develop all four language skills (listening, speaking, reading, writing)\n- Incorporate students' cultural experiences\n- Provide visual and contextual support\n- Create safe environment for language practice\n- Celebrate linguistic and cultural diversity",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "send_group_email",
+        "get_jetformbuilder_forms",
+        "generate_openai_speech"
+      ]
     },
     {
       "title": "Educational Psychologist",
@@ -212,7 +290,15 @@
         "Assessment results should be interpreted by qualified professionals"
       ],
       "knowledge_base": "### Educational Psychology\n- Apply learning theories to educational practice\n- Use evidence-based assessment tools\n- Design interventions based on individual needs\n- Collaborate with teachers and families\n- Conduct research to improve educational outcomes\n- Consider cognitive, social, and emotional factors in learning",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "create_chart",
+        "send_group_email",
+        "get_jetformbuilder_forms"
+      ]
     }
   ]
 }

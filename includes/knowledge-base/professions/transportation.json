@@ -23,7 +23,14 @@
         "Never compromise safety for schedule"
       ],
       "knowledge_base": "### Aviation\n- Complete thorough pre-flight inspections\n- Plan flights with adequate fuel reserves\n- Monitor weather continuously\n- Follow standard operating procedures\n- Communicate clearly with ATC and crew\n- Maintain currency and proficiency",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Truck Driver",
@@ -46,7 +53,14 @@
         "Never operate while fatigued or impaired"
       ],
       "knowledge_base": "### Commercial Trucking\n- Perform daily vehicle inspections\n- Secure cargo properly to prevent shifting\n- Maintain logbook accurately\n- Plan routes considering restrictions and regulations\n- Practice defensive driving\n- Maintain vehicle properly",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Train Engineer",
@@ -69,7 +83,14 @@
         "Emergency procedures must be memorized"
       ],
       "knowledge_base": "### Railroad Operations\n- Know and follow all operating rules\n- Monitor track conditions and signals\n- Communicate clearly with dispatch and crew\n- Handle train smoothly to protect cargo and passengers\n- Conduct inspections before and after runs\n- Respond appropriately to emergencies",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Ship Captain",
@@ -92,7 +113,14 @@
         "Environmental regulations must be followed"
       ],
       "knowledge_base": "### Maritime Operations\n- Plan voyages thoroughly with safety margins\n- Monitor weather and sea conditions continuously\n- Maintain ship systems and equipment\n- Ensure crew training and certification\n- Follow collision regulations (COLREGS)\n- Document all operations and incidents",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Bus Driver",
@@ -115,7 +143,14 @@
         "Follow schedules while maintaining safety"
       ],
       "knowledge_base": "### Bus Operations\n- Conduct pre-trip vehicle inspections\n- Assist passengers with special needs\n- Maintain schedule while driving safely\n- Communicate clearly with passengers\n- Handle difficult situations calmly\n- Report maintenance issues promptly",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Air Traffic Controller",
@@ -138,7 +173,14 @@
         "Fatigue management is critical"
       ],
       "knowledge_base": "### Air Traffic Control\n- Maintain required aircraft separation\n- Use standard phraseology for clarity\n- Prioritize aircraft in distress\n- Coordinate with other controllers\n- Monitor multiple aircraft simultaneously\n- Stay calm under pressure",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "moderate_content",
+        "create_chart",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Taxi/Rideshare Driver",
@@ -161,7 +203,14 @@
         "Comply with traffic laws"
       ],
       "knowledge_base": "### Passenger Transport\n- Know local streets and traffic patterns\n- Maintain clean, safe vehicle\n- Provide professional, courteous service\n- Drive defensively and safely\n- Protect passenger privacy\n- Handle cash and payments securely",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "search_places",
+        "send_group_email",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Logistics Coordinator",
@@ -184,7 +233,11 @@
         "Plan for delays and contingencies"
       ],
       "knowledge_base": "### Logistics Management\n- Optimize routes for efficiency and cost\n- Track shipments in real-time\n- Coordinate with carriers and warehouses\n- Manage documentation and customs\n- Resolve shipping issues quickly\n- Analyze metrics to improve operations",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post"
+      ]
     },
     {
       "title": "Dispatcher",
@@ -207,7 +260,14 @@
         "Stay calm under pressure"
       ],
       "knowledge_base": "### Dispatching\n- Monitor all units and their status\n- Assign calls efficiently\n- Communicate clearly and concisely\n- Maintain accurate records\n- Coordinate with other agencies as needed\n- Handle multiple situations simultaneously",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "get_open_meteo_forecast",
+        "send_group_email",
+        "create_cron_job",
+        "moderate_content"
+      ]
     },
     {
       "title": "Warehouse Manager",
@@ -230,7 +290,11 @@
         "Implement proper security measures"
       ],
       "knowledge_base": "### Warehouse Management\n- Optimize layout for efficiency\n- Implement inventory control systems\n- Train staff on safety and procedures\n- Maintain equipment properly\n- Monitor productivity metrics\n- Ensure accurate receiving and shipping",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post"
+      ]
     }
   ]
 }

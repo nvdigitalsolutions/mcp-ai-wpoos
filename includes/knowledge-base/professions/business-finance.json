@@ -142,7 +142,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "send_group_email",
+        "create_chart",
+        "get_jetformbuilder_forms",
+        "moderate_content"
       ]
     },
     {
@@ -168,7 +172,12 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "create_cron_job",
+        "list_cron_jobs",
+        "send_group_email",
+        "get_jetformbuilder_forms"
       ]
     },
     {
@@ -194,7 +203,13 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "get_woo_products",
+        "get_woo_recent_orders",
+        "create_cron_job",
+        "get_rankmath_seo"
       ]
     },
     {
@@ -220,7 +235,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "get_woo_products",
+        "get_woo_recent_orders"
       ]
     },
     {
@@ -246,7 +265,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job",
+        "get_system_logs"
       ]
     },
     {

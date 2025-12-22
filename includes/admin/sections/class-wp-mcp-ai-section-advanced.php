@@ -57,6 +57,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		public function get_fields() {
 			return array(
+				'profession_default_tool_count' => array(
+					'type'        => 'number',
+					'label'       => __( 'Recommended Default Tools per Profession', 'wp-mcp-ai' ),
+					'description' => __( 'Recommended number of default tools to assign per profession. This is a guideline for profession configuration - actual tool count can vary based on profession needs. Default: 10', 'wp-mcp-ai' ),
+					'default'     => 10,
+					'min'         => 3,
+					'max'         => 20,
+					'placeholder' => '10',
+				),
 				'memory_max_file_bytes'       => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),

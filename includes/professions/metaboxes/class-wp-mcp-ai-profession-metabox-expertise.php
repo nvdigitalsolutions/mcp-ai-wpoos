@@ -118,7 +118,29 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										<?php esc_html_e( 'Reset to Initial', 'wp-mcp-ai' ); ?>
 									</button>
 									<span id="tools-selected-count" style="margin-left: 10px; color: #666;">
-										<strong><?php echo is_array( $default_tools ) ? count( $default_tools ) : 0; ?></strong> <?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?>
+										<?php
+										$current_count = is_array( $default_tools ) ? count( $default_tools ) : 0;
+										$settings = get_option( 'wp_mcp_ai_settings', array() );
+										$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
+										
+										// Determine color based on count
+										$count_color = '#666'; // Default gray
+										if ( $current_count > $recommended_count + 5 ) {
+											$count_color = '#d63638'; // Red - too many
+										} elseif ( $current_count >= $recommended_count - 2 && $current_count <= $recommended_count + 2 ) {
+											$count_color = '#00a32a'; // Green - optimal
+										} elseif ( $current_count < 3 ) {
+											$count_color = '#d63638'; // Red - too few
+										}
+										?>
+										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
+										<span id="tools-count-label"><?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?></span>
+										<small style="color: #999; margin-left: 5px;">
+											(<?php 
+											/* translators: %d: Recommended tool count */
+											printf( esc_html__( 'recommended: %d', 'wp-mcp-ai' ), $recommended_count ); 
+											?>)
+										</small>
 									</span>
 								</div>
 							</div>
@@ -164,7 +186,15 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 							</div>
 
 							<p class="description" style="margin-top: 10px;">
-								<?php esc_html_e( 'Select the default tools that should be pre-selected when creating assistants with this profession. Choose 4-8 essential tools that align with the profession\'s expertise.', 'wp-mcp-ai' ); ?>
+								<?php
+								$settings = get_option( 'wp_mcp_ai_settings', array() );
+								$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
+								printf(
+									/* translators: %d: Recommended tool count from settings */
+									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'wp-mcp-ai' ),
+									$recommended_count
+								);
+								?>
 							</p>
 						<?php else : ?>
 							<p class="description">

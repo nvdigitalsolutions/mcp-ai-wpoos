@@ -115,7 +115,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_music",
+        "generate_openai_speech",
+        "send_group_email",
+        "create_cron_job"
       ]
     },
     {
@@ -141,7 +145,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "moderate_content",
+        "count_tokens",
+        "get_rankmath_seo",
+        "generate_image_caption"
       ]
     },
     {
@@ -167,7 +175,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_speech",
+        "analyze_video",
+        "send_group_email",
+        "create_cron_job"
       ]
     },
     {
@@ -223,7 +235,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "generate_sora_video",
+        "generate_veo_video"
       ]
     },
     {
@@ -250,7 +266,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "moderate_content",
+        "count_tokens",
+        "generate_image_caption",
+        "get_rankmath_seo"
       ]
     },
     {
@@ -278,8 +298,12 @@
         "web_search",
         "search_content",
         "save_post",
-        "post_facebook_instagram",
-        "post_linkedin_update"
+        "generate_openai_image",
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image",
+        "moderate_content",
+        "create_chart"
       ]
     },
     {
@@ -306,7 +330,10 @@
         "web_search",
         "search_content",
         "save_post",
-        "send_group_email"
+        "generate_openai_image",
+        "generate_gemini_image",
+        "send_group_email",
+        "moderate_content"
       ]
     },
     {
@@ -332,7 +359,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "create_chart",
+        "count_tokens"
       ]
     },
     {
@@ -495,9 +526,10 @@
         "web_search",
         "search_content",
         "save_post",
+        "generate_sora_video",
+        "generate_veo_video",
         "create_chart",
-        "send_group_email",
-        "create_cron_job"
+        "send_group_email"
       ]
     },
     {
@@ -522,8 +554,10 @@
         "web_search",
         "search_content",
         "save_post",
+        "generate_openai_image",
         "count_tokens",
-        "search_attachments"
+        "moderate_content",
+        "generate_video_caption"
       ]
     },
     {
