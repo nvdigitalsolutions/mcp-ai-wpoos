@@ -4603,8 +4603,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$system_prompt = $role_description;
 			}
 
+			// Load the complete profession playbook (includes global, category, and profession-specific guidelines).
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
+			}
+
+			$playbook_loader = new WP_MCP_AI_Profession_Playbook_Loader();
+			$playbook        = $playbook_loader->build_playbook( $profession_id );
+
+			// Add playbook to system prompt if available.
+			if ( ! empty( $playbook ) ) {
+				$system_prompt .= "\n\n" . __( 'Professional Playbook:', 'wp-mcp-ai' ) . "\n" . $playbook;
+			}
+
+			// Also include the knowledge_base meta field if it has additional content not in the playbook.
 			if ( ! empty( $knowledge_base ) ) {
-				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+				$system_prompt .= "\n\n" . __( 'Additional Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
 			}
 
 			// Merge profession configuration with assistant configuration.
