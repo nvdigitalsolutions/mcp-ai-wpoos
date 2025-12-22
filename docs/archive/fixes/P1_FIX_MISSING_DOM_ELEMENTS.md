@@ -168,9 +168,9 @@ includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-chats-widget.php |  
 
 ## Related Documentation
 
-- [localStorage Quota and Export](../docs/localStorage-quota-and-export.md)
-- [Session Management Features](../docs/session-management-features.md)
-- [Implementation Summary](../IMPLEMENTATION_SUMMARY_SESSION_MANAGEMENT.md)
+- [localStorage Quota and Export](../../guides/user/chat/localStorage-quota-and-export.md)
+- [Session Management Features](../../guides/user/chat/session-management-features.md)
+- [Implementation Summary](../summaries/IMPLEMENTATION_SUMMARY_SESSION_MANAGEMENT.md)
 
 ## Timeline
 

@@ -1,0 +1,17 @@
+{
+  "teams": [
+    {
+      "title": "Financial Administration Team",
+      "slug": "financial_administration_team",
+      "description": "Bookkeeping and financial administration professionals.",
+      "members": [
+        "bookkeeper",
+        "accountant",
+        "financial_advisor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

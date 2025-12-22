@@ -349,10 +349,10 @@ The foundation built in Phases 1-6 makes Phase 7 implementation straightforward,
 
 ## Quick Links
 
-📖 **[Full Phase 7 Plan](docs/PHASE-7-ANALYTICS-PLAN.md)** - Complete technical specification  
-⚡ **[Quick Reference](docs/QUICK-REFERENCE-PHASE-7.md)** - Fast-access guide  
-📊 **[Current Status](TOKEN-USAGE-MANAGER-IMPLEMENTATION.md)** - Phases 1-6 summary  
-📚 **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Master document list  
+📖 **[Full Phase 7 Plan](../../features/analytics/PHASE-7-ANALYTICS-PLAN.md)** - Complete technical specification  
+⚡ **[Quick Reference](../../features/analytics/QUICK-REFERENCE-PHASE-7.md)** - Fast-access guide  
+📊 **[Current Status](../implementations/TOKEN-USAGE-MANAGER-IMPLEMENTATION.md)** - Phases 1-6 summary  
+📚 **[Documentation Index](../../DOCUMENTATION_INDEX.md)** - Master document list  
 
 ---
 

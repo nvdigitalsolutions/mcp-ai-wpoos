@@ -19,9 +19,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
-	const DEFAULT_MODEL           = 'gpt-image-1';
+	const DEFAULT_MODEL           = 'gpt-image-1.5';
 	const DEFAULT_SIZE            = '1024x1024';
-	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1. DALL-E uses 'standard'.
+	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1/1.5. DALL-E uses 'standard'.
 	const DEFAULT_FORMAT          = 'png';
 	const DEFAULT_RESPONSE_FORMAT = 'b64_json';
 
@@ -75,6 +75,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Image quality setting.', 'wp-mcp-ai' ),
 					'enum'        => array_values( self::get_allowed_qualities() ),
 					'default'     => $defaults['quality'],
+				),
+				'style'           => array(
+					'type'        => 'string',
+					'description' => __( 'Style preset for DALL-E 3 models. "vivid" produces hyper-real and dramatic images. "natural" produces more natural, less hyper-real looking images.', 'wp-mcp-ai' ),
+					'enum'        => array( 'natural', 'vivid' ),
 				),
 				'response_format' => array(
 					'type'        => 'string',
@@ -257,6 +262,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'size'    => $size,
 			'quality' => $quality,
 		);
+
+		// Add style parameter if provided and model supports it (DALL-E 3 only).
+		if ( isset( $arguments['style'] ) && '' !== $arguments['style'] ) {
+			$style = sanitize_key( $arguments['style'] );
+			if ( in_array( $style, array( 'natural', 'vivid' ), true ) && WP_MCP_AI_OpenAI_Client::image_model_supports_style( $model ) ) {
+				$options['style'] = $style;
+			}
+		}
 
 		if ( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
 			$options['response_format'] = $response_format;
@@ -487,7 +500,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 *
 	 * Different OpenAI image models support different quality parameter values:
 	 * - DALL-E 2 and DALL-E 3 use: 'standard', 'hd'
-	 * - gpt-image-1 uses: 'low', 'medium', 'high', 'auto'
+	 * - gpt-image-1 and gpt-image-1.5 use: 'low', 'medium', 'high', 'auto'
 	 *
 	 * @param string $model Image model identifier.
 	 * @return array Array of allowed quality values for the model.
@@ -495,8 +508,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	protected function get_model_allowed_qualities( $model ) {
 		$model = strtolower( sanitize_text_field( $model ) );
 
-		// gpt-image-1 uses a different set of quality values.
-		if ( 'gpt-image-1' === $model ) {
+		// gpt-image-1 and gpt-image-1.5 use a different set of quality values.
+		if ( 'gpt-image-1' === $model || 'gpt-image-1.5' === $model ) {
 			return array( 'low', 'medium', 'high', 'auto' );
 		}
 
@@ -513,8 +526,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	protected function get_model_default_quality( $model ) {
 		$model = strtolower( sanitize_text_field( $model ) );
 
-		// gpt-image-1 defaults to 'medium' quality.
-		if ( 'gpt-image-1' === $model ) {
+		// gpt-image-1 and gpt-image-1.5 default to 'medium' quality.
+		if ( 'gpt-image-1' === $model || 'gpt-image-1.5' === $model ) {
 			return 'medium';
 		}
 
@@ -899,13 +912,17 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'openai' ),
-				'models'    => array( 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
+				'models'    => array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(
 				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'size', 'quality', 'response_format', 'file_name', 'timeout' ),
+				'optional_fields'   => array( 'model', 'size', 'quality', 'style', 'response_format', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
+				'style_support'     => array(
+					'supported_models' => array( 'dall-e-3' ),
+					'note'             => 'The style parameter (natural or vivid) is only supported by DALL-E 3. Other models (gpt-image-1, gpt-image-1.5, dall-e-2) will silently ignore this parameter.',
+				),
 			),
 			'rate_limits'           => array(
 				'requests_per_minute' => 5,
@@ -986,7 +1003,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Estimate cost for image generation.
 	 *
-	 * Based on OpenAI's pricing as of 2024-2025:
+	 * Based on OpenAI's pricing as of December 2024:
+	 * - gpt-image-1.5: $5/1M input tokens, $40/1M output tokens
+	 *   - Low quality (1024x1024): ~$0.009
+	 *   - Medium quality (1024x1024): ~$0.034
+	 *   - High quality (1024x1024): ~$0.133
 	 * - gpt-image-1: $5/1M input tokens, $40/1M output tokens
 	 *   - Low quality (1024x1024): ~$0.011
 	 *   - Medium quality (1024x1024): ~$0.042
@@ -1003,6 +1024,27 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function estimate_image_cost( $model, $size, $quality ) {
 		$model = strtolower( $model );
+
+		// gpt-image-1.5 pricing (token-based, ~20% cheaper than gpt-image-1).
+		if ( 'gpt-image-1.5' === $model ) {
+			$base_cost = 0.034; // Medium quality 1024x1024.
+
+			// Adjust for quality.
+			if ( 'low' === $quality ) {
+				$base_cost = 0.009;
+			} elseif ( 'high' === $quality ) {
+				$base_cost = 0.133;
+			} elseif ( 'auto' === $quality ) {
+				$base_cost = 0.034; // Assume medium.
+			}
+
+			// Adjust for larger sizes (approximately 1.5x cost for larger).
+			if ( in_array( $size, array( '1024x1536', '1536x1024' ), true ) ) {
+				$base_cost *= 1.5;
+			}
+
+			return $base_cost;
+		}
 
 		// gpt-image-1 pricing (token-based).
 		if ( 'gpt-image-1' === $model ) {

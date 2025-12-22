@@ -26,7 +26,7 @@
    - Complete checklists
    - Code examples
 
-4. **[ENHANCEMENT_ROADMAP_VISUAL.md](ENHANCEMENT_ROADMAP_VISUAL.md)** 📊 **Visual Guide**
+4. **[ENHANCEMENT_ROADMAP_VISUAL.md](../ENHANCEMENT_ROADMAP_VISUAL.md)** 📊 **Visual Guide**
    - Timeline diagrams
    - Architecture flows
    - Decision matrix

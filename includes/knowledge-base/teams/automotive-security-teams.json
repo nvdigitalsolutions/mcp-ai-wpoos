@@ -1,0 +1,31 @@
+{
+  "teams": [
+    {
+      "title": "Automotive & Mechanics Team",
+      "slug": "automotive_mechanics_team",
+      "description": "Automotive repair and maintenance specialists.",
+      "members": [
+        "automotive_mechanic",
+        "machinist",
+        "heavy_equipment_operator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Security & Facility Services Team",
+      "slug": "security_facility_services_team",
+      "description": "Security and facility management professionals.",
+      "members": [
+        "security_guard",
+        "heavy_equipment_operator",
+        "roofer",
+        "construction_painter"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

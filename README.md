@@ -88,7 +88,9 @@
 **WP oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, and Ollama (Local).
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-The plugin works standalone with **71 core tools** (base version) and optionally extends through the **Pro addon**, which adds **38 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **109 built-in tools**.
+The plugin works standalone with **95 core tools** (base version) and optionally extends through the **Pro addon**, which adds **38 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **133 built-in tools**.
+
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted as the same tool, not separately. The base includes 95 unique tools (plus 24 validated variants = 119 files total).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -134,7 +136,7 @@ The orchestration layer makes WP oOS unique in the WordPress ecosystem by solvin
 
 WP oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
-> **📖 For a detailed explanation of how WP oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
+> **📖 For a detailed explanation of how WP oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
 ### Why This Architecture Is Novel: Overcoming PHP's Limitations
 
@@ -159,7 +161,7 @@ WP oOS implements a comprehensive orchestration layer for managing AI operations
 | Request-based lifecycle | SSE controller implements streaming within request boundaries |
 | No background workers | WordPress cron system simulates async job processing |
 
-This makes WP oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
+This makes WP oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
 
 ### Computer-Implemented Resource Management
 
@@ -369,7 +371,7 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Publish Google Business Update 🌟 | `post_google_business_update` | Creates Google Business Profile local posts with summaries, language codes, and optional call-to-action links. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-google-business-update.php†L15-L168】|
 | Publish LinkedIn Update 🌟 | `post_linkedin_update` | Sends LinkedIn UGC posts for members or organisations with optional share URLs via the LinkedIn Marketing API. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-linkedin-update.php†L15-L160】|
 | Publish TikTok Video 🌟 | `post_tiktok_video` | Submits hosted video assets to TikTok’s Open API share endpoint with optional captions. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-tiktok-video.php†L15-L152】|
-| Send Group Email | `send_group_email` | Orchestrates structured or free-form email campaigns with capability-based audience limits and logging hooks. [Full documentation](docs/send-group-email-usage.md).【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L650】|
+| Send Group Email | `send_group_email` | Orchestrates structured or free-form email campaigns with capability-based audience limits and logging hooks. [Full documentation](docs/features/tools/communication/send-group-email-usage.md).【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L650】|
 | Send Mailjet Email 🌟 | `send_mailjet_email` | Delivers transactional and marketing emails through Mailjet with sender defaults, CC/BCC routing, and response metadata. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php†L19-L405】|
 | Send Telegram Message 🌟 | `send_telegram_message` | Posts formatted updates to Telegram chats or channels with capability filters and audit logging. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php†L16-L232】|
 | Send WhatsApp Message 🌟 | `send_whatsapp_message` | Sends WhatsApp Cloud API text messages with preview controls using phone-number specific access tokens. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php†L15-L178】|
@@ -448,7 +450,7 @@ Jobs are automatically pruned when they complete (single-run) or are manually re
 
 Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
-Need per-tool prerequisites or capability callouts? Consult [`docs/tool-reference.md`](docs/tool-reference.md) for a detailed matrix of every bundled integration.
+Need per-tool prerequisites or capability callouts? Consult [`docs/tool-reference.md`](docs/reference/tools/tool-reference.md) for a detailed matrix of every bundled integration.
 
 
 ---
@@ -493,7 +495,7 @@ Without JetEngine, chat conversations are **only stored in browser localStorage*
 - ⚠️ No cross-device synchronization
 - ⚠️ Lost if browser data is cleared
 
-See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
+See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
 
 ---
 
@@ -779,35 +781,35 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
-- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 105 built-in tools
-- **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
-- **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - Detailed guide to all 105 built-in tools
+- **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
+- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
 
 ### For New Users
-- [Setup Checklist](docs/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
-- [Remote Client Quickstart](docs/remote-client-quickstart.md) - Connect Claude Desktop, LM Studio, or other MCP clients
-- [Best Practices](docs/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
+- [Setup Checklist](docs/getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
+- [Remote Client Quickstart](docs/getting-started/quick-starts/remote-client-quickstart.md) - Connect Claude Desktop, LM Studio, or other MCP clients
+- [Best Practices](docs/guides/developer/best-practices/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
-- [Code Review Master](docs/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
-- [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
-- [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
-- [MCP JSON-RPC 2.0 Endpoint](docs/mcp-endpoint.md) - Model Context Protocol implementation
+- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
+- [Code Review Master](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
+- [Action Items](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
+- [Authentication Guide](docs/reference/api/mcp-server-authentication.md) - Authentication methods and security
+- [MCP JSON-RPC 2.0 Endpoint](docs/reference/api/mcp-endpoint.md) - Model Context Protocol implementation
 
 ### For Administrators
-- [Deployment Troubleshooting](docs/deployment-troubleshooting.md) - Common issues and solutions
-- [Multisite Support](docs/multisite-support.md) - WordPress multisite configuration
-- [Rate Limit Protection](docs/rate-limit-protection.md) - API rate limiting setup
-- [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
-- [Federation & Discovery](docs/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
+- [Deployment Troubleshooting](docs/getting-started/installation-setup/deployment-troubleshooting.md) - Common issues and solutions
+- [Multisite Support](docs/getting-started/installation-setup/multisite-support.md) - WordPress multisite configuration
+- [Rate Limit Protection](docs/features/performance/rate-limit-protection.md) - API rate limiting setup
+- [Mesh Routing Guide](docs/features/federation/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+- [Federation & Discovery](docs/features/federation/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
-- [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
-- [High Token Tool Handling](docs/high-token-tool-handling.md) - Agentic loop token management
-- [Job Notification System](docs/job-notification-system.md) - Real-time async job updates
-- [Chat Performance Optimizations](docs/chat-performance-optimizations.md) - Complete performance guide
-- [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+- [Message Bundling](docs/guides/user/chat/message-bundling-feature.md) - Client-side message optimization
+- [High Token Tool Handling](docs/features/tools/presets/high-token-tool-handling.md) - Agentic loop token management
+- [Job Notification System](docs/features/async-jobs/job-notification-system.md) - Real-time async job updates
+- [Chat Performance Optimizations](docs/features/chat/chat-performance-optimizations.md) - Complete performance guide
+- [Mesh Routing Guide](docs/features/federation/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
 ### Historical Documentation
 - **[Archive Directory](docs/archive/)** - 95+ historical documents organized by category:
@@ -920,7 +922,7 @@ The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships wi
 
 From the ChatKit dashboard configure the **WP oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
 
-Consult [`docs/chatkit-integration.md`](docs/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
+Consult [`docs/chatkit-integration.md`](docs/guides/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
 ## 🌐 Crawl4AI Integration
 
@@ -981,7 +983,7 @@ WP_MCP_AI_Job_Notifier::register_webhook(
 );
 ```
 
-➡️ See [docs/job-notification-system.md](docs/job-notification-system.md) for complete implementation details.
+➡️ See [docs/job-notification-system.md](docs/features/async-jobs/job-notification-system.md) for complete implementation details.
 
 ## 🧊 Elementor Widgets
 
@@ -1070,7 +1072,7 @@ Message bundling is enabled by default and requires no configuration. To disable
 window.wpMcpAiChatDebugMode = true;
 ```
 
-➡️ See [docs/message-bundling-feature.md](docs/message-bundling-feature.md) for configuration options and implementation details.
+➡️ See [docs/message-bundling-feature.md](docs/guides/user/chat/message-bundling-feature.md) for configuration options and implementation details.
 
 ## 🎯 Agentic Loop Token Management
 
@@ -1108,7 +1110,7 @@ Automatic model switching is enabled by default. Configure fallback model under 
 'fallback_model' => 'gemini-2.0-flash-exp'
 ```
 
-➡️ See [docs/high-token-tool-handling.md](docs/high-token-tool-handling.md) for complete technical details and examples.
+➡️ See [docs/high-token-tool-handling.md](docs/features/tools/presets/high-token-tool-handling.md) for complete technical details and examples.
 
 ## 🔄 Chat Performance Optimizations
 
@@ -1120,7 +1122,7 @@ WP oOS includes several performance optimizations to enhance the chat experience
 - **Automatic model switching** - Seamlessly handles token overflow scenarios
 - **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
 
-➡️ See [docs/chat-performance-optimizations.md](docs/chat-performance-optimizations.md) for detailed performance tuning guide.
+➡️ See [docs/chat-performance-optimizations.md](docs/features/chat/chat-performance-optimizations.md) for detailed performance tuning guide.
 
 ## 🌐 Mesh Compute Routing
 
@@ -1153,8 +1155,8 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 - Automatic load balancing across peer sites
 - Cross-server compute pooling for Cloudways, SiteGround, etc.
 
-➡️ See [docs/mesh-routing-guide.md](docs/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
-➡️ See [docs/mesh-compute-pooling.md](docs/mesh-compute-pooling.md) for architecture and authentication details.
+➡️ See [docs/mesh-routing-guide.md](docs/features/federation/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
+➡️ See [docs/mesh-compute-pooling.md](docs/features/federation/mesh-compute-pooling.md) for architecture and authentication details.
 
 ## 🔗 Federation & Discovery System
 
@@ -1231,18 +1233,18 @@ The Federation & Discovery system provides three deployment modes:
 - **QPS Limit**: Queries per second (default: 5)
 - **Burst Capacity**: Simultaneous requests (default: 10)
 
-➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/federation-discovery.md)
+➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/features/federation/federation-discovery.md)
 ➡️ **Implementation Summary:** FEDERATION-IMPLEMENTATION-SUMMARY.md
 
 ## 🕵️ Code Review
 
 The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds. These findings have been consolidated into the master code review document. One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.
 
-➡️ See [docs/CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
+➡️ See [docs/CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
 
 ### Using WP oOS as an MCP server
 
@@ -1290,7 +1292,7 @@ Claude Desktop supports MCP servers through a JSON configuration file. Add your 
 }
 ```
 
-See the complete [Claude Desktop setup guide](docs/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
+See the complete [Claude Desktop setup guide](docs/getting-started/installation-setup/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
 
 ### LM Studio Setup
 
@@ -1334,7 +1336,7 @@ If you want to use SSE for real-time updates:
 - **Enable SSE:** ✓ (checked)
 - **SSE Endpoint:** `/sse`
 
-See the complete [LM Studio setup guide](docs/remote-client-setup.md#lm-studio-setup) and example configurations:
+See the complete [LM Studio setup guide](docs/getting-started/installation-setup/remote-client-setup.md#lm-studio-setup) and example configurations:
 - [lmstudio-mcp-without-sse.json](assets/examples/lmstudio-mcp-without-sse.json) - Recommended
 - [lmstudio-config.json](assets/examples/lmstudio-config.json) - With SSE
 
@@ -1347,7 +1349,7 @@ To connect via ChatGPT:
 2. Generate an Auth0 access token with the configured audience
 3. Add the MCP server in ChatGPT's connector settings
 
-See the [ChatGPT connector guide](docs/remote-client-setup.md#chatgpt-connector-setup) for detailed Auth0 setup steps.
+See the [ChatGPT connector guide](docs/getting-started/installation-setup/remote-client-setup.md#chatgpt-connector-setup) for detailed Auth0 setup steps.
 
 ### Testing your connection
 
@@ -1371,10 +1373,10 @@ Expected output confirms the server is reachable and lists available assistants.
 ### Complete documentation
 
 For comprehensive setup guides, troubleshooting, and advanced configurations, see:
-- **[MCP Client Configurations](docs/mcp-client-configurations.md)** – **⭐ NEW:** Complete guide for all MCP clients (LM Studio, Claude Desktop, Cursor, Continue.dev, Cline, OpenAI)
-- **[Remote Client Setup Guide](docs/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
-- **[MCP Server Authentication](docs/mcp-server-authentication.md)** – Authentication methods and credential management
-- **[REST API Reference](docs/rest-api.md)** – Endpoint documentation and payload examples
+- **[MCP Client Configurations](docs/reference/api/mcp-client-configurations.md)** – **⭐ NEW:** Complete guide for all MCP clients (LM Studio, Claude Desktop, Cursor, Continue.dev, Cline, OpenAI)
+- **[Remote Client Setup Guide](docs/getting-started/installation-setup/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
+- **[MCP Server Authentication](docs/reference/api/mcp-server-authentication.md)** – Authentication methods and credential management
+- **[REST API Reference](docs/reference/api/rest-api.md)** – Endpoint documentation and payload examples
 - **[Example Configurations](assets/examples/)** – Ready-to-use config files for all major MCP clients
 
 ---
@@ -1433,7 +1435,7 @@ codex chat --assistant 123 "Hello world"
 - **Menu Location:** WP oOS → Token Manager
 - **REST API:** `/wp-json/mcp-ai/v1/token-manager/*`
 
-For complete documentation, see [Token Management Guide](docs/token-management.md).
+For complete documentation, see [Token Management Guide](docs/features/performance/token-management.md).
 
 ---
 
@@ -1449,7 +1451,7 @@ All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/
 - **`POST /chat`** – Normalises structured `messages`, injects assistant defaults, auto-enables the Submit Document Prompt tool when uploads are present, and forwards the request through the language model router. Responses include the assistant ID and the raw provider payload so clients can stream or render messages as needed.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1095】
 - **`POST /tools`** – Executes a specific registered tool outside of a chat turn. The endpoint enforces assistant tool allowlists, scopes credential-based requests to the issuing assistant, merges assistant defaults (such as external action identifiers), and returns the tool result with execution metadata.【F:includes/class-wp-mcp-ai-rest.php†L264-L322】【F:includes/class-wp-mcp-ai-rest.php†L1162-L1321】
 
-See [docs/rest-api.md](docs/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
+See [docs/rest-api.md](docs/reference/api/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
 
 ## 🌊 SSE Streaming Support
 
@@ -1576,10 +1578,10 @@ while (true) {
 ### Documentation
 
 For complete SSE implementation details, configuration options, and troubleshooting:
-- **[SSE Streaming Guide](docs/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
-- **[MCP and SSE](docs/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
-- **[Job Notification System](docs/job-notification-system.md)** - Real-time job status via SSE
-- **[REST API Reference](docs/rest-api.md)** - SSE endpoint specifications
+- **[SSE Streaming Guide](docs/features/streaming/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
+- **[MCP and SSE](docs/reference/api/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
+- **[Job Notification System](docs/features/async-jobs/job-notification-system.md)** - Real-time job status via SSE
+- **[REST API Reference](docs/reference/api/rest-api.md)** - SSE endpoint specifications
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
@@ -1644,7 +1646,7 @@ The MCP endpoint uses enhanced authentication aligned with MCP 2024-11-05 securi
 - **Comprehensive Logging**: Track errors, tool executions, and chat interactions
 - **Sensitive Data Protection**: Automatic redaction of API keys and tokens in logs
 
-See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
+See [Error Handling Documentation](docs/guides/developer/best-practices/ERROR_HANDLING.md) for detailed usage.
 
 **MCP Standard Error Codes**:
 - **-32700**: Parse error (invalid JSON)
@@ -1665,10 +1667,10 @@ See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
 ### Learn More
 
 ➡️ **Complete MCP Documentation:**
-- [MCP Endpoint Reference](docs/mcp-endpoint.md) - Complete method documentation and 2024-11-05 features
-- [MCP and SSE Explained](docs/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
-- [MCP Server Authentication](docs/mcp-server-authentication.md) - OAuth 2.1 and security enhancements
-- [MCP Client Configurations](docs/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
+- [MCP Endpoint Reference](docs/reference/api/mcp-endpoint.md) - Complete method documentation and 2024-11-05 features
+- [MCP and SSE Explained](docs/reference/api/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
+- [MCP Server Authentication](docs/reference/api/mcp-server-authentication.md) - OAuth 2.1 and security enhancements
+- [MCP Client Configurations](docs/reference/api/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
 - [Official MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 
 ---
@@ -1728,7 +1730,7 @@ When you save an assistant through the WordPress admin:
 - Integrating with JetEngine dashboards
 - Querying basic assistant metadata
 
-➡️ **[Read the complete CPT vs CCT guide](docs/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
+➡️ **[Read the complete CPT vs CCT guide](docs/architecture/integrations/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
 
 ## ⚡ Assistant Tool Shortcuts
 
@@ -1736,7 +1738,7 @@ Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate pr
 
 Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
 
-➡️ [Read the full guide to assistant prompt shortcuts.](docs/assistant-tool-shortcuts.md)
+➡️ [Read the full guide to assistant prompt shortcuts.](docs/getting-started/first-steps/assistant-tool-shortcuts.md)
 
 ## 👔 Professional & Team Layers
 
@@ -1843,7 +1845,7 @@ Test assistants, professions, and teams directly from the WordPress admin **befo
 **Security Note:** All test pages require `manage_options` capability and are restricted to WordPress administrators. Sensitive tools are enabled in test environments because administrators already have full site access.
 
 **Documentation:**
-- [Test Assistant Feature Enhancements](docs/test-assistant-enhancements.md) - Complete testing capabilities guide
+- [Test Assistant Feature Enhancements](docs/guides/user/assistants/test-assistant-enhancements.md) - Complete testing capabilities guide
 - [Dynamic Assistant Creation System](docs/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
 
 ### Custom Professions & Teams
@@ -2086,7 +2088,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 🛰 JetEngine REST API Reference
 
-- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
+- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/reference/api/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
 - 🤖 When JetEngine is active, assistants can invoke the **List JetEngine REST Routes** tool to retrieve the same metadata directly inside a conversation (requires a user with the `manage_options` capability).
 
 ---
@@ -2236,14 +2238,14 @@ Start with the comprehensive documentation before seeking additional support:
 
 1. **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast answers to common questions and tasks
 2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 32 documentation files
-3. **[Troubleshooting Guide](docs/deployment-troubleshooting.md)** - Solutions to common issues
-4. **[REST API Reference](docs/rest-api.md)** - Complete API documentation
+3. **[Troubleshooting Guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)** - Solutions to common issues
+4. **[REST API Reference](docs/reference/api/rest-api.md)** - Complete API documentation
 
 ### Before Reporting Issues
 
 When encountering problems, please:
 
-- [ ] Check the [troubleshooting guide](docs/deployment-troubleshooting.md)
+- [ ] Check the [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)
 - [ ] Enable logging in Settings → WP oOS to capture detailed errors
 - [ ] Review the [common issues section](#-common-issues) below
 - [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
@@ -2312,13 +2314,13 @@ npm install && composer install --no-dev --optimize-autoloader
 1. Verify tool is enabled for the assistant
 2. Check required dependencies are installed (WooCommerce, JetEngine, etc.)
 3. Ensure user has necessary capabilities
-4. Review tool-specific requirements in [tool reference](docs/tool-reference.md)
+4. Review tool-specific requirements in [tool reference](docs/reference/tools/tool-reference.md)
 
 #### Remote Client Connection Issues
 1. Verify credentials are correct and not expired
-2. Test with [remote client quickstart guide](docs/remote-client-quickstart.md)
+2. Test with [remote client quickstart guide](docs/getting-started/quick-starts/remote-client-quickstart.md)
 3. Use WP-CLI command: `wp mcp-ai remote <url> --token=<token>`
-4. Review [authentication documentation](docs/mcp-server-authentication.md)
+4. Review [authentication documentation](docs/reference/api/mcp-server-authentication.md)
 
 ### Reporting Issues
 
@@ -2338,20 +2340,24 @@ Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards (96/100 score)
-- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs, fixes, and improvements
-- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md) - Complete development history
-- [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
+- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
+- [CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
+- [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
+- [ACTION_ITEMS.md](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
 
 ### Documentation
 
 Comprehensive documentation is available:
 
-- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[CONSOLIDATED_BUGS_AND_FIXES.md](docs/CONSOLIDATED_BUGS_AND_FIXES.md)** - Master bugs and fixes report
-- **[CONSOLIDATED_SESSION_SUMMARIES.md](docs/CONSOLIDATED_SESSION_SUMMARIES.md)** - Master session summaries
-- **[CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md)** - Master code review (96/100)
-- **[TESTING_AND_QUALITY_REPORT.md](docs/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
+- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
+- **[CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
+- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
+- **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
+- **[TESTING_AND_QUALITY_REPORT.md](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
+
+**For Historical Reference:**
+- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
 
 ### Security Vulnerabilities
 

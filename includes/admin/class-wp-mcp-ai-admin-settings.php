@@ -3684,7 +3684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_openai_image_model_field() {
 			$settings = self::get_settings();
 			$models   = $this->get_openai_image_model_choices();
-			$current  = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+			$current  = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_model]" class="regular-text">
 			<?php foreach ( $models as $value => $label ) : ?>
@@ -3741,7 +3741,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings                 = self::get_settings();
 			$response_formats         = $this->get_openai_image_response_format_choices();
 			$current                  = isset( $settings['openai_image_response_format'] ) ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
-			$model                    = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+			$model                    = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			$supports_response_format = true;
 
 			if ( class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
@@ -5119,18 +5119,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_model_choices() {
 			$models = array(
-				'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
-				'dall-e-3'    => __( 'DALL·E 3', 'wp-mcp-ai' ),
-				'dall-e-2'    => __( 'DALL·E 2', 'wp-mcp-ai' ),
+				'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'wp-mcp-ai' ),
+				'gpt-image-1'   => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+				'dall-e-3'      => __( 'DALL·E 3', 'wp-mcp-ai' ),
+				'dall-e-2'      => __( 'DALL·E 2', 'wp-mcp-ai' ),
 			);
 
 			$models = apply_filters( 'wp_mcp_ai_openai_image_models', $models );
 
 			if ( ! is_array( $models ) || empty( $models ) ) {
 				$models = array(
-					'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
-					'dall-e-3'    => __( 'DALL·E 3', 'wp-mcp-ai' ),
-					'dall-e-2'    => __( 'DALL·E 2', 'wp-mcp-ai' ),
+					'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'wp-mcp-ai' ),
+					'gpt-image-1'   => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+					'dall-e-3'      => __( 'DALL·E 3', 'wp-mcp-ai' ),
+					'dall-e-2'      => __( 'DALL·E 2', 'wp-mcp-ai' ),
 				);
 			}
 

@@ -542,9 +542,9 @@ Settings → WP oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](tool-reference.md) - All 65+ tools detailed
-- [REST API Guide](rest-api.md) - Complete API documentation
-- [Orchestration Budget Enforcement](orchestration-budget-enforcement.md) - Budget prediction and adjustment
+- [Tool Reference](reference/tools/tool-reference.md) - All 65+ tools detailed
+- [REST API Guide](reference/api/rest-api.md) - Complete API documentation
+- [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
 ### External Links
 - [OpenAI Platform](https://platform.openai.com/)
@@ -589,7 +589,7 @@ Settings → WP oOS → Chat Theme
 
 ### Support Channels
 1. **Documentation** - Check [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
-2. **Troubleshooting** - See [deployment-troubleshooting.md](deployment-troubleshooting.md)
+2. **Troubleshooting** - See [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md)
 3. **GitHub Issues** - https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 4. **Community** - Follow contribution guidelines
 

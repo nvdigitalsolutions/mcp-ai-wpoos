@@ -1,0 +1,32 @@
+{
+  "teams": [
+    {
+      "title": "Legal Services Team",
+      "slug": "legal_services_team",
+      "description": "Comprehensive legal team for litigation, advisory, and regulatory matters.",
+      "members": [
+        "lawyer",
+        "legal_advisor",
+        "paralegal",
+        "judge"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Regulatory Compliance Team",
+      "slug": "regulatory_compliance_team",
+      "description": "Regulatory affairs and compliance specialists for various industries.",
+      "members": [
+        "regulatory_affairs_specialist",
+        "legal_advisor",
+        "qa_manager_pharma",
+        "customs_broker"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    }
+  ]
+}

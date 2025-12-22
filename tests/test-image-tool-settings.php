@@ -66,7 +66,7 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 		// Verify hardcoded defaults are used.
 		$this->assertArrayHasKey( 'properties', $schema );
 		$this->assertArrayHasKey( 'default', $schema['properties']['model'] );
-		$this->assertEquals( 'gpt-image-1', $schema['properties']['model']['default'] );
+		$this->assertEquals( 'gpt-image-1.5', $schema['properties']['model']['default'] );
 
 		$this->assertArrayHasKey( 'default', $schema['properties']['size'] );
 		$this->assertEquals( '1024x1024', $schema['properties']['size']['default'] );

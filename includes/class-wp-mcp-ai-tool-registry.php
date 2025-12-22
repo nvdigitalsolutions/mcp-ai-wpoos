@@ -440,9 +440,30 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_music'                 => 'external-tools',
 				'generate_openai_speech'         => 'external-tools',
 				'transcribe_openai_audio'        => 'external-tools',
+				'moderate_content'               => 'external-tools',
 				'open_openai_usage'              => 'external-tools',
 				'open_openai_logs'               => 'external-tools',
 				'run_openai_external_action'     => 'external-tools',
+				// OpenAI API Integration - Phase 1 Tools.
+				'list_openai_files'              => 'external-tools',
+				'get_openai_file_details'        => 'external-tools',
+				'list_available_models'          => 'external-tools',
+				'get_model_information'          => 'external-tools',
+				'create_text_embeddings'         => 'external-tools',
+				// OpenAI API Integration - Phase 2 Tools.
+				'semantic_content_search'        => 'external-tools',
+				'suggest_best_model'             => 'external-tools',
+				'batch_embed_content'            => 'external-tools',
+				// OpenAI API Integration - Phase 3 Tools (Vector Stores).
+				'create_vector_store'            => 'external-tools',
+				'list_vector_stores'             => 'external-tools',
+				'get_vector_store'               => 'external-tools',
+				'manage_vector_store_files'      => 'external-tools',
+				// OpenAI API Integration - Phase 4 Tools.
+				'edit_openai_image'              => 'external-tools',
+				'create_image_variation'         => 'external-tools',
+				'analyze_file_suitability'       => 'external-tools',
+				'openai_usage_analytics'         => 'external-tools',
 				'vision_product_search'          => 'external-tools',
 				'vision_object_localization'     => 'external-tools',
 				'schedule_notify_sms'            => 'external-tools',
@@ -460,6 +481,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'purge_varnish_cache'            => 'external-tools',
 				'geocode_address'                => 'external-tools',
 				'search_places'                  => 'external-tools',
+				'gemini_geospatial_query'        => 'external-tools',
 				'list_github_repositories'       => 'external-tools',
 				'github_repository_operations'   => 'external-tools',
 				'manage_github_codespace'        => 'external-tools',
@@ -751,6 +773,26 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_User_Info'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
 				'WP_MCP_AI_Tool_Get_Site_Summary'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
 				'WP_MCP_AI_Tool_Count_Tokens'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-count-tokens.php',
+				// OpenAI API Integration - Phase 1 Tools.
+				'WP_MCP_AI_Tool_List_OpenAI_Files'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-openai-files.php',
+				'WP_MCP_AI_Tool_Get_OpenAI_File_Details' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-openai-file-details.php',
+				'WP_MCP_AI_Tool_List_Available_Models'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-available-models.php',
+				'WP_MCP_AI_Tool_Get_Model_Information'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-model-information.php',
+				'WP_MCP_AI_Tool_Create_Text_Embeddings'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
+				// OpenAI API Integration - Phase 2 Tools.
+				'WP_MCP_AI_Tool_Semantic_Content_Search' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-content-search.php',
+				'WP_MCP_AI_Tool_Suggest_Best_Model'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-suggest-best-model.php',
+				'WP_MCP_AI_Tool_Batch_Embed_Content'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-batch-embed-content.php',
+				// OpenAI API Integration - Phase 3 Tools (Vector Stores).
+				'WP_MCP_AI_Tool_Create_Vector_Store'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-vector-store.php',
+				'WP_MCP_AI_Tool_List_Vector_Stores'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-vector-stores.php',
+				'WP_MCP_AI_Tool_Get_Vector_Store'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-vector-store.php',
+				'WP_MCP_AI_Tool_Manage_Vector_Store_Files' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-vector-store-files.php',
+				// OpenAI API Integration - Phase 4 Tools.
+				'WP_MCP_AI_Tool_Edit_OpenAI_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php',
+				'WP_MCP_AI_Tool_Create_Image_Variation'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-image-variation.php',
+				'WP_MCP_AI_Tool_Analyze_File_Suitability' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-file-suitability.php',
+				'WP_MCP_AI_Tool_OpenAI_Usage_Analytics'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-openai-usage-analytics.php',
 				'WP_MCP_AI_Tool_Get_Site_Health'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php',
 				'WP_MCP_AI_Tool_Get_Environment_Status'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-environment-status.php',
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
@@ -765,6 +807,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Probe_Remote_MCP'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php',
 				'WP_MCP_AI_Tool_Generate_OpenAI_Speech'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php',
 				'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php',
+				'WP_MCP_AI_Tool_Moderate_Content'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-moderate-content.php',
 				'WP_MCP_AI_Tool_Generate_OpenAI_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
 				'WP_MCP_AI_Tool_Generate_Sora_Video'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php',
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
@@ -806,6 +849,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
+				// Gemini Geospatial API tools.
+				'WP_MCP_AI_Tool_Gemini_Geospatial_Query' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-gemini-geospatial-query.php',
 				// Gemini image editing tool.
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
 				// Product scraping tool.

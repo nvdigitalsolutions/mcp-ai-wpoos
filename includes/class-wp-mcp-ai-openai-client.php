@@ -21,6 +21,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		const AUDIO_TRANSCRIPTIONS_ENDPOINT = 'https://api.openai.com/v1/audio/transcriptions';
 		const AUDIO_TRANSLATIONS_ENDPOINT   = 'https://api.openai.com/v1/audio/translations';
 		const IMAGES_ENDPOINT               = 'https://api.openai.com/v1/images/generations';
+		const IMAGES_EDITS_ENDPOINT         = 'https://api.openai.com/v1/images/edits';
+		const IMAGES_VARIATIONS_ENDPOINT    = 'https://api.openai.com/v1/images/variations';
+		const MODERATIONS_ENDPOINT          = 'https://api.openai.com/v1/moderations';
+		const VECTOR_STORES_ENDPOINT        = 'https://api.openai.com/v1/vector_stores';
+		const BATCHES_ENDPOINT              = 'https://api.openai.com/v1/batches';
 		const CHAT_APPROX_CHARS_PER_TOKEN   = 4; // Heuristic for estimating tokens from character count.
 
 		/**
@@ -32,13 +37,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// The gpt-image-1 model does NOT support the response_format parameter.
+			// The gpt-image-1 and gpt-image-1.5 models do NOT support the response_format parameter.
 			// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
-			// Default to true for backward compatibility, but explicitly block gpt-image-1.
+			// Default to true for backward compatibility, but explicitly block gpt-image-1/1.5.
 			$supported = true;
 
-			// Check if this is the gpt-image-1 model (case-insensitive).
-			if ( 'gpt-image-1' === strtolower( $model ) ) {
+			// Check if this is the gpt-image-1 or gpt-image-1.5 model (case-insensitive).
+			$model_lower = strtolower( $model );
+			if ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower ) {
 				$supported = false;
 			}
 			/**
@@ -48,6 +54,31 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			 * @param string $model     Model identifier.
 			 */
 			return (bool) apply_filters( 'wp_mcp_ai_image_model_supports_response_format', $supported, $model );
+		}
+
+		/**
+		 * Determine whether a given image model accepts the style parameter.
+		 *
+		 * The style parameter (natural or vivid) is only supported by DALL-E 3.
+		 * Other models (gpt-image-1, gpt-image-1.5, dall-e-2) do not support this parameter.
+		 *
+		 * @param string $model Image model identifier.
+		 * @return bool
+		 */
+		public static function image_model_supports_style( $model ) {
+			$model = sanitize_text_field( $model );
+
+			// Only DALL-E 3 supports the style parameter.
+			$model_lower = strtolower( $model );
+			$supported   = ( 'dall-e-3' === $model_lower );
+
+			/**
+			 * Filter whether the supplied image model supports the style parameter.
+			 *
+			 * @param bool   $supported Whether the style parameter is supported.
+			 * @param string $model     Model identifier.
+			 */
+			return (bool) apply_filters( 'wp_mcp_ai_image_model_supports_style', $supported, $model );
 		}
 
 		/**
@@ -476,6 +507,755 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * List files from the OpenAI Files API.
+		 *
+		 * @param array $args Optional arguments (purpose, limit, order, after, timeout).
+		 * @return array|WP_Error Array containing files list or WP_Error on failure.
+		 */
+		public function list_files( array $args = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Build query parameters.
+			$query_params = array();
+
+			if ( isset( $args['purpose'] ) && '' !== $args['purpose'] ) {
+				$query_params['purpose'] = sanitize_key( $args['purpose'] );
+			}
+
+			if ( isset( $args['limit'] ) && '' !== $args['limit'] ) {
+				$query_params['limit'] = absint( $args['limit'] );
+			}
+
+			if ( isset( $args['order'] ) && '' !== $args['order'] ) {
+				$query_params['order'] = in_array( $args['order'], array( 'asc', 'desc' ), true ) ? $args['order'] : 'desc';
+			}
+
+			if ( isset( $args['after'] ) && '' !== $args['after'] ) {
+				$query_params['after'] = sanitize_text_field( $args['after'] );
+			}
+
+			$endpoint = self::FILES_ENDPOINT;
+			if ( ! empty( $query_params ) ) {
+				$endpoint = add_query_arg( $query_params, $endpoint );
+			}
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_list_files',
+				'Listing files from OpenAI.',
+				$query_params
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'OpenAI list files request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_list_files_http_error',
+					__( 'The OpenAI files list request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code     = wp_remote_retrieve_response_code( $response );
+			$body     = wp_remote_retrieve_body( $response );
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
+
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list files response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_list_files_invalid_response', __( 'OpenAI returned malformed JSON for the files list.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list files returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI files list request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_list_files_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_files_listed',
+				'OpenAI files list retrieved successfully.',
+				array(
+					'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Retrieve metadata for a file from the OpenAI Files API.
+		 *
+		 * @param string $file_id OpenAI file identifier.
+		 * @param array  $args    Optional arguments (timeout).
+		 * @return array|WP_Error Array containing file metadata or WP_Error on failure.
+		 */
+		public function retrieve_file( $file_id, array $args = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$file_id = sanitize_text_field( (string) $file_id );
+
+			if ( '' === $file_id ) {
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_retrieve_file',
+				'Retrieving file metadata from OpenAI.',
+				array( 'file_id' => $file_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve file request failed.',
+					array(
+						'file_id' => $file_id,
+						'error'   => $response->get_error_message(),
+					)
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_retrieve_file_http_error',
+					__( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI retrieve file response.',
+					array(
+						'file_id' => $file_id,
+						'body'    => $body,
+					)
+				);
+
+				return new WP_Error( 'wp_mcp_ai_retrieve_file_invalid_response', __( 'OpenAI returned malformed JSON for the file metadata.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve file returned an error.',
+					array(
+						'file_id' => $file_id,
+						'code'    => $code,
+						'body'    => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_retrieve_file_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_file_retrieved',
+				'OpenAI file metadata retrieved successfully.',
+				array( 'file_id' => $file_id )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * List available models from OpenAI.
+		 *
+		 * @param array $args Optional arguments (timeout).
+		 * @return array|WP_Error Array containing models list or WP_Error on failure.
+		 */
+		public function list_models( array $args = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = 'https://api.openai.com/v1/models';
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event( 'openai_list_models', 'Listing models from OpenAI.' );
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'OpenAI list models request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_list_models_http_error',
+					__( 'The OpenAI models list request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list models response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list models returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_list_models_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_models_listed',
+				'OpenAI models list retrieved successfully.',
+				array(
+					'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Retrieve information about a specific model.
+		 *
+		 * @param string $model_id Model identifier (e.g., 'gpt-4').
+		 * @param array  $args     Optional arguments (timeout).
+		 * @return array|WP_Error Array containing model information or WP_Error on failure.
+		 */
+		public function get_model( $model_id, array $args = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$model_id = sanitize_text_field( (string) $model_id );
+
+			if ( '' === $model_id ) {
+				return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'wp-mcp-ai' ) );
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_get_model',
+				'Retrieving model information from OpenAI.',
+				array( 'model_id' => $model_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI get model request failed.',
+					array(
+						'model_id' => $model_id,
+						'error'    => $response->get_error_message(),
+					)
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_get_model_http_error',
+					__( 'The OpenAI model information request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI get model response.',
+					array(
+						'model_id' => $model_id,
+						'body'     => $body,
+					)
+				);
+
+				return new WP_Error( 'wp_mcp_ai_get_model_invalid_response', __( 'OpenAI returned malformed JSON for the model information.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI get model returned an error.',
+					array(
+						'model_id' => $model_id,
+						'code'     => $code,
+						'body'     => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI model information request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_get_model_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_model_retrieved',
+				'OpenAI model information retrieved successfully.',
+				array( 'model_id' => $model_id )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Create embeddings using OpenAI's Embeddings API.
+		 *
+		 * @param string|array $input  Input text or array of texts to create embeddings for.
+		 * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout).
+		 * @return array|WP_Error Array containing embeddings or WP_Error on failure.
+		 */
+		public function create_embeddings( $input, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
+				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'wp-mcp-ai' ) );
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Default model.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+
+			$payload = array(
+				'model' => $model,
+				'input' => $input,
+			);
+
+			// Optional parameters.
+			if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
+				$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
+			}
+
+			if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
+				$payload['dimensions'] = absint( $options['dimensions'] );
+			}
+
+			if ( isset( $options['user'] ) && '' !== $options['user'] ) {
+				$payload['user'] = sanitize_text_field( $options['user'] );
+			}
+
+			$endpoint = 'https://api.openai.com/v1/embeddings';
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_create_embeddings',
+				'Creating embeddings with OpenAI.',
+				array(
+					'model'        => $model,
+					'input_type'   => is_array( $input ) ? 'array' : 'string',
+					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+				)
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_embeddings_http_error',
+					__( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI embeddings returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_embeddings_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_embeddings_created',
+				'OpenAI embeddings created successfully.',
+				array(
+					'model'            => $model,
+					'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Moderate content using OpenAI's Moderation API.
+		 *
+		 * Analyzes text and/or image inputs for potentially harmful content across multiple
+		 * violation categories including sexual, hate, harassment, self-harm, and violence.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string|array $input   Content to moderate. Can be a string, array of strings,
+		 *                               or for multimodal: array of input objects with text/image.
+		 * @param array        $options Optional configuration:
+		 *                               - model: 'omni-moderation-latest' (default) or 'text-moderation-latest'
+		 *                               - timeout: Request timeout in seconds (default: from settings)
+		 * @return array|WP_Error Array containing moderation results or WP_Error on failure.
+		 *                        Result structure:
+		 *                        - id: Unique moderation request ID
+		 *                        - model: Model used
+		 *                        - results: Array of result objects, each containing:
+		 *                          - flagged: Boolean indicating if content was flagged
+		 *                          - categories: Object mapping category names to booleans
+		 *                          - category_scores: Object mapping category names to confidence scores (0-1)
+		 *                          - category_applied_input_types: Which input types triggered each category
+		 */
+		public function moderate_content( $input, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Validate input.
+			if ( empty( $input ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_input',
+					__( 'Input content must be provided for moderation.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate string input is not empty.
+			if ( is_string( $input ) && '' === trim( $input ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_input',
+					__( 'Input text cannot be empty.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Default to latest omni-moderation model (supports text + images).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'omni-moderation-latest';
+
+			$payload = array(
+				'model' => $model,
+				'input' => $input,
+			);
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_moderate_content',
+				'Moderating content with OpenAI.',
+				array(
+					'model'        => $model,
+					'input_type'   => is_array( $input ) ? 'array' : 'string',
+					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+				)
+			);
+
+			$response = $this->dispatch_http_request( self::MODERATIONS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI moderation request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_moderation_http_error',
+					__( 'The OpenAI moderation request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI moderation response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_moderation_invalid_response',
+					__( 'OpenAI returned malformed JSON for the moderation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI moderation returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI moderation request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_moderation_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			// Extract violation summary for logging.
+			$flagged_count  = 0;
+			$flagged_cats   = array();
+			$results        = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
+
+			foreach ( $results as $result ) {
+				if ( isset( $result['flagged'] ) && $result['flagged'] ) {
+					++$flagged_count;
+
+					if ( isset( $result['categories'] ) && is_array( $result['categories'] ) ) {
+						foreach ( $result['categories'] as $category => $is_flagged ) {
+							if ( $is_flagged && ! in_array( $category, $flagged_cats, true ) ) {
+								$flagged_cats[] = $category;
+							}
+						}
+					}
+				}
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_moderation_completed',
+				'OpenAI moderation completed successfully.',
+				array(
+					'model'          => $model,
+					'results_count'  => count( $results ),
+					'flagged_count'  => $flagged_count,
+					'flagged_categories' => $flagged_cats,
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
 		 * Dispatch an HTTP request while honouring preemptive short-circuit filters.
 		 *
 		 * @param string $url  Target URL.
@@ -623,7 +1403,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
 			$default_quality         = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
@@ -666,6 +1446,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'quality' => $quality,
 				'n'       => 1,
 			);
+
+			// Add style parameter only for models that support it (DALL-E 3).
+			if ( isset( $options['style'] ) && '' !== $options['style'] ) {
+				$style = sanitize_key( $options['style'] );
+				if ( in_array( $style, array( 'natural', 'vivid' ), true ) && self::image_model_supports_style( $model ) ) {
+					$payload['style'] = $style;
+				}
+			}
 
 			if ( $model_supports_response_format && '' !== $response_format ) {
 				$payload['response_format'] = $response_format;
@@ -1157,6 +1945,306 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Edit an image using OpenAI's image editing API (DALL-E).
+		 *
+		 * @param string $image_path Path to the image file to edit.
+		 * @param string $prompt     Description of desired edits.
+		 * @param array  $options    Optional parameters (mask_path, model, n, size, response_format, timeout).
+		 * @return array|WP_Error    Array containing the edited image data or WP_Error on failure.
+		 */
+		public function edit_image( $image_path, $prompt, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$image_path = (string) $image_path;
+			if ( '' === $image_path || ! file_exists( $image_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_not_found',
+					__( 'The image file to edit could not be located.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$prompt = sanitize_textarea_field( $prompt );
+			if ( '' === $prompt ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_image_prompt',
+					__( 'A text prompt must be supplied to edit the image.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 30, $timeout ); // Image editing needs more time.
+
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
+			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
+
+			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
+				$response_format = 'b64_json';
+			}
+
+			// Prepare multipart form data.
+			$boundary = wp_generate_password( 24, false );
+			$body     = '';
+
+			// Add image file.
+			$image_filename  = basename( $image_path );
+			$image_mime_type = mime_content_type( $image_path );
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
+			$body .= "Content-Type: {$image_mime_type}\r\n\r\n";
+			$body .= $image_data . "\r\n";
+
+			// Add mask file if provided.
+			if ( isset( $options['mask_path'] ) && '' !== $options['mask_path'] && file_exists( $options['mask_path'] ) ) {
+				$mask_filename  = basename( $options['mask_path'] );
+				$mask_mime_type = mime_content_type( $options['mask_path'] );
+				$mask_data      = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+				$body .= "--{$boundary}\r\n";
+				$body .= "Content-Disposition: form-data; name=\"mask\"; filename=\"{$mask_filename}\"\r\n";
+				$body .= "Content-Type: {$mask_mime_type}\r\n\r\n";
+				$body .= $mask_data . "\r\n";
+			}
+
+			// Add other parameters.
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n";
+			$body .= $prompt . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"model\"\r\n\r\n";
+			$body .= $model . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"n\"\r\n\r\n";
+			$body .= $n . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
+			$body .= $size . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+			$body .= $response_format . "\r\n";
+
+			$body .= "--{$boundary}--\r\n";
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+				),
+				'timeout' => $timeout,
+				'body'    => $body,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_image_edit_request',
+				'Sending image edit request to OpenAI.',
+				array(
+					'model' => $model,
+					'size'  => $size,
+					'n'     => $n,
+				)
+			);
+
+			$response = wp_remote_post( self::IMAGES_EDITS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_image_edit_error', 'Image edit request failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code    = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded      = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI image edit request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_image_edit_error',
+					'Image edit failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_image_edit_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image edit API.', 'wp-mcp-ai' ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_image_edit_success', 'Image edit completed successfully.' );
+
+			return array(
+				'success' => true,
+				'data'    => $decoded['data'],
+				'created' => isset( $decoded['created'] ) ? $decoded['created'] : time(),
+			);
+		}
+
+		/**
+		 * Create variations of an existing image using OpenAI's API (DALL-E).
+		 *
+		 * @param string $image_path Path to the image file.
+		 * @param array  $options    Optional parameters (model, n, size, response_format, timeout).
+		 * @return array|WP_Error    Array containing the image variations or WP_Error on failure.
+		 */
+		public function create_image_variation( $image_path, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$image_path = (string) $image_path;
+			if ( '' === $image_path || ! file_exists( $image_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_not_found',
+					__( 'The image file could not be located.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 30, $timeout ); // Image generation needs more time.
+
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
+			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
+
+			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
+				$response_format = 'b64_json';
+			}
+
+			// Prepare multipart form data.
+			$boundary = wp_generate_password( 24, false );
+			$body     = '';
+
+			// Add image file.
+			$image_filename  = basename( $image_path );
+			$image_mime_type = mime_content_type( $image_path );
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
+			$body .= "Content-Type: {$image_mime_type}\r\n\r\n";
+			$body .= $image_data . "\r\n";
+
+			// Add other parameters.
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"model\"\r\n\r\n";
+			$body .= $model . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"n\"\r\n\r\n";
+			$body .= $n . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
+			$body .= $size . "\r\n";
+
+			$body .= "--{$boundary}\r\n";
+			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+			$body .= $response_format . "\r\n";
+
+			$body .= "--{$boundary}--\r\n";
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+				),
+				'timeout' => $timeout,
+				'body'    => $body,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_image_variation_request',
+				'Sending image variation request to OpenAI.',
+				array(
+					'model' => $model,
+					'size'  => $size,
+					'n'     => $n,
+				)
+			);
+
+			$response = wp_remote_post( self::IMAGES_VARIATIONS_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_image_variation_error', 'Image variation request failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI image variation request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_image_variation_error',
+					'Image variation failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_image_variation_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image variation API.', 'wp-mcp-ai' ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_image_variation_success', 'Image variation completed successfully.' );
+
+			return array(
+				'success' => true,
+				'data'    => $decoded['data'],
+				'created' => isset( $decoded['created'] ) ? $decoded['created'] : time(),
+			);
+		}
+
+		/**
 		 * Generate speech audio from text using the OpenAI Text-to-Speech API.
 		 *
 		 * @param string $input   Text that should be converted to speech.
@@ -1375,7 +2463,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = max( 5, $timeout );
 
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? strtolower( sanitize_key( $options['response_format'] ) ) : 'verbose_json';
-			$allowed_formats = array( 'json', 'verbose_json' );
+			$allowed_formats = array( 'json', 'verbose_json', 'text', 'srt', 'vtt' );
 
 			if ( ! in_array( $response_format, $allowed_formats, true ) ) {
 				$response_format = 'verbose_json';
@@ -1398,6 +2486,26 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! $translate && isset( $options['language'] ) && '' !== $options['language'] ) {
 				$fields['language'] = sanitize_text_field( $options['language'] );
+			}
+
+			// Add timestamp_granularities parameter for word or segment level timestamps.
+			if ( isset( $options['timestamp_granularities'] ) ) {
+				$granularities = $options['timestamp_granularities'];
+				if ( is_string( $granularities ) ) {
+					$granularities = array( $granularities );
+				}
+				if ( is_array( $granularities ) && ! empty( $granularities ) ) {
+					$valid_granularities = array();
+					foreach ( $granularities as $granularity ) {
+						$granularity = strtolower( sanitize_key( $granularity ) );
+						if ( in_array( $granularity, array( 'word', 'segment' ), true ) ) {
+							$valid_granularities[] = $granularity;
+						}
+					}
+					if ( ! empty( $valid_granularities ) ) {
+						$fields['timestamp_granularities'] = array_values( array_unique( $valid_granularities ) );
+					}
+				}
 			}
 
 			$filename = isset( $options['filename'] ) && '' !== $options['filename'] ? sanitize_file_name( $options['filename'] ) : wp_basename( $file_path );
@@ -3293,6 +4401,1109 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			return $estimated_tokens;
+		}
+
+		/**
+		 * Create a new vector store.
+		 *
+		 * @param string $name Vector store name.
+		 * @param array  $options Optional parameters (file_ids, expires_after, metadata).
+		 * @return array|WP_Error Vector store data or error.
+		 */
+		public function create_vector_store( $name, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$name = sanitize_text_field( $name );
+			if ( empty( $name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_name',
+					__( 'A name is required to create a vector store.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$payload = array(
+				'name' => $name,
+			);
+
+			if ( ! empty( $options['file_ids'] ) && is_array( $options['file_ids'] ) ) {
+				$payload['file_ids'] = array_map( 'sanitize_text_field', $options['file_ids'] );
+			}
+
+			if ( ! empty( $options['expires_after'] ) && is_array( $options['expires_after'] ) ) {
+				$payload['expires_after'] = $options['expires_after'];
+			}
+
+			if ( ! empty( $options['metadata'] ) && is_array( $options['metadata'] ) ) {
+				$payload['metadata'] = $options['metadata'];
+			}
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_vector_store_create',
+				'Creating vector store.',
+				array( 'name' => $name )
+			);
+
+			$response = wp_remote_post( self::VECTOR_STORES_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_vector_store_create_error', 'Vector store creation failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI vector store creation failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'openai_vector_store_create_error',
+					'Vector store creation failed with HTTP code ' . $http_code,
+					array( 'response' => $decoded )
+				);
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'openai_vector_store_create_success', 'Vector store created successfully.' );
+
+			return $decoded;
+		}
+
+		/**
+		 * List vector stores.
+		 *
+		 * @param array $options Optional parameters (limit, order, after, before).
+		 * @return array|WP_Error Vector stores list or error.
+		 */
+		public function list_vector_stores( array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$query_params = array();
+
+			if ( isset( $options['limit'] ) ) {
+				$query_params['limit'] = absint( $options['limit'] );
+			}
+
+			if ( isset( $options['order'] ) ) {
+				$query_params['order'] = sanitize_key( $options['order'] );
+			}
+
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['before'] ) ) {
+				$query_params['before'] = sanitize_text_field( $options['before'] );
+			}
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT;
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI list vector stores request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Retrieve a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @return array|WP_Error Vector store data or error.
+		 */
+		public function retrieve_vector_store( $vector_store_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI retrieve vector store request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Delete a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @return array|WP_Error Deletion confirmation or error.
+		 */
+		public function delete_vector_store( $vector_store_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'method'  => 'DELETE',
+			);
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI delete vector store request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Add files to a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $file_ids Array of file IDs to add.
+		 * @return array|WP_Error Operation result or error.
+		 */
+		public function add_vector_store_files( $vector_store_id, array $file_ids ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $file_ids ) || ! is_array( $file_ids ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_file_ids',
+					__( 'File IDs are required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+
+			$payload = array(
+				'file_id' => sanitize_text_field( $file_ids[0] ), // OpenAI API accepts one file at a time.
+			);
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			$response = wp_remote_post( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI add vector store files request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * List files in a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $options Optional parameters (limit, order, after, before).
+		 * @return array|WP_Error Files list or error.
+		 */
+		public function list_vector_store_files( $vector_store_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$query_params = array();
+
+			if ( isset( $options['limit'] ) ) {
+				$query_params['limit'] = absint( $options['limit'] );
+			}
+
+			if ( isset( $options['order'] ) ) {
+				$query_params['order'] = sanitize_key( $options['order'] );
+			}
+
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['before'] ) ) {
+				$query_params['before'] = sanitize_text_field( $options['before'] );
+			}
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI list vector store files request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Remove a file from a vector store.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $file_id File ID to remove.
+		 * @return array|WP_Error Operation result or error.
+		 */
+		public function remove_vector_store_file( $vector_store_id, $file_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			$file_id         = sanitize_text_field( $file_id );
+
+			if ( empty( $vector_store_id ) || empty( $file_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'Vector store ID and file ID are required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'timeout' => $timeout,
+				'method'  => 'DELETE',
+			);
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI remove vector store file request failed.', 'wp-mcp-ai' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Create a batch processing job for asynchronous operations.
+		 *
+		 * The Batch API allows you to process large jobs asynchronously with 50% cost reduction
+		 * compared to synchronous calls. Supported endpoints: /v1/chat/completions, /v1/embeddings,
+		 * /v1/moderations.
+		 *
+		 * @param string $input_file_id  The ID of the uploaded input file containing batch requests (JSONL format).
+		 * @param string $endpoint       The OpenAI endpoint to use for the batch (e.g., '/v1/chat/completions').
+		 * @param array  $options        Optional parameters:
+		 *                               - completion_window: Time frame within which the batch should be processed.
+		 *                                 Default: "24h" (currently only "24h" is supported by OpenAI).
+		 *                               - metadata: Custom metadata as key-value pairs (up to 16 pairs).
+		 *                               - timeout: Request timeout in seconds.
+		 * @return array|WP_Error Array containing batch job details or WP_Error on failure.
+		 *                        Success structure:
+		 *                        - id: Unique batch job ID
+		 *                        - object: "batch"
+		 *                        - endpoint: The endpoint used
+		 *                        - input_file_id: Input file ID
+		 *                        - completion_window: Completion window
+		 *                        - status: Current status (validating, in_progress, completed, failed, etc.)
+		 *                        - output_file_id: Output file ID (available when completed)
+		 *                        - error_file_id: Error file ID (available if errors occurred)
+		 *                        - created_at: Creation timestamp
+		 *                        - metadata: Custom metadata
+		 */
+		public function create_batch( $input_file_id, $endpoint, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Validate input_file_id.
+			$input_file_id = sanitize_text_field( (string) $input_file_id );
+			if ( '' === $input_file_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_input_file_id',
+					__( 'Input file ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate endpoint.
+			$endpoint = sanitize_text_field( (string) $endpoint );
+			$allowed_endpoints = array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' );
+			if ( ! in_array( $endpoint, $allowed_endpoints, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_batch_endpoint',
+					sprintf(
+						/* translators: %s: comma-separated list of allowed endpoints */
+						__( 'Invalid batch endpoint. Allowed endpoints: %s', 'wp-mcp-ai' ),
+						implode( ', ', $allowed_endpoints )
+					),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Build payload.
+			$payload = array(
+				'input_file_id'      => $input_file_id,
+				'endpoint'           => $endpoint,
+				'completion_window'  => isset( $options['completion_window'] ) && '' !== $options['completion_window'] ? sanitize_text_field( $options['completion_window'] ) : '24h',
+			);
+
+			// Add optional metadata.
+			if ( isset( $options['metadata'] ) && is_array( $options['metadata'] ) && ! empty( $options['metadata'] ) ) {
+				$metadata = array();
+				foreach ( $options['metadata'] as $key => $value ) {
+					$sanitized_key   = sanitize_text_field( $key );
+					$sanitized_value = sanitize_text_field( $value );
+					if ( '' !== $sanitized_key && '' !== $sanitized_value ) {
+						$metadata[ $sanitized_key ] = $sanitized_value;
+					}
+				}
+				if ( ! empty( $metadata ) ) {
+					$payload['metadata'] = $metadata;
+				}
+			}
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_create_batch',
+				'Creating batch job with OpenAI.',
+				array(
+					'endpoint'       => $endpoint,
+					'input_file_id'  => $input_file_id,
+				)
+			);
+
+			$response = $this->dispatch_http_request( self::BATCHES_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI create batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_create_batch_http_error',
+					__( 'The OpenAI create batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI create batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_create_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch creation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI create batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI create batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_create_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_created',
+				'Batch job created successfully.',
+				array(
+					'batch_id' => isset( $decoded['id'] ) ? $decoded['id'] : '',
+					'status'   => isset( $decoded['status'] ) ? $decoded['status'] : '',
+				)
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Retrieve information about a specific batch job.
+		 *
+		 * @param string $batch_id The ID of the batch to retrieve.
+		 * @param array  $options  Optional parameters (timeout).
+		 * @return array|WP_Error Array containing batch job details or WP_Error on failure.
+		 */
+		public function retrieve_batch( $batch_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$batch_id = sanitize_text_field( (string) $batch_id );
+			if ( '' === $batch_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_batch_id',
+					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id );
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_retrieve_batch',
+				'Retrieving batch job from OpenAI.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_retrieve_batch_http_error',
+					__( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI retrieve batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_retrieve_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch retrieval.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI retrieve batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_retrieve_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Cancel a batch processing job.
+		 *
+		 * @param string $batch_id The ID of the batch to cancel.
+		 * @param array  $options  Optional parameters (timeout).
+		 * @return array|WP_Error Array containing updated batch details or WP_Error on failure.
+		 */
+		public function cancel_batch( $batch_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$batch_id = sanitize_text_field( (string) $batch_id );
+			if ( '' === $batch_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_batch_id',
+					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel';
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_cancel_batch',
+				'Cancelling batch job with OpenAI.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI cancel batch request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_cancel_batch_http_error',
+					__( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI cancel batch response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_cancel_batch_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batch cancellation.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI cancel batch returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_cancel_batch_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_cancelled',
+				'Batch job cancelled successfully.',
+				array( 'batch_id' => $batch_id )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * List batch processing jobs with optional filtering.
+		 *
+		 * @param array $options Optional parameters:
+		 *                       - after: Batch ID cursor for pagination (retrieve batches after this ID).
+		 *                       - limit: Maximum number of batches to return (1-100, default 20).
+		 *                       - timeout: Request timeout in seconds.
+		 * @return array|WP_Error Array containing list of batch jobs or WP_Error on failure.
+		 *                        Success structure:
+		 *                        - object: "list"
+		 *                        - data: Array of batch job objects
+		 *                        - first_id: ID of the first batch in the list
+		 *                        - last_id: ID of the last batch in the list
+		 *                        - has_more: Whether there are more batches available
+		 */
+		public function list_batches( array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			// Build query parameters.
+			$query_params = array();
+
+			if ( isset( $options['after'] ) && '' !== $options['after'] ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['limit'] ) && '' !== $options['limit'] ) {
+				$limit = absint( $options['limit'] );
+				$limit = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
+				$query_params['limit'] = $limit;
+			}
+
+			$endpoint = self::BATCHES_ENDPOINT;
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_list_batches',
+				'Listing batch jobs from OpenAI.',
+				array( 'params' => $query_params )
+			);
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list batches request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_list_batches_http_error',
+					__( 'The OpenAI list batches request failed.', 'wp-mcp-ai' ),
+					__( 'OpenAI', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode OpenAI list batches response.',
+					array( 'body' => $body )
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_list_batches_invalid_response',
+					__( 'OpenAI returned malformed JSON for the batches list.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list batches returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI list batches request failed.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_list_batches_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batches_listed',
+				'Batch jobs list retrieved successfully.',
+				array( 'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0 )
+			);
+
+			return is_array( $decoded ) ? $decoded : array();
 		}
 	}
 }

@@ -4,7 +4,7 @@
 **Current Status**: Phase 3.1 Complete ✅  
 **Branch**: copilot/update-separation-plan-steps
 
-> 💡 **Want a 2-minute answer?** See **[SEPARATION_PLAN_NEXT_STEP.md](SEPARATION_PLAN_NEXT_STEP.md)** for a quick summary.
+> 💡 **Want a 2-minute answer?** See **[SEPARATION_PLAN_NEXT_STEP.md](refactoring/SEPARATION_PLAN_NEXT_STEP.md)** for a quick summary.
 
 ---
 

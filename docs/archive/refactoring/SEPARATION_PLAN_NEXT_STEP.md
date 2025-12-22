@@ -171,11 +171,11 @@ Continue this approach for Phase 3.2:
 
 For full details, see:
 
-- 📖 **[PHASE_3_1_COMPLETE.md](PHASE_3_1_COMPLETE.md)** - What was just completed
-- 🗺️ **[PHASE_3_VISUAL_GUIDE.md](PHASE_3_VISUAL_GUIDE.md)** - Visual architecture guide
-- 📋 **[SEPARATION_OF_CONCERNS_ROADMAP.md](SEPARATION_OF_CONCERNS_ROADMAP.md)** - Full roadmap with progress
+- 📖 **[PHASE_3_1_COMPLETE.md](../phase-implementations/PHASE_3_1_COMPLETE.md)** - What was just completed
+- 🗺️ **[PHASE_3_VISUAL_GUIDE.md](../phases/PHASE_3_VISUAL_GUIDE.md)** - Visual architecture guide
+- 📋 **[SEPARATION_OF_CONCERNS_ROADMAP.md](../SEPARATION_OF_CONCERNS_ROADMAP.md)** - Full roadmap with progress
 - 📚 **[SEPARATION_OF_CONCERNS_NEXT_STEP_INDEX.md](SEPARATION_OF_CONCERNS_NEXT_STEP_INDEX.md)** - Documentation index
-- ✅ **[PHASE_2_2_COMPLETE.md](PHASE_2_2_COMPLETE.md)** - Previous phase completion
+- ✅ **[PHASE_2_2_COMPLETE.md](../phase-implementations/PHASE_2_2_COMPLETE.md)** - Previous phase completion
 
 ---
 
@@ -197,4 +197,4 @@ For full details, see:
 
 ---
 
-**Ready to start?** See [PHASE_3_VISUAL_GUIDE.md](PHASE_3_VISUAL_GUIDE.md) for detailed architecture and implementation guidance.
+**Ready to start?** See [PHASE_3_VISUAL_GUIDE.md](../phases/PHASE_3_VISUAL_GUIDE.md) for detailed architecture and implementation guidance.

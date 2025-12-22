@@ -100,6 +100,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated
 			$arguments['quality'] = $validated_args->quality;
 		}
 
+		if ( null !== $validated_args->style ) {
+			$arguments['style'] = $validated_args->style;
+		}
+
 		if ( null !== $validated_args->response_format ) {
 			$arguments['response_format'] = $validated_args->response_format;
 		}

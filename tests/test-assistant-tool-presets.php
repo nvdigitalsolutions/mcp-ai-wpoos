@@ -138,4 +138,101 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			);
 		}
 	}
+
+	/**
+	 * Test that ai_ml preset exists and contains expected tools.
+	 */
+	public function test_ai_ml_preset() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		// Create a reflection class to access protected method.
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+
+		$presets = $method->invoke( $assistant_cpt );
+
+		$this->assertArrayHasKey( 'ai_ml', $presets, 'AI/ML preset should exist.' );
+
+		$ai_ml_preset = $presets['ai_ml'];
+		$this->assertArrayHasKey( 'tools', $ai_ml_preset );
+
+		// Check for some expected tools.
+		$expected_tools = array( 'list_available_models', 'count_tokens', 'create_vector_store', 'semantic_content_search' );
+		foreach ( $expected_tools as $tool ) {
+			$this->assertContains(
+				$tool,
+				$ai_ml_preset['tools'],
+				"AI/ML preset should contain '{$tool}' tool."
+			);
+		}
+	}
+
+	/**
+	 * Test that media preset exists and contains expected tools.
+	 */
+	public function test_media_preset() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		// Create a reflection class to access protected method.
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+
+		$presets = $method->invoke( $assistant_cpt );
+
+		$this->assertArrayHasKey( 'media', $presets, 'Media preset should exist.' );
+
+		$media_preset = $presets['media'];
+		$this->assertArrayHasKey( 'tools', $media_preset );
+
+		// Check for some expected tools.
+		$expected_tools = array( 'generate_openai_image', 'generate_veo_video', 'transcribe_openai_audio', 'generate_music' );
+		foreach ( $expected_tools as $tool ) {
+			$this->assertContains(
+				$tool,
+				$media_preset['tools'],
+				"Media preset should contain '{$tool}' tool."
+			);
+		}
+	}
+
+	/**
+	 * Test that we have exactly 9 presets (2 new + 7 existing).
+	 */
+	public function test_preset_count() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		// Create a reflection class to access protected method.
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+
+		$presets = $method->invoke( $assistant_cpt );
+
+		$this->assertCount( 9, $presets, 'Should have exactly 9 presets (2 new + 7 existing).' );
+
+		// Verify all expected preset keys exist.
+		$expected_keys = array(
+			'ai_ml',
+			'media',
+			'content_writing',
+			'ecommerce',
+			'site_management',
+			'seo_marketing',
+			'development',
+			'data_analytics',
+			'design_professional',
+		);
+
+		foreach ( $expected_keys as $key ) {
+			$this->assertArrayHasKey( $key, $presets, "Preset '{$key}' should exist." );
+		}
+	}
 }
