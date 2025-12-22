@@ -117,9 +117,9 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$provider = $default_provider;
 		}
 
-		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ) );
+		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
 		if ( ! is_array( $provider_choices ) ) {
-			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 		}
 
 		if ( '' === $temperature ) {

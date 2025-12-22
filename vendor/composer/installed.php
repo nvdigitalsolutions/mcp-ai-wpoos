@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
-        'version' => 'dev-copilot/add-hugging-face-client-provider',
-        'reference' => '04f4ff56d58450bc13c7256e552eced8e657b7d6',
+        'pretty_version' => 'dev-copilot/fix-hugging-face-priority-order',
+        'version' => 'dev-copilot/fix-hugging-face-priority-order',
+        'reference' => '160127661cbd4772b6da57af790b58ff91e676c5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
-            'version' => 'dev-copilot/add-hugging-face-client-provider',
-            'reference' => '04f4ff56d58450bc13c7256e552eced8e657b7d6',
+            'pretty_version' => 'dev-copilot/fix-hugging-face-priority-order',
+            'version' => 'dev-copilot/fix-hugging-face-priority-order',
+            'reference' => '160127661cbd4772b6da57af790b58ff91e676c5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
