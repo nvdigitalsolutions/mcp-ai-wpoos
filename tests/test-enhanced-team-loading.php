@@ -116,8 +116,9 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 			}
 		}
 		$this->assertNotNull( $igcse_math_team, 'IGCSE Mathematics Team should exist' );
-		$this->assertCount( 1, $igcse_math_team['members'], 'Should have 1 mathematics tutor' );
+		$this->assertCount( 2, $igcse_math_team['members'], 'Should have 2 tutors (mathematics + year 10)' );
 		$this->assertContains( 'igcse_mathematics_tutor', $igcse_math_team['members'] );
+		$this->assertContains( 'igcse_year_10_tutor', $igcse_math_team['members'] );
 
 		// Verify IGCSE Science Tutoring Team.
 		$igcse_science_team = null;

@@ -5,7 +5,8 @@
       "slug": "igcse_mathematics_team",
       "description": "Specialized IGCSE mathematics tutoring covering Core (grades 5-1) and Extended (grades 9-4) tiers, exam techniques, and problem-solving strategies aligned with Cambridge IGCSE Mathematics syllabus (0580/0607).",
       "members": [
-        "igcse_mathematics_tutor"
+        "igcse_mathematics_tutor",
+        "igcse_year_10_tutor"
       ],
       "default_provider": "openai",
       "default_model": "gpt-4",
